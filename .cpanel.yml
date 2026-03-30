@@ -4,5 +4,6 @@ deployment:
     - export DEPLOYPATH=/home/c2627836c/public_html/mapo
     - /bin/cp -R dist/index.html $DEPLOYPATH/index.html
     - /bin/cp -R dist/assets/ $DEPLOYPATH/assets/
+    - /bin/cp -R public/.htaccess $DEPLOYPATH/.htaccess
     - /bin/cp -R public/favicon.svg $DEPLOYPATH/favicon.svg
     - /bin/cp -R public/icons.svg $DEPLOYPATH/icons.svg
