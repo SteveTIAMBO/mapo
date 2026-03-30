@@ -4,8 +4,8 @@ deployment:
     - export DEPLOYPATH=/home/c2627836c/public_html/mapo
     - /bin/rm -rf $DEPLOYPATH/assets
     - /bin/mkdir -p $DEPLOYPATH/assets
-    - /bin/cp -R dist/assets/* $DEPLOYPATH/assets/
-    - /bin/cp dist/index.html $DEPLOYPATH/index.html
-    - /bin/cp public/.htaccess $DEPLOYPATH/.htaccess
-    - /bin/cp public/favicon.svg $DEPLOYPATH/favicon.svg 2>/dev/null; true
-    - /bin/cp public/icons.svg $DEPLOYPATH/icons.svg 2>/dev/null; true
+    - /bin/cp -R dist-new/assets/* $DEPLOYPATH/assets/
+    - /bin/cp dist-new/index.html $DEPLOYPATH/index.html
+    - /bin/cp dist-new/.htaccess $DEPLOYPATH/.htaccess
+    - /bin/cp dist-new/favicon.svg $DEPLOYPATH/favicon.svg 2>/dev/null; true
+    - /bin/cp dist-new/icons.svg $DEPLOYPATH/icons.svg 2>/dev/null; true

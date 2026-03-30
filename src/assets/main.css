@@ -4,146 +4,389 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@500;600;700&display=swap');
 
+/* ═══════════════════════════════════════════
+   MAPO Design System — Inspired by ARIS
+   Clean, professional, warm
+   ═══════════════════════════════════════════ */
+
 :root {
+  /* Background */
   --bg: #EDEAE3;
-  --gl: rgba(255,255,255,.68);
-  --gl2: rgba(255,255,255,.9);
-  --glb: rgba(255,255,255,.52);
+
+  /* Primary — Blue (ARIS uses green, MAPO uses blue) */
   --pr: #1558B0;
-  --pr-d: #0E3F7E;
-  --pr-l: rgba(21,88,176,.11);
-  --pr-glow: rgba(21,88,176,.18);
+  --pr-dark: #0E3F7E;
+  --pr-light: rgba(21,88,176,.08);
+  --pr-glow: rgba(21,88,176,.15);
+
+  /* Sidebar */
+  --sidebar: #0C2D5A;
+  --sidebar-hover: rgba(255,255,255,.08);
+  --sidebar-active: rgba(255,255,255,.12);
+  --sidebar-muted: rgba(255,255,255,.45);
+
+  /* Accent */
   --gold: #B8892A;
-  --gold-l: rgba(184,137,42,.13);
-  --tx: #161E18;
-  --tx2: #546058;
-  --tx3: #98ADA5;
+  --gold-light: rgba(184,137,42,.1);
+
+  /* Text */
+  --tx: #1A1D1F;
+  --tx2: #6F767E;
+  --tx3: #9A9FA5;
+
+  /* Cards — clean white, no glass */
+  --card: #FFFFFF;
+  --card-border: rgba(0,0,0,.06);
+  --card-radius: 16px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,.04), 0 4px 12px rgba(0,0,0,.03);
+
+  /* Status */
   --danger: #D93025;
-  --warn: #C96B10;
+  --warn: #E8950A;
+  --success: #1B8A5A;
   --info: #1558B0;
-  --success: #0C7A52;
-  --R: 20px;
-  --Rs: 14px;
-  --Rx: 10px;
-  --sh: 0 4px 24px rgba(14,30,20,.07);
-  --shL: 0 16px 56px rgba(14,30,20,.1);
+
+  /* Inputs */
+  --input-bg: #F6F6F4;
+  --input-border: #E0DED8;
+  --input-focus: #1558B0;
+
+  /* Misc */
+  --divider: #EAEAEA;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 100px;
 }
 
+/* ─── Base ─── */
 @layer base {
   html {
-    font-family: 'Outfit', system-ui, sans-serif;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--tx);
   }
+
   body {
-    @apply bg-bg text-tx antialiased m-0;
+    margin: 0;
+    background: var(--bg);
+    color: var(--tx);
+    min-height: 100vh;
   }
-  h1, h2, h3 {
+
+  h1, h2, h3, h4 {
     font-family: 'Poppins', system-ui, sans-serif;
     font-weight: 600;
     color: var(--tx);
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  h1 { font-size: 28px; }
+  h2 { font-size: 20px; }
+  h3 { font-size: 16px; font-weight: 600; }
+
+  a { color: var(--pr); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ::selection {
+    background: rgba(21,88,176,.15);
+    color: var(--tx);
   }
 }
 
+/* ─── Components ─── */
 @layer components {
-  /* Glass card — ARIS-style */
-  .glass {
-    background: var(--gl);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,.45);
-    border-radius: var(--R);
-    box-shadow: var(--sh);
-  }
-  .glass-solid {
-    background: var(--gl2);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255,255,255,.6);
-    border-radius: var(--R);
-    box-shadow: var(--sh);
+
+  /* Card — clean white, ARIS-style */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
   }
 
-  /* Boutons */
-  .btn-pr {
-    @apply font-medium text-white px-5 py-2.5 transition-all duration-200;
+  /* Section label — green uppercase in ARIS, blue in MAPO */
+  .section-label {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pr);
+  }
+
+  /* Page header pattern (like ARIS: title + subtitle + action button) */
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .page-header-text h1 {
+    margin-bottom: 4px;
+  }
+  .page-header-text p {
+    font-size: 14px;
+    color: var(--tx2);
+    margin: 0;
+  }
+
+  /* Stat bar — unified card with dividers (ARIS pattern) */
+  .stat-bar {
+    display: grid;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+  }
+  .stat-bar-item {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+  }
+  .stat-bar-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 20%;
+    height: 60%;
+    width: 1px;
+    background: var(--divider);
+  }
+  .stat-bar-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .stat-bar-dot.blue { background: var(--pr); }
+  .stat-bar-dot.green { background: var(--success); }
+  .stat-bar-dot.orange { background: var(--warn); }
+  .stat-bar-dot.purple { background: #7C3AED; }
+  .stat-bar-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--tx);
+    line-height: 1;
+  }
+  .stat-bar-label {
+    font-size: 13px;
+    color: var(--tx2);
+    margin-top: 2px;
+  }
+
+  /* Buttons — ARIS style */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: var(--radius-pill);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    white-space: nowrap;
+    line-height: 1;
+  }
+
+  .btn-primary {
     background: var(--pr);
-    border-radius: var(--Rs);
-    box-shadow: 0 2px 12px var(--pr-glow);
+    color: #fff;
+    box-shadow: 0 2px 8px var(--pr-glow);
   }
-  .btn-pr:hover {
-    background: var(--pr-d);
-    box-shadow: 0 4px 20px var(--pr-glow);
-    transform: translateY(-1px);
+  .btn-primary:hover {
+    background: var(--pr-dark);
+    box-shadow: 0 4px 16px var(--pr-glow);
   }
-  .btn-pr:disabled {
-    @apply opacity-50 cursor-not-allowed;
-    transform: none;
+
+  .btn-outline {
+    background: transparent;
+    color: var(--tx);
+    border: 1.5px solid var(--card-border);
+  }
+  .btn-outline:hover {
+    border-color: var(--tx3);
+    background: rgba(0,0,0,.02);
   }
 
   .btn-ghost {
-    @apply font-medium px-5 py-2.5 transition-all duration-200;
-    color: var(--tx);
     background: transparent;
-    border: 1px solid rgba(0,0,0,.12);
-    border-radius: var(--Rs);
+    color: var(--tx2);
+    padding: 8px 12px;
   }
   .btn-ghost:hover {
-    background: rgba(255,255,255,.5);
-    border-color: rgba(0,0,0,.2);
-  }
-
-  /* Input fields */
-  .input-glass {
-    @apply w-full px-4 py-2.5 text-sm transition-all duration-200 outline-none;
-    background: rgba(255,255,255,.5);
-    border: 1px solid rgba(0,0,0,.08);
-    border-radius: var(--Rx);
+    background: rgba(0,0,0,.04);
     color: var(--tx);
   }
-  .input-glass::placeholder { color: var(--tx3); }
-  .input-glass:focus {
-    background: rgba(255,255,255,.8);
+
+  .btn-sm {
+    padding: 7px 14px;
+    font-size: 13px;
+  }
+
+  /* Input fields — clean, subtle */
+  .input {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: var(--tx);
+    background: var(--input-bg);
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: all 0.2s ease;
+  }
+  .input::placeholder { color: var(--tx3); }
+  .input:focus {
+    background: #fff;
     border-color: var(--pr);
-    box-shadow: 0 0 0 3px var(--pr-l);
+    box-shadow: 0 0 0 3px var(--pr-light);
   }
 
-  /* Badge */
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 text-xs font-medium;
-    border-radius: 99px;
-  }
-  .badge-success { background: rgba(12,122,82,.1); color: #0C7A52; }
-  .badge-warning { background: rgba(201,107,16,.1); color: #C96B10; }
-  .badge-danger  { background: rgba(217,48,37,.1);  color: #D93025; }
-  .badge-info    { background: rgba(21,88,176,.1);   color: #1558B0; }
-
-  /* Stat card */
-  .stat-card {
-    @apply glass p-5 flex flex-col gap-1;
-  }
-  .stat-card .stat-value {
-    font-family: 'Poppins', sans-serif;
-    @apply text-2xl font-bold;
+  /* Select */
+  .select {
+    appearance: none;
+    width: auto;
+    padding: 8px 32px 8px 14px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
     color: var(--tx);
+    background: var(--input-bg) url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236F767E' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center;
+    border: 1.5px solid transparent;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s ease;
   }
-  .stat-card .stat-label {
-    @apply text-sm;
-    color: var(--tx2);
+  .select:focus {
+    background-color: #fff;
+    border-color: var(--pr);
   }
 
-  /* Offline banner */
-  .offline-banner {
-    @apply fixed top-0 left-0 right-0 z-50 text-white text-center text-sm py-1.5 font-medium;
-    background: var(--warn);
+  /* Badge — pill style */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: var(--radius-pill);
+    line-height: 1.4;
+  }
+  .badge-success { background: rgba(27,138,90,.08); color: var(--success); }
+  .badge-warning { background: rgba(232,149,10,.08); color: var(--warn); }
+  .badge-danger  { background: rgba(217,48,37,.08);  color: var(--danger); }
+  .badge-info    { background: var(--pr-light);       color: var(--pr); }
+
+  /* List item — ARIS engagement-row style */
+  .list-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    transition: background 0.15s ease;
+  }
+  .list-row:not(:last-child) {
+    border-bottom: 1px solid var(--divider);
+  }
+  .list-row:hover {
+    background: rgba(0,0,0,.015);
   }
 
-  /* Scrollbar custom */
-  ::-webkit-scrollbar { width: 6px; }
+  /* Fieldset section — ARIS profile form style */
+  .fieldset {
+    position: relative;
+    padding: 24px;
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    background: var(--card);
+  }
+  .fieldset-legend {
+    font-family: 'Poppins', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pr);
+    margin-bottom: 20px;
+  }
+
+  /* Search bar */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--card-shadow);
+  }
+  .search-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px;
+    color: var(--tx);
+    background: transparent;
+  }
+  .search-bar input::placeholder { color: var(--tx3); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--tx3);
+  }
+  .empty-state p {
+    font-size: 14px;
+    margin: 0;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background: rgba(0,0,0,.15);
+    background: rgba(0,0,0,.12);
     border-radius: 3px;
   }
-  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.25); }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,.2); }
+}
+
+/* ─── Transitions ─── */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.slide-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }

@@ -1,39 +1,28 @@
 <template>
-  <header class="app-header">
+  <header class="header">
     <div class="header-left">
       <button class="menu-toggle" @click="$emit('toggle-sidebar')">
         <Menu :size="20" />
       </button>
-      <h1 class="page-title">{{ pageTitle }}</h1>
+      <p class="header-greeting">{{ greeting }}, {{ firstName }}</p>
     </div>
 
     <div class="header-right">
-      <!-- Offline indicator -->
-      <div v-if="!isOnline" class="status-badge offline">
-        <span class="status-dot"></span>
-        Hors-ligne
-      </div>
-      <div v-else class="status-badge online">
-        <span class="status-dot"></span>
-        En ligne
-      </div>
-
-      <!-- Notifications placeholder -->
-      <button class="icon-btn">
+      <!-- Notification bell -->
+      <button class="header-icon-btn" title="Notifications">
         <Bell :size="20" />
+        <!-- notification dot -->
+        <!-- <span class="notif-dot"></span> -->
       </button>
 
       <!-- User avatar -->
-      <div class="user-area">
+      <div class="header-avatar" :title="authStore.user?.displayName">
         <img
           v-if="authStore.user?.photoURL"
           :src="authStore.user.photoURL"
-          class="user-avatar"
           :alt="authStore.user?.displayName"
         />
-        <div v-else class="user-avatar-fallback">
-          {{ initials }}
-        </div>
+        <span v-else>{{ initials }}</span>
       </div>
     </div>
   </header>
@@ -41,39 +30,46 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
-import { useOnline } from '@vueuse/core'
 import { useAuthStore } from '../../stores/auth'
 import { Menu, Bell } from 'lucide-vue-next'
 
 defineEmits(['toggle-sidebar'])
-
-const route = useRoute()
-const isOnline = useOnline()
 const authStore = useAuthStore()
 
-const pageTitle = computed(() => route.meta?.title || 'MAPO')
+const firstName = computed(() => {
+  const name = authStore.user?.displayName || ''
+  return name.split(' ')[0] || 'utilisateur'
+})
+
 const initials = computed(() => {
   const name = authStore.user?.displayName || ''
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 })
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bonjour'
+  if (h < 18) return 'Bon apres-midi'
+  return 'Bonsoir'
+})
 </script>
 
 <style scoped>
-.app-header {
+.header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 64px;
+  height: 60px;
   padding: 0 32px;
-  background: transparent;
   flex-shrink: 0;
 }
+
 .header-left {
   display: flex;
   align-items: center;
   gap: 12px;
 }
+
 .menu-toggle {
   display: none;
   align-items: center;
@@ -81,109 +77,83 @@ const initials = computed(() => {
   width: 36px;
   height: 36px;
   border: none;
-  background: var(--gl);
-  backdrop-filter: blur(12px);
-  border-radius: var(--Rx);
+  background: transparent;
+  border-radius: 8px;
   color: var(--tx2);
   cursor: pointer;
-  transition: all 0.2s;
 }
 .menu-toggle:hover {
-  background: var(--gl2);
+  background: rgba(0,0,0,.04);
   color: var(--tx);
 }
-.page-title {
+
+.header-greeting {
   font-family: 'Poppins', sans-serif;
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--tx);
   margin: 0;
 }
+
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.status-badge {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 14px;
-  border-radius: 99px;
-  font-size: 12px;
-  font-weight: 500;
-}
-.status-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-}
-.status-badge.online {
-  background: rgba(12,122,82,.1);
-  color: #0C7A52;
-}
-.status-badge.online .status-dot {
-  background: #0C7A52;
-  animation: pulse 2s infinite;
-}
-.status-badge.offline {
-  background: rgba(201,107,16,.1);
-  color: #C96B10;
-}
-.status-badge.offline .status-dot {
-  background: #C96B10;
-}
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: var(--gl);
-  backdrop-filter: blur(12px);
-  border-radius: var(--Rx);
-  color: var(--tx2);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.icon-btn:hover {
-  background: var(--gl2);
-  color: var(--tx);
-}
-.user-area {
-  display: flex;
-  align-items: center;
-}
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 2px solid rgba(21,88,176,.2);
-}
-.user-avatar-fallback {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--pr);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'Poppins', sans-serif;
+  gap: 8px;
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: .4; }
+.header-icon-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: none;
+  background: transparent;
+  border-radius: 10px;
+  color: var(--tx2);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.header-icon-btn:hover {
+  background: rgba(0,0,0,.04);
+  color: var(--tx);
+}
+
+.notif-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  background: var(--pr);
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+.header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pr);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: default;
+}
+.header-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 @media (max-width: 1024px) {
-  .app-header { padding: 0 16px; }
+  .header { padding: 0 16px; }
   .menu-toggle { display: flex; }
-  .page-title { font-size: 18px; }
 }
 </style>

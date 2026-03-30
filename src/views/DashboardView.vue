@@ -1,154 +1,160 @@
 <template>
   <div class="dashboard">
-    <!-- Top greeting section -->
-    <div class="greeting-section">
-      <h1 class="greeting-title">Bonjour, {{ firstName }}</h1>
-      <p class="school-name">{{ schoolName }}</p>
+    <!-- Page header — ARIS pattern: title + subtitle left, action button right -->
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>Tableau de Bord</h1>
+        <p>Vue d'ensemble de votre etablissement</p>
+      </div>
+      <RouterLink to="/eleves" class="btn btn-primary">
+        Gerer les eleves
+        <ArrowRight :size="16" />
+      </RouterLink>
     </div>
 
-    <!-- Stat cards section -->
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon-circle blue">
-          <Users :size="24" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">0</div>
-          <div class="stat-label">Eleves inscrits</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon-circle gold">
-          <Briefcase :size="24" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">{{ personnelTotal }}</div>
-          <div class="stat-label">Membres du personnel</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon-circle green">
-          <BookOpen :size="24" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">0</div>
-          <div class="stat-label">Classes actives</div>
-        </div>
-      </div>
-
-      <div class="stat-card">
-        <div class="stat-icon-circle purple">
-          <CalendarCheck :size="24" />
-        </div>
-        <div class="stat-content">
-          <div class="stat-value">—</div>
-          <div class="stat-label">Taux de presence</div>
+    <!-- Stat bar — unified card with dividers (ARIS pattern) -->
+    <div class="stat-bar" :style="{ gridTemplateColumns: `repeat(${stats.length}, 1fr)` }">
+      <div
+        v-for="stat in stats"
+        :key="stat.label"
+        class="stat-bar-item"
+      >
+        <span class="stat-bar-dot" :class="stat.color"></span>
+        <div>
+          <div class="stat-bar-value">{{ stat.value }}</div>
+          <div class="stat-bar-label">{{ stat.label }}</div>
         </div>
       </div>
     </div>
 
-    <!-- Quick actions section -->
-    <div class="quick-actions-section">
-      <h2 class="section-title">Actions rapides</h2>
-      <div class="quick-actions-grid">
-        <div class="quick-action-card glass">
-          <div class="qa-icon blue">
-            <UserPlus :size="28" />
-          </div>
-          <div class="qa-content">
-            <h3 class="qa-title">Ajouter un eleve</h3>
-            <p class="qa-description">Inscrire un nouvel eleve dans une classe</p>
-          </div>
-          <button class="qa-arrow">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </button>
-        </div>
+    <!-- Search bar -->
+    <div class="search-bar">
+      <Search :size="18" style="color: var(--tx3); flex-shrink: 0;" />
+      <input type="text" placeholder="Rechercher un eleve, un enseignant, une classe..." />
+    </div>
 
-        <RouterLink to="/personnel" class="quick-action-card glass qa-link">
-          <div class="qa-icon gold">
-            <Briefcase :size="28" />
+    <!-- Quick actions — clean card grid -->
+    <section class="section">
+      <h2 class="section-heading">
+        <Zap :size="18" style="color: var(--pr);" />
+        Actions rapides
+      </h2>
+      <div class="actions-grid">
+        <RouterLink
+          v-for="action in quickActions"
+          :key="action.to"
+          :to="action.to"
+          class="action-card card"
+        >
+          <div class="action-icon" :style="{ background: action.bg, color: action.fg }">
+            <component :is="action.icon" :size="20" />
           </div>
-          <div class="qa-content">
-            <h3 class="qa-title">Gerer le personnel</h3>
-            <p class="qa-description">Ajouter ou modifier les membres du personnel</p>
+          <div class="action-text">
+            <h3>{{ action.title }}</h3>
+            <p>{{ action.desc }}</p>
           </div>
-          <div class="qa-arrow">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </RouterLink>
-
-        <RouterLink to="/parametres" class="quick-action-card glass qa-link">
-          <div class="qa-icon green">
-            <Settings :size="28" />
-          </div>
-          <div class="qa-content">
-            <h3 class="qa-title">Parametres ecole</h3>
-            <p class="qa-description">Configurer les informations de l'etablissement</p>
-          </div>
-          <div class="qa-arrow">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-        </RouterLink>
-
-        <RouterLink to="/rapports" class="quick-action-card glass qa-link">
-          <div class="qa-icon purple">
-            <BarChart3 :size="28" />
-          </div>
-          <div class="qa-content">
-            <h3 class="qa-title">Voir les rapports</h3>
-            <p class="qa-description">Consulter les statistiques et rapports</p>
-          </div>
-          <div class="qa-arrow">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M7 10H13M13 10L10 7M13 10L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <ArrowRight :size="16" class="action-arrow" />
         </RouterLink>
       </div>
-    </div>
+    </section>
 
-    <!-- Recent activity section -->
-    <div class="recent-activity-section">
-      <div class="glass activity-card">
-        <h2 class="section-title">Activite recente</h2>
-        <div class="activity-placeholder">Aucune activite recente</div>
+    <!-- Recent activity -->
+    <section class="section">
+      <h2 class="section-heading">
+        <Clock :size="18" style="color: var(--pr);" />
+        Activite recente
+      </h2>
+      <div class="card activity-card">
+        <div v-if="recentActivity.length === 0" class="empty-state">
+          <p>Aucune activite recente pour le moment.</p>
+          <p style="margin-top: 4px; font-size: 13px;">Les actions effectuees apparaitront ici.</p>
+        </div>
+        <div v-else>
+          <div
+            v-for="(item, i) in recentActivity"
+            :key="i"
+            class="list-row"
+          >
+            {{ item.text }}
+          </div>
+        </div>
       </div>
-    </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { RouterLink } from 'vue-router'
-import { Users, Briefcase, BookOpen, CalendarCheck, UserPlus, Settings, BarChart3 } from 'lucide-vue-next'
-import { useAuthStore } from '../stores/auth'
+import {
+  ArrowRight, Search, Zap, Clock,
+  UserPlus, Briefcase, BookOpen, Settings, BarChart3
+} from 'lucide-vue-next'
 import { useSchoolStore } from '../stores/school'
 import { usePersonnelStore } from '../stores/personnel'
 
-const authStore = useAuthStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 
-const firstName = computed(() => {
-  const displayName = authStore.userProfile?.displayName || ''
-  return displayName.split(' ')[0]
-})
+const stats = computed(() => [
+  {
+    value: 0,
+    label: 'Eleves inscrits',
+    color: 'green'
+  },
+  {
+    value: personnelStore.staffStats?.total || 0,
+    label: 'Personnel',
+    color: 'blue'
+  },
+  {
+    value: 0,
+    label: 'Classes actives',
+    color: 'orange'
+  },
+  {
+    value: '—',
+    label: 'Taux de presence',
+    color: 'purple'
+  }
+])
 
-const schoolName = computed(() => {
-  return schoolStore.settings?.schoolName || 'Mon ecole'
-})
+const quickActions = [
+  {
+    to: '/eleves',
+    icon: UserPlus,
+    title: 'Inscrire un eleve',
+    desc: 'Ajouter un nouvel eleve dans une classe',
+    bg: 'var(--pr-light)',
+    fg: 'var(--pr)'
+  },
+  {
+    to: '/personnel',
+    icon: Briefcase,
+    title: 'Gerer le personnel',
+    desc: 'Ajouter ou modifier les membres du personnel',
+    bg: 'rgba(184,137,42,.08)',
+    fg: 'var(--gold)'
+  },
+  {
+    to: '/classes',
+    icon: BookOpen,
+    title: 'Gerer les classes',
+    desc: 'Configurer les niveaux et les classes',
+    bg: 'rgba(27,138,90,.08)',
+    fg: 'var(--success)'
+  },
+  {
+    to: '/parametres',
+    icon: Settings,
+    title: 'Parametres ecole',
+    desc: 'Configurer les informations de l\'etablissement',
+    bg: 'rgba(0,0,0,.04)',
+    fg: 'var(--tx2)'
+  }
+]
 
-const personnelTotal = computed(() => {
-  return personnelStore.staffStats?.total || 0
-})
+const recentActivity = computed(() => [])
 
 onMounted(async () => {
   await schoolStore.loadSettings()
@@ -158,323 +164,163 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard {
-  padding: 40px 32px;
-  max-width: 1400px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
-.greeting-section {
-  margin-bottom: 48px;
-}
-
-.greeting-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 32px;
-  font-weight: 600;
-  color: var(--tx);
-  margin: 0 0 8px 0;
-  letter-spacing: -0.5px;
-}
-
-.school-name {
-  font-family: 'Outfit', sans-serif;
-  font-size: 16px;
-  color: var(--tx2);
-  margin: 0;
-  font-weight: 400;
-}
-
-/* Stats grid */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 24px;
-  margin-bottom: 48px;
-}
-
-.stat-card {
+/* Page header */
+.page-header {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  padding: 24px;
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(24px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: var(--sh);
-  transition: all 0.3s ease;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+}
+.page-header-text h1 {
+  margin-bottom: 4px;
+}
+.page-header-text p {
+  font-size: 14px;
+  color: var(--tx2);
+  margin: 0;
 }
 
-.stat-card:hover {
-  background: rgba(255, 255, 255, 0.8);
-  transform: translateY(-4px);
+/* Stat bar */
+.stat-bar {
+  margin-bottom: 20px;
 }
 
-.stat-icon-circle {
+/* Search bar */
+.search-bar {
+  margin-bottom: 32px;
+}
+
+/* Sections */
+.section {
+  margin-bottom: 32px;
+}
+.section-heading {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
-  flex-shrink: 0;
-  color: white;
+  gap: 8px;
+  font-size: 17px;
   font-weight: 600;
+  margin-bottom: 16px;
 }
 
-.stat-icon-circle.blue {
-  background: linear-gradient(135deg, var(--pr) 0%, #1043a0 100%);
-}
-
-.stat-icon-circle.gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #d4a047 100%);
-}
-
-.stat-icon-circle.green {
-  background: linear-gradient(135deg, var(--success) 0%, #0a5f41 100%);
-}
-
-.stat-icon-circle.purple {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-}
-
-.stat-value {
-  font-family: 'Poppins', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--tx);
-  line-height: 1;
-}
-
-.stat-label {
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  color: var(--tx2);
-  font-weight: 500;
-}
-
-/* Quick actions section */
-.quick-actions-section {
-  margin-bottom: 48px;
-}
-
-.section-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--tx);
-  margin: 0 0 20px 0;
-  letter-spacing: -0.3px;
-}
-
-.quick-actions-grid {
+/* Actions grid */
+.actions-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
 }
 
-.quick-action-card {
+.action-card {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 24px;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  transition: all 0.3s ease;
+  gap: 14px;
+  padding: 16px 18px;
   text-decoration: none;
-}
-
-.quick-action-card.glass {
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(24px);
-  box-shadow: var(--sh);
-}
-
-.quick-action-card.qa-link {
   color: inherit;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.action-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,.06), 0 8px 24px rgba(0,0,0,.04);
+  transform: translateY(-1px);
 }
 
-.quick-action-card:hover {
-  background: rgba(255, 255, 255, 0.8);
-  transform: translateY(-4px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
-}
-
-.qa-icon {
+.action-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
-  border-radius: 16px;
   flex-shrink: 0;
-  color: white;
 }
 
-.qa-icon.blue {
-  background: linear-gradient(135deg, var(--pr) 0%, #1043a0 100%);
-}
-
-.qa-icon.gold {
-  background: linear-gradient(135deg, var(--gold) 0%, #d4a047 100%);
-}
-
-.qa-icon.green {
-  background: linear-gradient(135deg, var(--success) 0%, #0a5f41 100%);
-}
-
-.qa-icon.purple {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-}
-
-.qa-content {
+.action-text {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  min-width: 0;
 }
-
-.qa-title {
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
+.action-text h3 {
+  font-size: 14px;
   font-weight: 600;
   color: var(--tx);
-  margin: 0;
-  letter-spacing: -0.3px;
+  margin: 0 0 2px;
 }
-
-.qa-description {
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
+.action-text p {
+  font-size: 12px;
   color: var(--tx2);
   margin: 0;
-  font-weight: 400;
-  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.qa-arrow {
-  display: flex;
+.action-arrow {
+  color: var(--tx3);
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.action-card:hover .action-arrow {
+  color: var(--pr);
+  transform: translateX(2px);
+}
+
+/* Activity card */
+.activity-card {
+  padding: 0;
+  overflow: hidden;
+}
+.activity-card .empty-state {
+  padding: 40px 24px;
+}
+
+/* Buttons (scoped overrides) */
+.btn {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: rgba(21, 88, 176, 0.1);
+  gap: 8px;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 100px;
   border: none;
   cursor: pointer;
-  color: var(--pr);
-  flex-shrink: 0;
+  text-decoration: none;
   transition: all 0.2s ease;
 }
-
-.quick-action-card:hover .qa-arrow {
+.btn-primary {
   background: var(--pr);
-  color: white;
-  transform: translateX(4px);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(21,88,176,.15);
+}
+.btn-primary:hover {
+  background: var(--pr-dark, #0E3F7E);
+  box-shadow: 0 4px 16px rgba(21,88,176,.2);
 }
 
-.qa-arrow:active {
-  transform: scale(0.95);
-}
-
-/* Recent activity section */
-.recent-activity-section {
-  margin-bottom: 24px;
-}
-
-.activity-card {
-  padding: 32px;
-  background: rgba(255, 255, 255, 0.68);
-  backdrop-filter: blur(24px);
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: var(--sh);
-}
-
-.activity-placeholder {
-  font-family: 'Outfit', sans-serif;
-  font-size: 14px;
-  color: var(--tx3);
-  text-align: center;
-  padding: 40px 20px;
-  font-weight: 400;
-}
-
-/* Responsive design */
+/* Responsive */
 @media (max-width: 768px) {
-  .dashboard {
-    padding: 24px 16px;
+  .page-header {
+    flex-direction: column;
   }
-
-  .greeting-title {
-    font-size: 24px;
-  }
-
-  .stats-grid {
+  .actions-grid {
     grid-template-columns: 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
   }
-
-  .quick-actions-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .stat-bar {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
-
-  .stat-card,
-  .quick-action-card {
-    padding: 20px;
+  .stat-bar-item:nth-child(2)::after {
+    display: none;
   }
-
-  .stat-icon-circle {
-    width: 48px;
-    height: 48px;
+  .stat-bar-item:nth-child(3) {
+    border-top: 1px solid var(--divider);
   }
-
-  .qa-icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .stat-value {
-    font-size: 24px;
-  }
-
-  .qa-title {
-    font-size: 15px;
-  }
-}
-
-@media (max-width: 480px) {
-  .dashboard {
-    padding: 16px 12px;
-  }
-
-  .greeting-title {
-    font-size: 20px;
-  }
-
-  .section-title {
-    font-size: 18px;
-  }
-
-  .stat-card,
-  .quick-action-card {
-    gap: 16px;
-    padding: 16px;
-  }
-
-  .stat-icon-circle,
-  .qa-icon {
-    width: 44px;
-    height: 44px;
+  .stat-bar-item:nth-child(4) {
+    border-top: 1px solid var(--divider);
   }
 }
 </style>

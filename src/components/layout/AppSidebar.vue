@@ -1,112 +1,70 @@
 <template>
-  <aside
-    :class="[
-      'flex flex-col h-screen bg-pr text-white transition-all duration-300 ease-in-out shrink-0',
-      collapsed ? 'w-[72px]' : 'w-[260px]'
-    ]"
-    :style="{ '--pr': '#1558B0', '--pr-d': '#0E3F7E' }"
-  >
-    <!-- Logo Section -->
-    <div class="flex items-center h-20 px-4 border-b" :style="{ borderColor: 'rgba(255,255,255,.12)' }">
-      <div class="w-10 h-10 rounded-xs flex items-center justify-center shrink-0" style="background-color: rgba(255,255,255,.15)">
-        <span class="text-white font-heading font-bold text-lg">M</span>
-      </div>
+  <aside class="sidebar" :class="{ collapsed }">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+      <div class="logo-mark">M</div>
       <transition name="fade">
-        <div v-if="!collapsed" class="ml-3 min-w-0">
-          <p class="font-heading font-bold text-white text-base leading-tight">MAPO</p>
-        </div>
+        <span v-if="!collapsed" class="logo-text">MAPO</span>
       </transition>
     </div>
 
-    <!-- Menu Label -->
-    <div v-if="!collapsed" class="px-6 py-4">
-      <p class="text-xs font-semibold uppercase tracking-wide" style="color: rgba(255,255,255,.56)">Menu</p>
-    </div>
+    <!-- Menu section -->
+    <div v-if="!collapsed" class="sidebar-section-label">Menu</div>
 
-    <!-- Navigation Items -->
-    <nav class="flex-1 overflow-y-auto px-3 space-y-1 py-2">
+    <nav class="sidebar-nav">
       <RouterLink
-        v-for="item in navItems"
+        v-for="item in mainNav"
         :key="item.to"
         :to="item.to"
-        :class="[
-          'flex items-center gap-3 px-4 py-3 rounded-xs font-medium text-sm transition-all duration-200',
-          isActive(item.to)
-            ? 'text-white'
-            : 'text-white hover:text-white'
-        ]"
-        :style="isActive(item.to) ? { backgroundColor: 'rgba(255,255,255,.15)' } : { backgroundColor: 'transparent' }"
-        @mouseenter="(e) => !isActive(item.to) && (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,.08)')"
-        @mouseleave="(e) => !isActive(item.to) && (e.currentTarget.style.backgroundColor = 'transparent')"
+        class="nav-item"
+        :class="{ active: isActive(item.to) }"
       >
-        <component :is="item.icon" :size="20" class="shrink-0" />
+        <component :is="item.icon" :size="19" class="nav-icon" />
         <transition name="fade">
-          <span v-if="!collapsed" class="truncate">{{ item.label }}</span>
+          <span v-if="!collapsed" class="nav-label">{{ item.label }}</span>
         </transition>
       </RouterLink>
     </nav>
 
-    <!-- Separator -->
-    <div v-if="!collapsed" style="height: '1px'; backgroundColor: 'rgba(255,255,255,.12)'; margin: '0.5rem 0'"></div>
+    <!-- Parametres section -->
+    <div v-if="!collapsed" class="sidebar-section-label">Parametres</div>
 
-    <!-- Parametres Section -->
-    <div v-if="!collapsed" class="px-6 py-4">
-      <p class="text-xs font-semibold uppercase tracking-wide" style="color: rgba(255,255,255,.56)">Parametres</p>
-    </div>
-
-    <!-- Parametres Item -->
-    <nav class="px-3 pb-4">
+    <nav class="sidebar-nav sidebar-nav-bottom">
       <RouterLink
         to="/parametres"
-        :class="[
-          'flex items-center gap-3 px-4 py-3 rounded-xs font-medium text-sm transition-all duration-200',
-          isActive('/parametres')
-            ? 'text-white'
-            : 'text-white hover:text-white'
-        ]"
-        :style="isActive('/parametres') ? { backgroundColor: 'rgba(255,255,255,.15)' } : { backgroundColor: 'transparent' }"
-        @mouseenter="(e) => !isActive('/parametres') && (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,.08)')"
-        @mouseleave="(e) => !isActive('/parametres') && (e.currentTarget.style.backgroundColor = 'transparent')"
+        class="nav-item"
+        :class="{ active: isActive('/parametres') }"
       >
-        <Settings :size="20" class="shrink-0" />
+        <Settings :size="19" class="nav-icon" />
         <transition name="fade">
-          <span v-if="!collapsed" class="truncate">Parametres</span>
+          <span v-if="!collapsed" class="nav-label">Parametres</span>
         </transition>
       </RouterLink>
     </nav>
 
-    <!-- User Info & Logout -->
-    <div class="px-3 pb-4 border-t" :style="{ borderColor: 'rgba(255,255,255,.12)' }">
-      <div v-if="userProfile && !collapsed" class="px-2 py-3 mb-2">
-        <div class="flex items-center gap-3">
-          <div
-            class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-heading font-bold text-sm"
-            style="background-color: rgba(255,255,255,.25)"
-          >
-            {{ getInitials(userProfile.displayName) }}
-          </div>
-          <div class="min-w-0">
-            <p class="text-sm font-medium text-white truncate">{{ userProfile.displayName }}</p>
-            <p class="text-xs truncate" style="color: rgba(255,255,255,.68)">{{ userProfile.role }}</p>
-          </div>
+    <!-- User profile + logout -->
+    <div class="sidebar-footer">
+      <div v-if="userProfile && !collapsed" class="user-block">
+        <div class="user-avatar-sidebar">
+          {{ getInitials(userProfile.displayName) }}
+        </div>
+        <div class="user-info">
+          <p class="user-name">{{ userProfile.displayName }}</p>
+          <p class="user-role">{{ userProfile.role || 'Administrateur' }}</p>
         </div>
       </div>
 
-      <button
-        @click="handleLogout"
-        :class="[
-          'w-full flex items-center gap-3 px-4 py-3 rounded-xs font-medium text-sm transition-all duration-200',
-          'text-white'
-        ]"
-        style="background-color: transparent"
-        @mouseenter="(e) => (e.currentTarget.style.backgroundColor = 'rgba(255,255,255,.08)')"
-        @mouseleave="(e) => (e.currentTarget.style.backgroundColor = 'transparent')"
-      >
-        <LogOut :size="20" class="shrink-0" />
+      <button class="nav-item logout-btn" @click="handleLogout">
+        <LogOut :size="19" class="nav-icon" />
         <transition name="fade">
-          <span v-if="!collapsed" class="truncate">Deconnexion</span>
+          <span v-if="!collapsed" class="nav-label">Se deconnecter</span>
         </transition>
       </button>
+
+      <div v-if="!collapsed" class="sidebar-credits">
+        <span>EDUFREM SAS</span>
+        <span>2026 MAPO</span>
+      </div>
     </div>
   </aside>
 </template>
@@ -118,6 +76,7 @@ import { useAuthStore } from '../../stores/auth'
 import {
   LayoutDashboard,
   Users,
+  Briefcase,
   BookOpen,
   FileText,
   CalendarCheck,
@@ -130,17 +89,15 @@ import {
   LogOut
 } from 'lucide-vue-next'
 
-const props = defineProps({
-  collapsed: Boolean
-})
-
+const props = defineProps({ collapsed: Boolean })
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 const userProfile = computed(() => authStore.userProfile)
 
-const navItems = [
+const mainNav = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
+  { to: '/personnel', icon: Briefcase, label: 'Personnel' },
   { to: '/eleves', icon: Users, label: 'Eleves' },
   { to: '/classes', icon: BookOpen, label: 'Classes' },
   { to: '/notes', icon: FileText, label: 'Notes & Evaluations' },
@@ -152,18 +109,12 @@ const navItems = [
   { to: '/import', icon: Upload, label: 'Import' }
 ]
 
-const isActive = (path) => {
-  return route.path === path || (path !== '/' && route.path.startsWith(path))
-}
+const isActive = (path) =>
+  route.path === path || (path !== '/' && route.path.startsWith(path))
 
-const getInitials = (displayName) => {
-  if (!displayName) return '?'
-  return displayName
-    .split(' ')
-    .map(part => part[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
+const getInitials = (name) => {
+  if (!name) return '?'
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)
 }
 
 const handleLogout = async () => {
@@ -173,11 +124,196 @@ const handleLogout = async () => {
 </script>
 
 <style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.2s ease-in-out;
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  height: 100vh;
+  background: var(--sidebar, #0C2D5A);
+  color: #fff;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 40;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+.sidebar.collapsed {
+  width: 68px;
 }
 
+/* Logo */
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.logo-mark {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,.12);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.logo-text {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.5px;
+}
+
+/* Section labels */
+.sidebar-section-label {
+  padding: 20px 20px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255,255,255,.4);
+}
+
+/* Navigation */
+.sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 10px;
+  flex: 0 0 auto;
+}
+.sidebar-nav:first-of-type {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255,255,255,.7);
+  text-decoration: none;
+  transition: all 0.15s ease;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  position: relative;
+}
+.nav-item:hover {
+  color: #fff;
+  background: rgba(255,255,255,.08);
+}
+.nav-item.active {
+  color: #fff;
+  background: rgba(255,255,255,.12);
+}
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: #fff;
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.nav-item.active .nav-icon {
+  opacity: 1;
+}
+
+.nav-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Bottom nav */
+.sidebar-nav-bottom {
+  padding-bottom: 8px;
+}
+
+/* Footer */
+.sidebar-footer {
+  border-top: 1px solid rgba(255,255,255,.08);
+  padding: 12px 10px 16px;
+  margin-top: auto;
+}
+
+.user-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+.user-avatar-sidebar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.user-info {
+  min-width: 0;
+}
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-role {
+  font-size: 11px;
+  color: rgba(255,255,255,.5);
+  margin: 0;
+}
+
+.logout-btn {
+  color: rgba(255,255,255,.5);
+}
+.logout-btn:hover {
+  color: #fff;
+  background: rgba(255,255,255,.06);
+}
+
+.sidebar-credits {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px 0;
+  font-size: 10px;
+  color: rgba(255,255,255,.25);
+}
+
+/* Transitions */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s ease;
+}
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
