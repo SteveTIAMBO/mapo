@@ -1,51 +1,38 @@
 <template>
-  <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
-    <!-- Titre de la page courante -->
-    <div class="flex items-center gap-3">
-      <button @click="$emit('toggle-sidebar')" class="text-gray-400 hover:text-gray-600 lg:hidden">
-        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
+  <header class="app-header">
+    <div class="header-left">
+      <button class="menu-toggle" @click="$emit('toggle-sidebar')">
+        <Menu :size="20" />
       </button>
-      <h1 class="text-lg font-semibold text-gray-800">{{ pageTitle }}</h1>
+      <h1 class="page-title">{{ pageTitle }}</h1>
     </div>
 
-    <!-- Droite : statut connexion + profil -->
-    <div class="flex items-center gap-4">
-      <!-- Indicateur offline -->
-      <div v-if="!isOnline" class="flex items-center gap-1.5 text-yellow-600 bg-yellow-50 px-3 py-1 rounded-full text-xs font-medium">
-        <span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+    <div class="header-right">
+      <!-- Offline indicator -->
+      <div v-if="!isOnline" class="status-badge offline">
+        <span class="status-dot"></span>
         Hors-ligne
       </div>
-      <div v-else class="flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1 rounded-full text-xs font-medium">
-        <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+      <div v-else class="status-badge online">
+        <span class="status-dot"></span>
         En ligne
       </div>
 
-      <!-- Avatar utilisateur -->
-      <div class="relative group">
-        <button class="flex items-center gap-2">
-          <img
-            v-if="authStore.user?.photoURL"
-            :src="authStore.user.photoURL"
-            class="w-8 h-8 rounded-full ring-2 ring-primary-100"
-            :alt="authStore.user?.displayName"
-          />
-          <div v-else class="w-8 h-8 rounded-full bg-primary-600 flex items-center justify-center text-white text-sm font-medium">
-            {{ initials }}
-          </div>
-          <span class="text-sm text-gray-700 font-medium hidden sm:block">{{ authStore.user?.displayName?.split(' ')[0] }}</span>
-        </button>
+      <!-- Notifications placeholder -->
+      <button class="icon-btn">
+        <Bell :size="20" />
+      </button>
 
-        <!-- Dropdown menu -->
-        <div class="absolute right-0 top-full mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 hidden group-focus-within:block z-50">
-          <div class="px-4 py-2 border-b border-gray-100">
-            <p class="text-sm font-medium text-gray-800 truncate">{{ authStore.user?.displayName }}</p>
-            <p class="text-xs text-gray-500 truncate">{{ authStore.user?.email }}</p>
-          </div>
-          <button @click="authStore.logout()" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-            Déconnexion
-          </button>
+      <!-- User avatar -->
+      <div class="user-area">
+        <img
+          v-if="authStore.user?.photoURL"
+          :src="authStore.user.photoURL"
+          class="user-avatar"
+          :alt="authStore.user?.displayName"
+        />
+        <div v-else class="user-avatar-fallback">
+          {{ initials }}
         </div>
       </div>
     </div>
@@ -57,6 +44,7 @@ import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { useOnline } from '@vueuse/core'
 import { useAuthStore } from '../../stores/auth'
+import { Menu, Bell } from 'lucide-vue-next'
 
 defineEmits(['toggle-sidebar'])
 
@@ -70,3 +58,132 @@ const initials = computed(() => {
   return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
 })
 </script>
+
+<style scoped>
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  padding: 0 32px;
+  background: transparent;
+  flex-shrink: 0;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.menu-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: var(--gl);
+  backdrop-filter: blur(12px);
+  border-radius: var(--Rx);
+  color: var(--tx2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.menu-toggle:hover {
+  background: var(--gl2);
+  color: var(--tx);
+}
+.page-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--tx);
+  margin: 0;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.status-badge.online {
+  background: rgba(12,122,82,.1);
+  color: #0C7A52;
+}
+.status-badge.online .status-dot {
+  background: #0C7A52;
+  animation: pulse 2s infinite;
+}
+.status-badge.offline {
+  background: rgba(201,107,16,.1);
+  color: #C96B10;
+}
+.status-badge.offline .status-dot {
+  background: #C96B10;
+}
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--gl);
+  backdrop-filter: blur(12px);
+  border-radius: var(--Rx);
+  color: var(--tx2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.icon-btn:hover {
+  background: var(--gl2);
+  color: var(--tx);
+}
+.user-area {
+  display: flex;
+  align-items: center;
+}
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(21,88,176,.2);
+}
+.user-avatar-fallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--pr);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .4; }
+}
+
+@media (max-width: 1024px) {
+  .app-header { padding: 0 16px; }
+  .menu-toggle { display: flex; }
+  .page-title { font-size: 18px; }
+}
+</style>

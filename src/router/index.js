@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { auth } from '../firebase'
 import { onAuthStateChanged } from 'firebase/auth'
 
-// Résolution de l'état auth avant la navigation
 const getCurrentUser = () =>
   new Promise((resolve) => {
     const unsub = onAuthStateChanged(auth, (user) => {
@@ -17,6 +16,12 @@ const routes = [
     name: 'Login',
     component: () => import('../views/LoginView.vue'),
     meta: { requiresAuth: false }
+  },
+  {
+    path: '/onboarding',
+    name: 'Onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { requiresAuth: true, title: 'Configuration initiale' }
   },
   {
     path: '/',
@@ -34,7 +39,7 @@ const routes = [
         path: 'eleves',
         name: 'Eleves',
         component: () => import('../views/ElevesView.vue'),
-        meta: { title: 'Élèves' }
+        meta: { title: 'Eleves' }
       },
       {
         path: 'classes',
@@ -46,13 +51,13 @@ const routes = [
         path: 'notes',
         name: 'Notes',
         component: () => import('../views/NotesView.vue'),
-        meta: { title: 'Notes & Évaluations' }
+        meta: { title: 'Notes & Evaluations' }
       },
       {
         path: 'presences',
         name: 'Presences',
         component: () => import('../views/PresencesView.vue'),
-        meta: { title: 'Présences' }
+        meta: { title: 'Presences' }
       },
       {
         path: 'emploi-du-temps',
@@ -82,13 +87,19 @@ const routes = [
         path: 'import',
         name: 'Import',
         component: () => import('../views/ImportView.vue'),
-        meta: { title: 'Import de données' }
+        meta: { title: 'Import de donnees' }
       },
       {
         path: 'parametres',
         name: 'Parametres',
         component: () => import('../views/ParametresView.vue'),
-        meta: { title: 'Paramètres école' }
+        meta: { title: 'Parametres ecole' }
+      },
+      {
+        path: 'personnel',
+        name: 'Personnel',
+        component: () => import('../views/PersonnelView.vue'),
+        meta: { title: 'Personnel' }
       },
     ]
   },
@@ -103,7 +114,7 @@ const router = createRouter({
   routes
 })
 
-// Guard d'authentification
+// Guard d'authentification + redirection onboarding
 router.beforeEach(async (to) => {
   const requiresAuth = to.meta.requiresAuth !== false
   const user = await getCurrentUser()
