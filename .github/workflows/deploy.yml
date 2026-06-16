@@ -37,14 +37,16 @@ jobs:
           done
           rm -f deploy_payload/*.map
 
-      - name: Déployer par FTP vers public_html/mapo
+      - name: Déployer par FTP vers le dossier mapo
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          # Le compte FTP `deploy@` est déjà enraciné dans public_html/mapo,
+          # donc on dépose à la racine de son répertoire (./).
           local-dir: ./deploy_payload/
-          server-dir: public_html/mapo/
+          server-dir: ./
           # Sécurité : ne JAMAIS téléverser/écraser les configs ni les secrets.
           exclude: |
             **/*-config.php
