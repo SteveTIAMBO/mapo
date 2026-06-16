@@ -20,7 +20,9 @@ jobs:
           cache: 'npm'
 
       - name: Installer les dépendances
-        run: npm ci
+        # --legacy-peer-deps : vite-plugin-pwa déclare un peer vite ≤7 alors que
+        # le projet est en vite 8 (compatible en pratique). Évite l'échec ERESOLVE.
+        run: npm ci --legacy-peer-deps
 
       - name: Build (Vite → /tmp/mapo-build)
         run: npm run build
