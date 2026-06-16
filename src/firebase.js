@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app'
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
-const firebaseConfig = {
+export const firebaseConfig = {
   apiKey: 'AIzaSyDgX93HmpPglyGGfTcQr7_soQpvHWBU-L0',
   authDomain: 'mapo-edufrem.firebaseapp.com',
   projectId: 'mapo-edufrem',
@@ -22,10 +22,10 @@ export const db = initializeFirestore(app, {
 
 export const auth = getAuth(app)
 
-// Google Auth - restreint au domaine edufrem.com
+// Google Auth — l'accès réel est filtré par les invitations (voir auth store),
+// pas par le domaine de l'adresse Google.
 export const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({
-  hd: 'edufrem.com',
   prompt: 'select_account'
 })
 

@@ -1,3 +1,18 @@
+# Protéger les fichiers sensibles de provisioning (clé compte de service +
+# config). Ils existent réellement donc le rewrite SPA ne les couvre pas.
+<FilesMatch "^(mapo-provision-config\.php|mapo-sa-key\.json|mapo-notify-config\.php|mapo-ia-config\.php|mapo-pay-config\.php)$">
+  Require all denied
+</FilesMatch>
+
+# Toujours revalider l'entrée de l'app et le service worker pour éviter
+# qu'une mise à jour reste bloquée par le cache navigateur. Les fichiers
+# /assets/* sont hashés → ils gardent le cache long par défaut.
+<IfModule mod_headers.c>
+  <FilesMatch "^(index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /

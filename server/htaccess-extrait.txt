@@ -1,0 +1,7 @@
+## À ajouter dans le .htaccess de public_html/mapo/ pour interdire l'accès web
+## aux fichiers sensibles de provisioning (config + clé du compte de service).
+## (Le rewrite SPA ne protège pas ces fichiers car ils existent réellement.)
+
+<FilesMatch "^(mapo-provision-config\.php|mapo-sa-key\.json)$">
+  Require all denied
+</FilesMatch>

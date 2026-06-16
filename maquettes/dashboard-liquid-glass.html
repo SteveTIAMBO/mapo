@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MAPO — Tableau de bord (Liquid Glass)</title>
+<style>
+  :root{
+    --ink:#1c1c1e; --ink2:#3a3a3e; --muted:#6b6b73; --faint:#8e8e96;
+    --accent:#0a84ff; --accent2:#34c759; --warn:#ff9f0a; --pink:#ff375f;
+    --glass: rgba(255,255,255,.55);
+    --glass-strong: rgba(255,255,255,.72);
+    --hair: rgba(255,255,255,.6);
+    --hair2: rgba(120,130,160,.18);
+    --radius: 22px;
+    --radius-s: 14px;
+    --shadow: 0 10px 30px rgba(35,45,80,.10), 0 2px 8px rgba(35,45,80,.06);
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--font); color:var(--ink); -webkit-font-smoothing:antialiased;
+    min-height:100vh; padding:40px;
+    background:
+      radial-gradient(1200px 800px at 12% 8%, #d6ecff 0%, rgba(214,236,255,0) 55%),
+      radial-gradient(1100px 700px at 92% 12%, #ffe1ef 0%, rgba(255,225,239,0) 55%),
+      radial-gradient(1100px 900px at 78% 95%, #fff0cf 0%, rgba(255,240,207,0) 55%),
+      radial-gradient(1000px 800px at 22% 92%, #e4dbff 0%, rgba(228,219,255,0) 55%),
+      linear-gradient(135deg,#eaf2ff 0%, #f3ecff 45%, #fdeef4 100%);
+    background-attachment:fixed;
+  }
+  /* ===== Fenêtre macOS ===== */
+  .window{
+    max-width:1180px; margin:0 auto; height:760px; display:flex; flex-direction:column;
+    border-radius:var(--radius); overflow:hidden;
+    background:rgba(248,250,253,.5);
+    backdrop-filter:blur(40px) saturate(180%); -webkit-backdrop-filter:blur(40px) saturate(180%);
+    border:1px solid var(--hair);
+    box-shadow:0 40px 90px rgba(30,40,80,.28), 0 8px 24px rgba(30,40,80,.16);
+  }
+  .titlebar{
+    height:52px; flex:none; display:flex; align-items:center; gap:14px; padding:0 18px;
+    background:rgba(255,255,255,.45); backdrop-filter:blur(30px) saturate(180%);
+    border-bottom:1px solid var(--hair2);
+  }
+  .lights{display:flex; gap:8px}
+  .lights span{width:12px;height:12px;border-radius:50%}
+  .l-r{background:#ff5f57} .l-y{background:#febc2e} .l-g{background:#28c840}
+  .wintitle{flex:1; text-align:center; font-size:13.5px; color:var(--muted); font-weight:500; letter-spacing:.2px}
+  .wintitle b{color:var(--ink2); font-weight:600}
+  .wintools{display:flex; gap:14px; color:var(--faint)}
+  .body{flex:1; display:flex; min-height:0}
+
+  /* ===== Sidebar ===== */
+  .sidebar{
+    width:236px; flex:none; padding:16px 12px; display:flex; flex-direction:column; gap:3px;
+    background:rgba(255,255,255,.28); border-right:1px solid var(--hair2);
+    backdrop-filter:blur(20px) saturate(160%);
+  }
+  .brand{display:flex; align-items:center; gap:11px; padding:6px 8px 16px}
+  .brand .logo{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(145deg,#0a84ff,#0060df); color:#fff; font-weight:700; font-size:16px;
+    box-shadow:0 4px 12px rgba(10,132,255,.4)}
+  .brand .bt{font-size:16px; font-weight:600; letter-spacing:.3px}
+  .brand .bs{font-size:11.5px; color:var(--muted); margin-top:-1px}
+  .navlabel{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--faint); padding:14px 10px 6px; font-weight:600}
+  .nav{display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:11px; cursor:default;
+    color:var(--ink2); font-size:14.5px; font-weight:500; transition:.15s}
+  .nav svg{width:19px;height:19px;flex:none;stroke-width:1.7}
+  .nav:hover{background:rgba(255,255,255,.55)}
+  .nav.active{background:rgba(10,132,255,.95); color:#fff; box-shadow:0 6px 16px rgba(10,132,255,.38)}
+  .nav .badge{margin-left:auto; font-size:11px; font-weight:600; background:var(--pink); color:#fff;
+    min-width:19px; height:19px; border-radius:10px; display:flex; align-items:center; justify-content:center; padding:0 5px}
+  .sb-foot{margin-top:auto; display:flex; align-items:center; gap:10px; padding:9px 8px; border-radius:12px; background:rgba(255,255,255,.4)}
+  .sb-foot .av{width:30px;height:30px;border-radius:50%;background:linear-gradient(145deg,#ff9f0a,#ff6f3c);color:#fff;
+    display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+  .sb-foot .nm{font-size:13px;font-weight:600;line-height:1.1}
+  .sb-foot .rl{font-size:11px;color:var(--muted)}
+
+  /* ===== Main ===== */
+  .main{flex:1; min-width:0; overflow-y:auto; padding:22px 26px 30px}
+  .main::-webkit-scrollbar{width:10px} .main::-webkit-scrollbar-thumb{background:rgba(120,130,160,.25);border-radius:8px;border:3px solid transparent;background-clip:content-box}
+  .topbar{display:flex; align-items:center; gap:16px; margin-bottom:22px}
+  .topbar h1{font-size:25px; font-weight:700; letter-spacing:-.4px}
+  .topbar .sub{font-size:13.5px; color:var(--muted); margin-top:2px}
+  .search{margin-left:auto; display:flex; align-items:center; gap:8px; width:230px; padding:9px 13px; border-radius:12px;
+    background:var(--glass); border:1px solid var(--hair); color:var(--muted); font-size:13.5px; box-shadow:var(--shadow)}
+  .search svg{width:16px;height:16px;stroke-width:1.8}
+  .iconbtn{width:38px;height:38px;border-radius:12px;background:var(--glass);border:1px solid var(--hair);
+    display:flex;align-items:center;justify-content:center;color:var(--ink2);box-shadow:var(--shadow)}
+  .iconbtn svg{width:18px;height:18px;stroke-width:1.7}
+
+  /* glass card base */
+  .glass{background:var(--glass); backdrop-filter:blur(30px) saturate(160%); -webkit-backdrop-filter:blur(30px) saturate(160%);
+    border:1px solid var(--hair); border-radius:var(--radius); box-shadow:var(--shadow)}
+
+  .kpis{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:16px}
+  .kpi{padding:16px 17px}
+  .kpi .ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .kpi .ic svg{width:20px;height:20px;stroke-width:1.8}
+  .kpi .lab{font-size:13px;color:var(--muted);font-weight:500}
+  .kpi .val{font-size:28px;font-weight:700;letter-spacing:-.5px;margin-top:1px}
+  .kpi .trend{font-size:12px;font-weight:600;margin-top:5px;display:inline-flex;align-items:center;gap:3px}
+  .up{color:var(--accent2)} .down{color:var(--pink)}
+  .ic-blue{background:rgba(10,132,255,.14);color:#0a84ff}
+  .ic-green{background:rgba(52,199,89,.16);color:#1fa64a}
+  .ic-purple{background:rgba(125,82,255,.14);color:#7d52ff}
+  .ic-amber{background:rgba(255,159,10,.16);color:#cf7e00}
+
+  .row{display:grid; grid-template-columns:1.55fr 1fr; gap:16px; margin-bottom:16px}
+  .card-h{display:flex;align-items:center;gap:10px;padding:16px 18px 4px}
+  .card-h h3{font-size:15.5px;font-weight:600}
+  .card-h .more{margin-left:auto;font-size:12.5px;color:var(--accent);font-weight:600}
+
+  /* bar chart */
+  .chart{padding:6px 18px 18px}
+  .bars{display:flex; align-items:flex-end; gap:14px; height:170px; padding-top:10px}
+  .bar-col{flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end}
+  .bar{width:64%; border-radius:8px 8px 4px 4px; background:linear-gradient(180deg,#4aa3ff,#0a84ff);
+    box-shadow:0 4px 10px rgba(10,132,255,.3); position:relative}
+  .bar span{position:absolute;top:-19px;left:50%;transform:translateX(-50%);font-size:11.5px;font-weight:600;color:var(--ink2)}
+  .bar-x{font-size:11.5px;color:var(--muted);font-weight:500}
+
+  /* finance gauge */
+  .fin{padding:14px 18px 18px; display:flex; flex-direction:column; gap:14px}
+  .gauge{display:flex; align-items:center; gap:16px}
+  .ring{width:96px;height:96px;flex:none}
+  .fin-meta .fm-lab{font-size:13px;color:var(--muted)}
+  .fin-meta .fm-val{font-size:22px;font-weight:700}
+  .fin-line{display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid var(--hair2)}
+  .fin-line .l{font-size:13px;color:var(--muted)} .fin-line .v{font-size:15px;font-weight:700;color:var(--accent2)}
+
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .feed{padding:6px 8px 12px}
+  .fi{display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:13px}
+  .fi:hover{background:rgba(255,255,255,.5)}
+  .fi .fic{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center}
+  .fi .fic svg{width:17px;height:17px;stroke-width:1.8}
+  .fi .ft{font-size:13.5px;font-weight:500;line-height:1.25}
+  .fi .fd{font-size:12px;color:var(--muted);margin-top:1px}
+  .fi .fw{margin-left:auto;font-size:11.5px;color:var(--faint);white-space:nowrap}
+
+  .sched{padding:6px 10px 12px}
+  .sl{display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:13px}
+  .sl + .sl{border-top:1px solid var(--hair2)}
+  .sl .time{font-size:12.5px;font-weight:700;color:var(--accent);width:54px;flex:none}
+  .sl .tt{font-size:13.5px;font-weight:600}
+  .sl .ts{font-size:12px;color:var(--muted)}
+  .sl .pill{margin-left:auto;font-size:11px;font-weight:600;padding:3px 9px;border-radius:9px;background:rgba(120,130,160,.14);color:var(--ink2)}
+</style>
+</head>
+<body>
+  <div class="window">
+    <!-- Title bar -->
+    <div class="titlebar">
+      <div class="lights"><span class="l-r"></span><span class="l-y"></span><span class="l-g"></span></div>
+      <div class="wintitle"><b>MAPO</b> — Collège EDUFREM · Yaoundé</div>
+      <div class="wintools">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="17" height="17" stroke-width="1.7"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" width="17" height="17" stroke-width="1.7"><path d="M12 3v18M3 12h18"/></svg>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo">M</div>
+          <div><div class="bt">MAPO</div><div class="bs">Gestion scolaire</div></div>
+        </div>
+
+        <div class="nav active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 10.5L12 4l9 6.5"/><path d="M5 10v9h14v-9"/></svg>
+          Tableau de bord
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/><path d="M17.5 19a5.2 5.2 0 0 0-2.4-4.4"/></svg>
+          Élèves
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg>
+          Classes
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+          Notes &amp; bulletins
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v15H4z"/><path d="M4 9h16M9 3v4M15 3v4"/><path d="M8.5 14.5l2 2 4-4"/></svg>
+          Présences
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+          Emploi du temps
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h11l3 3v13H5z"/><path d="M9 12l2 2 4-4"/></svg>
+          Devoirs
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v11H8l-4 4z"/></svg>
+          Messagerie
+          <span class="badge">3</span>
+        </div>
+
+        <div class="navlabel">Administration</div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="3"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15 5.5a3 3 0 0 1 0 5M21.5 19a5.2 5.2 0 0 0-3-4.6"/></svg>
+          Personnel
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18M7 15h4"/></svg>
+          Comptabilité
+        </div>
+        <div class="nav">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 19V9M12 19V4M19 19v-7"/></svg>
+          Rapports
+        </div>
+
+        <div class="sb-foot">
+          <div class="av">MT</div>
+          <div><div class="nm">Michel Teussop</div><div class="rl">Directeur</div></div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <main class="main">
+        <div class="topbar">
+          <div>
+            <h1>Tableau de bord</h1>
+            <div class="sub">Année 2025–2026 · Premier &amp; second cycle</div>
+          </div>
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+            Rechercher
+          </div>
+          <div class="iconbtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M6 9a6 6 0 0 1 12 0c0 5 2 6 2 6H4s2-1 2-6z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="kpis">
+          <div class="kpi glass">
+            <div class="ic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 6.2a3 3 0 0 1 0 5.6"/></svg></div>
+            <div class="lab">Élèves inscrits</div>
+            <div class="val">632</div>
+            <div class="trend up">▲ +12 ce mois</div>
+          </div>
+          <div class="kpi glass">
+            <div class="ic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v12H4z"/><path d="M8 21h8M12 17v4"/></svg></div>
+            <div class="lab">Classes</div>
+            <div class="val">21</div>
+            <div class="trend" style="color:var(--muted)">6ᵉ → Tle · 7 niveaux</div>
+          </div>
+          <div class="kpi glass">
+            <div class="ic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="8" cy="8" r="3"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0"/><path d="M15 5.5a3 3 0 0 1 0 5"/></svg></div>
+            <div class="lab">Personnel</div>
+            <div class="val">34</div>
+            <div class="trend" style="color:var(--muted)">26 enseignants</div>
+          </div>
+          <div class="kpi glass">
+            <div class="ic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 5h16v15H4z"/><path d="M8.5 13.5l2 2 4-4"/></svg></div>
+            <div class="lab">Taux de présence</div>
+            <div class="val">94%</div>
+            <div class="trend up">▲ +1,8 pts</div>
+          </div>
+        </div>
+
+        <!-- Row : chart + finance -->
+        <div class="row">
+          <div class="glass">
+            <div class="card-h"><h3>Effectifs par niveau</h3><div class="more">Voir détail</div></div>
+            <div class="chart">
+              <div class="bars">
+                <div class="bar-col"><div class="bar" style="height:78%"><span>108</span></div><div class="bar-x">6ᵉ</div></div>
+                <div class="bar-col"><div class="bar" style="height:70%"><span>96</span></div><div class="bar-x">5ᵉ</div></div>
+                <div class="bar-col"><div class="bar" style="height:64%"><span>88</span></div><div class="bar-x">4ᵉ</div></div>
+                <div class="bar-col"><div class="bar" style="height:60%"><span>82</span></div><div class="bar-x">3ᵉ</div></div>
+                <div class="bar-col"><div class="bar" style="height:52%"><span>71</span></div><div class="bar-x">2nde</div></div>
+                <div class="bar-col"><div class="bar" style="height:70%"><span>96</span></div><div class="bar-x">1ʳᵉ</div></div>
+                <div class="bar-col"><div class="bar" style="height:67%"><span>91</span></div><div class="bar-x">Tle</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="glass">
+            <div class="card-h"><h3>Finances</h3><div class="more">Comptabilité</div></div>
+            <div class="fin">
+              <div class="gauge">
+                <svg class="ring" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(120,130,160,.18)" stroke-width="4"/>
+                  <circle cx="18" cy="18" r="15.5" fill="none" stroke="#34c759" stroke-width="4" stroke-linecap="round"
+                          stroke-dasharray="97.4" stroke-dashoffset="27.3" transform="rotate(-90 18 18)"/>
+                  <text x="18" y="19.5" text-anchor="middle" font-size="9" font-weight="700" fill="#1c1c1e">72%</text>
+                </svg>
+                <div class="fin-meta">
+                  <div class="fm-lab">Taux de recouvrement</div>
+                  <div class="fm-val">21,4 M <span style="font-size:13px;color:var(--muted);font-weight:600">/ 29,7 M FCFA</span></div>
+                </div>
+              </div>
+              <div class="fin-line"><span class="l">Résultat net (à ce jour)</span><span class="v">+4,2 M FCFA</span></div>
+              <div class="fin-line"><span class="l">Impayés en attente</span><span class="v" style="color:var(--warn)">38 familles</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row2 : activity + schedule -->
+        <div class="row2">
+          <div class="glass">
+            <div class="card-h"><h3>Activité récente</h3></div>
+            <div class="feed">
+              <div class="fi"><div class="fic ic-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/></svg></div>
+                <div><div class="ft">Nadège Fomo inscrite en 3ᵉ B</div><div class="fd">par le secrétariat</div></div><div class="fw">il y a 12 min</div></div>
+              <div class="fi"><div class="fic ic-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M5 4h14v16H5z"/><path d="M9 8h6M9 12h6"/></svg></div>
+                <div><div class="ft">Notes de Mathématiques validées · 4ᵉ A</div><div class="fd">J. Kamga</div></div><div class="fw">il y a 1 h</div></div>
+              <div class="fi"><div class="fic ic-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 10h18"/></svg></div>
+                <div><div class="ft">Paiement scolarité reçu · 75 000 FCFA</div><div class="fd">famille Mbarga</div></div><div class="fw">il y a 2 h</div></div>
+              <div class="fi"><div class="fic ic-purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+                <div><div class="ft">Emploi du temps publié · 2nde C</div><div class="fd">Censeur</div></div><div class="fw">hier</div></div>
+            </div>
+          </div>
+
+          <div class="glass">
+            <div class="card-h"><h3>Aujourd'hui</h3><div class="more">Conseil le 14 juin</div></div>
+            <div class="sched">
+              <div class="sl"><div class="time">08:00</div><div><div class="tt">Réunion pédagogique</div><div class="ts">Salle des profs</div></div><div class="pill">Staff</div></div>
+              <div class="sl"><div class="time">10:15</div><div><div class="tt">Conseil de discipline</div><div class="ts">3ᵉ A · 2 dossiers</div></div><div class="pill">Vie scolaire</div></div>
+              <div class="sl"><div class="time">13:00</div><div><div class="tt">Clôture saisie des notes</div><div class="ts">Trimestre 2</div></div><div class="pill" style="background:rgba(255,159,10,.18);color:#a86400">Échéance</div></div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</body>
+</html>

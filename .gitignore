@@ -1,10 +1,31 @@
+# Dépendances
 node_modules/
+
+# Variables d'environnement
 .env
 .env.local
 .env.*.local
+
+# Logs / OS / éditeurs
 *.log
 .DS_Store
 .vscode/
 .idea/
+
+# Sorties de build (construites par la CI, jamais committées)
+dist/
+dist-*/
 deploy-mapo/
-mapo-dist.zip
+deploy_payload/
+_deploy/
+*.zip
+
+# ── SECRETS SERVEUR — NE JAMAIS COMMITTER ──────────────────────────
+# Les fichiers de config contiennent les clés API (Gemini, CinetPay, Twilio…)
+# et la clé de service Firebase. Ils vivent UNIQUEMENT sur le serveur.
+server/*-config.php
+server/mapo-sa-key.json
+server/sa-key.json
+*-config.php
+mapo-sa-key.json
+sa-key.json

@@ -1,0 +1,53 @@
+name: Déploiement MAPO → LWS (cPanel)
+
+# Déclenché à chaque push sur main, ou manuellement depuis l'onglet Actions.
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Build (Vite → /tmp/mapo-build)
+        run: npm run build
+
+      # On assemble le paquet à déployer : la SPA construite + les proxies PHP.
+      # ⚠️ On N'INCLUT PAS les fichiers *-config.php ni mapo-sa-key.json :
+      # ils contiennent les clés API et vivent UNIQUEMENT sur le serveur.
+      - name: Assembler le paquet
+        run: |
+          mkdir -p deploy_payload
+          cp -R /tmp/mapo-build/* deploy_payload/
+          for f in mapo-ia.php mapo-pay.php mapo-notify.php mapo-provision.php; do
+            [ -f "server/$f" ] && cp "server/$f" "deploy_payload/$f" || true
+          done
+          rm -f deploy_payload/*.map
+
+      - name: Déployer par FTP vers public_html/mapo
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy_payload/
+          server-dir: public_html/mapo/
+          # Sécurité : ne JAMAIS téléverser/écraser les configs ni les secrets.
+          exclude: |
+            **/*-config.php
+            **/mapo-sa-key.json
+            **/.git*
+            **/.ftp-deploy-sync-state.json

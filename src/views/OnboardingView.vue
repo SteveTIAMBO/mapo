@@ -1,7 +1,56 @@
 <template>
   <div class="onboarding-container">
+    <!-- Choix initial : assistant guidé OU import du classeur -->
+    <div v-if="mode === null" class="content-wrapper">
+      <div class="glass card-shadow">
+        <div class="step-header">
+          <h1 class="heading-1">Bienvenue ! Comment démarrer ?</h1>
+          <p class="body-text text-secondary">Configurez votre école pas à pas, ou importez le classeur de configuration déjà rempli.</p>
+        </div>
+        <div class="init-choices">
+          <button type="button" class="init-choice" @click="chooseManual">
+            <span class="init-ic">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            </span>
+            <span class="init-name">Paramétrer à la main</span>
+            <span class="init-desc">Assistant guidé en 4 étapes, en français. Idéal pour configurer directement dans l'application.</span>
+          </button>
+          <button type="button" class="init-choice" @click="chooseImport">
+            <span class="init-ic">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            </span>
+            <span class="init-name">Importer le classeur</span>
+            <span class="init-desc">Vous avez rempli le « classeur de démarrage » Excel ? Importez-le pour pré-remplir automatiquement.</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Import du classeur de configuration -->
+    <div v-else-if="mode === 'import'" class="content-wrapper">
+      <div class="glass card-shadow">
+        <div class="step-header">
+          <h1 class="heading-1">Importer le classeur</h1>
+          <p class="body-text text-secondary">Déposez le fichier Excel rempli — MAPO lit l'onglet « Configuration » et pré-remplit tout.</p>
+        </div>
+        <label class="photo-upload-area" style="display:block; cursor:pointer;">
+          <input type="file" accept=".xlsx,.xls,.csv" class="file-input" @change="onConfigFile" />
+          <div class="upload-placeholder">
+            <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p class="body-small">{{ importing ? 'Lecture du fichier…' : 'Cliquez pour choisir le fichier Excel' }}</p>
+          </div>
+        </label>
+        <p v-if="importError" class="body-small" style="color:#c0392b; margin-top:12px;">{{ importError }}</p>
+        <p class="body-small text-secondary" style="margin-top:12px;">
+          Pas encore de fichier ? Téléchargez le « Classeur de démarrage » depuis le menu Import, ou
+          <button type="button" class="link-btn" @click="chooseManual">paramétrez à la main</button>.
+        </p>
+        <button type="button" class="btn-ghost" style="margin-top:16px; max-width:160px;" @click="mode = null">Retour</button>
+      </div>
+    </div>
+
     <!-- Progress Bar -->
-    <div class="progress-section">
+    <div v-if="mode === 'manual'" class="progress-section">
       <div class="progress-dots">
         <div
           v-for="(step, index) in steps"
@@ -18,7 +67,7 @@
     </div>
 
     <!-- Content Area -->
-    <div class="content-wrapper">
+    <div v-if="mode === 'manual'" class="content-wrapper">
       <div class="glass card-shadow">
         <!-- Step 1: School Information -->
         <div v-if="currentStep === 0" class="step-content">
@@ -126,6 +175,37 @@
                     value="lycee"
                   />
                   <span class="checkbox-label">Lycée</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Systeme d'evaluation</label>
+              <p class="field-hint">Combien d'evaluations par trimestre dans votre etablissement ?</p>
+              <div class="radio-group">
+                <label class="radio-item" :class="{ 'radio-selected': formData.evaluationType === '2_sequences' }">
+                  <input
+                    v-model="formData.evaluationType"
+                    type="radio"
+                    name="evaluationType"
+                    value="2_sequences"
+                  />
+                  <div class="radio-content">
+                    <span class="radio-title">2 sequences par trimestre</span>
+                    <span class="radio-desc">6 evaluations par an (Seq1 + Seq2 = Moyenne trimestre)</span>
+                  </div>
+                </label>
+                <label class="radio-item" :class="{ 'radio-selected': formData.evaluationType === '1_evaluation' }">
+                  <input
+                    v-model="formData.evaluationType"
+                    type="radio"
+                    name="evaluationType"
+                    value="1_evaluation"
+                  />
+                  <div class="radio-content">
+                    <span class="radio-title">1 evaluation par trimestre</span>
+                    <span class="radio-desc">3 evaluations par an (1 note = Moyenne trimestre)</span>
+                  </div>
                 </label>
               </div>
             </div>
@@ -250,6 +330,10 @@
                 <span class="summary-value">{{ formData.cycles.join(', ').charAt(0).toUpperCase() + formData.cycles.join(', ').slice(1) }}</span>
               </div>
               <div class="summary-item">
+                <span class="summary-label">Évaluations:</span>
+                <span class="summary-value">{{ formData.evaluationType === '2_sequences' ? '2 séquences / trimestre' : '1 évaluation / trimestre' }}</span>
+              </div>
+              <div class="summary-item">
                 <span class="summary-label">Langue:</span>
                 <span class="summary-value">{{ formData.language === 'fr' ? 'Français' : 'Anglais' }}</span>
               </div>
@@ -280,7 +364,7 @@
     </div>
 
     <!-- Navigation Buttons -->
-    <div class="navigation-section">
+    <div v-if="mode === 'manual'" class="navigation-section">
       <button
         v-if="currentStep > 0"
         class="btn-ghost"
@@ -323,10 +407,15 @@ const isSubmitting = ref(false)
 const photoInput = ref(null)
 const photoPreview = ref(null)
 
+// Mode d'initialisation : null (choix) | 'manual' (assistant) | 'import' (classeur)
+const mode = ref(null)
+const importing = ref(false)
+const importError = ref('')
+
 const steps = ['Établissement', 'Année & Cycles', 'Directeur', 'Confirmation']
 
 const formData = ref({
-  schoolName: 'Collège EDUFREM',
+  schoolName: 'Collège Privé EDUFREM',
   schoolType: 'college_prive',
   acronym: '',
   country: 'CM',
@@ -334,7 +423,8 @@ const formData = ref({
   academicYear: '2025-2026',
   cycles: ['college'],
   language: 'fr',
-  directorName: 'Teussop Michel',
+  evaluationType: '2_sequences',
+  directorName: 'Steve TIAMBO',
   directorPhone: '',
   directorEmail: '',
   directorPhoto: null,
@@ -434,6 +524,87 @@ const previousStep = () => {
   }
 }
 
+// ── Choix d'initialisation ──
+function chooseManual() {
+  mode.value = 'manual'
+  currentStep.value = 0
+}
+function chooseImport() {
+  importError.value = ''
+  mode.value = 'import'
+}
+
+// Import du classeur : lit l'onglet « Configuration », pré-remplit formData,
+// puis bascule sur l'étape de confirmation pour relecture.
+async function onConfigFile(e) {
+  const file = e.target.files?.[0]
+  if (!file) return
+  importing.value = true
+  importError.value = ''
+  try {
+    const XLSX = await import('xlsx')
+    const buf = await file.arrayBuffer()
+    const wb = XLSX.read(new Uint8Array(buf), { type: 'array' })
+    const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+    const sheetName = wb.SheetNames.find((n) => ['configuration', 'config', 'ecole'].includes(norm(n))) || wb.SheetNames[0]
+    const raw = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' })
+    const hmap = {
+      "nom de l'ecole": 'schoolName', 'ecole': 'schoolName', 'etablissement': 'schoolName', 'school name': 'schoolName', "nom de l'etablissement": 'schoolName',
+      'type': 'schoolType', 'type (college/lycee/primaire)': 'schoolType',
+      'ville': 'city', 'pays': 'country', 'annee scolaire': 'academicYear', 'annee': 'academicYear',
+      'devise': 'currency', 'couleur': 'primaryColor', 'couleur (hex)': 'primaryColor',
+      'nom du directeur': 'directorLastName', 'nom directeur': 'directorLastName',
+      'prenom du directeur': 'directorFirstName', 'prenom directeur': 'directorFirstName',
+      'tel du directeur': 'directorPhone', 'telephone du directeur': 'directorPhone', 'tel directeur': 'directorPhone',
+      'email du directeur': 'directorEmail', 'email directeur': 'directorEmail',
+    }
+    let cfg = null
+    for (const r of raw) {
+      const fv = norm(Object.values(r)[0])
+      if (fv === 'obligatoire' || fv === 'optionnel') continue
+      const obj = {}
+      let has = false
+      for (const [h, v] of Object.entries(r)) {
+        const key = hmap[norm(h)]
+        if (key) { obj[key] = String(v ?? '').trim(); if (obj[key]) has = true }
+      }
+      if (has) { cfg = obj; break }
+    }
+    if (!cfg || !cfg.schoolName) {
+      importError.value = "Onglet « Configuration » introuvable ou vide. Vérifiez que le nom de l'école est rempli dans le fichier."
+      importing.value = false
+      return
+    }
+    const f = formData.value
+    if (cfg.schoolName) f.schoolName = cfg.schoolName
+    if (cfg.city) f.city = cfg.city
+    if (cfg.academicYear) f.academicYear = cfg.academicYear
+    if (cfg.currency) f.currency = cfg.currency
+    if (cfg.primaryColor) f.primaryColor = cfg.primaryColor
+    if (cfg.country) {
+      const c = norm(cfg.country)
+      f.country = c.startsWith('sen') ? 'SN' : (c.includes('ivoire') || c.startsWith('cote')) ? 'CI' : 'CM'
+      onCountryChange()
+    }
+    if (cfg.schoolType) {
+      const t = norm(cfg.schoolType)
+      if (t.includes('lyc')) f.cycles = ['college', 'lycee']
+      else if (t.includes('prim')) f.cycles = ['college']
+    }
+    const dn = [cfg.directorLastName, cfg.directorFirstName].filter(Boolean).join(' ').trim()
+    if (dn) f.directorName = dn
+    if (cfg.directorPhone) f.directorPhone = cfg.directorPhone
+    if (cfg.directorEmail) f.directorEmail = cfg.directorEmail
+    // Relecture avant démarrage
+    mode.value = 'manual'
+    currentStep.value = 3
+  } catch (err) {
+    importError.value = 'Erreur de lecture : ' + (err?.message || err)
+  } finally {
+    importing.value = false
+  }
+}
+
 const startMAP = async () => {
   isSubmitting.value = true
   try {
@@ -451,7 +622,7 @@ const startMAP = async () => {
 
 <style scoped>
 :root {
-  --pr: #1558B0;
+  --pr: var(--pr);
   --bg: #EDEAE3;
   --gl: rgba(255, 255, 255, 0.68);
   --R: 20px;
@@ -499,7 +670,7 @@ const startMAP = async () => {
 
 .dot.active {
   background-color: var(--pr);
-  box-shadow: 0 0 0 6px rgba(21, 88, 176, 0.15);
+  box-shadow: 0 0 0 6px rgba(var(--pr-rgb), 0.15);
 }
 
 .dot.completed {
@@ -627,7 +798,7 @@ const startMAP = async () => {
   outline: none;
   border-color: var(--pr);
   background-color: #fff;
-  box-shadow: 0 0 0 3px rgba(21, 88, 176, 0.1);
+  box-shadow: 0 0 0 3px rgba(var(--pr-rgb), 0.1);
 }
 
 .input-glass::placeholder {
@@ -660,6 +831,66 @@ const startMAP = async () => {
   color: #1a1a1a;
 }
 
+.field-hint {
+  font-size: 13px;
+  color: #999;
+  margin: -4px 0 4px 0;
+}
+
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: var(--Rx);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.radio-item:hover {
+  border-color: var(--pr);
+  background-color: rgba(var(--pr-rgb), 0.03);
+}
+
+.radio-selected {
+  border-color: var(--pr);
+  background-color: rgba(var(--pr-rgb), 0.06);
+  box-shadow: 0 0 0 2px rgba(var(--pr-rgb), 0.15);
+}
+
+.radio-item input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--pr);
+}
+
+.radio-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.radio-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.radio-desc {
+  font-size: 13px;
+  color: #999;
+}
+
 .photo-upload-area {
   border: 2px dashed #ddd;
   border-radius: var(--Rx);
@@ -672,7 +903,7 @@ const startMAP = async () => {
 
 .photo-upload-area:hover {
   border-color: var(--pr);
-  background-color: rgba(21, 88, 176, 0.05);
+  background-color: rgba(var(--pr-rgb), 0.05);
 }
 
 .file-input {
@@ -766,12 +997,12 @@ const startMAP = async () => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(21, 88, 176, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--pr-rgb), 0.3);
 }
 
 .btn-pr:hover:not(:disabled) {
   background-color: #0d3d7a;
-  box-shadow: 0 6px 16px rgba(21, 88, 176, 0.4);
+  box-shadow: 0 6px 16px rgba(var(--pr-rgb), 0.4);
   transform: translateY(-2px);
 }
 
@@ -802,6 +1033,47 @@ const startMAP = async () => {
 
 .btn-placeholder {
   flex: 1;
+}
+
+/* ── Choix d'initialisation (manuel vs import) ── */
+.init-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.init-choice {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  padding: 22px;
+  background: #ffffff;
+  border: 1.5px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: 'Outfit', sans-serif;
+}
+.init-choice:hover {
+  border-color: var(--pr);
+  box-shadow: 0 8px 24px rgba(var(--pr-rgb), 0.16);
+  transform: translateY(-2px);
+}
+.init-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; border-radius: 12px;
+  background: rgba(var(--pr-rgb), 0.1); color: var(--pr);
+  margin-bottom: 4px;
+}
+.init-name { font-size: 16px; font-weight: 600; color: #1a1a1a; }
+.init-desc { font-size: 13px; color: #888; line-height: 1.5; }
+.link-btn {
+  background: none; border: none; padding: 0; color: var(--pr);
+  font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline;
+}
+@media (max-width: 640px) {
+  .init-choices { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 640px) {

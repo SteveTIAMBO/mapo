@@ -1,0 +1,409 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════════
+// Règles de sécurité Firestore — MAPO (multi-établissements)
+// ═══════════════════════════════════════════════════════════════════
+//
+// Principe : toutes les données d'une école vivent sous schools/{schoolId}/.
+// Un utilisateur ne peut accéder qu'aux données de SON école, selon SON rôle.
+//
+// Déploiement : Firebase Console → Firestore → Règles, ou
+//   firebase deploy --only firestore:rules
+// Ce fichier est la source de vérité — versionné dans le dépôt.
+// ═══════════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helpers ──────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Profil de l'utilisateur connecté
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasProfile() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    // L'utilisateur appartient à cette école et son compte est actif
+    function isMember(schoolId) {
+      return hasProfile()
+        && userDoc().schoolId == schoolId
+        && userDoc().status == 'active';
+    }
+
+    // L'utilisateur a l'un des rôles indiqués dans cette école
+    function hasRole(schoolId, roles) {
+      return isMember(schoolId) && (userDoc().role in roles);
+    }
+
+    function isAdmin(schoolId) {
+      // 'directeur' = admin en édition secondaire.
+      // 'admin' = admin générique (utilisé en édition supérieur et accepté en secondaire).
+      return hasRole(schoolId, ['directeur', 'admin']);
+    }
+
+    // Membre de l'équipe EDUFREM (super admin). Présence d'un document
+    // dans superAdmins/{uid}. Cette collection n'est pas modifiable depuis
+    // l'application — elle est gérée uniquement via la console Firebase.
+    function isSuperAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/superAdmins/$(request.auth.uid));
+    }
+
+    // Droit d'écriture sur une sous-collection donnée, selon le rôle.
+    // Les administrateurs (directeur/admin) écrivent partout ; les autres
+    // rôles sont limités à leur périmètre métier.
+    //
+    // Conventions de nommage des sous-collections :
+    //   - secondaire : eleves, classes, notes, presences, devoirs, discipline, ...
+    //   - superieur  : etudiants, programmes, promotions, intervenants, ue, edt,
+    //                  inscriptions_peda, notes_sup, stages, salles,
+    //                  programme_responsables,
+    //                  finance_tarifs, finance_bourses, finance_comptes,
+    //                  finance_echeances, finance_paiements, finance_financements,
+    //                  finance_relances, finance_alloc_bourses,
+    //                  mobilite_dossiers.
+    function canWrite(schoolId, coll) {
+      return isMember(schoolId) && (
+        userDoc().role in ['directeur', 'admin']
+        // ── Rôles secondaire ──
+        || (userDoc().role == 'secretaire'
+            && coll in ['eleves', 'classes', 'inscriptions', 'import', 'matieres'])
+        || (userDoc().role in ['enseignant', 'surveillant']
+            && coll in ['notes', 'presences', 'devoirs', 'devoirs-data', 'discipline', 'emploi-du-temps'])
+        || (userDoc().role == 'comptable'
+            && coll in ['facturation',
+                        // Finance superieur :
+                        'finance_tarifs', 'finance_bourses', 'finance_comptes',
+                        'finance_echeances', 'finance_paiements', 'finance_financements',
+                        'finance_relances', 'finance_alloc_bourses',
+                        // Mobilite entrante (champs école côté facturation) :
+                        'mobilite_dossiers'])
+        || (userDoc().role == 'cantine'
+            && coll in ['facturation'])
+        // ── Rôles superieur ──
+        || (userDoc().role == 'relation_internationale'
+            && coll in ['etudiants', 'inscriptions_peda', 'mobilite_dossiers'])
+        || (userDoc().role == 'responsable_formation'
+            && coll in ['programmes', 'promotions', 'ue', 'intervenants', 'edt',
+                        'notes_sup', 'stages', 'programme_responsables',
+                        'mobilite_dossiers'])
+        // L'étudiant n'écrit pas dans les sous-collections de l'école : ses propres
+        // données (choix d'électives, etc.) seront gérées via des appels contrôlés
+        // côté app. Lecture restreinte côté app (cf §4 du doc).
+        // ── Collections partagées : tout le personnel peut écrire ──
+        || coll in ['messages', 'activity']
+      );
+    }
+
+    // ── Profils utilisateurs ─────────────────────────────────────────
+    // Lecture : soi-même, ou les administrateurs de la même école.
+    // Création : à la première connexion, validée par une invitation.
+    // Mise à jour : soi-même SANS toucher schoolId/role, ou un admin
+    //   de la même école (gestion des accès). Jamais de suppression.
+
+    match /users/{uid} {
+
+      function invitationOk() {
+        return exists(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId))
+          && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.email == request.auth.token.email
+          && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.schoolId == request.resource.data.schoolId
+          && get(/databases/$(database)/documents/invitations/$(request.resource.data.invitationId)).data.role == request.resource.data.role;
+      }
+
+      allow read: if isSignedIn() && (
+        request.auth.uid == uid
+        || (hasProfile()
+            && userDoc().schoolId == resource.data.schoolId
+            && userDoc().role in ['directeur', 'admin'])
+        || isSuperAdmin()
+      );
+
+      // L'utilisateur crée son propre profil, rattaché à l'école et au
+      // rôle d'une invitation valide pour son email.
+      allow create: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.uid == uid
+        && request.resource.data.status == 'active'
+        && invitationOk();
+
+      // Soi-même : peut modifier ses infos, mais pas son école ni son rôle.
+      // Admin de la même école : peut modifier rôle et statut du personnel.
+      allow update: if isSignedIn() && (
+        (request.auth.uid == uid
+          && request.resource.data.schoolId == resource.data.schoolId
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.uid == resource.data.uid)
+        || (hasProfile()
+            && userDoc().schoolId == resource.data.schoolId
+            && userDoc().role in ['directeur', 'admin']
+            && request.resource.data.schoolId == resource.data.schoolId)
+      );
+
+      // Suppression d'un profil utilisateur : super admin EDUFREM uniquement
+      // (utilisé par la suppression en cascade d'une école).
+      allow delete: if isSuperAdmin();
+    }
+
+    // ── Invitations ──────────────────────────────────────────────────
+    // Une invitation rattache un email à une école + un rôle.
+    // Lecture : le destinataire (par son email) ou un admin de l'école.
+    // Création/gestion : les administrateurs de l'école concernée.
+    // Le destinataire peut seulement passer le statut à 'accepted'.
+
+    match /invitations/{invId} {
+      allow read: if isSignedIn() && (
+        request.auth.token.email == resource.data.email
+        || isAdmin(resource.data.schoolId)
+        || isSuperAdmin()
+      );
+
+      allow create: if isAdmin(request.resource.data.schoolId) || isSuperAdmin();
+
+      allow update: if isSignedIn() && (
+        isAdmin(resource.data.schoolId)
+        || isSuperAdmin()
+        || (request.auth.token.email == resource.data.email
+            && request.resource.data.email == resource.data.email
+            && request.resource.data.schoolId == resource.data.schoolId
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.status == 'accepted')
+      );
+
+      allow delete: if isAdmin(resource.data.schoolId) || isSuperAdmin();
+    }
+
+    // ── Établissements et leurs données ──────────────────────────────
+    // Le document école : lisible par ses membres, modifiable par ses
+    // administrateurs. Création hors application (provisioning EDUFREM
+    // via la console / le SDK admin).
+
+    match /schools/{schoolId} {
+      // Lecture publique du document école (nom, sigle, edition, logoUrl,
+      // modulesActifs, configSup). Permet aux pages publiques (login, ID
+      // visuelle) d'afficher le branding AVANT authentification. Les
+      // sous-collections (étudiants, finance, etc.) restent privées via
+      // les règles du `match /{coll}/{docId=**}` plus bas.
+      allow read: if true;
+      allow create: if isSuperAdmin();
+      allow update: if isAdmin(schoolId) || isSuperAdmin();
+      // Suppression d'école réservée à EDUFREM (bouton « Supprimer l'école »).
+      allow delete: if isSuperAdmin();
+
+      // Toutes les sous-collections de modules (eleves, classes, notes,
+      // presences, devoirs, discipline, facturation, inscriptions,
+      // emploi-du-temps, messages, activity, matieres, personnel, ...).
+      // Lecture : tout le personnel de l'école + les super admins EDUFREM.
+      // Écriture : selon le rôle (les super admins ne modifient pas les
+      // données métier d'une école, sauf à se créer une invitation s'ils
+      // veulent y entrer comme membre).
+      match /{coll}/{docId=**} {
+        allow read: if isMember(schoolId) || isSuperAdmin();
+        allow write: if canWrite(schoolId, coll);
+      }
+    }
+
+    // ── Super admins EDUFREM ─────────────────────────────────────────
+    // La présence d'un document dans cette collection désigne un membre
+    // de l'équipe EDUFREM. Géré exclusivement via la console Firebase
+    // (jamais d'écriture depuis l'application).
+    match /superAdmins/{uid} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperAdmin());
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Section MOBI — application étudiante accompagnement Campus France
+    // ═══════════════════════════════════════════════════════════════════
+    // Migrée depuis le projet Firebase `mobi-9c97b` vers `mapo-edufrem`
+    // pour partager Firestore avec MAPO et permettre les workflows
+    // transverses (paiement de scolarité notamment).
+    //
+    // Modèle MOBI préservé :
+    //   - admins/{uid}      : équipe MOBI/EDUFREM (super/admin/personnel)
+    //   - students/{uid}    : étudiants accompagnés par EDUFREM
+    //   - testimonials/{id} : témoignages soumis par étudiants
+    //   - articles/{id}     : actualités (admin)
+    //   - events/{id}       : événements (admin)
+    //   - requests/{id}     : DM, commandes EDUFREM, broadcasts
+    //   - community_posts/{id} : mur d'annonces
+    //   - cf_dates/{country}   : dates Campus France (Cloud Function)
+    //
+    // Helpers de rôle MOBI (équipe MOBI ≠ super admin MAPO) :
+
+    function mobiUserRole() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role
+        : null;
+    }
+    function isMobiSuper()    { return mobiUserRole() == 'super'; }
+    function isMobiAdminish() { return mobiUserRole() == 'super' || mobiUserRole() == 'admin'; }
+    function isMobiStaff()    { return mobiUserRole() == 'super' || mobiUserRole() == 'admin' || mobiUserRole() == 'personnel'; }
+
+    // admins/{uid} — équipe MOBI
+    match /admins/{uid} {
+      allow get:    if request.auth != null;
+      allow list:   if request.auth != null;
+      allow create: if isMobiSuper()
+                    || (mobiUserRole() == 'admin' && request.resource.data.role == 'personnel');
+      allow update, delete: if isMobiSuper();
+    }
+
+    // students/{uid} — étudiants MOBI
+    match /students/{uid} {
+      allow read:  if request.auth != null && (request.auth.uid == uid || isMobiStaff());
+      allow write: if (request.auth != null && request.auth.uid == uid) || isMobiAdminish();
+    }
+
+    // testimonials/{id} — témoignages
+    match /testimonials/{id} {
+      allow read:   if resource.data.status == 'approved'
+                    || (request.auth != null && (resource.data.uid == request.auth.uid || isMobiAdminish()));
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update: if isMobiAdminish();
+      allow delete: if isMobiAdminish() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
+
+    // articles/{id} — actualités
+    match /articles/{id} {
+      allow read:   if true;
+      allow create, update, delete: if isMobiAdminish();
+    }
+
+    // events/{id} — événements (étudiant peut RSVP via champ attendees)
+    match /events/{id} {
+      allow read:   if true;
+      allow create, delete: if isMobiAdminish();
+      allow update: if isMobiAdminish()
+                    || (request.auth != null
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['attendees']));
+    }
+
+    // requests/{id} + sous-collection messages
+    match /requests/{id} {
+      allow read:   if request.auth != null
+                    && (
+                      resource.data.uid == request.auth.uid
+                      || isMobiAdminish()
+                      || (resource.data.participants is list && request.auth.uid in resource.data.participants)
+                    );
+      allow create: if request.auth != null
+                    && (
+                      request.resource.data.uid == request.auth.uid
+                      || isMobiAdminish()
+                      || (request.resource.data.participants is list && request.auth.uid in request.resource.data.participants)
+                    );
+      allow update: if isMobiAdminish()
+                    || (request.auth != null
+                        && resource.data.uid == request.auth.uid
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadByStudent','lastStudentReplyAt','lastMessageAt']))
+                    || (request.auth != null
+                        && resource.data.participants is list
+                        && request.auth.uid in resource.data.participants
+                        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadByA','unreadByB','lastMessageAt']));
+      allow delete: if isMobiAdminish();
+
+      match /messages/{mid} {
+        allow read:   if request.auth != null
+                      && (
+                        get(/databases/$(database)/documents/requests/$(id)).data.uid == request.auth.uid
+                        || isMobiAdminish()
+                        || (get(/databases/$(database)/documents/requests/$(id)).data.participants is list
+                            && request.auth.uid in get(/databases/$(database)/documents/requests/$(id)).data.participants)
+                      );
+        allow create: if request.auth != null
+                      && (
+                        get(/databases/$(database)/documents/requests/$(id)).data.uid == request.auth.uid
+                        || isMobiAdminish()
+                        || (get(/databases/$(database)/documents/requests/$(id)).data.participants is list
+                            && request.auth.uid in get(/databases/$(database)/documents/requests/$(id)).data.participants)
+                      )
+                      && request.resource.data.uid == request.auth.uid;
+        allow update, delete: if isMobiAdminish();
+      }
+    }
+
+    // community_posts/{id} — mur d'annonces
+    match /community_posts/{postId} {
+      allow read:   if request.auth != null;
+      allow create: if isMobiAdminish() && request.resource.data.uid == request.auth.uid;
+      allow update: if false;
+      allow delete: if isMobiAdminish() || (request.auth != null && resource.data.uid == request.auth.uid);
+    }
+
+    // cf_dates/{country} — écrit par Cloud Function uniquement
+    match /cf_dates/{country} {
+      allow read:  if true;
+      allow write: if false;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // Workflow scolarité — pont MOBI ↔ MAPO
+    // ═══════════════════════════════════════════════════════════════════
+    // Document de paiement créé par l'étudiant côté MOBI, validé par
+    // l'équipe EDUFREM (super admin MAPO ou admin MOBI), puis transféré
+    // vers l'école et confirmé par l'école côté MAPO.
+    //
+    // States :
+    //   declare_etudiant   — Ossongo a déclaré son paiement, en attente
+    //   recu_edufrem       — EDUFREM a confirmé la réception du virement
+    //   transfert_envoye   — EDUFREM a viré la somme à l'école
+    //   recu_ecole         — l'école a confirmé la réception
+    //
+    // Champs attendus : studentUid, studentName, studentEmail, schoolId,
+    //   schoolName, montant, devise, motif, status, declareAt,
+    //   recuEdufremAt/By, transfertEnvoyeAt/By, recuEcoleAt/By,
+    //   modePaiement, reference, notes, preuveUrl.
+
+    match /paiements_scolarite/{paymentId} {
+      // Lecture : l'étudiant concerné, les membres de l'école destinataire,
+      // l'équipe EDUFREM (super admin MAPO ou admin MOBI).
+      allow read: if isSignedIn() && (
+        request.auth.uid == resource.data.studentUid
+        || (resource.data.schoolId != null && isMember(resource.data.schoolId))
+        || isSuperAdmin()
+        || isMobiAdminish()
+      );
+
+      // Création : par l'étudiant lui-même (déclaration initiale).
+      // status doit être 'declare_etudiant'.
+      allow create: if isSignedIn()
+        && request.resource.data.studentUid == request.auth.uid
+        && request.resource.data.status == 'declare_etudiant';
+
+      // Mise à jour selon le rôle et l'état :
+      //   - étudiant : seulement tant que status == 'declare_etudiant'
+      //     (peut ajuster montant, motif, modePaiement, preuveUrl).
+      //   - EDUFREM (super admin MAPO ou admin MOBI) : peut passer
+      //     declare_etudiant → recu_edufrem → transfert_envoye.
+      //   - École (admin/comptable) : peut passer transfert_envoye → recu_ecole.
+      allow update: if isSignedIn() && (
+        (request.auth.uid == resource.data.studentUid
+          && resource.data.status == 'declare_etudiant'
+          && request.resource.data.studentUid == resource.data.studentUid
+          && request.resource.data.schoolId == resource.data.schoolId)
+        || isSuperAdmin()
+        || isMobiAdminish()
+        || (resource.data.schoolId != null
+            && hasRole(resource.data.schoolId, ['directeur', 'admin', 'comptable']))
+      );
+
+      // Suppression : super admin uniquement (cas exceptionnel).
+      allow delete: if isSuperAdmin() || isMobiSuper();
+    }
+
+    // ── Tout le reste est refusé par défaut ──────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

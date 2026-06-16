@@ -1,0 +1,36 @@
+// ═══════════════════════════════════════════════════════════
+// Règles Firestore pour le projet MAPO (mapo-edufrem)
+// À ajouter dans Firebase Console → Firestore → Rules
+// ═══════════════════════════════════════════════════════════
+//
+// La collection "school_directory" doit être lisible par NOVA
+// (qui s'authentifie en tant qu'app secondaire sans auth user).
+//
+// IMPORTANT : NOVA lit ces données en mode "anonyme" (pas d'auth),
+// donc la règle doit permettre la lecture publique sur cette
+// collection spécifique uniquement.
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Règles existantes (NE PAS MODIFIER) ──
+    // ... vos règles actuelles pour schoolSettings, eleves, personnel, etc. ...
+
+    // ── Bridge MAPO ↔ NOVA ──
+
+    // school_directory : profils agrégés des écoles
+    // Lecture publique (NOVA lit sans authentification MAPO)
+    // Écriture réservée aux utilisateurs MAPO authentifiés
+    match /school_directory/{slug} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Index par UID (utilisé en interne par MAPO uniquement)
+    match /school_directory_by_uid/{uid} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

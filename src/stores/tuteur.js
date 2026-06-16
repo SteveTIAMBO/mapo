@@ -1,0 +1,472 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import { auth as fbAuth, db } from '../firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+
+// Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
+// La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
+// Firestore est déjà configuré avec un cache local persistant (offline-first).
+function cloudUid() { return fbAuth.currentUser ? fbAuth.currentUser.uid : null }
+function revisionDocRef(uid, studentId) {
+  return doc(db, 'users', uid, 'revisions', studentId || 'self')
+}
+
+/**
+ * Store « tuteur » — Tuteur IA de révision (espace élève).
+ *
+ * Génère un quiz de révision adaptatif (QCM + indice socratique + explication)
+ * via le proxy /mapo-ia.php (task tutor_quiz → modèle Gemini). UN seul appel
+ * IA produit tout le quiz → faible coût + fonctionne ensuite hors-ligne (bas débit).
+ * Si l'IA n'est pas configurée / indisponible → repli sur une petite banque de
+ * questions locale (démo), pour que la fonctionnalité reste démontrable.
+ *
+ * Gère aussi la RÉPÉTITION ESPACÉE : pour chaque (élève, matière) on garde un
+ * niveau de maîtrise et une date de prochaine révision (localStorage).
+ */
+
+const IA_URL = '/mapo-ia.php'
+const REVISION_KEY = (sid) => `mapo_revisions_v1_${sid || 'demo'}`
+
+export const useTuteurStore = defineStore('tuteur', () => {
+  const generating = ref(false)
+  const lastMode = ref('')   // 'ia' | 'simulation'
+  const lastReason = ref('')
+
+  /**
+   * Génère un quiz pour une matière.
+   * @returns {Promise<{ok, questions, mode, reason}>}
+   *   questions: [{ q, choices[4], answer, hint, explanation }]
+   */
+  async function generateQuiz({ matiere, niveau, nombre = 5, themes = '', difficulte = 1 }) {
+    generating.value = true
+    lastMode.value = ''
+    lastReason.value = ''
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'tutor_quiz', data: { matiere, niveau, nombre, themes, difficulte } }),
+      })
+      const json = await res.json().catch(() => null)
+
+      if (json && json.ok && json.text) {
+        const parsed = parseQuiz(json.text)
+        if (parsed.length) {
+          lastMode.value = 'ia'
+          return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '' }
+        }
+        lastReason.value = 'Réponse IA illisible, mode démonstration'
+      } else {
+        lastReason.value = json && json.error === 'not_configured'
+          ? 'IA pas encore configurée'
+          : json && json.error === 'non_autorise'
+            ? 'Connexion requise'
+            : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale')
+              ? 'Limite de démo atteinte, réessayez plus tard'
+              : (json && (json.detail || json.error)) || 'Service IA indisponible'
+      }
+    } catch (e) {
+      lastReason.value = 'Proxy indisponible (mode démonstration)'
+    } finally {
+      generating.value = false
+    }
+    // Repli démo
+    lastMode.value = 'simulation'
+    return { ok: true, questions: buildLocalQuiz(matiere, nombre), mode: 'simulation', reason: lastReason.value }
+  }
+
+  // ── Répétition espacée ────────────────────────────────────────────────
+  function loadRevisions(studentId) {
+    try { return JSON.parse(localStorage.getItem(REVISION_KEY(studentId)) || '{}') } catch { return {} }
+  }
+  function saveRevisions(studentId, data) {
+    try { localStorage.setItem(REVISION_KEY(studentId), JSON.stringify(data)) } catch {}
+    // Miroir Firestore pour les vrais comptes (durable, cross-appareils).
+    const uid = cloudUid()
+    if (uid) {
+      setDoc(revisionDocRef(uid, studentId), { map: data, updatedAt: new Date().toISOString() })
+        .catch(() => { /* offline : le cache Firestore réessaiera */ })
+    }
+  }
+
+  /**
+   * Hydrate l'état de révision depuis Firestore (vrais comptes) vers le
+   * localStorage, pour que le suivi soit retrouvé sur un autre appareil/session.
+   * Sans effet en démo. À appeler à l'ouverture d'un quiz/écran de révision.
+   */
+  async function syncFromCloud(studentId) {
+    const uid = cloudUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(revisionDocRef(uid, studentId))
+      if (snap.exists()) {
+        const cloud = snap.data()?.map
+        if (cloud && typeof cloud === 'object') {
+          // Le cloud fait autorité (dernier état consolidé du suivi).
+          try { localStorage.setItem(REVISION_KEY(studentId), JSON.stringify(cloud)) } catch {}
+        }
+      }
+    } catch { /* offline / non autorisé : on garde l'état local */ }
+  }
+
+  // Niveau de difficulté adaptatif : 1 (bases) → 5 (exigeant).
+  const MAX_LEVEL = 5
+
+  /** Enregistre le résultat d'un quiz et planifie la prochaine révision. */
+  function recordResult(studentId, subjectId, subjectName, scorePercent) {
+    const data = loadRevisions(studentId)
+    const prev = data[subjectId] || { mastery: 0, attempts: 0, level: 1 }
+    const prevLevel = prev.level || 1
+    // Maîtrise = moyenne mobile (donne du poids à la dernière session)
+    const mastery = Math.round(prev.attempts ? prev.mastery * 0.5 + scorePercent * 0.5 : scorePercent)
+    // Difficulté ADAPTATIVE : on réussit bien → on monte ; on bute → on consolide.
+    let level = prevLevel
+    if (scorePercent >= 80) level = Math.min(MAX_LEVEL, prevLevel + 1)
+    else if (scorePercent < 50) level = Math.max(1, prevLevel - 1)
+    const levelChange = level - prevLevel // +1 monté, -1 redescendu, 0 stable
+    // Intervalle selon le score : faible → revoir vite, fort → espacer
+    const days = scorePercent >= 80 ? 7 : scorePercent >= 50 ? 3 : 1
+    const due = new Date(Date.now() + days * 24 * 3600 * 1000).toISOString()
+    data[subjectId] = {
+      name: subjectName,
+      mastery,
+      lastScore: scorePercent,
+      level,
+      attempts: (prev.attempts || 0) + 1,
+      lastReviewed: new Date().toISOString(),
+      due,
+    }
+    saveRevisions(studentId, data)
+    return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL }
+  }
+
+  /** Niveau de difficulté courant pour (élève, matière). Défaut : 1. */
+  function getLevel(studentId, subjectId) {
+    const data = loadRevisions(studentId)
+    return (data[subjectId] && data[subjectId].level) || 1
+  }
+
+  function getRevisionState(studentId) {
+    return loadRevisions(studentId)
+  }
+
+  /** Matières dont la date de révision est échue (à revoir maintenant). */
+  function getDueSubjects(studentId) {
+    const data = loadRevisions(studentId)
+    const now = Date.now()
+    return Object.entries(data)
+      .filter(([, v]) => v.due && new Date(v.due).getTime() <= now)
+      .map(([id, v]) => ({ subjectId: id, ...v }))
+  }
+
+  // ── Remontée enseignants/direction ────────────────────────────────────
+  /** Agrège l'état de révision de plusieurs élèves (lecture locale). */
+  function getAllRevisionStates(studentIds) {
+    const out = {}
+    for (const id of studentIds || []) {
+      const st = loadRevisions(id)
+      if (st && Object.keys(st).length) out[id] = st
+    }
+    return out
+  }
+
+  /**
+   * Démo : sème des données de révision réalistes (quelques élèves en
+   * difficulté sur certaines matières) pour que l'écran enseignant soit
+   * parlant sans avoir à jouer 30 quiz. Ne s'exécute qu'une fois.
+   */
+  function seedDemoIfEmpty(eleves, subjects) {
+    if (typeof localStorage === 'undefined') return
+    if (localStorage.getItem('mapo_revisions_seeded_v1')) return
+    const inscrits = (eleves || []).filter((e) => e.status === 'inscrit')
+    const byId = Object.fromEntries((subjects || []).map((s) => [s.id, s.name || s.label]))
+    const wanted = ['s-maths', 's-francais', 's-anglais', 's-physique', 's-svt', 's-hg', 's-pct']
+      .filter((id) => byId[id])
+    if (!inscrits.length || !wanted.length) return
+    // Profils : ~40% des élèves ont au moins une matière fragile, certains 2.
+    inscrits.forEach((e, i) => {
+      if (i % 5 === 4) return // ~20% sans aucune donnée (pas encore révisé)
+      const data = {}
+      const nb = i % 3 === 0 ? 2 : 1
+      for (let k = 0; k < nb; k++) {
+        const sid = wanted[(i + k * 3) % wanted.length]
+        // Maîtrise : mélange de fragiles (<50) et de corrects pour le contraste.
+        const weak = (i + k) % 2 === 0
+        const mastery = weak ? 25 + ((i * 7 + k * 13) % 24) : 62 + ((i * 5) % 30)
+        const daysAgo = 1 + ((i + k) % 9)
+        const reviewed = new Date(Date.now() - daysAgo * 86400000)
+        const dueDays = mastery >= 80 ? 7 : mastery >= 50 ? 3 : 1
+        data[sid] = {
+          name: byId[sid],
+          mastery,
+          lastScore: mastery,
+          attempts: 1 + ((i + k) % 3),
+          lastReviewed: reviewed.toISOString(),
+          due: new Date(reviewed.getTime() + dueDays * 86400000).toISOString(),
+        }
+      }
+      if (Object.keys(data).length) saveRevisions(e.id, data)
+    })
+    localStorage.setItem('mapo_revisions_seeded_v1', '1')
+  }
+
+  /**
+   * Analyse une copie d'examen photographiée (MIAPO vision / Gemini).
+   * @param {{imageDataUrl:string, niveau?:string}} opts
+   * @returns {Promise<{ok, analyse?:{matiere,note,points_faibles,conseil}, mode, reason?}>}
+   */
+  async function analyserCopie({ imageDataUrl, niveau = '' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj) {
+          return {
+            ok: true,
+            mode: 'ia',
+            analyse: {
+              matiere: String(obj.matiere || '').trim(),
+              note: clampNote(obj.note),
+              points_faibles: Array.isArray(obj.points_faibles) ? obj.points_faibles.map((x) => String(x).trim()).filter(Boolean).slice(0, 5) : [],
+              conseil: String(obj.conseil || '').trim(),
+            },
+          }
+        }
+      }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Lecture de la copie impossible pour le moment.'
+      return { ok: false, mode: 'simulation', reason }
+    } catch (e) {
+      return { ok: false, mode: 'simulation', reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
+  /**
+   * Pistes d'orientation contextualisées (MIAPO / Gemini).
+   * @param {{niveau:string, pays?:string, forts?:string[], faibles?:string[]}} opts
+   * @returns {Promise<{ok, orientation?:{profil,pistes,conseil}, reason?}>}
+   */
+  async function orientation({ niveau, pays = '', forts = [], faibles = [] }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'orientation', data: { niveau, pays, forts, faibles } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj) {
+          return {
+            ok: true,
+            orientation: {
+              profil: String(obj.profil || '').trim(),
+              pistes: Array.isArray(obj.pistes) ? obj.pistes.map((p) => ({
+                filiere: String(p.filiere || '').trim(),
+                pourquoi: String(p.pourquoi || '').trim(),
+                debouches: Array.isArray(p.debouches) ? p.debouches.map((x) => String(x).trim()).filter(Boolean).slice(0, 5) : [],
+              })).filter((p) => p.filiere).slice(0, 4) : [],
+              conseil: String(obj.conseil || '').trim(),
+            },
+          }
+        }
+      }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Orientation indisponible pour le moment.'
+      return { ok: false, reason }
+    } catch (e) {
+      return { ok: false, reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
+  /**
+   * Programme de préparation à l'examen national (MIAPO / Gemini).
+   * @param {{niveau:string, pays?:string, faibles?:string[]}} opts
+   * @returns {Promise<{ok, prepa?:{examen,matieres_cles,plan,conseil}, reason?}>}
+   */
+  async function prepaExamen({ niveau, pays = '', faibles = [] }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'prepa_examen', data: { niveau, pays, faibles } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj) {
+          return {
+            ok: true,
+            prepa: {
+              examen: String(obj.examen || '').trim(),
+              matieres_cles: Array.isArray(obj.matieres_cles) ? obj.matieres_cles.map((x) => String(x).trim()).filter(Boolean).slice(0, 10) : [],
+              plan: Array.isArray(obj.plan) ? obj.plan.map((p) => ({
+                etape: String(p.etape || '').trim(),
+                objectif: String(p.objectif || '').trim(),
+                focus: Array.isArray(p.focus) ? p.focus.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+                actions: Array.isArray(p.actions) ? p.actions.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+              })).filter((p) => p.etape || p.objectif).slice(0, 6) : [],
+              conseil: String(obj.conseil || '').trim(),
+            },
+          }
+        }
+      }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Préparation indisponible pour le moment.'
+      return { ok: false, reason }
+    } catch (e) {
+      return { ok: false, reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
+  return {
+    generating, lastMode, lastReason,
+    generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen,
+  }
+})
+
+function clampNote(n) {
+  const v = Number(n)
+  if (Number.isNaN(v)) return null
+  return Math.max(0, Math.min(20, Math.round(v * 2) / 2))
+}
+
+// Parse robuste d'un objet JSON (réponse vision), tolère ```json et le texte autour.
+function parseJsonObject(text) {
+  if (!text) return null
+  let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
+  const s = t.indexOf('{'), e = t.lastIndexOf('}')
+  if (s !== -1 && e !== -1 && e > s) t = t.slice(s, e + 1)
+  try { return JSON.parse(t) } catch { return null }
+}
+
+// ── Parsing robuste du JSON renvoyé par l'IA ────────────────────────────
+function parseQuiz(text) {
+  if (!text) return []
+  let t = String(text).trim()
+  // Retire d'éventuelles balises markdown ```json ... ```
+  t = t.replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
+  const start = t.indexOf('{')
+  const end = t.lastIndexOf('}')
+  const slice = (start !== -1 && end !== -1 && end > start) ? t.slice(start, end + 1) : t
+  let arr = []
+  try {
+    const obj = JSON.parse(slice)
+    arr = Array.isArray(obj?.questions) ? obj.questions : (Array.isArray(obj) ? obj : [])
+  } catch {
+    // Réponse tronquée (cap de tokens) → on récupère les objets-questions complets
+    arr = salvageQuestions(t)
+  }
+  return arr
+    .map((x) => ({
+      q: String(x.q ?? x.question ?? '').trim(),
+      choices: Array.isArray(x.choices) ? x.choices.map((c) => String(c).trim()).slice(0, 4) : [],
+      answer: Number.isInteger(x.answer) ? x.answer : 0,
+      hint: String(x.hint ?? '').trim(),
+      explanation: String(x.explanation ?? x.explication ?? '').trim(),
+    }))
+    .filter((x) => x.q && x.choices.length === 4 && x.answer >= 0 && x.answer < 4)
+}
+
+// Récupère les objets-questions JSON complets d'une réponse tronquée.
+// Pile d'indices d'ouverture → chaque '}' ferme l'objet le plus récent ;
+// on tente de parser ce fragment (les questions sont des objets imbriqués).
+function salvageQuestions(text) {
+  const out = []
+  const stack = []
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch === '{') stack.push(i)
+    else if (ch === '}') {
+      const s = stack.pop()
+      if (s === undefined) continue
+      const frag = text.slice(s, i + 1)
+      if (/"choices"\s*:/.test(frag)) {
+        try { const o = JSON.parse(frag); if (o && Array.isArray(o.choices)) out.push(o) } catch { /* incomplet */ }
+      }
+    }
+  }
+  return out
+}
+
+// ── Banque locale (repli démo, sans IA) ─────────────────────────────────
+const LOCAL_BANK = {
+  maths: [
+    { q: 'Combien font 7 × 8 ?', choices: ['54', '56', '48', '64'], answer: 1, hint: 'Pense à 7 × 8 = 7 × 4, doublé.', explanation: '7 × 8 = 56. On peut faire 7 × 4 = 28, puis ×2 = 56.' },
+    { q: 'Quelle est l’aire d’un rectangle de 5 cm sur 3 cm ?', choices: ['8 cm²', '15 cm²', '16 cm²', '15 cm'], answer: 1, hint: 'Aire = longueur × largeur.', explanation: '5 × 3 = 15 cm². L’aire s’exprime en cm².' },
+    { q: 'Quel est le PGCD de 12 et 18 ?', choices: ['2', '3', '6', '9'], answer: 2, hint: 'Cherche le plus grand diviseur commun aux deux.', explanation: 'Diviseurs communs : 1, 2, 3, 6. Le plus grand est 6.' },
+    { q: 'Combien vaut 3² + 4² ?', choices: ['25', '12', '49', '7'], answer: 0, hint: '3² = 9 et 4² = 16.', explanation: '9 + 16 = 25 (c’est aussi 5², théorème de Pythagore).' },
+  ],
+  francais: [
+    { q: 'Quel est le pluriel de « cheval » ?', choices: ['chevals', 'chevaux', 'chevales', 'cheveaux'], answer: 1, hint: 'Les mots en -al font souvent leur pluriel en -aux.', explanation: 'Cheval → chevaux. Exceptions : bal, carnaval, festival (+s).' },
+    { q: 'Dans « Je mange une pomme », quel est le COD ?', choices: ['Je', 'mange', 'une pomme', 'aucun'], answer: 2, hint: 'Le COD répond à « mange quoi ? ».', explanation: 'On mange « quoi ? » → une pomme : c’est le complément d’objet direct.' },
+    { q: 'Quel est le contraire de « rapide » ?', choices: ['vif', 'lent', 'pressé', 'agile'], answer: 1, hint: 'Cherche l’antonyme.', explanation: 'Le contraire de rapide est lent.' },
+    { q: '« Ils (finir) leurs devoirs » au présent : ', choices: ['finis', 'finit', 'finissent', 'finissons'], answer: 2, hint: 'Verbe du 2e groupe, 3e personne du pluriel.', explanation: 'Ils finissent. Au présent, -ir (2e groupe) → -issent.' },
+  ],
+  histoire: [
+    { q: 'Sur quel continent se trouve le Cameroun ?', choices: ['Asie', 'Afrique', 'Europe', 'Amérique'], answer: 1, hint: 'C’est un pays d’Afrique centrale.', explanation: 'Le Cameroun est situé en Afrique centrale, sur le golfe de Guinée.' },
+    { q: 'Quel fleuve traverse l’Égypte ?', choices: ['Le Congo', 'Le Niger', 'Le Nil', 'Le Sénégal'], answer: 2, hint: 'Le plus long fleuve d’Afrique.', explanation: 'Le Nil traverse l’Égypte et se jette dans la Méditerranée.' },
+    { q: 'Quelle est la capitale du Sénégal ?', choices: ['Abidjan', 'Dakar', 'Bamako', 'Yaoundé'], answer: 1, hint: 'Ville côtière, pointe ouest de l’Afrique.', explanation: 'Dakar est la capitale du Sénégal.' },
+    { q: 'Un point cardinal :', choices: ['Le centre', 'Le nord', 'La gauche', 'Le haut'], answer: 1, hint: 'Nord, sud, est, ouest.', explanation: 'Les points cardinaux sont le nord, le sud, l’est et l’ouest.' },
+  ],
+  svt: [
+    { q: 'Quel organe pompe le sang ?', choices: ['Le foie', 'Le cœur', 'Les poumons', 'Le rein'], answer: 1, hint: 'C’est un muscle qui bat.', explanation: 'Le cœur pompe le sang dans tout le corps.' },
+    { q: 'Que respirent les plantes pour la photosynthèse ?', choices: ['Le dioxygène', 'Le dioxyde de carbone', 'L’azote', 'L’hydrogène'], answer: 1, hint: 'Le gaz que nous expirons.', explanation: 'Les plantes absorbent le CO₂ et rejettent du dioxygène (O₂).' },
+    { q: 'Combien de dents a un adulte (en général) ?', choices: ['20', '28', '32', '36'], answer: 2, hint: 'Dents de sagesse comprises.', explanation: 'Un adulte a 32 dents, dents de sagesse incluses.' },
+    { q: 'L’eau bout à quelle température (niveau de la mer) ?', choices: ['50 °C', '80 °C', '100 °C', '120 °C'], answer: 2, hint: 'Au niveau de la mer.', explanation: 'L’eau bout à 100 °C au niveau de la mer.' },
+  ],
+  anglais: [
+    { q: 'Comment dit-on « livre » en anglais ?', choices: ['Book', 'Pen', 'Table', 'Door'], answer: 0, hint: 'On lit un… book.', explanation: '« Livre » se dit « book ».' },
+    { q: 'Quel est le pluriel de « child » ?', choices: ['childs', 'childes', 'children', 'childrens'], answer: 2, hint: 'Pluriel irrégulier.', explanation: 'Child → children (pluriel irrégulier).' },
+    { q: 'Traduis « Je suis » :', choices: ['I am', 'I is', 'I are', 'Me am'], answer: 0, hint: 'Verbe to be, 1re personne.', explanation: '« Je suis » = « I am ».' },
+    { q: 'What is the opposite of « big » ?', choices: ['Tall', 'Small', 'Large', 'High'], answer: 1, hint: 'Contraire de grand.', explanation: 'The opposite of « big » is « small ».' },
+  ],
+}
+
+function normalizeKey(name) {
+  const n = (name || '').toLowerCase()
+  if (/(math)/.test(n)) return 'maths'
+  if (/(fran|lettre|expression)/.test(n)) return 'francais'
+  if (/(hist|geo|géo)/.test(n)) return 'histoire'
+  if (/(svt|biolog|science.*vie|nature)/.test(n)) return 'svt'
+  if (/(angl|english)/.test(n)) return 'anglais'
+  return ''
+}
+
+export function buildLocalQuiz(matiere, nombre = 5) {
+  const key = normalizeKey(matiere)
+  const bank = LOCAL_BANK[key]
+  if (bank && bank.length) return bank.slice(0, nombre)
+  // Générique si matière inconnue
+  return [
+    { q: `Révision « ${matiere} » : pour bien réviser, que faut-il faire d’abord ?`, choices: ['Tout apprendre par cœur la veille', 'Relire et s’entraîner régulièrement', 'Ne rien faire', 'Copier sans comprendre'], answer: 1, hint: 'La régularité bat le bachotage.', explanation: 'Réviser un peu chaque jour et s’entraîner ancre durablement les connaissances.' },
+    { q: 'Face à un exercice difficile, la meilleure attitude est :', choices: ['Abandonner', 'Reformuler l’énoncé et chercher un exemple', 'Deviner au hasard', 'Sauter la question'], answer: 1, hint: 'Comprendre la question est la 1re étape.', explanation: 'Reformuler l’énoncé et chercher un cas simple aide à débloquer.' },
+    { q: 'Pour mémoriser durablement, il vaut mieux :', choices: ['Réviser une seule fois', 'Espacer les révisions dans le temps', 'Tout faire la nuit', 'Lire sans écrire'], answer: 1, hint: 'C’est le principe de la répétition espacée.', explanation: 'Revoir à intervalles croissants renforce la mémoire à long terme.' },
+  ].slice(0, nombre)
+}

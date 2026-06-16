@@ -1,104 +1,183 @@
 <template>
   <header class="header">
     <div class="header-left">
-      <button class="menu-toggle" @click="$emit('toggle-sidebar')">
-        <Menu :size="20" />
+      <button class="collapse-toggle" @click="$emit('toggle-sidebar')" title="Menu">
+        <Menu v-if="isMobile" :size="22" />
+        <PanelLeftClose v-else-if="!sidebarCollapsed" :size="18" />
+        <PanelLeftOpen v-else :size="18" />
       </button>
       <p class="header-greeting">{{ greeting }}, {{ firstName }}</p>
     </div>
 
     <div class="header-right">
+      <!-- Logo + Nom ecole -->
+      <RouterLink v-if="schoolName" to="/parametres" class="header-school" title="Paramètres ecole">
+        <img v-if="schoolLogo" :src="schoolLogo" :alt="schoolName" class="header-school-logo" />
+        <span class="header-school-name">{{ schoolName }}</span>
+      </RouterLink>
+
+      <!-- Search trigger -->
+      <button class="header-icon-btn header-search-btn" title="Recherche" @click="openSearch">
+        <Search :size="20" />
+        <span class="search-hint">Ctrl+K</span>
+      </button>
+
       <!-- Notification bell -->
       <button class="header-icon-btn" title="Notifications">
         <Bell :size="20" />
-        <!-- notification dot -->
-        <!-- <span class="notif-dot"></span> -->
       </button>
 
-      <!-- User avatar -->
-      <div class="header-avatar" :title="authStore.user?.displayName">
-        <img
-          v-if="authStore.user?.photoURL"
-          :src="authStore.user.photoURL"
-          :alt="authStore.user?.displayName"
-        />
-        <span v-else>{{ initials }}</span>
-      </div>
+      <!-- User Avatar with online status -->
+      <RouterLink to="/profil" class="header-avatar" :title="`Profil de ${displayName}${isOnline ? ' — En ligne' : ' — Hors ligne'}`">
+        <img v-if="userPhoto" :src="userPhoto" :alt="displayName" class="header-avatar-img" />
+        <div v-else class="header-avatar-initials">{{ initials }}</div>
+        <span class="status-dot" :class="isOnline ? 'status-online' : 'status-offline'"></span>
+      </RouterLink>
+
+      <!-- Settings gear — only for admin/directeur -->
+      <RouterLink v-if="canAccessSettings" to="/parametres" class="header-icon-btn header-settings" title="Paramètres">
+        <Settings :size="20" />
+      </RouterLink>
     </div>
   </header>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
-import { Menu, Bell } from 'lucide-vue-next'
+import { useSchoolStore } from '../../stores/school'
+import { PanelLeftClose, PanelLeftOpen, Bell, Settings, Menu, Search } from 'lucide-vue-next'
+import { usePermissionsStore } from '../../stores/permissions'
+import { useConnectionStatus } from '../../composables/useConnectionStatus'
 
+defineProps({ sidebarCollapsed: Boolean })
 defineEmits(['toggle-sidebar'])
+
 const authStore = useAuthStore()
+const schoolStore = useSchoolStore()
+const permissionsStore = usePermissionsStore()
+const { isOnline } = useConnectionStatus()
 
-const firstName = computed(() => {
-  const name = authStore.user?.displayName || ''
-  return name.split(' ')[0] || 'utilisateur'
-})
+const isMobile = ref(false)
+function checkMobile() { isMobile.value = window.innerWidth <= 768 }
+onMounted(() => { checkMobile(); window.addEventListener('resize', checkMobile) })
+onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
 
-const initials = computed(() => {
-  const name = authStore.user?.displayName || ''
-  return name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
-})
+const canAccessSettings = computed(() => permissionsStore.hasAccess('parametres'))
+const firstName = computed(() => authStore.userFirstName)
+const schoolName = computed(() => schoolStore.schoolSettings?.schoolName || '')
+const schoolLogo = computed(() => schoolStore.schoolSettings?.logo || null)
 
 const greeting = computed(() => {
   const h = new Date().getHours()
   if (h < 12) return 'Bonjour'
-  if (h < 18) return 'Bon apres-midi'
+  if (h < 18) return 'Bon après-midi'
   return 'Bonsoir'
 })
+
+const displayName = computed(() => authStore.user?.displayName || '')
+const initials = computed(() => {
+  const name = displayName.value || ''
+  return name.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2)
+})
+const userPhoto = computed(() => authStore.userProfile?.photoURL || authStore.user?.photoURL || null)
+
+function openSearch() {
+  window.dispatchEvent(new CustomEvent('open-global-search'))
+}
 </script>
 
 <style scoped>
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
-  padding: 0 32px;
+  height: 56px;
+  padding: 0 24px;
   flex-shrink: 0;
+  background: rgba(255,255,255,.55);
+  border-bottom: 1px solid rgba(255,255,255,.5);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
-.menu-toggle {
-  display: none;
+.collapse-toggle {
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   border: none;
   background: transparent;
   border-radius: 8px;
-  color: var(--tx2);
+  color: var(--tx3);
   cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
 }
-.menu-toggle:hover {
+.collapse-toggle:hover {
   background: rgba(0,0,0,.04);
   color: var(--tx);
 }
 
 .header-greeting {
-  font-family: 'Poppins', sans-serif;
+  font-family: var(--font-display);
   font-size: 15px;
   font-weight: 600;
   color: var(--tx);
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-right {
   display: flex;
   align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.header-school {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: 10px;
+  transition: background 0.15s ease;
+  margin-right: 4px;
+}
+.header-school:hover {
+  background: rgba(0,0,0,.04);
+  text-decoration: none;
+}
+.header-school-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.header-school-name {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tx);
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-icon-btn {
@@ -120,40 +199,231 @@ const greeting = computed(() => {
   color: var(--tx);
 }
 
-.notif-dot {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 7px;
-  height: 7px;
-  background: var(--pr);
-  border-radius: 50%;
-  border: 2px solid var(--bg);
-}
-
 .header-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   background: var(--pr);
-  color: #fff;
-  font-family: 'Poppins', sans-serif;
-  font-size: 12px;
+  color: white;
+  text-decoration: none;
   font-weight: 600;
-  cursor: default;
+  font-size: 12px;
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+  flex-shrink: 0;
+  position: relative;
 }
-.header-avatar img {
+.header-avatar:hover {
+  box-shadow: 0 0 0 3px rgba(var(--pr-rgb),.15);
+}
+
+.header-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 50%;
+  overflow: hidden;
 }
 
+.header-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  overflow: hidden;
+}
+
+/* Online/offline status dot */
+.status-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg, #fff);
+}
+.status-online { background: #22c55e; }
+.status-offline { background: #94a3b8; }
+
+/* header-avatar position: relative is set in main declaration above */
+
+/* Connection status indicator */
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  height: 36px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: help;
+  transition: background 0.15s ease;
+}
+
+.connection-status.online {
+  display: flex;
+  align-items: center;
+}
+
+.connection-status.offline {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+}
+
+.connection-status.syncing {
+  background: rgba(59, 130, 246, 0.1);
+  color: #2563eb;
+}
+
+.connection-status .status-dot {
+  position: relative;
+  bottom: auto;
+  right: auto;
+  width: 8px;
+  height: 8px;
+  border: none;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.connection-status.offline .status-dot {
+  background: #ef4444;
+}
+
+.connection-status.syncing .status-dot {
+  background: #3b82f6;
+}
+
+.status-dot.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.connection-status .spinner {
+  width: 8px;
+  height: 8px;
+  border: 2px solid #3b82f6;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.status-text {
+  white-space: nowrap;
+}
+
+.pending-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  background: #ef4444;
+  color: white;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+/* Search button */
+.header-search-btn {
+  position: relative;
+}
+
+.search-hint {
+  position: absolute;
+  top: 50%;
+  right: -2px;
+  transform: translateY(-50%);
+  font-size: 9px;
+  color: var(--tx3);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.header-search-btn:hover .search-hint {
+  opacity: 1;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Tablet ── */
 @media (max-width: 1024px) {
   .header { padding: 0 16px; }
-  .menu-toggle { display: flex; }
+  .header-school-name { display: none; }
+}
+
+/* ── Tablet ── */
+@media (max-width: 1024px) {
+  .header { padding: 0 16px; }
+  .header-school-name { display: none; }
+  .search-hint { display: none; }
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+    height: 52px;
+  }
+  .header-greeting {
+    font-size: 14px;
+  }
+  .header-school {
+    display: none;
+  }
+  .header-settings {
+    display: none;
+  }
+  .header-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .header-avatar {
+    width: 32px;
+    height: 32px;
+    font-size: 11px;
+  }
+  .connection-status {
+    height: 32px;
+    padding: 0 6px;
+  }
+  .status-text {
+    display: none;
+  }
+  .pending-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 9px;
+  }
+}
+
+/* ── Very small ── */
+@media (max-width: 380px) {
+  .header-greeting { display: none; }
 }
 </style>
