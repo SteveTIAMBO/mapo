@@ -52,10 +52,12 @@ jobs:
           # LWS exige le FTPS explicite (FTP over TLS) sur le port 21.
           protocol: ftps
           port: 21
-          # Le compte FTP `deploy@` est déjà enraciné dans public_html/mapo,
-          # donc on dépose à la racine de son répertoire (./).
+          # Le compte FTP `deploy@` est enraciné dans …/app-edufrem.com/mapoFTP,
+          # mais le site est servi depuis le dossier VOISIN …/app-edufrem.com/mapo.
+          # On remonte d'un cran puis on entre dans mapo (si le compte n'est pas
+          # cloisonné). Sinon → repointer le dossier du compte FTP sur `mapo` (cPanel).
           local-dir: ./deploy_payload/
-          server-dir: ./
+          server-dir: ../mapo/
           # Sécurité : ne JAMAIS téléverser/écraser les configs ni les secrets.
           exclude: |
             **/*-config.php
