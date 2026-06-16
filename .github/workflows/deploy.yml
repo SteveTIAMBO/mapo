@@ -42,7 +42,11 @@ jobs:
       - name: Déployer par FTP vers le dossier mapo
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
-          server: ${{ secrets.FTP_SERVER }}
+          # ⚠️ Hôte = le SERVEUR LWS réel (Pure-FTPd, port 21 ouvert, TLS),
+          # PAS `ftp.app-edufrem.com` (qui pointe vers le front applicatif GCP
+          # 35.240.x où le port 21 est fermé → « Timeout (control socket) »).
+          # web58.lws-hosting.com est un nom DNS public, pas un secret.
+          server: web58.lws-hosting.com
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           # LWS exige le FTPS explicite (FTP over TLS) sur le port 21.
