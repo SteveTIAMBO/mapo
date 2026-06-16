@@ -45,6 +45,9 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+          # LWS exige le FTPS explicite (FTP over TLS) sur le port 21.
+          protocol: ftps
+          port: 21
           # Le compte FTP `deploy@` est déjà enraciné dans public_html/mapo,
           # donc on dépose à la racine de son répertoire (./).
           local-dir: ./deploy_payload/
