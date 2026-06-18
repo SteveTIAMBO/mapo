@@ -145,9 +145,30 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return [...e.notes].filter((n) => n.note < 10).sort((a, b) => a.note - b.note)
   }
 
+  // ── Auto-évaluation 6C (orientation) ────────────────────────────────
+  // Profil de compétences (Créativité, Esprit critique, Communication,
+  // Coopération, Courage, Confiance), noté /5, persisté avec l'enfant.
+  function setComp6c(enfantId, scores) {
+    const e = getEnfant(enfantId)
+    if (!e || !scores) return
+    const clean = {}
+    for (const k of Object.keys(scores)) {
+      const v = Math.max(1, Math.min(5, Number(scores[k])))
+      if (!Number.isNaN(v)) clean[k] = v
+    }
+    e.comp6c = clean
+    e.comp6cAt = new Date().toISOString()
+    persist()
+  }
+  function getComp6c(enfantId) {
+    const e = getEnfant(enfantId)
+    return e && e.comp6c ? e.comp6c : null
+  }
+
   return {
     enfants, load, hydrate,
     addEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
+    setComp6c, getComp6c,
   }
 })

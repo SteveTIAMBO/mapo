@@ -44,16 +44,26 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        // Le service worker ne doit JAMAIS servir l'index.html (SPA) à la place
-        // d'un endpoint serveur : sinon les appels au provisioning PHP reçoivent
-        // la page de l'app (HTML) et échouent. On exclut les .php du fallback.
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [
-          /^\/mapo-provision\.php/,
-          /\.php(\?.*)?$/,
-          /^\/scolarite-bridge/,
-        ],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
+          // App shell (navigations HTML) : NetworkFirst → on récupère TOUJOURS
+          // la dernière version en ligne, donc l'utilisateur voit la nouvelle
+          // version dès sa 1re visite (fini le « recharger 2 fois »). Repli sur
+          // le cache seulement hors-ligne. On NE touche pas aux .php (proxies)
+          // ni au bridge scolarité : ce ne sont pas des navigations.
+          {
+            urlPattern: ({ request, url }) =>
+              request.mode === 'navigate' &&
+              !url.pathname.endsWith('.php') &&
+              !url.pathname.startsWith('/scolarite-bridge'),
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'app-shell',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 12 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'CacheFirst',

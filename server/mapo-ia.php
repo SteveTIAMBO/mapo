@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'prepa_examen', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'prepa_examen', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -83,6 +83,7 @@ function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
+  if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'prepa_examen') return buildPrepaExamenPrompts($d);
   if ($task === 'commande') return buildCommandePrompts($d);
   if ($task === 'pedagogie') return buildPedagogiePrompts($d);
@@ -229,6 +230,66 @@ function buildOrientationPrompts($d) {
   // reasoning_effort:none → tout le budget tokens passe dans la sortie JSON
   // (sinon le « raisonnement » Gemini consomme les tokens et tronque le JSON).
   return [$system, $u, 1400, true, null];
+}
+
+// ── Orientation 6C : argumentation FONDÉE sur des domaines pré-sélectionnés ──
+// Le front fait le matching profil 6C → domaines réels (référentiel embarqué,
+// sourcé) et envoie une liste de CANDIDATS (domaines + métiers + établissements
+// RÉELS). L'IA ne doit RIEN inventer : elle argumente uniquement sur ces options.
+function buildOrientation6cPrompts($d) {
+  $niveau  = clean($d['niveau'] ?? '', 40);
+  $pays    = clean($d['pays'] ?? '', 40);
+  if ($pays === '') $pays = 'Cameroun';
+  $forts   = array_slice(array_filter(array_map(function ($s) { return clean($s, 40); }, (array) ($d['forts'] ?? []))), 0, 8);
+  $faibles = array_slice(array_filter(array_map(function ($s) { return clean($s, 40); }, (array) ($d['faibles'] ?? []))), 0, 8);
+
+  // Profil 6C (scores /5) → texte
+  $labels6c = [
+    'creativite' => 'Créativité', 'esprit_critique' => 'Esprit critique', 'communication' => 'Communication',
+    'cooperation' => 'Coopération', 'courage' => 'Courage', 'confiance' => 'Confiance',
+  ];
+  $comp = is_array($d['competences'] ?? null) ? $d['competences'] : [];
+  $compLines = [];
+  foreach ($labels6c as $k => $lab) {
+    if (isset($comp[$k])) { $v = (float) $comp[$k]; if ($v < 0) $v = 0; if ($v > 5) $v = 5; $compLines[] = "{$lab} : {$v}/5"; }
+  }
+
+  // Candidats (domaines réels présélectionnés par le front)
+  $cands = array_slice((array) ($d['candidats'] ?? []), 0, 6);
+  $candTxt = '';
+  $n = 0;
+  foreach ($cands as $c) {
+    if (!is_array($c)) continue;
+    $n++;
+    $dom = clean($c['domaine'] ?? '', 80);
+    $mets = array_slice(array_filter(array_map(function ($s) { return clean($s, 60); }, (array) ($c['metiers'] ?? []))), 0, 6);
+    $etabs = array_slice(array_filter(array_map(function ($s) { return clean($s, 90); }, (array) ($c['etablissements'] ?? []))), 0, 6);
+    $candTxt .= "\n{$n}. {$dom}";
+    if ($mets)  $candTxt .= "\n   Métiers : " . implode(' ; ', $mets);
+    if ($etabs) $candTxt .= "\n   Écoles/établissements : " . implode(' ; ', $etabs);
+  }
+
+  $system = "Tu es un conseiller d'orientation scolaire expérimenté, qui accompagne un élève en {$pays}. "
+    . "On te donne (a) son PROFIL DE COMPÉTENCES auto-évalué selon le référentiel des 6C (Créativité, Esprit critique, "
+    . "Communication, Coopération, Courage, Confiance, notés sur 5), (b) son niveau scolaire et ses matières fortes/faibles, "
+    . "et (c) une LISTE DE DOMAINES CANDIDATS déjà présélectionnés, avec des métiers et des établissements RÉELS. "
+    . "RÈGLE ABSOLUE : tu n'inventes AUCUN établissement ni métier ; tu argumentes UNIQUEMENT à partir des domaines, métiers et "
+    . "écoles fournis. Pour chaque domaine retenu, explique CONCRÈTEMENT en quoi il correspond (ou non) à son profil 6C ET à son "
+    . "niveau scolaire, en citant les compétences fortes mobilisées. Classe-les du plus au moins adapté. Reste encourageant, honnête, "
+    . "sans survendre, et rappelle que c'est une aide à la décision. "
+    . "Réponds STRICTEMENT en JSON valide (sans markdown), au format EXACT : "
+    . "{\"profil\":\"2 phrases sur son profil 6C\",\"recommandations\":[{\"domaine\":\"...\",\"adequation\":\"forte|moyenne\",\"pourquoi\":\"argumentaire lié à ses 6C et son niveau\",\"metiers_cles\":[\"...\"],\"etablissements_cles\":[\"...\"]}],\"conseil\":\"...\",\"prudence\":\"...\"}. "
+    . "Donne 2 à 4 recommandations, classées.";
+
+  $u  = "Pays visé : {$pays}\n";
+  $u .= "Niveau scolaire : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
+  if ($compLines) $u .= "Profil 6C (auto-évaluation) : " . implode(' · ', $compLines) . "\n";
+  if ($forts)   $u .= "Matières fortes : " . implode(', ', $forts) . "\n";
+  if ($faibles) $u .= "Matières faibles : " . implode(', ', $faibles) . "\n";
+  $u .= "\nDomaines candidats (à argumenter, SANS rien ajouter d'autre) :" . ($candTxt !== '' ? $candTxt : ' (aucun)') . "\n";
+  $u .= "\nProduis les recommandations argumentées au format JSON demandé.";
+
+  return [$system, $u, 1900, true, null];
 }
 
 // ── Lecture d'une copie d'examen (photo) → analyse JSON ───────────────

@@ -11,6 +11,49 @@ function revisionDocRef(uid, studentId) {
   return doc(db, 'users', uid, 'revisions', studentId || 'self')
 }
 
+// ── Banque d'exercices PARTAGÉE (économie de tokens + hors-ligne) ───────
+// Les quiz générés par l'IA sont stockés dans une collection commune
+// `quizBank`, indexée par (matière, niveau, difficulté). Avant d'appeler
+// l'IA, on réutilise ceux déjà produits (par n'importe quel élève) → 0 token,
+// et ça fonctionne en faible connectivité (cache Firestore persistant).
+// Best-effort : si la règle Firestore `quizBank` n'est pas publiée ou hors-ligne,
+// on régénère simplement comme avant (aucune casse).
+function bankKey(matiere, niveau, difficulte) {
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+  const d = Math.max(1, Math.min(5, Number(difficulte) || 1))
+  return `${norm(matiere)}__${norm(niveau)}__d${d}`
+}
+function bankDocRef(key) { return doc(db, 'quizBank', key) }
+
+async function readBankQuiz({ matiere, niveau, difficulte, nombre }) {
+  if (!cloudUid()) return null // démo / non connecté : pas de banque cloud
+  try {
+    const snap = await getDoc(bankDocRef(bankKey(matiere, niveau, difficulte)))
+    if (snap.exists()) {
+      const qs = Array.isArray(snap.data()?.questions) ? snap.data().questions : []
+      const valid = qs.filter((q) => q && q.q && Array.isArray(q.choices) && q.choices.length === 4)
+      if (valid.length >= nombre) {
+        const shuffled = [...valid].sort(() => Math.random() - 0.5) // variété
+        return shuffled.slice(0, nombre)
+      }
+    }
+  } catch { /* règle absente / offline → on régénère */ }
+  return null
+}
+async function appendBankQuiz({ matiere, niveau, difficulte, questions }) {
+  if (!cloudUid() || !Array.isArray(questions) || !questions.length) return
+  try {
+    const ref = bankDocRef(bankKey(matiere, niveau, difficulte))
+    const snap = await getDoc(ref).catch(() => null)
+    const existing = snap && snap.exists() && Array.isArray(snap.data()?.questions) ? snap.data().questions : []
+    const seen = new Set(existing.map((q) => (q.q || '').trim().toLowerCase()))
+    const fresh = questions.filter((q) => q && q.q && Array.isArray(q.choices) && q.choices.length === 4 && !seen.has(q.q.trim().toLowerCase()))
+    if (!fresh.length && existing.length) return
+    const merged = [...existing, ...fresh].slice(-40) // borne la taille du document
+    await setDoc(ref, { matiere, niveau, difficulte: Number(difficulte) || 1, questions: merged, updatedAt: new Date().toISOString() })
+  } catch { /* best-effort */ }
+}
+
 /**
  * Store « tuteur » — Tuteur IA de révision (espace élève).
  *
@@ -41,6 +84,16 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
+    // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
+    // Uniquement pour une révision générique (pas de thème imposé).
+    if (!themes) {
+      const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre })
+      if (fromBank) {
+        generating.value = false
+        lastMode.value = 'banque'
+        return { ok: true, questions: fromBank, mode: 'banque', reason: '' }
+      }
+    }
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -58,6 +111,8 @@ export const useTuteurStore = defineStore('tuteur', () => {
         const parsed = parseQuiz(json.text)
         if (parsed.length) {
           lastMode.value = 'ia'
+          // Alimente la banque partagée pour les prochains élèves (best-effort).
+          if (!themes) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
           return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '' }
         }
         lastReason.value = 'Réponse IA illisible, mode démonstration'
@@ -292,6 +347,52 @@ export const useTuteurStore = defineStore('tuteur', () => {
       }
       const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
         : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Orientation indisponible pour le moment.'
+      return { ok: false, reason }
+    } catch (e) {
+      return { ok: false, reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
+  /**
+   * Orientation 6C : recommandations ARGUMENTÉES, fondées sur des domaines
+   * candidats RÉELS (présélectionnés côté front via le référentiel embarqué).
+   * @param {{niveau, pays, competences:Object, forts:string[], faibles:string[], candidats:Array}} o
+   * @returns {Promise<{ok, result?:{profil,recommandations,conseil,prudence}, reason?}>}
+   */
+  async function orientation6c({ niveau, pays = '', competences = {}, forts = [], faibles = [], candidats = [] }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj) {
+          return {
+            ok: true,
+            result: {
+              profil: String(obj.profil || '').trim(),
+              recommandations: Array.isArray(obj.recommandations) ? obj.recommandations.map((r) => ({
+                domaine: String(r.domaine || '').trim(),
+                adequation: String(r.adequation || '').trim().toLowerCase() === 'forte' ? 'forte' : 'moyenne',
+                pourquoi: String(r.pourquoi || '').trim(),
+                metiers_cles: Array.isArray(r.metiers_cles) ? r.metiers_cles.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+                etablissements_cles: Array.isArray(r.etablissements_cles) ? r.etablissements_cles.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+              })).filter((r) => r.domaine).slice(0, 4) : [],
+              conseil: String(obj.conseil || '').trim(),
+              prudence: String(obj.prudence || '').trim(),
+            },
+          }
+        }
+      }
+      const reason = json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
         : (json && (json.detail || json.error)) || 'Orientation indisponible pour le moment.'
       return { ok: false, reason }
     } catch (e) {
