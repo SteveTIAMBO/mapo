@@ -21,7 +21,27 @@
 
       <!-- Choice cards -->
       <div class="welcome-choices">
-        <!-- Secondaire & Primaire -->
+        <!-- Primaire -->
+        <button class="choice-card" type="button" @click="choisir('primaire')">
+          <span class="choice-badge">Nouveau</span>
+          <span class="choice-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 7c-1.5-1.2-3.6-2-6-2-1 0-2 .1-3 .4v13c1-.3 2-.4 3-.4 2.4 0 4.5.8 6 2 1.5-1.2 3.6-2 6-2 1 0 2 .1 3 .4v-13c-1-.3-2-.4-3-.4-2.4 0-4.5.8-6 2z" />
+              <path d="M12 7v13" />
+            </svg>
+          </span>
+          <span class="choice-name">Primaire</span>
+          <span class="choice-tagline">Écoles primaires (SIL → CM2)</span>
+          <span class="choice-context">
+            Programme officiel camerounais (APC) — fonctionne hors ligne.
+          </span>
+          <span class="choice-cta">
+            Découvrir cette version
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+          </span>
+        </button>
+
+        <!-- Secondaire -->
         <button class="choice-card" type="button" @click="choisir('secondaire')">
           <span class="choice-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
@@ -31,8 +51,8 @@
               <path d="M9 11h.01M15 11h.01" />
             </svg>
           </span>
-          <span class="choice-name">Secondaire &amp; Primaire</span>
-          <span class="choice-tagline">Collèges, lycées et écoles primaires</span>
+          <span class="choice-name">Secondaire</span>
+          <span class="choice-tagline">Collèges et lycées</span>
           <span class="choice-context">
             Pensé pour les établissements africains — fonctionne hors ligne.
           </span>

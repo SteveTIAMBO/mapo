@@ -22,14 +22,20 @@ import { ref, computed } from 'vue'
 const STORAGE_KEY = 'mapo_edition'
 
 // Liste des éditions valides
-const VALID_EDITIONS = ['secondaire', 'superieur']
+const VALID_EDITIONS = ['primaire', 'secondaire', 'superieur']
 
 // Métadonnées d'affichage de chaque édition
 export const EDITIONS = {
+  primaire: {
+    key: 'primaire',
+    name: 'Primaire',
+    tagline: 'Écoles primaires (SIL → CM2)',
+    context: "Programme officiel camerounais (APC) — fonctionne hors ligne",
+  },
   secondaire: {
     key: 'secondaire',
-    name: 'Secondaire & Primaire',
-    tagline: 'Collèges, lycées et écoles primaires',
+    name: 'Secondaire',
+    tagline: 'Collèges et lycées',
     context: 'Pensé pour les établissements africains — fonctionne hors ligne',
   },
   superieur: {
@@ -46,6 +52,27 @@ export const EDITIONS = {
  * (Utilisé progressivement — la version secondaire reste la référence aujourd'hui.)
  */
 export const TERMINOLOGY = {
+  primaire: {
+    learner: 'écolier',
+    learnerCap: 'Écolier',
+    learners: 'écoliers',
+    learnersCap: 'Écoliers',
+    group: 'classe',
+    groupCap: 'Classe',
+    groups: 'classes',
+    groupsCap: 'Classes',
+    teacher: 'maître',
+    teacherCap: 'Maître',
+    teachers: 'maîtres',
+    report: 'bulletin',
+    reportCap: 'Bulletin',
+    reports: 'bulletins',
+    guardian: 'parent',
+    guardianCap: 'Parent',
+    term: 'trimestre',
+    termCap: 'Trimestre',
+    establishment: 'école primaire',
+  },
   secondaire: {
     learner: 'élève',
     learnerCap: 'Élève',
@@ -95,6 +122,7 @@ export const useEditionStore = defineStore('edition', () => {
   const current = ref(null)
 
   const isChosen = computed(() => VALID_EDITIONS.includes(current.value))
+  const isPrimaire = computed(() => current.value === 'primaire')
   const isSecondaire = computed(() => current.value === 'secondaire')
   const isSuperieur = computed(() => current.value === 'superieur')
 
@@ -141,6 +169,7 @@ export const useEditionStore = defineStore('edition', () => {
   return {
     current,
     isChosen,
+    isPrimaire,
     isSecondaire,
     isSuperieur,
     meta,
