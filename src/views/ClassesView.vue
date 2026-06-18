@@ -166,7 +166,7 @@
               <label>Niveau *</label>
               <select v-model="formData.level" class="input" required>
                 <option value="">Sélectionnez</option>
-                <option v-for="l in LEVELS" :key="l.value" :value="l.value">{{ l.label }}</option>
+                <option v-for="l in levels" :key="l.value" :value="l.value">{{ l.label }}</option>
               </select>
             </div>
             <div class="field">
@@ -215,7 +215,8 @@
 </template>
 
 <script setup>
-import { useClassesStore, LEVELS, SECTIONS } from '../stores/classes'
+import { useClassesStore, LEVELS, LEVELS_PRIMAIRE, SECTIONS } from '../stores/classes'
+import { useEditionStore } from '../stores/edition'
 import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
@@ -256,16 +257,14 @@ const teachersList = computed(() => {
     .sort((a, b) => a.fullName.localeCompare(b.fullName))
 })
 
-const levelFilters = [
+// Niveaux selon l'édition active (Primaire → SIL-CM2, sinon 6e-Tle).
+const editionStore = useEditionStore()
+const levels = computed(() => (editionStore.isPrimaire ? LEVELS_PRIMAIRE : LEVELS))
+
+const levelFilters = computed(() => [
   { value: '', label: 'Tous' },
-  { value: '6e', label: '6e' },
-  { value: '5e', label: '5e' },
-  { value: '4e', label: '4e' },
-  { value: '3e', label: '3e' },
-  { value: '2nde', label: '2nde' },
-  { value: '1ere', label: '1ère' },
-  { value: 'Tle', label: 'Tle' },
-]
+  ...levels.value.map((l) => ({ value: l.value, label: l.label })),
+])
 
 const formData = reactive({
   name: '', level: '', section: '', capacity: 60,
@@ -288,7 +287,7 @@ const filteredClasses = computed(() => {
   if (selectedLevel.value) {
     list = list.filter(c => c.level === selectedLevel.value)
   }
-  const levelOrder = LEVELS.map(l => l.value)
+  const levelOrder = levels.value.map(l => l.value)
   return [...list].sort((a, b) => {
     const la = levelOrder.indexOf(a.level)
     const lb = levelOrder.indexOf(b.level)
@@ -304,20 +303,20 @@ const paginatedClasses = computed(() => {
 })
 
 const getLevelLabel = (level) => {
-  const found = LEVELS.find(l => l.value === level)
+  const found = levels.value.find(l => l.value === level)
   return found ? found.label : level
 }
 
 const getLevelColor = (level) => {
-  const found = LEVELS.find(l => l.value === level)
+  const found = levels.value.find(l => l.value === level)
   if (!found) return 'var(--tx3)'
-  return found.cycle === 'premier' ? 'var(--pr)' : 'var(--success)'
+  return found.cycle === 'second' ? 'var(--success)' : 'var(--pr)'
 }
 
 const getLevelBadge = (level) => {
-  const found = LEVELS.find(l => l.value === level)
+  const found = levels.value.find(l => l.value === level)
   if (!found) return ''
-  return found.cycle === 'premier' ? 'badge-info' : 'badge-success'
+  return found.cycle === 'second' ? 'badge-success' : 'badge-info'
 }
 
 const getFillPercent = (cls) => {

@@ -21,6 +21,16 @@ export const LEVELS = [
   { value: 'Tle', label: 'Terminale', cycle: 'second' },
 ]
 
+// Niveaux du PRIMAIRE (édition 'primaire') — programme camerounais SIL → CM2.
+export const LEVELS_PRIMAIRE = [
+  { value: 'SIL', label: 'SIL', cycle: 'primaire' },
+  { value: 'CP', label: 'CP', cycle: 'primaire' },
+  { value: 'CE1', label: 'CE1', cycle: 'primaire' },
+  { value: 'CE2', label: 'CE2', cycle: 'primaire' },
+  { value: 'CM1', label: 'CM1', cycle: 'primaire' },
+  { value: 'CM2', label: 'CM2', cycle: 'primaire' },
+]
+
 export const SECTIONS = [
   { value: 'A', label: 'A' },
   { value: 'B', label: 'B' },
