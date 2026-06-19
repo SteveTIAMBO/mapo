@@ -416,7 +416,7 @@
                   <th v-if="selectedTrimester === 'annual'">T3</th>
                   <th v-if="selectedTrimester === 'annual'">Moy. Ann.</th>
                   <th>Moy. Classe</th>
-                  <th>Appréciation</th>
+                  <th>{{ isApc ? 'Palier (APC)' : 'Appréciation' }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -450,7 +450,10 @@
                     </td>
                   </template>
                   <td>{{ row.classAvg !== null ? row.classAvg.toFixed(2) : '-' }}</td>
-                  <td><span v-if="row.mainAvg !== null" class="appreciation-tag-sm" :class="getAppreciationClass(row.mainAvg)">{{ getAppreciationText(row.mainAvg) }}</span></td>
+                  <td>
+                    <span v-if="isApc && row.mainAvg !== null" class="apc-badge" :class="'apc-' + paletteFor(row.mainAvg)">{{ paletteFor(row.mainAvg) }}</span>
+                    <span v-else-if="row.mainAvg !== null" class="appreciation-tag-sm" :class="getAppreciationClass(row.mainAvg)">{{ getAppreciationText(row.mainAvg) }}</span>
+                  </td>
                 </tr>
               </tbody>
               <tfoot>
@@ -472,7 +475,10 @@
                     </td>
                   </template>
                   <td></td>
-                  <td><span v-if="bulletinGeneralAvg !== null" class="appreciation-tag-sm" :class="getAppreciationClass(bulletinGeneralAvg)">{{ getAppreciationText(bulletinGeneralAvg) }}</span></td>
+                  <td>
+                    <span v-if="isApc && bulletinGeneralAvg !== null" class="apc-badge" :class="'apc-' + paletteFor(bulletinGeneralAvg)">{{ paletteFor(bulletinGeneralAvg) }}</span>
+                    <span v-else-if="bulletinGeneralAvg !== null" class="appreciation-tag-sm" :class="getAppreciationClass(bulletinGeneralAvg)">{{ getAppreciationText(bulletinGeneralAvg) }}</span>
+                  </td>
                 </tr>
               </tfoot>
             </table>
@@ -803,6 +809,8 @@ import {
 import { useInscriptionsStore, DOCUMENT_FORMATS } from '../stores/inscriptions'
 import { exportToExcel } from '../utils/exportExcel'
 import { useAppreciationsStore } from '../stores/appreciations'
+import { useEditionStore } from '../stores/edition'
+import { noteToPalier } from '../data/primaire'
 
 const notesStore = useNotesStore()
 const appreciationsStore = useAppreciationsStore()
@@ -814,6 +822,12 @@ const authStore = useAuthStore()
 const inscriptionsStore = useInscriptionsStore()
 const subjectsStore = useSubjectsStore()
 const edtStore = useEmploiDuTempsStore()
+const editionStore = useEditionStore()
+
+// Mode compétences (APC) : édition primaire + l'école a choisi gradingMode 'apc'.
+// On garde la saisie /20 ; le bulletin AFFICHE en plus le palier A/ECA/NA.
+const isApc = computed(() => editionStore.isPrimaire && schoolStore.schoolSettings?.gradingMode === 'apc')
+function paletteFor(avg) { return noteToPalier(avg) }
 
 // Enseignant : seulement ses classes
 const teacherClassIds = computed(() => {
@@ -2030,6 +2044,11 @@ onMounted(async () => {
   font-size: 11px; font-weight: 600;
 }
 .appreciation-tag-sm { font-size: 10px; padding: 1px 6px; }
+/* Palier APC (primaire, mode compétences) */
+.apc-badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.apc-A { background: rgba(27,138,90,.12); color: #1B8A5A; }
+.apc-ECA { background: rgba(232,149,10,.14); color: #B87A00; }
+.apc-NA { background: rgba(217,48,37,.10); color: #D93025; }
 .appr-excellent { background: #dcfce7; color: #166534; }
 .appr-tres-bien { background: #d1fae5; color: #065f46; }
 .appr-bien { background: #dbeafe; color: #1e40af; }
