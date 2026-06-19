@@ -10,6 +10,7 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { useEditionStore } from './edition'
 
 export const GENDERS = [
   { value: 'M', label: 'Masculin' },
@@ -195,6 +196,42 @@ function generateDemoStudents() {
   return students
 }
 
+// Écoliers de démo pour l'édition PRIMAIRE (3 par classe SIL → CM2).
+function generatePrimaireStudents() {
+  const PRIMAIRE = [
+    { name: 'SIL', year: 2019 }, { name: 'CP', year: 2018 },
+    { name: 'CE1', year: 2017 }, { name: 'CE2', year: 2016 },
+    { name: 'CM1', year: 2015 }, { name: 'CM2 A', year: 2014 }, { name: 'CM2 B', year: 2014 },
+  ]
+  const students = []
+  let id = 1
+  PRIMAIRE.forEach(({ name, year }) => {
+    for (let i = 0; i < 3; i++) {
+      const gender = Math.random() > 0.48 ? 'M' : 'F'
+      const firstNames = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F
+      students.push({
+        id: `ep-${String(id).padStart(4, '0')}`,
+        matricule: generateMatricule(year, id),
+        firstName: pickRandom(firstNames),
+        lastName: pickRandom(LAST_NAMES),
+        gender,
+        dateOfBirth: `${year}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
+        className: name,
+        city: 'Douala',
+        quartier: pickRandom(QUARTIERS_YDE),
+        parentLastName: pickRandom(LAST_NAMES),
+        parentFirstName: pickRandom(FIRST_NAMES_M),
+        parentPhone: `+237 6${Math.floor(Math.random() * 4) + 5}${Math.floor(Math.random() * 10)} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
+        parentPhone2: '',
+        parentEmail: '',
+        status: 'inscrit',
+      })
+      id++
+    }
+  })
+  return students
+}
+
 const DEMO_ELEVES_KEY = 'mapo_demo_eleves'
 const DEMO_ELEVES_VERSION_KEY = 'mapo_demo_eleves_version'
 const DEMO_ELEVES_VERSION = 9 // v9: Hélène en Tle D + studentEmail pour compte élève
@@ -248,13 +285,16 @@ export const useElevesStore = defineStore('eleves', () => {
     return [...set].sort()
   })
 
+  // Suffixe de clé démo selon l'édition (primaire = cache séparé).
+  function demoSuffix() { return useEditionStore().isPrimaire ? '_primaire' : '' }
+
   // Helpers demo localStorage
   function saveDemoEleves() {
-    try { localStorage.setItem(DEMO_ELEVES_KEY, JSON.stringify(eleves.value)) } catch (e) { /* silent */ }
+    try { localStorage.setItem(DEMO_ELEVES_KEY + demoSuffix(), JSON.stringify(eleves.value)) } catch (e) { /* silent */ }
   }
   function loadDemoEleves() {
     try {
-      const raw = localStorage.getItem(DEMO_ELEVES_KEY)
+      const raw = localStorage.getItem(DEMO_ELEVES_KEY + demoSuffix())
       return raw ? JSON.parse(raw) : null
     } catch (e) { return null }
   }
@@ -264,11 +304,12 @@ export const useElevesStore = defineStore('eleves', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_ELEVES_VERSION_KEY)
+      const ed = useEditionStore()
+      const savedVersion = localStorage.getItem(DEMO_ELEVES_VERSION_KEY + demoSuffix())
       const saved = (savedVersion === String(DEMO_ELEVES_VERSION)) ? loadDemoEleves() : null
-      eleves.value = saved || generateDemoStudents()
+      eleves.value = saved || (ed.isPrimaire ? generatePrimaireStudents() : generateDemoStudents())
       if (!saved) {
-        localStorage.setItem(DEMO_ELEVES_VERSION_KEY, String(DEMO_ELEVES_VERSION))
+        localStorage.setItem(DEMO_ELEVES_VERSION_KEY + demoSuffix(), String(DEMO_ELEVES_VERSION))
         saveDemoEleves()
       }
       loading.value = false

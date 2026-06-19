@@ -10,6 +10,7 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { useEditionStore } from './edition'
 
 export const LEVELS = [
   { value: '6e', label: '6ème', cycle: 'premier' },
@@ -70,6 +71,18 @@ const DEMO_CLASSES = [
   { id: 'c-td', name: 'Tle D', level: 'Tle', section: 'D', serie: 'D', capacity: 40, enrolled: 31, homeroomTeacher: 'Cécile Owona', homeroomTeacherId: null },
 ]
 
+// Classes de démo pour l'édition PRIMAIRE (SIL → CM2). Clés démo namespacées
+// par édition (suffixe _primaire) → la démo secondaire reste inchangée.
+const DEMO_CLASSES_PRIMAIRE = [
+  { id: 'cp-sil', name: 'SIL', level: 'SIL', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Bernadette Atangana', homeroomTeacherId: null },
+  { id: 'cp-cp', name: 'CP', level: 'CP', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Pierre Manga', homeroomTeacherId: null },
+  { id: 'cp-ce1', name: 'CE1', level: 'CE1', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Estelle Ndongo', homeroomTeacherId: null },
+  { id: 'cp-ce2', name: 'CE2', level: 'CE2', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Joseph Bilong', homeroomTeacherId: null },
+  { id: 'cp-cm1', name: 'CM1', level: 'CM1', section: '', capacity: 40, enrolled: 3, homeroomTeacher: 'Brigitte Eyenga', homeroomTeacherId: null },
+  { id: 'cp-cm2a', name: 'CM2 A', level: 'CM2', section: 'A', capacity: 40, enrolled: 3, homeroomTeacher: 'Sylvie Manga', homeroomTeacherId: null },
+  { id: 'cp-cm2b', name: 'CM2 B', level: 'CM2', section: 'B', capacity: 38, enrolled: 3, homeroomTeacher: 'André Tchoua', homeroomTeacherId: null },
+]
+
 const DEMO_CLASSES_KEY = 'mapo_demo_classes'
 const DEMO_CLASSES_VERSION_KEY = 'mapo_demo_classes_version'
 const DEMO_CLASSES_VERSION = 2
@@ -125,13 +138,16 @@ export const useClassesStore = defineStore('classes', () => {
     if (changed) saveDemoClasses()
   }
 
+  // Suffixe de clé démo selon l'édition (primaire = cache séparé).
+  function demoSuffix() { return useEditionStore().isPrimaire ? '_primaire' : '' }
+
   // Helpers demo localStorage
   function saveDemoClasses() {
-    try { localStorage.setItem(DEMO_CLASSES_KEY, JSON.stringify(classes.value)) } catch (e) { /* silent */ }
+    try { localStorage.setItem(DEMO_CLASSES_KEY + demoSuffix(), JSON.stringify(classes.value)) } catch (e) { /* silent */ }
   }
   function loadDemoClasses() {
     try {
-      const raw = localStorage.getItem(DEMO_CLASSES_KEY)
+      const raw = localStorage.getItem(DEMO_CLASSES_KEY + demoSuffix())
       return raw ? JSON.parse(raw) : null
     } catch (e) { return null }
   }
@@ -141,11 +157,12 @@ export const useClassesStore = defineStore('classes', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVer = localStorage.getItem(DEMO_CLASSES_VERSION_KEY)
+      const ed = useEditionStore()
+      const savedVer = localStorage.getItem(DEMO_CLASSES_VERSION_KEY + demoSuffix())
       const saved = (savedVer === String(DEMO_CLASSES_VERSION)) ? loadDemoClasses() : null
-      classes.value = saved || [...DEMO_CLASSES]
+      classes.value = saved || [...(ed.isPrimaire ? DEMO_CLASSES_PRIMAIRE : DEMO_CLASSES)]
       if (!saved) {
-        localStorage.setItem(DEMO_CLASSES_VERSION_KEY, String(DEMO_CLASSES_VERSION))
+        localStorage.setItem(DEMO_CLASSES_VERSION_KEY + demoSuffix(), String(DEMO_CLASSES_VERSION))
         saveDemoClasses()
       }
       loading.value = false
