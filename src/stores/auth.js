@@ -26,6 +26,8 @@ const DEMO_ACCOUNTS = {
   enseignant: { uid: 'demo-enseignant', firstName: 'Jean', lastName: 'Kamga', role: 'enseignant', email: 'enseignant@demo' },
   parent: { uid: 'demo-parent', firstName: 'Thomas', lastName: 'Mbarga', role: 'parent', email: 'parent@demo' },
   eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo' },
+  // MIAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MIAPO+ seul.
+  miapo: { uid: 'demo-miapo', firstName: 'Famille', lastName: 'Démo', role: 'parent', email: 'miapo@demo', b2c: true },
 }
 
 // Comptes demo SUPERIEUR (clic = login, pas de mot de passe).
@@ -191,6 +193,7 @@ export const useAuthStore = defineStore('auth', () => {
       role: account.role,
       photoURL: null,
       isDemo: true,
+      b2c: account.b2c || false,
     }
 
     isDemo.value = true

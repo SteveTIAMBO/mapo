@@ -136,7 +136,7 @@ function choisir(edition) {
 // ensuite via la page de connexion (lien « compte en ligne »).
 function choisirMiapo() {
   editionStore.setEdition('secondaire')
-  const result = authStore.loginDemo('parent', 'demo1234')
+  const result = authStore.loginDemo('miapo', 'demo1234')
   if (result && result.success) {
     router.push('/parent/miapo')
   } else {

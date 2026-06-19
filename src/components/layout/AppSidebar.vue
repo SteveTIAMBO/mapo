@@ -215,7 +215,6 @@ const mainNav = computed(() => {
     }
     return [
       { to: '/espace-parent', icon: Home, label: 'Tableau de bord' },
-      { to: '/parent/miapo', icon: Sparkles, label: 'MIAPO+' },
       { to: '/parent/inscriptions', icon: ClipboardList, label: 'Inscriptions' },
       { key: 'notes', to: '/parent/notes', icon: BookOpen, label: 'Notes' },
       { key: 'presences', to: '/parent/presences', icon: CalendarCheck, label: 'Présences' },

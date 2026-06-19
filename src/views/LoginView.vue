@@ -118,10 +118,6 @@
             <span class="auth-demo-chip-icon" v-html="d.icon"></span>
             {{ d.label }}
           </button>
-          <button type="button" class="auth-demo-chip" data-role="miapo" @click="demoMiapo">
-            <span class="auth-demo-chip-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg></span>
-            MIAPO+
-          </button>
         </div>
         <p class="auth-demo-pw">Accès instantané, sans mot de passe</p>
         <button type="button" class="auth-switch-link" @click="showLogin = true">J'ai un compte en ligne →</button>
@@ -229,17 +225,6 @@ function loginDemoAs(role) {
   const result = authStore.loginDemo(role, 'demo1234')
   if (result.success) {
     router.push('/dashboard')
-  } else {
-    errorMessage.value = result.error
-  }
-}
-
-// Démo MIAPO+ (espace famille/tuteur) : profil parent → vue MIAPO+ directement.
-function demoMiapo() {
-  errorMessage.value = ''
-  const result = authStore.loginDemo('parent', 'demo1234')
-  if (result.success) {
-    router.push('/parent/miapo')
   } else {
     errorMessage.value = result.error
   }

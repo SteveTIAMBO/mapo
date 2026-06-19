@@ -83,6 +83,8 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
    */
   async function hydrate() {
     load() // local d'abord (affichage instantané, offline)
+    // Démo : amorcer un écolier cohérent pour que l'espace MIAPO+ ne soit pas vide.
+    if (authStore.isDemo) seedDemoIfEmpty()
     const uid = cloudUid()
     if (!uid) return
     try {
@@ -163,6 +165,18 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function getComp6c(enfantId) {
     const e = getEnfant(enfantId)
     return e && e.comp6c ? e.comp6c : null
+  }
+
+  // Amorçage démo : un écolier cohérent (notes + profil 6C) pour montrer MIAPO+
+  // sans saisie préalable. Démo uniquement, et seulement si aucun enfant.
+  function seedDemoIfEmpty() {
+    if (enfants.value.length) return
+    const id = addEnfant({ firstName: 'Awa', lastName: 'Démo', gender: 'F', niveau: '5ème', pays: 'CM' })
+    addNote(id, 'Mathématiques', 8)
+    addNote(id, 'Français', 14)
+    addNote(id, 'Anglais', 11)
+    addNote(id, 'SVT', 9)
+    setComp6c(id, { creativite: 4, esprit_critique: 3, communication: 4, cooperation: 4, courage: 3, confiance: 3 })
   }
 
   return {
