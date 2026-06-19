@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
 
 // Version de demo pour reset quand la structure change
 const DEMO_SUBJECTS_VERSION = 2
@@ -61,6 +62,17 @@ const DEFAULT_SUBJECTS = [
     coefficients: { '4e': 2, '3e': 2, '2nde': 2, '1ere': 2, 'Tle': 2 } },
 ]
 
+// ── PRIMAIRE : niveaux + disciplines (APC, pas de coefficient chiffré) ──
+const PRIMAIRE_LEVELS = ['SIL', 'CP', 'CE1', 'CE2', 'CM1', 'CM2']
+const PRIMAIRE_SUBJECT_OBJECTS = DISCIPLINES_PRIMAIRE.map((d, i) => ({
+  id: 'sp-' + i,
+  name: d.name,
+  domaine: d.domaine,
+  cycles: ['primaire'],
+  coefficients: {},
+  color: SUBJECT_DEFAULT_COLORS[d.name] || '#CBD5E1',
+}))
+
 export const useSubjectsStore = defineStore('subjects', () => {
   const subjects = ref([]) // Array of subject objects
   const loaded = ref(false)
@@ -71,6 +83,8 @@ export const useSubjectsStore = defineStore('subjects', () => {
   function getSubjectsForClass(cls) {
     if (!cls) return []
     const level = cls.level || ''
+    // Primaire : les 10 disciplines APC (indépendant du store secondaire).
+    if (PRIMAIRE_LEVELS.includes(level)) return PRIMAIRE_SUBJECT_OBJECTS.map(s => s.name)
     const isLycee = ['2nde', '1ere', 'Tle'].includes(level)
     const cycle = isLycee ? 'lycee' : 'college'
 
@@ -89,6 +103,7 @@ export const useSubjectsStore = defineStore('subjects', () => {
   function getSubjectObjectsForClass(cls) {
     if (!cls) return []
     const level = cls.level || ''
+    if (PRIMAIRE_LEVELS.includes(level)) return PRIMAIRE_SUBJECT_OBJECTS
     const isLycee = ['2nde', '1ere', 'Tle'].includes(level)
     const cycle = isLycee ? 'lycee' : 'college'
 
