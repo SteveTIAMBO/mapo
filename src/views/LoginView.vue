@@ -18,12 +18,13 @@
       <div class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
-          Version Secondaire &amp; Primaire
+          Version {{ editionStore.meta?.name || 'Secondaire' }}
         </span>
         <button type="button" class="auth-edition-change" @click="changerVersion">Changer</button>
       </div>
 
-      <!-- Connexion / Inscription -->
+      <!-- Connexion / Inscription (comptes EN LIGNE — live) -->
+      <template v-if="isSchoolTenantMode || showLogin">
       <form @submit.prevent="handleSubmit" class="auth-form">
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
@@ -98,11 +99,13 @@
         Continuer avec Google
       </button>
 
-      <div v-if="!isSchoolTenantMode" class="auth-divider"><span>ou</span></div>
+      <button v-if="!isSchoolTenantMode" type="button" class="auth-switch-link auth-back-demo" @click="showLogin = false">← Retour à la démonstration</button>
+      </template>
 
-      <!-- Démonstration (jamais affichée sur l'instance d'une vraie école) -->
-      <div v-if="!isSchoolTenantMode" class="auth-demo-credentials">
-        <p class="auth-demo-title">Découvrir en démonstration</p>
+      <!-- DÉMONSTRATION : profils types, accès direct sans connexion -->
+      <!-- (le formulaire ci-dessus est réservé aux comptes en ligne / vraies écoles) -->
+      <div v-if="!isSchoolTenantMode && !showLogin" class="auth-demo-credentials">
+        <p class="auth-demo-title">Choisissez un profil de démonstration</p>
         <div class="auth-demo-accounts">
           <button
             v-for="d in demoAccounts"
@@ -115,8 +118,13 @@
             <span class="auth-demo-chip-icon" v-html="d.icon"></span>
             {{ d.label }}
           </button>
+          <button type="button" class="auth-demo-chip" data-role="miapo" @click="demoMiapo">
+            <span class="auth-demo-chip-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z"/></svg></span>
+            MIAPO+
+          </button>
         </div>
         <p class="auth-demo-pw">Accès instantané, sans mot de passe</p>
+        <button type="button" class="auth-switch-link" @click="showLogin = true">J'ai un compte en ligne →</button>
       </div>
     </div>
 
@@ -160,6 +168,9 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 const mode = ref('login') // 'login' | 'signup'
 const signupName = ref('')
+// Démo : profils types affichés par défaut ; le formulaire login/inscription
+// (réservé aux comptes en ligne / vraies écoles) est masqué derrière un lien.
+const showLogin = ref(false)
 
 function setMode(m) {
   mode.value = m
@@ -218,6 +229,17 @@ function loginDemoAs(role) {
   const result = authStore.loginDemo(role, 'demo1234')
   if (result.success) {
     router.push('/dashboard')
+  } else {
+    errorMessage.value = result.error
+  }
+}
+
+// Démo MIAPO+ (espace famille/tuteur) : profil parent → vue MIAPO+ directement.
+function demoMiapo() {
+  errorMessage.value = ''
+  const result = authStore.loginDemo('parent', 'demo1234')
+  if (result.success) {
+    router.push('/parent/miapo')
   } else {
     errorMessage.value = result.error
   }
