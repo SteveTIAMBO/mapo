@@ -139,6 +139,16 @@
                 </select>
               </div>
             </div>
+            <div v-if="editionStore.isPrimaire" class="field-row">
+              <div class="field">
+                <label>Mode de notation (bulletin)</label>
+                <select v-model="form.gradingMode" class="input">
+                  <option value="notes">Notes sur 20</option>
+                  <option value="apc">Compétences APC (A / ECA / NA)</option>
+                </select>
+                <small style="display:block;margin-top:6px;color:var(--tx3);font-size:12px;">Primaire : « Notes /20 » (pratique courante) ou « Compétences » (officiel APC). Choisi à la création de l'école.</small>
+              </div>
+            </div>
           </div>
         </section>
       </div>
@@ -342,11 +352,13 @@
 <script setup>
 import { onMounted, ref, reactive, watch, computed } from 'vue'
 import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
+import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck } from 'lucide-vue-next'
 import { DEFAULT_SERVICES } from '../stores/messages'
 
 const schoolStore = useSchoolStore()
+const editionStore = useEditionStore()
 const authStore = useAuthStore()
 
 const isDirecteur = computed(() => {
@@ -394,6 +406,7 @@ const form = reactive({
   logo: null,
   directorSignature: null,
   language: 'fr',
+  gradingMode: 'notes',
   primaryColor: '#0A84FF',
   services: DEFAULT_SERVICES.map(s => ({ ...s })),
   periods: {},

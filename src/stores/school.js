@@ -123,6 +123,7 @@ const DEMO_SCHOOL_DEFAULTS = {
   language: 'fr',
   primaryColor: '#0A84FF',
   evaluationType: '2_sequences',
+  gradingMode: 'notes',
   periods: {
     T1: {
       start: '2025-09-02',
@@ -180,6 +181,9 @@ export const useSchoolStore = defineStore('school', () => {
     language: 'fr',
     primaryColor: '#0A84FF',
     evaluationType: '2_sequences',
+    // Mode de notation : 'notes' (chiffré /20) ou 'apc' (compétences A/ECA/NA).
+    // Choisi à la création de l'école ; déterminant pour les bulletins du primaire.
+    gradingMode: 'notes',
     periods: {},
   })
 
