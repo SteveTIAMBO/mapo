@@ -15,6 +15,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Banque d'exercices partagée (tuteur MIAPO) ───────────────────
+    // Contenu pédagogique non sensible (QCM de révision). Lecture/écriture
+    // pour tout utilisateur authentifié → réutilisation des exercices déjà
+    // générés (économie de tokens) + fonctionne hors-ligne via le cache.
+    // PUBLIÉE en prod le 2026-06-19.
+    match /quizBank/{key} {
+      allow read, write: if request.auth != null;
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────
 
     function isSignedIn() {
@@ -150,6 +159,14 @@ service cloud.firestore {
       // Suppression d'un profil utilisateur : super admin EDUFREM uniquement
       // (utilisé par la suppression en cascade d'une école).
       allow delete: if isSuperAdmin();
+
+      // Sous-collections privées de l'utilisateur (B2C autonome : progression
+      // du tuteur `revisions`, données `b2c`/enfants). Accès réservé au
+      // propriétaire du compte. PUBLIÉE en prod (reconstituée ici 2026-06-19 ;
+      // à vérifier au besoin contre la console).
+      match /{sub}/{docId=**} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     // ── Invitations ──────────────────────────────────────────────────
