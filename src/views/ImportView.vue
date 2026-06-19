@@ -186,6 +186,7 @@ import { useClassesStore } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
+import { useEditionStore } from '../stores/edition'
 
 const elevesStore = useElevesStore()
 const personnelStore = usePersonnelStore()
@@ -193,6 +194,7 @@ const classesStore = useClassesStore()
 const subjectsStore = useSubjectsStore()
 const activityStore = useActivityStore()
 const schoolStore = useSchoolStore()
+const editionStore = useEditionStore()
 
 // ── Module definitions ─────────────────────────────────
 const modules = [
@@ -367,6 +369,36 @@ const IMPORT_EXAMPLES = {
     { name: '6ème A', level: '6e', serie: '', capacity: '60' },
     { name: '1ère C', level: '1ere', serie: 'C', capacity: '45' },
   ],
+}
+
+// Exemples pour l'édition PRIMAIRE (SIL→CM2, disciplines APC).
+const IMPORT_EXAMPLES_PRIMAIRE = {
+  ecole: [
+    { schoolName: 'École Primaire Les Lauréats', schoolType: 'École primaire', city: 'Douala', country: 'Cameroun', address: 'Quartier Bonapriso', phone: '+237 233 00 22 33', email: 'contact@leslaureats.cm', academicYear: '2025-2026', currency: 'FCFA', primaryColor: '#1558B0', directorLastName: 'Eyenga', directorFirstName: 'Sylvie', directorPhone: '+237 699 22 33 44', directorEmail: 'direction@leslaureats.cm' },
+  ],
+  eleves: [
+    { lastName: 'Biya', firstName: 'Estelle', gender: 'F', dateOfBirth: '2018-05-12', className: 'CP', city: 'Douala', quartier: 'Bonapriso', parentLastName: 'Biya', parentFirstName: 'Georges', parentPhone: '+237 699 12 34 56', parentPhone2: '' },
+    { lastName: 'Mballa', firstName: 'Junior', gender: 'M', dateOfBirth: '2015-09-03', className: 'CM1', city: 'Douala', quartier: 'Akwa', parentLastName: 'Mballa', parentFirstName: 'Diane', parentPhone: '+237 677 65 43 21', parentPhone2: '' },
+  ],
+  personnel: [
+    { lastName: 'Atangana', firstName: 'Bernadette', category: 'enseignement', role: 'Institutrice', gender: 'F', email: 'b.atangana@leslaureats.cm', phone: '+237 677 11 22 33', subjects: '' },
+    { lastName: 'Eyenga', firstName: 'Sylvie', category: 'administration', role: 'Directrice', gender: 'F', email: 'direction@leslaureats.cm', phone: '+237 699 22 33 44', subjects: '' },
+  ],
+  matieres: [
+    { name: 'Français', cycle: 'Primaire' },
+    { name: 'Mathématiques', cycle: 'Primaire' },
+    { name: 'Sciences et technologie', cycle: 'Primaire' },
+  ],
+  classes: [
+    { name: 'SIL', level: 'SIL', serie: '', capacity: '45' },
+    { name: 'CE1', level: 'CE1', serie: '', capacity: '45' },
+    { name: 'CM2 A', level: 'CM2', serie: 'A', capacity: '40' },
+  ],
+}
+
+// Jeu d'exemples selon l'édition active (Primaire vs Secondaire).
+function currentExamples() {
+  return editionStore.isPrimaire ? IMPORT_EXAMPLES_PRIMAIRE : IMPORT_EXAMPLES
 }
 
 // ── State ──────────────────────────────────────────────
@@ -583,7 +615,7 @@ async function downloadTemplate() {
   const mod = currentModule.value
 
   // Example data per module (partagé avec le classeur de démarrage)
-  const examples = IMPORT_EXAMPLES
+  const examples = currentExamples()
 
   // Build rows: instruction row + header row + example data
   // Row 1: Instructions (will be in row 1, above the headers which start row 2)
@@ -696,7 +728,7 @@ async function downloadStarterWorkbook() {
     if (!mod) continue
     const headerRow = mod.columns.map(c => c.label)
     const instrRow = mod.columns.map(c => c.required ? 'OBLIGATOIRE' : 'optionnel')
-    const exRows = (IMPORT_EXAMPLES[id] || []).map(ex => mod.columns.map(c => ex[c.key] ?? ''))
+    const exRows = (currentExamples()[id] || []).map(ex => mod.columns.map(c => ex[c.key] ?? ''))
     const ws = XLSX.utils.aoa_to_sheet([headerRow, instrRow, ...exRows])
     ws['!cols'] = mod.columns.map(c => ({ wch: Math.max(c.label.length + 2, 16) }))
     XLSX.utils.book_append_sheet(wb, ws, mod.label)
