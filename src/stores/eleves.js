@@ -199,14 +199,14 @@ function generateDemoStudents() {
 // Écoliers de démo pour l'édition PRIMAIRE (3 par classe SIL → CM2).
 function generatePrimaireStudents() {
   const PRIMAIRE = [
-    { name: 'SIL', year: 2019 }, { name: 'CP', year: 2018 },
-    { name: 'CE1', year: 2017 }, { name: 'CE2', year: 2016 },
-    { name: 'CM1', year: 2015 }, { name: 'CM2 A', year: 2014 }, { name: 'CM2 B', year: 2014 },
+    { name: 'SIL', year: 2019, count: 38 }, { name: 'CP', year: 2018, count: 42 },
+    { name: 'CE1', year: 2017, count: 40 }, { name: 'CE2', year: 2016, count: 36 },
+    { name: 'CM1', year: 2015, count: 34 }, { name: 'CM2 A', year: 2014, count: 33 }, { name: 'CM2 B', year: 2014, count: 31 },
   ]
   const students = []
   let id = 1
-  PRIMAIRE.forEach(({ name, year }) => {
-    for (let i = 0; i < 3; i++) {
+  PRIMAIRE.forEach(({ name, year, count }) => {
+    for (let i = 0; i < count; i++) {
       const gender = Math.random() > 0.48 ? 'M' : 'F'
       const firstNames = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F
       students.push({
@@ -234,7 +234,7 @@ function generatePrimaireStudents() {
 
 const DEMO_ELEVES_KEY = 'mapo_demo_eleves'
 const DEMO_ELEVES_VERSION_KEY = 'mapo_demo_eleves_version'
-const DEMO_ELEVES_VERSION = 9 // v9: Hélène en Tle D + studentEmail pour compte élève
+const DEMO_ELEVES_VERSION = 10 // v10: démo primaire enrichie (~254 écoliers SIL-CM2)
 
 export const useElevesStore = defineStore('eleves', () => {
   const eleves = ref([])

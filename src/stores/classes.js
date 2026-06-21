@@ -74,18 +74,18 @@ const DEMO_CLASSES = [
 // Classes de démo pour l'édition PRIMAIRE (SIL → CM2). Clés démo namespacées
 // par édition (suffixe _primaire) → la démo secondaire reste inchangée.
 const DEMO_CLASSES_PRIMAIRE = [
-  { id: 'cp-sil', name: 'SIL', level: 'SIL', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Bernadette Atangana', homeroomTeacherId: null },
-  { id: 'cp-cp', name: 'CP', level: 'CP', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Pierre Manga', homeroomTeacherId: null },
-  { id: 'cp-ce1', name: 'CE1', level: 'CE1', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Estelle Ndongo', homeroomTeacherId: null },
-  { id: 'cp-ce2', name: 'CE2', level: 'CE2', section: '', capacity: 45, enrolled: 3, homeroomTeacher: 'Joseph Bilong', homeroomTeacherId: null },
-  { id: 'cp-cm1', name: 'CM1', level: 'CM1', section: '', capacity: 40, enrolled: 3, homeroomTeacher: 'Brigitte Eyenga', homeroomTeacherId: null },
-  { id: 'cp-cm2a', name: 'CM2 A', level: 'CM2', section: 'A', capacity: 40, enrolled: 3, homeroomTeacher: 'Sylvie Manga', homeroomTeacherId: null },
-  { id: 'cp-cm2b', name: 'CM2 B', level: 'CM2', section: 'B', capacity: 38, enrolled: 3, homeroomTeacher: 'André Tchoua', homeroomTeacherId: null },
+  { id: 'cp-sil', name: 'SIL', level: 'SIL', section: '', capacity: 45, enrolled: 38, homeroomTeacher: 'Bernadette Atangana', homeroomTeacherId: null },
+  { id: 'cp-cp', name: 'CP', level: 'CP', section: '', capacity: 45, enrolled: 42, homeroomTeacher: 'Pierre Manga', homeroomTeacherId: null },
+  { id: 'cp-ce1', name: 'CE1', level: 'CE1', section: '', capacity: 45, enrolled: 40, homeroomTeacher: 'Estelle Ndongo', homeroomTeacherId: null },
+  { id: 'cp-ce2', name: 'CE2', level: 'CE2', section: '', capacity: 45, enrolled: 36, homeroomTeacher: 'Joseph Bilong', homeroomTeacherId: null },
+  { id: 'cp-cm1', name: 'CM1', level: 'CM1', section: '', capacity: 40, enrolled: 34, homeroomTeacher: 'Brigitte Eyenga', homeroomTeacherId: null },
+  { id: 'cp-cm2a', name: 'CM2 A', level: 'CM2', section: 'A', capacity: 40, enrolled: 33, homeroomTeacher: 'Sylvie Manga', homeroomTeacherId: null },
+  { id: 'cp-cm2b', name: 'CM2 B', level: 'CM2', section: 'B', capacity: 38, enrolled: 31, homeroomTeacher: 'André Tchoua', homeroomTeacherId: null },
 ]
 
 const DEMO_CLASSES_KEY = 'mapo_demo_classes'
 const DEMO_CLASSES_VERSION_KEY = 'mapo_demo_classes_version'
-const DEMO_CLASSES_VERSION = 2
+const DEMO_CLASSES_VERSION = 3 // v3: effectifs démo primaire enrichis
 
 export const useClassesStore = defineStore('classes', () => {
   const classes = ref([])

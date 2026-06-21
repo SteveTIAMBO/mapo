@@ -21,6 +21,7 @@
           <span>{{ s.label }}</span>
         </button>
       </nav>
+      <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>Se déconnecter</span></button>
     </aside>
 
     <!-- ───────── Contenu ───────── -->
@@ -242,11 +243,17 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, PAYS, MATIERES } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut } from 'lucide-vue-next'
+
+const router = useRouter()
+const authStore = useAuthStore()
+async function logout() { await authStore.logout(); router.push('/login') }
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
@@ -400,6 +407,8 @@ onMounted(async () => {
 .child-single { font-size: 14px; font-weight: 600; color: var(--tx); padding: 4px 6px; } .child-single span { font-size: 12px; font-weight: 500; color: var(--tx3); background: var(--input-bg, #eef1f4); padding: 2px 8px; border-radius: 20px; margin-left: 4px; }
 
 .volet-nav { display: flex; flex-direction: column; gap: 3px; }
+.volet-logout { margin-top: auto; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
+.volet-logout:hover { background: rgba(217,48,37,.07); color: #D93025; }
 .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx2, #4b5563); text-align: left; width: 100%; }
 .nav-item:hover { background: var(--input-bg, #f1f3f5); }
 .nav-item.active { background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); font-weight: 600; }
@@ -513,6 +522,7 @@ onMounted(async () => {
   .miapo-shell { flex-direction: column; }
   .volet { width: auto; align-self: auto; position: static; border-right: none; border-bottom: 1px solid var(--bd); padding: 12px; gap: 12px; }
   .volet-nav { flex-direction: row; overflow-x: auto; gap: 6px; -webkit-overflow-scrolling: touch; }
+  .volet-logout { margin-top: 0; }
   .nav-item { flex-direction: column; gap: 4px; padding: 8px 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
   .nav-item span { font-size: 11px; }
   .miapo-main { padding: 16px 14px; max-width: 100%; width: 100%; box-sizing: border-box; }

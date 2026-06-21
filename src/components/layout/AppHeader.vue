@@ -65,7 +65,8 @@ onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
 
 const canAccessSettings = computed(() => permissionsStore.hasAccess('parametres'))
 const firstName = computed(() => authStore.userFirstName)
-const schoolName = computed(() => schoolStore.schoolSettings?.schoolName || '')
+// B2C (MIAPO+) : pas de nom d'école dans l'en-tête (la famille n'appartient pas à une école).
+const schoolName = computed(() => authStore.isB2C ? '' : (schoolStore.schoolSettings?.schoolName || ''))
 const schoolLogo = computed(() => schoolStore.schoolSettings?.logo || null)
 
 const greeting = computed(() => {
