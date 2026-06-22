@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { useEditionStore } from './edition'
 import { publishSchoolDirectory } from '../utils/schoolDirectory'
 
 export const COUNTRY_DEFAULTS = {
@@ -39,7 +40,20 @@ export const SCHOOL_TYPES = [
 
 const DEMO_SETTINGS_KEY = 'mapo_demo_school_settings'
 const DEMO_SCHOOL_VERSION_KEY = 'mapo_demo_school_version'
-const DEMO_SCHOOL_VERSION = 5
+const DEMO_SCHOOL_VERSION = 6
+
+// La démo doit être propre à chaque édition (primaire ≠ secondaire) : on suffixe
+// les clés localStorage par édition, sinon une école primaire hériterait des
+// réglages du collège (nom, séquences…). Voir aussi classes.js / eleves.js.
+function demoSuffix() {
+  try {
+    return useEditionStore().isPrimaire ? '_primaire' : ''
+  } catch (e) {
+    return ''
+  }
+}
+function demoSettingsKey() { return DEMO_SETTINGS_KEY + demoSuffix() }
+function demoVersionKey() { return DEMO_SCHOOL_VERSION_KEY + demoSuffix() }
 
 // Génère une signature manuscrite demo sur un canvas puis retourne un data:image/png
 function generateDemoSignature() {
@@ -155,6 +169,17 @@ const DEMO_SCHOOL_DEFAULTS = {
   },
 }
 
+// Surcharge démo pour l'édition PRIMAIRE : identité « école primaire » + évaluation
+// TRIMESTRIELLE (le bulletin APC du primaire est par trimestre, PAS découpé en
+// séquences comme au secondaire). evaluationType '1_evaluation' = 1 note/trimestre.
+const DEMO_SCHOOL_PRIMAIRE = {
+  schoolName: 'École Primaire EDUFREM',
+  schoolType: 'ecole_primaire',
+  acronym: 'EDUFREM',
+  cycles: ['primaire'],
+  evaluationType: '1_evaluation',
+}
+
 export const useSchoolStore = defineStore('school', () => {
   const schoolSettings = ref({
     schoolName: '',
@@ -238,23 +263,30 @@ export const useSchoolStore = defineStore('school', () => {
 
     // Mode demo : charger depuis localStorage ou utiliser les valeurs par défaut
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_SCHOOL_VERSION_KEY)
+      const ed = useEditionStore()
+      const sKey = demoSettingsKey()
+      const vKey = demoVersionKey()
+      const savedVersion = localStorage.getItem(vKey)
       if (savedVersion === String(DEMO_SCHOOL_VERSION)) {
         try {
-          const stored = localStorage.getItem(DEMO_SETTINGS_KEY)
+          const stored = localStorage.getItem(sKey)
           if (stored) {
             schoolSettings.value = { ...schoolSettings.value, ...JSON.parse(stored) }
           }
         } catch (e) { /* silent */ }
       } else {
-        // Initialize with demo defaults
-        schoolSettings.value = { ...schoolSettings.value, ...DEMO_SCHOOL_DEFAULTS }
+        // Initialize with demo defaults (+ surcharge primaire si édition primaire)
+        schoolSettings.value = {
+          ...schoolSettings.value,
+          ...DEMO_SCHOOL_DEFAULTS,
+          ...(ed.isPrimaire ? DEMO_SCHOOL_PRIMAIRE : {}),
+        }
         // Ajouter la signature manuscrite demo du directeur
         if (!schoolSettings.value.directorSignature) {
           schoolSettings.value.directorSignature = generateDemoSignature()
         }
-        localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(schoolSettings.value))
-        localStorage.setItem(DEMO_SCHOOL_VERSION_KEY, String(DEMO_SCHOOL_VERSION))
+        localStorage.setItem(sKey, JSON.stringify(schoolSettings.value))
+        localStorage.setItem(vKey, String(DEMO_SCHOOL_VERSION))
       }
       if (!schoolSettings.value.academicYear) {
         schoolSettings.value.academicYear = currentAcademicYear.value
@@ -303,7 +335,7 @@ export const useSchoolStore = defineStore('school', () => {
     // Mode demo : sauvegarder dans localStorage uniquement
     if (authStore.isDemo) {
       try {
-        localStorage.setItem(DEMO_SETTINGS_KEY, JSON.stringify(schoolSettings.value))
+        localStorage.setItem(demoSettingsKey(), JSON.stringify(schoolSettings.value))
       } catch (e) { /* silent */ }
       return
     }

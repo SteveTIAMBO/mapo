@@ -13,7 +13,7 @@
     </div>
 
     <!-- Stat bar -->
-    <div v-if="!authStore.isTeacher" class="stat-bar" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
+    <div v-if="!authStore.isTeacher" class="stat-bar" :style="{ gridTemplateColumns: 'repeat(' + (editionStore.isPrimaire ? 3 : 4) + ', 1fr)', marginBottom: '24px' }">
       <div class="stat-bar-item">
         <div class="stat-bar-dot blue"></div>
         <div>
@@ -21,18 +21,28 @@
           <div class="stat-bar-label">Total classes</div>
         </div>
       </div>
-      <div class="stat-bar-item">
+      <!-- Secondaire : Premier / Second cycle — Primaire : nombre de niveaux (SIL→CM2) -->
+      <template v-if="!editionStore.isPrimaire">
+        <div class="stat-bar-item">
+          <div class="stat-bar-dot" style="background: var(--gold)"></div>
+          <div>
+            <div class="stat-bar-value">{{ classesStore.classStats.premier }}</div>
+            <div class="stat-bar-label">Premier cycle</div>
+          </div>
+        </div>
+        <div class="stat-bar-item">
+          <div class="stat-bar-dot green"></div>
+          <div>
+            <div class="stat-bar-value">{{ classesStore.classStats.second }}</div>
+            <div class="stat-bar-label">Second cycle</div>
+          </div>
+        </div>
+      </template>
+      <div v-else class="stat-bar-item">
         <div class="stat-bar-dot" style="background: var(--gold)"></div>
         <div>
-          <div class="stat-bar-value">{{ classesStore.classStats.premier }}</div>
-          <div class="stat-bar-label">Premier cycle</div>
-        </div>
-      </div>
-      <div class="stat-bar-item">
-        <div class="stat-bar-dot green"></div>
-        <div>
-          <div class="stat-bar-value">{{ classesStore.classStats.second }}</div>
-          <div class="stat-bar-label">Second cycle</div>
+          <div class="stat-bar-value">{{ niveauxCount }}</div>
+          <div class="stat-bar-label">Niveaux</div>
         </div>
       </div>
       <div class="stat-bar-item">
@@ -265,6 +275,9 @@ const levelFilters = computed(() => [
   { value: '', label: 'Tous' },
   ...levels.value.map((l) => ({ value: l.value, label: l.label })),
 ])
+
+// Primaire : nombre de niveaux distincts représentés par les classes (carte stat).
+const niveauxCount = computed(() => new Set((classesStore.classes || []).map((c) => c.level)).size)
 
 const formData = reactive({
   name: '', level: '', section: '', capacity: 60,

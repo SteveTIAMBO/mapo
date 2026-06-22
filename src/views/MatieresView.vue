@@ -2,16 +2,35 @@
   <div class="matieres-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Matières & Coefficients</h1>
-        <p>Gérez les matières enseignées, leurs coefficients par niveau et les classes correspondantes</p>
+        <h1>{{ isPrimaire ? 'Disciplines & domaines' : 'Matières & Coefficients' }}</h1>
+        <p v-if="isPrimaire">Référentiel officiel du primaire (APC) : 10 disciplines réparties en 5 domaines d'apprentissage pondérés. L'évaluation se fait par compétences (A / ECA / NA), sans coefficients.</p>
+        <p v-else>Gérez les matières enseignées, leurs coefficients par niveau et les classes correspondantes</p>
       </div>
-      <button class="btn btn-primary btn-sm" @click="openAddModal" style="display:inline-flex;align-items:center;gap:6px;">
+      <button v-if="!isPrimaire" class="btn btn-primary btn-sm" @click="openAddModal" style="display:inline-flex;align-items:center;gap:6px;">
         <Plus :size="16" />
         <span>Ajouter une matière</span>
       </button>
     </div>
 
-    <!-- Loading -->
+    <!-- ── Primaire : référentiel APC en lecture seule (pas de coefficients) ── -->
+    <div v-if="isPrimaire" class="primaire-domaines">
+      <div class="info-banner" style="margin-bottom:16px;">
+        <Info :size="16" />
+        <span>Au primaire, l'évaluation suit l'Approche Par Compétences : chaque domaine a un poids officiel dans la moyenne, et les acquis sont notés A (Acquis), ECA (En cours d'acquisition) ou NA (Non acquis).</span>
+      </div>
+      <div v-for="dom in primaireDomaines" :key="dom.key" class="card domaine-card">
+        <div class="domaine-head">
+          <span class="domaine-name">{{ dom.label }}</span>
+          <span class="domaine-poids">{{ dom.poids }} %</span>
+        </div>
+        <div class="domaine-disciplines">
+          <span v-for="d in dom.disciplines" :key="d.name" class="discipline-chip">{{ d.name }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading (secondaire) -->
+    <template v-else>
     <div v-if="loading" class="card empty-state-card">
       <Loader2 :size="32" class="spinning" style="color: var(--primary); margin-bottom: 12px;" />
       <p>Chargement des matières...</p>
@@ -118,6 +137,7 @@
         </div>
       </div>
     </template>
+    </template>
 
     <!-- Modal: Add/Edit Subject -->
     <Teleport to="body">
@@ -222,10 +242,23 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore, LEVELS } from '../stores/classes'
+import { useEditionStore } from '../stores/edition'
+import { DOMAINES_PRIMAIRE, DISCIPLINES_PRIMAIRE } from '../data/primaire'
 import { Plus, BookOpen, Pencil, Trash2, Save, X, Loader2, Info } from 'lucide-vue-next'
 
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
+const editionStore = useEditionStore()
+
+// Primaire : on n'affiche PAS la grille de coefficients du secondaire mais le
+// référentiel APC (disciplines groupées par domaine pondéré, lecture seule).
+const isPrimaire = computed(() => editionStore.isPrimaire)
+const primaireDomaines = computed(() =>
+  DOMAINES_PRIMAIRE.map((dom) => ({
+    ...dom,
+    disciplines: DISCIPLINES_PRIMAIRE.filter((d) => d.domaine === dom.key),
+  }))
+)
 
 const loading = ref(true)
 const activeFilter = ref('all')
@@ -491,5 +524,24 @@ onMounted(async () => {
   .summary-row { flex-direction: column; }
   .summary-card { min-width: 100%; }
   .toolbar { flex-direction: column; align-items: stretch; }
+}
+
+/* ── Primaire : cartes domaine (référentiel APC) ── */
+.domaine-card { margin-bottom: 12px; padding: 16px 18px; }
+.domaine-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px; gap: 12px;
+}
+.domaine-name { font-family: var(--font-display); font-weight: 600; font-size: 15px; color: var(--tx); }
+.domaine-poids {
+  font-weight: 700; font-size: 13px; color: var(--pr);
+  background: rgba(var(--pr-rgb), .1); padding: 3px 10px; border-radius: 999px; flex-shrink: 0;
+}
+.domaine-disciplines { display: flex; flex-wrap: wrap; gap: 8px; }
+.discipline-chip {
+  font-size: 13px; color: var(--tx2);
+  background: var(--input-bg, rgba(0,0,0,.04));
+  border: 1px solid var(--hair, rgba(0,0,0,.08));
+  padding: 6px 12px; border-radius: 8px;
 }
 </style>

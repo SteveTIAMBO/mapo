@@ -714,9 +714,11 @@
   /* Card spacing */
   .card { padding: 10px; border-radius: 10px; }
 
-  /* Stat bar stacks vertically */
+  /* Stat bar : 2 colonnes sur mobile.
+     !important pour écraser les grilles inline repeat(4,1fr) posées par les vues
+     (ClassesView, ElevesView, FacturationView…) qui sinon restent illisibles. */
   .stat-bar {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr !important;
   }
   .stat-bar-item:not(:last-child)::after { display: none; }
   .stat-bar-value { font-size: 16px; }
@@ -729,6 +731,12 @@
   .data-table { font-size: 12px; }
   .data-table th, .data-table td { padding: 10px 8px; }
   .data-table th { font-size: 10px; }
+  /* Sur mobile, ne PAS écraser les colonnes (table-layout:fixed posé inline par
+     certaines vues comme Facturation) : on repasse en auto + nowrap pour que la
+     table déborde et scrolle horizontalement dans .table-wrapper plutôt que de
+     tasser/tronquer un tableau de 7 colonnes illisible. */
+  .data-table { table-layout: auto !important; }
+  .data-table th, .data-table td { white-space: nowrap; }
 
   /* Page header stacks */
   .page-header {
@@ -763,7 +771,7 @@
 
 @media (max-width: 480px) {
   .card { padding: 8px; border-radius: 8px; }
-  .stat-bar { grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px; }
+  .stat-bar { grid-template-columns: 1fr 1fr !important; gap: 8px; padding: 8px; }
   .stat-bar-value { font-size: 14px; }
   .stat-bar-label { font-size: 10px; }
   .btn { padding: 8px 12px; font-size: 13px; }
