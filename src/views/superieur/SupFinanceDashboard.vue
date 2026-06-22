@@ -169,7 +169,7 @@
 
           <div class="sf-pay-form">
             <div class="sf-pay-row">
-              <label class="sf-pay-flab">Montant reçu (EUR)</label>
+              <label class="sf-pay-flab">Montant reçu (FCFA)</label>
               <input v-model.number="paiementForm.montant" type="number" min="0" class="sf-pay-input" />
             </div>
             <div class="sf-pay-row">

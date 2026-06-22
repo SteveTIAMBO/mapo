@@ -77,15 +77,15 @@
           </p>
           <div class="sg-form">
             <label>
-              <span>Frais d'inscription (€)</span>
+              <span>Frais d'inscription (FCFA)</span>
               <input type="number" min="0" step="50" v-model.number="form.fraisInscription" />
             </label>
             <label>
-              <span>Frais de scolarité (€)</span>
+              <span>Frais de scolarité (FCFA)</span>
               <input type="number" min="0" step="100" v-model.number="form.fraisScolarite" />
             </label>
             <label>
-              <span>Frais divers (€)</span>
+              <span>Frais divers (FCFA)</span>
               <input type="number" min="0" step="50" v-model.number="form.fraisDivers" />
             </label>
             <div class="sg-form-total">

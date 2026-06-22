@@ -172,17 +172,17 @@ function generateTarifs() {
   const list = []
   let counter = 1
   for (const promo of PROMOTIONS) {
-    // Tarifs typiques d'une école de management privée européenne
-    // Bachelor : 6 800 → 8 200 €/an  ;  Master : 9 500 → 12 800 €/an
+    // Tarifs typiques d'une université privée au Cameroun (FCFA)
+    // Licence : 450 000 → 600 000 FCFA/an  ;  Master : 1 000 000 → 1 200 000 FCFA/an
     let scolarite, inscription, divers
     if (promo.niveau === 'Master') {
-      scolarite = promo.rang === 2 ? 12800 : 11500
-      inscription = 600
-      divers = 900
+      scolarite = promo.rang === 2 ? 1200000 : 1000000
+      inscription = 75000
+      divers = 60000
     } else {
-      scolarite = 6800 + (promo.rang - 1) * 700
-      inscription = 500
-      divers = 600
+      scolarite = 450000 + (promo.rang - 1) * 75000
+      inscription = 50000
+      divers = 40000
     }
     list.push({
       id: `tar-${String(counter).padStart(3, '0')}`,
@@ -247,7 +247,7 @@ function generateBourses() {
       libelle: 'Bourse EDUFREM — Continuité Afrique',
       type: 'interne',
       mode: 'montant',
-      valeur: 2500,
+      valeur: 200000,
       conditions: 'Étudiant boursier au niveau précédent dans le réseau EDUFREM',
       actif: true,
     },
@@ -256,7 +256,7 @@ function generateBourses() {
       libelle: 'Bourse Diversité & Inclusion',
       type: 'diversite',
       mode: 'montant',
-      valeur: 1800,
+      valeur: 150000,
       conditions: 'Sur dossier — commission diversité',
       actif: true,
     },

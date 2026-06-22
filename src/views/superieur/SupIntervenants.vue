@@ -101,7 +101,7 @@
                 {{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}
               </span>
               <span v-if="it.statut === 'vacataire' && it.coutHoraire" class="si-cout">
-                {{ it.coutHoraire }} €/h
+                {{ it.coutHoraire }} FCFA/h
               </span>
             </td>
             <td>{{ it.specialite }}</td>
@@ -173,7 +173,7 @@
               </div>
             </div>
             <div v-if="form.statut === 'vacataire'" class="si-field">
-              <label class="si-form-label">Coût horaire (€)</label>
+              <label class="si-form-label">Coût horaire (FCFA)</label>
               <input v-model.number="form.coutHoraire" type="number" min="0" step="1" class="si-input" />
             </div>
             <p v-if="formError" class="si-form-error">{{ formError }}</p>

@@ -267,7 +267,7 @@ function generateDossiers() {
       }
 
       // Montant de l'acompte (30% des frais de scolarité moyens)
-      const acompteMontant = factureEmise ? randInt(800, 2500) : null
+      const acompteMontant = factureEmise ? randInt(150000, 350000) : null
 
       const inscriptionPedaDeclenchee = rangMobi >= 5 && chance(0.75)
 

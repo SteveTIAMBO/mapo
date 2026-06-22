@@ -29,7 +29,7 @@ export const DEMO_SCHOOL_IDENTITY = {
   anneeAcademique: '2025 — 2026',
   modulesActifs: null,
   logoUrl: null,
-  configSup: { devise: 'EUR' },
+  configSup: { devise: 'XAF' },
 }
 
 export const useSchoolIdentityStore = defineStore('schoolIdentity', () => {

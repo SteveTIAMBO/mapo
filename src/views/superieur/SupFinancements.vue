@@ -149,7 +149,7 @@
             </label>
             <div class="sn-form-row">
               <label>
-                <span>Montant (€)</span>
+                <span>Montant (FCFA)</span>
                 <input type="number" min="0" step="100" v-model.number="form.montant" />
               </label>
               <label>

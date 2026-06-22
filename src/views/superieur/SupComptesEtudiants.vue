@@ -249,7 +249,7 @@
               </select>
             </label>
             <label>
-              <span>Montant (€)</span>
+              <span>Montant (FCFA)</span>
               <input type="number" min="0" step="10" v-model.number="paiementForm.montant" />
             </label>
             <label>

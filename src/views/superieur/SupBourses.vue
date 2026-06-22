@@ -101,7 +101,7 @@
                 </select>
               </label>
               <label>
-                <span>Valeur {{ form.mode === 'pourcentage' ? '(%)' : '(€)' }}</span>
+                <span>Valeur {{ form.mode === 'pourcentage' ? '(%)' : '(FCFA)' }}</span>
                 <input type="number" min="0" step="1" v-model.number="form.valeur" />
               </label>
             </div>

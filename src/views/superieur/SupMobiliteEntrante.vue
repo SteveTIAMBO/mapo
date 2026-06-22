@@ -529,7 +529,7 @@ function confirmerEnvoiCertificat() {
 
 function fmtMontant(n) {
   if (n == null) return '—'
-  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'XAF', maximumFractionDigits: 0 }).format(n)
 }
 
 // Alertes contextuelles selon rôle
@@ -671,7 +671,7 @@ const paiementsStudent = computed(() => {
   return psStore.getByStudent(detail.value.mobiStudentId)
 })
 
-function fmtMontantPS(montant, devise = 'EUR') {
+function fmtMontantPS(montant, devise = 'XAF') {
   if (montant == null) return '—'
   try {
     return new Intl.NumberFormat('fr-FR', {

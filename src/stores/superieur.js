@@ -204,7 +204,7 @@ function generateIntervenants() {
       nomComplet: `${prenom} ${nom}`,
       statut: vacataire ? 'vacataire' : 'permanent',
       specialite: pick(SPECIALITES),
-      coutHoraire: vacataire ? randInt(55, 110) : null,
+      coutHoraire: vacataire ? randInt(8000, 20000) : null,
     })
   }
   return list
