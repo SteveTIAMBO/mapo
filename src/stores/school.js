@@ -40,7 +40,7 @@ export const SCHOOL_TYPES = [
 
 const DEMO_SETTINGS_KEY = 'mapo_demo_school_settings'
 const DEMO_SCHOOL_VERSION_KEY = 'mapo_demo_school_version'
-const DEMO_SCHOOL_VERSION = 6
+const DEMO_SCHOOL_VERSION = 7
 
 // La démo doit être propre à chaque édition (primaire ≠ secondaire) : on suffixe
 // les clés localStorage par édition, sinon une école primaire hériterait des
@@ -178,6 +178,9 @@ const DEMO_SCHOOL_PRIMAIRE = {
   acronym: 'EDUFREM',
   cycles: ['primaire'],
   evaluationType: '1_evaluation',
+  // Démo en mode APC (A/ECA/NA) : c'est le bulletin distinctif du primaire camerounais.
+  // Le directeur peut basculer en /20 via Paramètres pour voir les deux modes.
+  gradingMode: 'apc',
 }
 
 export const useSchoolStore = defineStore('school', () => {

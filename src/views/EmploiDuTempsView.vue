@@ -926,6 +926,8 @@ import { usePersonnelStore, SUBJECTS_BY_CYCLE } from '../stores/personnel'
 import { useSubjectsStore } from '../stores/subjects'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
+import { useEditionStore } from '../stores/edition'
+import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
 import {
   AlertCircle, AlertTriangle, Plus, Trash2, Wand2, Settings, RotateCcw, Printer, X, Calendar, Loader2, CheckCircle2
 } from 'lucide-vue-next'
@@ -936,6 +938,7 @@ const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
 const schoolStore = useSchoolStore()
 const authStore = useAuthStore()
+const editionStore = useEditionStore()
 
 // Teacher's staff record (pour auto-sélectionner l'enseignant)
 const teacherStaffRecord = computed(() => {
@@ -1081,6 +1084,11 @@ const getLevelKeyLabel = (key) => {
 const getBaseLevelFromKey = (key) => key.split('_')[0]
 
 const allSubjects = computed(() => {
+  // Primaire : les 10 disciplines APC (sinon la classification par cycle range les
+  // niveaux SIL-CM2 en « lycée » → afficherait des matières de lycée, incohérent).
+  if (editionStore.isPrimaire) {
+    return DISCIPLINES_PRIMAIRE.map(d => d.name)
+  }
   const subjects = new Set()
   for (const key of availableLevelKeys.value) {
     const baseLevel = getBaseLevelFromKey(key)

@@ -4,6 +4,7 @@ import { db } from '../firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useClassesStore } from './classes'
+import { useEditionStore } from './edition'
 import { usePersonnelStore, SUBJECTS_BY_CYCLE } from './personnel'
 import { useElevesStore } from './eleves'
 import { getDefaultHoursForLevel, getSubjectHoursKey } from './emploi-du-temps'
@@ -74,7 +75,16 @@ export const SIGN_PERIODS = [
 
 const DEMO_NOTES_KEY = 'mapo_demo_notes'
 const DEMO_NOTES_VERSION_KEY = 'mapo_demo_notes_version'
-const DEMO_NOTES_VERSION = 13 // v13: année complète, 21 classes, 6 séquences, Hélène en Tle D
+const DEMO_NOTES_VERSION = 14 // v14: clés démo edition-aware + seed primaire (trimestriel S1/S3/S5)
+
+// La démo de notes doit être propre à chaque édition (sinon le primaire hérite des
+// notes du secondaire, dont les IDs de classes diffèrent → bulletin vide). On suffixe
+// les clés localStorage par édition, comme school.js / classes.js / eleves.js.
+function notesDemoSuffix() {
+  try { return useEditionStore().isPrimaire ? '_primaire' : '' } catch (e) { return '' }
+}
+function notesDemoKey() { return DEMO_NOTES_KEY + notesDemoSuffix() }
+function notesDemoVersionKey() { return DEMO_NOTES_VERSION_KEY + notesDemoSuffix() }
 
 export const useNotesStore = defineStore('notes', () => {
   // notes: { [classId_subjectId_sequence]: { [eleveId]: number|null } }
@@ -617,7 +627,7 @@ export const useNotesStore = defineStore('notes', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_NOTES_VERSION_KEY)
+      const savedVersion = localStorage.getItem(notesDemoVersionKey())
       if (savedVersion === String(DEMO_NOTES_VERSION)) {
         const saved = loadDemoNotes()
         if (saved && Object.keys(saved).length > 0) {
@@ -694,8 +704,8 @@ export const useNotesStore = defineStore('notes', () => {
     const data = { notes: notes.value, setupDone: setupDone.value, validations: validations.value, mentions: mentions.value, subjectValidations: subjectValidations.value, dirSignatures: dirSignatures.value, distributions: distributions.value }
 
     if (authStore.isDemo) {
-      localStorage.setItem(DEMO_NOTES_KEY, JSON.stringify(data))
-      localStorage.setItem(DEMO_NOTES_VERSION_KEY, String(DEMO_NOTES_VERSION))
+      localStorage.setItem(notesDemoKey(), JSON.stringify(data))
+      localStorage.setItem(notesDemoVersionKey(), String(DEMO_NOTES_VERSION))
     } else {
       localStorage.setItem('mapo_notes', JSON.stringify(data))
       if (authStore.schoolId) {
@@ -713,7 +723,7 @@ export const useNotesStore = defineStore('notes', () => {
   // ── Demo data ──
   function loadDemoNotes() {
     try {
-      const raw = localStorage.getItem(DEMO_NOTES_KEY)
+      const raw = localStorage.getItem(notesDemoKey())
       return raw ? JSON.parse(raw) : null
     } catch { return null }
   }
@@ -724,8 +734,14 @@ export const useNotesStore = defineStore('notes', () => {
 
     const demoNotes = {}
 
-    // Générer pour TOUTES les 21 classes (année complète)
+    // Générer pour TOUTES les classes de l'édition courante (année complète)
     const demoClasses = classesStore.classes
+
+    // Primaire = évaluation trimestrielle (1 note/trimestre) → on seede S1/S3/S5
+    // (la 1re séquence de chaque trimestre, lue par le mode 1_evaluation) ;
+    // secondaire = 2 séquences/trimestre → S1..S6.
+    const ed = useEditionStore()
+    const seqList = ed.isPrimaire ? ['S1', 'S3', 'S5'] : ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']
 
     // ── Seed déterministe pour reproductibilité ──
     let seed = 42
@@ -757,8 +773,8 @@ export const useNotesStore = defineStore('notes', () => {
         const coeff = getSubjectCoeff(cls, subject)
         if (!coeff) continue
 
-        // Générer les notes pour les 6 séquences (année terminée)
-        for (const seqVal of ['S1', 'S2', 'S3', 'S4', 'S5', 'S6']) {
+        // Générer les notes (année terminée) selon le découpage de l'édition
+        for (const seqVal of seqList) {
           const key = noteKey(cls.id, subject, seqVal)
           demoNotes[key] = {}
 
