@@ -532,5 +532,11 @@ onMounted(async () => {
 @media (max-width: 420px) {
   .volet-brand .brand-tx small { display: none; }
   .main-head .btn span { display: none; }
+  /* Densité confort sur petit écran : moins de marge perdue */
+  .miapo-main { padding: 14px 10px; }
+  .card { padding: 14px 13px; }
+  .intro-card { padding: 28px 18px; margin: 18px auto; }
+  .abo-card { padding: 24px 16px; }
+  .stat { padding: 13px 10px; }
 }
 </style>

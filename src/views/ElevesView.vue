@@ -131,11 +131,11 @@
             <thead>
               <tr>
                 <th>Élève</th>
-                <th>Matricule</th>
+                <th class="hide-mobile">Matricule</th>
                 <th>Classe</th>
                 <th>Genre</th>
-                <th>Date de naissance</th>
-                <th>Tuteur / Parent</th>
+                <th class="hide-mobile">Date de naissance</th>
+                <th class="hide-mobile">Tuteur / Parent</th>
                 <th>Statut</th>
                 <th style="width: 90px;">Actions</th>
               </tr>
@@ -150,11 +150,11 @@
                     <span>{{ eleve.lastName }} {{ eleve.firstName }}</span>
                   </div>
                 </td>
-                <td class="td-mono">{{ eleve.matricule }}</td>
+                <td class="td-mono hide-mobile">{{ eleve.matricule }}</td>
                 <td><span class="badge badge-info">{{ eleve.className }}</span></td>
                 <td>{{ eleve.gender === 'M' ? 'M' : 'F' }}</td>
-                <td>{{ formatDate(eleve.dateOfBirth) }}</td>
-                <td>
+                <td class="hide-mobile">{{ formatDate(eleve.dateOfBirth) }}</td>
+                <td class="hide-mobile">
                   <div class="parent-cell">
                     <span>{{ getParentFullName(eleve) }}</span>
                     <span v-if="eleve.parentPhone" class="parent-phone">{{ eleve.parentPhone }}</span>

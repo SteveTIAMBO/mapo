@@ -238,4 +238,13 @@ onMounted(start)
 .tq-level-fb.up { background: rgba(27,138,90,.10); color: #1B8A5A; }
 .tq-level-fb.down { background: rgba(232,149,10,.10); color: #B87A00; }
 .tq-level-fb.stable { background: rgba(var(--pr-rgb),.07); color: var(--pr); }
+
+@media (max-width: 420px) {
+  .tq-choice { padding: 11px 13px; gap: 9px; font-size: 14px; }
+  .tq-letter { width: 24px; height: 24px; font-size: 12px; }
+  .tq-actions { margin-top: 16px; gap: 10px; }
+  .btn-primary { padding: 11px 18px; font-size: 14px; }
+  .tq-ring { width: 104px; height: 104px; }
+  .tq-ring::before { width: 80px; height: 80px; }
+}
 </style>

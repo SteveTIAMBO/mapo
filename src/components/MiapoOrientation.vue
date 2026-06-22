@@ -295,4 +295,11 @@ async function getSuggestions() {
   .pr-label { width: 92px; }
   .mobi-cta { width: 100%; justify-content: center; }
 }
+@media (max-width: 420px) {
+  /* Profil 6C : libellé plus court pour laisser respirer la barre */
+  .pr-label { width: 78px; font-size: 12px; }
+  /* Choix du pays : boutons pleine largeur, empilés et tapables */
+  .pays-pick { flex-direction: column; }
+  .pays-btn { width: 100%; justify-content: center; padding: 12px 16px; }
+}
 </style>

@@ -100,9 +100,9 @@
               <th>Classe</th>
               <th>Niveau</th>
               <th>Effectif</th>
-              <th>Capacité</th>
-              <th>Remplissage</th>
-              <th>Professeur principal</th>
+              <th class="hide-mobile">Capacité</th>
+              <th class="hide-mobile">Remplissage</th>
+              <th class="hide-mobile">Professeur principal</th>
               <th style="width: 90px;">Actions</th>
             </tr>
           </thead>
@@ -116,8 +116,8 @@
               </td>
               <td><span class="badge" :class="getLevelBadge(cls.level)">{{ getLevelLabel(cls.level) }}</span></td>
               <td class="td-number">{{ cls.enrolled || 0 }}</td>
-              <td class="td-number">{{ cls.capacity || '-' }}</td>
-              <td>
+              <td class="td-number hide-mobile">{{ cls.capacity || '-' }}</td>
+              <td class="hide-mobile">
                 <div class="fill-bar-wrap">
                   <div class="fill-bar">
                     <div class="fill-bar-inner" :style="{ width: getFillPercent(cls) + '%', background: getFillColor(cls) }"></div>
@@ -125,7 +125,7 @@
                   <span class="fill-label">{{ getFillPercent(cls) }}%</span>
                 </div>
               </td>
-              <td>{{ cls.homeroomTeacher || '-' }}</td>
+              <td class="hide-mobile">{{ cls.homeroomTeacher || '-' }}</td>
               <td>
                 <div class="action-btns">
                   <button class="icon-btn" title="Modifier" @click="openEditModal(cls)"><Pencil :size="15" /></button>

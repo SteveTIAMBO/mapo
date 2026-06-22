@@ -761,6 +761,9 @@
   .modal-header { padding: 12px; }
   .modal-body { padding: 12px; }
   .modal-actions, .modal-footer { padding: 12px 16px; }
+  /* Champs de formulaire empilés sur mobile (sinon 2 colonnes trop serrées dans
+     les modales d'ajout/édition — Classes, Élèves, Facturation…) */
+  .field-row { grid-template-columns: 1fr !important; }
 
   /* Fieldset tighter */
   .fieldset { padding: 10px; }

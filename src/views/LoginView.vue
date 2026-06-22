@@ -657,5 +657,10 @@ function resetDemo() {
     padding: 28px 24px;
     border-radius: 20px;
   }
+  /* Champs plus hauts + 16px : évite le zoom auto iOS et facilite le tap */
+  .auth-input {
+    font-size: 16px;
+    height: 46px;
+  }
 }
 </style>
