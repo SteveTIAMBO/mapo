@@ -458,6 +458,10 @@ function askDelete(e) {
   background: var(--gold-light);
   color: var(--gold);
 }
+.se-niveau.n-doctorat {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6D28D9;
+}
 .se-ects {
   display: inline-flex;
   align-items: center;

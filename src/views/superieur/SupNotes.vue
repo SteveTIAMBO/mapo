@@ -352,6 +352,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 }
 .sn-niveau.n-licence { background: var(--pr-light); color: var(--pr); }
 .sn-niveau.n-master { background: var(--gold-light); color: var(--gold); }
+.sn-niveau.n-doctorat { background: rgba(124, 58, 237, 0.12); color: #6D28D9; }
 .sn-promo-nom { font-weight: 600; color: var(--tx); }
 
 .sn-rate { display: inline-flex; align-items: center; gap: 8px; justify-content: flex-end; }

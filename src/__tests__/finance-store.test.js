@@ -26,7 +26,7 @@ describe('store finance — Frais & scolarité', () => {
 
   it('initialise les grilles tarifaires (une par promotion)', () => {
     const fin = useFinanceStore()
-    expect(fin.tarifs.length).toBe(5) // 3 Bachelor + 2 Master
+    expect(fin.tarifs.length).toBe(13) // une grille par promotion (Gestion + Droit + École doctorale)
     for (const t of fin.tarifs) {
       expect(t.fraisInscription).toBeGreaterThan(0)
       expect(t.fraisScolarite).toBeGreaterThan(0)

@@ -2,15 +2,15 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useSuperieurStore, PROGRAMMES, PROMOTIONS, UE_TYPES } from '../stores/superieur'
 
-describe('store superieur — démo école de management', () => {
+describe('store superieur — démo université LMD', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
   })
 
-  it('expose 2 programmes et 5 promotions', () => {
-    expect(PROGRAMMES).toHaveLength(2)
-    expect(PROMOTIONS).toHaveLength(5)
-    expect(PROGRAMMES.map((p) => p.niveau)).toEqual(['Licence', 'Master'])
+  it('expose 5 programmes (Gestion, Droit, Doctorat) et 13 promotions', () => {
+    expect(PROGRAMMES).toHaveLength(5)
+    expect(PROMOTIONS).toHaveLength(13)
+    expect(PROGRAMMES.map((p) => p.niveau)).toEqual(['Licence', 'Master', 'Licence', 'Master', 'Doctorat'])
   })
 
   it('charge des étudiants, intervenants et UE', () => {
@@ -80,8 +80,8 @@ describe('store superieur — démo école de management', () => {
     const store = useSuperieurStore()
     const s = store.stats
     expect(s.nbEtudiants).toBe(store.etudiants.length)
-    expect(s.nbProgrammes).toBe(2)
-    expect(s.nbPromotions).toBe(5)
+    expect(s.nbProgrammes).toBe(5)
+    expect(s.nbPromotions).toBe(13)
     expect(s.tauxProgressionEcts).toBeGreaterThan(0)
     expect(s.tauxProgressionEcts).toBeLessThanOrEqual(100)
     expect(s.parProgramme.reduce((x, p) => x + p.effectif, 0)).toBe(s.nbEtudiants)

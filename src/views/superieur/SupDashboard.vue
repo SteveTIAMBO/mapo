@@ -324,6 +324,10 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   background: var(--gold-light);
   color: var(--gold);
 }
+.sd-prog-niveau.n-doctorat {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6D28D9;
+}
 .sd-prog-nom {
   font-family: 'Poppins', sans-serif;
   font-size: 14px;

@@ -331,6 +331,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 }
 .sip-niveau.n-licence { background: var(--pr-light); color: var(--pr); }
 .sip-niveau.n-master { background: var(--gold-light); color: var(--gold); }
+.sip-niveau.n-doctorat { background: rgba(124, 58, 237, 0.12); color: #6D28D9; }
 .sip-warn-text { color: var(--warn); font-weight: 700; }
 
 .sip-pill {

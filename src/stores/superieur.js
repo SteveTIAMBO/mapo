@@ -64,10 +64,13 @@ export const ECOLE = {
 
 // ── Programmes et promotions ──
 export const PROGRAMMES = [
+  // ── Faculté des Sciences Sociales et de Gestion ──
   {
     id: 'bachelor-mgt',
     nom: 'Licence en Sciences de Gestion',
     niveau: 'Licence',
+    domaine: 'gestion',
+    faculte: 'Sciences Sociales et de Gestion',
     dureeAns: 3,
     ectsTotal: 180,
     annees: [
@@ -80,11 +83,56 @@ export const PROGRAMMES = [
     id: 'msc-mgt',
     nom: 'Master en Management et Stratégie',
     niveau: 'Master',
+    domaine: 'gestion',
+    faculte: 'Sciences Sociales et de Gestion',
     dureeAns: 2,
     ectsTotal: 120,
     annees: [
       { id: 'm1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
       { id: 'm2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
+    ],
+  },
+  // ── Faculté de Droit et Sciences Politiques ──
+  {
+    id: 'licence-droit',
+    nom: 'Licence en Droit',
+    niveau: 'Licence',
+    domaine: 'droit',
+    faculte: 'Droit et Sciences Politiques',
+    dureeAns: 3,
+    ectsTotal: 180,
+    annees: [
+      { id: 'ld1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'ld2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
+      { id: 'ld3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
+    ],
+  },
+  {
+    id: 'master-droit',
+    nom: 'Master en Droit des Affaires',
+    niveau: 'Master',
+    domaine: 'droit',
+    faculte: 'Droit et Sciences Politiques',
+    dureeAns: 2,
+    ectsTotal: 120,
+    annees: [
+      { id: 'mdr1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
+      { id: 'mdr2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
+    ],
+  },
+  // ── École doctorale (3e cycle, recherche) ──
+  {
+    id: 'doctorat-gst',
+    nom: 'Doctorat en Sciences de Gestion',
+    niveau: 'Doctorat',
+    domaine: 'doctorat',
+    faculte: 'École doctorale',
+    dureeAns: 3,
+    ectsTotal: 180,
+    annees: [
+      { id: 'd1', nom: 'Doctorat 1', rang: 1, semestres: ['S11', 'S12'] },
+      { id: 'd2', nom: 'Doctorat 2', rang: 2, semestres: ['S13', 'S14'] },
+      { id: 'd3', nom: 'Doctorat 3', rang: 3, semestres: ['S15', 'S16'] },
     ],
   },
 ]
@@ -96,6 +144,8 @@ export const PROMOTIONS = PROGRAMMES.flatMap((p) =>
     programmeId: p.id,
     programmeNom: p.nom,
     niveau: p.niveau,
+    domaine: p.domaine,
+    faculte: p.faculte,
     anneeId: a.id,
     anneeNom: a.nom,
     rang: a.rang,
@@ -153,26 +203,67 @@ const ENTREPRISES = [
 ]
 const VILLES_STAGES = ['Paris', 'Lyon', 'Lille', 'Bordeaux', 'Marseille', 'Casablanca', 'Dakar', 'Abidjan', 'Yaoundé', 'Douala', 'Genève']
 
-// Catalogue d'UE par domaine (intitulé, type)
-const UE_POOL = {
-  fondamentale: [
-    'Fondamentaux du management', 'Théorie des organisations', 'Microéconomie', 'Macroéconomie',
-    'Comptabilité générale', 'Marketing fondamental', 'Droit des affaires', 'Management stratégique',
-    'Finance d\'entreprise', 'Gouvernance d\'entreprise', 'Économie internationale', 'Analyse financière',
-  ],
-  methodologique: [
-    'Statistiques appliquées', 'Méthodes quantitatives', 'Systèmes d\'information', 'Anglais des affaires',
-    'Communication professionnelle', 'Excel & analyse de données', 'Gestion de projet', 'Méthodologie de recherche',
-  ],
-  professionnelle: [
-    'Projet professionnel', 'Stage en entreprise', 'Mission de conseil', 'Séminaire métiers',
-    'Soft skills & leadership', 'Mémoire de recherche', 'Business game', 'Conduite du changement',
-  ],
-  electif: [
-    'Entrepreneuriat & création', 'RSE & développement durable', 'Management interculturel',
-    'Négociation commerciale', 'Supply chain management', 'Marketing digital', 'Finance de marché',
-    'Transformation digitale', 'Luxe & retail', 'Data marketing',
-  ],
+// Catalogue d'UE par DOMAINE puis par type (l'université est multi-facultés :
+// Gestion, Droit, et une École doctorale en recherche).
+const UE_POOL_BY_DOMAINE = {
+  gestion: {
+    fondamentale: [
+      'Fondamentaux du management', 'Théorie des organisations', 'Microéconomie', 'Macroéconomie',
+      'Comptabilité générale', 'Marketing fondamental', 'Droit des affaires', 'Management stratégique',
+      'Finance d\'entreprise', 'Gouvernance d\'entreprise', 'Économie internationale', 'Analyse financière',
+    ],
+    methodologique: [
+      'Statistiques appliquées', 'Méthodes quantitatives', 'Systèmes d\'information', 'Anglais des affaires',
+      'Communication professionnelle', 'Excel & analyse de données', 'Gestion de projet', 'Méthodologie de recherche',
+    ],
+    professionnelle: [
+      'Projet professionnel', 'Stage en entreprise', 'Mission de conseil', 'Séminaire métiers',
+      'Soft skills & leadership', 'Mémoire de recherche', 'Business game', 'Conduite du changement',
+    ],
+    electif: [
+      'Entrepreneuriat & création', 'RSE & développement durable', 'Management interculturel',
+      'Négociation commerciale', 'Supply chain management', 'Marketing digital', 'Finance de marché',
+      'Transformation digitale', 'Économie sociale et solidaire', 'Data marketing',
+    ],
+  },
+  droit: {
+    fondamentale: [
+      'Introduction au droit', 'Droit civil', 'Droit constitutionnel', 'Droit pénal général',
+      'Droit administratif', 'Droit des obligations', 'Droit commercial', 'Droit des sociétés',
+      'Droit du travail', 'Droit international public', 'Procédure civile', 'Droit fiscal',
+    ],
+    methodologique: [
+      'Méthodologie juridique', 'Recherche documentaire juridique', 'Anglais juridique',
+      'Expression écrite et orale', 'Informatique juridique', 'Méthodes du cas pratique',
+    ],
+    professionnelle: [
+      'Stage en cabinet', 'Clinique juridique', 'Plaidoirie & art oratoire',
+      'Rédaction d\'actes juridiques', 'Séminaire métiers du droit', 'Mémoire de recherche',
+    ],
+    electif: [
+      'Droit des affaires OHADA', 'Droit de l\'environnement', 'Droit du numérique',
+      'Propriété intellectuelle', 'Droit bancaire', 'Contentieux des affaires',
+      'Arbitrage & médiation', 'Droit des assurances',
+    ],
+  },
+  doctorat: {
+    fondamentale: [
+      'Épistémologie et théories', 'État de l\'art du domaine', 'Séminaire de recherche thématique',
+      'Cadres conceptuels avancés',
+    ],
+    methodologique: [
+      'Méthodologie de la recherche', 'Méthodes quantitatives avancées', 'Méthodes qualitatives',
+      'Statistiques pour la recherche', 'Rédaction scientifique',
+    ],
+    professionnelle: [
+      'Séminaire doctoral', 'Encadrement de thèse', 'Publication scientifique',
+      'Communication en colloque', 'Éthique de la recherche', 'Valorisation de la recherche',
+    ],
+    electif: [
+      'Pédagogie universitaire', 'Veille scientifique internationale',
+      'Montage de projet de recherche', 'Vulgarisation scientifique',
+    ],
+  },
 }
 
 const SPECIALITES = [
@@ -215,10 +306,10 @@ const INTERVENANTS = reactive(loadEntity('intervenants', IS_SCHOOL_MODE ? [] : g
 // Initialisation : on désigne les deux premiers intervenants permanents.
 function initialResponsables() {
   const permanents = INTERVENANTS.filter((i) => i.statut === 'permanent')
-  return {
-    'bachelor-mgt': permanents[0]?.id || INTERVENANTS[0]?.id || null,
-    'msc-mgt': permanents[1]?.id || INTERVENANTS[1]?.id || null,
-  }
+  const pickId = (idx) => permanents[idx % Math.max(permanents.length, 1)]?.id || INTERVENANTS[idx % Math.max(INTERVENANTS.length, 1)]?.id || null
+  const map = {}
+  PROGRAMMES.forEach((p, idx) => { map[p.id] = pickId(idx) })
+  return map
 }
 const PROGRAMME_RESPONSABLES = reactive(loadEntity('prog_responsables', IS_SCHOOL_MODE ? {} : initialResponsables()))
 
@@ -228,6 +319,7 @@ function generateUE() {
   let counter = 1
 
   for (const prog of PROGRAMMES) {
+    const pool = UE_POOL_BY_DOMAINE[prog.domaine] || UE_POOL_BY_DOMAINE.gestion
     for (const annee of prog.annees) {
       annee.semestres.forEach((sem, semIndex) => {
         // Progression : les premiers semestres sont plus "fondamentaux",
@@ -258,10 +350,10 @@ function generateUE() {
           if (ectsRestants - ects > 0 && ectsRestants - ects < 2) ects = ectsRestants
 
           // Intitulé non répété dans le semestre
-          let intitule = pick(UE_POOL[type])
+          let intitule = pick(pool[type])
           let guard = 0
           while (usedTitles.has(intitule) && guard < 12) {
-            intitule = pick(UE_POOL[type])
+            intitule = pick(pool[type])
             guard++
           }
           usedTitles.add(intitule)
@@ -305,7 +397,7 @@ function generateEtudiants() {
 
   for (const promo of PROMOTIONS) {
     // Les promotions avancées sont un peu moins nombreuses (sélection, abandons)
-    const effectif = promo.niveau === 'Master' ? randInt(28, 46) : randInt(38, 64)
+    const effectif = promo.niveau === 'Doctorat' ? randInt(6, 16) : promo.niveau === 'Master' ? randInt(28, 46) : randInt(38, 64)
     // ECTS attendus à ce stade de l'année (semestre 1 validé, semestre 2 en cours)
     const ectsAnnee = 60
     const ectsAcquisAnneesPrecedentes = (promo.rang - 1) * 60

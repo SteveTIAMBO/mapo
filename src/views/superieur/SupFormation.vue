@@ -395,6 +395,10 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   background: var(--gold-light);
   color: var(--gold);
 }
+.sf-tab:not(.active) .sf-tab-niveau.n-doctorat {
+  background: rgba(124, 58, 237, 0.12);
+  color: #6D28D9;
+}
 
 /* Bandeau programme */
 .sf-prog-banner {
