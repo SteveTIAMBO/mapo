@@ -199,6 +199,10 @@
     border-radius: var(--card-radius);
     box-shadow: var(--card-shadow);
     overflow: hidden;
+    /* Espace par défaut sous la barre de KPI (sinon la barre de recherche/toolbar
+       est collée, ex. onglets Inscriptions). Les vues qui posent une marge inline
+       la conservent (l'inline l'emporte). */
+    margin-bottom: 24px;
   }
   .stat-bar-item {
     padding: 20px 24px;
