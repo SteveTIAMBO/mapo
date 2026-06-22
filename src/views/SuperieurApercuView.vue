@@ -27,9 +27,9 @@
 
         <p class="sup-lead">
           Cette édition de MAPO s'adresse aux universités, écoles supérieures et BTS.
-          Elle est conçue pour être compatible avec l'enseignement supérieur français
-          (crédits ECTS, unités d'enseignement, semestres) tout en restant adaptée au
-          contexte africain. La démonstration interactive est en préparation.
+          Elle est conçue pour le système LMD (Licence-Master-Doctorat) tel qu'appliqué
+          dans les universités d'Afrique francophone : crédits, unités d'enseignement,
+          semestres, notation sur 20 et mentions. La démonstration interactive est en préparation.
         </p>
 
         <!-- Modules à venir -->
@@ -86,7 +86,7 @@ const modules = [
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   },
   {
-    title: 'UE & crédits ECTS',
+    title: 'UE & crédits',
     desc: "Unités d'enseignement, coefficients, capitalisation et compensation.",
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
   },

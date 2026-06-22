@@ -10,7 +10,7 @@ describe('store superieur — démo école de management', () => {
   it('expose 2 programmes et 5 promotions', () => {
     expect(PROGRAMMES).toHaveLength(2)
     expect(PROMOTIONS).toHaveLength(5)
-    expect(PROGRAMMES.map((p) => p.niveau)).toEqual(['Bachelor', 'Master'])
+    expect(PROGRAMMES.map((p) => p.niveau)).toEqual(['Licence', 'Master'])
   })
 
   it('charge des étudiants, intervenants et UE', () => {

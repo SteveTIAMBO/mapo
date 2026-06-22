@@ -78,7 +78,7 @@
                 <th>Promotion</th>
                 <th class="num">UE choisies</th>
                 <th class="num">Électives</th>
-                <th class="num">ECTS</th>
+                <th class="num">crédits</th>
                 <th>Statut</th>
               </tr>
             </thead>
@@ -162,7 +162,7 @@
                 <span class="sip-ue-nom">{{ u.intitule }}</span>
                 <span class="sip-ue-tags">
                   <span class="sip-tag" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
-                  <span class="sip-ue-ects">{{ u.ects }} ECTS</span>
+                  <span class="sip-ue-ects">{{ u.ects }} crédits</span>
                 </span>
               </li>
             </ul>
@@ -176,7 +176,7 @@
                 <span class="sip-ue-nom">{{ u.intitule }}</span>
                 <span class="sip-ue-tags">
                   <span class="sip-tag t-electif">Électif</span>
-                  <span class="sip-ue-ects">{{ u.ects }} ECTS</span>
+                  <span class="sip-ue-ects">{{ u.ects }} crédits</span>
                 </span>
               </li>
             </ul>
@@ -329,7 +329,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   font-family: 'Poppins', sans-serif;
   font-size: 10.5px; font-weight: 700; margin-right: 6px;
 }
-.sip-niveau.n-bachelor { background: var(--pr-light); color: var(--pr); }
+.sip-niveau.n-licence { background: var(--pr-light); color: var(--pr); }
 .sip-niveau.n-master { background: var(--gold-light); color: var(--gold); }
 .sip-warn-text { color: var(--warn); font-weight: 700; }
 

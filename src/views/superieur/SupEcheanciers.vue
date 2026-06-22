@@ -101,7 +101,7 @@
         <div class="ec-modal-body">
           <div class="ec-form-row">
             <label class="ec-lab">Libellé</label>
-            <input v-model="form.libelle" type="text" class="ec-input" placeholder="Ex : Grille standard Bachelor" />
+            <input v-model="form.libelle" type="text" class="ec-input" placeholder="Ex : Grille standard Licence" />
           </div>
 
           <div class="ec-form-row">

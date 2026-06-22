@@ -37,7 +37,7 @@ const DEMO_ACCOUNTS = {
 const DEMO_ACCOUNTS_SUP = {
   admin: {
     uid: 'demo-sup-admin', firstName: 'Steve', lastName: 'EDUFREM',
-    displayName: 'Steve · Admin EBS',
+    displayName: 'Steve · Admin Université EDUFREM',
     role: 'admin', email: 'admin@demo.ebs',
   },
   relation_internationale: {

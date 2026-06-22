@@ -133,7 +133,7 @@ export const METHODES_PAIEMENT = [
 export const TYPES_BOURSE = {
   merite: { key: 'merite', label: 'Mérite académique' },
   social: { key: 'social', label: 'Social' },
-  interne: { key: 'interne', label: 'Bourse interne EBS' },
+  interne: { key: 'interne', label: 'Bourse interne (université)' },
   diversite: { key: 'diversite', label: 'Diversité & inclusion' },
 }
 

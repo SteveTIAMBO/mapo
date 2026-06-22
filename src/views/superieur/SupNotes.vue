@@ -25,7 +25,7 @@
         <div class="sn-kpi-value">{{ globalStats.moyenne }}<span class="sn-kpi-unit">/20</span></div>
       </div>
       <div class="sn-kpi">
-        <div class="sn-kpi-label">ECTS validés</div>
+        <div class="sn-kpi-label">crédits validés</div>
         <div class="sn-kpi-value">{{ fmt(globalStats.ectsValides) }}</div>
         <div class="sn-kpi-foot">sur {{ fmt(globalStats.ectsTotal) }} attribués</div>
       </div>
@@ -112,7 +112,7 @@
               <span class="sn-result-val">{{ releve.moyenne.toFixed(2) }}<small>/20</small></span>
             </div>
             <div class="sn-result-line">
-              <span class="sn-result-label">ECTS validés</span>
+              <span class="sn-result-label">crédits validés</span>
               <span class="sn-result-val">{{ releve.ectsValides }}<small>/{{ releve.totalEcts }}</small></span>
             </div>
             <div class="sn-result-decision">
@@ -129,7 +129,7 @@
             <tr>
               <th>UE</th>
               <th>Type</th>
-              <th class="num">ECTS</th>
+              <th class="num">crédits</th>
               <th class="num">Note</th>
               <th>Validation</th>
             </tr>
@@ -169,7 +169,7 @@
           </option>
         </select>
         <span v-if="ueSelectionnee" class="sn-ue-info">
-          {{ ueSelectionnee.intervenantNom }} · {{ ueSelectionnee.volumeHoraire }} h · {{ ueSelectionnee.ects }} ECTS
+          {{ ueSelectionnee.intervenantNom }} · {{ ueSelectionnee.volumeHoraire }} h · {{ ueSelectionnee.ects }} crédits
         </span>
       </div>
 
@@ -253,7 +253,7 @@ const globalStats = computed(() => {
   const moyenne = jurys.length
     ? (jurys.reduce((s, j) => s + j.moyennePromo * j.nbEtudiants, 0) / Math.max(nbReleves, 1))
     : 0
-  // ECTS validés/total : on s'appuie sur les relevés
+  // crédits validés/total : on s'appuie sur les relevés
   let ectsValides = 0
   let ectsTotal = 0
   for (const e of store.etudiants) {
@@ -350,7 +350,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   font-family: 'Poppins', sans-serif;
   font-size: 10.5px; font-weight: 700;
 }
-.sn-niveau.n-bachelor { background: var(--pr-light); color: var(--pr); }
+.sn-niveau.n-licence { background: var(--pr-light); color: var(--pr); }
 .sn-niveau.n-master { background: var(--gold-light); color: var(--gold); }
 .sn-promo-nom { font-weight: 600; color: var(--tx); }
 

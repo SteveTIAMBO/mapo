@@ -22,10 +22,10 @@ import { SOCLE_MODULES } from './permissions'
 // Fiche école démo utilisée en preview (et fallback).
 export const DEMO_SCHOOL_IDENTITY = {
   id: 'demo-sup',
-  nom: 'EDUFREM Business School',
-  sigle: 'EBS',
+  nom: 'Université EDUFREM',
+  sigle: 'UEDF',
   edition: 'superieur',
-  type: 'École supérieure de management',
+  type: 'Université — système LMD',
   anneeAcademique: '2025 — 2026',
   modulesActifs: null,
   logoUrl: null,

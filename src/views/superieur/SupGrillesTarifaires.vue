@@ -135,7 +135,7 @@ const totalForm = computed(() =>
   (Number(form.value.fraisScolarite) || 0) +
   (Number(form.value.fraisDivers) || 0)
 )
-function niveauClass(n) { return n === 'Master' ? 'n-master' : 'n-bachelor' }
+function niveauClass(n) { return n === 'Master' ? 'n-master' : 'n-licence' }
 
 const MOIS_NOMS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc']
 function formatMois(mois) {
@@ -238,7 +238,7 @@ function formatMois(mois) {
   border-radius: 100px;
 }
 .sg-niveau.n-master { background: rgba(184, 137, 42, 0.15); color: #B07308; }
-.sg-niveau.n-bachelor { background: rgba(var(--pr-rgb), 0.12); color: var(--pr); }
+.sg-niveau.n-licence { background: rgba(var(--pr-rgb), 0.12); color: var(--pr); }
 
 .sg-btn-edit {
   background: rgba(var(--pr-rgb), 0.08);

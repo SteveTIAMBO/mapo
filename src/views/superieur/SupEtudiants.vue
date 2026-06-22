@@ -55,7 +55,7 @@
             <th>Étudiant</th>
             <th>Programme</th>
             <th>Promotion</th>
-            <th class="num">Progression ECTS</th>
+            <th class="num">Progression crédits</th>
             <th class="num">Moyenne</th>
             <th>Statut</th>
             <th class="se-actions-head"></th>
@@ -149,11 +149,11 @@
             </div>
             <div class="se-form-row">
               <div class="se-field">
-                <label class="se-form-label">ECTS validés</label>
+                <label class="se-form-label">crédits validés</label>
                 <input v-model.number="form.ectsValides" type="number" min="0" class="se-input" />
               </div>
               <div class="se-field">
-                <label class="se-form-label">ECTS requis</label>
+                <label class="se-form-label">crédits requis</label>
                 <input v-model.number="form.ectsRequis" type="number" min="0" class="se-input" />
               </div>
               <div class="se-field">
@@ -450,7 +450,7 @@ function askDelete(e) {
   font-weight: 700;
   margin-right: 6px;
 }
-.se-niveau.n-bachelor {
+.se-niveau.n-licence {
   background: var(--pr-light);
   color: var(--pr);
 }

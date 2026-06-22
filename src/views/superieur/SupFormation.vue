@@ -2,7 +2,7 @@
   <div class="sf">
     <div class="sf-intro">
       <h1 class="sf-h1">Offre de formation</h1>
-      <p class="sf-sub">Unités d'enseignement, crédits ECTS et cours électifs par programme</p>
+      <p class="sf-sub">Unités d'enseignement, crédits et cours électifs par programme</p>
     </div>
 
     <!-- Sélecteur de programme -->
@@ -27,7 +27,7 @@
           <div class="sf-prog-nom">{{ activeProgramme.nom }}</div>
           <div class="sf-prog-meta">
             {{ activeProgramme.dureeAns }} ans · {{ activeProgramme.annees.length }} années ·
-            {{ activeProgramme.ectsTotal }} crédits ECTS au total
+            {{ activeProgramme.ectsTotal }} crédits au total
           </div>
         </div>
         <div class="sf-prog-legend">
@@ -71,7 +71,7 @@
               <span class="sf-sem-totals">
                 {{ sem.ue.length }} UE
                 <span class="sf-sem-dot">•</span>
-                <strong>{{ sem.totalEcts }} ECTS</strong>
+                <strong>{{ sem.totalEcts }} crédits</strong>
                 <span class="sf-sem-dot">•</span>
                 {{ sem.totalHeures }} h
               </span>
@@ -88,7 +88,7 @@
                   <th>Type</th>
                   <th>Intervenant</th>
                   <th class="num">Heures</th>
-                  <th class="num">ECTS</th>
+                  <th class="num">crédits</th>
                   <th class="sf-actions-head"></th>
                 </tr>
               </thead>
@@ -204,7 +204,7 @@
             </div>
             <div class="sf-form-row">
               <div class="sf-field">
-                <label class="sf-form-label">Crédits ECTS</label>
+                <label class="sf-form-label">Crédits</label>
                 <input v-model.number="form.ects" type="number" min="1" max="12" class="sf-input" required />
               </div>
               <div class="sf-field">
@@ -310,7 +310,7 @@ function openEdit(u, annee, sem) {
 function closeModal() { modalOpen.value = false; editing.value = null }
 function submit() {
   if (!form.intitule.trim()) { formError.value = "L'intitulé est obligatoire."; return }
-  if (!form.ects || form.ects < 1) { formError.value = 'Les crédits ECTS sont obligatoires.'; return }
+  if (!form.ects || form.ects < 1) { formError.value = 'Les crédits sont obligatoires.'; return }
   const payload = { ...form }
   if (editing.value) store.updateUe(editing.value.id, payload)
   else store.addUe(payload)
@@ -387,7 +387,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   font-weight: 700;
   background: rgba(255, 255, 255, 0.18);
 }
-.sf-tab:not(.active) .sf-tab-niveau.n-bachelor {
+.sf-tab:not(.active) .sf-tab-niveau.n-licence {
   background: var(--pr-light);
   color: var(--pr);
 }

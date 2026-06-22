@@ -25,7 +25,7 @@
       <div class="sd-kpi">
         <div class="sd-kpi-label">Unités d'enseignement</div>
         <div class="sd-kpi-value">{{ s.nbUE }}</div>
-        <div class="sd-kpi-foot">{{ fmt(s.totalEctsCatalogue) }} crédits ECTS au catalogue</div>
+        <div class="sd-kpi-foot">{{ fmt(s.totalEctsCatalogue) }} crédits au catalogue</div>
       </div>
       <div class="sd-kpi">
         <div class="sd-kpi-label">Volume horaire</div>
@@ -76,13 +76,13 @@
                 transform="rotate(-90 60 60)"
               />
               <text x="60" y="56" text-anchor="middle" class="sd-ring-num">{{ s.tauxProgressionEcts }}%</text>
-              <text x="60" y="74" text-anchor="middle" class="sd-ring-cap">ECTS acquis</text>
+              <text x="60" y="74" text-anchor="middle" class="sd-ring-cap">crédits acquis</text>
             </svg>
           </div>
           <div class="sd-progress-text">
             <p>
               Les étudiants ont validé en moyenne <strong>{{ s.tauxProgressionEcts }}%</strong>
-              des crédits ECTS attendus à ce stade de l'année.
+              des crédits attendus à ce stade de l'année.
             </p>
             <p class="sd-progress-note">
               Le premier semestre est clôturé ; le second est en cours.
@@ -316,7 +316,7 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   font-weight: 700;
   margin-right: 8px;
 }
-.sd-prog-niveau.n-bachelor {
+.sd-prog-niveau.n-licence {
   background: var(--pr-light);
   color: var(--pr);
 }

@@ -45,9 +45,9 @@ function deleteOne(key, list, docId) {
  * Store "superieur" de MAPO
  * -------------------------
  * Alimente la démonstration de l'édition Enseignement Supérieur.
- * Établissement de démonstration : une école supérieure de management,
- * compatible avec le cadre de l'enseignement supérieur français
- * (semestres, unités d'enseignement, crédits ECTS, cours électifs).
+ * Établissement de démonstration : une université africaine au système LMD
+ * (Licence / Master / Doctorat), tel que pratiqué au Cameroun / dans la zone
+ * CEMAC (semestres, unités d'enseignement, crédits, mentions sur 20).
  *
  * Les données sont générées de façon DÉTERMINISTE (graine fixe) :
  * les chiffres sont stables d'un chargement à l'autre — indispensable
@@ -56,9 +56,9 @@ function deleteOne(key, list, docId) {
 
 // ── Établissement de démonstration ──
 export const ECOLE = {
-  nom: 'EDUFREM Business School',
-  sigle: 'EBS',
-  type: 'École supérieure de management',
+  nom: 'Université EDUFREM',
+  sigle: 'UEDF',
+  type: 'Université — système LMD',
   anneeAcademique: '2025 — 2026',
 }
 
@@ -66,19 +66,19 @@ export const ECOLE = {
 export const PROGRAMMES = [
   {
     id: 'bachelor-mgt',
-    nom: 'Bachelor Management',
-    niveau: 'Bachelor',
+    nom: 'Licence en Sciences de Gestion',
+    niveau: 'Licence',
     dureeAns: 3,
     ectsTotal: 180,
     annees: [
-      { id: 'b1', nom: 'Bachelor 1', rang: 1, semestres: ['S1', 'S2'] },
-      { id: 'b2', nom: 'Bachelor 2', rang: 2, semestres: ['S3', 'S4'] },
-      { id: 'b3', nom: 'Bachelor 3', rang: 3, semestres: ['S5', 'S6'] },
+      { id: 'b1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'b2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
+      { id: 'b3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
     ],
   },
   {
     id: 'msc-mgt',
-    nom: 'MSc Management & Stratégie',
+    nom: 'Master en Management et Stratégie',
     niveau: 'Master',
     dureeAns: 2,
     ectsTotal: 120,
@@ -325,7 +325,7 @@ function generateEtudiants() {
 
       list.push({
         id: `etu-${String(counter).padStart(4, '0')}`,
-        matricule: `EBS${promo.rang}${String(counter).padStart(4, '0')}`,
+        matricule: `UEDF${promo.rang}${String(counter).padStart(4, '0')}`,
         prenom,
         nom,
         nomComplet: `${nom.toUpperCase()} ${prenom}`,
@@ -937,7 +937,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     const ectsRequis = Number(data.ectsRequis) || (promo ? promo.rang * 60 : 60)
     const etu = {
       id: nextId('etu', etudiants),
-      matricule: (data.matricule || '').trim() || `EBS${promo?.rang || 0}${String(Date.now()).slice(-5)}`,
+      matricule: (data.matricule || '').trim() || `UEDF${promo?.rang || 0}${String(Date.now()).slice(-5)}`,
       prenom: (data.prenom || '').trim(),
       nom: (data.nom || '').trim(),
       nomComplet: `${(data.nom || '').trim().toUpperCase()} ${(data.prenom || '').trim()}`.trim(),
