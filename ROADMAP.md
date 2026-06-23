@@ -13,22 +13,19 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 
 ---
 
-## P0 — Rendre les 3 éditions utilisables (FOCUS ACTUEL)
+## P0 — Rendre les 3 éditions utilisables ✅ ATTEINT (2026-06-22)
 
-> ⚠️ Constat code : il n'existe que 2 éditions (`secondaire` qui inclut « Secondaire &
-> Primaire », et `superieur`). **Aucune édition `primaire` distincte.** Le classeur Excel
-> d'onboarding **accompagne chaque édition** (il n'a de sens que si l'édition existe) —
-> ce n'est PAS une étape séparée en amont.
+> 🎉 Les 3 éditions sont à beta utilisable. Le focus bascule sur P1 (consolider) puis P2.
 
-1. **⭐ Édition PRIMAIRE distincte (LA priorité)** — créer une vraie édition `primaire`
-   (séparée du secondaire) : terminologie (écolier/maître/…), structure SIL → CM2
-   (+ équiv. anglophone Class 1-6), matières du primaire, bulletin & moyennes adaptés,
-   données de démo. **→ PUIS son classeur d'onboarding Excel.** → **PROCHAINE ÉTAPE**
-2. **Édition SECONDAIRE — finaliser** (la plus avancée ; l'édition existe). Vérifier le
-   parcours complet (config → personnel → élèves → notes → bulletins → examens) +
-   **classeur d'onboarding Secondaire** (prêt rapidement, l'importeur colle déjà).
-3. **Édition SUPÉRIEUR — amener à beta** : logique LMD (promotions, UE, crédits,
-   semestres), IRIIG pilote + **classeur d'onboarding adapté** (promotions/UE).
+1. **✅ Édition PRIMAIRE distincte** — édition `primaire` séparée : terminologie
+   (écolier/maître/bulletin), structure SIL → CM2, 10 disciplines APC par domaine,
+   bulletin **trimestriel A/ECA/NA** + mode /20 (choix à la création), démo cohérente
+   (254 écoliers, notes seedées), emploi du temps, **classeur d'onboarding** Primaire.
+2. **✅ Édition SECONDAIRE — finalisée** : parcours complet vérifié (effectifs synchronisés,
+   bulletins null-safe, examens protégés, pas de cruft) + classeur d'onboarding.
+3. **✅ Édition SUPÉRIEUR — beta** : **système LMD africain** (Licence/Master/**Doctorat**),
+   **crédits** + notation /20 + mentions TB/B/AB/P, **FCFA**, **université multi-facultés**
+   (Gestion + Droit + École doctorale), démo = Université EDUFREM.
 
 ## P1 — Consolider l'existant déjà déployé (stabiliser, pas étendre)
 
