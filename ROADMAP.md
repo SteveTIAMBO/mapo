@@ -40,7 +40,18 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 - **Copilote MIAPO** ✅ déployé → harmoniser les effectifs de classes de la démo (page
   Classes affiche encore 915).
 
-## ⭐ Fonctionnalités annoncées « Bientôt » sur edufrem.com — PROMESSES PUBLIQUES (à livrer vite)
+## ⭐ Feuille de route MAPO annoncée PUBLIQUEMENT (badges « À venir » / « Bientôt ») — à livrer vite
+
+> **Source de vérité = la page ERP `edufrem.com/services/erp-scolaire/`, section « CE QUI ARRIVE — La feuille de route, au plus près du terrain ».** Ces 4 briques portent un badge **« À VENIR »** public → priorité HAUTE (déployer vite). Relevé 2026-06-22. (Steve : « va voir la page ERP pour les fonctionnalités bientôt sur MAPO ».)
+>
+> 1. **Paiement Mobile Money** — « Orange Money, MTN MoMo, Wave et Moov directement dans le module Finance. Le vrai levier du recouvrement en Afrique. » → = [[project_cinetpay_paiement]] (proxy existe) ; ⚠️ BLOQUÉ sur compte marchand (action Steve).
+> 2. **Suivi du décrochage** — « Détecter tôt les élèves qui décrochent à partir de l'assiduité et des résultats, et alerter avant qu'il ne soit trop tard. » → **BUILDABLE TOUT DE SUITE** (données présences + notes déjà en base, pur front) = copilote directeur proactif. **← meilleur 1er livrable (dans mon contrôle).**
+> 3. **Diplômes vérifiables** — « À partir de 2027, émission native de diplômes signés cryptographiquement, déposés dans le coffre-fort EDUFREM de chaque diplômé. » → le moat (W3C/EBSI, PAS blockchain). Plus tard (2027).
+> 4. **Robustesse renforcée** — « Synchronisation par lots, mode ultra-léger en données et résilience aux coupures de courant et de réseau. » → infra offline-first.
+
+---
+
+## (Contexte écosystème) Autres « Bientôt » du site edufrem.com — PROMESSES PUBLIQUES
 
 > Relevé 2026-06-22 sur edufrem.com (menu Services). Portent un badge **« Bientôt »** PUBLIC
 > → priorité HAUTE (à traiter avant le reste de P2). Archi produit EDUFREM : **MiAPO** (IA
