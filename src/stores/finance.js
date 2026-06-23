@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, reactive } from 'vue'
-import { PROGRAMMES, PROMOTIONS } from './superieur'
+import { PROGRAMMES, PROMOTIONS, useSuperieurStore } from './superieur'
 import * as supSync from '../utils/supSync'
 
 /**
@@ -76,8 +76,8 @@ function plusJours(dateStr, n) {
   return d.toISOString().slice(0, 10)
 }
 
-// ── Devise (Euro pour l'école de management, simple à modifier) ───
-export const DEVISE = { code: 'EUR', symbole: '€' }
+// ── Devise : FCFA (XAF) — université africaine. fmtMontant formate via DEVISE.code. ───
+export const DEVISE = { code: 'XAF', symbole: 'FCFA' }
 export function fmtMontant(n) {
   if (n === null || n === undefined || isNaN(n)) return '—'
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: DEVISE.code, maximumFractionDigits: 0 }).format(n)
@@ -161,9 +161,12 @@ export const STATUTS_CONVENTION = {
 function loadEtudiantsSnapshot() {
   try {
     const raw = localStorage.getItem('sup_etudiants_v1')
-    if (raw) return JSON.parse(raw)
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a }
   } catch (e) { /* silent */ }
-  return []
+  // Repli : lire le store superieur EN MÉMOIRE quand le snapshot localStorage est
+  // absent (démo fraîche : loadEntity ne persiste pas le fallback généré) ou vidé
+  // (quota saturé). Évite une finance à 0 alors que les étudiants existent.
+  try { return useSuperieurStore().etudiants || [] } catch (e) { return [] }
 }
 
 // ── Génération des grilles tarifaires ──────────────────────────────
