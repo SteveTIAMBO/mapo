@@ -4,11 +4,17 @@
     <aside class="volet">
       <div class="volet-brand">
         <div class="brand-ic"><Sparkles :size="18" /></div>
-        <div class="brand-tx"><strong>MIAPO+</strong><small>Suivi & cours à la maison</small></div>
+        <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
       </div>
 
-      <!-- Sélecteur d'enfant -->
-      <div v-if="enfants.length" class="volet-child">
+      <!-- Mode : un parent qui suit ses enfants, ou l'apprenant lui-même -->
+      <div class="volet-mode">
+        <button type="button" :class="{ on: !isApprenant }" @click="setMode('parent')">Parent</button>
+        <button type="button" :class="{ on: isApprenant }" @click="setMode('apprenant')">Apprenant</button>
+      </div>
+
+      <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
+      <div v-if="enfants.length && !isApprenant" class="volet-child">
         <select v-if="enfants.length > 1" v-model="activeId" class="child-select">
           <option v-for="e in enfants" :key="e.id" :value="e.id">{{ e.firstName }} · {{ e.niveau }}</option>
         </select>
@@ -29,15 +35,15 @@
       <!-- Aucun enfant : accueil d'amorçage -->
       <div v-if="!enfants.length" class="card intro-card">
         <div class="intro-icon"><Sparkles :size="26" /></div>
-        <h2>Confiez le suivi de votre enfant à MIAPO</h2>
-        <p>Ajoutez votre enfant, saisissez ses notes (ou photographiez ses copies) : MIAPO repère ses points faibles, lui propose des révisions adaptées et l'accompagne dans son orientation.</p>
-        <button class="btn btn-primary" @click="openAdd"><Plus :size="16" /> <span>Ajouter mon enfant</span></button>
+        <h2>{{ L.introTitle }}</h2>
+        <p>{{ L.introText }}</p>
+        <button class="btn btn-primary" @click="openAdd"><Plus :size="16" /> <span>{{ L.introBtn }}</span></button>
       </div>
 
       <template v-else-if="activeEnfant">
         <header class="main-head">
           <h1>{{ currentSection.label }}</h1>
-          <button class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
+          <button v-if="!isApprenant" class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
         </header>
 
         <!-- ========== ACCUEIL ========== -->
@@ -70,7 +76,7 @@
         <!-- ========== MES ENFANTS ========== -->
         <section v-else-if="section === 'enfants'" class="sec">
           <div class="card">
-            <div class="card-head"><Users :size="18" /><h3>Profils</h3></div>
+            <div class="card-head"><Users :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profils' }}</h3></div>
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
                 <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'">{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</span>
@@ -78,12 +84,12 @@
                 <Trash2 v-if="e.id === activeId" :size="16" class="er-del" @click.stop="confirmRemove" />
               </button>
             </div>
-            <button class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
+            <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
           </div>
 
           <!-- Notes -->
           <div class="card">
-            <div class="card-head"><FileText :size="18" /><h3>Notes de {{ activeEnfant.firstName }}</h3></div>
+            <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? 'Tes notes' : 'Notes de ' + activeEnfant.firstName }}</h3></div>
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}</span>
@@ -220,7 +226,7 @@
     <!-- Modal ajout enfant -->
     <div v-if="showAdd" class="modal-overlay" @click.self="showAdd = false">
       <div class="modal-card">
-        <div class="modal-header"><h3>Ajouter mon enfant</h3><button class="btn btn-ghost btn-sm" @click="showAdd = false"><X :size="18" /></button></div>
+        <div class="modal-header"><h3>{{ isApprenant ? 'Créer mon profil' : 'Ajouter mon enfant' }}</h3><button class="btn btn-ghost btn-sm" @click="showAdd = false"><X :size="18" /></button></div>
         <div class="modal-body">
           <div class="form-row">
             <div class="form-group"><label class="form-label">Prénom</label><input v-model="form.firstName" class="input" placeholder="Prénom" /></div>
@@ -259,16 +265,34 @@ const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
 const enfants = computed(() => store.enfants)
 
-const SECTIONS = [
+// Mode apprenant : MIAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
+// profil unique = lui) plutôt que par un parent qui suit ses enfants. Même moteur.
+const isApprenant = computed(() => store.mode === 'apprenant')
+function setMode(m) { store.setMode(m) }
+
+const SECTIONS = computed(() => [
   { key: 'accueil', label: 'Accueil', icon: Home },
-  { key: 'enfants', label: 'Mes enfants', icon: Users },
+  { key: 'enfants', label: isApprenant.value ? 'Mon profil' : 'Mes enfants', icon: isApprenant.value ? Target : Users },
   { key: 'tuteur', label: 'Tuteur', icon: GraduationCap },
   { key: 'progression', label: 'Progression', icon: TrendingUp },
   { key: 'orientation', label: 'Orientation', icon: Compass },
   { key: 'abonnement', label: 'Abonnement', icon: CreditCard },
-]
+])
 const section = ref('accueil')
-const currentSection = computed(() => SECTIONS.find((s) => s.key === section.value) || SECTIONS[0])
+const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
+
+// Libellés selon le mode (parent vs apprenant)
+const L = computed(() => isApprenant.value ? {
+  brandSub: 'Ton coach de révision',
+  introTitle: 'Pilote ton apprentissage avec MIAPO',
+  introText: "Saisis tes notes (ou photographie tes copies) : MIAPO repère tes points faibles, te propose des révisions adaptées et t'accompagne dans ton orientation.",
+  introBtn: 'Créer mon profil',
+} : {
+  brandSub: 'Suivi & cours à la maison',
+  introTitle: 'Confiez le suivi de votre enfant à MIAPO',
+  introText: "Ajoutez votre enfant, saisissez ses notes (ou photographiez ses copies) : MIAPO repère ses points faibles, lui propose des révisions adaptées et l'accompagne dans son orientation.",
+  introBtn: 'Ajouter mon enfant',
+})
 
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
@@ -307,12 +331,19 @@ const progression = computed(() => {
 const insight = computed(() => {
   const e = activeEnfant.value
   if (!e) return ''
-  if (!e.notes.length) return `Saisissez les notes de ${e.firstName} (ou photographiez ses copies) : MIAPO repèrera ses points faibles et lui proposera des révisions adaptées à la ${e.niveau}.`
+  const ap = isApprenant.value
+  if (!e.notes.length) return ap
+    ? `Saisis tes notes (ou photographie tes copies) : MIAPO repèrera tes points faibles et te proposera des révisions adaptées à la ${e.niveau}.`
+    : `Saisissez les notes de ${e.firstName} (ou photographiez ses copies) : MIAPO repèrera ses points faibles et lui proposera des révisions adaptées à la ${e.niveau}.`
   const f = faiblesses.value
-  if (!f.length) return `Bon niveau d'ensemble pour ${e.firstName} ! Continuez les révisions régulières pour consolider.`
+  if (!f.length) return ap
+    ? `Bon niveau d'ensemble ! Continue les révisions régulières pour consolider.`
+    : `Bon niveau d'ensemble pour ${e.firstName} ! Continuez les révisions régulières pour consolider.`
   const noms = f.slice(0, 2).map((x) => x.matiere)
   const m = noms.length === 2 ? `${noms[0]} et ${noms[1]}` : noms[0]
-  return `MIAPO a repéré des difficultés en ${m}. Lancez une révision ciblée — ${e.firstName} progressera plus vite sur ses points faibles.`
+  return ap
+    ? `MIAPO a repéré des difficultés en ${m}. Lance une révision ciblée — tu progresseras plus vite sur tes points faibles.`
+    : `MIAPO a repéré des difficultés en ${m}. Lancez une révision ciblée — ${e.firstName} progressera plus vite sur ses points faibles.`
 })
 
 function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM' }; showAdd.value = true }
@@ -320,7 +351,7 @@ function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)
   showAdd.value = false
-  section.value = 'enfants'
+  section.value = isApprenant.value ? 'accueil' : 'enfants'
 }
 function addNote() {
   if (!canAddNote.value || !activeEnfant.value) return
@@ -403,6 +434,9 @@ onMounted(async () => {
 .brand-tx small { font-size: 11px; color: var(--tx3, #6b7280); }
 
 .volet-child { padding: 0 4px; }
+.volet-mode { display: flex; gap: 4px; padding: 3px; background: var(--input-bg, #eef1f4); border-radius: 10px; }
+.volet-mode button { flex: 1; padding: 7px 8px; border: none; background: none; border-radius: 8px; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--tx3, #6b7280); cursor: pointer; transition: background .15s, color .15s; }
+.volet-mode button.on { background: #fff; color: var(--pr); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
 .child-select { width: 100%; padding: 9px 11px; border: 1px solid var(--bd); border-radius: 10px; font-family: inherit; font-size: 13.5px; background: #fff; color: var(--tx); }
 .child-single { font-size: 14px; font-weight: 600; color: var(--tx); padding: 4px 6px; } .child-single span { font-size: 12px; font-weight: 500; color: var(--tx3); background: var(--input-bg, #eef1f4); padding: 2px 8px; border-radius: 20px; margin-left: 4px; }
 

@@ -52,7 +52,22 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   const owner = computed(() => authStore.userProfile?.email || authStore.userProfile?.phone || 'demo-parent')
 
+  // ── Mode d'usage de MIAPO+ (multi-personas, 1er pas) ──────────────────
+  // 'parent'    : un parent suit son/ses enfant(s) (cadre par défaut).
+  // 'apprenant' : l'apprenant (élève/étudiant) pilote SON propre apprentissage.
+  // Même moteur, même profil — seul le point de vue (langage, sujet) change.
+  const MODE_KEY = (o) => `mapo_miapo_mode_${o || 'demo'}`
+  const mode = ref('parent')
+  function setMode(m) {
+    mode.value = m === 'apprenant' ? 'apprenant' : 'parent'
+    try { localStorage.setItem(MODE_KEY(owner.value), mode.value) } catch { /* quota : on garde en mémoire */ }
+  }
+  function loadMode() {
+    try { mode.value = localStorage.getItem(MODE_KEY(owner.value)) === 'apprenant' ? 'apprenant' : 'parent' } catch { mode.value = 'parent' }
+  }
+
   function load() {
+    loadMode()
     try {
       const raw = localStorage.getItem(KEY(owner.value))
       enfants.value = raw ? JSON.parse(raw) : []
@@ -180,7 +195,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   }
 
   return {
-    enfants, load, hydrate,
+    enfants, mode, setMode, load, hydrate,
     addEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
     setComp6c, getComp6c,
