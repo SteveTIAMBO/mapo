@@ -40,6 +40,23 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 - **Copilote MIAPO** ✅ déployé → harmoniser les effectifs de classes de la démo (page
   Classes affiche encore 915).
 
+## ⭐ Fonctionnalités annoncées « Bientôt » sur edufrem.com — PROMESSES PUBLIQUES (à livrer vite)
+
+> Relevé 2026-06-22 sur edufrem.com (menu Services). Portent un badge **« Bientôt »** PUBLIC
+> → priorité HAUTE (à traiter avant le reste de P2). Archi produit EDUFREM : **MiAPO** (IA
+> éducative) · **MAPO** (ERP) · **NOVA** (pilotage) · **ARIS** (financement) · **EDU** (crédit éducatif).
+
+1. **MiAPO+, le tuteur de l'enfant** (Familles — « Révisions et orientation par l'IA »).
+   → = le MIAPO+ B2C de MAPO, **DÉJÀ largement construit** (tuteur quiz, orientation 6C, lecture
+   de copies, mode apprenant). Le plus proche du « live » → finaliser/polir et basculer le badge.
+2. **Suite « Diplômes vérifiables / infalsifiables »** (le moat — crédentiels W3C/EBSI, PAS blockchain) :
+   - **Émettre des diplômes** (Écoles — « infalsifiables, gratuit ») → module MAPO naturel (l'école a les données).
+   - **Coffre-fort à diplômes** (Familles — « retrouver et partager ses diplômes ») → portefeuille étudiant.
+   - **Vérifier un diplôme** (Entreprises « authentifier un candidat » + Institutions « visas & équivalences ») → page de vérification publique.
+   → MVP déployable = **Émettre (MAPO) + Vérifier (page publique)** ; Coffre-fort ensuite.
+3. **Transfert scolarité** (Familles — « scolarité, fournitures, cantine ») → produit fintech **EDU**
+   (crédit éducatif) ; lié à CinetPay/Stripe, backend + plus lourd, probablement hors MAPO core.
+
 ## P2 — Incréments APRÈS les 3 betas (parking — ne pas démarrer maintenant)
 
 - MIAPO+ **personas** : mode apprenant (élève/étudiant autonome) vs parent.
