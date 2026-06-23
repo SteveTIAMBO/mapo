@@ -245,6 +245,12 @@ const routes = [
         meta: { title: 'Suivi des révisions' }
       },
       {
+        path: 'suivi-decrochage',
+        name: 'DecrochageSuivi',
+        component: () => import('../views/DecrochageSuiviView.vue'),
+        meta: { title: 'Suivi du décrochage' }
+      },
+      {
         path: 'discipline',
         name: 'Discipline',
         component: () => import('../views/DisciplineView.vue'),

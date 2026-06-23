@@ -111,7 +111,8 @@ import {
   Wallet,
   Bell,
   Award,
-  Sparkles
+  Sparkles,
+  TrendingDown
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -181,6 +182,7 @@ const STAFF_NAV_ITEMS = [
   { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'Emploi du temps' },
   { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'Devoirs' },
   { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'Suivi des révisions' },
+  { key: 'notes', to: '/suivi-decrochage', icon: TrendingDown, label: 'Suivi du décrochage', dirOnly: true },
   { key: 'discipline', to: '/discipline', icon: Shield, label: 'Discipline' },
   { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'Messagerie' },
   { key: 'messagerie', to: '/alertes', icon: Bell, label: 'Alertes parents' },
