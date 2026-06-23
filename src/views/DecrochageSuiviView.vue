@@ -93,11 +93,11 @@ const classFilter = ref('')
 const loaded = ref(false)
 
 // Seuils de détection
-const ABS_RATE_RISK = 0.18   // ≥ 18 % d'absences = assiduité préoccupante
-const ABS_COUNT_RISK = 5     // ou ≥ 5 absences absolues
-const ABS_RATE_HIGH = 0.32   // ≥ 32 % = sévère
-const WEAK_NOTE = 10         // moyenne < 10 = résultats faibles
-const VERY_WEAK = 8          // moyenne < 8 = très faible
+const ABS_RATE_RISK = 0.15   // ≥ 15 % d'absences = assiduité préoccupante (1er signal de décrochage)
+const ABS_COUNT_RISK = 4     // ou ≥ 4 absences absolues
+const ABS_RATE_HIGH = 0.28   // ≥ 28 % = sévère
+const WEAK_NOTE = 8          // moyenne < 8 = résultats en décrochage (sévère, pas juste « en difficulté »)
+const VERY_WEAK = 6          // moyenne < 6 = très faible
 const MAX_ROWS = 80
 
 const inscrits = computed(() => elevesStore.eleves.filter((e) => e.status === 'inscrit'))
@@ -162,9 +162,10 @@ function riskFor(eleve) {
   }
   if (!facteurs.length) return null
 
-  const niveau = (facteurs.length >= 2 || tauxAbs >= ABS_RATE_HIGH || (assiduiteFaible && moyenne !== null && moyenne < VERY_WEAK))
+  const niveau = (facteurs.length >= 2 || tauxAbs >= ABS_RATE_HIGH || (moyenne !== null && moyenne < VERY_WEAK))
     ? 'eleve' : 'moyen'
-  const score = Math.round(tauxAbs * 100) + (moyenne !== null ? (20 - moyenne) * 3 : 0) + facteurs.length * 12
+  // L'assiduité (1er signal de décrochage) pèse le plus dans le tri.
+  const score = Math.round(tauxAbs * 160) + (moyenne !== null && moyenne < WEAK_NOTE ? (WEAK_NOTE - moyenne) * 6 : 0) + facteurs.length * 14
   return {
     id: eleve.id, firstName: eleve.firstName, lastName: eleve.lastName,
     className: eleve.className, gender: eleve.gender, initials: initials(eleve),
