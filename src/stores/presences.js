@@ -18,7 +18,7 @@ export const ATTENDANCE_STATUS = [
 
 const DEMO_PRESENCES_KEY = 'mapo_demo_presences'
 const DEMO_PRESENCES_VERSION_KEY = 'mapo_demo_presences_version'
-const DEMO_PRESENCES_VERSION = 5 // v5: 20 jours ouvrés + stats annuelles
+const DEMO_PRESENCES_VERSION = 6 // v6: reseed (cohérence avec les élèves démo actuels — alimente le Suivi du décrochage)
 
 // Générer des données de présence de démo pour les 20 derniers jours ouvrés (4 semaines)
 function generateDemoPresences(eleves) {
