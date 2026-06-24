@@ -1014,11 +1014,18 @@ const teacherSubjects = computed(() => {
   return record?.subjects || []
 })
 
+// Correspondance tolérante (accents / casse) entre le nom de matière d'un
+// enseignant et celui configuré sur la classe : évite qu'un simple écart
+// d'accent (« Mathématiques » vs « Mathematiques ») n'empêche la saisie de notes.
+function sameSubject(a, b) {
+  return (a || '').toString().trim().localeCompare((b || '').toString().trim(), 'fr', { sensitivity: 'base' }) === 0
+}
+
 // If enseignant, filter to only their subjects. Otherwise show all.
 const classSubjects = computed(() => {
   const all = allClassSubjects.value
   if (teacherSubjects.value.length > 0) {
-    return all.filter(s => teacherSubjects.value.includes(s))
+    return all.filter(s => teacherSubjects.value.some(ts => sameSubject(ts, s)))
   }
   return all
 })
@@ -1031,7 +1038,7 @@ const visibleSubjects = computed(() => classSubjects.value)
 function canEditSubject(subject) {
   if (isDirecteurOnly.value) return false
   if (teacherSubjects.value.length > 0) {
-    return teacherSubjects.value.includes(subject)
+    return teacherSubjects.value.some(ts => sameSubject(ts, subject))
   }
   return false
 }
