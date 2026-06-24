@@ -112,7 +112,8 @@ import {
   Bell,
   Award,
   Sparkles,
-  TrendingDown
+  TrendingDown,
+  BadgeCheck
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -178,6 +179,7 @@ const STAFF_NAV_ITEMS = [
   { key: 'matieres', to: '/matieres', icon: Library, label: 'Matières', dirOnly: true },
   { key: 'notes', to: '/notes', icon: FileText, label: 'Notes & Évaluations' },
   { key: 'notes', to: '/examens', icon: Award, label: 'Examens', dirOnly: true },
+  { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'Diplômes', dirOnly: true },
   { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'Présences' },
   { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'Emploi du temps' },
   { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'Devoirs' },

@@ -12,6 +12,7 @@ const ROUTE_PERMISSION_MAP = {
   'matieres': 'matieres',
   'notes': 'notes',
   'examens': 'notes',
+  'diplomes': 'notes',
   'presences': 'presences',
   'emploi-du-temps': 'emploi-du-temps',
   'devoirs': 'devoirs',
@@ -42,6 +43,12 @@ const routes = [
     name: 'Superieur',
     component: () => import('../views/SuperieurView.vue'),
     meta: { requiresAuth: false, title: 'Enseignement Supérieur' }
+  },
+  {
+    path: '/verifier',
+    name: 'VerifierDiplome',
+    component: () => import('../views/VerifierDiplomeView.vue'),
+    meta: { requiresAuth: false, title: 'Vérifier un diplôme' }
   },
   {
     path: '/compte-non-configure',
@@ -221,6 +228,12 @@ const routes = [
         meta: { title: 'Examens nationaux' }
       },
       {
+        path: 'diplomes',
+        name: 'Diplomes',
+        component: () => import('../views/DiplomesView.vue'),
+        meta: { title: 'Diplômes vérifiables' }
+      },
+      {
         path: 'presences',
         name: 'Presences',
         component: () => import('../views/PresencesView.vue'),
@@ -398,7 +411,7 @@ router.beforeEach(async (to) => {
   // sur une école qui doit servir la version supérieur.
   if (tenant.mode === 'school' && editionStore.isSuperieur) {
     const allowedInSuperieurTenant = new Set([
-      'Superieur', 'CompteNonConfigure',
+      'Superieur', 'CompteNonConfigure', 'VerifierDiplome',
     ])
     if (!allowedInSuperieurTenant.has(to.name)) {
       return { name: 'Superieur' }
