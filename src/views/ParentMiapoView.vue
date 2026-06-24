@@ -211,13 +211,13 @@
           <div class="card abo-card">
             <div class="abo-ic"><Sparkles :size="24" /></div>
             <h2>MIAPO+ — l'accompagnement complet</h2>
-            <p>Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO accompagne {{ activeEnfant.firstName }} comme un professeur particulier, à une fraction du prix.</p>
+            <p>Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO {{ isApprenant ? "t'accompagne" : 'accompagne ' + activeEnfant.firstName }} comme un professeur particulier, à une fraction du prix.</p>
             <ul class="abo-feats">
               <li><Check :size="15" /> Révisions adaptées et progressives</li>
               <li><Check :size="15" /> Suivi de la progression dans la durée</li>
               <li><Check :size="15" /> Orientation argumentée (Cameroun & international)</li>
             </ul>
-            <p class="muted small">Le paiement en ligne arrive bientôt. En attendant, votre accès est actif.</p>
+            <p class="muted small">{{ isApprenant ? 'Ton accès MIAPO+ est actif — profites-en pour progresser.' : 'Votre accès MIAPO+ est actif — profitez-en pour accompagner ' + activeEnfant.firstName + '.' }}</p>
           </div>
         </section>
       </template>

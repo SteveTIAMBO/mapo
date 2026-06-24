@@ -54,6 +54,10 @@
         <h3>Où viser ?</h3>
       </div>
       <p class="muted small">Les pistes seront calées sur les filières, écoles et débouchés <strong>réels</strong> de la destination choisie.</p>
+      <div v-if="!paysCouvert" class="pays-note">
+        <Info :size="16" />
+        <p>Le référentiel d'orientation propre au pays de {{ enfant.firstName }} (<strong>{{ paysEnfantLabel || 'non précisé' }}</strong>) n'est pas encore disponible. En attendant, MIAPO s'appuie sur des repères <strong>régionaux (Cameroun)</strong> et <strong>internationaux (France)</strong> pour situer filières et débouchés.</p>
+      </div>
       <div class="pays-pick">
         <button v-for="p in PAYS_ORIENTATION" :key="p.code" class="pays-btn" :class="{ active: pays === p.code }" :disabled="!hasEval" @click="selectPays(p.code)">
           <Globe v-if="p.code === 'france'" :size="16" /><MapPin v-else :size="16" />
@@ -126,9 +130,9 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientation'
-import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders } from 'lucide-vue-next'
+import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 
@@ -162,7 +166,14 @@ function saveEval() {
 }
 
 // ── Destination ───────────────────────────────────────────────────────
-function defaultPays() { return 'cameroun' }
+// Code pays de l'enfant (CM/SN/CI/GA/autre) → clé du référentiel d'orientation.
+// Aujourd'hui seul le Cameroun a un référentiel LOCAL complet ; la France est la
+// destination « internationale ». Les autres pays n'ont pas encore de référentiel
+// dédié : on l'affiche honnêtement (jamais de Cameroun déguisé en pays de l'enfant).
+const REFERENTIEL_PAR_PAYS = { CM: 'cameroun' }
+const paysEnfantLabel = computed(() => PAYS.find((p) => p.code === props.enfant.pays)?.label || '')
+const paysCouvert = computed(() => !!REFERENTIEL_PAR_PAYS[props.enfant.pays])
+function defaultPays() { return REFERENTIEL_PAR_PAYS[props.enfant.pays] || 'cameroun' }
 const pays = ref(defaultPays())
 const paysLabel = computed(() => PAYS_ORIENTATION.find((p) => p.code === pays.value)?.label || 'Cameroun')
 function selectPays(code) { pays.value = code; state.value = 'idle'; result.value = null }
@@ -254,6 +265,9 @@ async function getSuggestions() {
 .pays-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border: 1px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 14px; font-weight: 500; color: var(--tx2); }
 .pays-btn.active { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.06); }
 .pays-btn:disabled { cursor: not-allowed; }
+.pays-note { display: flex; gap: 9px; align-items: flex-start; padding: 10px 12px; margin-bottom: 12px; border-radius: 10px; background: rgba(232,149,10,.08); border: 1px solid rgba(232,149,10,.22); }
+.pays-note svg { color: #B87A00; flex-shrink: 0; margin-top: 1px; }
+.pays-note p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--tx2, #4b5563); }
 
 /* Loading / erreur */
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; }
