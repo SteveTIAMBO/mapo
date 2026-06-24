@@ -141,7 +141,7 @@
               <span class="cert-verif-url">Vérifiez l'authenticité sur {{ verifBaseUrl }}</span>
             </div>
             <div class="cert-seal">
-              <ShieldCheck :size="22" />
+              <img v-if="qrDataUrl" :src="qrDataUrl" alt="QR de vérification" class="cert-qr" />
               <span>Diplôme vérifiable EDUFREM</span>
               <small v-if="certificat.hash">empreinte {{ certificat.hash.slice(0, 16) }}…</small>
             </div>
@@ -176,6 +176,7 @@ import { useElevesStore } from '../stores/eleves'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
 import { Award, ShieldCheck, Check, Copy, Eye, Ban, X, Printer, ExternalLink } from 'lucide-vue-next'
+import QRCode from 'qrcode'
 
 const dipStore = useDiplomesStore()
 const elevesStore = useElevesStore()
@@ -238,6 +239,8 @@ async function emettre() {
     })
     showEmettre.value = false
     certificat.value = d
+    qrDataUrl.value = ''
+    genQr(d.code)
   } finally {
     emitting.value = false
   }
@@ -245,7 +248,13 @@ async function emettre() {
 
 // ── Certificat ──
 const certificat = ref(null)
-function openCertificat(d) { certificat.value = d }
+const qrDataUrl = ref('')
+async function genQr(code) {
+  try {
+    qrDataUrl.value = await QRCode.toDataURL(verifUrl(code), { margin: 1, width: 140, color: { dark: '#11335f', light: '#ffffff' } })
+  } catch { qrDataUrl.value = '' }
+}
+function openCertificat(d) { certificat.value = d; qrDataUrl.value = ''; genQr(d.code) }
 function printCert() {
   document.body.classList.add('printing-cert')
   setTimeout(() => { window.print(); document.body.classList.remove('printing-cert') }, 60)
@@ -336,7 +345,8 @@ onMounted(async () => {
 .cert-verif-lab { font-size: 10px; text-transform: uppercase; letter-spacing: .08em; color: var(--tx3); }
 .cert-verif-code { font-family: 'Poppins', monospace; font-size: 18px; font-weight: 700; letter-spacing: .06em; color: var(--pr); }
 .cert-verif-url { font-size: 11px; color: var(--tx3); }
-.cert-seal { display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--pr); text-align: center; }
+.cert-seal { display: flex; flex-direction: column; align-items: center; gap: 4px; color: var(--pr); text-align: center; }
+.cert-qr { width: 96px; height: 96px; border-radius: 6px; }
 .cert-seal span { font-size: 11px; font-weight: 600; }
 .cert-seal small { font-family: monospace; font-size: 9.5px; color: var(--tx3); }
 .cert-actions { padding: 0 22px 18px; }

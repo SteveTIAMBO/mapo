@@ -75,6 +75,13 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
   remédiation sourcé (le moat).
 - **Suivi enseignant anonyme** : onglet « Révisions » → « Suivi », remontées anonymes
   (identité opt-in) → le prof adapte le cours suivant.
+- **6C : radar + commentaires enseignant par évaluation** (idée Steve 2026-06-24) :
+  (a) afficher les 6 compétences en RADAR (aujourd'hui = barres dans MiAPO+ orientation,
+  `MiapoOrientation.vue .profil-recap`) ; (b) en contexte ÉCOLE, chaque enseignant peut
+  commenter/noter les 6C à chaque évaluation → ces apports ALIMENTENT le radar 6C de
+  l'élève (profil validé par les profs, plus seulement auto-évalué). Relie 6C IRIIG +
+  Suivi enseignant + boucle Carré. = vrai chantier (modèle de saisie 6C par éval +
+  agrégation + radar côté élève/parent ET prof), pas une retouche.
 - **Verticales** : auto-école (révision du permis), université.
 - **Abonnement B2C** via CinetPay (gating de l'accès MIAPO+).
 - **Vocal / WhatsApp** parents, **copilote directeur proactif** (détection décrochage).

@@ -65,9 +65,12 @@
         </div>
         <div class="ex-detail-actions">
           <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporter">Exporter</button>
-          <button class="btn btn-primary btn-sm" type="button" @click="inscrire">Inscrire la {{ niveauLabel(selectedExam.niveau) }}</button>
+          <button v-if="detailStats.admis" class="btn btn-primary btn-sm" type="button" :disabled="emitting" @click="emettreDiplomesAdmis">{{ emitting ? 'Émission…' : `Émettre les diplômes des admis (${detailStats.admis})` }}</button>
+          <button class="btn btn-outline btn-sm" type="button" @click="inscrire">Inscrire la {{ niveauLabel(selectedExam.niveau) }}</button>
         </div>
       </header>
+
+      <p v-if="emitFeedback" class="ex-emit-feedback">{{ emitFeedback }}</p>
 
       <!-- Stats de la session -->
       <div class="ex-stats">
@@ -155,9 +158,23 @@ import { ref, computed, onMounted } from 'vue'
 import { useExamensStore, EXAM_TYPES, RESULT_STATUS, MENTIONS } from '../stores/examens'
 import { useElevesStore } from '../stores/eleves'
 import { exportToExcel } from '../utils/exportExcel'
+import { useDiplomesStore } from '../stores/diplomes'
+import { useSchoolStore } from '../stores/school'
+import { useAuthStore } from '../stores/auth'
 
 const store = useExamensStore()
 const elevesStore = useElevesStore()
+const dipStore = useDiplomesStore()
+const schoolStore = useSchoolStore()
+const authStore = useAuthStore()
+
+const schoolName = computed(() => schoolStore.schoolSettings?.schoolName || 'Établissement EDUFREM')
+const schoolAcronym = computed(() => {
+  const acro = schoolName.value.split(/\s+/).filter(w => w.length > 2).map(w => w[0]).join('').toUpperCase().replace(/[^A-Z0-9]/g, '')
+  return acro.slice(0, 5) || 'EDFM'
+})
+const emitting = ref(false)
+const emitFeedback = ref('')
 
 const types = EXAM_TYPES
 const statuses = RESULT_STATUS
@@ -176,6 +193,7 @@ function anneeParDefaut() {
 
 onMounted(async () => {
   if (!elevesStore.eleves.length) await elevesStore.loadEleves()
+  await schoolStore.loadSettings()
   store.seedDemo(elevesStore.eleves)
 })
 
@@ -226,6 +244,35 @@ function exporter() {
   }))
   exportToExcel(rows, `${selectedExam.value.label}_${selectedExam.value.annee}`)
 }
+
+// ── Émettre les diplômes vérifiables des candidats ADMIS (intégration Diplômes) ──
+function seriesFromClass(cn) {
+  const m = (cn || '').match(/\b([A-D])\b/i)
+  return m ? m[1].toUpperCase() : ''
+}
+async function emettreDiplomesAdmis() {
+  const ex = selectedExam.value
+  if (!ex || emitting.value) return
+  emitting.value = true
+  emitFeedback.value = ''
+  const admis = candidats.value.filter(c => c.statut === 'admis')
+  let issued = 0, skipped = 0
+  for (const c of admis) {
+    const exists = dipStore.diplomes.some(d => d.eleveId === c.eleveId && d.type === ex.type && d.annee === ex.annee && d.statut === 'valide')
+    if (exists) { skipped++; continue }
+    await dipStore.emettre({
+      eleveId: c.eleveId, eleveName: c.eleveName, type: ex.type,
+      serie: seriesFromClass(c.className), mention: c.mention, annee: ex.annee,
+      ecoleNom: schoolName.value, ecoleAcronyme: schoolAcronym.value,
+      emisPar: authStore.userProfile?.displayName || 'Direction',
+    })
+    issued++
+  }
+  emitting.value = false
+  emitFeedback.value = issued
+    ? `${issued} diplôme(s) émis${skipped ? `, ${skipped} déjà existant(s)` : ''} — à retrouver dans le module Diplômes.`
+    : (skipped ? `Les ${skipped} admis ont déjà leur diplôme.` : 'Aucun admis à diplômer pour le moment.')
+}
 </script>
 
 <style scoped>
@@ -234,7 +281,8 @@ function exporter() {
 .ex-title { font-size: 26px; font-weight: 700; color: var(--tx); margin: 0; }
 .ex-title-year { font-size: 18px; font-weight: 600; color: var(--tx3); }
 .ex-sub { font-size: 14px; color: var(--tx2); margin: 4px 0 0; }
-.ex-detail-actions { display: flex; gap: 10px; }
+.ex-detail-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.ex-emit-feedback { margin: -4px 0 16px; padding: 10px 14px; border-radius: 10px; background: rgba(27,138,90,.08); color: #157a4f; font-size: 13.5px; }
 .ex-back { background: none; border: none; color: var(--pr); font: inherit; font-size: 14px; cursor: pointer; margin-bottom: 12px; padding: 0; }
 
 .ex-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
