@@ -275,7 +275,9 @@ function formatDate(iso) {
 }
 
 onMounted(async () => {
-  await elevesStore.loadEleves()
+  // Charger l'identité de l'école AVANT le seed : sinon le nom d'émetteur
+  // retombe sur le libellé générique « Établissement EDUFREM ».
+  await Promise.all([elevesStore.loadEleves(), schoolStore.loadSettings()])
   if (authStore.isDemo) {
     await dipStore.seedDemo({ eleves: elevesStore.eleves, ecoleNom: schoolName.value, ecoleAcronyme: schoolAcronym.value })
   }
