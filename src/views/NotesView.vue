@@ -175,6 +175,21 @@
           </div>
         </div>
 
+        <!-- Brouillon de notes récupéré après une coupure (auto-sauvegarde) -->
+        <div v-if="restoreNotesPrompt && selectedSubject" class="draft-restore-bar">
+          <div class="draft-restore-text">
+            <RotateCcw :size="18" />
+            <span>Notes non enregistrées récupérées pour <strong>{{ selectedSubject }}</strong> — {{ restoreNotesPrompt.count }} élève(s) saisi(s), {{ draftAge(restoreNotesPrompt.savedAt) }}. Reprenez votre saisie.</span>
+          </div>
+          <div class="draft-restore-actions">
+            <button class="btn btn-sm btn-outline" @click="discardNotesDraft">Ignorer</button>
+            <button class="btn btn-sm btn-primary" @click="restoreNotesDraft">
+              <RotateCcw :size="14" />
+              <span>Reprendre la saisie</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Notes grid -->
         <div v-if="selectedSubject" class="card">
           <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
@@ -804,7 +819,7 @@ import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import {
-  FileText, AlertCircle, Pencil, BarChart3, Save, Printer, X, Loader2, CheckCircle, ShieldCheck, Lock, Unlock, Settings, CircleCheck, Send, Upload, Image, ChevronLeft, ChevronRight, Download, Sparkles
+  FileText, AlertCircle, Pencil, BarChart3, Save, Printer, X, Loader2, CheckCircle, ShieldCheck, Lock, Unlock, Settings, CircleCheck, Send, Upload, Image, ChevronLeft, ChevronRight, Download, Sparkles, RotateCcw
 } from 'lucide-vue-next'
 import { useInscriptionsStore, DOCUMENT_FORMATS } from '../stores/inscriptions'
 import { exportToExcel } from '../utils/exportExcel'
@@ -859,6 +874,13 @@ const selectedTrimester = computed(() => {
 // Editing state for note inputs
 const editingNotes = ref({}) // { [eleveId]: { s1: val, s2: val } }
 const savedSnapshot = ref('') // JSON snapshot for dirty check
+// Brouillon de saisie des notes (auto-sauvegarde anti-coupure de courant/réseau)
+const restoreNotesPrompt = ref(null)
+const notesDraftKey = computed(() => {
+  if (!selectedClass.value || !selectedSubject.value || !selectedPeriod.value || selectedTrimester.value === 'annual') return null
+  const ns = authStore.schoolId || (authStore.isDemo ? 'demo' : 'me')
+  return `mapo_notes_draft_${ns}_${selectedClass.value}_${selectedPeriod.value}_${selectedSubject.value}`
+})
 const showValidateAllConfirm = ref(false) // Confirmation modal for validate-all
 const showValidateDirAllConfirm = ref(false)
 const editingCustomMention = ref('')
@@ -1650,6 +1672,7 @@ function loadEditingNotes() {
   }
   editingNotes.value = notes
   savedSnapshot.value = JSON.stringify(notes)
+  checkNotesDraft() // propose un brouillon non enregistré (coupure) pour cette matière/période
 }
 
 function onInput(eleveId, seq, event) {
@@ -1673,7 +1696,67 @@ async function saveNotes() {
 
   await notesStore.saveAllNotes()
   savedSnapshot.value = JSON.stringify(editingNotes.value)
+  clearNotesDraft() // notes enregistrées → plus besoin du brouillon
 }
+
+// ── Auto-sauvegarde des notes en cours de saisie (résilience aux coupures) ──
+function countFilledNotes(notes) {
+  return Object.values(notes || {}).filter(v => v && ((v.s1 !== '' && v.s1 != null) || (v.s2 !== '' && v.s2 != null))).length
+}
+function saveNotesDraft() {
+  const key = notesDraftKey.value
+  if (!key || !isDirty.value) return
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      notes: editingNotes.value,
+      savedAt: Date.now(),
+      subject: selectedSubject.value,
+    }))
+  } catch { /* quota / silencieux */ }
+}
+function clearNotesDraft() {
+  try { if (notesDraftKey.value) localStorage.removeItem(notesDraftKey.value) } catch { /* silencieux */ }
+}
+function checkNotesDraft() {
+  restoreNotesPrompt.value = null
+  const key = notesDraftKey.value
+  if (!key) return
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return
+    const d = JSON.parse(raw)
+    // Vide, périmé (> 2 j) ou identique aux notes déjà enregistrées : on purge sans proposer
+    if (!d || !d.notes || (d.savedAt && Date.now() - d.savedAt > 2 * 24 * 3600 * 1000) ||
+        JSON.stringify(d.notes) === savedSnapshot.value) {
+      localStorage.removeItem(key)
+      return
+    }
+    const count = countFilledNotes(d.notes)
+    if (!count) { localStorage.removeItem(key); return }
+    restoreNotesPrompt.value = { count, savedAt: d.savedAt, data: d }
+  } catch { /* silencieux */ }
+}
+function restoreNotesDraft() {
+  const d = restoreNotesPrompt.value?.data
+  if (!d || !d.notes) return
+  editingNotes.value = JSON.parse(JSON.stringify(d.notes))
+  restoreNotesPrompt.value = null
+}
+function discardNotesDraft() {
+  clearNotesDraft()
+  restoreNotesPrompt.value = null
+}
+function draftAge(ts) {
+  if (!ts) return ''
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return "à l'instant"
+  if (mins < 60) return `il y a ${mins} min`
+  const h = Math.floor(mins / 60)
+  if (h < 24) return `il y a ${h} h`
+  return new Date(ts).toLocaleDateString('fr-FR')
+}
+// Sauvegarde en continu tant que la saisie n'est pas enregistrée
+watch(editingNotes, () => { if (isDirty.value) saveNotesDraft() }, { deep: true })
 
 // ── Helpers ──
 function getAppreciationText(avg) { return getAppreciation(avg) }
@@ -1999,6 +2082,34 @@ onMounted(async () => {
 .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 
 .unsaved-badge { font-size: 12px; color: #E8A838; font-weight: 500; }
+
+/* Brouillon de notes récupéré (auto-sauvegarde anti-coupure) */
+.draft-restore-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: rgba(232, 168, 56, 0.10);
+  border: 1px solid rgba(232, 168, 56, 0.30);
+}
+.draft-restore-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text, #1A1D1F);
+  line-height: 1.45;
+}
+.draft-restore-text svg { color: #E8A838; flex-shrink: 0; }
+.draft-restore-actions { display: flex; gap: 8px; flex-shrink: 0; }
+@media (max-width: 768px) {
+  .draft-restore-bar { flex-direction: column; align-items: stretch; }
+  .draft-restore-actions { width: 100%; }
+  .draft-restore-actions .btn { flex: 1; }
+}
 
 /* Notes table */
 .notes-table-wrap { overflow-x: auto; }

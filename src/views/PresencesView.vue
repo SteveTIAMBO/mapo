@@ -96,6 +96,21 @@
     </div>
 
     <template v-else>
+      <!-- Brouillon d'appel récupéré après une coupure (auto-sauvegarde) -->
+      <div v-if="restorePrompt && !isEditing" class="draft-restore-bar">
+        <div class="draft-restore-text">
+          <RotateCcw :size="18" />
+          <span>Appel non enregistré récupéré pour <strong>{{ selectedClass }}</strong> — {{ restorePrompt.count }} élève(s), {{ formatDraftTime(restorePrompt.savedAt) }}. Reprenez où vous vous étiez arrêté.</span>
+        </div>
+        <div class="draft-restore-actions">
+          <button class="btn btn-sm btn-outline" @click="discardDraft">Ignorer</button>
+          <button class="btn btn-sm btn-primary" @click="restoreDraft">
+            <RotateCcw :size="14" />
+            <span>Reprendre l'appel</span>
+          </button>
+        </div>
+      </div>
+
       <!-- Historique rapide — AU-DESSUS du tableau -->
       <div v-if="recentDates.length > 0" class="card" style="margin-bottom: 16px;">
         <div class="history-grid">
@@ -300,7 +315,7 @@ import { useElevesStore } from '../stores/eleves'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
-import { Pencil, Check, CalendarCheck, X, Phone, Download } from 'lucide-vue-next'
+import { Pencil, Check, CalendarCheck, X, Phone, Download, RotateCcw } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { exportToExcel } from '../utils/exportExcel'
 import { useNotificationsStore, buildMessage } from '../stores/notifications'
@@ -331,6 +346,70 @@ const perPage = ref(20)
 const absenceAlertPrompt = ref(null)
 const sendingAlerts = ref(false)
 const alertResult = ref('')
+
+// ── Auto-sauvegarde de l'appel en cours (résilience aux coupures de courant/réseau) ──
+// L'appel non enregistré est gardé en brouillon local ; en cas de coupure, l'enseignant le reprend.
+const restorePrompt = ref(null)
+const draftKey = computed(() => {
+  if (!selectedClass.value || !selectedDate.value) return null
+  const ns = authStore.schoolId || (authStore.isDemo ? 'demo' : 'me')
+  return `mapo_appel_draft_${ns}_${selectedClass.value}_${selectedDate.value}`
+})
+function saveDraft() {
+  const key = draftKey.value
+  if (!key || !isEditing.value || !editEntries.value.length) return
+  try {
+    localStorage.setItem(key, JSON.stringify({
+      entries: editEntries.value,
+      savedAt: Date.now(),
+      className: selectedClass.value,
+      date: selectedDate.value,
+    }))
+  } catch { /* quota dépassé / silencieux */ }
+}
+function clearDraft() {
+  try { if (draftKey.value) localStorage.removeItem(draftKey.value) } catch { /* silencieux */ }
+}
+function checkDraft() {
+  restorePrompt.value = null
+  const key = draftKey.value
+  if (!key || isEditing.value) return
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return
+    const d = JSON.parse(raw)
+    // Brouillon vide ou périmé (> 2 jours) : on le purge sans le proposer
+    if (!d || !Array.isArray(d.entries) || !d.entries.length ||
+        (d.savedAt && Date.now() - d.savedAt > 2 * 24 * 3600 * 1000)) {
+      localStorage.removeItem(key)
+      return
+    }
+    restorePrompt.value = { count: d.entries.length, savedAt: d.savedAt, data: d }
+  } catch { /* silencieux */ }
+}
+function restoreDraft() {
+  const d = restorePrompt.value?.data
+  if (!d || !Array.isArray(d.entries)) return
+  activeFilter.value = null
+  editEntries.value = d.entries.map(e => ({ ...e })).sort((a, b) => a.eleveName.localeCompare(b.eleveName))
+  isEditing.value = true
+  restorePrompt.value = null
+}
+function discardDraft() {
+  clearDraft()
+  restorePrompt.value = null
+}
+function formatDraftTime(ts) {
+  if (!ts) return ''
+  const mins = Math.round((Date.now() - ts) / 60000)
+  if (mins < 1) return "à l'instant"
+  if (mins < 60) return `il y a ${mins} min`
+  const h = Math.floor(mins / 60)
+  if (h < 24) return `il y a ${h} h`
+  return new Date(ts).toLocaleDateString('fr-FR')
+}
+// Sauvegarde en continu tant que l'appel est en cours de saisie
+watch(editEntries, () => { if (isEditing.value) saveDraft() }, { deep: true })
 
 // Enseignant : seulement ses classes
 const teacherClassIds = computed(() => {
@@ -431,6 +510,7 @@ const exportPresences = () => {
 // Commencer l'appel
 const startEditing = () => {
   activeFilter.value = null
+  restorePrompt.value = null
   const existing = presencesStore.getPresencesByDateAndClass(selectedDate.value, selectedClass.value)
 
   if (existing.length > 0) {
@@ -452,12 +532,14 @@ const startEditing = () => {
 }
 
 const cancelEditing = () => {
+  clearDraft()
   isEditing.value = false
   editEntries.value = []
 }
 
 const saveEditing = async () => {
   await presencesStore.saveAttendance(selectedDate.value, selectedClass.value, editEntries.value)
+  clearDraft() // appel enregistré → plus besoin du brouillon
   // Préparer l'alerte parents pour les élèves marqués absents
   const ecole = schoolId.nom || schoolId.name || schoolId.schoolName || schoolId.acronym || "l'établissement"
   const dateLisible = new Date(selectedDate.value + 'T00:00:00').toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -587,7 +669,9 @@ watch(
 // Reset filter quand on change de classe ou date
 watch([() => selectedClass.value, () => selectedDate.value], () => {
   activeFilter.value = null
-  if (isEditing.value) cancelEditing()
+  // On quitte la saisie SANS supprimer le brouillon (il pourra être repris en revenant)
+  if (isEditing.value) { isEditing.value = false; editEntries.value = [] }
+  checkDraft()
 })
 
 // ── Copilote MIAPO : applique les filtres passés en query (?classe/date) ──
@@ -608,6 +692,7 @@ onMounted(async () => {
     await edtStore.loadData()
   }
   applyMiapoQuery()
+  checkDraft() // récupère un appel non enregistré (coupure) pour la classe/date courante
 })
 
 watch(() => route.query, applyMiapoQuery)
@@ -670,6 +755,34 @@ watch(() => route.query, applyMiapoQuery)
   margin-bottom: 12px;
   font-size: 13px;
   color: var(--tx2);
+}
+
+/* Brouillon d'appel récupéré (auto-sauvegarde anti-coupure) */
+.draft-restore-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  background: rgba(232, 168, 56, 0.10);
+  border: 1px solid rgba(232, 168, 56, 0.30);
+}
+.draft-restore-text {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--tx);
+  line-height: 1.45;
+}
+.draft-restore-text svg { color: #E8A838; flex-shrink: 0; }
+.draft-restore-actions { display: flex; gap: 8px; flex-shrink: 0; }
+@media (max-width: 768px) {
+  .draft-restore-bar { flex-direction: column; align-items: stretch; }
+  .draft-restore-actions { width: 100%; }
+  .draft-restore-actions .btn { flex: 1; }
 }
 
 /* Table */

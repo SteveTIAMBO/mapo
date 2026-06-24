@@ -16,6 +16,14 @@
         <span class="header-school-name">{{ schoolName }}</span>
       </RouterLink>
 
+      <!-- Statut connexion + synchronisation (robustesse réseau / coupures) -->
+      <div class="connection-status" :class="connClass" :title="connTitle">
+        <span v-if="isSyncing" class="spinner"></span>
+        <span v-else class="status-dot"></span>
+        <span v-if="!isOnline || isSyncing || pendingSyncCount > 0" class="status-text">{{ connText }}</span>
+        <span v-if="pendingSyncCount > 0 && !isSyncing" class="pending-badge">{{ pendingSyncCount }}</span>
+      </div>
+
       <!-- Search trigger -->
       <button class="header-icon-btn header-search-btn" title="Recherche" @click="openSearch">
         <Search :size="20" />
@@ -56,7 +64,22 @@ defineEmits(['toggle-sidebar'])
 const authStore = useAuthStore()
 const schoolStore = useSchoolStore()
 const permissionsStore = usePermissionsStore()
-const { isOnline } = useConnectionStatus()
+const { isOnline, pendingSyncCount, syncStatus } = useConnectionStatus()
+
+// Indicateur connexion + synchronisation (robustesse réseau rendue visible)
+const isSyncing = computed(() => syncStatus.value === 'syncing')
+const connClass = computed(() => isSyncing.value ? 'syncing' : (isOnline.value ? 'online' : 'offline'))
+const connText = computed(() => {
+  if (isSyncing.value) return 'Synchronisation…'
+  if (!isOnline.value) return 'Hors ligne'
+  if (pendingSyncCount.value > 0) return 'En attente'
+  return 'En ligne'
+})
+const connTitle = computed(() => {
+  if (!isOnline.value) return `Hors ligne — ${pendingSyncCount.value} modification(s) en attente. Tout se synchronisera automatiquement au retour du réseau.`
+  if (pendingSyncCount.value > 0) return `${pendingSyncCount.value} modification(s) en cours de synchronisation.`
+  return 'En ligne — tout est synchronisé.'
+})
 
 const isMobile = ref(false)
 function checkMobile() { isMobile.value = window.innerWidth <= 768 }
