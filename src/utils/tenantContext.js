@@ -32,6 +32,7 @@ function readOverride() {
     if (!v) return null
     if (v === 'admin' || v === 'megaAdmin') return { mode: 'megaAdmin', source: 'override' }
     if (v === 'preview' || v === 'vitrine') return { mode: 'preview', source: 'override' }
+    if (v === 'miapo') return { mode: 'miapo', source: 'override' }
     if (v.startsWith('school:')) {
       const sid = v.slice(7).trim()
       if (sid) return { mode: 'school', schoolId: sid, source: 'override' }
@@ -61,6 +62,7 @@ function detect() {
   if (host.endsWith('.' + ROOT_DOMAIN)) {
     const sub = host.slice(0, -('.' + ROOT_DOMAIN).length).split('.')[0]
     if (sub === 'adminmapo' || sub === 'admin') return { mode: 'megaAdmin', source: 'host' }
+    if (sub === 'miapo') return { mode: 'miapo', source: 'host' }
     if (sub) return { mode: 'school', schoolId: sub, source: 'host' }
   }
 
@@ -85,6 +87,11 @@ export function isSchoolTenant() {
 
 export function isPreviewTenant() {
   return tenant.mode === 'preview'
+}
+
+/** Instance MIAPO+ autonome (miapo.app-edufrem.com) : produit B2C séparé. */
+export function isMiapoTenant() {
+  return tenant.mode === 'miapo'
 }
 
 /** schoolId imposé par le sous-domaine, ou null. */

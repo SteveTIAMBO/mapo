@@ -45,6 +45,12 @@ const routes = [
     meta: { requiresAuth: false, title: 'Enseignement Supérieur' }
   },
   {
+    path: '/miapo',
+    name: 'MiapoWelcome',
+    component: () => import('../views/MiapoWelcomeView.vue'),
+    meta: { requiresAuth: false, title: 'MIAPO+' }
+  },
+  {
     path: '/verifier',
     name: 'VerifierDiplome',
     component: () => import('../views/VerifierDiplomeView.vue'),
@@ -379,6 +385,21 @@ router.beforeEach(async (to) => {
   // Hors tenant méga admin, on ne sert pas les routes /admin et /admin-login
   if (to.name === 'MegaAdmin' || to.name === 'MegaAdminLogin') {
     return { name: 'Welcome' }
+  }
+
+  // ── Tenant MIAPO+ standalone (miapo.app-edufrem.com) ──────────────
+  // Produit B2C dédié : on entre par l'accueil MIAPO+ (Parent / Enfant) puis on
+  // reste dans l'expérience famille (espaces parent + élève + tuteur). La
+  // vitrine multi-éditions (Welcome) et l'enseignement supérieur ne
+  // s'appliquent pas à cette instance → on renvoie vers l'accueil MIAPO+.
+  if (tenant.mode === 'miapo') {
+    if (to.name === 'Welcome' || to.name === 'Superieur') {
+      return { name: 'MiapoWelcome' }
+    }
+    if (!isLoggedIn) {
+      const publicMiapo = new Set(['MiapoWelcome', 'Login', 'VerifierDiplome', 'CompteNonConfigure'])
+      if (!publicMiapo.has(to.name)) return { name: 'MiapoWelcome' }
+    }
   }
 
   // ── Tenant école : on saute la page de choix (Welcome interdite) ──
