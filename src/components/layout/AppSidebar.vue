@@ -86,6 +86,7 @@ import { useAuthStore } from '../../stores/auth'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { useSchoolStore } from '../../stores/school'
+import { isMiapoTenant } from '../../utils/tenantContext'
 import {
   LayoutDashboard,
   Users,
@@ -252,7 +253,8 @@ const getInitials = (name) => {
 
 const handleLogout = async () => {
   await authStore.logout()
-  await router.push('/login')
+  // Sur l'instance MIAPO+, on revient à l'accueil MIAPO+ (et non au login MAPO).
+  await router.push(isMiapoTenant() ? '/miapo' : '/login')
 }
 </script>
 

@@ -45,6 +45,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { isMiapoTenant } from '../utils/tenantContext'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -53,7 +54,7 @@ const email = computed(() => authStore.user?.email || 'inconnu')
 
 async function seDeconnecter() {
   await authStore.logout()
-  router.push('/login')
+  router.push(isMiapoTenant() ? '/miapo' : '/login')
 }
 </script>
 

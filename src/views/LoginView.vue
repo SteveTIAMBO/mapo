@@ -142,14 +142,17 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
-import { isSchoolTenant } from '../utils/tenantContext'
+import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
 
-// Sur l'instance d'une vraie école (<slug>.app-edufrem.com), pas de démo
-const isSchoolTenantMode = isSchoolTenant()
+// Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
+// MIAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
+// démonstration « staff » : seul le formulaire compte en ligne est proposé
+// (la démo MIAPO+ s'entre par les cartes Parent / Élève de l'accueil).
+const isSchoolTenantMode = isSchoolTenant() || isMiapoTenant()
 
 function changerVersion() {
   editionStore.clearEdition()

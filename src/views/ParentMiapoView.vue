@@ -253,13 +253,14 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, PAYS, MATIERES } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
+import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
-async function logout() { await authStore.logout(); router.push('/login') }
+async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/miapo' : '/login') }
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
