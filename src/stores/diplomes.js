@@ -63,6 +63,67 @@ function loadJSON(key, fallback) {
 
 function normCode(code) { return (code || '').toUpperCase().replace(/[\s-]/g, '') }
 
+// ── Signature cryptographique (RSA SHA-256) ──────────────────────────
+// La SIGNATURE prouve l'authenticité de l'émetteur (clé privée EDUFREM côté
+// serveur via /mapo-sign.php). La clé PUBLIQUE ci-dessous est embarquée (elle
+// est publique) pour vérifier la signature côté client, hors-ligne.
+const SIGN_URL = '/mapo-sign.php'
+const PUBLIC_KEY_SPKI_B64 = `
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAs7wGbfxcTgwvhpvQXajS
+aqVApEuNqgoJfAY1QlcML887642Dm/DdGliamVP1px832Wqtyd5R+JaFHRVahU2Q
+7sWVlGtY/QwHFE7CdTTpGUsYwoCgeLjSAZOn461rijh9Evn2e6/VMp9XSq3dlM2M
+WLA/GX5s0uxw7sSayLvhT915IInKdO+JzE48B4F7Cs+oKt2LchlpK6QVXla33+7p
+/HejnqtVzOXUqjuxdNfKsmLj/YhwfECzCn8QDJvoZvlD6qxtqMabkAT/qeedMvsR
+xvrMdpXgxW8TmHVntTbkcUUQO/uFRxeUm3r+rQlou15Cz69EKZ36qvWT6IFQOyug
+hwIDAQAB
+`.replace(/\s+/g, '')
+
+function b64ToBytes(b64) {
+  const bin = atob(b64)
+  const a = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i)
+  return a
+}
+
+let _pubKey // CryptoKey | false | undefined
+async function getPublicKey() {
+  if (_pubKey === undefined) {
+    try {
+      _pubKey = await window.crypto.subtle.importKey(
+        'spki', b64ToBytes(PUBLIC_KEY_SPKI_B64),
+        { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
+    } catch { _pubKey = false }
+  }
+  return _pubKey
+}
+
+// Demande au serveur une signature du contenu canonique (best-effort :
+// si /mapo-sign.php n'est pas joignable, le diplôme s'émet sans signature).
+async function signContent(content) {
+  try {
+    const r = await fetch(SIGN_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content }),
+    })
+    if (!r.ok) return null
+    const j = await r.json()
+    return (j && j.ok && j.signature) ? j.signature : null
+  } catch { return null }
+}
+
+// Vérifie la signature RSA d'un diplôme. true = signé EDUFREM ; false = invalide ;
+// null = pas de signature (ou WebCrypto indisponible).
+async function verifySignature(d) {
+  if (!d || !d.signature) return null
+  try {
+    const key = await getPublicKey()
+    if (!key) return null
+    return await window.crypto.subtle.verify(
+      { name: 'RSASSA-PKCS1-v1_5' }, key,
+      b64ToBytes(d.signature), new TextEncoder().encode(canonical(d)))
+  } catch { return null }
+}
+
 export const useDiplomesStore = defineStore('diplomes', () => {
   const authStore = useAuthStore()
   const diplomes = ref(loadJSON(KEY, []))
@@ -106,6 +167,7 @@ export const useDiplomesStore = defineStore('diplomes', () => {
       signature: null, // ajoutée côté serveur une fois la clé EDUFREM en place
     }
     d.hash = await sha256Hex(canonical(d))
+    d.signature = await signContent(canonical(d)) // authenticité émetteur (best-effort)
     diplomes.value = [d, ...diplomes.value]
     persist()
     mirrorToCloud(d)
@@ -174,6 +236,6 @@ export const useDiplomesStore = defineStore('diplomes', () => {
 
   return {
     diplomes, diplomesSorted,
-    getType, getByCode, emettre, revoquer, verifierIntegrite, lookup, seedDemo,
+    getType, getByCode, emettre, revoquer, verifierIntegrite, verifierSignature: verifySignature, lookup, seedDemo,
   }
 })

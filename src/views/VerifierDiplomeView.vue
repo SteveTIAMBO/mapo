@@ -50,7 +50,7 @@
       </div>
 
       <div v-else-if="result === 'valide' && diplome" class="vf-res vf-res-ok">
-        <div class="vf-ok-head"><CheckCircle :size="30" /><h3>Diplôme authentique</h3></div>
+        <div class="vf-ok-head"><CheckCircle :size="30" /><h3>{{ signed ? 'Diplôme authentique et signé' : 'Diplôme authentique' }}</h3></div>
         <div class="vf-detail">
           <div class="vf-row"><span class="vf-lab">Titulaire</span><span class="vf-val strong">{{ diplome.eleveName }}</span></div>
           <div class="vf-row"><span class="vf-lab">Diplôme</span><span class="vf-val">{{ diplome.typeLabel }}<span v-if="diplome.serie"> — Série {{ diplome.serie }}</span></span></div>
@@ -62,8 +62,8 @@
         </div>
         <p class="vf-note">
           <ShieldCheck :size="14" />
-          Présent dans le registre EDUFREM et intègre (empreinte SHA-256 vérifiée).
-          <span v-if="!diplome.signature" class="vf-note-soft"> La signature cryptographique de l'émetteur est en cours de déploiement.</span>
+          <template v-if="signed">Diplôme <strong>signé cryptographiquement</strong> par l'établissement — présent au registre EDUFREM et intègre (empreinte SHA-256 + signature RSA vérifiées).</template>
+          <template v-else>Présent dans le registre EDUFREM et intègre (empreinte SHA-256 vérifiée).<span class="vf-note-soft"> Ce diplôme ne porte pas encore de signature cryptographique.</span></template>
         </p>
       </div>
     </div>
@@ -85,6 +85,7 @@ const code = ref('')
 const loading = ref(false)
 const result = ref(null) // null | 'valide' | 'revoque' | 'altere' | 'introuvable'
 const diplome = ref(null)
+const signed = ref(false)
 const lastCode = ref('')
 
 async function verifier() {
@@ -93,6 +94,7 @@ async function verifier() {
   loading.value = true
   result.value = null
   diplome.value = null
+  signed.value = false
   lastCode.value = c
   try {
     const d = await dipStore.lookup(c)
@@ -100,7 +102,11 @@ async function verifier() {
     diplome.value = d
     if (d.statut === 'revoque') { result.value = 'revoque'; return }
     const integre = await dipStore.verifierIntegrite(d)
-    result.value = integre ? 'valide' : 'altere'
+    if (!integre) { result.value = 'altere'; return }
+    const sig = await dipStore.verifierSignature(d) // true | false | null
+    if (sig === false) { result.value = 'altere'; return } // signature présente mais invalide
+    signed.value = sig === true
+    result.value = 'valide'
   } catch {
     result.value = 'introuvable'
   } finally {
