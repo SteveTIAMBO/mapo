@@ -87,6 +87,24 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 - **Vocal / WhatsApp** parents, **copilote directeur proactif** (détection décrochage).
 - **Orientation** : approfondir les données réelles + validation institutionnelle
   (IRIIG, conseiller d'orientation, ONEFOP, Campus France).
+- **Signature DIPLÔMES par ÉCOLE** (Steve 2026-06-27 « chaque école doit signer SES
+  diplômes ») : aujourd'hui = 1 clé EDUFREM plateforme (MVP livré). Cible = chaque école
+  signe avec SA propre identité — soit une paire de clés per-école (clé publique stockée
+  dans le doc `schools/{id}`, la vérif récupère la clé de l'école émettrice), soit la
+  plateforme atteste une école AUTHENTIFIÉE (signature liée au schoolId vérifié + jeton
+  Firebase sur `mapo-sign.php`). = productisation du moat. **Prochain pas naturel des diplômes.**
+- **MIAPO voix** (Steve 2026-06-27) : vraie voix IA pour lancer une révision LIVE / donner
+  des instructions vocales (TTS en sortie + STT en entrée). Faisable (Web Speech API
+  gratuite, ou TTS cloud pour la qualité). Fort différenciant, aligné « vocal Afrique /
+  parents peu lettrés » [[project_roadmap_conquete_afrique]].
+- **Langue locale** (Steve 2026-06-27) : révisions/tuteur en langues locales (contenu IA
+  faisable via Gemini, qualité variable sur langues africaines ; traduction d'UI = plus
+  gros chantier). À combiner avec MIAPO voix.
+- **Apprentissage adaptatif par STYLE** (Steve 2026-06-27) : le module de révision s'adapte
+  au style auto-évalué de l'apprenant. Réaliste = adapter le FORMAT (QCM / question libre /
+  audio-vocal) + difficulté + répétition espacée. ⚠️ Le « visuel » (générer une image par
+  question) = lourd/coûteux → on privilégie format-adaptation + répétition espacée plutôt
+  qu'une pédagogie disruptive à base d'images (instinct Steve validé).
 
 ---
 

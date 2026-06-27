@@ -36,13 +36,7 @@
       </template>
 
       <template v-else>
-        <div class="profil-recap">
-          <div v-for="c in sorted6c" :key="c.key" class="pr-row">
-            <span class="pr-label">{{ c.label }}</span>
-            <span class="pr-bar"><span class="pr-fill" :style="{ width: (c.val / 5 * 100) + '%' }"></span></span>
-            <span class="pr-val">{{ c.val }}</span>
-          </div>
-        </div>
+        <Radar6C :scores="enfant.comp6c || {}" />
         <button class="btn btn-ghost btn-sm refaire" @click="startEdit"><Sliders :size="14" /> <span>Refaire l'auto-évaluation</span></button>
       </template>
     </div>
@@ -133,6 +127,7 @@ import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientati
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info } from 'lucide-vue-next'
+import Radar6C from './Radar6C.vue'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 
