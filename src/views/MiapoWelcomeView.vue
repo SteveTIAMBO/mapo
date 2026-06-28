@@ -88,18 +88,24 @@
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 
 const router = useRouter()
 const editionStore = useEditionStore()
 const authStore = useAuthStore()
+const miapoStore = useEnfantsAutonomesStore()
 
-// Démo MIAPO+ : deux profils distincts (parent / élève) issus de la même
-// famille fictive, qui partagent les données scolaires de la démo.
+// Les deux entrées ouvrent l'APPLI MIAPO+ (le tuteur qu'on a construit), pas
+// les espaces parent/élève standards de MAPO : compte démo B2C 'miapo' (confiné
+// à MIAPO+ par le guard), en réglant juste le point de vue —
+//   parent   : un parent qui suit son enfant (« Mes enfants »)
+//   apprenant : l'élève qui pilote son propre apprentissage (« Mon profil »).
 function entrer(profil) {
   editionStore.setEdition('secondaire')
-  const result = authStore.loginDemo(profil, 'demo1234')
+  const result = authStore.loginDemo('miapo', 'demo1234')
   if (result && result.success) {
-    router.push(profil === 'parent' ? '/espace-parent' : '/espace-eleve')
+    miapoStore.setMode(profil === 'parent' ? 'parent' : 'apprenant')
+    router.push('/parent/miapo')
   } else {
     router.push('/login')
   }

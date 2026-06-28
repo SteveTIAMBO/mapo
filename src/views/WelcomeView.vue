@@ -83,25 +83,6 @@
           </span>
         </button>
 
-        <!-- MIAPO+ (tuteur famille — B2C) -->
-        <button class="choice-card" type="button" @click="choisirMiapo">
-          <span class="choice-badge">Famille</span>
-          <span class="choice-icon">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z" />
-            </svg>
-          </span>
-          <span class="choice-name">MIAPO+</span>
-          <span class="choice-tagline">Tuteur &amp; suivi à la maison</span>
-          <span class="choice-context">
-            Pour les parents et les élèves — révisions, suivi et orientation.
-          </span>
-          <span class="choice-cta">
-            Découvrir cette version
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
-          </span>
-        </button>
-
       </div>
 
       <!-- Footer -->
@@ -116,29 +97,14 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
-import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
 const editionStore = useEditionStore()
-const authStore = useAuthStore()
 
 function choisir(edition) {
   editionStore.setEdition(edition)
   if (edition === 'superieur') {
     router.push('/superieur')
-  } else {
-    router.push('/login')
-  }
-}
-
-// MIAPO+ = produit famille/B2C transverse. Depuis le hub, accès direct à la
-// démonstration MIAPO+ (profil parent) ; les comptes en ligne se connectent
-// ensuite via la page de connexion (lien « compte en ligne »).
-function choisirMiapo() {
-  editionStore.setEdition('secondaire')
-  const result = authStore.loginDemo('miapo', 'demo1234')
-  if (result && result.success) {
-    router.push('/parent/miapo')
   } else {
     router.push('/login')
   }
