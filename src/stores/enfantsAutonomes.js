@@ -111,14 +111,17 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL }) {
     const enfant = {
       id: 'ea-' + Date.now().toString(36),
       firstName: (firstName || '').trim(),
       lastName: (lastName || '').trim(),
       gender: gender === 'F' ? 'F' : 'M',
-      niveau: niveau || '3ème',
+      cycle: cycle || '',       // 'primaire' | 'secondaire' | 'superieur'
+      niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…)
       pays: pays || 'CM',
+      ecole: (ecole || '').trim(),
+      photoURL: photoURL || '',
       notes: [], // [{ id, matiere, note }]
       createdAt: new Date().toISOString(),
     }
@@ -129,6 +132,16 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   function removeEnfant(id) {
     enfants.value = enfants.value.filter((e) => e.id !== id)
+    persist()
+  }
+
+  /** Met à jour la fiche de profil (config) d'un enfant/apprenant. */
+  function updateEnfant(id, patch) {
+    const e = getEnfant(id)
+    if (!e || !patch) return
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'photoURL']) {
+      if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
+    }
     persist()
   }
 
@@ -196,7 +209,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   return {
     enfants, mode, setMode, load, hydrate,
-    addEnfant, removeEnfant, getEnfant,
+    addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
     setComp6c, getComp6c,
   }

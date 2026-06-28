@@ -219,6 +219,36 @@
             <p class="muted small">{{ isApprenant ? 'Ton accès MIAPO+ est actif — profites-en pour progresser.' : 'Votre accès MIAPO+ est actif — profitez-en pour accompagner ' + activeEnfant.firstName + '.' }}</p>
           </div>
         </section>
+
+        <!-- ========== PROFIL (configuration) ========== -->
+        <section v-else-if="section === 'profil'" class="sec">
+          <div class="card">
+            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profil de ' + activeEnfant.firstName }}</h3></div>
+            <div class="profil-photo">
+              <span class="er-avatar pp-avatar" :class="profil.gender === 'F' ? 'av-f' : 'av-m'">
+                <img v-if="profil.photoURL" :src="profil.photoURL" alt="" />
+                <template v-else>{{ (profil.firstName[0] || '') + (profil.lastName[0] || '') }}</template>
+              </span>
+              <label class="btn btn-outline btn-sm"><Camera :size="15" /> <span>Changer la photo</span><input type="file" accept="image/*" style="display:none" @change="onPickPhoto" /></label>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Prénom</label><input v-model="profil.firstName" class="input" /></div>
+              <div class="form-group"><label class="form-label">Nom</label><input v-model="profil.lastName" class="input" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Niveau</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">Primaire</option><option value="secondaire">Secondaire</option><option value="superieur">Supérieur</option></select></div>
+              <div class="form-group"><label class="form-label">Classe</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Pays</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+              <div class="form-group"><label class="form-label">École</label><input v-model="profil.ecole" class="input" placeholder="Nom de l'établissement" /></div>
+            </div>
+            <div class="compose-actions">
+              <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>Enregistrer</span></button>
+              <span v-if="profilSaved" class="muted small saved-ok">Enregistré ✓</span>
+            </div>
+          </div>
+        </section>
       </template>
     </main>
 
@@ -247,7 +277,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, PAYS, MATIERES } from '../stores/enfantsAutonomes'
@@ -256,7 +286,7 @@ import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Radar6C from '../components/Radar6C.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings } from 'lucide-vue-next'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -273,11 +303,12 @@ function setMode(m) { store.setMode(m) }
 
 const SECTIONS = computed(() => [
   { key: 'accueil', label: 'Accueil', icon: Home },
-  { key: 'enfants', label: isApprenant.value ? 'Mon profil' : 'Mes enfants', icon: isApprenant.value ? Target : Users },
+  { key: 'enfants', label: isApprenant.value ? 'Mes notes' : 'Mes enfants', icon: isApprenant.value ? FileText : Users },
   { key: 'tuteur', label: 'Tuteur', icon: GraduationCap },
   { key: 'progression', label: 'Progression', icon: TrendingUp },
   { key: 'orientation', label: 'Orientation', icon: Compass },
   { key: 'abonnement', label: 'Abonnement', icon: CreditCard },
+  { key: 'profil', label: 'Profil', icon: Settings },
 ])
 const section = ref('accueil')
 const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
@@ -298,6 +329,34 @@ const L = computed(() => isApprenant.value ? {
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
+
+// ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', photoURL: '' })
+const profilSaved = ref(false)
+function syncProfil() {
+  const e = activeEnfant.value
+  if (!e) return
+  profil.value = {
+    firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
+    cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
+    ecole: e.ecole || '', photoURL: e.photoURL || '',
+  }
+}
+function onPickPhoto(ev) {
+  const f = ev.target.files && ev.target.files[0]
+  if (!f) return
+  const reader = new FileReader()
+  reader.onload = () => { profil.value.photoURL = String(reader.result || '') }
+  reader.readAsDataURL(f)
+}
+function saveProfil() {
+  if (!activeEnfant.value) return
+  store.updateEnfant(activeEnfant.value.id, { ...profil.value })
+  profilSaved.value = true
+  setTimeout(() => { profilSaved.value = false }, 2000)
+}
+// Charge la fiche dans le formulaire à l'ouverture de la section / au changement d'enfant.
+watch([() => section.value, activeId], () => { if (section.value === 'profil') syncProfil() })
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')
@@ -478,6 +537,10 @@ onMounted(async () => {
 .stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .stat:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
 .radar-dash { cursor: pointer; }
+.profil-photo { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.pp-avatar { width: 64px; height: 64px; font-size: 22px; overflow: hidden; flex-shrink: 0; }
+.pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.saved-ok { color: #1B8A5A; font-weight: 600; }
 .stat-v { display: block; font-size: 22px; font-weight: 700; color: var(--tx); } .stat-v.warn { color: #D93025; }
 .stat-l { font-size: 12px; color: var(--tx3); }
 .quick { display: flex; gap: 10px; flex-wrap: wrap; }
