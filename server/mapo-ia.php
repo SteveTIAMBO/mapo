@@ -352,9 +352,10 @@ function buildTutorQuizPrompts($d) {
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 
-  // Assez de tokens pour un quiz complet de 10 questions (sinon le JSON est
-  // tronqué ; le parseur récupère quand même les questions complètes en secours).
-  return [$system, $u, 3600, false, null];
+  // Assez de tokens pour un quiz complet de 10 questions (~514 tok/question
+  // observés ; 3600 ne laissait passer que ~7 questions → on monte à 5400).
+  // Le parseur récupère quand même les questions complètes si jamais tronqué.
+  return [$system, $u, 5400, false, null];
 }
 
 function buildAppreciationPrompts($d) {
