@@ -135,11 +135,11 @@ function goLogin() {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: linear-gradient(150deg,
-    rgb(20, 8, 38) 0%,
-    rgb(38, 16, 74) 38%,
-    rgb(76, 29, 149) 72%,
-    rgb(124, 58, 237) 100%
+  background: linear-gradient(160deg,
+    #2a2550 0%,
+    #3a3470 42%,
+    #574e93 78%,
+    #7468be 100%
   );
 }
 
@@ -228,12 +228,10 @@ function goLogin() {
   align-items: flex-start;
   text-align: left;
   padding: 32px 30px;
-  background: rgba(255, 255, 255, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  background: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 22px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 48px rgba(20, 16, 50, 0.28);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   font-family: 'Outfit', sans-serif;

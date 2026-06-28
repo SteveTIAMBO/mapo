@@ -7,12 +7,6 @@
         <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
       </div>
 
-      <!-- Mode : un parent qui suit ses enfants, ou l'apprenant lui-même -->
-      <div class="volet-mode">
-        <button type="button" :class="{ on: !isApprenant }" @click="setMode('parent')">Parent</button>
-        <button type="button" :class="{ on: isApprenant }" @click="setMode('apprenant')">Apprenant</button>
-      </div>
-
       <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
       <div v-if="enfants.length && !isApprenant" class="volet-child">
         <select v-if="enfants.length > 1" v-model="activeId" class="child-select">
@@ -58,7 +52,7 @@
 
           <div class="card insight-card">
             <div class="insight-icon"><Sparkles :size="20" /></div>
-            <div><strong>MIAPO te signale</strong><p>{{ insight }}</p></div>
+            <div><strong>Points de vigilance</strong><p>{{ insight }}</p></div>
           </div>
 
           <div class="stat-grid">
