@@ -74,13 +74,17 @@ export const useTuteurStore = defineStore('tuteur', () => {
   const generating = ref(false)
   const lastMode = ref('')   // 'ia' | 'simulation'
   const lastReason = ref('')
+  // Compteur réactif incrémenté à chaque sauvegarde de révision : permet aux vues
+  // (tableau de progression, niveaux) de se rafraîchir après un quiz. getLevel lit
+  // le localStorage (non réactif) → ce ref déclenche le recalcul des computed.
+  const revisionsVersion = ref(0)
 
   /**
    * Génère un quiz pour une matière.
    * @returns {Promise<{ok, questions, mode, reason}>}
    *   questions: [{ q, choices[4], answer, hint, explanation }]
    */
-  async function generateQuiz({ matiere, niveau, nombre = 5, themes = '', difficulte = 1 }) {
+  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1 }) {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
@@ -141,6 +145,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
   function saveRevisions(studentId, data) {
     try { localStorage.setItem(REVISION_KEY(studentId), JSON.stringify(data)) } catch {}
+    revisionsVersion.value++ // notifie les vues réactives (progression, niveaux)
     // Miroir Firestore pour les vrais comptes (durable, cross-appareils).
     const uid = cloudUid()
     if (uid) {
@@ -164,6 +169,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         if (cloud && typeof cloud === 'object') {
           // Le cloud fait autorité (dernier état consolidé du suivi).
           try { localStorage.setItem(REVISION_KEY(studentId), JSON.stringify(cloud)) } catch {}
+          revisionsVersion.value++
         }
       }
     } catch { /* offline / non autorisé : on garde l'état local */ }
@@ -446,7 +452,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   return {
-    generating, lastMode, lastReason,
+    generating, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen,
   }

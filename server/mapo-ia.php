@@ -322,7 +322,7 @@ function buildVisionPrompts($d) {
 function buildTutorQuizPrompts($d) {
   $matiere = clean($d['matiere'] ?? 'Culture générale', 50);
   $niveau  = clean($d['niveau'] ?? '', 30);
-  $count   = isset($d['nombre']) ? max(3, min(8, intval($d['nombre']))) : 5;
+  $count   = isset($d['nombre']) ? max(3, min(12, intval($d['nombre']))) : 10;
   $themes  = clean($d['themes'] ?? '', 200);
   $diff    = isset($d['difficulte']) ? max(1, min(5, intval($d['difficulte']))) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
@@ -352,9 +352,9 @@ function buildTutorQuizPrompts($d) {
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 
-  // Assez de tokens pour un quiz complet (sinon le JSON est tronqué) ; on garde
-  // un peu de raisonnement pour l'exactitude des réponses (pas de reasoning none).
-  return [$system, $u, 2600, false, null];
+  // Assez de tokens pour un quiz complet de 10 questions (sinon le JSON est
+  // tronqué ; le parseur récupère quand même les questions complètes en secours).
+  return [$system, $u, 3600, false, null];
 }
 
 function buildAppreciationPrompts($d) {

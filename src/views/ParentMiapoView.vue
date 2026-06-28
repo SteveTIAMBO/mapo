@@ -56,9 +56,14 @@
           </div>
 
           <div class="stat-grid">
-            <div class="stat"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">Moyenne /20</span></div>
-            <div class="stat"><span class="stat-v" :class="{ warn: faiblesses.length }">{{ faiblesses.length }}</span><span class="stat-l">À réviser</span></div>
-            <div class="stat"><span class="stat-v">{{ hasEval ? 'Fait' : '—' }}</span><span class="stat-l">Profil 6C</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">Moyenne /20</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: faiblesses.length }">{{ faiblesses.length }}</span><span class="stat-l">À réviser</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'orientation'" @keyup.enter="section = 'orientation'"><span class="stat-v">{{ hasEval ? 'Fait' : '—' }}</span><span class="stat-l">Profil 6C</span></div>
+          </div>
+
+          <div v-if="hasEval" class="card radar-dash" role="button" tabindex="0" @click="section = 'orientation'">
+            <div class="card-head"><Target :size="18" /><h3>Profil 6C</h3></div>
+            <Radar6C :scores="activeEnfant.comp6c || {}" />
           </div>
 
           <div class="quick">
@@ -250,6 +255,7 @@ import { useTuteurStore } from '../stores/tuteur'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
+import Radar6C from '../components/Radar6C.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -316,6 +322,7 @@ const moyenne = computed(() => {
   return Math.round((ns.reduce((a, n) => a + n.note, 0) / ns.length) * 10) / 10
 })
 const progression = computed(() => {
+  void tuteur.revisionsVersion // dépendance réactive : le tableau se met à jour après chaque quiz
   const e = activeEnfant.value
   if (!e) return []
   const mats = new Set(e.notes.map((n) => n.matiere))
@@ -468,7 +475,9 @@ onMounted(async () => {
 .insight-card strong { color: var(--pr); } .insight-card p { margin: 4px 0 0; font-size: 14px; color: var(--tx); line-height: 1.5; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-.stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; }
+.stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.stat:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
+.radar-dash { cursor: pointer; }
 .stat-v { display: block; font-size: 22px; font-weight: 700; color: var(--tx); } .stat-v.warn { color: #D93025; }
 .stat-l { font-size: 12px; color: var(--tx3); }
 .quick { display: flex; gap: 10px; flex-wrap: wrap; }

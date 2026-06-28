@@ -114,7 +114,7 @@ async function start() {
   if (props.studentId) await tuteur.syncFromCloud(props.studentId)
   // Niveau de difficulté courant (adaptatif) pour cet élève + cette matière.
   level.value = props.studentId ? tuteur.getLevel(props.studentId, subjectId.value) : 1
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: 5, themes: props.themes, difficulte: level.value })
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: 10, themes: props.themes, difficulte: level.value })
   questions.value = res.questions || []
   if (!questions.value.length) { mode.value = 'result'; return }
   index.value = 0
