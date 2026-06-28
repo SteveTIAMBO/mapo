@@ -591,29 +591,22 @@ function validateRow(row, mod) {
     }
   }
   if (mod.id === 'classes') {
-    // Niveaux valides SELON L'ÉDITION (Primaire SIL→CM2, Secondaire 6e→Tle).
-    // Avant : liste codée en dur sur le secondaire → les classes primaires
-    // (SIL, CP, CE1…) étaient rejetées (« erreur niveau »).
-    const validLevels = (editionStore.isPrimaire ? LEVELS_PRIMAIRE : LEVELS).map(l => l.value)
-    if (row.level && !validLevels.includes(row.level)) {
-      // Normalisation tolérante (accents, casse, début du libellé)
-      const l = row.level.toLowerCase().replace('è', 'e')
-      const match = validLevels.find(v => v.toLowerCase() === l || l.startsWith(v.toLowerCase()))
-      if (match) row.level = match
-      else errors.push('level')
+    // OUVERT par conception : c'est l'école qui définit SES niveaux et sections
+    // à la création. Le logiciel vise aussi l'anglophone (Form 1…) et le
+    // technique (F1…), qui n'ont pas les mêmes dénominations. On ne REJETTE
+    // donc aucun niveau : on tente seulement de canoniser les niveaux
+    // francophones courants (ex. « 6ème » → « 6e ») par confort, sinon on garde
+    // la dénomination de l'école telle quelle.
+    if (row.level) {
+      const known = [...LEVELS, ...LEVELS_PRIMAIRE].map(l => l.value)
+      if (!known.includes(row.level)) {
+        const l = row.level.toLowerCase().replace('è', 'e')
+        const match = known.find(v => v.toLowerCase() === l || l.startsWith(v.toLowerCase()))
+        if (match) row.level = match
+      }
     }
-    // « Série » a deux sens selon le niveau :
-    //  - Lycée (1ère/Tle) = filière académique → A, C, D (PAS B).
-    //  - Collège/Primaire = lettre de SECTION parallèle (A, B, C, D, E…),
-    //    propre à chaque école → on accepte n'importe quelle lettre. La liste
-    //    exacte par niveau sera paramétrable au lancement de l'école.
-    if (row.serie) {
-      const s = row.serie.toUpperCase().trim()
-      const isLycee = ['1ere', 'Tle'].includes(row.level)
-      const ok = isLycee ? ['A', 'C', 'D'].includes(s) : /^[A-Z]$/.test(s)
-      if (ok) row.serie = s
-      else errors.push('serie')
-    }
+    // Série / section : libre (définie par l'école). Normalisation de casse seule.
+    if (row.serie) row.serie = String(row.serie).toUpperCase().trim()
     if (row.capacity) row.capacity = parseInt(row.capacity, 10) || 60
   }
 
