@@ -182,7 +182,7 @@ async function loadXLSX() {
 }
 import { useElevesStore } from '../stores/eleves'
 import { usePersonnelStore } from '../stores/personnel'
-import { useClassesStore, LEVELS, LEVELS_PRIMAIRE, SECTIONS } from '../stores/classes'
+import { useClassesStore, LEVELS, LEVELS_PRIMAIRE } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
@@ -602,12 +602,17 @@ function validateRow(row, mod) {
       if (match) row.level = match
       else errors.push('level')
     }
-    // Séries valides = A, B, C, D (la « B » était rejetée à tort).
-    const validSeries = SECTIONS.map(s => s.value)
-    if (row.serie && !validSeries.includes(row.serie.toUpperCase())) {
-      errors.push('serie')
-    } else if (row.serie) {
-      row.serie = row.serie.toUpperCase()
+    // « Série » a deux sens selon le niveau :
+    //  - Lycée (1ère/Tle) = filière académique → A, C, D (PAS B).
+    //  - Collège/Primaire = lettre de SECTION parallèle (A, B, C, D, E…),
+    //    propre à chaque école → on accepte n'importe quelle lettre. La liste
+    //    exacte par niveau sera paramétrable au lancement de l'école.
+    if (row.serie) {
+      const s = row.serie.toUpperCase().trim()
+      const isLycee = ['1ere', 'Tle'].includes(row.level)
+      const ok = isLycee ? ['A', 'C', 'D'].includes(s) : /^[A-Z]$/.test(s)
+      if (ok) row.serie = s
+      else errors.push('serie')
     }
     if (row.capacity) row.capacity = parseInt(row.capacity, 10) || 60
   }
