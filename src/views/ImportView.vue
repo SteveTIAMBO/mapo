@@ -182,7 +182,7 @@ async function loadXLSX() {
 }
 import { useElevesStore } from '../stores/eleves'
 import { usePersonnelStore } from '../stores/personnel'
-import { useClassesStore } from '../stores/classes'
+import { useClassesStore, LEVELS, LEVELS_PRIMAIRE, SECTIONS } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
@@ -531,6 +531,15 @@ function validateRow(row, mod) {
     } else if (row.gender) {
       row.gender = row.gender.toUpperCase()
     }
+    // Anti-typo : si des classes existent déjà, la classe de l'élève doit
+    // correspondre à l'une d'elles. Une faute mineure (accent, espace, casse)
+    // est rattrapée en recalant sur le nom EXACT de la classe ; sinon erreur.
+    if (row.className && classesStore.classes.length) {
+      const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+      const match = classesStore.classes.find(c => norm(c.name) === norm(row.className))
+      if (match) row.className = match.name
+      else errors.push('className')
+    }
   }
   if (mod.id === 'personnel') {
     const validCats = ['enseignement', 'administration', 'support']
@@ -582,15 +591,20 @@ function validateRow(row, mod) {
     }
   }
   if (mod.id === 'classes') {
-    const validLevels = ['6e', '5e', '4e', '3e', '2nde', '1ere', 'Tle']
+    // Niveaux valides SELON L'ÉDITION (Primaire SIL→CM2, Secondaire 6e→Tle).
+    // Avant : liste codée en dur sur le secondaire → les classes primaires
+    // (SIL, CP, CE1…) étaient rejetées (« erreur niveau »).
+    const validLevels = (editionStore.isPrimaire ? LEVELS_PRIMAIRE : LEVELS).map(l => l.value)
     if (row.level && !validLevels.includes(row.level)) {
-      // Try to normalize
-      const l = row.level.toLowerCase().replace('è', 'e').replace('nde', 'nde')
+      // Normalisation tolérante (accents, casse, début du libellé)
+      const l = row.level.toLowerCase().replace('è', 'e')
       const match = validLevels.find(v => v.toLowerCase() === l || l.startsWith(v.toLowerCase()))
       if (match) row.level = match
       else errors.push('level')
     }
-    if (row.serie && !['A', 'C', 'D', ''].includes(row.serie.toUpperCase())) {
+    // Séries valides = A, B, C, D (la « B » était rejetée à tort).
+    const validSeries = SECTIONS.map(s => s.value)
+    if (row.serie && !validSeries.includes(row.serie.toUpperCase())) {
       errors.push('serie')
     } else if (row.serie) {
       row.serie = row.serie.toUpperCase()
