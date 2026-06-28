@@ -25,7 +25,7 @@
       <!-- Choix du profil -->
       <div class="miapo-choices">
         <!-- Parent -->
-        <button class="m-card" type="button" @click="entrer('parent')">
+        <button class="m-tile" type="button" @click="entrer('parent')">
           <span class="m-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="9" cy="8" r="3" />
@@ -47,7 +47,7 @@
         </button>
 
         <!-- Enfant / élève -->
-        <button class="m-card" type="button" @click="entrer('eleve')">
+        <button class="m-tile" type="button" @click="entrer('eleve')">
           <span class="m-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 10L12 5 2 10l10 5 10-5z" />
@@ -221,7 +221,7 @@ function goLogin() {
   max-width: 720px;
   margin: 0 auto;
 }
-.m-card {
+.m-tile {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -236,12 +236,12 @@ function goLogin() {
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   font-family: 'Outfit', sans-serif;
 }
-.m-card:hover {
+.m-tile:hover {
   transform: translateY(-6px);
   box-shadow: 0 32px 72px rgba(0, 0, 0, 0.4);
   border-color: rgba(var(--m-accent-rgb), 0.45);
 }
-.m-card:focus-visible {
+.m-tile:focus-visible {
   outline: 3px solid rgba(var(--m-accent-rgb), 0.5);
   outline-offset: 3px;
 }
@@ -287,7 +287,7 @@ function goLogin() {
   color: var(--m-accent);
   transition: gap 0.2s ease;
 }
-.m-card:hover .m-cta {
+.m-tile:hover .m-cta {
   gap: 12px;
 }
 
@@ -341,6 +341,6 @@ function goLogin() {
 @media (max-width: 720px) {
   .miapo-title { font-size: 25px; }
   .miapo-subtitle { font-size: 15px; }
-  .m-card { padding: 26px 24px; }
+  .m-tile { padding: 26px 24px; }
 }
 </style>
