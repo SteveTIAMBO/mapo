@@ -1210,5 +1210,27 @@
     "descriptionPlaceholder": "Describe your claim...",
     "cancel": "Cancel",
     "send": "Send"
+  },
+  "sup": {
+    "backToChoice": "Back to selection",
+    "eyebrow": "MAPO — Higher Education",
+    "comingSoon": "The higher-education edition is coming soon",
+    "lead": "This MAPO edition is for universities, higher schools and BTS. It is designed for the LMD system (Bachelor-Master-Doctorate) as applied in French-speaking African universities: credits, teaching units, semesters, grading out of 20 and honors. The interactive demo is in preparation.",
+    "willCover": "What this edition will cover",
+    "note": "In the meantime, the Secondary & Primary edition is fully available as a demo.",
+    "discoverSecondary": "Explore the Secondary & Primary edition",
+    "backToSelection": "Back to selection",
+    "mod1Title": "Student management",
+    "mod1Desc": "Records, administrative enrollment, pathways and statuses.",
+    "mod2Title": "Units & credits",
+    "mod2Desc": "Teaching units, coefficients, capitalization and compensation.",
+    "mod3Title": "Course registration",
+    "mod3Desc": "Course and option selection by the student, prerequisites and pathways.",
+    "mod4Title": "Timetable & rooms",
+    "mod4Desc": "Planning by course, group and lecturer, conflict-free.",
+    "mod5Title": "Lecturers & adjuncts",
+    "mod5Desc": "Statuses, hourly costs, workload plans and tracking of sessions.",
+    "mod6Title": "Transcripts & boards",
+    "mod6Desc": "Assessments by semester, deliberations and graduation."
   }
 }

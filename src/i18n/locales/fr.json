@@ -1210,5 +1210,27 @@
     "descriptionPlaceholder": "Décrivez votre réclamation...",
     "cancel": "Annuler",
     "send": "Envoyer"
+  },
+  "sup": {
+    "backToChoice": "Retour au choix",
+    "eyebrow": "MAPO — Enseignement Supérieur",
+    "comingSoon": "La version supérieur arrive bientôt",
+    "lead": "Cette édition de MAPO s'adresse aux universités, écoles supérieures et BTS. Elle est conçue pour le système LMD (Licence-Master-Doctorat) tel qu'appliqué dans les universités d'Afrique francophone : crédits, unités d'enseignement, semestres, notation sur 20 et mentions. La démonstration interactive est en préparation.",
+    "willCover": "Ce que couvrira cette version",
+    "note": "En attendant, la version Secondaire & Primaire est entièrement disponible en démonstration.",
+    "discoverSecondary": "Découvrir la version Secondaire & Primaire",
+    "backToSelection": "Revenir au choix",
+    "mod1Title": "Gestion des étudiants",
+    "mod1Desc": "Dossiers, inscriptions administratives, parcours et statuts.",
+    "mod2Title": "UE & crédits",
+    "mod2Desc": "Unités d'enseignement, coefficients, capitalisation et compensation.",
+    "mod3Title": "Inscriptions pédagogiques",
+    "mod3Desc": "Choix des cours et options par l'étudiant, prérequis et parcours.",
+    "mod4Title": "Emploi du temps & salles",
+    "mod4Desc": "Planification par cours, par groupe et par intervenant, sans conflit.",
+    "mod5Title": "Intervenants & vacataires",
+    "mod5Desc": "Statuts, coûts horaires, plans de charge et suivi des interventions.",
+    "mod6Title": "Relevés de notes & jurys",
+    "mod6Desc": "Évaluations par semestre, délibérations et diplomation."
   }
 }

@@ -6,7 +6,7 @@
       <!-- Retour -->
       <button class="sup-back" type="button" @click="retour">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
-        Retour au choix
+        {{ t('sup.backToChoice') }}
       </button>
 
       <div class="sup-card">
@@ -20,20 +20,17 @@
             </svg>
           </div>
           <div>
-            <div class="sup-eyebrow">MAPO — Enseignement Supérieur</div>
-            <h1 class="sup-title">La version supérieur arrive bientôt</h1>
+            <div class="sup-eyebrow">{{ t('sup.eyebrow') }}</div>
+            <h1 class="sup-title">{{ t('sup.comingSoon') }}</h1>
           </div>
         </div>
 
         <p class="sup-lead">
-          Cette édition de MAPO s'adresse aux universités, écoles supérieures et BTS.
-          Elle est conçue pour le système LMD (Licence-Master-Doctorat) tel qu'appliqué
-          dans les universités d'Afrique francophone : crédits, unités d'enseignement,
-          semestres, notation sur 20 et mentions. La démonstration interactive est en préparation.
+          {{ t('sup.lead') }}
         </p>
 
         <!-- Modules à venir -->
-        <div class="sup-section-label">Ce que couvrira cette version</div>
+        <div class="sup-section-label">{{ t('sup.willCover') }}</div>
         <div class="sup-modules">
           <div v-for="m in modules" :key="m.title" class="sup-module">
             <span class="sup-module-icon" v-html="m.icon"></span>
@@ -48,18 +45,17 @@
         <div class="sup-note">
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
           <span>
-            En attendant, la version <strong>Secondaire &amp; Primaire</strong> est entièrement
-            disponible en démonstration.
+            {{ t('sup.note') }}
           </span>
         </div>
 
         <!-- Actions -->
         <div class="sup-actions">
           <button class="sup-btn-primary" type="button" @click="allerSecondaire">
-            Découvrir la version Secondaire &amp; Primaire
+            {{ t('sup.discoverSecondary') }}
           </button>
           <button class="sup-btn-ghost" type="button" @click="retour">
-            Revenir au choix
+            {{ t('sup.backToSelection') }}
           </button>
         </div>
       </div>
@@ -73,44 +69,47 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const editionStore = useEditionStore()
 
-const modules = [
+const modules = computed(() => [
   {
-    title: 'Gestion des étudiants',
-    desc: 'Dossiers, inscriptions administratives, parcours et statuts.',
+    title: t('sup.mod1Title'),
+    desc: t('sup.mod1Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
   },
   {
-    title: 'UE & crédits',
-    desc: "Unités d'enseignement, coefficients, capitalisation et compensation.",
+    title: t('sup.mod2Title'),
+    desc: t('sup.mod2Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
   },
   {
-    title: 'Inscriptions pédagogiques',
-    desc: "Choix des cours et options par l'étudiant, prérequis et parcours.",
+    title: t('sup.mod3Title'),
+    desc: t('sup.mod3Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
   },
   {
-    title: 'Emploi du temps & salles',
-    desc: 'Planification par cours, par groupe et par intervenant, sans conflit.',
+    title: t('sup.mod4Title'),
+    desc: t('sup.mod4Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
   },
   {
-    title: 'Intervenants & vacataires',
-    desc: 'Statuts, coûts horaires, plans de charge et suivi des interventions.',
+    title: t('sup.mod5Title'),
+    desc: t('sup.mod5Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/></svg>',
   },
   {
-    title: 'Relevés de notes & jurys',
-    desc: 'Évaluations par semestre, délibérations et diplomation.',
+    title: t('sup.mod6Title'),
+    desc: t('sup.mod6Desc'),
     icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
   },
-]
+])
 
 function retour() {
   editionStore.clearEdition()
