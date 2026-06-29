@@ -16,5 +16,36 @@
     "eleveCta": "Entrer dans l'espace élève",
     "haveAccount": "J'ai déjà un compte MIAPO+",
     "footerCopy": "© 2026 MIAPO+ — Apprendre, accompagné"
+  },
+  "login": {
+    "tagline": "Gestion Scolaire by EDUFREM",
+    "version": "Version {name}",
+    "change": "Changer",
+    "yourName": "Votre nom",
+    "namePlaceholder": "Prénom Nom",
+    "email": "Email",
+    "emailOrPhone": "Email ou téléphone",
+    "emailPlaceholder": "votre@email.com",
+    "emailOrPhonePlaceholder": "email ou +237 6XX XX XX XX",
+    "password": "Mot de passe",
+    "createAccount": "Créer mon compte",
+    "signIn": "Se connecter",
+    "noAccount": "Pas encore de compte ?",
+    "createOne": "Créer un compte",
+    "haveAccountQ": "Déjà un compte ?",
+    "continueGoogle": "Continuer avec Google",
+    "backToDemo": "← Retour à la démonstration",
+    "chooseDemo": "Choisissez un profil de démonstration",
+    "instantAccess": "Accès instantané, sans mot de passe",
+    "haveOnlineAccount": "J'ai un compte en ligne →",
+    "resetDemo": "Réinitialiser la démo",
+    "resetDone": "Démo réinitialisée",
+    "copy": "© 2026 MAPO",
+    "roles": {
+      "directeur": "Directeur",
+      "enseignant": "Enseignant",
+      "parent": "Parent",
+      "eleve": "Élève"
+    }
   }
 }

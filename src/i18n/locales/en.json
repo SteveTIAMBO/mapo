@@ -16,5 +16,36 @@
     "eleveCta": "Enter the student space",
     "haveAccount": "I already have a MIAPO+ account",
     "footerCopy": "© 2026 MIAPO+ — Learning, supported"
+  },
+  "login": {
+    "tagline": "School Management by EDUFREM",
+    "version": "{name} edition",
+    "change": "Change",
+    "yourName": "Your name",
+    "namePlaceholder": "First name Last name",
+    "email": "Email",
+    "emailOrPhone": "Email or phone",
+    "emailPlaceholder": "you@email.com",
+    "emailOrPhonePlaceholder": "email or +237 6XX XX XX XX",
+    "password": "Password",
+    "createAccount": "Create my account",
+    "signIn": "Sign in",
+    "noAccount": "No account yet?",
+    "createOne": "Create an account",
+    "haveAccountQ": "Already have an account?",
+    "continueGoogle": "Continue with Google",
+    "backToDemo": "← Back to the demo",
+    "chooseDemo": "Choose a demo profile",
+    "instantAccess": "Instant access, no password",
+    "haveOnlineAccount": "I have an online account →",
+    "resetDemo": "Reset the demo",
+    "resetDone": "Demo reset",
+    "copy": "© 2026 MAPO",
+    "roles": {
+      "directeur": "Director",
+      "enseignant": "Teacher",
+      "parent": "Parent",
+      "eleve": "Student"
+    }
   }
 }

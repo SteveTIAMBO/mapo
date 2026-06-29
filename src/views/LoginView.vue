@@ -5,12 +5,17 @@
 
     <!-- Auth card -->
     <div class="auth-card">
+      <!-- Sélecteur de langue -->
+      <div class="auth-lang">
+        <button type="button" :class="{ on: locale === 'fr' }" @click="setLang('fr')">FR</button>
+        <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
+      </div>
       <!-- Logo -->
       <div class="auth-logo">
         <div class="auth-logo-mark">M</div>
         <div>
           <div class="auth-logo-title">MAPO</div>
-          <div class="auth-logo-sub">Gestion Scolaire by EDUFREM</div>
+          <div class="auth-logo-sub">{{ t('login.tagline') }}</div>
         </div>
       </div>
 
@@ -18,9 +23,9 @@
       <div class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
-          Version {{ editionStore.meta?.name || 'Secondaire' }}
+          {{ t('login.version', { name: editionStore.meta?.name || 'Secondaire' }) }}
         </span>
-        <button type="button" class="auth-edition-change" @click="changerVersion">Changer</button>
+        <button type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
       </div>
 
       <!-- Connexion / Inscription (comptes EN LIGNE — live) -->
@@ -29,19 +34,19 @@
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
         <div v-if="mode === 'signup'" class="auth-field">
-          <label class="auth-label">Votre nom</label>
+          <label class="auth-label">{{ t('login.yourName') }}</label>
           <input
             v-model="signupName"
             type="text"
             autocomplete="name"
             class="auth-input"
-            placeholder="Prénom Nom"
+            :placeholder="t('login.namePlaceholder')"
             required
           />
         </div>
 
         <div class="auth-field">
-          <label class="auth-label">{{ mode === 'signup' ? 'Email' : 'Email ou téléphone' }}</label>
+          <label class="auth-label">{{ mode === 'signup' ? t('login.email') : t('login.emailOrPhone') }}</label>
           <input
             v-model="loginEmail"
             type="text"
@@ -49,19 +54,19 @@
             autocapitalize="none"
             autocomplete="username"
             class="auth-input"
-            :placeholder="mode === 'signup' ? 'votre@email.com' : 'email ou +237 6XX XX XX XX'"
+            :placeholder="mode === 'signup' ? t('login.emailPlaceholder') : t('login.emailOrPhonePlaceholder')"
             required
           />
         </div>
 
         <div class="auth-field">
-          <label class="auth-label">Mot de passe</label>
+          <label class="auth-label">{{ t('login.password') }}</label>
           <div class="auth-input-wrap">
             <input
               v-model="loginPassword"
               :type="showPassword ? 'text' : 'password'"
               class="auth-input"
-              placeholder="Mot de passe"
+              :placeholder="t('login.password')"
               required
             />
             <button type="button" class="auth-eye" @click="showPassword = !showPassword">
@@ -73,19 +78,19 @@
 
         <button type="submit" class="auth-btn-primary" :disabled="isLoading">
           <span v-if="isLoading" class="auth-spinner"></span>
-          <span v-else>{{ mode === 'signup' ? 'Créer mon compte' : 'Se connecter' }}</span>
+          <span v-else>{{ mode === 'signup' ? t('login.createAccount') : t('login.signIn') }}</span>
         </button>
       </form>
 
       <!-- Bascule connexion / inscription (parent autonome) -->
       <p class="auth-switch">
         <template v-if="mode === 'login'">
-          Pas encore de compte ?
-          <button type="button" class="auth-switch-link" @click="setMode('signup')">Créer un compte</button>
+          {{ t('login.noAccount') }}
+          <button type="button" class="auth-switch-link" @click="setMode('signup')">{{ t('login.createOne') }}</button>
         </template>
         <template v-else>
-          Déjà un compte ?
-          <button type="button" class="auth-switch-link" @click="setMode('login')">Se connecter</button>
+          {{ t('login.haveAccountQ') }}
+          <button type="button" class="auth-switch-link" @click="setMode('login')">{{ t('login.signIn') }}</button>
         </template>
       </p>
 
@@ -96,16 +101,16 @@
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
         </svg>
-        Continuer avec Google
+        {{ t('login.continueGoogle') }}
       </button>
 
-      <button v-if="!isSchoolTenantMode" type="button" class="auth-switch-link auth-back-demo" @click="showLogin = false">← Retour à la démonstration</button>
+      <button v-if="!isSchoolTenantMode" type="button" class="auth-switch-link auth-back-demo" @click="showLogin = false">{{ t('login.backToDemo') }}</button>
       </template>
 
       <!-- DÉMONSTRATION : profils types, accès direct sans connexion -->
       <!-- (le formulaire ci-dessus est réservé aux comptes en ligne / vraies écoles) -->
       <div v-if="!isSchoolTenantMode && !showLogin" class="auth-demo-credentials">
-        <p class="auth-demo-title">Choisissez un profil de démonstration</p>
+        <p class="auth-demo-title">{{ t('login.chooseDemo') }}</p>
         <div class="auth-demo-accounts">
           <button
             v-for="d in demoAccounts"
@@ -116,11 +121,11 @@
             @click="loginDemoAs(d.role)"
           >
             <span class="auth-demo-chip-icon" v-html="d.icon"></span>
-            {{ d.label }}
+            {{ t('login.roles.' + d.role) }}
           </button>
         </div>
-        <p class="auth-demo-pw">Accès instantané, sans mot de passe</p>
-        <button type="button" class="auth-switch-link" @click="showLogin = true">J'ai un compte en ligne →</button>
+        <p class="auth-demo-pw">{{ t('login.instantAccess') }}</p>
+        <button type="button" class="auth-switch-link" @click="showLogin = true">{{ t('login.haveOnlineAccount') }}</button>
       </div>
     </div>
 
@@ -129,21 +134,24 @@
       <button v-if="!isSchoolTenantMode" class="auth-reset-btn" @click="resetDemo">
         <svg v-if="!resetDone" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-        {{ resetDone ? 'Demo reinitialisee' : 'Reinitialiser la demo' }}
+        {{ resetDone ? t('login.resetDone') : t('login.resetDemo') }}
       </button>
       <p class="auth-footer-org">EDUFREM SAS</p>
-      <p class="auth-footer-copy">&copy; 2026 MAPO</p>
+      <p class="auth-footer-copy">{{ t('login.copy') }}</p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
 import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
+import { setLang } from '../i18n'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
@@ -317,6 +325,33 @@ function resetDemo() {
 }
 
 /* ── Edition badge ── */
+.auth-lang {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(0, 0, 0, .05);
+  border-radius: 100px;
+  z-index: 2;
+}
+.auth-lang button {
+  border: none;
+  background: transparent;
+  color: var(--tx3, #9ca3af);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+}
+.auth-lang button.on {
+  background: var(--pr, #1558B0);
+  color: #fff;
+}
+
 .auth-edition {
   display: flex;
   align-items: center;
