@@ -1232,5 +1232,14 @@
     "mod5Desc": "Statuts, coûts horaires, plans de charge et suivi des interventions.",
     "mod6Title": "Relevés de notes & jurys",
     "mod6Desc": "Évaluations par semestre, délibérations et diplomation."
+  },
+  "mal": {
+    "adminSpace": "Espace d'administration MAPO",
+    "teamOnly": "Accès réservé à l'équipe EDUFREM",
+    "emailLabel": "Email EDUFREM",
+    "password": "Mot de passe",
+    "signIn": "Se connecter",
+    "continueGoogle": "Continuer avec Google",
+    "footNote": "Cet espace est réservé à l'équipe EDUFREM. Si vous êtes un personnel d'établissement, rendez-vous sur l'adresse de votre école."
   }
 }

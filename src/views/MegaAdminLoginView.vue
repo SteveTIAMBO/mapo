@@ -7,14 +7,14 @@
         <div class="auth-logo-mark">E</div>
         <div>
           <div class="auth-logo-title">EDUFREM</div>
-          <div class="auth-logo-sub">Espace d'administration MAPO</div>
+          <div class="auth-logo-sub">{{ t('mal.adminSpace') }}</div>
         </div>
       </div>
 
       <div class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.396.957 1.286 1.58 2.32 1.6H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Accès réservé à l'équipe EDUFREM
+          {{ t('mal.teamOnly') }}
         </span>
       </div>
 
@@ -22,7 +22,7 @@
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
         <div class="auth-field">
-          <label class="auth-label">Email EDUFREM</label>
+          <label class="auth-label">{{ t('mal.emailLabel') }}</label>
           <input
             v-model="loginEmail"
             type="email"
@@ -34,13 +34,13 @@
         </div>
 
         <div class="auth-field">
-          <label class="auth-label">Mot de passe</label>
+          <label class="auth-label">{{ t('mal.password') }}</label>
           <div class="auth-input-wrap">
             <input
               v-model="loginPassword"
               :type="showPassword ? 'text' : 'password'"
               class="auth-input"
-              placeholder="Mot de passe"
+              :placeholder="t('mal.password')"
               required
               autocomplete="current-password"
             />
@@ -53,7 +53,7 @@
 
         <button type="submit" class="auth-btn-primary" :disabled="isLoading">
           <span v-if="isLoading" class="auth-spinner"></span>
-          <span v-else>Se connecter</span>
+          <span v-else>{{ t('mal.signIn') }}</span>
         </button>
       </form>
 
@@ -64,12 +64,11 @@
           <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
           <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
         </svg>
-        Continuer avec Google
+        {{ t('mal.continueGoogle') }}
       </button>
 
       <p class="auth-foot-note">
-        Cet espace est réservé à l'équipe EDUFREM. Si vous êtes un personnel
-        d'établissement, rendez-vous sur l'adresse de votre école.
+        {{ t('mal.footNote') }}
       </p>
     </div>
 
@@ -82,9 +81,11 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 

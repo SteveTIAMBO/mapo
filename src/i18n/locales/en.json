@@ -1232,5 +1232,14 @@
     "mod5Desc": "Statuses, hourly costs, workload plans and tracking of sessions.",
     "mod6Title": "Transcripts & boards",
     "mod6Desc": "Assessments by semester, deliberations and graduation."
+  },
+  "mal": {
+    "adminSpace": "MAPO administration space",
+    "teamOnly": "Restricted to the EDUFREM team",
+    "emailLabel": "EDUFREM email",
+    "password": "Password",
+    "signIn": "Sign in",
+    "continueGoogle": "Continue with Google",
+    "footNote": "This space is restricted to the EDUFREM team. If you are school staff, go to your school's address."
   }
 }
