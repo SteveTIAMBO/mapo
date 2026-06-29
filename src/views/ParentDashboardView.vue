@@ -27,6 +27,8 @@
         </div>
       </router-link>
 
+      <MiapoPlusCTA />
+
       <!-- Sélecteur d'enfant (si plusieurs) -->
       <div v-if="children.length > 1" class="tabs-bar">
         <button
@@ -169,6 +171,7 @@ import { usePresencesStore } from '../stores/presences'
 import { useFacturationStore } from '../stores/facturation'
 import { useClassesStore } from '../stores/classes'
 import { useMessagesStore } from '../stores/messages'
+import MiapoPlusCTA from '../components/MiapoPlusCTA.vue'
 import {
   User, UserX, Bell, ChevronRight, BookOpen, CalendarCheck, CreditCard, MessageSquare, ClipboardCheck
 } from 'lucide-vue-next'

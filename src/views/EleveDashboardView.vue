@@ -15,6 +15,8 @@
     </div>
 
     <template v-else>
+      <MiapoPlusCTA />
+
       <!-- Student identity card -->
       <div class="card student-card">
         <div class="student-avatar" :class="myRecord.gender === 'F' ? 'avatar-f' : 'avatar-m'">
@@ -111,6 +113,7 @@ import { usePresencesStore } from '../stores/presences'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import MiapoPlusCTA from '../components/MiapoPlusCTA.vue'
 import {
   FileText, CalendarCheck, Clock, MessageSquare, ChevronRight
 } from 'lucide-vue-next'

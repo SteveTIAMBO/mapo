@@ -123,6 +123,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       ecole: (ecole || '').trim(),
       photoURL: photoURL || '',
       notes: [], // [{ id, matiere, note }]
+      revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
       createdAt: new Date().toISOString(),
     }
     enfants.value.push(enfant)
@@ -175,6 +176,25 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return [...e.notes].filter((n) => n.note < 10).sort((a, b) => a.note - b.note)
   }
 
+  // Révisions ciblées : faiblesses détectées par la lecture d'une copie (photo).
+  // Alimentent « À réviser » et ciblent les notions du quiz (champ themes).
+  function addRevisionCiblee(enfantId, matiere, themes) {
+    const e = getEnfant(enfantId)
+    if (!e || !matiere) return
+    if (!Array.isArray(e.revisions)) e.revisions = []
+    const list = Array.isArray(themes) ? themes.map((t) => String(t).trim()).filter(Boolean) : []
+    const existing = e.revisions.find((r) => r.matiere === matiere)
+    if (existing) existing.themes = [...new Set([...(existing.themes || []), ...list])]
+    else e.revisions.push({ id: 'rv-' + Date.now().toString(36), matiere, themes: list })
+    persist()
+  }
+  function removeRevision(enfantId, id) {
+    const e = getEnfant(enfantId)
+    if (!e || !Array.isArray(e.revisions)) return
+    e.revisions = e.revisions.filter((r) => r.id !== id)
+    persist()
+  }
+
   // ── Auto-évaluation 6C (orientation) ────────────────────────────────
   // Profil de compétences (Créativité, Esprit critique, Communication,
   // Coopération, Courage, Confiance), noté /5, persisté avec l'enfant.
@@ -211,6 +231,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     enfants, mode, setMode, load, hydrate,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
+    addRevisionCiblee, removeRevision,
     setComp6c, getComp6c,
   }
 })

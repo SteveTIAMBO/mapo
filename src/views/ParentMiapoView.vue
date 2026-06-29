@@ -57,7 +57,7 @@
 
           <div class="stat-grid">
             <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">Moyenne /20</span></div>
-            <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: faiblesses.length }">{{ faiblesses.length }}</span><span class="stat-l">À réviser</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">À réviser</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'orientation'" @keyup.enter="section = 'orientation'"><span class="stat-v">{{ hasEval ? 'Fait' : '—' }}</span><span class="stat-l">Profil 6C</span></div>
           </div>
 
@@ -118,7 +118,8 @@
               <p v-if="visionResult.conseil" class="reco-conseil"><Lightbulb :size="15" /> {{ visionResult.conseil }}</p>
               <div class="vr-actions">
                 <button v-if="visionResult.matiere && visionResult.note !== null" class="btn btn-outline btn-sm" @click="addVisionNote"><Plus :size="14" /> <span>Ajouter la note</span></button>
-                <button v-if="visionResult.matiere" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere)"><Sparkles :size="14" /> <span>Réviser {{ visionResult.matiere }}</span></button>
+                <button v-if="visionResult.matiere && visionResult.points_faibles.length" class="btn btn-outline btn-sm" @click="addToRevisions"><Target :size="14" /> <span>Ajouter aux révisions</span></button>
+                <button v-if="visionResult.matiere" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere, visionResult.points_faibles)"><Sparkles :size="14" /> <span>Réviser {{ visionResult.matiere }}</span></button>
                 <button class="btn btn-ghost btn-sm" @click="resetVision">Autre copie</button>
               </div>
             </div>
@@ -129,15 +130,15 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="activeEnfant.niveau" :student-id="activeEnfant.id" @quit="quizMatiere = ''" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="activeEnfant.niveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" />
           </div>
           <template v-else>
-            <div v-if="faiblesses.length" class="card">
+            <div v-if="aReviser.length" class="card">
               <div class="card-head"><Target :size="18" /><h3>À réviser en priorité</h3></div>
               <div class="weak-list">
-                <button v-for="w in faiblesses" :key="w.id" class="weak-item" @click="goRevise(w.matiere)">
-                  <span class="wi-name">{{ w.matiere }}</span>
-                  <span class="wi-right"><span class="wi-level">Niveau {{ levelFor(w.matiere) }}/5</span><span class="wi-note">{{ w.note }}/20</span><ChevronRight :size="18" /></span>
+                <button v-for="w in aReviser" :key="w.matiere" class="weak-item" @click="goRevise(w.matiere, w.themes)">
+                  <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
+                  <span class="wi-right"><span class="wi-level">Niveau {{ levelFor(w.matiere) }}/5</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight :size="18" /></span>
                 </button>
               </div>
             </div>
@@ -360,7 +361,12 @@ watch([() => section.value, activeId], () => { if (section.value === 'profil') s
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')
-function goRevise(matiere) { quizMatiere.value = matiere; section.value = 'tuteur' }
+const quizThemes = ref('')
+function goRevise(matiere, themes) {
+  quizMatiere.value = matiere
+  quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
+  section.value = 'tuteur'
+}
 
 const showAdd = ref(false)
 const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM' })
@@ -374,6 +380,19 @@ function noteClass(n) { return n < 10 ? 'low' : n < 12 ? 'mid' : 'ok' }
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
 
 const faiblesses = computed(() => activeEnfant.value ? store.faiblesses(activeEnfant.value.id) : [])
+// « À réviser » = matières faibles (notes < 10) + faiblesses repérées par photo de copie.
+const aReviser = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return []
+  const map = new Map()
+  for (const f of faiblesses.value) map.set(f.matiere, { matiere: f.matiere, note: f.note, themes: [], source: 'note' })
+  for (const r of (e.revisions || [])) {
+    const ex = map.get(r.matiere)
+    if (ex) { ex.themes = [...new Set([...ex.themes, ...(r.themes || [])])]; ex.source = 'note+copie' }
+    else map.set(r.matiere, { matiere: r.matiere, note: null, themes: r.themes || [], source: 'copie' })
+  }
+  return [...map.values()]
+})
 const hasEval = computed(() => !!activeEnfant.value?.comp6c && Object.keys(activeEnfant.value.comp6c).length >= 6)
 const moyenne = computed(() => {
   const ns = activeEnfant.value?.notes || []
@@ -462,6 +481,15 @@ function addVisionNote() {
   if (!a || !activeEnfant.value || !a.matiere || a.note === null) return
   store.addNote(activeEnfant.value.id, a.matiere, a.note)
 }
+// Pousse les points faibles repérés sur la copie dans « À réviser » (et cible
+// ces notions au prochain quiz). On bascule sur le Tuteur pour les voir.
+function addToRevisions() {
+  const a = visionResult.value
+  if (!a || !activeEnfant.value || !a.matiere) return
+  store.addRevisionCiblee(activeEnfant.value.id, a.matiere, a.points_faibles || [])
+  resetVision()
+  section.value = 'tuteur'
+}
 
 // ── Prépa examen ───────────────────────────────────────────────────────
 const prepaState = ref('idle')
@@ -537,6 +565,7 @@ onMounted(async () => {
 .stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
 .stat:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
 .radar-dash { cursor: pointer; }
+.wi-themes { color: var(--tx3, #9ca3af); font-weight: 400; font-size: 12px; }
 .profil-photo { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .pp-avatar { width: 64px; height: 64px; font-size: 22px; overflow: hidden; flex-shrink: 0; }
 .pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
