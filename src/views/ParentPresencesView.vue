@@ -2,13 +2,13 @@
   <div class="parent-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Présences</h1>
-        <p>Suivi des absences et retards</p>
+        <h1>{{ t('parent.presencesTitle') }}</h1>
+        <p>{{ t('parent.presencesSubtitle') }}</p>
       </div>
     </div>
 
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
-      <p>Aucun enfant lié à votre compte.</p>
+      <p>{{ t('parent.noChildLinked') }}</p>
     </div>
 
     <template v-else>
@@ -26,28 +26,28 @@
           <span class="stat-bar-dot" style="background: var(--success);"></span>
           <div>
             <div class="stat-bar-value">{{ presenceRate }}%</div>
-            <div class="stat-bar-label">Taux de présence</div>
+            <div class="stat-bar-label">{{ t('eleve.attendanceRate') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" style="background: var(--danger);"></span>
           <div>
             <div class="stat-bar-value">{{ absentCount }}</div>
-            <div class="stat-bar-label">Absences</div>
+            <div class="stat-bar-label">{{ t('parent.absences') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" style="background: var(--warn);"></span>
           <div>
             <div class="stat-bar-value">{{ retardCount }}</div>
-            <div class="stat-bar-label">Retards</div>
+            <div class="stat-bar-label">{{ t('eleve.attLate') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" style="background: var(--pr);"></span>
           <div>
             <div class="stat-bar-value">{{ excuseCount }}</div>
-            <div class="stat-bar-label">Excusés</div>
+            <div class="stat-bar-label">{{ t('parent.excused') }}</div>
           </div>
         </div>
       </div>
@@ -55,19 +55,19 @@
       <!-- Table -->
       <div class="card">
         <div class="card-header">
-          <h3>Historique des présences</h3>
+          <h3>{{ t('parent.presencesHistory') }}</h3>
         </div>
         <div v-if="childPresences.length === 0" class="empty-state" style="padding: 24px;">
-          <p>Aucune donnée de présence</p>
+          <p>{{ t('parent.noPresenceData') }}</p>
         </div>
         <div v-else class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th class="text-center">Statut</th>
-                <th>Observation</th>
-                <th class="text-center">Action</th>
+                <th>{{ t('parent.date') }}</th>
+                <th class="text-center">{{ t('parent.status') }}</th>
+                <th>{{ t('parent.observation') }}</th>
+                <th class="text-center">{{ t('parent.action') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -79,15 +79,15 @@
                 <td>{{ p.note || '—' }}</td>
                 <td class="text-center">
                   <div v-if="p.status === 'absent'" class="absence-actions">
-                    <button class="btn btn-outline btn-sm" @click="justifyAbsence(p)" title="Justifier l'absence">
+                    <button class="btn btn-outline btn-sm" @click="justifyAbsence(p)" :title="t('parent.justifyAbsenceTitle')">
                       <FileText :size="13" />
-                      <span>Justifier</span>
+                      <span>{{ t('parent.justify') }}</span>
                     </button>
-                    <button class="btn btn-ghost btn-sm" @click="askAboutAbsence(p)" title="Demander des explications">
+                    <button class="btn btn-ghost btn-sm" @click="askAboutAbsence(p)" :title="t('parent.askExplanations')">
                       <HelpCircle :size="13" />
                     </button>
                   </div>
-                  <span v-else-if="p.status === 'excuse'" class="excuse-badge">Justifié</span>
+                  <span v-else-if="p.status === 'excuse'" class="excuse-badge">{{ t('parent.justified') }}</span>
                 </td>
               </tr>
             </tbody>
@@ -101,7 +101,7 @@
       <div class="modal-card" style="max-width: 540px;">
         <div class="modal-header">
           <div>
-            <h3>Justifier une absence</h3>
+            <h3>{{ t('parent.justifyModalTitle') }}</h3>
             <p style="font-size: 13px; color: var(--tx3); margin-top: 4px;">
               {{ selectedChild?.firstName }} — {{ formatDate(justifyingAbsence?.date) }}
             </p>
@@ -111,39 +111,39 @@
         <div class="modal-body">
           <!-- Destinataire -->
           <div class="justify-recipient">
-            <span style="font-size: 13px; color: var(--tx3);">À :</span>
+            <span style="font-size: 13px; color: var(--tx3);">{{ t('parent.toColon') }}</span>
             <strong>{{ profPrincipalName }}</strong>
-            <span class="justify-role">Professeur principal</span>
+            <span class="justify-role">{{ t('parent.headTeacher') }}</span>
           </div>
 
           <!-- Motif -->
           <div class="form-group">
-            <label class="form-label">Motif de l'absence</label>
+            <label class="form-label">{{ t('parent.absenceReason') }}</label>
             <select v-model="justifyForm.motif" class="select" style="width: 100%;">
-              <option value="">Sélectionner un motif</option>
-              <option value="maladie">Maladie</option>
-              <option value="rdv_medical">Rendez-vous médical</option>
-              <option value="deuil">Deuil familial</option>
-              <option value="voyage">Voyage familial</option>
-              <option value="autre">Autre (préciser)</option>
+              <option value="">{{ t('parent.selectReason') }}</option>
+              <option value="maladie">{{ t('parent.reasonIllness') }}</option>
+              <option value="rdv_medical">{{ t('parent.reasonMedical') }}</option>
+              <option value="deuil">{{ t('parent.reasonBereavement') }}</option>
+              <option value="voyage">{{ t('parent.reasonTravel') }}</option>
+              <option value="autre">{{ t('parent.reasonOther') }}</option>
             </select>
           </div>
 
           <!-- Message -->
           <div class="form-group">
-            <label class="form-label">Message</label>
-            <textarea v-model="justifyForm.message" class="input" rows="4" placeholder="Expliquez le motif de l'absence..." style="resize: vertical;"></textarea>
+            <label class="form-label">{{ t('parent.message') }}</label>
+            <textarea v-model="justifyForm.message" class="input" rows="4" :placeholder="t('parent.explainReasonPlaceholder')" style="resize: vertical;"></textarea>
           </div>
 
           <!-- Pièce jointe -->
           <div class="form-group">
-            <label class="form-label">Pièce jointe (optionnel)</label>
+            <label class="form-label">{{ t('parent.attachmentOptional') }}</label>
             <div class="file-upload-zone" @click="$refs.fileInput.click()">
               <input ref="fileInput" type="file" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" @change="handleFileSelect" />
               <div v-if="!justifyForm.attachment" class="file-upload-placeholder">
                 <Paperclip :size="20" />
-                <span>Certificat médical, justificatif...</span>
-                <span style="font-size: 11px; color: var(--tx3);">PDF, image ou document (max 5 Mo)</span>
+                <span>{{ t('parent.attachmentHint') }}</span>
+                <span style="font-size: 11px; color: var(--tx3);">{{ t('parent.attachmentTypes') }}</span>
               </div>
               <div v-else class="file-upload-selected">
                 <FileText :size="16" />
@@ -156,10 +156,10 @@
           </div>
 
           <div class="compose-actions">
-            <button class="btn btn-outline" @click="showJustifyModal = false">Annuler</button>
+            <button class="btn btn-outline" @click="showJustifyModal = false">{{ t('parent.cancel') }}</button>
             <button class="btn btn-primary" :disabled="!canJustify" @click="sendJustification">
               <Send :size="14" />
-              <span>Envoyer la justification</span>
+              <span>{{ t('parent.sendJustificationBtn') }}</span>
             </button>
           </div>
         </div>
@@ -171,30 +171,30 @@
       <div class="modal-card" style="max-width: 500px;">
         <div class="modal-header">
           <div>
-            <h3>Demander des explications</h3>
+            <h3>{{ t('parent.askExplanations') }}</h3>
             <p style="font-size: 13px; color: var(--tx3); margin-top: 4px;">
-              Absence du {{ formatDate(askingAbsence?.date) }}
+              {{ t('parent.absenceOf', { date: formatDate(askingAbsence?.date) }) }}
             </p>
           </div>
           <button class="btn btn-ghost btn-sm" @click="showAskModal = false"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <div class="justify-recipient">
-            <span style="font-size: 13px; color: var(--tx3);">À :</span>
+            <span style="font-size: 13px; color: var(--tx3);">{{ t('parent.toColon') }}</span>
             <strong>{{ profPrincipalName }}</strong>
-            <span class="justify-role">Professeur principal</span>
+            <span class="justify-role">{{ t('parent.headTeacher') }}</span>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Message</label>
+            <label class="form-label">{{ t('parent.message') }}</label>
             <textarea v-model="askForm.message" class="input" rows="4" :placeholder="defaultAskMessage" style="resize: vertical;"></textarea>
           </div>
 
           <div class="compose-actions">
-            <button class="btn btn-outline" @click="showAskModal = false">Annuler</button>
+            <button class="btn btn-outline" @click="showAskModal = false">{{ t('parent.cancel') }}</button>
             <button class="btn btn-primary" :disabled="!askForm.message.trim()" @click="sendAskMessage">
               <Send :size="14" />
-              <span>Envoyer</span>
+              <span>{{ t('parent.send') }}</span>
             </button>
           </div>
         </div>
@@ -213,6 +213,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -228,6 +229,7 @@ const elevesStore = useElevesStore()
 const presencesStore = usePresencesStore()
 const personnelStore = usePersonnelStore()
 const messagesStore = useMessagesStore()
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const parentChildren = useParentChildrenStore()
 const selectedChildId = computed({
@@ -269,7 +271,7 @@ const profPrincipal = computed(() => {
   return pp || personnelStore.staff.find(p => p.role === 'Censeur' && p.status === 'Actif') || null
 })
 const profPrincipalName = computed(() => {
-  if (!profPrincipal.value) return 'Professeur principal'
+  if (!profPrincipal.value) return t('parent.headTeacher')
   return `${profPrincipal.value.firstName} ${profPrincipal.value.lastName}`
 })
 
@@ -298,7 +300,7 @@ function handleFileSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
   if (file.size > 5 * 1024 * 1024) {
-    alert('Le fichier ne doit pas dépasser 5 Mo.')
+    alert(t('parent.fileTooLarge'))
     return
   }
   justifyForm.value.attachment = file
@@ -333,7 +335,7 @@ async function sendJustification() {
   })
 
   showJustifyModal.value = false
-  showSuccess('Justification envoyée au professeur principal')
+  showSuccess(t('parent.justificationSent'))
 }
 
 async function sendAskMessage() {
@@ -351,7 +353,7 @@ async function sendAskMessage() {
   })
 
   showAskModal.value = false
-  showSuccess('Message envoyé au professeur principal')
+  showSuccess(t('parent.messageSent'))
 }
 
 function showSuccess(msg) {
@@ -361,12 +363,13 @@ function showSuccess(msg) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function presenceLabel(status) {
-  const labels = { present: 'Présent', absent: 'Absent', retard: 'Retard', excuse: 'Excusé' }
-  return labels[status] || status
+  const k = 'eleve.attStatus.' + status
+  const lbl = t(k)
+  return lbl === k ? status : lbl
 }
 
 function presenceClass(status) {
