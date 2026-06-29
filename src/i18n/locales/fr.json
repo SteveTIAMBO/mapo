@@ -1064,5 +1064,13 @@
       "cardOperator": "Carte bancaire",
       "payStartError": "Le paiement n'a pas pu démarrer."
     }
+  },
+  "cnc": {
+    "title": "Compte non configuré",
+    "text1": "Votre connexion a bien fonctionné, mais ce compte",
+    "text1b": "n'est rattaché à aucun établissement.",
+    "text2": "Pour accéder à MAPO, votre établissement doit d'abord vous inviter. Contactez l'administrateur de votre école — ou EDUFREM si vous êtes le directeur — afin qu'une invitation soit créée pour cette adresse.",
+    "logout": "Se déconnecter",
+    "unknown": "inconnu"
   }
 }

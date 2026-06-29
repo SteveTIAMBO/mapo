@@ -11,16 +11,14 @@
         </svg>
       </div>
 
-      <h1 class="cnc-title">Compte non configuré</h1>
+      <h1 class="cnc-title">{{ t('cnc.title') }}</h1>
 
       <p class="cnc-text">
-        Votre connexion a bien fonctionné, mais ce compte
-        <strong>{{ email }}</strong> n'est rattaché à aucun établissement.
+        {{ t('cnc.text1') }}
+        <strong>{{ email }}</strong> {{ t('cnc.text1b') }}
       </p>
       <p class="cnc-text">
-        Pour accéder à MAPO, votre établissement doit d'abord vous inviter.
-        Contactez l'administrateur de votre école — ou EDUFREM si vous êtes
-        le directeur — afin qu'une invitation soit créée pour cette adresse.
+        {{ t('cnc.text2') }}
       </p>
 
       <div class="cnc-contact">
@@ -30,7 +28,7 @@
 
       <button class="cnc-btn" type="button" @click="seDeconnecter">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        Se déconnecter
+        {{ t('cnc.logout') }}
       </button>
     </div>
 
@@ -43,14 +41,16 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { isMiapoTenant } from '../utils/tenantContext'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 
-const email = computed(() => authStore.user?.email || 'inconnu')
+const email = computed(() => authStore.user?.email || t('cnc.unknown'))
 
 async function seDeconnecter() {
   await authStore.logout()

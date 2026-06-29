@@ -1064,5 +1064,13 @@
       "cardOperator": "Bank card",
       "payStartError": "The payment could not start."
     }
+  },
+  "cnc": {
+    "title": "Account not set up",
+    "text1": "Your sign-in worked, but this account",
+    "text1b": "is not linked to any school.",
+    "text2": "To access MAPO, your school must first invite you. Contact your school's administrator — or EDUFREM if you are the director — so that an invitation is created for this address.",
+    "logout": "Sign out",
+    "unknown": "unknown"
   }
 }
