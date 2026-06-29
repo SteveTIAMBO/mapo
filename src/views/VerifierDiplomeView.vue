@@ -5,12 +5,12 @@
       <div class="vf-brand">
         <div class="vf-logo">M</div>
         <div>
-          <div class="vf-title">Vérifier un diplôme</div>
-          <div class="vf-sub">Authentification des diplômes EDUFREM</div>
+          <div class="vf-title">{{ t('verif.title') }}</div>
+          <div class="vf-sub">{{ t('verif.subtitle') }}</div>
         </div>
       </div>
 
-      <p class="vf-intro">Saisissez le <strong>code de vérification</strong> figurant sur le diplôme pour confirmer son authenticité et son intégrité.</p>
+      <p class="vf-intro">{{ t('verif.intro') }}</p>
 
       <!-- Saisie -->
       <form class="vf-form" @submit.prevent="verifier">
@@ -26,58 +26,60 @@
         <button class="vf-btn" type="submit" :disabled="loading || !code.trim()">
           <Loader2 v-if="loading" :size="18" class="spin" />
           <ShieldCheck v-else :size="18" />
-          <span>{{ loading ? 'Vérification…' : 'Vérifier' }}</span>
+          <span>{{ loading ? t('verif.verifying') : t('verif.verify') }}</span>
         </button>
       </form>
 
       <!-- Résultats -->
       <div v-if="result === 'introuvable'" class="vf-res vf-res-bad">
         <XCircle :size="34" />
-        <h3>Diplôme introuvable</h3>
-        <p>Aucun diplôme ne correspond au code <strong>{{ lastCode }}</strong>. Vérifiez la saisie (le code figure en bas du diplôme).</p>
+        <h3>{{ t('verif.notFoundTitle') }}</h3>
+        <p>{{ t('verif.notFoundText', { code: lastCode }) }}</p>
       </div>
 
       <div v-else-if="result === 'revoque'" class="vf-res vf-res-bad">
         <Ban :size="34" />
-        <h3>Diplôme révoqué</h3>
-        <p>Ce diplôme existe dans le registre EDUFREM mais a été <strong>révoqué</strong> par l'établissement émetteur. Il n'est pas valide.</p>
+        <h3>{{ t('verif.revokedTitle') }}</h3>
+        <p>{{ t('verif.revokedText') }}</p>
       </div>
 
       <div v-else-if="result === 'altere'" class="vf-res vf-res-warn">
         <AlertTriangle :size="34" />
-        <h3>Intégrité non confirmée</h3>
-        <p>Le contenu présenté ne correspond pas à l'empreinte enregistrée. Ne considérez pas ce document comme authentique.</p>
+        <h3>{{ t('verif.alteredTitle') }}</h3>
+        <p>{{ t('verif.alteredText') }}</p>
       </div>
 
       <div v-else-if="result === 'valide' && diplome" class="vf-res vf-res-ok">
-        <div class="vf-ok-head"><CheckCircle :size="30" /><h3>{{ signed ? 'Diplôme authentique et signé' : 'Diplôme authentique' }}</h3></div>
+        <div class="vf-ok-head"><CheckCircle :size="30" /><h3>{{ signed ? t('verif.validSignedTitle') : t('verif.validTitle') }}</h3></div>
         <div class="vf-detail">
-          <div class="vf-row"><span class="vf-lab">Titulaire</span><span class="vf-val strong">{{ diplome.eleveName }}</span></div>
-          <div class="vf-row"><span class="vf-lab">Diplôme</span><span class="vf-val">{{ diplome.typeLabel }}<span v-if="diplome.serie"> — Série {{ diplome.serie }}</span></span></div>
-          <div v-if="diplome.mention" class="vf-row"><span class="vf-lab">Mention</span><span class="vf-val">{{ diplome.mention }}</span></div>
-          <div class="vf-row"><span class="vf-lab">Année</span><span class="vf-val">{{ diplome.annee }}</span></div>
-          <div class="vf-row"><span class="vf-lab">Établissement</span><span class="vf-val">{{ diplome.ecoleNom }}</span></div>
-          <div class="vf-row"><span class="vf-lab">Émis le</span><span class="vf-val">{{ formatDate(diplome.emisLe) }}</span></div>
-          <div class="vf-row"><span class="vf-lab">Code</span><span class="vf-val mono">{{ diplome.code }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.holder') }}</span><span class="vf-val strong">{{ diplome.eleveName }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.diploma') }}</span><span class="vf-val">{{ diplome.typeLabel }}<span v-if="diplome.serie"> — {{ t('verif.serieLabel') }} {{ diplome.serie }}</span></span></div>
+          <div v-if="diplome.mention" class="vf-row"><span class="vf-lab">{{ t('verif.mention') }}</span><span class="vf-val">{{ diplome.mention }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.year') }}</span><span class="vf-val">{{ diplome.annee }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.school') }}</span><span class="vf-val">{{ diplome.ecoleNom }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.issuedOn') }}</span><span class="vf-val">{{ formatDate(diplome.emisLe) }}</span></div>
+          <div class="vf-row"><span class="vf-lab">{{ t('verif.code') }}</span><span class="vf-val mono">{{ diplome.code }}</span></div>
         </div>
         <p class="vf-note">
           <ShieldCheck :size="14" />
-          <template v-if="signed">Diplôme <strong>signé cryptographiquement</strong> par l'établissement — présent au registre EDUFREM et intègre (empreinte SHA-256 + signature RSA vérifiées).</template>
-          <template v-else>Présent dans le registre EDUFREM et intègre (empreinte SHA-256 vérifiée).<span class="vf-note-soft"> Ce diplôme ne porte pas encore de signature cryptographique.</span></template>
+          <template v-if="signed">{{ t('verif.noteSigned') }}</template>
+          <template v-else>{{ t('verif.noteUnsigned') }}<span class="vf-note-soft"> {{ t('verif.noteUnsignedSoft') }}</span></template>
         </p>
       </div>
     </div>
 
-    <div class="vf-footer">Propulsé par <strong>EDUFREM</strong> · Diplômes vérifiables</div>
+    <div class="vf-footer">{{ t('verif.poweredBy') }} <strong>EDUFREM</strong> · {{ t('verif.verifiableDiplomas') }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useDiplomesStore } from '../stores/diplomes'
 import { ShieldCheck, CheckCircle, XCircle, Ban, AlertTriangle, Loader2 } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const dipStore = useDiplomesStore()
 
@@ -116,7 +118,7 @@ async function verifier() {
 
 function formatDate(iso) {
   if (!iso) return '-'
-  try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) } catch { return '-' }
+  try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' }) } catch { return '-' }
 }
 
 onMounted(() => {

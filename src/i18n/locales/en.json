@@ -1072,5 +1072,33 @@
     "text2": "To access MAPO, your school must first invite you. Contact your school's administrator — or EDUFREM if you are the director — so that an invitation is created for this address.",
     "logout": "Sign out",
     "unknown": "unknown"
+  },
+  "verif": {
+    "title": "Verify a diploma",
+    "subtitle": "EDUFREM diploma authentication",
+    "intro": "Enter the verification code shown on the diploma to confirm its authenticity and integrity.",
+    "verifying": "Verifying…",
+    "verify": "Verify",
+    "notFoundTitle": "Diploma not found",
+    "notFoundText": "No diploma matches code {code}. Check your entry (the code is at the bottom of the diploma).",
+    "revokedTitle": "Diploma revoked",
+    "revokedText": "This diploma exists in the EDUFREM registry but was revoked by the issuing school. It is not valid.",
+    "alteredTitle": "Integrity not confirmed",
+    "alteredText": "The presented content does not match the recorded fingerprint. Do not consider this document authentic.",
+    "validSignedTitle": "Authentic and signed diploma",
+    "validTitle": "Authentic diploma",
+    "holder": "Holder",
+    "diploma": "Diploma",
+    "serieLabel": "Series",
+    "mention": "Honors",
+    "year": "Year",
+    "school": "School",
+    "issuedOn": "Issued on",
+    "code": "Code",
+    "noteSigned": "Diploma cryptographically signed by the school — present in the EDUFREM registry and intact (SHA-256 fingerprint + RSA signature verified).",
+    "noteUnsigned": "Present in the EDUFREM registry and intact (SHA-256 fingerprint verified).",
+    "noteUnsignedSoft": "This diploma does not yet carry a cryptographic signature.",
+    "poweredBy": "Powered by",
+    "verifiableDiplomas": "Verifiable diplomas"
   }
 }
