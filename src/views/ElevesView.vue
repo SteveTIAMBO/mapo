@@ -3,17 +3,17 @@
     <!-- En-tete -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Élèves</h1>
-        <p>{{ authStore.isTeacher ? filteredEleves.length + ' élève' + (filteredEleves.length > 1 ? 's' : '') : elevesStore.elevesStats.total + ' élève' + (elevesStore.elevesStats.total > 1 ? 's' : '') + ' au total' }}</p>
+        <h1>{{ t('eleves.title') }}</h1>
+        <p>{{ headerCount }}</p>
       </div>
       <div style="display: flex; gap: 8px;">
         <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportStudents">
           <Download :size="16" />
-          <span>Exporter</span>
+          <span>{{ t('eleves.export') }}</span>
         </button>
         <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="router.push('/inscriptions')">
           <Plus :size="16" />
-          <span>Inscrire un élève</span>
+          <span>{{ t('eleves.enroll') }}</span>
         </button>
       </div>
     </div>
@@ -24,28 +24,28 @@
         <div class="stat-bar-dot blue"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.total }}</div>
-          <div class="stat-bar-label">Total</div>
+          <div class="stat-bar-label">{{ t('eleves.total') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: var(--pr)"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.garcons }}</div>
-          <div class="stat-bar-label">Garçons</div>
+          <div class="stat-bar-label">{{ t('eleves.boys') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: var(--gold)"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.filles }}</div>
-          <div class="stat-bar-label">Filles</div>
+          <div class="stat-bar-label">{{ t('eleves.girls') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot green"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.inscrits }}</div>
-          <div class="stat-bar-label">Inscrits actifs</div>
+          <div class="stat-bar-label">{{ t('eleves.activeEnrolled') }}</div>
         </div>
       </div>
     </div>
@@ -55,28 +55,28 @@
         <div class="stat-bar-dot" style="background: #8B5CF6"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.handicap }}</div>
-          <div class="stat-bar-label">Handicap</div>
+          <div class="stat-bar-label">{{ t('eleves.disability') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #F59E0B"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.redoublants }}</div>
-          <div class="stat-bar-label">Redoublants</div>
+          <div class="stat-bar-label">{{ t('eleves.repeaters') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #10B981"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.boursiers }}</div>
-          <div class="stat-bar-label">Boursiers</div>
+          <div class="stat-bar-label">{{ t('eleves.scholarship') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #EF4444"></div>
         <div>
           <div class="stat-bar-value">{{ elevesStore.elevesStats.vulnerables }}</div>
-          <div class="stat-bar-label">Vulnérables</div>
+          <div class="stat-bar-label">{{ t('eleves.vulnerable') }}</div>
         </div>
       </div>
     </div>
@@ -86,22 +86,22 @@
       <div class="toolbar">
         <div class="search-box">
           <Search :size="18" class="search-icon" />
-          <input v-model="searchQuery" type="text" class="input search-input" placeholder="Rechercher par nom, prénom ou matricule..." />
+          <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('eleves.searchPlaceholder')" />
         </div>
         <select v-model="selectedClass" class="select">
-          <option value="">Toutes les classes</option>
+          <option value="">{{ t('eleves.allClasses') }}</option>
           <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
         </select>
         <select v-model="selectedStatus" class="select">
-          <option value="">Tous les statuts</option>
-          <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+          <option value="">{{ t('eleves.allStatuses') }}</option>
+          <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ t('eleves.statusLabels.' + s.value) }}</option>
         </select>
         <select v-model="selectedProfile" class="select">
-          <option value="">Tous les profils</option>
-          <option value="handicap">Handicap</option>
-          <option value="redoublant">Redoublant</option>
-          <option value="boursier">Boursier</option>
-          <option value="vulnerable">Vulnérable</option>
+          <option value="">{{ t('eleves.allProfiles') }}</option>
+          <option value="handicap">{{ t('eleves.profileDisability') }}</option>
+          <option value="redoublant">{{ t('eleves.profileRepeater') }}</option>
+          <option value="boursier">{{ t('eleves.profileScholarship') }}</option>
+          <option value="vulnerable">{{ t('eleves.profileVulnerable') }}</option>
         </select>
       </div>
     </div>
@@ -110,9 +110,9 @@
     <div class="card">
       <div v-if="filteredEleves.length === 0" class="empty-state">
         <UserPlus :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>{{ searchQuery || selectedClass || selectedStatus ? 'Aucun résultat pour cette recherche' : 'Aucun élève inscrit pour le moment' }}</p>
+        <p>{{ searchQuery || selectedClass || selectedStatus ? t('eleves.noResults') : t('eleves.noStudents') }}</p>
         <button v-if="!searchQuery && !selectedClass && !selectedStatus" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="router.push('/inscriptions')">
-          Inscrire un premier élève
+          {{ t('eleves.enrollFirst') }}
         </button>
       </div>
 
@@ -130,14 +130,14 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Élève</th>
-                <th class="hide-mobile">Matricule</th>
-                <th>Classe</th>
-                <th>Genre</th>
-                <th class="hide-mobile">Date de naissance</th>
-                <th class="hide-mobile">Tuteur / Parent</th>
-                <th>Statut</th>
-                <th style="width: 90px;">Actions</th>
+                <th>{{ t('eleves.thStudent') }}</th>
+                <th class="hide-mobile">{{ t('eleves.thId') }}</th>
+                <th>{{ t('eleves.thClass') }}</th>
+                <th>{{ t('eleves.thGender') }}</th>
+                <th class="hide-mobile">{{ t('eleves.thBirthdate') }}</th>
+                <th class="hide-mobile">{{ t('eleves.thGuardian') }}</th>
+                <th>{{ t('eleves.thStatus') }}</th>
+                <th style="width: 90px;">{{ t('eleves.thActions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -162,15 +162,15 @@
                 </td>
                 <td>
                   <span class="badge" :class="getStatusBadge(eleve.status)">{{ getStatusLabel(eleve.status) }}</span>
-                  <span v-if="eleve.handicap" class="tag-mini tag-handicap" title="Handicap">H</span>
-                  <span v-if="eleve.redoublant" class="tag-mini tag-redoublant" title="Redoublant">R</span>
-                  <span v-if="eleve.boursier" class="tag-mini tag-boursier" title="Boursier">B</span>
-                  <span v-if="eleve.vulnerabilities && eleve.vulnerabilities.length > 0" class="tag-mini tag-vulnerable" title="Vulnérable">V</span>
+                  <span v-if="eleve.handicap" class="tag-mini tag-handicap" :title="t('eleves.disability')">H</span>
+                  <span v-if="eleve.redoublant" class="tag-mini tag-redoublant" :title="t('eleves.profileRepeater')">R</span>
+                  <span v-if="eleve.boursier" class="tag-mini tag-boursier" :title="t('eleves.profileScholarship')">B</span>
+                  <span v-if="eleve.vulnerabilities && eleve.vulnerabilities.length > 0" class="tag-mini tag-vulnerable" :title="t('eleves.profileVulnerable')">V</span>
                 </td>
                 <td>
                   <div class="action-btns">
-                    <button class="icon-btn" title="Modifier" @click="openEditModal(eleve)"><Pencil :size="15" /></button>
-                    <button class="icon-btn icon-btn-danger" title="Supprimer" @click="openDeleteConfirm(eleve)"><Trash2 :size="15" /></button>
+                    <button class="icon-btn" :title="t('eleves.edit')" @click="openEditModal(eleve)"><Pencil :size="15" /></button>
+                    <button class="icon-btn icon-btn-danger" :title="t('eleves.delete')" @click="openDeleteConfirm(eleve)"><Trash2 :size="15" /></button>
                   </div>
                 </td>
               </tr>
@@ -193,91 +193,91 @@
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>{{ editingEleve ? "Modifier l'élève" : 'Inscrire un élève' }}</h2>
+          <h2>{{ editingEleve ? t('eleves.editStudent') : t('eleves.enroll') }}</h2>
           <button class="icon-btn" @click="closeModal"><X :size="20" /></button>
         </div>
 
         <form @submit.prevent="saveEleve" class="modal-body">
           <!-- Informations de l'élève -->
-          <div class="fieldset-legend">Informations de l'élève</div>
+          <div class="fieldset-legend">{{ t('eleves.studentInfo') }}</div>
 
           <div class="field-row">
             <div class="field">
-              <label>Nom *</label>
-              <input v-model="formData.lastName" type="text" class="input" placeholder="Nom de famille" required />
+              <label>{{ t('eleves.lastName') }} *</label>
+              <input v-model="formData.lastName" type="text" class="input" :placeholder="t('eleves.lastNamePh')" required />
             </div>
             <div class="field">
-              <label>Prénom *</label>
-              <input v-model="formData.firstName" type="text" class="input" placeholder="Prénom" required />
+              <label>{{ t('eleves.firstName') }} *</label>
+              <input v-model="formData.firstName" type="text" class="input" :placeholder="t('eleves.firstNamePh')" required />
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Genre *</label>
+              <label>{{ t('eleves.genderField') }} *</label>
               <select v-model="formData.gender" class="input" required>
-                <option value="">Sélectionnez</option>
-                <option v-for="g in GENDERS" :key="g.value" :value="g.value">{{ g.label }}</option>
+                <option value="">{{ t('eleves.select') }}</option>
+                <option v-for="g in GENDERS" :key="g.value" :value="g.value">{{ t('eleves.genders.' + g.value) }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Date de naissance</label>
+              <label>{{ t('eleves.birthdate') }}</label>
               <input v-model="formData.dateOfBirth" type="date" class="input" />
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Classe *</label>
+              <label>{{ t('eleves.classField') }} *</label>
               <select v-model="formData.className" class="input" required>
-                <option value="">Sélectionnez</option>
+                <option value="">{{ t('eleves.select') }}</option>
                 <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Statut</label>
+              <label>{{ t('eleves.statusField') }}</label>
               <select v-model="formData.status" class="input">
-                <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ s.label }}</option>
+                <option v-for="s in STATUSES" :key="s.value" :value="s.value">{{ t('eleves.statusLabels.' + s.value) }}</option>
               </select>
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Ville</label>
-              <input v-model="formData.city" type="text" class="input" placeholder="Ex : Yaounde" />
+              <label>{{ t('eleves.city') }}</label>
+              <input v-model="formData.city" type="text" class="input" :placeholder="t('eleves.cityPh')" />
             </div>
             <div class="field">
-              <label>Quartier</label>
-              <input v-model="formData.quartier" type="text" class="input" placeholder="Ex : Santa Barbara" />
+              <label>{{ t('eleves.district') }}</label>
+              <input v-model="formData.quartier" type="text" class="input" :placeholder="t('eleves.districtPh')" />
             </div>
           </div>
 
           <!-- Profil complémentaire (NOVA / CESA) -->
-          <div class="fieldset-legend" style="margin-top: 24px;">Profil complémentaire</div>
+          <div class="fieldset-legend" style="margin-top: 24px;">{{ t('eleves.extraProfile') }}</div>
 
           <div class="field-row" style="grid-template-columns: 1fr 1fr 1fr;">
             <label class="check-field">
               <input type="checkbox" v-model="formData.handicap" />
-              <span>Handicap</span>
+              <span>{{ t('eleves.profileDisability') }}</span>
             </label>
             <label class="check-field">
               <input type="checkbox" v-model="formData.redoublant" />
-              <span>Redoublant</span>
+              <span>{{ t('eleves.profileRepeater') }}</span>
             </label>
             <label class="check-field">
               <input type="checkbox" v-model="formData.boursier" />
-              <span>Boursier</span>
+              <span>{{ t('eleves.profileScholarship') }}</span>
             </label>
           </div>
 
           <div v-if="formData.handicap" class="field">
-            <label>Détail du handicap</label>
-            <input v-model="formData.handicapDetail" type="text" class="input" placeholder="Ex : moteur, visuel, auditif..." />
+            <label>{{ t('eleves.disabilityDetail') }}</label>
+            <input v-model="formData.handicapDetail" type="text" class="input" :placeholder="t('eleves.disabilityDetailPh')" />
           </div>
 
           <div class="field">
-            <label>Situation de vulnérabilité</label>
+            <label>{{ t('eleves.vulnSituation') }}</label>
             <div class="vuln-checkboxes">
               <label v-for="v in VULNERABILITY_TYPES" :key="v.value" class="check-field">
                 <input
@@ -285,41 +285,41 @@
                   :checked="formData.vulnerabilities.includes(v.value)"
                   @change="toggleVulnerability(v.value)"
                 />
-                <span>{{ v.label }}</span>
+                <span>{{ t('eleves.vulns.' + v.value) }}</span>
               </label>
             </div>
           </div>
 
           <!-- Tuteur / Parent -->
-          <div class="fieldset-legend" style="margin-top: 24px;">Tuteur / Parent
-            <span v-if="!tuteurRequired" class="fieldset-optional">(facultatif)</span>
+          <div class="fieldset-legend" style="margin-top: 24px;">{{ t('eleves.guardian') }}
+            <span v-if="!tuteurRequired" class="fieldset-optional">{{ t('eleves.optional') }}</span>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Nom du tuteur{{ tuteurRequired ? ' *' : '' }}</label>
-              <input v-model="formData.parentLastName" type="text" class="input" placeholder="Nom" :required="tuteurRequired" />
+              <label>{{ t('eleves.guardianLastName') }}{{ tuteurRequired ? ' *' : '' }}</label>
+              <input v-model="formData.parentLastName" type="text" class="input" :placeholder="t('eleves.namePh')" :required="tuteurRequired" />
             </div>
             <div class="field">
-              <label>Prénom du tuteur{{ tuteurRequired ? ' *' : '' }}</label>
-              <input v-model="formData.parentFirstName" type="text" class="input" placeholder="Prénom" :required="tuteurRequired" />
+              <label>{{ t('eleves.guardianFirstName') }}{{ tuteurRequired ? ' *' : '' }}</label>
+              <input v-model="formData.parentFirstName" type="text" class="input" :placeholder="t('eleves.firstNamePh')" :required="tuteurRequired" />
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Téléphone principal{{ tuteurRequired ? ' *' : '' }}</label>
+              <label>{{ t('eleves.phonePrimary') }}{{ tuteurRequired ? ' *' : '' }}</label>
               <input v-model="formData.parentPhone" type="tel" class="input" placeholder="+237 6XX XXX XXX" :required="tuteurRequired" />
             </div>
             <div class="field">
-              <label>Téléphone secondaire</label>
+              <label>{{ t('eleves.phoneSecondary') }}</label>
               <input v-model="formData.parentPhone2" type="tel" class="input" placeholder="+237 6XX XXX XXX" />
             </div>
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="closeModal">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ editingEleve ? 'Mettre à jour' : 'Inscrire' }}</button>
+            <button type="button" class="btn btn-outline" @click="closeModal">{{ t('eleves.cancel') }}</button>
+            <button type="submit" class="btn btn-primary">{{ editingEleve ? t('eleves.update') : t('eleves.enrollBtn') }}</button>
           </div>
         </form>
       </div>
@@ -329,13 +329,13 @@
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Supprimer cet élève ?</h2>
+          <h2>{{ t('eleves.deleteTitle') }}</h2>
           <button class="icon-btn" @click="closeDeleteConfirm"><X :size="20" /></button>
         </div>
-        <p class="modal-text">{{ deletingEleve?.lastName }} {{ deletingEleve?.firstName }} sera définitivement supprimé(e) de la base.</p>
+        <p class="modal-text">{{ t('eleves.deleteText', { name: (deletingEleve?.lastName || '') + ' ' + (deletingEleve?.firstName || '') }) }}</p>
         <div class="modal-actions">
-          <button class="btn btn-outline" @click="closeDeleteConfirm">Annuler</button>
-          <button class="btn btn-danger" @click="confirmDelete">Supprimer</button>
+          <button class="btn btn-outline" @click="closeDeleteConfirm">{{ t('eleves.cancel') }}</button>
+          <button class="btn btn-danger" @click="confirmDelete">{{ t('eleves.delete') }}</button>
         </div>
       </div>
     </div>
@@ -347,6 +347,7 @@ import { useElevesStore, GENDERS, STATUSES, VULNERABILITY_TYPES } from '../store
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { Search, Plus, Pencil, Trash2, X, UserPlus, Download } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
@@ -355,6 +356,7 @@ import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { exportToExcel } from '../utils/exportExcel'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
@@ -437,6 +439,15 @@ const filteredEleves = computed(() => {
   return list.sort((a, b) => a.lastName.localeCompare(b.lastName))
 })
 
+const headerCount = computed(() => {
+  if (authStore.isTeacher) {
+    const n = filteredEleves.value.length
+    return n > 1 ? t('eleves.countMany', { n }) : t('eleves.countOne', { n })
+  }
+  const n = elevesStore.elevesStats.total
+  return n > 1 ? t('eleves.countTotalMany', { n }) : t('eleves.countTotalOne', { n })
+})
+
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredEleves.value.length / perPage.value)))
 const paginatedEleves = computed(() => {
   const start = (currentPage.value - 1) * perPage.value
@@ -462,8 +473,9 @@ const formatDate = (d) => {
 }
 
 const getStatusLabel = (s) => {
-  const found = STATUSES.find(st => st.value === s)
-  return found ? found.label : s
+  const k = `eleves.statusLabels.${s}`
+  const lbl = t(k)
+  return lbl === k ? s : lbl
 }
 
 const getStatusBadge = (s) => {
@@ -474,36 +486,38 @@ const getStatusBadge = (s) => {
 
 const exportStudents = () => {
   const columns = [
-    { key: 'matricule', label: 'Matricule', width: 15 },
-    { key: 'firstName', label: 'Prénom', width: 18 },
-    { key: 'lastName', label: 'Nom', width: 18 },
-    { key: 'gender', label: 'Sexe', width: 10 },
-    { key: 'dateOfBirth', label: 'Date naissance', width: 18 },
-    { key: 'className', label: 'Classe', width: 15 },
-    { key: 'status', label: 'Statut', width: 15 },
-    { key: 'handicap', label: 'Handicap', width: 12 },
-    { key: 'redoublant', label: 'Redoublant', width: 12 },
-    { key: 'boursier', label: 'Boursier', width: 12 },
-    { key: 'vulnerable', label: 'Vulnérable', width: 18 },
-    { key: 'parentPhone', label: 'Tél parent', width: 18 },
+    { key: 'matricule', label: t('eleves.exportCols.matricule'), width: 15 },
+    { key: 'firstName', label: t('eleves.exportCols.firstName'), width: 18 },
+    { key: 'lastName', label: t('eleves.exportCols.lastName'), width: 18 },
+    { key: 'gender', label: t('eleves.exportCols.gender'), width: 10 },
+    { key: 'dateOfBirth', label: t('eleves.exportCols.birthdate'), width: 18 },
+    { key: 'className', label: t('eleves.exportCols.class'), width: 15 },
+    { key: 'status', label: t('eleves.exportCols.status'), width: 15 },
+    { key: 'handicap', label: t('eleves.exportCols.disability'), width: 12 },
+    { key: 'redoublant', label: t('eleves.exportCols.repeater'), width: 12 },
+    { key: 'boursier', label: t('eleves.exportCols.scholarship'), width: 12 },
+    { key: 'vulnerable', label: t('eleves.exportCols.vulnerable'), width: 18 },
+    { key: 'parentPhone', label: t('eleves.exportCols.parentPhone'), width: 18 },
   ]
+  const yes = t('eleves.exportYes')
+  const no = t('eleves.exportNo')
 
   const exportData = filteredEleves.value.map(e => ({
     matricule: e.matricule || '-',
     firstName: e.firstName || '-',
     lastName: e.lastName || '-',
-    gender: e.gender === 'M' ? 'M' : 'F',
+    gender: e.gender === 'F' ? t('eleves.genders.F') : t('eleves.genders.M'),
     dateOfBirth: formatDate(e.dateOfBirth),
     className: e.className || '-',
     status: getStatusLabel(e.status),
-    handicap: e.handicap ? (e.handicapDetail || 'Oui') : 'Non',
-    redoublant: e.redoublant ? 'Oui' : 'Non',
-    boursier: e.boursier ? 'Oui' : 'Non',
-    vulnerable: (e.vulnerabilities || []).map(v => { const found = VULNERABILITY_TYPES.find(t => t.value === v); return found ? found.label : v }).join(', ') || 'Non',
+    handicap: e.handicap ? (e.handicapDetail || yes) : no,
+    redoublant: e.redoublant ? yes : no,
+    boursier: e.boursier ? yes : no,
+    vulnerable: (e.vulnerabilities || []).map(v => { const k = 'eleves.vulns.' + v; const lbl = t(k); return lbl === k ? v : lbl }).join(', ') || no,
     parentPhone: e.parentPhone || '-',
   }))
 
-  exportToExcel(exportData, columns, 'eleves', 'Élèves')
+  exportToExcel(exportData, columns, 'eleves', t('eleves.exportSheet'))
 }
 
 const resetForm = () => {
