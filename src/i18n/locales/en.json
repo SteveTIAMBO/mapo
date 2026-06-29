@@ -558,5 +558,68 @@
       "exclusion_temp": "Temporary suspension",
       "conseil": "Disciplinary council"
     }
+  },
+  "examens": {
+    "title": "National exams",
+    "subtitle": "Registrations, results and pass rates (CEP, BEPC, Probatoire, Baccalauréat).",
+    "newExam": "+ New exam",
+    "kpiSessions": "Sessions",
+    "kpiCandidates": "Candidates",
+    "kpiAdmitted": "Admitted",
+    "kpiAvgRate": "Average pass rate",
+    "emptyList": "No exam yet. Click \"New exam\" to get started.",
+    "deleteTitle": "Delete",
+    "successRate": "pass rate",
+    "admittedPresent": "{admis} admitted / {presents} present",
+    "registered": "{n} registered",
+    "backAll": "← All exams",
+    "export": "Export",
+    "emitting": "Issuing…",
+    "emitDiplomas": "Issue diplomas for admitted ({n})",
+    "registerLevel": "Register {niveau}",
+    "statInscrits": "Registered",
+    "statPresents": "Present",
+    "statAdmis": "Admitted",
+    "statAjournes": "Failed",
+    "statAbsents": "Absent",
+    "statRate": "Pass rate",
+    "emptyCandidates": "No candidate. Click \"Register {niveau}\" to automatically add the students of that level.",
+    "thCandidate": "Candidate",
+    "thClass": "Class",
+    "thTableNo": "Seat no.",
+    "thResult": "Result",
+    "thMention": "Honors",
+    "mentionPlaceholder": "— Honors —",
+    "modalTitle": "New exam",
+    "examField": "Exam",
+    "yearField": "Year",
+    "cancel": "Cancel",
+    "create": "Create",
+    "confirmDelete": "Delete this exam session and its results?",
+    "directionFallback": "Management",
+    "schoolFallback": "EDUFREM School",
+    "feedbackIssued": "{issued} diploma(s) issued{extra} — find them in the Diplomas module.",
+    "feedbackExisting": ", {n} already existing",
+    "feedbackAllHave": "The {n} admitted already have their diploma.",
+    "feedbackNone": "No admitted student to issue diplomas for yet.",
+    "status": {
+      "inscrit": "Registered",
+      "admis": "Admitted",
+      "ajourne": "Failed",
+      "absent": "Absent"
+    },
+    "examDesc": {
+      "cep": "Primary school leaving certificate (end of primary)",
+      "bepc": "Lower secondary certificate",
+      "probatoire": "Before the baccalaureate",
+      "bac": "End of secondary"
+    },
+    "exportCols": {
+      "candidate": "Candidate",
+      "class": "Class",
+      "tableNo": "Seat no.",
+      "result": "Result",
+      "mention": "Honors"
+    }
   }
 }

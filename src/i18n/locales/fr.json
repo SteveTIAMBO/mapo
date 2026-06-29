@@ -558,5 +558,68 @@
       "exclusion_temp": "Exclusion temporaire",
       "conseil": "Conseil de discipline"
     }
+  },
+  "examens": {
+    "title": "Examens nationaux",
+    "subtitle": "Inscriptions, résultats et taux de réussite (CEP, BEPC, Probatoire, Baccalauréat).",
+    "newExam": "+ Nouvel examen",
+    "kpiSessions": "Sessions",
+    "kpiCandidates": "Candidats",
+    "kpiAdmitted": "Admis",
+    "kpiAvgRate": "Taux de réussite moyen",
+    "emptyList": "Aucun examen pour l'instant. Cliquez sur « Nouvel examen » pour commencer.",
+    "deleteTitle": "Supprimer",
+    "successRate": "de réussite",
+    "admittedPresent": "{admis} admis / {presents} présents",
+    "registered": "{n} inscrits",
+    "backAll": "← Tous les examens",
+    "export": "Exporter",
+    "emitting": "Émission…",
+    "emitDiplomas": "Émettre les diplômes des admis ({n})",
+    "registerLevel": "Inscrire la {niveau}",
+    "statInscrits": "Inscrits",
+    "statPresents": "Présents",
+    "statAdmis": "Admis",
+    "statAjournes": "Ajournés",
+    "statAbsents": "Absents",
+    "statRate": "Réussite",
+    "emptyCandidates": "Aucun candidat. Cliquez sur « Inscrire la {niveau} » pour ajouter automatiquement les élèves du niveau.",
+    "thCandidate": "Candidat",
+    "thClass": "Classe",
+    "thTableNo": "N° table",
+    "thResult": "Résultat",
+    "thMention": "Mention",
+    "mentionPlaceholder": "— Mention —",
+    "modalTitle": "Nouvel examen",
+    "examField": "Examen",
+    "yearField": "Année",
+    "cancel": "Annuler",
+    "create": "Créer",
+    "confirmDelete": "Supprimer cette session d'examen et ses résultats ?",
+    "directionFallback": "Direction",
+    "schoolFallback": "Établissement EDUFREM",
+    "feedbackIssued": "{issued} diplôme(s) émis{extra} — à retrouver dans le module Diplômes.",
+    "feedbackExisting": ", {n} déjà existant(s)",
+    "feedbackAllHave": "Les {n} admis ont déjà leur diplôme.",
+    "feedbackNone": "Aucun admis à diplômer pour le moment.",
+    "status": {
+      "inscrit": "Inscrit",
+      "admis": "Admis",
+      "ajourne": "Ajourné",
+      "absent": "Absent"
+    },
+    "examDesc": {
+      "cep": "Certificat d'études primaires (fin du primaire)",
+      "bepc": "Brevet d'études du premier cycle",
+      "probatoire": "Avant le baccalauréat",
+      "bac": "Fin du secondaire"
+    },
+    "exportCols": {
+      "candidate": "Candidat",
+      "class": "Classe",
+      "tableNo": "N° table",
+      "result": "Résultat",
+      "mention": "Mention"
+    }
   }
 }

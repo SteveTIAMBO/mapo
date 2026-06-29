@@ -4,34 +4,34 @@
     <template v-if="!selectedExam">
       <header class="ex-head">
         <div>
-          <h1 class="ex-title">Examens nationaux</h1>
-          <p class="ex-sub">Inscriptions, résultats et taux de réussite (CEP, BEPC, Probatoire, Baccalauréat).</p>
+          <h1 class="ex-title">{{ t('examens.title') }}</h1>
+          <p class="ex-sub">{{ t('examens.subtitle') }}</p>
         </div>
-        <button class="btn btn-primary" type="button" @click="showCreate = true">+ Nouvel examen</button>
+        <button class="btn btn-primary" type="button" @click="showCreate = true">{{ t('examens.newExam') }}</button>
       </header>
 
       <!-- KPIs globaux -->
       <div class="ex-kpis">
         <div class="ex-kpi">
-          <div class="ex-kpi-label">Sessions</div>
+          <div class="ex-kpi-label">{{ t('examens.kpiSessions') }}</div>
           <div class="ex-kpi-value">{{ store.exams.length }}</div>
         </div>
         <div class="ex-kpi">
-          <div class="ex-kpi-label">Candidats</div>
+          <div class="ex-kpi-label">{{ t('examens.kpiCandidates') }}</div>
           <div class="ex-kpi-value">{{ globalStats.candidats }}</div>
         </div>
         <div class="ex-kpi">
-          <div class="ex-kpi-label">Admis</div>
+          <div class="ex-kpi-label">{{ t('examens.kpiAdmitted') }}</div>
           <div class="ex-kpi-value">{{ globalStats.admis }}</div>
         </div>
         <div class="ex-kpi ex-kpi-accent">
-          <div class="ex-kpi-label">Taux de réussite moyen</div>
+          <div class="ex-kpi-label">{{ t('examens.kpiAvgRate') }}</div>
           <div class="ex-kpi-value">{{ globalStats.taux }}%</div>
         </div>
       </div>
 
       <div v-if="!store.exams.length" class="ex-empty">
-        Aucun examen pour l'instant. Cliquez sur « Nouvel examen » pour commencer.
+        {{ t('examens.emptyList') }}
       </div>
       <div v-else class="ex-grid">
         <article v-for="ex in store.examsSorted" :key="ex.id" class="ex-card" @click="openExam(ex.id)">
@@ -40,16 +40,16 @@
               <div class="ex-c-name">{{ ex.label }}</div>
               <div class="ex-c-meta">{{ niveauLabel(ex.niveau) }} · {{ ex.annee }}</div>
             </div>
-            <button class="ex-c-del" type="button" title="Supprimer" @click.stop="supprimer(ex.id)">✕</button>
+            <button class="ex-c-del" type="button" :title="t('examens.deleteTitle')" @click.stop="supprimer(ex.id)">✕</button>
           </div>
           <div class="ex-c-taux">
             <span class="ex-c-taux-val">{{ statOf(ex.id).taux }}%</span>
-            <span class="ex-c-taux-lbl">de réussite</span>
+            <span class="ex-c-taux-lbl">{{ t('examens.successRate') }}</span>
           </div>
           <div class="ex-bar"><div class="ex-bar-fill" :style="{ width: statOf(ex.id).taux + '%' }"></div></div>
           <div class="ex-c-foot">
-            <span>{{ statOf(ex.id).admis }} admis / {{ statOf(ex.id).presents }} présents</span>
-            <span>{{ statOf(ex.id).inscrits }} inscrits</span>
+            <span>{{ t('examens.admittedPresent', { admis: statOf(ex.id).admis, presents: statOf(ex.id).presents }) }}</span>
+            <span>{{ t('examens.registered', { n: statOf(ex.id).inscrits }) }}</span>
           </div>
         </article>
       </div>
@@ -57,16 +57,16 @@
 
     <!-- ====== Détail d'un examen (candidats) ====== -->
     <template v-else>
-      <button class="ex-back" type="button" @click="selectedExamId = null">← Tous les examens</button>
+      <button class="ex-back" type="button" @click="selectedExamId = null">{{ t('examens.backAll') }}</button>
       <header class="ex-head">
         <div>
           <h1 class="ex-title">{{ selectedExam.label }} <span class="ex-title-year">{{ selectedExam.annee }}</span></h1>
-          <p class="ex-sub">{{ niveauLabel(selectedExam.niveau) }} — {{ store.getType(selectedExam.type)?.desc }}</p>
+          <p class="ex-sub">{{ niveauLabel(selectedExam.niveau) }} — {{ typeDesc(selectedExam.type) }}</p>
         </div>
         <div class="ex-detail-actions">
-          <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporter">Exporter</button>
-          <button v-if="detailStats.admis" class="btn btn-primary btn-sm" type="button" :disabled="emitting" @click="emettreDiplomesAdmis">{{ emitting ? 'Émission…' : `Émettre les diplômes des admis (${detailStats.admis})` }}</button>
-          <button class="btn btn-outline btn-sm" type="button" @click="inscrire">Inscrire la {{ niveauLabel(selectedExam.niveau) }}</button>
+          <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporter">{{ t('examens.export') }}</button>
+          <button v-if="detailStats.admis" class="btn btn-primary btn-sm" type="button" :disabled="emitting" @click="emettreDiplomesAdmis">{{ emitting ? t('examens.emitting') : t('examens.emitDiplomas', { n: detailStats.admis }) }}</button>
+          <button class="btn btn-outline btn-sm" type="button" @click="inscrire">{{ t('examens.registerLevel', { niveau: niveauLabel(selectedExam.niveau) }) }}</button>
         </div>
       </header>
 
@@ -74,26 +74,26 @@
 
       <!-- Stats de la session -->
       <div class="ex-stats">
-        <div class="ex-stat"><b>{{ detailStats.inscrits }}</b><span>Inscrits</span></div>
-        <div class="ex-stat"><b>{{ detailStats.presents }}</b><span>Présents</span></div>
-        <div class="ex-stat ex-stat-ok"><b>{{ detailStats.admis }}</b><span>Admis</span></div>
-        <div class="ex-stat ex-stat-ko"><b>{{ detailStats.ajournes }}</b><span>Ajournés</span></div>
-        <div class="ex-stat"><b>{{ detailStats.absents }}</b><span>Absents</span></div>
-        <div class="ex-stat ex-stat-accent"><b>{{ detailStats.taux }}%</b><span>Réussite</span></div>
+        <div class="ex-stat"><b>{{ detailStats.inscrits }}</b><span>{{ t('examens.statInscrits') }}</span></div>
+        <div class="ex-stat"><b>{{ detailStats.presents }}</b><span>{{ t('examens.statPresents') }}</span></div>
+        <div class="ex-stat ex-stat-ok"><b>{{ detailStats.admis }}</b><span>{{ t('examens.statAdmis') }}</span></div>
+        <div class="ex-stat ex-stat-ko"><b>{{ detailStats.ajournes }}</b><span>{{ t('examens.statAjournes') }}</span></div>
+        <div class="ex-stat"><b>{{ detailStats.absents }}</b><span>{{ t('examens.statAbsents') }}</span></div>
+        <div class="ex-stat ex-stat-accent"><b>{{ detailStats.taux }}%</b><span>{{ t('examens.statRate') }}</span></div>
       </div>
 
       <div v-if="!candidats.length" class="ex-empty">
-        Aucun candidat. Cliquez sur « Inscrire la {{ niveauLabel(selectedExam.niveau) }} » pour ajouter automatiquement les élèves du niveau.
+        {{ t('examens.emptyCandidates', { niveau: niveauLabel(selectedExam.niveau) }) }}
       </div>
       <section v-else class="ex-tablecard">
         <table class="ex-table">
           <thead>
             <tr>
-              <th>Candidat</th>
-              <th>Classe</th>
-              <th>N° table</th>
-              <th>Résultat</th>
-              <th>Mention</th>
+              <th>{{ t('examens.thCandidate') }}</th>
+              <th>{{ t('examens.thClass') }}</th>
+              <th>{{ t('examens.thTableNo') }}</th>
+              <th>{{ t('examens.thResult') }}</th>
+              <th>{{ t('examens.thMention') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -107,13 +107,13 @@
               <td>
                 <select class="ex-input" :value="c.statut"
                   @change="onStatut(c, $event.target.value)">
-                  <option v-for="s in statuses" :key="s.value" :value="s.value">{{ s.label }}</option>
+                  <option v-for="s in statuses" :key="s.value" :value="s.value">{{ statusLabel(s.value) }}</option>
                 </select>
               </td>
               <td>
                 <select v-if="c.statut === 'admis'" class="ex-input" :value="c.mention"
                   @change="store.updateCandidat(selectedExam.id, c.eleveId, { mention: $event.target.value })">
-                  <option value="">— Mention —</option>
+                  <option value="">{{ t('examens.mentionPlaceholder') }}</option>
                   <option v-for="m in mentions" :key="m" :value="m">{{ m }}</option>
                 </select>
                 <span v-else class="ex-dash">—</span>
@@ -128,24 +128,24 @@
     <transition name="ex-fade">
       <div v-if="showCreate" class="ex-overlay" @click.self="showCreate = false">
         <div class="ex-modal">
-          <h2 class="ex-modal-title">Nouvel examen</h2>
+          <h2 class="ex-modal-title">{{ t('examens.modalTitle') }}</h2>
           <div class="ex-field">
-            <label>Examen</label>
+            <label>{{ t('examens.examField') }}</label>
             <div class="ex-radio-group">
-              <label v-for="t in types" :key="t.key" class="ex-radio" :class="{ active: createType === t.key }">
-                <input type="radio" :value="t.key" v-model="createType" />
-                <span class="ex-radio-main">{{ t.label }}</span>
-                <span class="ex-radio-desc">{{ niveauLabel(t.niveau) }} — {{ t.desc }}</span>
+              <label v-for="et in types" :key="et.key" class="ex-radio" :class="{ active: createType === et.key }">
+                <input type="radio" :value="et.key" v-model="createType" />
+                <span class="ex-radio-main">{{ et.label }}</span>
+                <span class="ex-radio-desc">{{ niveauLabel(et.niveau) }} — {{ typeDesc(et.key) }}</span>
               </label>
             </div>
           </div>
           <div class="ex-field">
-            <label>Année</label>
+            <label>{{ t('examens.yearField') }}</label>
             <input class="ex-input" v-model="createAnnee" placeholder="2025-2026" />
           </div>
           <div class="ex-modal-actions">
-            <button class="btn btn-outline btn-sm" type="button" @click="showCreate = false">Annuler</button>
-            <button class="btn btn-primary btn-sm" type="button" :disabled="!createType" @click="creer">Créer</button>
+            <button class="btn btn-outline btn-sm" type="button" @click="showCreate = false">{{ t('examens.cancel') }}</button>
+            <button class="btn btn-primary btn-sm" type="button" :disabled="!createType" @click="creer">{{ t('examens.create') }}</button>
           </div>
         </div>
       </div>
@@ -155,6 +155,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useExamensStore, EXAM_TYPES, RESULT_STATUS, MENTIONS } from '../stores/examens'
 import { useElevesStore } from '../stores/eleves'
 import { exportToExcel } from '../utils/exportExcel'
@@ -162,13 +163,14 @@ import { useDiplomesStore } from '../stores/diplomes'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useExamensStore()
 const elevesStore = useElevesStore()
 const dipStore = useDiplomesStore()
 const schoolStore = useSchoolStore()
 const authStore = useAuthStore()
 
-const schoolName = computed(() => schoolStore.schoolSettings?.schoolName || 'Établissement EDUFREM')
+const schoolName = computed(() => schoolStore.schoolSettings?.schoolName || t('examens.schoolFallback'))
 const schoolAcronym = computed(() => {
   const acro = schoolName.value.split(/\s+/).filter(w => w.length > 2).map(w => w[0]).join('').toUpperCase().replace(/[^A-Z0-9]/g, '')
   return acro.slice(0, 5) || 'EDFM'
@@ -217,6 +219,16 @@ function niveauLabel(n) {
   const map = { '6e': '6ème', '5e': '5ème', '4e': '4ème', '3e': '3ème', '2nde': '2nde', '1ere': '1ère', 'Tle': 'Terminale', 'CM2': 'CM2' }
   return map[n] || n
 }
+function statusLabel(v) {
+  const k = `examens.status.${v}`
+  const lbl = t(k)
+  return lbl === k ? v : lbl
+}
+function typeDesc(key) {
+  const k = `examens.examDesc.${key}`
+  const lbl = t(k)
+  return lbl === k ? (store.getType(key)?.desc || '') : lbl
+}
 
 function openExam(id) { selectedExamId.value = id }
 function creer() {
@@ -225,7 +237,7 @@ function creer() {
   if (ex) selectedExamId.value = ex.id
 }
 function supprimer(id) {
-  if (confirm("Supprimer cette session d'examen et ses résultats ?")) store.removeExam(id)
+  if (confirm(t('examens.confirmDelete'))) store.removeExam(id)
 }
 function inscrire() {
   const n = store.inscrireNiveau(selectedExam.value.id, elevesStore.eleves)
@@ -238,9 +250,11 @@ function onStatut(c, val) {
 }
 function exporter() {
   const rows = candidats.value.map(c => ({
-    'Candidat': c.eleveName, 'Classe': c.className, 'N° table': c.numeroTable,
-    'Résultat': (statuses.find(s => s.value === c.statut) || {}).label || c.statut,
-    'Mention': c.mention || '',
+    [t('examens.exportCols.candidate')]: c.eleveName,
+    [t('examens.exportCols.class')]: c.className,
+    [t('examens.exportCols.tableNo')]: c.numeroTable,
+    [t('examens.exportCols.result')]: statusLabel(c.statut),
+    [t('examens.exportCols.mention')]: c.mention || '',
   }))
   exportToExcel(rows, `${selectedExam.value.label}_${selectedExam.value.annee}`)
 }
@@ -264,14 +278,14 @@ async function emettreDiplomesAdmis() {
       eleveId: c.eleveId, eleveName: c.eleveName, type: ex.type,
       serie: seriesFromClass(c.className), mention: c.mention, annee: ex.annee,
       ecoleNom: schoolName.value, ecoleAcronyme: schoolAcronym.value,
-      emisPar: authStore.userProfile?.displayName || 'Direction',
+      emisPar: authStore.userProfile?.displayName || t('examens.directionFallback'),
     })
     issued++
   }
   emitting.value = false
   emitFeedback.value = issued
-    ? `${issued} diplôme(s) émis${skipped ? `, ${skipped} déjà existant(s)` : ''} — à retrouver dans le module Diplômes.`
-    : (skipped ? `Les ${skipped} admis ont déjà leur diplôme.` : 'Aucun admis à diplômer pour le moment.')
+    ? t('examens.feedbackIssued', { issued, extra: skipped ? t('examens.feedbackExisting', { n: skipped }) : '' })
+    : (skipped ? t('examens.feedbackAllHave', { n: skipped }) : t('examens.feedbackNone'))
 }
 </script>
 
