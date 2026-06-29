@@ -4,54 +4,48 @@
     <template v-if="!notesStore.setupDone && !loading">
       <div class="page-header">
         <div class="page-header-text">
-          <h1>Notes & Évaluations</h1>
-          <p>Configurez le système de notation de votre établissement</p>
+          <h1>{{ t('notes.title') }}</h1>
+          <p>{{ t('notes.onboardSubtitle') }}</p>
         </div>
       </div>
       <div class="card onboarding-card">
         <div class="onboarding-icon">
           <FileText :size="36" />
         </div>
-        <h2>Bienvenue dans le module de notes</h2>
+        <h2>{{ t('notes.onboardWelcome') }}</h2>
         <p class="onboarding-desc">
-          Ce module permet de saisir les notes {{ isSingleEval ? 'de chaque trimestre' : 'de chaque sequence' }}, de calculer automatiquement
-          les moyennes trimestrielles et annuelles, et de générer les bulletins de vos élèves.
+          {{ isSingleEval ? t('notes.onboardDescTri') : t('notes.onboardDescSeq') }}
         </p>
         <div class="onboarding-steps">
           <div class="onboarding-step">
             <div class="step-num">1</div>
             <div>
-              <strong>Structure</strong>
-              <p v-if="isSingleEval">1 évaluation par trimestre, 3 trimestres par année.
-              La moyenne des 3 trimestres donne la note annuelle.</p>
-              <p v-else>6 séquences (2 par trimestre), 3 trimestres par année.
-              La moyenne des 2 séquences donne la note du trimestre.
-              La moyenne des 3 trimestres donne la note annuelle.</p>
+              <strong>{{ t('notes.stepStructure') }}</strong>
+              <p v-if="isSingleEval">{{ t('notes.stepStructureSingle') }}</p>
+              <p v-else>{{ t('notes.stepStructureSeq') }}</p>
             </div>
           </div>
           <div class="onboarding-step">
             <div class="step-num">2</div>
             <div>
-              <strong>Coefficients</strong>
-              <p>Chaque matière est pondérée par son volume horaire hebdomadaire.
-              Ex: Mathématiques (6h) compte plus qu'EPS (2h) dans la moyenne générale.</p>
+              <strong>{{ t('notes.stepCoeff') }}</strong>
+              <p>{{ t('notes.stepCoeffDesc') }}</p>
             </div>
           </div>
           <div class="onboarding-step">
             <div class="step-num">3</div>
             <div>
-              <strong>Bulletins</strong>
-              <p>Le directeur valide et envoie les bulletins. Les parents les reçoivent dans leur espace.
-              Chaque bulletin indique le rang, la moyenne, l'appréciation et la décision de fin d'année.</p>
+              <strong>{{ t('notes.stepBulletins') }}</strong>
+              <p>{{ t('notes.stepBulletinsDesc') }}</p>
             </div>
           </div>
         </div>
         <div v-if="classesStore.classes.length === 0" class="onboarding-warning">
           <AlertCircle :size="16" />
-          <span>Vous devez d'abord créer vos classes et inscrire vos élèves avant de saisir les notes.</span>
+          <span>{{ t('notes.onboardWarning') }}</span>
         </div>
         <button class="btn btn-primary" style="margin-top:20px;" @click="notesStore.completeSetup()" :disabled="classesStore.classes.length === 0">
-          Commencer la saisie des notes
+          {{ t('notes.startEntry') }}
         </button>
       </div>
     </template>
@@ -61,17 +55,17 @@
       <!-- Header -->
       <div class="page-header">
         <div class="page-header-text">
-          <h1>Notes & Évaluations</h1>
-          <p>Saisie des notes et consultation des moyennes</p>
+          <h1>{{ t('notes.title') }}</h1>
+          <p>{{ t('notes.subtitle') }}</p>
         </div>
         <div style="display: flex; gap: 8px;">
           <button v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="exportNotes">
             <Download :size="16" />
-            <span>Exporter</span>
+            <span>{{ t('notes.export') }}</span>
           </button>
           <button v-if="isDirecteur" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="openNotesSettings()">
             <Settings :size="16" />
-            <span>Paramètres du module</span>
+            <span>{{ t('notes.moduleSettings') }}</span>
           </button>
         </div>
       </div>
@@ -79,38 +73,38 @@
       <!-- Notification: pending validation for directeur -->
       <div v-if="isDirecteur && pendingDirCount > 0" class="pending-dir-banner" style="margin-bottom: 16px;">
         <ShieldCheck :size="16" />
-        <span><strong>{{ pendingDirCount }}</strong> {{ pendingDirCount > 1 ? 'classes ont des bulletins' : 'classe a des bulletins' }} en attente de votre signature.</span>
+        <span><strong>{{ pendingDirCount }}</strong> {{ pendingDirCount > 1 ? t('notes.pendingMany') : t('notes.pendingOne') }}</span>
       </div>
 
       <!-- Toolbar -->
       <div class="card" style="margin-bottom: 20px;">
         <div class="toolbar">
           <div class="field" style="margin-bottom:0; min-width:180px;">
-            <label>Classe</label>
+            <label>{{ t('notes.classLabel') }}</label>
             <select v-model="selectedClass" class="input">
-              <option value="">Sélectionnez une classe</option>
+              <option value="">{{ t('notes.selectClass') }}</option>
               <option v-for="c in availableClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
             </select>
           </div>
           <div class="field" style="margin-bottom:0; min-width:200px;">
-            <label>Période</label>
+            <label>{{ t('notes.periodLabel') }}</label>
             <select v-model="selectedPeriod" class="input">
               <template v-if="!isSingleEval">
-                <option value="S1">Séquence 1</option>
-                <option value="S2">Séquence 2</option>
+                <option value="S1">{{ t('notes.periods.S1') }}</option>
+                <option value="S2">{{ t('notes.periods.S2') }}</option>
               </template>
-              <option value="T1">1er Trimestre</option>
+              <option value="T1">{{ t('notes.periods.T1') }}</option>
               <template v-if="!isSingleEval">
-                <option value="S3">Séquence 3</option>
-                <option value="S4">Séquence 4</option>
+                <option value="S3">{{ t('notes.periods.S3') }}</option>
+                <option value="S4">{{ t('notes.periods.S4') }}</option>
               </template>
-              <option value="T2">2ème Trimestre</option>
+              <option value="T2">{{ t('notes.periods.T2') }}</option>
               <template v-if="!isSingleEval">
-                <option value="S5">Séquence 5</option>
-                <option value="S6">Séquence 6</option>
+                <option value="S5">{{ t('notes.periods.S5') }}</option>
+                <option value="S6">{{ t('notes.periods.S6') }}</option>
               </template>
-              <option value="T3">3ème Trimestre</option>
-              <option value="annual">Bilan annuel</option>
+              <option value="T3">{{ t('notes.periods.T3') }}</option>
+              <option value="annual">{{ t('notes.periods.annual') }}</option>
             </select>
           </div>
           <div class="toolbar-spacer"></div>
@@ -118,17 +112,17 @@
             <!-- Enseignants : Saisie des notes -->
             <button v-if="!isDirecteurOnly" class="tab-btn" :class="{ active: activeTab === 'saisie' }" @click="activeTab = 'saisie'">
               <Pencil :size="14" />
-              Saisie
+              {{ t('notes.tabEntry') }}
             </button>
             <!-- Bulletin : visible par tous -->
             <button class="tab-btn" :class="{ active: activeTab === 'bulletin' }" @click="activeTab = 'bulletin'">
               <FileText :size="14" />
-              Bulletin
+              {{ t('notes.tabBulletin') }}
             </button>
             <!-- Distribution : directeur uniquement -->
             <button v-if="isDirecteur" class="tab-btn" :class="{ active: activeTab === 'distribution' }" @click="activeTab = 'distribution'">
               <Send :size="14" />
-              Distribution
+              {{ t('notes.tabDistribution') }}
             </button>
           </div>
         </div>
@@ -137,15 +131,15 @@
       <!-- Empty state -->
       <div v-if="!selectedClass" class="card empty-state-card">
         <FileText :size="40" style="color: var(--muted); margin-bottom: 12px;" />
-        <p style="font-size: 15px; font-weight: 500;">Sélectionnez une classe pour commencer</p>
-        <p style="font-size: 13px; color: var(--muted);">Choisissez une classe et un trimestre pour saisir ou consulter les notes.</p>
+        <p style="font-size: 15px; font-weight: 500;">{{ t('notes.emptyTitle') }}</p>
+        <p style="font-size: 13px; color: var(--muted);">{{ t('notes.emptyDesc') }}</p>
       </div>
 
       <!-- ═══════ TAB: SAISIE ═══════ -->
       <template v-if="selectedClass && activeTab === 'saisie' && selectedTrimester !== 'annual'">
         <div class="info-banner" style="margin-bottom:16px;">
           <AlertCircle :size="16" />
-          <span>{{ isSingleEval ? 'Saisissez la note sur 20 pour chaque élève.' : 'Saisissez les notes sur 20 pour chaque séquence. La moyenne du trimestre se calcule automatiquement.' }}</span>
+          <span>{{ isSingleEval ? t('notes.entryBannerSingle') : t('notes.entryBannerSeq') }}</span>
         </div>
 
         <!-- Subject selector -->
@@ -810,6 +804,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useNotesStore, SEQUENCES, TRIMESTERS, SIGN_PERIODS, VALIDATION_STATUS, getAppreciation, getMention, getDecision } from '../stores/notes'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
@@ -827,6 +822,7 @@ import { useAppreciationsStore } from '../stores/appreciations'
 import { useEditionStore } from '../stores/edition'
 import { noteToPalier } from '../data/primaire'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const notesStore = useNotesStore()
 const appreciationsStore = useAppreciationsStore()
 const classesStore = useClassesStore()

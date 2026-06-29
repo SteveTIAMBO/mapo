@@ -621,5 +621,48 @@
       "result": "Résultat",
       "mention": "Mention"
     }
+  },
+  "notes": {
+    "title": "Notes & Évaluations",
+    "onboardSubtitle": "Configurez le système de notation de votre établissement",
+    "onboardWelcome": "Bienvenue dans le module de notes",
+    "onboardDescSeq": "Ce module permet de saisir les notes de chaque séquence, de calculer automatiquement les moyennes trimestrielles et annuelles, et de générer les bulletins de vos élèves.",
+    "onboardDescTri": "Ce module permet de saisir les notes de chaque trimestre, de calculer automatiquement les moyennes trimestrielles et annuelles, et de générer les bulletins de vos élèves.",
+    "stepStructure": "Structure",
+    "stepStructureSingle": "1 évaluation par trimestre, 3 trimestres par année. La moyenne des 3 trimestres donne la note annuelle.",
+    "stepStructureSeq": "6 séquences (2 par trimestre), 3 trimestres par année. La moyenne des 2 séquences donne la note du trimestre. La moyenne des 3 trimestres donne la note annuelle.",
+    "stepCoeff": "Coefficients",
+    "stepCoeffDesc": "Chaque matière est pondérée par son volume horaire hebdomadaire. Ex : Mathématiques (6h) compte plus qu'EPS (2h) dans la moyenne générale.",
+    "stepBulletins": "Bulletins",
+    "stepBulletinsDesc": "Le directeur valide et envoie les bulletins. Les parents les reçoivent dans leur espace. Chaque bulletin indique le rang, la moyenne, l'appréciation et la décision de fin d'année.",
+    "onboardWarning": "Vous devez d'abord créer vos classes et inscrire vos élèves avant de saisir les notes.",
+    "startEntry": "Commencer la saisie des notes",
+    "subtitle": "Saisie des notes et consultation des moyennes",
+    "export": "Exporter",
+    "moduleSettings": "Paramètres du module",
+    "pendingOne": "classe a des bulletins en attente de votre signature.",
+    "pendingMany": "classes ont des bulletins en attente de votre signature.",
+    "classLabel": "Classe",
+    "selectClass": "Sélectionnez une classe",
+    "periodLabel": "Période",
+    "periods": {
+      "S1": "Séquence 1",
+      "S2": "Séquence 2",
+      "S3": "Séquence 3",
+      "S4": "Séquence 4",
+      "S5": "Séquence 5",
+      "S6": "Séquence 6",
+      "T1": "1er Trimestre",
+      "T2": "2ème Trimestre",
+      "T3": "3ème Trimestre",
+      "annual": "Bilan annuel"
+    },
+    "tabEntry": "Saisie",
+    "tabBulletin": "Bulletin",
+    "tabDistribution": "Distribution",
+    "emptyTitle": "Sélectionnez une classe pour commencer",
+    "emptyDesc": "Choisissez une classe et un trimestre pour saisir ou consulter les notes.",
+    "entryBannerSingle": "Saisissez la note sur 20 pour chaque élève.",
+    "entryBannerSeq": "Saisissez les notes sur 20 pour chaque séquence. La moyenne du trimestre se calcule automatiquement."
   }
 }

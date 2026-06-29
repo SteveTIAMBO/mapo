@@ -621,5 +621,48 @@
       "result": "Result",
       "mention": "Honors"
     }
+  },
+  "notes": {
+    "title": "Grades & Assessment",
+    "onboardSubtitle": "Set up your school's grading system",
+    "onboardWelcome": "Welcome to the grades module",
+    "onboardDescSeq": "This module lets you enter the grades of each sequence, automatically compute term and annual averages, and generate your students' report cards.",
+    "onboardDescTri": "This module lets you enter the grades of each term, automatically compute term and annual averages, and generate your students' report cards.",
+    "stepStructure": "Structure",
+    "stepStructureSingle": "1 assessment per term, 3 terms per year. The average of the 3 terms gives the annual grade.",
+    "stepStructureSeq": "6 sequences (2 per term), 3 terms per year. The average of the 2 sequences gives the term grade. The average of the 3 terms gives the annual grade.",
+    "stepCoeff": "Coefficients",
+    "stepCoeffDesc": "Each subject is weighted by its weekly teaching hours. E.g. Mathematics (6h) counts more than PE (2h) in the overall average.",
+    "stepBulletins": "Report cards",
+    "stepBulletinsDesc": "The director validates and sends the report cards. Parents receive them in their space. Each report card shows the rank, average, comment and end-of-year decision.",
+    "onboardWarning": "You must first create your classes and enroll your students before entering grades.",
+    "startEntry": "Start entering grades",
+    "subtitle": "Grade entry and average consultation",
+    "export": "Export",
+    "moduleSettings": "Module settings",
+    "pendingOne": "class has report cards awaiting your signature.",
+    "pendingMany": "classes have report cards awaiting your signature.",
+    "classLabel": "Class",
+    "selectClass": "Select a class",
+    "periodLabel": "Period",
+    "periods": {
+      "S1": "Sequence 1",
+      "S2": "Sequence 2",
+      "S3": "Sequence 3",
+      "S4": "Sequence 4",
+      "S5": "Sequence 5",
+      "S6": "Sequence 6",
+      "T1": "1st Term",
+      "T2": "2nd Term",
+      "T3": "3rd Term",
+      "annual": "Annual summary"
+    },
+    "tabEntry": "Entry",
+    "tabBulletin": "Report card",
+    "tabDistribution": "Distribution",
+    "emptyTitle": "Select a class to start",
+    "emptyDesc": "Choose a class and a term to enter or view grades.",
+    "entryBannerSingle": "Enter the grade out of 20 for each student.",
+    "entryBannerSeq": "Enter the grades out of 20 for each sequence. The term average is computed automatically."
   }
 }
