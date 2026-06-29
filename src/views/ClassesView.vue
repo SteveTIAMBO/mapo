@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Classes</h1>
-        <p>{{ authStore.isTeacher ? filteredClasses.length + ' classe' + (filteredClasses.length > 1 ? 's' : '') : classesStore.classStats.total + ' classe' + (classesStore.classStats.total > 1 ? 's' : '') + ' — ' + classesStore.classStats.totalStudents + ' élèves inscrits' }}</p>
+        <h1>{{ t('classes.title') }}</h1>
+        <p>{{ headerCount }}</p>
       </div>
       <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="openAddModal">
         <Plus :size="16" />
-        <span>Nouvelle classe</span>
+        <span>{{ t('classes.newClass') }}</span>
       </button>
     </div>
 
@@ -18,7 +18,7 @@
         <div class="stat-bar-dot blue"></div>
         <div>
           <div class="stat-bar-value">{{ classesStore.classStats.total }}</div>
-          <div class="stat-bar-label">Total classes</div>
+          <div class="stat-bar-label">{{ t('classes.totalClasses') }}</div>
         </div>
       </div>
       <!-- Secondaire : Premier / Second cycle — Primaire : nombre de niveaux (SIL→CM2) -->
@@ -27,14 +27,14 @@
           <div class="stat-bar-dot" style="background: var(--gold)"></div>
           <div>
             <div class="stat-bar-value">{{ classesStore.classStats.premier }}</div>
-            <div class="stat-bar-label">Premier cycle</div>
+            <div class="stat-bar-label">{{ t('classes.firstCycle') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <div class="stat-bar-dot green"></div>
           <div>
             <div class="stat-bar-value">{{ classesStore.classStats.second }}</div>
-            <div class="stat-bar-label">Second cycle</div>
+            <div class="stat-bar-label">{{ t('classes.secondCycle') }}</div>
           </div>
         </div>
       </template>
@@ -42,14 +42,14 @@
         <div class="stat-bar-dot" style="background: var(--gold)"></div>
         <div>
           <div class="stat-bar-value">{{ niveauxCount }}</div>
-          <div class="stat-bar-label">Niveaux</div>
+          <div class="stat-bar-label">{{ t('classes.levelsCount') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #7C3AED"></div>
         <div>
           <div class="stat-bar-value">{{ classesStore.classStats.totalStudents }}</div>
-          <div class="stat-bar-label">Élèves inscrits</div>
+          <div class="stat-bar-label">{{ t('classes.studentsEnrolled') }}</div>
         </div>
       </div>
     </div>
@@ -59,7 +59,7 @@
       <div class="toolbar">
         <div class="search-box">
           <Search :size="18" class="search-icon" />
-          <input v-model="searchQuery" type="text" class="input search-input" placeholder="Rechercher une classe, un enseignant..." />
+          <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('classes.searchPlaceholder')" />
         </div>
         <div class="filter-chips">
           <button
@@ -87,9 +87,9 @@
 
       <div v-if="filteredClasses.length === 0" class="empty-state">
         <BookOpen :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>{{ searchQuery || selectedLevel ? 'Aucun résultat' : 'Aucune classe configurée' }}</p>
+        <p>{{ searchQuery || selectedLevel ? t('classes.noResults') : t('classes.noClasses') }}</p>
         <button v-if="!searchQuery && !selectedLevel" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="openAddModal">
-          Créer une première classe
+          {{ t('classes.createFirst') }}
         </button>
       </div>
 
@@ -97,13 +97,13 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Classe</th>
-              <th>Niveau</th>
-              <th>Effectif</th>
-              <th class="hide-mobile">Capacité</th>
-              <th class="hide-mobile">Remplissage</th>
-              <th class="hide-mobile">Professeur principal</th>
-              <th style="width: 90px;">Actions</th>
+              <th>{{ t('classes.thClass') }}</th>
+              <th>{{ t('classes.thLevel') }}</th>
+              <th>{{ t('classes.thHeadcount') }}</th>
+              <th class="hide-mobile">{{ t('classes.thCapacity') }}</th>
+              <th class="hide-mobile">{{ t('classes.thFill') }}</th>
+              <th class="hide-mobile">{{ t('classes.thHomeroom') }}</th>
+              <th style="width: 90px;">{{ t('classes.thActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -128,8 +128,8 @@
               <td class="hide-mobile">{{ cls.homeroomTeacher || '-' }}</td>
               <td>
                 <div class="action-btns">
-                  <button class="icon-btn" title="Modifier" @click="openEditModal(cls)"><Pencil :size="15" /></button>
-                  <button class="icon-btn icon-btn-danger" title="Supprimer" @click="openDeleteConfirm(cls)"><Trash2 :size="15" /></button>
+                  <button class="icon-btn" :title="t('classes.edit')" @click="openEditModal(cls)"><Pencil :size="15" /></button>
+                  <button class="icon-btn icon-btn-danger" :title="t('classes.delete')" @click="openDeleteConfirm(cls)"><Trash2 :size="15" /></button>
                 </div>
               </td>
             </tr>
@@ -152,20 +152,20 @@
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>{{ editingClass ? 'Modifier la classe' : 'Nouvelle classe' }}</h2>
+          <h2>{{ editingClass ? t('classes.editClass') : t('classes.newClass') }}</h2>
           <button class="icon-btn" @click="closeModal"><X :size="20" /></button>
         </div>
 
         <form @submit.prevent="saveClass" class="modal-body">
           <div class="field-row">
             <div class="field">
-              <label>Nom de la classe *</label>
-              <input v-model="formData.name" type="text" class="input" placeholder="Ex: 6ème A" required />
+              <label>{{ t('classes.className') }} *</label>
+              <input v-model="formData.name" type="text" class="input" :placeholder="t('classes.classNamePh')" required />
             </div>
             <div class="field">
-              <label>Section</label>
+              <label>{{ t('classes.section') }}</label>
               <select v-model="formData.section" class="input">
-                <option value="">Aucune</option>
+                <option value="">{{ t('classes.noneF') }}</option>
                 <option v-for="s in SECTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
               </select>
             </div>
@@ -173,35 +173,35 @@
 
           <div class="field-row">
             <div class="field">
-              <label>Niveau *</label>
+              <label>{{ t('classes.level') }} *</label>
               <select v-model="formData.level" class="input" required>
-                <option value="">Sélectionnez</option>
+                <option value="">{{ t('classes.select') }}</option>
                 <option v-for="l in levels" :key="l.value" :value="l.value">{{ l.label }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Capacité maximale</label>
+              <label>{{ t('classes.maxCapacity') }}</label>
               <input v-model.number="formData.capacity" type="number" class="input" placeholder="60" min="1" max="200" />
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Effectif inscrit</label>
+              <label>{{ t('classes.enrolledCount') }}</label>
               <input v-model.number="formData.enrolled" type="number" class="input" placeholder="0" min="0" />
             </div>
             <div class="field">
-              <label>Professeur principal</label>
+              <label>{{ t('classes.homeroom') }}</label>
               <select v-model="formData.homeroomTeacher" class="input">
-                <option value="">Aucun</option>
-                <option v-for="t in teachersList" :key="t.id" :value="t.fullName">{{ t.fullName }}</option>
+                <option value="">{{ t('classes.noneM') }}</option>
+                <option v-for="tch in teachersList" :key="tch.id" :value="tch.fullName">{{ tch.fullName }}</option>
               </select>
             </div>
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="closeModal">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ editingClass ? 'Mettre à jour' : 'Créer' }}</button>
+            <button type="button" class="btn btn-outline" @click="closeModal">{{ t('classes.cancel') }}</button>
+            <button type="submit" class="btn btn-primary">{{ editingClass ? t('classes.update') : t('classes.create') }}</button>
           </div>
         </form>
       </div>
@@ -211,13 +211,13 @@
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Supprimer cette classe ?</h2>
+          <h2>{{ t('classes.deleteTitle') }}</h2>
           <button class="icon-btn" @click="closeDeleteConfirm"><X :size="20" /></button>
         </div>
-        <p class="modal-text">La classe {{ deletingClass?.name }} sera définitivement supprimée.</p>
+        <p class="modal-text">{{ t('classes.deleteText', { name: deletingClass?.name }) }}</p>
         <div class="modal-actions">
-          <button class="btn btn-outline" @click="closeDeleteConfirm">Annuler</button>
-          <button class="btn btn-danger" @click="confirmDelete">Supprimer</button>
+          <button class="btn btn-outline" @click="closeDeleteConfirm">{{ t('classes.cancel') }}</button>
+          <button class="btn btn-danger" @click="confirmDelete">{{ t('classes.delete') }}</button>
         </div>
       </div>
     </div>
@@ -232,10 +232,12 @@ import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { useElevesStore } from '../stores/eleves'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Search, Plus, Pencil, Trash2, X, BookOpen } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const classesStore = useClassesStore()
 const personnelStore = usePersonnelStore()
 const authStore = useAuthStore()
@@ -272,9 +274,16 @@ const editionStore = useEditionStore()
 const levels = computed(() => (editionStore.isPrimaire ? LEVELS_PRIMAIRE : LEVELS))
 
 const levelFilters = computed(() => [
-  { value: '', label: 'Tous' },
+  { value: '', label: t('classes.all') },
   ...levels.value.map((l) => ({ value: l.value, label: l.label })),
 ])
+
+const headerCount = computed(() => {
+  const n = authStore.isTeacher ? filteredClasses.value.length : classesStore.classStats.total
+  const base = n > 1 ? t('classes.countMany', { n }) : t('classes.countOne', { n })
+  if (authStore.isTeacher) return base
+  return base + ' — ' + t('classes.headerStudents', { n: classesStore.classStats.totalStudents })
+})
 
 // Primaire : nombre de niveaux distincts représentés par les classes (carte stat).
 const niveauxCount = computed(() => new Set((classesStore.classes || []).map((c) => c.level)).size)

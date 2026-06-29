@@ -2,27 +2,27 @@
   <div class="pagination-bar">
     <div class="pagination-info">
       <span class="pagination-count">
-        {{ startItem }}-{{ endItem }} sur {{ totalItems }}
+        {{ startItem }}-{{ endItem }} {{ t('pagination.of') }} {{ totalItems }}
       </span>
       <div class="pagination-per-page">
-        <label>Afficher</label>
+        <label>{{ t('pagination.show') }}</label>
         <select :value="perPage" class="per-page-select" @change="$emit('update:perPage', Number($event.target.value))">
           <option v-for="opt in perPageOptions" :key="opt" :value="opt">{{ opt }}</option>
         </select>
       </div>
     </div>
     <div class="pagination-nav" v-if="totalPages > 1">
-      <button class="icon-btn" :disabled="currentPage === 1" @click="$emit('update:currentPage', 1)" title="Première page">
+      <button class="icon-btn" :disabled="currentPage === 1" @click="$emit('update:currentPage', 1)" :title="t('pagination.firstPage')">
         <ChevronsLeft :size="16" />
       </button>
-      <button class="icon-btn" :disabled="currentPage === 1" @click="$emit('update:currentPage', currentPage - 1)" title="Page précédente">
+      <button class="icon-btn" :disabled="currentPage === 1" @click="$emit('update:currentPage', currentPage - 1)" :title="t('pagination.prevPage')">
         <ChevronLeft :size="16" />
       </button>
       <span class="page-indicator">{{ currentPage }} / {{ totalPages }}</span>
-      <button class="icon-btn" :disabled="currentPage === totalPages" @click="$emit('update:currentPage', currentPage + 1)" title="Page suivante">
+      <button class="icon-btn" :disabled="currentPage === totalPages" @click="$emit('update:currentPage', currentPage + 1)" :title="t('pagination.nextPage')">
         <ChevronRight :size="16" />
       </button>
-      <button class="icon-btn" :disabled="currentPage === totalPages" @click="$emit('update:currentPage', totalPages)" title="Dernière page">
+      <button class="icon-btn" :disabled="currentPage === totalPages" @click="$emit('update:currentPage', totalPages)" :title="t('pagination.lastPage')">
         <ChevronsRight :size="16" />
       </button>
     </div>
@@ -31,7 +31,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({
   currentPage: { type: Number, required: true },
