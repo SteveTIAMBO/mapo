@@ -101,7 +101,7 @@
             </div>
             <p v-else class="muted">Aucune note saisie. Ajoutez-en pour que MIAPO analyse les points faibles.</p>
             <div class="add-note">
-              <select v-model="newMatiere" class="input"><option value="" disabled>Matière…</option><option v-for="m in MATIERES" :key="m" :value="m">{{ m }}</option></select>
+              <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Module / matière…' : 'Matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
               <input v-model.number="newNote" type="number" min="0" max="20" step="0.5" class="input note-input" placeholder="/20" />
               <button class="btn btn-primary btn-sm" :disabled="!canAddNote" @click="addNote"><Plus :size="15" /></button>
             </div>
@@ -133,7 +133,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="activeEnfant.niveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -152,7 +152,7 @@
               <div class="card-head"><GraduationCap :size="18" /><h3>Cours particulier — réviser une matière</h3></div>
               <p class="muted">MIAPO génère un exercice adapté à ton niveau et t'accompagne pas à pas (méthode, indices, explication).</p>
               <div class="revise-pick">
-                <select v-model="reviseMatiere" class="input"><option value="" disabled>Choisir une matière…</option><option v-for="m in MATIERES" :key="m" :value="m">{{ m }}</option></select>
+                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Choisir un module…' : 'Choisir une matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>Démarrer</span></button>
               </div>
             </div>
@@ -161,7 +161,7 @@
               <div class="card-head"><GraduationCap :size="18" /><h3>Demander une révision</h3></div>
               <p class="muted">Désignez une matière : elle apparaîtra dans « À réviser » de {{ activeEnfant.firstName }}, qui la travaillera avec MIAPO. Vous suivez, {{ activeEnfant.firstName }} révise.</p>
               <div class="revise-pick">
-                <select v-model="reviseMatiere" class="input"><option value="" disabled>Choisir une matière…</option><option v-for="m in MATIERES" :key="m" :value="m">{{ m }}</option></select>
+                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Choisir un module…' : 'Choisir une matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>Demander</span></button>
               </div>
               <p v-if="revisionDemandee" class="muted small saved-ok">« {{ revisionDemandee }} » ajoutée à « À réviser ».</p>
@@ -461,6 +461,24 @@ function niveauLabel(e) {
 function noteClass(n) { return n < 10 ? 'low' : n < 12 ? 'mid' : 'ok' }
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
 
+// Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
+// hors-catalogue qui a renseigné ses modules, on pilote toute la boucle
+// (notes → faiblesses → quiz → révision) par SES modules ; sinon catalogue scolaire.
+const matieresList = computed(() => {
+  const e = activeEnfant.value
+  if (e && e.niveau === NIVEAU_HORS_CATALOGUE && e.formationModules) {
+    const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
+    if (mods.length) return mods
+  }
+  return MATIERES
+})
+// Contexte passé au quiz IA : pour un apprenant hors-catalogue, le NOM de la
+// formation donne de bien meilleures questions que « Formation (hors catalogue) ».
+const quizNiveau = computed(() => {
+  const e = activeEnfant.value
+  return e && e.niveau === NIVEAU_HORS_CATALOGUE ? (e.formation || e.niveau) : (e?.niveau || '')
+})
+
 const faiblesses = computed(() => activeEnfant.value ? store.faiblesses(activeEnfant.value.id) : [])
 // « À réviser » = matières faibles (notes < 10) + faiblesses repérées par photo de copie.
 const aReviser = computed(() => {
@@ -486,7 +504,7 @@ const progression = computed(() => {
   const e = activeEnfant.value
   if (!e) return []
   const mats = new Set(e.notes.map((n) => n.matiere))
-  for (const m of MATIERES) { if (tuteur.getLevel(e.id, 'auto-' + m) > 1) mats.add(m) }
+  for (const m of matieresList.value) { if (tuteur.getLevel(e.id, 'auto-' + m) > 1) mats.add(m) }
   return [...mats].map((m) => ({ matiere: m, level: levelFor(m) })).sort((a, b) => b.level - a.level)
 })
 
@@ -495,8 +513,8 @@ const insight = computed(() => {
   if (!e) return ''
   const ap = isApprenant.value
   if (!e.notes.length) return ap
-    ? `Saisis tes notes (ou photographie tes copies) : MIAPO repèrera tes points faibles et te proposera des révisions adaptées à la ${e.niveau}.`
-    : `Saisissez les notes de ${e.firstName} (ou photographiez ses copies) : MIAPO repèrera ses points faibles et lui proposera des révisions adaptées à la ${e.niveau}.`
+    ? `Saisis tes notes (ou photographie tes copies) : MIAPO repèrera tes points faibles et te proposera des révisions adaptées à ${niveauLabel(e)}.`
+    : `Saisissez les notes de ${e.firstName} (ou photographiez ses copies) : MIAPO repèrera ses points faibles et lui proposera des révisions adaptées à ${niveauLabel(e)}.`
   const f = faiblesses.value
   if (!f.length) return ap
     ? `Bon niveau d'ensemble ! Continue les révisions régulières pour consolider.`
