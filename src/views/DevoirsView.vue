@@ -3,31 +3,31 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Devoirs</h1>
-        <p>Gestion des devoirs et travaux</p>
+        <h1>{{ t('devoirs.title') }}</h1>
+        <p>{{ t('devoirs.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="openCreateModal">
         <Plus :size="18" />
-        Nouveau devoir
+        {{ t('devoirs.newAssignment') }}
       </button>
     </div>
 
     <!-- Stats Bar -->
     <div class="stat-bar">
       <div class="stat-item">
-        <div class="stat-label">Total devoirs</div>
+        <div class="stat-label">{{ t('devoirs.statTotal') }}</div>
         <div class="stat-value">{{ stats.total }}</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">En cours</div>
+        <div class="stat-label">{{ t('devoirs.statActive') }}</div>
         <div class="stat-value">{{ stats.active }}</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Passés</div>
+        <div class="stat-label">{{ t('devoirs.statOverdue') }}</div>
         <div class="stat-value">{{ stats.overdue }}</div>
       </div>
       <div class="stat-item">
-        <div class="stat-label">Numériques</div>
+        <div class="stat-label">{{ t('devoirs.statDigital') }}</div>
         <div class="stat-value">{{ stats.digital }}</div>
       </div>
     </div>
@@ -36,9 +36,9 @@
     <div class="card">
       <div class="toolbar">
         <div class="field">
-          <label>Classe</label>
+          <label>{{ t('devoirs.classLabel') }}</label>
           <select v-model="filterClass" class="input">
-            <option value="">Toutes les classes</option>
+            <option value="">{{ t('devoirs.allClasses') }}</option>
             <option v-for="cls in userClasses" :key="cls.id" :value="cls.id">
               {{ cls.name }}
             </option>
@@ -46,9 +46,9 @@
         </div>
 
         <div class="field">
-          <label>Matière</label>
+          <label>{{ t('devoirs.subjectLabel') }}</label>
           <select v-model="filterSubject" class="input">
-            <option value="">Toutes les matières</option>
+            <option value="">{{ t('devoirs.allSubjects') }}</option>
             <option v-for="subj in filteredSubjects" :key="subj.id" :value="subj.name">
               {{ subj.name }}
             </option>
@@ -56,11 +56,11 @@
         </div>
 
         <div class="field">
-          <label>Type</label>
+          <label>{{ t('devoirs.typeLabel') }}</label>
           <select v-model="filterType" class="input">
-            <option value="">Tous les types</option>
+            <option value="">{{ t('devoirs.allTypes') }}</option>
             <option v-for="type in DEVOIR_TYPES" :key="type.value" :value="type.value">
-              {{ type.label }}
+              {{ t('devoirs.types.' + type.value) }}
             </option>
           </select>
         </div>
@@ -71,19 +71,19 @@
     <div class="card">
       <div v-if="filteredDevoirs.length === 0" class="empty-state">
         <FileText :size="48" />
-        <p>Aucun devoir trouvé</p>
+        <p>{{ t('devoirs.noneFound') }}</p>
       </div>
 
       <table v-else class="data-table">
         <thead>
           <tr>
-            <th>Matière</th>
-            <th>Titre</th>
-            <th>Type</th>
-            <th>Date limite</th>
-            <th>Numérique</th>
-            <th>Rendus</th>
-            <th>Actions</th>
+            <th>{{ t('devoirs.thSubject') }}</th>
+            <th>{{ t('devoirs.thTitle') }}</th>
+            <th>{{ t('devoirs.thType') }}</th>
+            <th>{{ t('devoirs.thDueDate') }}</th>
+            <th>{{ t('devoirs.thDigital') }}</th>
+            <th>{{ t('devoirs.thSubmissions') }}</th>
+            <th>{{ t('devoirs.thActions') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -98,7 +98,7 @@
                 {{ devoir.title }}
                 <span v-if="devoir.isDigital" class="devoir-badge">
                   <Upload :size="12" style="display: inline" />
-                  Numérique
+                  {{ t('devoirs.digital') }}
                 </span>
               </div>
             </td>
@@ -119,13 +119,13 @@
               <span v-else style="color: var(--tx3)">—</span>
             </td>
             <td class="actions-cell">
-              <button class="btn-icon" @click="openDetailModal(devoir)" title="Détails">
+              <button class="btn-icon" @click="openDetailModal(devoir)" :title="t('devoirs.details')">
                 <Eye :size="18" />
               </button>
-              <button class="btn-icon" @click="openEditModal(devoir)" title="Modifier">
+              <button class="btn-icon" @click="openEditModal(devoir)" :title="t('devoirs.edit')">
                 <Pencil :size="18" />
               </button>
-              <button class="btn-icon btn-danger" @click="confirmDeleteDevoir(devoir.id)" title="Supprimer">
+              <button class="btn-icon btn-danger" @click="confirmDeleteDevoir(devoir.id)" :title="t('devoirs.delete')">
                 <Trash2 :size="18" />
               </button>
             </td>
@@ -138,7 +138,7 @@
     <div v-if="showFormModal" class="modal-backdrop" @click.self="closeFormModal">
       <div class="modal">
         <div class="modal-header">
-          <h2>{{ editingDevoirId ? 'Modifier le devoir' : 'Nouveau devoir' }}</h2>
+          <h2>{{ editingDevoirId ? t('devoirs.editAssignment') : t('devoirs.newAssignment') }}</h2>
           <button class="btn-icon" @click="closeFormModal">
             <X :size="20" />
           </button>
@@ -146,9 +146,9 @@
 
         <div class="modal-body">
           <div class="field">
-            <label>Classe</label>
+            <label>{{ t('devoirs.classLabel') }}</label>
             <select v-model="formData.classId" class="input" required>
-              <option value="">Sélectionner une classe</option>
+              <option value="">{{ t('devoirs.selectClass') }}</option>
               <option v-for="cls in userClasses" :key="cls.id" :value="cls.id">
                 {{ cls.name }}
               </option>
@@ -156,9 +156,9 @@
           </div>
 
           <div class="field">
-            <label>Matière</label>
+            <label>{{ t('devoirs.subjectLabel') }}</label>
             <select v-model="formData.subjectName" class="input" required>
-              <option value="">Sélectionner une matière</option>
+              <option value="">{{ t('devoirs.selectSubject') }}</option>
               <option v-for="subj in formFilteredSubjects" :key="subj.id" :value="subj.name">
                 {{ subj.name }}
               </option>
@@ -166,39 +166,39 @@
           </div>
 
           <div class="field">
-            <label>Titre</label>
-            <input v-model="formData.title" type="text" class="input" placeholder="Ex: Exercices chapitre 5" required />
+            <label>{{ t('devoirs.titleField') }}</label>
+            <input v-model="formData.title" type="text" class="input" :placeholder="t('devoirs.titlePh')" required />
           </div>
 
           <div class="field">
-            <label>Description</label>
-            <textarea v-model="formData.description" class="input" rows="4" placeholder="Détails du devoir..."></textarea>
+            <label>{{ t('devoirs.descriptionField') }}</label>
+            <textarea v-model="formData.description" class="input" rows="4" :placeholder="t('devoirs.descriptionPh')"></textarea>
           </div>
 
           <div class="field">
-            <label>Type</label>
+            <label>{{ t('devoirs.typeLabel') }}</label>
             <select v-model="formData.type" class="input" required>
-              <option value="">Sélectionner un type</option>
+              <option value="">{{ t('devoirs.selectType') }}</option>
               <option v-for="type in DEVOIR_TYPES" :key="type.value" :value="type.value">
-                {{ type.label }}
+                {{ t('devoirs.types.' + type.value) }}
               </option>
             </select>
           </div>
 
           <div class="field">
-            <label>Date limite</label>
+            <label>{{ t('devoirs.dueDateField') }}</label>
             <input v-model="formData.dueDate" type="date" class="input" required />
           </div>
 
           <div class="field checkbox-field">
             <input v-model="formData.isDigital" type="checkbox" id="isDigital" />
-            <label for="isDigital" style="margin: 0">Les élèves peuvent soumettre en ligne</label>
+            <label for="isDigital" style="margin: 0">{{ t('devoirs.allowOnline') }}</label>
           </div>
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeFormModal">Annuler</button>
-          <button class="btn btn-primary" @click="saveDevoir">Enregistrer</button>
+          <button class="btn btn-secondary" @click="closeFormModal">{{ t('devoirs.cancel') }}</button>
+          <button class="btn btn-primary" @click="saveDevoir">{{ t('devoirs.save') }}</button>
         </div>
       </div>
     </div>
@@ -216,27 +216,27 @@
         <div class="modal-body">
           <!-- Devoir Info -->
           <div class="detail-section">
-            <h3>Informations</h3>
+            <h3>{{ t('devoirs.info') }}</h3>
             <div class="detail-grid">
               <div class="detail-row">
-                <span class="detail-label">Matière :</span>
+                <span class="detail-label">{{ t('devoirs.subjectColon') }}</span>
                 <span>{{ selectedDevoir.subjectName }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Type :</span>
+                <span class="detail-label">{{ t('devoirs.typeColon') }}</span>
                 <span class="devoir-badge">{{ getTypeLabel(selectedDevoir.type) }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Date limite :</span>
+                <span class="detail-label">{{ t('devoirs.dueDateColon') }}</span>
                 <span>{{ formatDate(selectedDevoir.dueDate) }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Numérique :</span>
-                <span v-if="selectedDevoir.isDigital" style="color: var(--success)">Oui</span>
-                <span v-else style="color: var(--tx3)">Non</span>
+                <span class="detail-label">{{ t('devoirs.digitalColon') }}</span>
+                <span v-if="selectedDevoir.isDigital" style="color: var(--success)">{{ t('devoirs.yes') }}</span>
+                <span v-else style="color: var(--tx3)">{{ t('devoirs.no') }}</span>
               </div>
               <div class="detail-row">
-                <span class="detail-label">Description :</span>
+                <span class="detail-label">{{ t('devoirs.descriptionColon') }}</span>
                 <span>{{ selectedDevoir.description || '—' }}</span>
               </div>
             </div>
@@ -245,10 +245,10 @@
           <!-- Submissions -->
           <div class="detail-section">
             <h3>
-              Rendus ({{ submissionStats.submitted }}/{{ submissionStats.total }})
+              {{ t('devoirs.submissions') }} ({{ submissionStats.submitted }}/{{ submissionStats.total }})
             </h3>
             <div v-if="devoirSubmissions.length === 0" class="empty-state-sm">
-              <p>Aucun rendu pour le moment</p>
+              <p>{{ t('devoirs.noSubmissions') }}</p>
             </div>
 
             <div v-for="sub in devoirSubmissions" :key="sub.eleveId" class="submission-row">
@@ -268,21 +268,21 @@
                     class="input grade-input"
                     min="0"
                     max="20"
-                    placeholder="Note"
+                    :placeholder="t('devoirs.gradePh')"
                   />
                   <textarea
                     v-model="feedbackInputs[sub.eleveId]"
                     class="input feedback-input"
                     rows="2"
-                    placeholder="Commentaire (optionnel)"
+                    :placeholder="t('devoirs.feedbackPh')"
                   ></textarea>
-                  <button class="btn btn-sm btn-primary" @click="submitGrade(sub.eleveId)">Noter</button>
+                  <button class="btn btn-sm btn-primary" @click="submitGrade(sub.eleveId)">{{ t('devoirs.grade') }}</button>
                 </div>
               </div>
             </div>
 
             <div v-if="devoirSubmissions.some(s => s.feedback)" class="detail-section">
-              <h4>Commentaires</h4>
+              <h4>{{ t('devoirs.comments') }}</h4>
               <div v-for="sub in devoirSubmissions.filter(s => s.feedback)" :key="`feedback-${sub.eleveId}`">
                 <div class="feedback-item">
                   <div class="feedback-student">{{ getEleveName(sub.eleveId) }}</div>
@@ -294,7 +294,7 @@
         </div>
 
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="closeDetailModal">Fermer</button>
+          <button class="btn btn-secondary" @click="closeDetailModal">{{ t('devoirs.close') }}</button>
         </div>
       </div>
     </div>
@@ -303,6 +303,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDevoirsStore, DEVOIR_TYPES } from '../stores/devoirs'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
@@ -325,6 +326,7 @@ import {
   AlertCircle
 } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 // Stores
 const devoirsStore = useDevoirsStore()
 const classesStore = useClassesStore()
@@ -442,18 +444,19 @@ const submissionStats = computed(() => {
 // Methods
 const getEleveName = (eleveId) => {
   const eleve = elevesStore.eleves.find(e => e.id === eleveId)
-  return eleve ? `${eleve.lastName} ${eleve.firstName}` : 'Élève inconnu'
+  return eleve ? `${eleve.lastName} ${eleve.firstName}` : t('devoirs.unknownStudent')
 }
 
 const getTypeLabel = (type) => {
-  const typeObj = DEVOIR_TYPES.find(t => t.value === type)
-  return typeObj ? typeObj.label : type
+  const k = `devoirs.types.${type}`
+  const lbl = t(k)
+  return lbl === k ? type : lbl
 }
 
 const formatDate = (dateString) => {
   if (!dateString) return '—'
   const date = new Date(dateString)
-  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  return date.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const isOverdue = (devoir) => {
@@ -536,14 +539,14 @@ const closeDetailModal = () => {
 
 const saveDevoir = async () => {
   if (!formData.value.classId || !formData.value.subjectName || !formData.value.title || !formData.value.type || !formData.value.dueDate) {
-    alert('Veuillez remplir tous les champs obligatoires')
+    alert(t('devoirs.fillRequired'))
     return
   }
 
   // Build the devoir object with className from classId
   const cls = classesStore.classes.find(c => c.id === formData.value.classId)
   if (!cls) {
-    alert('Classe introuvable')
+    alert(t('devoirs.classNotFound'))
     return
   }
 
@@ -556,7 +559,7 @@ const saveDevoir = async () => {
     type: formData.value.type,
     dueDate: formData.value.dueDate,
     isDigital: formData.value.isDigital,
-    createdBy: authStore.userProfile?.displayName || authStore.userProfile?.email || 'Enseignant',
+    createdBy: authStore.userProfile?.displayName || authStore.userProfile?.email || t('devoirs.teacherFallback'),
   }
 
   try {
@@ -568,34 +571,34 @@ const saveDevoir = async () => {
     closeFormModal()
   } catch (error) {
     console.error('Erreur lors de la sauvegarde du devoir:', error)
-    alert('Erreur lors de la sauvegarde')
+    alert(t('devoirs.saveError'))
   }
 }
 
 const confirmDeleteDevoir = async (devoirId) => {
-  if (!confirm('Êtes-vous sûr de vouloir supprimer ce devoir ?')) return
+  if (!confirm(t('devoirs.confirmDelete'))) return
   try {
     await devoirsStore.deleteDevoir(devoirId)
   } catch (error) {
     console.error('Erreur lors de la suppression:', error)
-    alert('Erreur lors de la suppression')
+    alert(t('devoirs.deleteError'))
   }
 }
 
 const submitGrade = async (eleveId) => {
   const grade = gradingInputs.value[eleveId]
   if (grade === '' || grade === null || grade === undefined) {
-    alert('Veuillez entrer une note')
+    alert(t('devoirs.enterGrade'))
     return
   }
 
   if (grade < 0 || grade > 20) {
-    alert('La note doit être entre 0 et 20')
+    alert(t('devoirs.gradeRange'))
     return
   }
 
   const feedback = feedbackInputs.value[eleveId] || ''
-  const gradedBy = authStore.userProfile?.displayName || authStore.userProfile?.email || 'Enseignant'
+  const gradedBy = authStore.userProfile?.displayName || authStore.userProfile?.email || t('devoirs.teacherFallback')
 
   try {
     devoirsStore.gradeSubmission(selectedDevoir.value.id, eleveId, grade, feedback, gradedBy)
@@ -603,7 +606,7 @@ const submitGrade = async (eleveId) => {
     feedbackInputs.value[eleveId] = ''
   } catch (error) {
     console.error('Erreur lors de la notation:', error)
-    alert('Erreur lors de la notation')
+    alert(t('devoirs.gradeError'))
   }
 }
 
