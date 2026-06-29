@@ -3,15 +3,15 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Mon espace</h1>
-        <p>Bienvenue, {{ authStore.userFirstName }}</p>
+        <h1>{{ t('eleve.myspace') }}</h1>
+        <p>{{ t('eleve.welcome', { name: authStore.userFirstName }) }}</p>
       </div>
     </div>
 
     <!-- No linked student -->
     <div v-if="!myRecord" class="card empty-state" style="padding: 48px 24px;">
-      <p style="font-size: 16px; font-weight: 500; color: var(--tx); margin-bottom: 8px;">Compte non lié</p>
-      <p>Contactez l'administration pour activer votre compte élève.</p>
+      <p style="font-size: 16px; font-weight: 500; color: var(--tx); margin-bottom: 8px;">{{ t('eleve.accountNotLinked') }}</p>
+      <p>{{ t('eleve.contactAdmin') }}</p>
     </div>
 
     <template v-else>
@@ -27,7 +27,7 @@
           <div class="student-meta">
             <span>{{ myRecord.className }}</span>
             <span class="meta-sep">|</span>
-            <span>Matricule : {{ myRecord.matricule }}</span>
+            <span>{{ t('eleve.matriculeLabel', { id: myRecord.matricule }) }}</span>
           </div>
         </div>
       </div>
@@ -37,28 +37,28 @@
         <router-link to="/eleve/notes" class="kpi-card">
           <div class="kpi-icon kpi-blue"><FileText :size="20" /></div>
           <div class="kpi-body">
-            <span class="kpi-label">Moyenne générale</span>
+            <span class="kpi-label">{{ t('eleve.generalAvg') }}</span>
             <span class="kpi-value">{{ myAverage !== null ? myAverage.toFixed(2) + '/20' : '—' }}</span>
           </div>
         </router-link>
         <router-link to="/eleve/presences" class="kpi-card">
           <div class="kpi-icon kpi-green"><CalendarCheck :size="20" /></div>
           <div class="kpi-body">
-            <span class="kpi-label">Présence</span>
+            <span class="kpi-label">{{ t('eleve.presence') }}</span>
             <span class="kpi-value">{{ myPresenceRate }}%</span>
           </div>
         </router-link>
         <router-link to="/eleve/emploi-du-temps" class="kpi-card">
           <div class="kpi-icon kpi-purple"><Clock :size="20" /></div>
           <div class="kpi-body">
-            <span class="kpi-label">Cours aujourd'hui</span>
+            <span class="kpi-label">{{ t('eleve.coursesToday') }}</span>
             <span class="kpi-value">{{ todayCourseCount }}</span>
           </div>
         </router-link>
         <router-link to="/eleve/messagerie" class="kpi-card">
           <div class="kpi-icon kpi-orange"><MessageSquare :size="20" /></div>
           <div class="kpi-body">
-            <span class="kpi-label">Messages</span>
+            <span class="kpi-label">{{ t('eleve.messagesKpi') }}</span>
             <span class="kpi-value">{{ unreadCount }}</span>
           </div>
         </router-link>
@@ -69,32 +69,32 @@
         <router-link to="/eleve/notes" class="nav-card">
           <FileText :size="22" style="color: var(--pr);" />
           <div class="nav-card-text">
-            <h4>Mes notes</h4>
-            <p>Consulter mes résultats et bulletins</p>
+            <h4>{{ t('eleve.gradesTitle') }}</h4>
+            <p>{{ t('eleve.navNotesSub') }}</p>
           </div>
           <ChevronRight :size="16" class="nav-arrow" />
         </router-link>
         <router-link to="/eleve/emploi-du-temps" class="nav-card">
           <Clock :size="22" style="color: #8b5cf6;" />
           <div class="nav-card-text">
-            <h4>Emploi du temps</h4>
-            <p>Mon planning de la semaine</p>
+            <h4>{{ t('eleve.scheduleTitle') }}</h4>
+            <p>{{ t('eleve.navScheduleSub') }}</p>
           </div>
           <ChevronRight :size="16" class="nav-arrow" />
         </router-link>
         <router-link to="/eleve/presences" class="nav-card">
           <CalendarCheck :size="22" style="color: #1B8A5A;" />
           <div class="nav-card-text">
-            <h4>Mes présences</h4>
-            <p>Historique de mes absences et retards</p>
+            <h4>{{ t('eleve.attendanceTitle') }}</h4>
+            <p>{{ t('eleve.navAttendanceSub') }}</p>
           </div>
           <ChevronRight :size="16" class="nav-arrow" />
         </router-link>
         <router-link to="/eleve/messagerie" class="nav-card">
           <MessageSquare :size="22" style="color: #E8A838;" />
           <div class="nav-card-text">
-            <h4>Messagerie</h4>
-            <p>Communiquer avec mes enseignants</p>
+            <h4>{{ t('eleve.messagesTitle') }}</h4>
+            <p>{{ t('eleve.navMessagesSub') }}</p>
           </div>
           <ChevronRight :size="16" class="nav-arrow" />
         </router-link>
@@ -105,6 +105,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useNotesStore } from '../stores/notes'
@@ -118,6 +119,7 @@ import {
   FileText, CalendarCheck, Clock, MessageSquare, ChevronRight
 } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const notesStore = useNotesStore()

@@ -2,32 +2,32 @@
   <div class="eleve-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Mes présences</h1>
+        <h1>{{ t('eleve.attendanceTitle') }}</h1>
         <p v-if="myRecord">{{ myRecord.lastName }} {{ myRecord.firstName }} — {{ myRecord.className }}</p>
       </div>
     </div>
 
     <div v-if="!myRecord" class="card empty-state">
-      <p>Compte non lié à un dossier élève.</p>
+      <p>{{ t('eleve.noStudentRecord') }}</p>
     </div>
 
     <template v-else>
       <!-- Summary -->
       <div class="summary-row">
         <div class="summary-card summary-green">
-          <span class="summary-label">Présent</span>
+          <span class="summary-label">{{ t('eleve.attPresent') }}</span>
           <span class="summary-value">{{ stats.presents }}</span>
         </div>
         <div class="summary-card summary-red">
-          <span class="summary-label">Absent</span>
+          <span class="summary-label">{{ t('eleve.attAbsent') }}</span>
           <span class="summary-value">{{ stats.absents }}</span>
         </div>
         <div class="summary-card summary-orange">
-          <span class="summary-label">Retards</span>
+          <span class="summary-label">{{ t('eleve.attLate') }}</span>
           <span class="summary-value">{{ stats.retards }}</span>
         </div>
         <div class="summary-card">
-          <span class="summary-label">Excusé</span>
+          <span class="summary-label">{{ t('eleve.attExcused') }}</span>
           <span class="summary-value">{{ stats.excuses }}</span>
         </div>
       </div>
@@ -35,7 +35,7 @@
       <!-- Taux de présence -->
       <div class="card" style="padding: 20px 24px;">
         <div class="progress-header">
-          <span class="progress-label">Taux de présence</span>
+          <span class="progress-label">{{ t('eleve.attendanceRate') }}</span>
           <span class="progress-pct" :class="stats.tauxPresence >= 80 ? 'pct-green' : stats.tauxPresence >= 60 ? 'pct-orange' : 'pct-red'">
             {{ stats.tauxPresence }}%
           </span>
@@ -48,10 +48,10 @@
       <!-- Historique -->
       <div class="card">
         <div class="card-header-inner">
-          <h3>Historique récent</h3>
+          <h3>{{ t('eleve.recentHistory') }}</h3>
         </div>
         <div v-if="presenceHistory.length === 0" class="empty-state" style="padding: 32px;">
-          <p>Aucune donnée de présence enregistrée.</p>
+          <p>{{ t('eleve.noAttendance') }}</p>
         </div>
         <div v-else class="history-list">
           <div v-for="item in presenceHistory" :key="item.date + item.period" class="history-item">
@@ -70,12 +70,14 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { usePresencesStore } from '../stores/presences'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const presencesStore = usePresencesStore()
@@ -114,12 +116,13 @@ const presenceHistory = computed(() => {
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 function statusLabel(status) {
-  const labels = { absent: 'Absent', retard: 'Retard', excuse: 'Excusé', present: 'Présent' }
-  return labels[status] || status
+  const k = 'eleve.attStatus.' + status
+  const lbl = t(k)
+  return lbl === k ? status : lbl
 }
 
 onMounted(async () => {
