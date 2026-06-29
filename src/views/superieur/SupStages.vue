@@ -394,7 +394,7 @@ function formatDate(iso) {
 .sg-table-wrap {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: var(--card-radius); box-shadow: var(--card-shadow);
-  overflow: hidden;
+  overflow-x: auto; /* défile au lieu de rogner sur écran étroit */
 }
 .sg-table { width: 100%; border-collapse: collapse; }
 .sg-table thead th {

@@ -8,6 +8,8 @@
       </div>
     </div>
 
+    <MiapoPlusCTA />
+
     <!-- Pas d'enfant lié -->
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
       <UserX :size="48" style="color: var(--tx3); margin-bottom: 16px;" />
@@ -26,8 +28,6 @@
           <ChevronRight :size="18" />
         </div>
       </router-link>
-
-      <MiapoPlusCTA />
 
       <!-- Sélecteur d'enfant (si plusieurs) -->
       <div v-if="children.length > 1" class="tabs-bar">

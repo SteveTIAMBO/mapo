@@ -296,7 +296,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 .sip-table-wrap {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: var(--card-radius); box-shadow: var(--card-shadow);
-  overflow: hidden; max-height: 560px; overflow-y: auto;
+  overflow-x: auto; max-height: 560px; overflow-y: auto;
 }
 .sip-table { width: 100%; border-collapse: collapse; }
 .sip-table thead th {

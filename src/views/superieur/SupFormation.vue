@@ -495,7 +495,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
-  overflow: hidden;
+  overflow-x: auto; /* tableau d'UE (grille 2 col. = étroit) : défile au lieu d'être rogné */
 }
 .sf-sem-head {
   display: flex;

@@ -1,5 +1,5 @@
 <template>
-  <svg class="radar6c" viewBox="0 0 300 234" role="img" aria-label="Radar des 6 compétences">
+  <svg class="radar6c" viewBox="-22 0 344 234" role="img" aria-label="Radar des 6 compétences">
     <!-- Grille (anneaux 1 à 5) -->
     <polygon v-for="r in 5" :key="'ring' + r" :points="ringPoints(r)" class="r-grid" />
     <!-- Axes -->

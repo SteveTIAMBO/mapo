@@ -375,7 +375,7 @@ function askDelete(e) {
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
-  overflow: hidden;
+  overflow-x: auto; /* défile au lieu de rogner les colonnes sur écran étroit */
 }
 .se-table {
   width: 100%;

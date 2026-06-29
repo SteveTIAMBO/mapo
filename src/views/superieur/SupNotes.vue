@@ -321,6 +321,7 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: var(--card-radius); box-shadow: var(--card-shadow);
   padding: 18px 20px;
+  overflow-x: auto; /* relevés/jurys larges : défile au lieu de déborder */
 }
 
 /* Tables */

@@ -331,7 +331,7 @@ function askDelete(sa) {
 .sl-table-wrap {
   background: var(--card); border: 1px solid var(--card-border);
   border-radius: var(--card-radius); box-shadow: var(--card-shadow);
-  overflow: hidden;
+  overflow-x: auto; /* défile au lieu de rogner sur écran étroit */
 }
 .sl-table { width: 100%; border-collapse: collapse; }
 .sl-table thead th {
