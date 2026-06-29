@@ -1148,5 +1148,23 @@
     "insightHighMany": "{n} students to track, including {high} at high risk (repeated absences + falling results). Quick family contact and targeted support can prevent dropping out.",
     "insightWatchOne": "{n} student to watch: attendance or results signals. An individual check-in now helps reverse the trend before it sets in.",
     "insightWatchMany": "{n} students to watch: attendance or results signals. An individual check-in now helps reverse the trend before it sets in."
+  },
+  "revsuivi": {
+    "title": "Revision tracking",
+    "subtitle": "What the AI Tutor observes: which students are struggling and on what topics.",
+    "weakestSubjects": "Weakest subjects",
+    "studentsCountOne": "{n} student",
+    "studentsCountMany": "{n} students",
+    "studentsToSupport": "Students to support ({n})",
+    "noDifficulty": "No difficulty detected yet. Data will appear as students use the Tutor.",
+    "lastRevision": "Last revision: {label}",
+    "footNote": "Revisions feed this tracking automatically. Students with no difficulty don't appear here.",
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo": "{n}d ago",
+    "insightNone": "No struggling students detected for now. Keep encouraging use of the Tutor.",
+    "insightOne": "{n} student needs support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
+    "insightMany": "{n} students need support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
+    "and": "and"
   }
 }

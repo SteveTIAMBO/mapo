@@ -2,11 +2,11 @@
   <div class="suivi-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Suivi des révisions</h1>
-        <p>Ce que le Tuteur IA observe : les élèves en difficulté et sur quels sujets.</p>
+        <h1>{{ t('revsuivi.title') }}</h1>
+        <p>{{ t('revsuivi.subtitle') }}</p>
       </div>
       <select v-if="classOptions.length > 1" v-model="classFilter" class="select-filter">
-        <option value="">Toutes les classes</option>
+        <option value="">{{ t('dec.allClasses') }}</option>
         <option v-for="c in classOptions" :key="c" :value="c">{{ c }}</option>
       </select>
     </div>
@@ -15,29 +15,29 @@
     <div class="card insight-card">
       <div class="insight-icon"><Sparkles :size="20" /></div>
       <div>
-        <strong>MIAPO te signale</strong>
+        <strong>{{ t('dec.miapoFlags') }}</strong>
         <p>{{ insight }}</p>
       </div>
     </div>
 
     <!-- Rollup par matière -->
     <div class="card" v-if="subjectRollup.length">
-      <div class="card-head"><AlertTriangle :size="18" /><h3>Matières les plus fragiles</h3></div>
+      <div class="card-head"><AlertTriangle :size="18" /><h3>{{ t('revsuivi.weakestSubjects') }}</h3></div>
       <div class="rollup">
         <div v-for="r in subjectRollup" :key="r.name" class="rollup-item">
           <span class="rollup-name">{{ r.name }}</span>
           <span class="rollup-bar"><span class="rollup-fill" :style="{ width: r.pct + '%' }"></span></span>
-          <span class="rollup-count">{{ r.count }} élève{{ r.count > 1 ? 's' : '' }}</span>
+          <span class="rollup-count">{{ r.count > 1 ? t('revsuivi.studentsCountMany', { n: r.count }) : t('revsuivi.studentsCountOne', { n: r.count }) }}</span>
         </div>
       </div>
     </div>
 
     <!-- Élèves en difficulté -->
     <div class="card">
-      <div class="card-head"><Users :size="18" /><h3>Élèves à accompagner ({{ filteredStudents.length }})</h3></div>
+      <div class="card-head"><Users :size="18" /><h3>{{ t('revsuivi.studentsToSupport', { n: filteredStudents.length }) }}</h3></div>
 
       <div v-if="filteredStudents.length === 0" class="empty">
-        <p>Aucune difficulté détectée pour l’instant. Les données apparaîtront à mesure que les élèves utilisent le Tuteur.</p>
+        <p>{{ t('revsuivi.noDifficulty') }}</p>
       </div>
 
       <div v-else class="student-list">
@@ -55,20 +55,21 @@
             </div>
           </div>
           <div class="sr-meta">
-            <span class="sr-last">Dernière révision : {{ s.lastLabel }}</span>
+            <span class="sr-last">{{ t('revsuivi.lastRevision', { label: s.lastLabel }) }}</span>
           </div>
         </div>
       </div>
     </div>
 
     <p class="foot-note">
-      <Info :size="13" /> Les révisions alimentent ce suivi automatiquement. Les élèves sans difficulté n’apparaissent pas ici.
+      <Info :size="13" /> {{ t('revsuivi.footNote') }}
     </p>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useElevesStore } from '../stores/eleves'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
@@ -76,6 +77,7 @@ import { useNotesStore } from '../stores/notes'
 import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, AlertTriangle, Users, Info } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
@@ -97,10 +99,10 @@ function fmtDate(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
   const days = Math.round((Date.now() - d.getTime()) / 86400000)
-  if (days <= 0) return "aujourd'hui"
-  if (days === 1) return 'hier'
-  if (days < 7) return `il y a ${days} j`
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  if (days <= 0) return t('revsuivi.today')
+  if (days === 1) return t('revsuivi.yesterday')
+  if (days < 7) return t('revsuivi.daysAgo', { n: days })
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })
 }
 
 const classById = computed(() => {
@@ -118,8 +120,8 @@ function weakFor(eleve) {
   const weak = []
   for (const s of subs) {
     let avg = null
-    for (const t of TRIMS) {
-      const a = notesStore.getSubjectTrimesterAvg?.(cls.id, s.id, t, eleve.id)
+    for (const tr of TRIMS) {
+      const a = notesStore.getSubjectTrimesterAvg?.(cls.id, s.id, tr, eleve.id)
       if (a !== null && a !== undefined) { avg = a; break }
     }
     if (avg !== null && avg < WEAK_NOTE) {
@@ -214,10 +216,10 @@ const subjectRollup = computed(() => {
 
 const insight = computed(() => {
   const n = filteredStudents.value.length
-  if (n === 0) return "Aucun élève en difficulté détecté pour le moment. Continue d’encourager l’usage du Tuteur."
+  if (n === 0) return t('revsuivi.insightNone')
   const top = subjectRollup.value.slice(0, 2).map((r) => r.name)
-  const matiere = top.length === 2 ? `${top[0]} et ${top[1]}` : top[0]
-  return `${n} élève${n > 1 ? 's' : ''} ${n > 1 ? 'ont' : 'a'} besoin de soutien, surtout en ${matiere}. Un appui ciblé (devoir maison, séance de remédiation) aiderait ces élèves à progresser.`
+  const matiere = top.length === 2 ? `${top[0]} ${t('revsuivi.and')} ${top[1]}` : top[0]
+  return n > 1 ? t('revsuivi.insightMany', { n, subject: matiere }) : t('revsuivi.insightOne', { n, subject: matiere })
 })
 
 onMounted(async () => {

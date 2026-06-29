@@ -1148,5 +1148,23 @@
     "insightHighMany": "{n} élèves à suivre, dont {high} à risque élevé (absences répétées + résultats en baisse). Un contact rapide avec les familles et un appui ciblé peuvent éviter le décrochage.",
     "insightWatchOne": "{n} élève à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe.",
     "insightWatchMany": "{n} élèves à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe."
+  },
+  "revsuivi": {
+    "title": "Suivi des révisions",
+    "subtitle": "Ce que le Tuteur IA observe : les élèves en difficulté et sur quels sujets.",
+    "weakestSubjects": "Matières les plus fragiles",
+    "studentsCountOne": "{n} élève",
+    "studentsCountMany": "{n} élèves",
+    "studentsToSupport": "Élèves à accompagner ({n})",
+    "noDifficulty": "Aucune difficulté détectée pour l'instant. Les données apparaîtront à mesure que les élèves utilisent le Tuteur.",
+    "lastRevision": "Dernière révision : {label}",
+    "footNote": "Les révisions alimentent ce suivi automatiquement. Les élèves sans difficulté n'apparaissent pas ici.",
+    "today": "aujourd'hui",
+    "yesterday": "hier",
+    "daysAgo": "il y a {n} j",
+    "insightNone": "Aucun élève en difficulté détecté pour le moment. Continue d'encourager l'usage du Tuteur.",
+    "insightOne": "{n} élève a besoin de soutien, surtout en {subject}. Un appui ciblé (devoir maison, séance de remédiation) aiderait ces élèves à progresser.",
+    "insightMany": "{n} élèves ont besoin de soutien, surtout en {subject}. Un appui ciblé (devoir maison, séance de remédiation) aiderait ces élèves à progresser.",
+    "and": "et"
   }
 }
