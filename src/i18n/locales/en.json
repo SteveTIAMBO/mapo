@@ -853,6 +853,16 @@
       "back": "Back",
       "subjectFallback": "revision"
     },
-    "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday" }
+    "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday", "samedi": "Saturday", "dimanche": "Sunday" }
+  },
+  "parent": {
+    "noChildLinked": "No child linked to your account.",
+    "scheduleTitle": "Timetable",
+    "scheduleSubtitleOne": "View your child's timetable",
+    "scheduleSubtitleMany": "View your children's timetable",
+    "hoursPerWeek": "{n}h / week",
+    "print": "Print",
+    "scheduleUnavailable": "Timetable unavailable",
+    "scheduleNotPublished": "This class's timetable hasn't been published yet."
   }
 }

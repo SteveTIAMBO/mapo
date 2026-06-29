@@ -853,6 +853,16 @@
       "back": "Retour",
       "subjectFallback": "révision"
     },
-    "days": { "lundi": "Lundi", "mardi": "Mardi", "mercredi": "Mercredi", "jeudi": "Jeudi", "vendredi": "Vendredi" }
+    "days": { "lundi": "Lundi", "mardi": "Mardi", "mercredi": "Mercredi", "jeudi": "Jeudi", "vendredi": "Vendredi", "samedi": "Samedi", "dimanche": "Dimanche" }
+  },
+  "parent": {
+    "noChildLinked": "Aucun enfant lié à votre compte.",
+    "scheduleTitle": "Emploi du temps",
+    "scheduleSubtitleOne": "Consultez l'emploi du temps de votre enfant",
+    "scheduleSubtitleMany": "Consultez l'emploi du temps de vos enfants",
+    "hoursPerWeek": "{n}h / semaine",
+    "print": "Imprimer",
+    "scheduleUnavailable": "Emploi du temps non disponible",
+    "scheduleNotPublished": "L'emploi du temps de cette classe n'a pas encore été publié."
   }
 }

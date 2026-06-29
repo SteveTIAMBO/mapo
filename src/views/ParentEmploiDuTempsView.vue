@@ -2,14 +2,14 @@
   <div class="parent-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Emploi du temps</h1>
-        <p>Consultez l'emploi du temps de {{ children.length > 1 ? 'vos enfants' : 'votre enfant' }}</p>
+        <h1>{{ t('parent.scheduleTitle') }}</h1>
+        <p>{{ children.length > 1 ? t('parent.scheduleSubtitleMany') : t('parent.scheduleSubtitleOne') }}</p>
       </div>
     </div>
 
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
       <Clock :size="40" style="color: var(--muted); margin-bottom: 12px;" />
-      <p>Aucun enfant lié à votre compte.</p>
+      <p>{{ t('parent.noChildLinked') }}</p>
     </div>
 
     <template v-else>
@@ -29,10 +29,10 @@
             <span style="color: var(--muted); font-size: 13px; margin-left: 8px;">{{ selectedChild.className }}</span>
           </div>
           <div style="display: flex; gap: 8px; align-items: center;">
-            <span style="font-size: 12px; color: var(--muted);">{{ totalHoursPerWeek }}h / semaine</span>
+            <span style="font-size: 12px; color: var(--muted);">{{ t('parent.hoursPerWeek', { n: totalHoursPerWeek }) }}</span>
             <button class="btn btn-outline btn-sm" @click="printSchedule">
               <Printer :size="14" />
-              <span>Imprimer</span>
+              <span>{{ t('parent.print') }}</span>
             </button>
           </div>
         </div>
@@ -41,8 +41,8 @@
       <!-- No schedule -->
       <div v-if="!hasSchedule" class="card empty-state" style="padding: 48px 24px;">
         <Clock :size="40" style="color: var(--muted); margin-bottom: 12px;" />
-        <p style="font-size: 15px; font-weight: 500;">Emploi du temps non disponible</p>
-        <p style="font-size: 13px; color: var(--muted);">L'emploi du temps de cette classe n'a pas encore été publié.</p>
+        <p style="font-size: 15px; font-weight: 500;">{{ t('parent.scheduleUnavailable') }}</p>
+        <p style="font-size: 13px; color: var(--muted);">{{ t('parent.scheduleNotPublished') }}</p>
       </div>
 
       <!-- Weekly schedule grid -->
@@ -52,7 +52,7 @@
           <div class="schedule-header">
             <div class="schedule-time-col"></div>
             <div v-for="day in activeDays" :key="day.value" class="schedule-day-col">
-              {{ day.label }}
+              {{ t('eleve.days.' + day.value) }}
             </div>
           </div>
           <!-- Rows: time slots + breaks -->
@@ -83,6 +83,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -90,6 +91,7 @@ import { useClassesStore } from '../stores/classes'
 import { useEmploiDuTempsStore, DAYS, SUBJECT_COLORS } from '../stores/emploi-du-temps'
 import { Clock, Printer } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
