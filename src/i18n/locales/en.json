@@ -47,5 +47,23 @@
       "parent": "Parent",
       "eleve": "Student"
     }
+  },
+  "header": {
+    "menu": "Menu",
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
+    "schoolSettings": "School settings",
+    "search": "Search",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "profileOf": "{name}'s profile",
+    "online": "Online",
+    "offline": "Offline",
+    "syncing": "Syncing…",
+    "pending": "Pending",
+    "onlineSynced": "Online — everything is synced.",
+    "offlineDetail": "Offline — {n} pending change(s). Everything will sync automatically when the network is back.",
+    "syncingDetail": "{n} change(s) syncing."
   }
 }

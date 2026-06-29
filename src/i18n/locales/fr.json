@@ -47,5 +47,23 @@
       "parent": "Parent",
       "eleve": "Élève"
     }
+  },
+  "header": {
+    "menu": "Menu",
+    "greetingMorning": "Bonjour",
+    "greetingAfternoon": "Bon après-midi",
+    "greetingEvening": "Bonsoir",
+    "schoolSettings": "Paramètres école",
+    "search": "Recherche",
+    "notifications": "Notifications",
+    "settings": "Paramètres",
+    "profileOf": "Profil de {name}",
+    "online": "En ligne",
+    "offline": "Hors ligne",
+    "syncing": "Synchronisation…",
+    "pending": "En attente",
+    "onlineSynced": "En ligne — tout est synchronisé.",
+    "offlineDetail": "Hors ligne — {n} modification(s) en attente. Tout se synchronisera automatiquement au retour du réseau.",
+    "syncingDetail": "{n} modification(s) en cours de synchronisation."
   }
 }

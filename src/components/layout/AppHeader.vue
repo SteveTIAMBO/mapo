@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="header-left">
-      <button class="collapse-toggle" @click="$emit('toggle-sidebar')" title="Menu">
+      <button class="collapse-toggle" @click="$emit('toggle-sidebar')" :title="t('header.menu')">
         <Menu v-if="isMobile" :size="22" />
         <PanelLeftClose v-else-if="!sidebarCollapsed" :size="18" />
         <PanelLeftOpen v-else :size="18" />
@@ -11,7 +11,7 @@
 
     <div class="header-right">
       <!-- Logo + Nom ecole -->
-      <RouterLink v-if="schoolName" to="/parametres" class="header-school" title="Paramètres ecole">
+      <RouterLink v-if="schoolName" to="/parametres" class="header-school" :title="t('header.schoolSettings')">
         <img v-if="schoolLogo" :src="schoolLogo" :alt="schoolName" class="header-school-logo" />
         <span class="header-school-name">{{ schoolName }}</span>
       </RouterLink>
@@ -24,26 +24,32 @@
         <span v-if="pendingSyncCount > 0 && !isSyncing" class="pending-badge">{{ pendingSyncCount }}</span>
       </div>
 
+      <!-- Sélecteur de langue (global, sur toute l'app) -->
+      <div class="header-lang">
+        <button type="button" :class="{ on: locale === 'fr' }" @click="setLang('fr')">FR</button>
+        <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
+      </div>
+
       <!-- Search trigger -->
-      <button class="header-icon-btn header-search-btn" title="Recherche" @click="openSearch">
+      <button class="header-icon-btn header-search-btn" :title="t('header.search')" @click="openSearch">
         <Search :size="20" />
         <span class="search-hint">Ctrl+K</span>
       </button>
 
       <!-- Notification bell -->
-      <button class="header-icon-btn" title="Notifications">
+      <button class="header-icon-btn" :title="t('header.notifications')">
         <Bell :size="20" />
       </button>
 
       <!-- User Avatar with online status -->
-      <RouterLink to="/profil" class="header-avatar" :title="`Profil de ${displayName}${isOnline ? ' — En ligne' : ' — Hors ligne'}`">
+      <RouterLink to="/profil" class="header-avatar" :title="t('header.profileOf', { name: displayName }) + (isOnline ? ' — ' + t('header.online') : ' — ' + t('header.offline'))">
         <img v-if="userPhoto" :src="userPhoto" :alt="displayName" class="header-avatar-img" />
         <div v-else class="header-avatar-initials">{{ initials }}</div>
         <span class="status-dot" :class="isOnline ? 'status-online' : 'status-offline'"></span>
       </RouterLink>
 
       <!-- Settings gear — only for admin/directeur -->
-      <RouterLink v-if="canAccessSettings" to="/parametres" class="header-icon-btn header-settings" title="Paramètres">
+      <RouterLink v-if="canAccessSettings" to="/parametres" class="header-icon-btn header-settings" :title="t('header.settings')">
         <Settings :size="20" />
       </RouterLink>
     </div>
@@ -52,12 +58,15 @@
 
 <script setup>
 import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../../stores/auth'
 import { useSchoolStore } from '../../stores/school'
 import { PanelLeftClose, PanelLeftOpen, Bell, Settings, Menu, Search } from 'lucide-vue-next'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
+import { setLang } from '../../i18n'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 defineProps({ sidebarCollapsed: Boolean })
 defineEmits(['toggle-sidebar'])
 
@@ -70,15 +79,15 @@ const { isOnline, pendingSyncCount, syncStatus } = useConnectionStatus()
 const isSyncing = computed(() => syncStatus.value === 'syncing')
 const connClass = computed(() => isSyncing.value ? 'syncing' : (isOnline.value ? 'online' : 'offline'))
 const connText = computed(() => {
-  if (isSyncing.value) return 'Synchronisation…'
-  if (!isOnline.value) return 'Hors ligne'
-  if (pendingSyncCount.value > 0) return 'En attente'
-  return 'En ligne'
+  if (isSyncing.value) return t('header.syncing')
+  if (!isOnline.value) return t('header.offline')
+  if (pendingSyncCount.value > 0) return t('header.pending')
+  return t('header.online')
 })
 const connTitle = computed(() => {
-  if (!isOnline.value) return `Hors ligne — ${pendingSyncCount.value} modification(s) en attente. Tout se synchronisera automatiquement au retour du réseau.`
-  if (pendingSyncCount.value > 0) return `${pendingSyncCount.value} modification(s) en cours de synchronisation.`
-  return 'En ligne — tout est synchronisé.'
+  if (!isOnline.value) return t('header.offlineDetail', { n: pendingSyncCount.value })
+  if (pendingSyncCount.value > 0) return t('header.syncingDetail', { n: pendingSyncCount.value })
+  return t('header.onlineSynced')
 })
 
 const isMobile = ref(false)
@@ -94,9 +103,9 @@ const schoolLogo = computed(() => schoolStore.schoolSettings?.logo || null)
 
 const greeting = computed(() => {
   const h = new Date().getHours()
-  if (h < 12) return 'Bonjour'
-  if (h < 18) return 'Bon après-midi'
-  return 'Bonsoir'
+  if (h < 12) return t('header.greetingMorning')
+  if (h < 18) return t('header.greetingAfternoon')
+  return t('header.greetingEvening')
 })
 
 const displayName = computed(() => authStore.user?.displayName || '')
@@ -202,6 +211,31 @@ function openSearch() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.header-lang {
+  display: inline-flex;
+  gap: 1px;
+  padding: 2px;
+  background: rgba(0, 0, 0, .05);
+  border-radius: 100px;
+  margin-right: 2px;
+}
+.header-lang button {
+  border: none;
+  background: transparent;
+  color: var(--tx3);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 9px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease;
+}
+.header-lang button.on {
+  background: var(--pr);
+  color: #fff;
 }
 
 .header-icon-btn {
