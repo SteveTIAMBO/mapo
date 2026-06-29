@@ -200,7 +200,7 @@
                 <span class="prog-lv">Niv. {{ p.level }}</span>
               </div>
             </div>
-            <p v-else class="muted">Lancez des révisions dans <button class="lnk" @click="section = 'tuteur'">Tuteur</button> pour voir la progression apparaître ici.</p>
+            <p v-else class="muted">{{ isApprenant ? 'Lance des' : 'Demandez des' }} révisions dans <button class="lnk" @click="section = 'tuteur'">Tuteur</button> pour voir la progression apparaître ici.</p>
           </div>
 
           <div v-if="activeEnfant.notes.length" class="card">
@@ -482,7 +482,7 @@ const insight = computed(() => {
   const m = noms.length === 2 ? `${noms[0]} et ${noms[1]}` : noms[0]
   return ap
     ? `MIAPO a repéré des difficultés en ${m}. Lance une révision ciblée — tu progresseras plus vite sur tes points faibles.`
-    : `MIAPO a repéré des difficultés en ${m}. Lancez une révision ciblée — ${e.firstName} progressera plus vite sur ses points faibles.`
+    : `MIAPO a repéré des difficultés en ${m}. Désignez ces matières à réviser — ${e.firstName} progressera plus vite sur ses points faibles.`
 })
 
 function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM' }; showAdd.value = true }
