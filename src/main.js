@@ -6,6 +6,7 @@ import { useAuthStore } from './stores/auth'
 import { useEditionStore } from './stores/edition'
 import { useSchoolIdentityStore } from './stores/schoolIdentity'
 import { getTenant } from './utils/tenantContext'
+import { i18n } from './i18n'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -13,6 +14,7 @@ const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+app.use(i18n)
 
 // Restaurer l'édition choisie (secondaire / supérieur) avant toute navigation
 const editionStore = useEditionStore()

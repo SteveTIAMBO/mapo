@@ -1,0 +1,20 @@
+{
+  "common": {
+    "byEdufrem": "par EDUFREM",
+    "lang": "Langue"
+  },
+  "welcome": {
+    "title": "Le tuteur intelligent qui accompagne chaque enfant",
+    "subtitle": "Révisions, suivi et orientation par l'IA — à la maison comme à l'école.",
+    "parentName": "Je suis un parent",
+    "parentTag": "Espace famille",
+    "parentText": "Suivez la scolarité de votre enfant — notes, présences, devoirs — et activez son tuteur intelligent pour l'aider à progresser.",
+    "parentCta": "Entrer dans l'espace parent",
+    "eleveName": "Je suis un élève",
+    "eleveTag": "Espace élève",
+    "eleveText": "Révise avec ton tuteur intelligent, fais des quiz adaptés à ton niveau et garde le fil de tes cours, à ton rythme.",
+    "eleveCta": "Entrer dans l'espace élève",
+    "haveAccount": "J'ai déjà un compte MIAPO+",
+    "footerCopy": "© 2026 MIAPO+ — Apprendre, accompagné"
+  }
+}

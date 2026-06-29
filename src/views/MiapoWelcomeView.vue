@@ -3,6 +3,12 @@
     <div class="miapo-bg"></div>
 
     <div class="miapo-inner">
+      <!-- Sélecteur de langue -->
+      <div class="miapo-lang">
+        <button type="button" :class="{ on: locale === 'fr' }" @click="setLang('fr')">FR</button>
+        <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
+      </div>
+
       <!-- Logo + intro -->
       <header class="miapo-head">
         <div class="miapo-logo">
@@ -13,13 +19,11 @@
           </div>
           <div>
             <div class="miapo-logo-title">MIAPO<span class="plus">+</span></div>
-            <div class="miapo-logo-sub">par EDUFREM</div>
+            <div class="miapo-logo-sub">{{ t('common.byEdufrem') }}</div>
           </div>
         </div>
-        <h1 class="miapo-title">Le tuteur intelligent qui accompagne chaque enfant</h1>
-        <p class="miapo-subtitle">
-          Révisions, suivi et orientation par l'IA — à la maison comme à l'école.
-        </p>
+        <h1 class="miapo-title">{{ t('welcome.title') }}</h1>
+        <p class="miapo-subtitle">{{ t('welcome.subtitle') }}</p>
       </header>
 
       <!-- Choix du profil -->
@@ -34,14 +38,11 @@
               <path d="M16 20c0-2.6 1.4-4.9 3.6-6" />
             </svg>
           </span>
-          <span class="m-name">Je suis un parent</span>
-          <span class="m-tagline">Espace famille</span>
-          <span class="m-context">
-            Suivez la scolarité de votre enfant — notes, présences, devoirs — et
-            activez son tuteur intelligent pour l'aider à progresser.
-          </span>
+          <span class="m-name">{{ t('welcome.parentName') }}</span>
+          <span class="m-tagline">{{ t('welcome.parentTag') }}</span>
+          <span class="m-context">{{ t('welcome.parentText') }}</span>
           <span class="m-cta">
-            Entrer dans l'espace parent
+            {{ t('welcome.parentCta') }}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
@@ -55,14 +56,11 @@
               <path d="M22 10v6" />
             </svg>
           </span>
-          <span class="m-name">Je suis un élève</span>
-          <span class="m-tagline">Espace élève</span>
-          <span class="m-context">
-            Révise avec ton tuteur intelligent, fais des quiz adaptés à ton niveau
-            et garde le fil de tes cours, à ton rythme.
-          </span>
+          <span class="m-name">{{ t('welcome.eleveName') }}</span>
+          <span class="m-tagline">{{ t('welcome.eleveTag') }}</span>
+          <span class="m-context">{{ t('welcome.eleveText') }}</span>
           <span class="m-cta">
-            Entrer dans l'espace élève
+            {{ t('welcome.eleveCta') }}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
@@ -71,25 +69,28 @@
       <!-- Compte en ligne -->
       <div class="miapo-account">
         <button type="button" class="miapo-login-link" @click="goLogin">
-          J'ai déjà un compte MIAPO+
+          {{ t('welcome.haveAccount') }}
         </button>
       </div>
 
       <!-- Footer -->
       <footer class="miapo-footer">
         <p class="miapo-footer-org">EDUFREM SAS</p>
-        <p class="miapo-footer-copy">&copy; 2026 MIAPO+ — Apprendre, accompagné</p>
+        <p class="miapo-footer-copy">{{ t('welcome.footerCopy') }}</p>
       </footer>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { setLang } from '../i18n'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const editionStore = useEditionStore()
 const authStore = useAuthStore()
@@ -151,6 +152,35 @@ function goLogin() {
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Sélecteur de langue */
+.miapo-lang {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 100px;
+}
+.miapo-lang button {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-family: 'Poppins', sans-serif;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 5px 13px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.miapo-lang button.on {
+  background: #fff;
+  color: var(--m-accent);
 }
 
 /* Header */
