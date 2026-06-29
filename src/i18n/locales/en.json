@@ -775,5 +775,19 @@
     "apprLocal": "Proposal generated locally ({reason}). Review and adjust.",
     "apprFail": "Generation failed.",
     "inAppTodoAlert": "Feature under development.\n\nDigital report cards will be emailed to parents.\nFor now, PDF report cards are downloaded for manual sending."
+  },
+  "eleve": {
+    "noStudentRecord": "Account not linked to a student record.",
+    "messagesTitle": "Messages",
+    "messagesSubtitle": "Communicate with your teachers and the administration",
+    "myMessages": "My messages",
+    "noMessages": "No messages yet.",
+    "noMessagesHint": "Messages from your teachers will appear here.",
+    "scheduleTitle": "Timetable",
+    "noClassDay": "No classes this day",
+    "subjectFallback": "Subject",
+    "teacherFallback": "Teacher",
+    "room": "Room {room}",
+    "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday" }
   }
 }

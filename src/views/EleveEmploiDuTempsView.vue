@@ -2,27 +2,27 @@
   <div class="eleve-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Emploi du temps</h1>
+        <h1>{{ t('eleve.scheduleTitle') }}</h1>
         <p v-if="myRecord">{{ myRecord.className }}</p>
       </div>
     </div>
 
     <div v-if="!myRecord || !myClass" class="card empty-state">
-      <p>Compte non lié à un dossier élève.</p>
+      <p>{{ t('eleve.noStudentRecord') }}</p>
     </div>
 
     <template v-else>
       <!-- Day tabs -->
       <div class="day-tabs">
         <button v-for="day in weekDays" :key="day.key" class="day-tab" :class="{ active: selectedDay === day.key }" @click="selectedDay = day.key">
-          {{ day.label }}
+          {{ t('eleve.days.' + day.key) }}
         </button>
       </div>
 
       <!-- Schedule for selected day -->
       <div class="schedule-list">
         <div v-if="daySlots.length === 0" class="card empty-state" style="padding: 32px;">
-          <p>Pas de cours ce jour</p>
+          <p>{{ t('eleve.noClassDay') }}</p>
         </div>
         <div v-for="slot in daySlots" :key="slot.id" class="schedule-item card">
           <div class="schedule-time">
@@ -30,8 +30,8 @@
             <span class="time-end">{{ slot.endTime }}</span>
           </div>
           <div class="schedule-body">
-            <h4>{{ slot.subjectName || 'Matière' }}</h4>
-            <p>{{ slot.teacherName || 'Enseignant' }} <span v-if="slot.room">— Salle {{ slot.room }}</span></p>
+            <h4>{{ slot.subjectName || t('eleve.subjectFallback') }}</h4>
+            <p>{{ slot.teacherName || t('eleve.teacherFallback') }} <span v-if="slot.room">— {{ t('eleve.room', { room: slot.room }) }}</span></p>
           </div>
         </div>
       </div>
@@ -41,12 +41,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useClassesStore } from '../stores/classes'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { useSchoolStore } from '../stores/school'
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
@@ -54,11 +56,11 @@ const edtStore = useEmploiDuTempsStore()
 const schoolStore = useSchoolStore()
 
 const weekDays = [
-  { key: 'lundi', label: 'Lundi' },
-  { key: 'mardi', label: 'Mardi' },
-  { key: 'mercredi', label: 'Mercredi' },
-  { key: 'jeudi', label: 'Jeudi' },
-  { key: 'vendredi', label: 'Vendredi' },
+  { key: 'lundi' },
+  { key: 'mardi' },
+  { key: 'mercredi' },
+  { key: 'jeudi' },
+  { key: 'vendredi' },
 ]
 
 const dayNames = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi']

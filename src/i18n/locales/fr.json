@@ -775,5 +775,19 @@
     "apprLocal": "Proposition générée localement ({reason}). Relisez et ajustez.",
     "apprFail": "Échec de la génération.",
     "inAppTodoAlert": "Fonctionnalité en cours de développement.\n\nLes bulletins numériques seront envoyés par email aux parents.\nPour l'instant, les bulletins PDF sont téléchargés pour envoi manuel."
+  },
+  "eleve": {
+    "noStudentRecord": "Compte non lié à un dossier élève.",
+    "messagesTitle": "Messagerie",
+    "messagesSubtitle": "Communiquez avec vos enseignants et l'administration",
+    "myMessages": "Mes messages",
+    "noMessages": "Aucun message pour le moment.",
+    "noMessagesHint": "Les messages de vos enseignants apparaîtront ici.",
+    "scheduleTitle": "Emploi du temps",
+    "noClassDay": "Pas de cours ce jour",
+    "subjectFallback": "Matière",
+    "teacherFallback": "Enseignant",
+    "room": "Salle {room}",
+    "days": { "lundi": "Lundi", "mardi": "Mardi", "mercredi": "Mercredi", "jeudi": "Jeudi", "vendredi": "Vendredi" }
   }
 }

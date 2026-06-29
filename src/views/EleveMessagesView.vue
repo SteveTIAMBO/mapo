@@ -2,25 +2,25 @@
   <div class="eleve-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Messagerie</h1>
-        <p>Communiquez avec vos enseignants et l'administration</p>
+        <h1>{{ t('eleve.messagesTitle') }}</h1>
+        <p>{{ t('eleve.messagesSubtitle') }}</p>
       </div>
     </div>
 
     <div v-if="!myRecord" class="card empty-state">
-      <p>Compte non lié à un dossier élève.</p>
+      <p>{{ t('eleve.noStudentRecord') }}</p>
     </div>
 
     <template v-else>
       <!-- Messages list (read-only for now) -->
       <div class="card">
         <div class="card-header-inner">
-          <h3>Mes messages</h3>
+          <h3>{{ t('eleve.myMessages') }}</h3>
         </div>
         <div v-if="messages.length === 0" class="empty-state" style="padding: 48px 24px;">
           <MessageSquare :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-          <p style="font-size: 14px;">Aucun message pour le moment.</p>
-          <p style="font-size: 13px; margin-top: 4px;">Les messages de vos enseignants apparaitront ici.</p>
+          <p style="font-size: 14px;">{{ t('eleve.noMessages') }}</p>
+          <p style="font-size: 13px; margin-top: 4px;">{{ t('eleve.noMessagesHint') }}</p>
         </div>
         <div v-else class="messages-list">
           <div v-for="msg in messages" :key="msg.id" class="message-item" :class="{ unread: !msg.read }">
@@ -42,12 +42,14 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useSchoolStore } from '../stores/school'
 import { useClassesStore } from '../stores/classes'
 import { MessageSquare } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const schoolStore = useSchoolStore()
@@ -69,7 +71,7 @@ function getInitials(name) {
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  return new Date(dateStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short' })
 }
 
 onMounted(async () => {
