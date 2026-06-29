@@ -22,7 +22,7 @@
           :alt="schoolStore.schoolSettings?.name"
           class="school-logo-sm"
         />
-        <span class="school-name-sm">{{ schoolStore.schoolSettings?.name || 'Établissement' }}</span>
+        <span class="school-name-sm">{{ schoolStore.schoolSettings?.name || t('sidebar.school') }}</span>
       </div>
       <select v-model="selectedAcademicYear" class="year-select">
         <option v-for="year in academicYears" :key="year" :value="year">
@@ -39,35 +39,35 @@
         :to="item.to"
         class="nav-item"
         :class="{ active: isActive(item.to) }"
-        :title="collapsed && !mobileOpen ? item.label : undefined"
+        :title="collapsed && !mobileOpen ? t(item.label) : undefined"
         @click="$emit('navigate')"
       >
         <component :is="item.icon" :size="19" class="nav-icon" />
         <transition name="fade">
-          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ item.label }}</span>
+          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
         </transition>
       </RouterLink>
     </nav>
 
     <!-- User profile + logout -->
     <div class="sidebar-footer">
-      <RouterLink to="/profil" class="user-block" :class="{ 'user-block-mini': collapsed && !mobileOpen }" :title="collapsed && !mobileOpen ? (userProfile?.displayName || 'Profil') : undefined" @click="$emit('navigate')">
+      <RouterLink to="/profil" class="user-block" :class="{ 'user-block-mini': collapsed && !mobileOpen }" :title="collapsed && !mobileOpen ? (userProfile?.displayName || t('sidebar.profile')) : undefined" @click="$emit('navigate')">
         <div class="user-avatar-sidebar">
           <img v-if="userPhoto" :src="userPhoto" :alt="userProfile?.displayName" class="user-avatar-img" />
           <span v-else>{{ getInitials(userProfile?.displayName) }}</span>
         </div>
         <transition name="fade">
           <div v-if="!collapsed || mobileOpen" class="user-info">
-            <p class="user-name">{{ userProfile?.displayName || 'Utilisateur' }}</p>
+            <p class="user-name">{{ userProfile?.displayName || t('sidebar.user') }}</p>
             <p class="user-role">{{ roleLabel }}</p>
           </div>
         </transition>
       </RouterLink>
 
-      <button class="nav-item logout-btn" @click="handleLogout" :title="collapsed && !mobileOpen ? 'Se déconnecter' : undefined">
+      <button class="nav-item logout-btn" @click="handleLogout" :title="collapsed && !mobileOpen ? t('sidebar.logout') : undefined">
         <LogOut :size="19" class="nav-icon" />
         <transition name="fade">
-          <span v-if="!collapsed || mobileOpen" class="nav-label">Se déconnecter</span>
+          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t('sidebar.logout') }}</span>
         </transition>
       </button>
 
@@ -81,6 +81,7 @@
 
 <script setup>
 import { computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { usePermissionsStore } from '../../stores/permissions'
@@ -123,6 +124,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['close-mobile', 'navigate'])
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
@@ -135,18 +137,13 @@ const userPhoto = computed(() =>
   authStore.userProfile?.photoURL || authStore.user?.photoURL || null
 )
 
-const roleLabels = {
-  admin: 'Administrateur',
-  directeur: 'Directeur',
-  enseignant: 'Enseignant',
-  secretaire: 'Secrétaire',
-  comptable: 'Comptable',
-  parent: 'Parent / Tuteur',
-  eleve: 'Élève',
-  cantine: 'Resp. cantine',
-  surveillant: 'Surveillant',
-}
-const roleLabel = computed(() => roleLabels[userProfile.value?.role] || userProfile.value?.role || 'Utilisateur')
+const roleLabel = computed(() => {
+  const r = userProfile.value?.role
+  if (!r) return t('sidebar.user')
+  const k = `sidebar.roles.${r}`
+  const lbl = t(k)
+  return lbl === k ? r : lbl
+})
 
 const academicYears = computed(() => {
   const now = new Date()
@@ -173,40 +170,40 @@ const selectedAcademicYear = computed({
 })
 
 const STAFF_NAV_ITEMS = [
-  { key: 'dashboard', to: '/dashboard', icon: LayoutDashboard, label: 'Tableau de bord' },
-  { key: 'eleves', to: '/eleves', icon: Users, label: 'Élèves' },
-  { key: 'inscriptions', to: '/inscriptions', icon: ClipboardList, label: 'Inscriptions', dirOnly: true },
-  { key: 'classes', to: '/classes', icon: BookOpen, label: 'Classes' },
-  { key: 'matieres', to: '/matieres', icon: Library, label: 'Matières', dirOnly: true },
-  { key: 'notes', to: '/notes', icon: FileText, label: 'Notes & Évaluations' },
-  { key: 'notes', to: '/examens', icon: Award, label: 'Examens', dirOnly: true },
-  { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'Diplômes', dirOnly: true },
-  { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'Présences' },
-  { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'Emploi du temps' },
-  { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'Devoirs' },
-  { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'Suivi des révisions' },
-  { key: 'notes', to: '/suivi-decrochage', icon: TrendingDown, label: 'Suivi du décrochage', dirOnly: true },
-  { key: 'discipline', to: '/discipline', icon: Shield, label: 'Discipline' },
-  { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'Messagerie' },
-  { key: 'messagerie', to: '/alertes', icon: Bell, label: 'Alertes parents' },
-  { key: 'salaire', to: '/salaire', icon: Wallet, label: 'Mon salaire' },
-  { key: 'personnel', to: '/personnel', icon: Briefcase, label: 'Personnel' },
-  { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'Gestion des accès', dirOnly: true },
-  { key: 'facturation', to: '/facturation', icon: CreditCard, label: 'Comptabilité' },
-  { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'Rapports' },
-  { key: 'import', to: '/import', icon: Upload, label: 'Import' },
-  { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'Passage d\'année', dirOnly: true },
+  { key: 'dashboard', to: '/dashboard', icon: LayoutDashboard, label: 'nav.dashboard' },
+  { key: 'eleves', to: '/eleves', icon: Users, label: 'nav.eleves' },
+  { key: 'inscriptions', to: '/inscriptions', icon: ClipboardList, label: 'nav.inscriptions', dirOnly: true },
+  { key: 'classes', to: '/classes', icon: BookOpen, label: 'nav.classes' },
+  { key: 'matieres', to: '/matieres', icon: Library, label: 'nav.matieres', dirOnly: true },
+  { key: 'notes', to: '/notes', icon: FileText, label: 'nav.notesEval' },
+  { key: 'notes', to: '/examens', icon: Award, label: 'nav.examens', dirOnly: true },
+  { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'nav.diplomes', dirOnly: true },
+  { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'nav.presences' },
+  { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'nav.edt' },
+  { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'nav.devoirs' },
+  { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'nav.suiviRevisions' },
+  { key: 'notes', to: '/suivi-decrochage', icon: TrendingDown, label: 'nav.suiviDecrochage', dirOnly: true },
+  { key: 'discipline', to: '/discipline', icon: Shield, label: 'nav.discipline' },
+  { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
+  { key: 'messagerie', to: '/alertes', icon: Bell, label: 'nav.alertes' },
+  { key: 'salaire', to: '/salaire', icon: Wallet, label: 'nav.salaire' },
+  { key: 'personnel', to: '/personnel', icon: Briefcase, label: 'nav.personnel' },
+  { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true },
+  { key: 'facturation', to: '/facturation', icon: CreditCard, label: 'nav.comptabilite' },
+  { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'nav.rapports' },
+  { key: 'import', to: '/import', icon: Upload, label: 'nav.import' },
+  { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'nav.passageAnnee', dirOnly: true },
 ]
 
 const mainNav = computed(() => {
   if (authStore.userProfile?.role === 'eleve') {
     return [
-      { to: '/espace-eleve', icon: Home, label: 'Mon espace' },
-      { key: 'notes', to: '/eleve/notes', icon: FileText, label: 'Mes notes' },
-      { to: '/eleve/revisions', icon: Sparkles, label: 'Révisions' },
-      { key: 'emploi-du-temps', to: '/eleve/emploi-du-temps', icon: Clock, label: 'Emploi du temps' },
-      { key: 'presences', to: '/eleve/presences', icon: CalendarCheck, label: 'Mes présences' },
-      { key: 'messagerie', to: '/eleve/messagerie', icon: MessageSquare, label: 'Messagerie' },
+      { to: '/espace-eleve', icon: Home, label: 'nav.monEspace' },
+      { key: 'notes', to: '/eleve/notes', icon: FileText, label: 'nav.mesNotes' },
+      { to: '/eleve/revisions', icon: Sparkles, label: 'nav.revisions' },
+      { key: 'emploi-du-temps', to: '/eleve/emploi-du-temps', icon: Clock, label: 'nav.edt' },
+      { key: 'presences', to: '/eleve/presences', icon: CalendarCheck, label: 'nav.mesPresences' },
+      { key: 'messagerie', to: '/eleve/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
     ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
   }
 
@@ -219,14 +216,14 @@ const mainNav = computed(() => {
       ]
     }
     return [
-      { to: '/espace-parent', icon: Home, label: 'Tableau de bord' },
-      { to: '/parent/inscriptions', icon: ClipboardList, label: 'Inscriptions' },
-      { key: 'notes', to: '/parent/notes', icon: BookOpen, label: 'Notes' },
-      { key: 'presences', to: '/parent/presences', icon: CalendarCheck, label: 'Présences' },
-      { key: 'emploi-du-temps', to: '/parent/emploi-du-temps', icon: Clock, label: 'Emploi du temps' },
-      { key: 'devoirs', to: '/parent/devoirs', icon: ClipboardCheck, label: 'Devoirs' },
-      { key: 'facturation', to: '/parent/finances', icon: CreditCard, label: 'Paiements' },
-      { key: 'messagerie', to: '/parent/messagerie', icon: MessageSquare, label: 'Messagerie' },
+      { to: '/espace-parent', icon: Home, label: 'nav.dashboard' },
+      { to: '/parent/inscriptions', icon: ClipboardList, label: 'nav.inscriptions' },
+      { key: 'notes', to: '/parent/notes', icon: BookOpen, label: 'nav.notes' },
+      { key: 'presences', to: '/parent/presences', icon: CalendarCheck, label: 'nav.presences' },
+      { key: 'emploi-du-temps', to: '/parent/emploi-du-temps', icon: Clock, label: 'nav.edt' },
+      { key: 'devoirs', to: '/parent/devoirs', icon: ClipboardCheck, label: 'nav.devoirs' },
+      { key: 'facturation', to: '/parent/finances', icon: CreditCard, label: 'nav.paiements' },
+      { key: 'messagerie', to: '/parent/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
     ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
   }
 

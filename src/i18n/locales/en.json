@@ -65,5 +65,53 @@
     "onlineSynced": "Online — everything is synced.",
     "offlineDetail": "Offline — {n} pending change(s). Everything will sync automatically when the network is back.",
     "syncingDetail": "{n} change(s) syncing."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "eleves": "Students",
+    "inscriptions": "Enrollment",
+    "classes": "Classes",
+    "matieres": "Subjects",
+    "notesEval": "Grades & Assessment",
+    "examens": "Exams",
+    "diplomes": "Diplomas",
+    "presences": "Attendance",
+    "edt": "Timetable",
+    "devoirs": "Homework",
+    "suiviRevisions": "Revision tracking",
+    "suiviDecrochage": "Dropout tracking",
+    "discipline": "Discipline",
+    "messagerie": "Messages",
+    "alertes": "Parent alerts",
+    "salaire": "My salary",
+    "personnel": "Staff",
+    "acces": "Access management",
+    "comptabilite": "Accounting",
+    "rapports": "Reports",
+    "import": "Import",
+    "passageAnnee": "Year transition",
+    "monEspace": "My space",
+    "mesNotes": "My grades",
+    "revisions": "Revision",
+    "mesPresences": "My attendance",
+    "notes": "Grades",
+    "paiements": "Payments"
+  },
+  "sidebar": {
+    "school": "School",
+    "user": "User",
+    "profile": "Profile",
+    "logout": "Log out",
+    "roles": {
+      "admin": "Administrator",
+      "directeur": "Director",
+      "enseignant": "Teacher",
+      "secretaire": "Secretary",
+      "comptable": "Accountant",
+      "parent": "Parent / Guardian",
+      "eleve": "Student",
+      "cantine": "Canteen manager",
+      "surveillant": "Supervisor"
+    }
   }
 }

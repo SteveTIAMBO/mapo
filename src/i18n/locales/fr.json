@@ -65,5 +65,53 @@
     "onlineSynced": "En ligne — tout est synchronisé.",
     "offlineDetail": "Hors ligne — {n} modification(s) en attente. Tout se synchronisera automatiquement au retour du réseau.",
     "syncingDetail": "{n} modification(s) en cours de synchronisation."
+  },
+  "nav": {
+    "dashboard": "Tableau de bord",
+    "eleves": "Élèves",
+    "inscriptions": "Inscriptions",
+    "classes": "Classes",
+    "matieres": "Matières",
+    "notesEval": "Notes & Évaluations",
+    "examens": "Examens",
+    "diplomes": "Diplômes",
+    "presences": "Présences",
+    "edt": "Emploi du temps",
+    "devoirs": "Devoirs",
+    "suiviRevisions": "Suivi des révisions",
+    "suiviDecrochage": "Suivi du décrochage",
+    "discipline": "Discipline",
+    "messagerie": "Messagerie",
+    "alertes": "Alertes parents",
+    "salaire": "Mon salaire",
+    "personnel": "Personnel",
+    "acces": "Gestion des accès",
+    "comptabilite": "Comptabilité",
+    "rapports": "Rapports",
+    "import": "Import",
+    "passageAnnee": "Passage d'année",
+    "monEspace": "Mon espace",
+    "mesNotes": "Mes notes",
+    "revisions": "Révisions",
+    "mesPresences": "Mes présences",
+    "notes": "Notes",
+    "paiements": "Paiements"
+  },
+  "sidebar": {
+    "school": "Établissement",
+    "user": "Utilisateur",
+    "profile": "Profil",
+    "logout": "Se déconnecter",
+    "roles": {
+      "admin": "Administrateur",
+      "directeur": "Directeur",
+      "enseignant": "Enseignant",
+      "secretaire": "Secrétaire",
+      "comptable": "Comptable",
+      "parent": "Parent / Tuteur",
+      "eleve": "Élève",
+      "cantine": "Resp. cantine",
+      "surveillant": "Surveillant"
+    }
   }
 }
