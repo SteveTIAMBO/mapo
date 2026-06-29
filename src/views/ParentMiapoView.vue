@@ -13,9 +13,9 @@
       <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
       <div v-if="enfants.length && !isApprenant" class="volet-child">
         <select v-if="enfants.length > 1" v-model="activeId" class="child-select">
-          <option v-for="e in enfants" :key="e.id" :value="e.id">{{ e.firstName }} · {{ e.niveau }}</option>
+          <option v-for="e in enfants" :key="e.id" :value="e.id">{{ e.firstName }} · {{ niveauLabel(e) }}</option>
         </select>
-        <div v-else class="child-single">{{ activeEnfant?.firstName }} <span>{{ activeEnfant?.niveau }}</span></div>
+        <div v-else class="child-single">{{ activeEnfant?.firstName }} <span>{{ niveauLabel(activeEnfant) }}</span></div>
       </div>
 
       <nav class="volet-nav">
@@ -49,7 +49,7 @@
             <div class="child-avatar" :class="activeEnfant.gender === 'F' ? 'av-f' : 'av-m'">{{ initials }}</div>
             <div class="child-info">
               <h2>{{ activeEnfant.firstName }} {{ activeEnfant.lastName }}</h2>
-              <div class="child-meta"><span>{{ activeEnfant.niveau }}</span><span class="sep">·</span><span>{{ paysLabel(activeEnfant.pays) }}</span></div>
+              <div class="child-meta"><span>{{ niveauLabel(activeEnfant) }}</span><span class="sep">·</span><span>{{ paysLabel(activeEnfant.pays) }}</span></div>
             </div>
           </div>
 
@@ -82,7 +82,7 @@
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
                 <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'">{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</span>
-                <span class="er-info"><strong>{{ e.firstName }} {{ e.lastName }}</strong><small>{{ e.niveau }} · {{ paysLabel(e.pays) }}</small></span>
+                <span class="er-info"><strong>{{ e.firstName }} {{ e.lastName }}</strong><small>{{ niveauLabel(e) }} · {{ paysLabel(e.pays) }}</small></span>
                 <Trash2 v-if="e.id === activeId" :size="16" class="er-del" @click.stop="confirmRemove" />
               </button>
             </div>
@@ -274,7 +274,10 @@
             </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">Niveau</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">Primaire</option><option value="secondaire">Secondaire</option><option value="superieur">Supérieur</option></select></div>
-              <div class="form-group"><label class="form-label">Classe</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option></select></div>
+              <div class="form-group"><label class="form-label">Classe</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            </div>
+            <div v-if="profil.niveau === NIVEAU_HORS_CATALOGUE" class="form-row">
+              <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="profil.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
             </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">Pays</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
@@ -300,8 +303,9 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Sexe</label><select v-model="form.gender" class="input"><option value="M">Garçon</option><option value="F">Fille</option></select></div>
-            <div class="form-group"><label class="form-label">Classe</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option></select></div>
+            <div class="form-group"><label class="form-label">Classe</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
+          <div v-if="form.niveau === NIVEAU_HORS_CATALOGUE" class="form-group"><label class="form-label">Nom de la formation</label><input v-model="form.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
           <div class="form-group"><label class="form-label">Pays</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
             <button class="btn btn-outline" @click="showAdd = false">Annuler</button>
@@ -318,7 +322,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, PAYS, MATIERES } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
@@ -372,7 +376,7 @@ const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.v
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', photoURL: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', formation: '', photoURL: '' })
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value
@@ -380,7 +384,7 @@ function syncProfil() {
   profil.value = {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
-    ecole: e.ecole || '', photoURL: e.photoURL || '',
+    ecole: e.ecole || '', formation: e.formation || '', photoURL: e.photoURL || '',
   }
 }
 function onPickPhoto(ev) {
@@ -434,13 +438,18 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '' })
 
 const newMatiere = ref('')
 const newNote = ref(null)
 const canAddNote = computed(() => newMatiere.value && newNote.value !== null && newNote.value !== '' && !Number.isNaN(Number(newNote.value)))
 
 function paysLabel(code) { return PAYS.find((p) => p.code === code)?.label || code }
+// Affiche le NOM de la formation pour un apprenant hors-catalogue (sinon la classe).
+function niveauLabel(e) {
+  if (!e) return ''
+  return e.niveau === NIVEAU_HORS_CATALOGUE ? (e.formation || NIVEAU_HORS_CATALOGUE) : e.niveau
+}
 function noteClass(n) { return n < 10 ? 'low' : n < 12 ? 'mid' : 'ok' }
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
 
@@ -491,7 +500,7 @@ const insight = computed(() => {
     : `MIAPO a repéré des difficultés en ${m}. Désignez ces matières à réviser — ${e.firstName} progressera plus vite sur ses points faibles.`
 })
 
-function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM' }; showAdd.value = true }
+function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '' }; showAdd.value = true }
 function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)

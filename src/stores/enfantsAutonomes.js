@@ -31,6 +31,13 @@ export const NIVEAUX = [
   'Tle A', 'Tle C', 'Tle D',
 ]
 
+// Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
+// (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
+// choisit ce « niveau », il saisit librement le NOM de sa formation (champ
+// `formation`) et, plus tard, son URL (`formationUrl`, Étape 2). Le profil reste
+// le même modèle ; seul le point d'entrée du cursus change.
+export const NIVEAU_HORS_CATALOGUE = 'Formation (hors catalogue)'
+
 export const PAYS = [
   { code: 'CM', label: 'Cameroun' },
   { code: 'SN', label: 'Sénégal' },
@@ -112,16 +119,18 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL, formation, formationUrl }) {
     const enfant = {
       id: 'ea-' + Date.now().toString(36),
       firstName: (firstName || '').trim(),
       lastName: (lastName || '').trim(),
       gender: gender === 'F' ? 'F' : 'M',
       cycle: cycle || '',       // 'primaire' | 'secondaire' | 'superieur'
-      niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…)
+      niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…) OU « Formation (hors catalogue) »
       pays: pays || 'CM',
       ecole: (ecole || '').trim(),
+      formation: (formation || '').trim(),       // nom libre de la formation (apprenant hors-catalogue)
+      formationUrl: (formationUrl || '').trim(), // URL de la formation (Étape 2)
       photoURL: photoURL || '',
       notes: [], // [{ id, matiere, note }]
       revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
@@ -141,7 +150,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'photoURL']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'formation', 'formationUrl', 'photoURL']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     persist()
