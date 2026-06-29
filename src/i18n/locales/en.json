@@ -788,6 +788,15 @@
     "subjectFallback": "Subject",
     "teacherFallback": "Teacher",
     "room": "Room {room}",
+    "gradesTitle": "My grades",
+    "trimester": "Term {n}",
+    "generalAvg": "General average",
+    "appreciationLabel": "Appreciation",
+    "rankLabel": "Rank",
+    "detailBySubject": "Detail by subject — {trim}",
+    "noGradesTrim": "No grades available for this term.",
+    "thSubject": "Subject",
+    "thTermAvg": "Term avg",
     "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday" }
   }
 }

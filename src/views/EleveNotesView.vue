@@ -2,35 +2,35 @@
   <div class="eleve-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Mes notes</h1>
+        <h1>{{ t('eleve.gradesTitle') }}</h1>
         <p v-if="myRecord">{{ myRecord.lastName }} {{ myRecord.firstName }} — {{ myRecord.className }}</p>
       </div>
       <div class="header-actions">
         <select v-model="selectedTrimester" class="select-filter">
-          <option value="T1">Trimestre 1</option>
-          <option value="T2">Trimestre 2</option>
-          <option value="T3">Trimestre 3</option>
+          <option value="T1">{{ t('eleve.trimester', { n: 1 }) }}</option>
+          <option value="T2">{{ t('eleve.trimester', { n: 2 }) }}</option>
+          <option value="T3">{{ t('eleve.trimester', { n: 3 }) }}</option>
         </select>
       </div>
     </div>
 
     <div v-if="!myRecord" class="card empty-state">
-      <p>Compte non lié à un dossier élève.</p>
+      <p>{{ t('eleve.noStudentRecord') }}</p>
     </div>
 
     <template v-else>
       <!-- Average summary -->
       <div class="summary-row">
         <div class="summary-card summary-blue">
-          <span class="summary-label">Moyenne générale</span>
+          <span class="summary-label">{{ t('eleve.generalAvg') }}</span>
           <span class="summary-value">{{ generalAvg !== null ? generalAvg.toFixed(2) : '—' }}/20</span>
         </div>
         <div class="summary-card" :class="generalAvg >= 10 ? 'summary-green' : 'summary-red'">
-          <span class="summary-label">Appréciation</span>
+          <span class="summary-label">{{ t('eleve.appreciationLabel') }}</span>
           <span class="summary-value">{{ generalAvg !== null ? getAppreciation(generalAvg) : '—' }}</span>
         </div>
         <div class="summary-card">
-          <span class="summary-label">Rang</span>
+          <span class="summary-label">{{ t('eleve.rankLabel') }}</span>
           <span class="summary-value">{{ myRank || '—' }}</span>
         </div>
       </div>
@@ -38,20 +38,20 @@
       <!-- Notes table -->
       <div class="card">
         <div class="card-header-inner">
-          <h3>Détail par matière — {{ selectedTrimester }}</h3>
+          <h3>{{ t('eleve.detailBySubject', { trim: trimesterLabel }) }}</h3>
         </div>
         <div v-if="subjectNotes.length === 0" class="empty-state" style="padding: 32px;">
-          <p>Aucune note disponible pour ce trimestre.</p>
+          <p>{{ t('eleve.noGradesTrim') }}</p>
         </div>
         <div v-else class="table-wrap">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Matière</th>
+                <th>{{ t('eleve.thSubject') }}</th>
                 <th class="tc">Coeff.</th>
                 <th class="tr">S1</th>
                 <th class="tr">S2</th>
-                <th class="tr">Moy. trim.</th>
+                <th class="tr">{{ t('eleve.thTermAvg') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -74,6 +74,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useNotesStore, getAppreciation } from '../stores/notes'
@@ -81,6 +82,7 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const notesStore = useNotesStore()
@@ -89,6 +91,7 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 
 const selectedTrimester = ref('T1')
+const trimesterLabel = computed(() => t('eleve.trimester', { n: selectedTrimester.value.slice(1) }))
 
 const myRecord = computed(() => {
   const email = authStore.userProfile?.email
@@ -143,7 +146,10 @@ const myRank = computed(() => {
   if (!ranking) return null
   const me = ranking.find(r => r.eleveId === myRecord.value.id)
   if (!me || me.rank === undefined) return null
-  return `${me.rank}${me.rank === 1 ? 'er' : 'e'} / ${ranking.length}`
+  let ord
+  if (locale.value === 'en') { const v = me.rank % 100, s = ['th', 'st', 'nd', 'rd']; ord = s[(v - 20) % 10] || s[v] || s[0] }
+  else { ord = me.rank === 1 ? 'er' : 'e' }
+  return `${me.rank}${ord} / ${ranking.length}`
 })
 
 onMounted(async () => {

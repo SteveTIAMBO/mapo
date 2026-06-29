@@ -788,6 +788,15 @@
     "subjectFallback": "Matière",
     "teacherFallback": "Enseignant",
     "room": "Salle {room}",
+    "gradesTitle": "Mes notes",
+    "trimester": "Trimestre {n}",
+    "generalAvg": "Moyenne générale",
+    "appreciationLabel": "Appréciation",
+    "rankLabel": "Rang",
+    "detailBySubject": "Détail par matière — {trim}",
+    "noGradesTrim": "Aucune note disponible pour ce trimestre.",
+    "thSubject": "Matière",
+    "thTermAvg": "Moy. trim.",
     "days": { "lundi": "Lundi", "mardi": "Mardi", "mercredi": "Mercredi", "jeudi": "Jeudi", "vendredi": "Vendredi" }
   }
 }
