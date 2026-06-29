@@ -1166,5 +1166,21 @@
     "insightOne": "{n} student needs support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
     "insightMany": "{n} students need support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
     "and": "and"
+  },
+  "wv": {
+    "title": "Welcome to MAPO",
+    "subtitle": "Choose the edition you'd like to explore.",
+    "new": "New",
+    "primary": "Primary",
+    "primaryTag": "Primary schools (SIL → CM2)",
+    "primaryContext": "Official Cameroonian curriculum (competency-based) — works offline.",
+    "secondary": "Secondary",
+    "secondaryTag": "Middle and high schools",
+    "secondaryContext": "Designed for African schools — works offline.",
+    "higher": "Higher Education",
+    "higherTag": "Universities, higher schools and BTS",
+    "higherContext": "Compatible with French higher education — Europe and Africa.",
+    "discover": "Explore this edition",
+    "copy": "© 2026 MAPO — School management"
   }
 }

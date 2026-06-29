@@ -13,9 +13,9 @@
             <div class="welcome-logo-sub">by EDUFREM</div>
           </div>
         </div>
-        <h1 class="welcome-title">Bienvenue sur MAPO</h1>
+        <h1 class="welcome-title">{{ t('wv.title') }}</h1>
         <p class="welcome-subtitle">
-          Choisissez la version que vous souhaitez découvrir.
+          {{ t('wv.subtitle') }}
         </p>
       </header>
 
@@ -23,20 +23,20 @@
       <div class="welcome-choices">
         <!-- Primaire -->
         <button class="choice-card" type="button" @click="choisir('primaire')">
-          <span class="choice-badge">Nouveau</span>
+          <span class="choice-badge">{{ t('wv.new') }}</span>
           <span class="choice-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <path d="M12 7c-1.5-1.2-3.6-2-6-2-1 0-2 .1-3 .4v13c1-.3 2-.4 3-.4 2.4 0 4.5.8 6 2 1.5-1.2 3.6-2 6-2 1 0 2 .1 3 .4v-13c-1-.3-2-.4-3-.4-2.4 0-4.5.8-6 2z" />
               <path d="M12 7v13" />
             </svg>
           </span>
-          <span class="choice-name">Primaire</span>
-          <span class="choice-tagline">Écoles primaires (SIL → CM2)</span>
+          <span class="choice-name">{{ t('wv.primary') }}</span>
+          <span class="choice-tagline">{{ t('wv.primaryTag') }}</span>
           <span class="choice-context">
-            Programme officiel camerounais (APC) — fonctionne hors ligne.
+            {{ t('wv.primaryContext') }}
           </span>
           <span class="choice-cta">
-            Découvrir cette version
+            {{ t('wv.discover') }}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
@@ -51,20 +51,20 @@
               <path d="M9 11h.01M15 11h.01" />
             </svg>
           </span>
-          <span class="choice-name">Secondaire</span>
-          <span class="choice-tagline">Collèges et lycées</span>
+          <span class="choice-name">{{ t('wv.secondary') }}</span>
+          <span class="choice-tagline">{{ t('wv.secondaryTag') }}</span>
           <span class="choice-context">
-            Pensé pour les établissements africains — fonctionne hors ligne.
+            {{ t('wv.secondaryContext') }}
           </span>
           <span class="choice-cta">
-            Découvrir cette version
+            {{ t('wv.discover') }}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
 
         <!-- Enseignement Supérieur -->
         <button class="choice-card" type="button" @click="choisir('superieur')">
-          <span class="choice-badge">Nouveau</span>
+          <span class="choice-badge">{{ t('wv.new') }}</span>
           <span class="choice-icon">
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 10L12 5 2 10l10 5 10-5z" />
@@ -72,13 +72,13 @@
               <path d="M22 10v6" />
             </svg>
           </span>
-          <span class="choice-name">Enseignement Supérieur</span>
-          <span class="choice-tagline">Universités, écoles supérieures et BTS</span>
+          <span class="choice-name">{{ t('wv.higher') }}</span>
+          <span class="choice-tagline">{{ t('wv.higherTag') }}</span>
           <span class="choice-context">
-            Compatible avec l'enseignement supérieur français — Europe et Afrique.
+            {{ t('wv.higherContext') }}
           </span>
           <span class="choice-cta">
-            Découvrir cette version
+            {{ t('wv.discover') }}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
@@ -88,16 +88,18 @@
       <!-- Footer -->
       <footer class="welcome-footer">
         <p class="welcome-footer-org">EDUFREM SAS</p>
-        <p class="welcome-footer-copy">&copy; 2026 MAPO — Gestion scolaire</p>
+        <p class="welcome-footer-copy">{{ t('wv.copy') }}</p>
       </footer>
     </div>
   </div>
 </template>
 
 <script setup>
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const editionStore = useEditionStore()
 

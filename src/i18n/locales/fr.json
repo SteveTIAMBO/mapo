@@ -1166,5 +1166,21 @@
     "insightOne": "{n} élève a besoin de soutien, surtout en {subject}. Un appui ciblé (devoir maison, séance de remédiation) aiderait ces élèves à progresser.",
     "insightMany": "{n} élèves ont besoin de soutien, surtout en {subject}. Un appui ciblé (devoir maison, séance de remédiation) aiderait ces élèves à progresser.",
     "and": "et"
+  },
+  "wv": {
+    "title": "Bienvenue sur MAPO",
+    "subtitle": "Choisissez la version que vous souhaitez découvrir.",
+    "new": "Nouveau",
+    "primary": "Primaire",
+    "primaryTag": "Écoles primaires (SIL → CM2)",
+    "primaryContext": "Programme officiel camerounais (APC) — fonctionne hors ligne.",
+    "secondary": "Secondaire",
+    "secondaryTag": "Collèges et lycées",
+    "secondaryContext": "Pensé pour les établissements africains — fonctionne hors ligne.",
+    "higher": "Enseignement Supérieur",
+    "higherTag": "Universités, écoles supérieures et BTS",
+    "higherContext": "Compatible avec l'enseignement supérieur français — Europe et Afrique.",
+    "discover": "Découvrir cette version",
+    "copy": "© 2026 MAPO — Gestion scolaire"
   }
 }
