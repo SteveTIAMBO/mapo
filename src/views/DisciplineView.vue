@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Discipline</h1>
-        <p>Suivi des incidents et sanctions</p>
+        <h1>{{ t('discipline.title') }}</h1>
+        <p>{{ t('discipline.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="showAddIncident = true">
         <Plus :size="16" />
-        <span>Signaler un incident</span>
+        <span>{{ t('discipline.report') }}</span>
       </button>
     </div>
 
@@ -18,28 +18,28 @@
         <span class="stat-bar-dot blue"></span>
         <div>
           <div class="stat-bar-value">{{ disciplineStore.stats.total }}</div>
-          <div class="stat-bar-label">Total incidents</div>
+          <div class="stat-bar-label">{{ t('discipline.statTotal') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-link" :class="{ 'stat-active': filter === 'pending' }" @click="toggleFilter('pending')">
         <span class="stat-bar-dot orange"></span>
         <div>
           <div class="stat-bar-value">{{ disciplineStore.stats.pending }}</div>
-          <div class="stat-bar-label">En cours</div>
+          <div class="stat-bar-label">{{ t('discipline.statPending') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-link" :class="{ 'stat-active': filter === 'resolved' }" @click="toggleFilter('resolved')">
         <span class="stat-bar-dot green"></span>
         <div>
           <div class="stat-bar-value">{{ disciplineStore.stats.resolved }}</div>
-          <div class="stat-bar-label">Résolus</div>
+          <div class="stat-bar-label">{{ t('discipline.statResolved') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-link" :class="{ 'stat-active': filter === 'high' }" @click="toggleFilter('high')">
         <span class="stat-bar-dot" style="background: var(--danger, #D93025)"></span>
         <div>
           <div class="stat-bar-value">{{ disciplineStore.stats.bySeverity.high }}</div>
-          <div class="stat-bar-label">Gravité haute</div>
+          <div class="stat-bar-label">{{ t('discipline.statHigh') }}</div>
         </div>
       </button>
     </div>
@@ -48,22 +48,22 @@
     <div class="card" style="margin-bottom: 20px;">
       <div class="toolbar">
         <div class="field" style="margin-bottom:0; min-width:180px;">
-          <label>Classe</label>
+          <label>{{ t('discipline.classLabel') }}</label>
           <select v-model="filterClass" class="input">
-            <option value="">Toutes les classes</option>
+            <option value="">{{ t('discipline.allClasses') }}</option>
             <option v-for="c in userClasses" :key="c.id" :value="c.name">{{ c.name }}</option>
           </select>
         </div>
         <div class="field" style="margin-bottom:0; min-width:170px;">
-          <label>Type d'incident</label>
+          <label>{{ t('discipline.typeLabel') }}</label>
           <select v-model="filterType" class="input">
-            <option value="">Tous les types</option>
-            <option v-for="t in INCIDENT_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+            <option value="">{{ t('discipline.allTypes') }}</option>
+            <option v-for="it in INCIDENT_TYPES" :key="it.value" :value="it.value">{{ t('discipline.types.' + it.value) }}</option>
           </select>
         </div>
         <div class="field" style="margin-bottom:0; min-width:160px;">
-          <label>Rechercher</label>
-          <input v-model="searchQuery" class="input" placeholder="Nom de l'élève..." />
+          <label>{{ t('discipline.searchLabel') }}</label>
+          <input v-model="searchQuery" class="input" :placeholder="t('discipline.searchPh')" />
         </div>
       </div>
     </div>
@@ -71,8 +71,8 @@
     <!-- Incidents list -->
     <div v-if="filteredIncidents.length === 0" class="card empty-state-card">
       <Shield :size="40" style="color: var(--muted); margin-bottom: 12px;" />
-      <p style="font-size: 15px; font-weight: 500;">Aucun incident enregistré</p>
-      <p style="font-size: 13px; color: var(--muted);">Les incidents disciplinaires apparaîtront ici.</p>
+      <p style="font-size: 15px; font-weight: 500;">{{ t('discipline.empty') }}</p>
+      <p style="font-size: 13px; color: var(--muted);">{{ t('discipline.emptyHint') }}</p>
     </div>
 
     <div v-else class="incidents-list">
@@ -87,8 +87,8 @@
             {{ getTypeLabel(inc.type) }}
           </div>
           <span class="incident-date">{{ formatDate(inc.date) }}</span>
-          <span v-if="inc.resolved" class="resolved-badge">Résolu</span>
-          <span v-else class="pending-badge">En cours</span>
+          <span v-if="inc.resolved" class="resolved-badge">{{ t('discipline.resolved') }}</span>
+          <span v-else class="pending-badge">{{ t('discipline.pending') }}</span>
         </div>
 
         <div class="incident-body">
@@ -101,14 +101,14 @@
 
         <div class="incident-footer">
           <div class="incident-meta">
-            <span v-if="inc.reportedBy" class="meta-item">Signalé par : {{ inc.reportedBy }}</span>
-            <span v-if="inc.sanction" class="meta-item">Sanction : {{ getSanctionLabel(inc.sanction) }}</span>
+            <span v-if="inc.reportedBy" class="meta-item">{{ t('discipline.reportedBy', { name: inc.reportedBy }) }}</span>
+            <span v-if="inc.sanction" class="meta-item">{{ t('discipline.sanctionLabel', { sanction: getSanctionLabel(inc.sanction) }) }}</span>
             <span v-if="inc.notes" class="meta-item meta-notes">{{ inc.notes }}</span>
           </div>
           <div class="incident-actions">
             <button v-if="!inc.resolved" class="btn btn-sm btn-outline" @click="markResolved(inc.id)">
               <CheckCircle2 :size="14" />
-              <span>Résoudre</span>
+              <span>{{ t('discipline.resolve') }}</span>
             </button>
             <button class="btn btn-sm btn-outline" @click="editIncident(inc)">
               <Pencil :size="14" />
@@ -125,64 +125,64 @@
     <div v-if="showAddIncident" class="modal-overlay" @click.self="closeModal">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>{{ editingId ? 'Modifier l\'incident' : 'Signaler un incident' }}</h2>
+          <h2>{{ editingId ? t('discipline.editTitle') : t('discipline.report') }}</h2>
           <button class="icon-btn" @click="closeModal" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field-row">
             <div class="field">
-              <label>Élève</label>
-              <input v-model="form.eleveName" class="input" placeholder="Nom et prénom de l'élève" />
+              <label>{{ t('discipline.studentField') }}</label>
+              <input v-model="form.eleveName" class="input" :placeholder="t('discipline.studentPh')" />
             </div>
             <div class="field">
-              <label>Classe</label>
+              <label>{{ t('discipline.classLabel') }}</label>
               <select v-model="form.className" class="input">
-                <option value="">Sélectionnez</option>
+                <option value="">{{ t('discipline.select') }}</option>
                 <option v-for="c in userClasses" :key="c.id" :value="c.name">{{ c.name }}</option>
               </select>
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Type d'incident</label>
+              <label>{{ t('discipline.typeLabel') }}</label>
               <select v-model="form.type" class="input">
-                <option v-for="t in INCIDENT_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+                <option v-for="it in INCIDENT_TYPES" :key="it.value" :value="it.value">{{ t('discipline.types.' + it.value) }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Date</label>
+              <label>{{ t('discipline.dateField') }}</label>
               <input v-model="form.date" type="date" class="input" />
             </div>
           </div>
           <div class="field">
-            <label>Description</label>
-            <textarea v-model="form.description" class="input" rows="3" placeholder="Décrivez l'incident..."></textarea>
+            <label>{{ t('discipline.descriptionField') }}</label>
+            <textarea v-model="form.description" class="input" rows="3" :placeholder="t('discipline.descriptionPh')"></textarea>
           </div>
           <div class="field">
-            <label>Signalé par</label>
-            <input v-model="form.reportedBy" class="input" placeholder="Nom de l'enseignant ou du surveillant" />
+            <label>{{ t('discipline.reportedByField') }}</label>
+            <input v-model="form.reportedBy" class="input" :placeholder="t('discipline.reportedByPh')" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Sanction</label>
+              <label>{{ t('discipline.sanctionField') }}</label>
               <select v-model="form.sanction" class="input">
-                <option value="">Aucune pour l'instant</option>
-                <option v-for="s in SANCTION_TYPES" :key="s.value" :value="s.value">{{ s.label }}</option>
+                <option value="">{{ t('discipline.noSanction') }}</option>
+                <option v-for="s in SANCTION_TYPES" :key="s.value" :value="s.value">{{ t('discipline.sanctions.' + s.value) }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Date sanction</label>
+              <label>{{ t('discipline.sanctionDate') }}</label>
               <input v-model="form.sanctionDate" type="date" class="input" />
             </div>
           </div>
           <div class="field">
-            <label>Notes / Remarques</label>
-            <input v-model="form.notes" class="input" placeholder="Informations complémentaires..." />
+            <label>{{ t('discipline.notesField') }}</label>
+            <input v-model="form.notes" class="input" :placeholder="t('discipline.notesPh')" />
           </div>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="closeModal" type="button">Annuler</button>
+            <button class="btn btn-outline" @click="closeModal" type="button">{{ t('discipline.cancel') }}</button>
             <button class="btn btn-primary" @click="saveIncident" :disabled="!form.eleveName || !form.type" type="button">
-              {{ editingId ? 'Enregistrer' : 'Signaler' }}
+              {{ editingId ? t('discipline.save') : t('discipline.submit') }}
             </button>
           </div>
         </div>
@@ -193,6 +193,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDisciplineStore, INCIDENT_TYPES, SANCTION_TYPES } from '../stores/discipline'
 import { useClassesStore } from '../stores/classes'
 import { useAuthStore } from '../stores/auth'
@@ -202,6 +203,7 @@ import {
   Plus, Shield, Trash2, Pencil, CheckCircle2, X
 } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const disciplineStore = useDisciplineStore()
 const classesStore = useClassesStore()
 const authStore = useAuthStore()
@@ -248,7 +250,7 @@ const filteredIncidents = computed(() => {
   if (filter.value === 'pending') list = list.filter(i => !i.resolved)
   if (filter.value === 'resolved') list = list.filter(i => i.resolved)
   if (filter.value === 'high') {
-    const highTypes = INCIDENT_TYPES.filter(t => t.severity >= 3).map(t => t.value)
+    const highTypes = INCIDENT_TYPES.filter(it => it.severity >= 3).map(it => it.value)
     list = list.filter(i => highTypes.includes(i.type))
   }
 
@@ -277,21 +279,25 @@ function toggleFilter(value) {
 }
 
 function getTypeLabel(type) {
-  return INCIDENT_TYPES.find(t => t.value === type)?.label || type
+  const k = `discipline.types.${type}`
+  const lbl = t(k)
+  return lbl === k ? type : lbl
 }
 
 function getTypeColor(type) {
-  return INCIDENT_TYPES.find(t => t.value === type)?.color || '#64748B'
+  return INCIDENT_TYPES.find(it => it.value === type)?.color || '#64748B'
 }
 
 function getSanctionLabel(sanction) {
-  return SANCTION_TYPES.find(s => s.value === sanction)?.label || sanction
+  const k = `discipline.sanctions.${sanction}`
+  const lbl = t(k)
+  return lbl === k ? sanction : lbl
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T12:00:00')
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
 async function saveIncident() {
@@ -326,7 +332,7 @@ async function markResolved(id) {
 }
 
 function confirmDelete(id) {
-  if (confirm('Supprimer cet incident ?')) {
+  if (confirm(t('discipline.confirmDelete'))) {
     disciplineStore.deleteIncident(id)
   }
 }
