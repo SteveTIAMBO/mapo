@@ -29,3 +29,6 @@ server/sa-key.json
 *-config.php
 mapo-sa-key.json
 sa-key.json
+
+# Archives/builds zippés à la racine (évite de re-committer des dist zippés)
+*.zip

@@ -11,8 +11,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === realpath(__FILE__)) { http_r
  *   → copier le jeton ci-dessous (il ne sera affiché qu'une fois).
  */
 
-const CPANEL_HOST = 'web58.lws-hosting.com';   // serveur cPanel
-const CPANEL_USER = 'c2627836c';                // utilisateur cPanel
+const CPANEL_HOST = 'votre-serveur.lws-hosting.com';   // serveur cPanel
+const CPANEL_USER = 'votre_utilisateur_cpanel';                // utilisateur cPanel
 const CPANEL_TOKEN = 'COLLER_LE_JETON_ICI';     // jeton API cPanel
 const ROOT_DOMAIN = 'app-edufrem.com';          // domaine racine des écoles
 const MAPO_DIR = 'public_html/mapo';            // dossier du build partagé
