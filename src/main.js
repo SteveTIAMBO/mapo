@@ -34,6 +34,17 @@ if (tenant.mode === 'school') {
   editionStore.setEdition('superieur')
 }
 
+// Branding MIAPO+ standalone : favicon, manifest et thème dédiés (sinon le PWA
+// hérite de l'identité MAPO « ERP gestion scolaire »).
+if (tenant.mode === 'miapo') {
+  const set = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val) }
+  set('link[rel="icon"]', 'type', 'image/svg+xml')
+  set('link[rel="icon"]', 'href', '/favicon-miapo.svg')
+  set('link[rel="manifest"]', 'href', '/manifest-miapo.webmanifest')
+  set('meta[name="theme-color"]', 'content', '#7c3aed')
+  set('meta[name="description"]', 'content', "MIAPO+ — le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
+}
+
 // Initialiser l'écoute d'authentification Firebase au démarrage
 const authStore = useAuthStore()
 authStore.init()

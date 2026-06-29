@@ -1,7 +1,10 @@
 <template>
   <div class="miapo-shell">
-    <!-- ───────── Volet menu (gauche sur PC, barre d'onglets sur mobile) ───────── -->
-    <aside class="volet">
+    <!-- Fond sombre quand le menu coulissant est ouvert (mobile) -->
+    <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
+
+    <!-- ───────── Volet menu (sidebar sur PC ; hamburger coulissant sur mobile) ───────── -->
+    <aside class="volet" :class="{ open: menuOpen }">
       <div class="volet-brand">
         <div class="brand-ic"><Sparkles :size="18" /></div>
         <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
@@ -16,7 +19,7 @@
       </div>
 
       <nav class="volet-nav">
-        <button v-for="s in SECTIONS" :key="s.key" class="nav-item" :class="{ active: section === s.key }" @click="section = s.key">
+        <button v-for="s in SECTIONS" :key="s.key" class="nav-item" :class="{ active: section === s.key }" @click="section = s.key; menuOpen = false">
           <component :is="s.icon" :size="18" />
           <span>{{ s.label }}</span>
         </button>
@@ -312,7 +315,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, PAYS, MATIERES } from '../stores/enfantsAutonomes'
@@ -346,6 +349,9 @@ const SECTIONS = computed(() => [
   { key: 'profil', label: 'Profil', icon: Settings },
 ])
 const section = ref('accueil')
+// Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
+const menuOpen = ref(false)
+function onToggleMenu() { menuOpen.value = !menuOpen.value }
 const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
 
 // Libellés selon le mode (parent vs apprenant)
@@ -567,7 +573,9 @@ async function getPrepa() {
 onMounted(async () => {
   await store.hydrate()
   activeId.value = enfants.value[0]?.id || ''
+  window.addEventListener('miapo-toggle-menu', onToggleMenu)
 })
+onUnmounted(() => window.removeEventListener('miapo-toggle-menu', onToggleMenu))
 </script>
 
 <style scoped>
@@ -738,13 +746,22 @@ onMounted(async () => {
 .btn-xs { padding: 5px 9px; font-size: 12px; }
 
 /* ───────── Responsive : volet → barre d'onglets en haut ───────── */
-@media (max-width: 820px) {
-  .miapo-shell { flex-direction: column; }
-  .volet { width: auto; align-self: auto; position: static; border-right: none; border-bottom: 1px solid var(--bd); padding: 12px; gap: 12px; }
-  .volet-nav { flex-direction: row; overflow-x: auto; gap: 6px; -webkit-overflow-scrolling: touch; }
-  .volet-logout { margin-top: 0; }
-  .nav-item { flex-direction: column; gap: 4px; padding: 8px 12px; font-size: 11px; white-space: nowrap; flex-shrink: 0; }
-  .nav-item span { font-size: 11px; }
+/* Menu hamburger coulissant (mobile) — fond sombre + tiroir */
+.volet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 55; }
+
+@media (max-width: 768px) {
+  .miapo-shell { display: block; }
+  .volet {
+    position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; height: 100dvh;
+    width: 268px; max-width: 84vw;
+    transform: translateX(-100%); transition: transform .26s ease;
+    z-index: 60; background: var(--card, #fff);
+    border-right: 1px solid var(--bd, #e5e7eb);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, .22); align-self: auto;
+  }
+  .volet.open { transform: translateX(0); }
+  .volet-nav { flex-direction: column; overflow-x: visible; }
+  .volet-logout { margin-top: auto; }
   .miapo-main { padding: 16px 14px; max-width: 100%; width: 100%; box-sizing: border-box; }
   .main-head h1 { font-size: 20px; }
   .stat-grid { gap: 8px; }

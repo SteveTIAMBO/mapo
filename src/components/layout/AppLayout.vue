@@ -142,6 +142,12 @@ function checkMobile() {
 }
 
 function toggleSidebar() {
+  // B2C / MIAPO+ : pas de sidebar principale → le bouton ⊞ de l'en-tête pilote le
+  // volet MIAPO+ en menu hamburger coulissant (évènement écouté par ParentMiapoView).
+  if (hideSidebar.value) {
+    if (isMobile.value) window.dispatchEvent(new CustomEvent('miapo-toggle-menu'))
+    return
+  }
   if (isMobile.value) {
     mobileOpen.value = !mobileOpen.value
   } else {

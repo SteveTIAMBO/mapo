@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/auth'
 import { usePermissionsStore } from '../stores/permissions'
 import { useEditionStore } from '../stores/edition'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
-import { getTenant } from '../utils/tenantContext'
+import { getTenant, isMiapoTenant } from '../utils/tenantContext'
 
 // Mapping route path → permission module key
 const ROUTE_PERMISSION_MAP = {
@@ -540,7 +540,14 @@ router.beforeEach(async (to) => {
 
 // Titre de page dynamique
 router.afterEach((to) => {
-  document.title = to.meta.title ? `${to.meta.title} — MAPO` : 'MAPO — Gestion Scolaire by EDUFREM'
+  // Le tenant MIAPO+ standalone s'affiche MIAPO+, pas MAPO.
+  if (isMiapoTenant()) {
+    document.title = to.meta.title && to.meta.title !== 'MIAPO+'
+      ? `${to.meta.title} — MIAPO+`
+      : 'MIAPO+ — Le tuteur intelligent par EDUFREM'
+  } else {
+    document.title = to.meta.title ? `${to.meta.title} — MAPO` : 'MAPO — Gestion Scolaire by EDUFREM'
+  }
 })
 
 // Track navigation for dynamic quick actions
