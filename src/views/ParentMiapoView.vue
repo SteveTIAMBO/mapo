@@ -134,22 +134,34 @@
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
-              <div class="card-head"><Target :size="18" /><h3>À réviser en priorité</h3></div>
+              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? 'À réviser en priorité' : 'Matières à réviser' }}</h3></div>
               <div class="weak-list">
-                <button v-for="w in aReviser" :key="w.matiere" class="weak-item" @click="goRevise(w.matiere, w.themes)">
+                <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && goRevise(w.matiere, w.themes)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
-                  <span class="wi-right"><span class="wi-level">Niveau {{ levelFor(w.matiere) }}/5</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight :size="18" /></span>
-                </button>
+                  <span class="wi-right"><span class="wi-level">Niveau {{ levelFor(w.matiere) }}/5</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
+                </component>
               </div>
+              <p v-if="!isApprenant" class="muted small wl-note">Ce que {{ activeEnfant.firstName }} doit travailler — {{ activeEnfant.firstName }} lance ses révisions de son côté.</p>
             </div>
 
-            <div class="card">
+            <!-- Apprenant : lancer une révision -->
+            <div v-if="isApprenant" class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3>Cours particulier — réviser une matière</h3></div>
-              <p class="muted">MIAPO génère un exercice adapté au niveau de {{ activeEnfant.firstName }} et l'accompagne pas à pas (méthode, indices, explication).</p>
+              <p class="muted">MIAPO génère un exercice adapté à ton niveau et t'accompagne pas à pas (méthode, indices, explication).</p>
               <div class="revise-pick">
                 <select v-model="reviseMatiere" class="input"><option value="" disabled>Choisir une matière…</option><option v-for="m in MATIERES" :key="m" :value="m">{{ m }}</option></select>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>Démarrer</span></button>
               </div>
+            </div>
+            <!-- Parent : désigner une matière à réviser (sans la lancer) -->
+            <div v-else class="card">
+              <div class="card-head"><GraduationCap :size="18" /><h3>Demander une révision</h3></div>
+              <p class="muted">Désignez une matière : elle apparaîtra dans « À réviser » de {{ activeEnfant.firstName }}, qui la travaillera avec MIAPO. Vous suivez, {{ activeEnfant.firstName }} révise.</p>
+              <div class="revise-pick">
+                <select v-model="reviseMatiere" class="input"><option value="" disabled>Choisir une matière…</option><option v-for="m in MATIERES" :key="m" :value="m">{{ m }}</option></select>
+                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>Demander</span></button>
+              </div>
+              <p v-if="revisionDemandee" class="muted small saved-ok">« {{ revisionDemandee }} » ajoutée à « À réviser ».</p>
             </div>
 
             <!-- Prépa examen -->
@@ -208,43 +220,44 @@
 
         <!-- ========== ABONNEMENT ========== -->
         <section v-else-if="section === 'abonnement'" class="sec">
-          <!-- Abonnement actif -->
-          <div v-if="aboActive" class="card abo-card">
-            <div class="abo-ic abo-ic-ok"><Check :size="24" /></div>
-            <h2>Abonnement MIAPO+ actif</h2>
-            <p>{{ isApprenant ? 'Ton accès complet' : "L'accès complet de " + activeEnfant.firstName }} est actif : révisions illimitées, lecture des copies et orientation.</p>
-            <p class="muted small">Formule {{ aboPlanSaved === 'annuel' ? 'annuelle' : 'mensuelle' }} · renouvellement simulé (démo).</p>
-            <button class="btn btn-outline btn-sm" @click="cancelAbo">Gérer / changer de formule</button>
+          <div class="card abo-card">
+            <div class="abo-ic"><Sparkles :size="24" /></div>
+            <h2>MIAPO+ — l'accompagnement complet</h2>
+            <p>Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO {{ isApprenant ? "t'accompagne" : 'accompagne ' + activeEnfant.firstName }} comme un professeur particulier.</p>
+            <ul class="abo-feats">
+              <li><Check :size="15" /> Révisions adaptées et progressives</li>
+              <li><Check :size="15" /> Lecture des copies + suivi dans la durée</li>
+              <li><Check :size="15" /> Orientation argumentée, adaptée au pays</li>
+            </ul>
+            <div class="abo-trial">
+              <Sparkles :size="16" />
+              <span>Période d'essai gratuite en cours — {{ isApprenant ? 'profites-en pour progresser' : 'profitez-en pour accompagner ' + activeEnfant.firstName }}.</span>
+            </div>
           </div>
-          <!-- Offre + souscription -->
-          <template v-else>
-            <div class="card abo-card">
-              <div class="abo-ic"><Sparkles :size="24" /></div>
-              <h2>MIAPO+ — l'accompagnement complet</h2>
-              <p>Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO {{ isApprenant ? "t'accompagne" : 'accompagne ' + activeEnfant.firstName }} comme un professeur particulier, à une fraction du prix.</p>
-              <ul class="abo-feats">
-                <li><Check :size="15" /> Révisions adaptées et progressives</li>
-                <li><Check :size="15" /> Lecture des copies + suivi dans la durée</li>
-                <li><Check :size="15" /> Orientation argumentée (Cameroun & international)</li>
-              </ul>
-            </div>
-            <div class="abo-plans">
-              <button v-for="p in ABO_PLANS" :key="p.key" type="button" class="plan-card" :class="{ selected: aboPlan === p.key }" @click="aboPlan = p.key">
-                <span v-if="p.badge" class="plan-badge">{{ p.badge }}</span>
-                <span class="plan-name">{{ p.name }}</span>
-                <span class="plan-price">{{ p.price }}</span>
-                <span class="plan-sub">{{ p.sub }}</span>
-              </button>
-            </div>
-            <button class="btn btn-primary abo-cta" @click="openPay"><CreditCard :size="16" /> <span>S'abonner — {{ currentPlan.price }}</span></button>
-            <p class="muted small abo-legal">Paiement par Mobile Money (Orange Money, MTN MoMo, Moov, Wave) ou carte bancaire. Sans engagement.</p>
-          </template>
         </section>
 
         <!-- ========== PROFIL (configuration) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
+          <!-- Profil du PARENT (mode parent) — d'abord -->
+          <div v-if="!isApprenant" class="card">
+            <div class="card-head"><Settings :size="18" /><h3>Mon profil (parent)</h3></div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Prénom</label><input v-model="parentProfil.firstName" class="input" /></div>
+              <div class="form-group"><label class="form-label">Nom</label><input v-model="parentProfil.lastName" class="input" /></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">Email</label><input :value="parentProfil.email" class="input" disabled /></div>
+              <div class="form-group"><label class="form-label">Téléphone</label><input v-model="parentProfil.phone" class="input" type="tel" placeholder="+237 6XX XXX XXX" /></div>
+            </div>
+            <div class="compose-actions">
+              <button class="btn btn-primary" @click="saveParentProfil"><Check :size="16" /> <span>Enregistrer</span></button>
+              <span v-if="parentSaved" class="muted small saved-ok">Enregistré ✓</span>
+            </div>
+          </div>
+
+          <!-- Profil de l'ENFANT rattaché (ou de l'apprenant lui-même) — en dessous -->
           <div class="card">
-            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profil de ' + activeEnfant.firstName }}</h3></div>
+            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profil de ' + activeEnfant.firstName + ' — enfant rattaché' }}</h3></div>
             <div class="profil-photo">
               <span class="er-avatar pp-avatar" :class="profil.gender === 'F' ? 'av-f' : 'av-m'">
                 <img v-if="profil.photoURL" :src="profil.photoURL" alt="" />
@@ -295,44 +308,6 @@
       </div>
     </div>
 
-    <!-- Modal paiement abonnement MIAPO+ — Mobile Money (CinetPay) · carte (Stripe), simulé en démo -->
-    <div v-if="payModal" class="modal-overlay" @click.self="!payProcessing && (payModal = false)">
-      <div class="modal-card" style="max-width: 440px;">
-        <div class="modal-header"><h3>Abonnement {{ currentPlan.name }}</h3><button v-if="!payProcessing && !payDone" class="btn btn-ghost btn-sm" @click="payModal = false"><X :size="18" /></button></div>
-        <div class="modal-body">
-          <div class="pay-amount"><span>À régler</span><strong>{{ currentPlan.price }}</strong></div>
-          <template v-if="!payProcessing && !payDone">
-            <div class="pay-tabs">
-              <button type="button" class="pay-tab" :class="{ active: payMethod === 'momo' }" @click="payMethod = 'momo'">Mobile Money</button>
-              <button type="button" class="pay-tab" :class="{ active: payMethod === 'card' }" @click="payMethod = 'card'">Carte bancaire</button>
-            </div>
-            <div v-if="payMethod === 'momo'">
-              <div class="op-grid">
-                <button v-for="op in MOMO_OPERATORS" :key="op.key" type="button" class="op-btn" :class="{ selected: payOperator === op.key }" @click="payOperator = op.key"><span class="op-dot" :style="{ background: op.color }"></span>{{ op.label }}</button>
-              </div>
-              <label class="form-label">Numéro Mobile Money</label>
-              <input v-model="payPhone" type="tel" class="input" placeholder="Ex : 6XX XXX XXX" />
-              <p class="sim-note">via CinetPay — démo : aucun débit réel.</p>
-            </div>
-            <div v-else>
-              <label class="form-label">Numéro de carte</label>
-              <input v-model="cardNumber" type="text" inputmode="numeric" class="input" placeholder="4242 4242 4242 4242" maxlength="23" />
-              <div class="form-row">
-                <div class="form-group"><label class="form-label">Expiration</label><input v-model="cardExp" class="input" placeholder="MM/AA" maxlength="5" /></div>
-                <div class="form-group"><label class="form-label">CVC</label><input v-model="cardCvc" type="text" inputmode="numeric" class="input" placeholder="123" maxlength="4" /></div>
-              </div>
-              <p class="sim-note">via Stripe — démo : aucun débit réel.</p>
-            </div>
-            <div class="compose-actions">
-              <button class="btn btn-outline" @click="payModal = false">Annuler</button>
-              <button class="btn btn-primary" :disabled="!canPay" @click="confirmPay"><CreditCard :size="15" /> <span>Payer {{ currentPlan.price }}</span></button>
-            </div>
-          </template>
-          <div v-else-if="payProcessing" class="guichet-processing"><Loader2 :size="30" class="spin" /><p>Paiement en cours…</p><small>{{ payMethod === 'momo' ? 'Validez sur votre téléphone' : 'Vérification de la carte' }}</small></div>
-          <div v-else class="pay-done"><div class="pay-check"><Check :size="28" /></div><h3>Abonnement activé</h3><p>Merci ! L'accès complet MIAPO+ est actif (démo, aucun débit réel).</p><button class="btn btn-primary" @click="payModal = false">Continuer</button></div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -372,57 +347,6 @@ const SECTIONS = computed(() => [
 ])
 const section = ref('accueil')
 const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
-
-// ── Abonnement MIAPO+ (B2C) : formules + paiement Mobile Money (CinetPay) /
-// carte (Stripe). SIMULÉ en démo (aucun débit réel) ; l'intégration réelle
-// (clés marchand Stripe + CinetPay) reste une action manuelle côté EDUFREM.
-const ABO_PLANS = [
-  { key: 'mensuel', name: 'Mensuel', price: '2 500 FCFA', sub: 'par mois, sans engagement', badge: '' },
-  { key: 'annuel', name: 'Annuel', price: '24 000 FCFA', sub: 'par an · 2 mois offerts', badge: 'Le plus choisi' },
-]
-const MOMO_OPERATORS = [
-  { key: 'om', label: 'Orange Money', color: '#FF7900' },
-  { key: 'mtn', label: 'MTN MoMo', color: '#FFCC00' },
-  { key: 'moov', label: 'Moov Money', color: '#0066B3' },
-  { key: 'wave', label: 'Wave', color: '#1DC4FF' },
-]
-const aboPlan = ref('annuel')
-const currentPlan = computed(() => ABO_PLANS.find((p) => p.key === aboPlan.value) || ABO_PLANS[0])
-const aboActive = ref(false)
-const aboPlanSaved = ref('annuel')
-function aboKey() { return `mapo_miapo_abo_${authStore.userProfile?.email || authStore.userProfile?.phone || 'demo'}` }
-function loadAbo() {
-  try { const r = JSON.parse(localStorage.getItem(aboKey()) || '{}'); aboActive.value = !!r.active; if (r.plan) aboPlanSaved.value = r.plan } catch { /* démo */ }
-}
-function persistAbo() {
-  try { localStorage.setItem(aboKey(), JSON.stringify({ active: aboActive.value, plan: aboActive.value ? aboPlanSaved.value : '' })) } catch { /* quota */ }
-}
-function cancelAbo() { aboActive.value = false; persistAbo() }
-
-// Paiement (modal) — simulé
-const payModal = ref(false)
-const payMethod = ref('momo')
-const payOperator = ref('om')
-const payPhone = ref('')
-const cardNumber = ref('')
-const cardExp = ref('')
-const cardCvc = ref('')
-const payProcessing = ref(false)
-const payDone = ref(false)
-const canPay = computed(() => payMethod.value === 'momo'
-  ? (!!payOperator.value && payPhone.value.replace(/\s/g, '').length >= 6)
-  : (cardNumber.value.replace(/\s/g, '').length >= 12 && cardExp.value.length >= 4 && cardCvc.value.length >= 3))
-function openPay() { payDone.value = false; payProcessing.value = false; payModal.value = true }
-async function confirmPay() {
-  if (!canPay.value) return
-  payProcessing.value = true
-  await new Promise((r) => setTimeout(r, 1600)) // simulation du guichet de paiement
-  payProcessing.value = false
-  payDone.value = true
-  aboPlanSaved.value = aboPlan.value
-  aboActive.value = true
-  persistAbo()
-}
 
 // Libellés selon le mode (parent vs apprenant)
 const L = computed(() => isApprenant.value ? {
@@ -466,8 +390,24 @@ function saveProfil() {
   profilSaved.value = true
   setTimeout(() => { profilSaved.value = false }, 2000)
 }
-// Charge la fiche dans le formulaire à l'ouverture de la section / au changement d'enfant.
-watch([() => section.value, activeId], () => { if (section.value === 'profil') syncProfil() })
+// Profil du PARENT (compte) — affiché d'abord en mode parent ; le profil enfant suit.
+const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '' })
+const parentSaved = ref(false)
+function syncParentProfil() {
+  const p = authStore.userProfile || {}
+  parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '' }
+}
+function saveParentProfil() {
+  authStore.updateProfile({
+    firstName: parentProfil.value.firstName.trim(),
+    lastName: parentProfil.value.lastName.trim(),
+    phone: parentProfil.value.phone.trim(),
+  })
+  parentSaved.value = true
+  setTimeout(() => { parentSaved.value = false }, 2000)
+}
+// Charge les fiches à l'ouverture de la section / au changement d'enfant.
+watch([() => section.value, activeId], () => { if (section.value === 'profil') { syncProfil(); syncParentProfil() } })
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')
@@ -476,6 +416,15 @@ function goRevise(matiere, themes) {
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
   section.value = 'tuteur'
+}
+// Mode parent : désigner une matière à réviser (l'enfant la verra dans « À réviser »
+// et la travaillera lui-même — le parent ne lance pas le quiz).
+const revisionDemandee = ref('')
+function demanderRevision() {
+  if (!reviseMatiere.value || !activeEnfant.value) return
+  store.addRevisionCiblee(activeEnfant.value.id, reviseMatiere.value, [])
+  revisionDemandee.value = reviseMatiere.value
+  reviseMatiere.value = ''
 }
 
 const showAdd = ref(false)
@@ -618,7 +567,6 @@ async function getPrepa() {
 onMounted(async () => {
   await store.hydrate()
   activeId.value = enfants.value[0]?.id || ''
-  loadAbo()
 })
 </script>
 
@@ -626,7 +574,8 @@ onMounted(async () => {
 .miapo-shell { display: flex; align-items: flex-start; gap: 0; min-height: 100%; }
 
 /* ───────── Volet menu ───────── */
-.volet { width: 224px; flex-shrink: 0; align-self: stretch; border-right: 1px solid var(--bd, #e5e7eb); padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; }
+/* Menu figé : il reste en place (sticky pleine hauteur), seul le contenu défile. */
+.volet { width: 224px; flex-shrink: 0; align-self: flex-start; border-right: 1px solid var(--bd, #e5e7eb); padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .volet-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
 .brand-ic { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .brand-tx { display: flex; flex-direction: column; line-height: 1.2; }
@@ -677,6 +626,8 @@ onMounted(async () => {
 .stat:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
 .radar-dash { cursor: pointer; }
 .wi-themes { color: var(--tx3, #9ca3af); font-weight: 400; font-size: 12px; }
+.weak-static { cursor: default; }
+.wl-note { margin-top: 10px; }
 .profil-photo { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
 .pp-avatar { width: 64px; height: 64px; font-size: 22px; overflow: hidden; flex-shrink: 0; }
 .pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -746,6 +697,7 @@ onMounted(async () => {
 .abo-card h2 { font-size: 19px; margin: 0; } .abo-card p { color: var(--tx2); font-size: 14px; line-height: 1.6; margin: 0; max-width: 460px; }
 .abo-feats { list-style: none; padding: 0; margin: 8px 0; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .abo-feats li { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--tx); } .abo-feats li svg { color: #1B8A5A; flex-shrink: 0; }
+.abo-trial { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; padding: 10px 16px; background: rgba(27, 138, 90, .09); border: 1px solid rgba(27, 138, 90, .25); border-radius: 100px; color: #1B8A5A; font-size: 13.5px; font-weight: 600; }
 .abo-ic-ok { background: linear-gradient(135deg, #1B8A5A, #34A853) !important; }
 .abo-plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 4px 0 14px; }
 .plan-card { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 18px 14px; border: 2px solid var(--bd, #e5e7eb); border-radius: 14px; background: var(--card, #fff); cursor: pointer; transition: border-color .15s, box-shadow .15s; font-family: inherit; }
