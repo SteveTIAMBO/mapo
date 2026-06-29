@@ -2,13 +2,13 @@
   <div class="matieres-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>{{ isPrimaire ? 'Disciplines & domaines' : 'Matières & Coefficients' }}</h1>
-        <p v-if="isPrimaire">Référentiel officiel du primaire (APC) : 10 disciplines réparties en 5 domaines d'apprentissage pondérés. L'évaluation se fait par compétences (A / ECA / NA), sans coefficients.</p>
-        <p v-else>Gérez les matières enseignées, leurs coefficients par niveau et les classes correspondantes</p>
+        <h1>{{ isPrimaire ? t('matieres.titlePrimaire') : t('matieres.titleSecondaire') }}</h1>
+        <p v-if="isPrimaire">{{ t('matieres.subPrimaire') }}</p>
+        <p v-else>{{ t('matieres.subSecondaire') }}</p>
       </div>
       <button v-if="!isPrimaire" class="btn btn-primary btn-sm" @click="openAddModal" style="display:inline-flex;align-items:center;gap:6px;">
         <Plus :size="16" />
-        <span>Ajouter une matière</span>
+        <span>{{ t('matieres.addSubject') }}</span>
       </button>
     </div>
 
@@ -16,7 +16,7 @@
     <div v-if="isPrimaire" class="primaire-domaines">
       <div class="info-banner" style="margin-bottom:16px;">
         <Info :size="16" />
-        <span>Au primaire, l'évaluation suit l'Approche Par Compétences : chaque domaine a un poids officiel dans la moyenne, et les acquis sont notés A (Acquis), ECA (En cours d'acquisition) ou NA (Non acquis).</span>
+        <span>{{ t('matieres.bannerPrimaire') }}</span>
       </div>
       <div v-for="dom in primaireDomaines" :key="dom.key" class="card domaine-card">
         <div class="domaine-head">
@@ -33,17 +33,17 @@
     <template v-else>
     <div v-if="loading" class="card empty-state-card">
       <Loader2 :size="32" class="spinning" style="color: var(--primary); margin-bottom: 12px;" />
-      <p>Chargement des matières...</p>
+      <p>{{ t('matieres.loading') }}</p>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="subjectsStore.subjects.length === 0" class="card empty-state-card">
       <BookOpen :size="40" style="color: var(--muted); margin-bottom: 12px;" />
-      <p style="font-size: 15px; font-weight: 500;">Aucune matière configurée</p>
-      <p style="font-size: 13px; color: var(--muted);">Ajoutez vos matières pour pouvoir assigner les enseignants et créer l'emploi du temps.</p>
+      <p style="font-size: 15px; font-weight: 500;">{{ t('matieres.empty') }}</p>
+      <p style="font-size: 13px; color: var(--muted);">{{ t('matieres.emptyHint') }}</p>
       <button class="btn btn-primary" style="margin-top: 16px;" @click="openAddModal">
         <Plus :size="16" />
-        Ajouter une matière
+        {{ t('matieres.addSubject') }}
       </button>
     </div>
 
@@ -52,7 +52,7 @@
       <!-- Info banner -->
       <div class="info-banner" style="margin-bottom: 16px;">
         <Info :size="16" />
-        <span>Les coefficients déterminent le poids de chaque matière dans le calcul des moyennes. Un coefficient de 0 signifie que la matière n'est pas enseignée à ce niveau.</span>
+        <span>{{ t('matieres.bannerSecondaire') }}</span>
       </div>
 
       <!-- Cycle filter -->
@@ -60,13 +60,13 @@
         <div class="toolbar">
           <div class="tab-bar">
             <button class="tab-btn" :class="{ active: activeFilter === 'all' }" @click="activeFilter = 'all'">
-              Toutes ({{ subjectsStore.subjects.length }})
+              {{ t('matieres.tabAll') }} ({{ subjectsStore.subjects.length }})
             </button>
             <button class="tab-btn" :class="{ active: activeFilter === 'college' }" @click="activeFilter = 'college'">
-              Premier cycle ({{ collegeSubjects.length }})
+              {{ t('matieres.tabFirstCycle') }} ({{ collegeSubjects.length }})
             </button>
             <button class="tab-btn" :class="{ active: activeFilter === 'lycee' }" @click="activeFilter = 'lycee'">
-              Second cycle ({{ lyceeSubjects.length }})
+              {{ t('matieres.tabSecondCycle') }} ({{ lyceeSubjects.length }})
             </button>
           </div>
         </div>
@@ -79,8 +79,8 @@
             <thead>
               <tr>
                 <th class="col-color"></th>
-                <th class="col-name">Matière</th>
-                <th class="col-cycles">Cycles</th>
+                <th class="col-name">{{ t('matieres.thSubject') }}</th>
+                <th class="col-cycles">{{ t('matieres.thCycles') }}</th>
                 <th v-for="level in visibleLevels" :key="level.value" class="col-coeff">
                   {{ level.label }}
                 </th>
@@ -96,8 +96,8 @@
                   <strong>{{ subject.name }}</strong>
                 </td>
                 <td class="col-cycles">
-                  <span v-if="subject.cycles.includes('college')" class="cycle-tag cycle-college">1er cycle</span>
-                  <span v-if="subject.cycles.includes('lycee')" class="cycle-tag cycle-lycee">2nd cycle</span>
+                  <span v-if="subject.cycles.includes('college')" class="cycle-tag cycle-college">{{ t('matieres.firstCycleTag') }}</span>
+                  <span v-if="subject.cycles.includes('lycee')" class="cycle-tag cycle-lycee">{{ t('matieres.secondCycleTag') }}</span>
                 </td>
                 <td v-for="level in visibleLevels" :key="level.value" class="col-coeff">
                   <template v-if="isLevelInCycle(level, subject)">
@@ -114,10 +114,10 @@
                 </td>
                 <td class="col-actions">
                   <div class="action-buttons">
-                    <button class="icon-btn-sm" title="Modifier" @click="openEditModal(subject)">
+                    <button class="icon-btn-sm" :title="t('matieres.edit')" @click="openEditModal(subject)">
                       <Pencil :size="14" />
                     </button>
-                    <button class="icon-btn-sm icon-btn-danger" title="Supprimer" @click="confirmDelete(subject)">
+                    <button class="icon-btn-sm icon-btn-danger" :title="t('matieres.delete')" @click="confirmDelete(subject)">
                       <Trash2 :size="14" />
                     </button>
                   </div>
@@ -132,8 +132,8 @@
       <div class="summary-row" style="margin-top: 16px;">
         <div class="card summary-card" v-for="level in LEVELS" :key="level.value">
           <div class="summary-level">{{ level.label }}</div>
-          <div class="summary-count">{{ getSubjectCountForLevel(level.value) }} matières</div>
-          <div class="summary-total">Total coeff: {{ getTotalCoeffForLevel(level.value) }}</div>
+          <div class="summary-count">{{ t('matieres.subjectsCount', { n: getSubjectCountForLevel(level.value) }) }}</div>
+          <div class="summary-total">{{ t('matieres.totalCoeff', { n: getTotalCoeffForLevel(level.value) }) }}</div>
         </div>
       </div>
     </template>
@@ -144,31 +144,31 @@
       <div v-if="showModal" class="modal-overlay" @click.self="showModal = false">
         <div class="modal-card card" style="max-width: 520px;">
           <div class="modal-header">
-            <h3>{{ editingSubject ? 'Modifier la matière' : 'Ajouter une matière' }}</h3>
+            <h3>{{ editingSubject ? t('matieres.editSubject') : t('matieres.addSubject') }}</h3>
             <button class="modal-close" @click="showModal = false"><X :size="18" /></button>
           </div>
           <div class="modal-body">
             <div class="field">
-              <label>Nom de la matière</label>
-              <input type="text" class="input" v-model="form.name" placeholder="Ex: Mathématiques" />
+              <label>{{ t('matieres.subjectName') }}</label>
+              <input type="text" class="input" v-model="form.name" :placeholder="t('matieres.subjectNamePh')" />
             </div>
 
             <div class="field">
-              <label>Cycles d'enseignement</label>
+              <label>{{ t('matieres.teachingCycles') }}</label>
               <div class="checkbox-row">
                 <label class="checkbox-item">
                   <input type="checkbox" v-model="form.cycles" value="college" />
-                  <span>Premier cycle (6e - 3e)</span>
+                  <span>{{ t('matieres.firstCycleRange') }}</span>
                 </label>
                 <label class="checkbox-item">
                   <input type="checkbox" v-model="form.cycles" value="lycee" />
-                  <span>Second cycle (2nde - Tle)</span>
+                  <span>{{ t('matieres.secondCycleRange') }}</span>
                 </label>
               </div>
             </div>
 
             <div class="field">
-              <label>Couleur</label>
+              <label>{{ t('matieres.color') }}</label>
               <div class="color-picker">
                 <button
                   v-for="c in COLORS"
@@ -182,8 +182,8 @@
             </div>
 
             <div class="field">
-              <label>Coefficients par niveau</label>
-              <p style="font-size: 12px; color: var(--muted); margin: 0 0 8px;">Mettez 0 si la matière n'est pas enseignée à ce niveau.</p>
+              <label>{{ t('matieres.coeffByLevel') }}</label>
+              <p style="font-size: 12px; color: var(--muted); margin: 0 0 8px;">{{ t('matieres.coeffHint') }}</p>
               <div class="coeff-grid">
                 <template v-if="form.cycles.includes('college')">
                   <div class="coeff-row" v-for="level in collegeLevels" :key="level.value">
@@ -203,10 +203,10 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" @click="showModal = false">Annuler</button>
+            <button class="btn btn-outline" @click="showModal = false">{{ t('matieres.cancel') }}</button>
             <button class="btn btn-primary" @click="saveSubject" :disabled="!form.name.trim() || form.cycles.length === 0">
               <Save :size="16" />
-              <span>{{ editingSubject ? 'Enregistrer' : 'Ajouter' }}</span>
+              <span>{{ editingSubject ? t('matieres.save') : t('matieres.add') }}</span>
             </button>
           </div>
         </div>
@@ -218,18 +218,18 @@
       <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="showDeleteConfirm = false">
         <div class="modal-card card" style="max-width: 420px;">
           <div class="modal-header">
-            <h3>Supprimer la matière</h3>
+            <h3>{{ t('matieres.deleteTitle') }}</h3>
             <button class="modal-close" @click="showDeleteConfirm = false"><X :size="18" /></button>
           </div>
           <div class="modal-body">
-            <p>Voulez-vous vraiment supprimer <strong>{{ deletingSubject?.name }}</strong> ?</p>
-            <p style="font-size: 13px; color: var(--muted);">Les notes déjà saisies pour cette matière seront conservées mais ne seront plus visibles dans les bulletins.</p>
+            <p>{{ t('matieres.deleteConfirm', { name: deletingSubject?.name }) }}</p>
+            <p style="font-size: 13px; color: var(--muted);">{{ t('matieres.deleteNote') }}</p>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" @click="showDeleteConfirm = false">Annuler</button>
+            <button class="btn btn-outline" @click="showDeleteConfirm = false">{{ t('matieres.cancel') }}</button>
             <button class="btn btn-danger" @click="doDelete">
               <Trash2 :size="16" />
-              <span>Supprimer</span>
+              <span>{{ t('matieres.delete') }}</span>
             </button>
           </div>
         </div>
@@ -240,12 +240,14 @@
 
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore, LEVELS } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
 import { DOMAINES_PRIMAIRE, DISCIPLINES_PRIMAIRE } from '../data/primaire'
 import { Plus, BookOpen, Pencil, Trash2, Save, X, Loader2, Info } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const editionStore = useEditionStore()

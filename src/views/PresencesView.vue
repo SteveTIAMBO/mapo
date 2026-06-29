@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Présences</h1>
-        <p>Gestion des présences et absences</p>
+        <h1>{{ t('presence.title') }}</h1>
+        <p>{{ t('presence.subtitle') }}</p>
       </div>
       <button v-if="!authStore.isTeacher && displayedEntries.length > 0" class="btn btn-outline" @click="exportPresences">
         <Download :size="16" />
-        <span>Exporter</span>
+        <span>{{ t('presence.export') }}</span>
       </button>
     </div>
 
@@ -18,35 +18,35 @@
         <div class="stat-bar-dot green"></div>
         <div>
           <div class="stat-bar-value">{{ currentStats.tauxPresence }}%</div>
-          <div class="stat-bar-label">Taux de présence</div>
+          <div class="stat-bar-label">{{ t('presence.statRate') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-btn" :class="{ 'stat-active': activeFilter === 'present' }" @click="toggleFilter('present')">
         <div class="stat-bar-dot" style="background: var(--success)"></div>
         <div>
           <div class="stat-bar-value">{{ currentStats.presents }}</div>
-          <div class="stat-bar-label">Présents</div>
+          <div class="stat-bar-label">{{ t('presence.statPresents') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-btn" :class="{ 'stat-active': activeFilter === 'absent' }" @click="toggleFilter('absent')">
         <div class="stat-bar-dot" style="background: var(--danger)"></div>
         <div>
           <div class="stat-bar-value">{{ currentStats.absents }}</div>
-          <div class="stat-bar-label">Absents</div>
+          <div class="stat-bar-label">{{ t('presence.statAbsents') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-btn" :class="{ 'stat-active': activeFilter === 'retard' }" @click="toggleFilter('retard')">
         <div class="stat-bar-dot" style="background: #E8A838"></div>
         <div>
           <div class="stat-bar-value">{{ currentStats.retards }}</div>
-          <div class="stat-bar-label">Retards</div>
+          <div class="stat-bar-label">{{ t('presence.statRetards') }}</div>
         </div>
       </button>
       <button class="stat-bar-item stat-bar-btn" :class="{ 'stat-active': activeFilter === 'excuse' }" @click="toggleFilter('excuse')">
         <div class="stat-bar-dot" style="background: #6366F1"></div>
         <div>
           <div class="stat-bar-value">{{ currentStats.excuses }}</div>
-          <div class="stat-bar-label">Excusés</div>
+          <div class="stat-bar-label">{{ t('presence.statExcuses') }}</div>
         </div>
       </button>
     </div>
@@ -55,14 +55,14 @@
     <div class="card" style="margin-bottom: 24px;">
       <div class="toolbar">
         <div class="field" style="margin-bottom: 0; min-width: 180px;">
-          <label>Classe</label>
+          <label>{{ t('presence.classLabel') }}</label>
           <select v-model="selectedClass" class="input">
-            <option value="">Sélectionnez une classe</option>
+            <option value="">{{ t('presence.selectClass') }}</option>
             <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
         <div class="field" style="margin-bottom: 0; min-width: 170px;">
-          <label>Date</label>
+          <label>{{ t('presence.dateLabel') }}</label>
           <input v-model="selectedDate" type="date" class="input" :max="todayStr" />
         </div>
         <div class="toolbar-spacer"></div>
@@ -72,16 +72,16 @@
           @click="startEditing"
         >
           <Pencil :size="16" />
-          <span>Faire l'appel</span>
+          <span>{{ t('presence.takeAttendance') }}</span>
         </button>
         <span v-if="selectedClass && selectedDate && !isToday && !isEditing" class="toolbar-hint">
-          L'appel ne peut être fait que pour aujourd'hui
+          {{ t('presence.onlyToday') }}
         </span>
         <template v-if="isEditing">
-          <button class="btn btn-outline" @click="cancelEditing">Annuler</button>
+          <button class="btn btn-outline" @click="cancelEditing">{{ t('presence.cancel') }}</button>
           <button class="btn btn-primary" @click="saveEditing">
             <Check :size="16" />
-            <span>Enregistrer</span>
+            <span>{{ t('presence.save') }}</span>
           </button>
         </template>
       </div>
@@ -91,7 +91,7 @@
     <div v-if="!selectedClass || !selectedDate" class="card">
       <div class="empty-state">
         <CalendarCheck :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>Sélectionnez une classe et une date pour consulter ou faire l'appel.</p>
+        <p>{{ t('presence.selectClassDate') }}</p>
       </div>
     </div>
 
@@ -100,13 +100,13 @@
       <div v-if="restorePrompt && !isEditing" class="draft-restore-bar">
         <div class="draft-restore-text">
           <RotateCcw :size="18" />
-          <span>Appel non enregistré récupéré pour <strong>{{ selectedClass }}</strong> — {{ restorePrompt.count }} élève(s), {{ formatDraftTime(restorePrompt.savedAt) }}. Reprenez où vous vous étiez arrêté.</span>
+          <span>{{ t('presence.draftRecovered', { className: selectedClass, count: restorePrompt.count, time: formatDraftTime(restorePrompt.savedAt) }) }}</span>
         </div>
         <div class="draft-restore-actions">
-          <button class="btn btn-sm btn-outline" @click="discardDraft">Ignorer</button>
+          <button class="btn btn-sm btn-outline" @click="discardDraft">{{ t('presence.ignore') }}</button>
           <button class="btn btn-sm btn-primary" @click="restoreDraft">
             <RotateCcw :size="14" />
-            <span>Reprendre l'appel</span>
+            <span>{{ t('presence.resumeAttendance') }}</span>
           </button>
         </div>
       </div>
@@ -131,15 +131,15 @@
 
       <!-- Filtre actif -->
       <div v-if="activeFilter" class="filter-active-bar">
-        <span>Filtre : <strong>{{ getStatusLabel(activeFilter) }}</strong> ({{ filteredEntries.length }})</span>
-        <button class="btn btn-sm btn-outline" @click="activeFilter = null">Tout afficher</button>
+        <span>{{ t('presence.filter') }} <strong>{{ getStatusLabel(activeFilter) }}</strong> ({{ filteredEntries.length }})</span>
+        <button class="btn btn-sm btn-outline" @click="activeFilter = null">{{ t('presence.showAll') }}</button>
       </div>
 
       <!-- Tableau de présence -->
       <div class="card">
         <div v-if="filteredEntries.length === 0 && !isEditing" class="empty-state">
-          <p>{{ activeFilter ? `Aucun élève ${getStatusLabel(activeFilter).toLowerCase()} à cette date.` : 'Aucune donnée de présence pour cette classe à cette date.' }}</p>
-          <button v-if="!activeFilter && canDoAppel" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="startEditing">Faire l'appel</button>
+          <p>{{ activeFilter ? t('presence.noneWithStatus', { status: getStatusLabel(activeFilter).toLowerCase() }) : t('presence.noData') }}</p>
+          <button v-if="!activeFilter && canDoAppel" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="startEditing">{{ t('presence.takeAttendance') }}</button>
         </div>
 
         <div v-else>
@@ -158,10 +158,10 @@
               <thead>
                 <tr>
                   <th style="width: 40px;">#</th>
-                  <th>Élève</th>
-                  <th>Matricule</th>
-                  <th style="width: 200px;">Statut</th>
-                  <th v-if="isEditing">Note</th>
+                  <th>{{ t('presence.thStudent') }}</th>
+                  <th>{{ t('presence.thId') }}</th>
+                  <th style="width: 200px;">{{ t('presence.thStatus') }}</th>
+                  <th v-if="isEditing">{{ t('presence.thNote') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -189,12 +189,12 @@
                         :style="entry.status === s.value ? { background: s.color, color: '#fff', borderColor: s.color } : {}"
                         @click="entry.status = s.value"
                         type="button"
-                      >{{ s.label }}</button>
+                      >{{ t('presence.statusLabels.' + s.value) }}</button>
                     </div>
                     <span v-else class="badge" :class="getStatusBadge(entry.status)">{{ getStatusLabel(entry.status) }}</span>
                   </td>
                   <td v-if="isEditing" @click.stop>
-                    <input v-model="entry.note" type="text" class="input input-sm" placeholder="Motif..." />
+                    <input v-model="entry.note" type="text" class="input input-sm" :placeholder="t('presence.reasonPh')" />
                   </td>
                 </tr>
               </tbody>
@@ -218,7 +218,7 @@
     <div v-if="showDetail" class="modal-overlay" @click.self="showDetail = false">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Détail de l'élève</h2>
+          <h2>{{ t('presence.studentDetail') }}</h2>
           <button class="icon-btn" @click="showDetail = false"><X :size="20" /></button>
         </div>
         <div class="detail-body" v-if="detailEleve">
@@ -230,26 +230,26 @@
 
           <div class="detail-info-grid">
             <div class="detail-info-item">
-              <span class="detail-label">Matricule</span>
+              <span class="detail-label">{{ t('presence.thId') }}</span>
               <span class="detail-value">{{ detailEleve.matricule }}</span>
             </div>
             <div class="detail-info-item">
-              <span class="detail-label">Genre</span>
-              <span class="detail-value">{{ detailEleve.gender === 'M' ? 'Masculin' : 'Féminin' }}</span>
+              <span class="detail-label">{{ t('presence.genderLabel') }}</span>
+              <span class="detail-value">{{ detailEleve.gender === 'M' ? t('presence.male') : t('presence.female') }}</span>
             </div>
             <div class="detail-info-item" v-if="detailEleve.dateOfBirth">
-              <span class="detail-label">Date de naissance</span>
+              <span class="detail-label">{{ t('presence.birthdate') }}</span>
               <span class="detail-value">{{ formatDate(detailEleve.dateOfBirth) }}</span>
             </div>
             <div class="detail-info-item" v-if="detailEleve.city">
-              <span class="detail-label">Ville / Quartier</span>
+              <span class="detail-label">{{ t('presence.cityDistrict') }}</span>
               <span class="detail-value">{{ detailEleve.city }}{{ detailEleve.quartier ? ' — ' + detailEleve.quartier : '' }}</span>
             </div>
           </div>
 
           <!-- Contacts -->
           <div class="detail-contacts">
-            <div class="detail-section-label">Contact tuteur / parent</div>
+            <div class="detail-section-label">{{ t('presence.guardianContact') }}</div>
             <div v-if="detailEleve.parentLastName" class="detail-contact-name">
               {{ detailEleve.parentLastName }} {{ detailEleve.parentFirstName }}
             </div>
@@ -261,7 +261,7 @@
               <Phone :size="16" />
               {{ detailEleve.parentPhone2 }}
             </a>
-            <p v-if="!detailEleve.parentPhone && !detailEleve.parentLastName" class="detail-no-contact">Aucun contact renseigné</p>
+            <p v-if="!detailEleve.parentPhone && !detailEleve.parentLastName" class="detail-no-contact">{{ t('presence.noContact') }}</p>
           </div>
 
           <!-- Statut de présence du jour -->
@@ -278,11 +278,10 @@
       <div class="pr-alert-modal">
         <div class="pr-alert-head">
           <CalendarCheck :size="20" />
-          <h3 class="pr-alert-title">Prévenir les parents des absents ?</h3>
+          <h3 class="pr-alert-title">{{ t('presence.alertTitle') }}</h3>
         </div>
         <p class="pr-alert-sub">
-          Appel enregistré pour le {{ absenceAlertPrompt.date }}.
-          {{ nbAlertesAEnvoyer }} parent(s) avec numéro seront alertés par {{ notif.settings.channel === 'sms' ? 'SMS' : 'WhatsApp' }}.
+          {{ t('presence.alertSub', { date: absenceAlertPrompt.date, n: nbAlertesAEnvoyer, channel: notif.settings.channel === 'sms' ? 'SMS' : 'WhatsApp' }) }}
         </p>
         <ul class="pr-alert-list">
           <li v-for="it in absenceAlertPrompt.items" :key="it.eleveId" class="pr-alert-item">
@@ -291,14 +290,14 @@
               <span class="pr-alert-eleve">{{ it.eleveName }}</span>
             </label>
             <span v-if="it.phone" class="pr-alert-phone">{{ it.phone }}</span>
-            <span v-else class="pr-alert-nophone">pas de numéro</span>
+            <span v-else class="pr-alert-nophone">{{ t('presence.noPhone') }}</span>
           </li>
         </ul>
         <p v-if="alertResult" class="pr-alert-result">{{ alertResult }}</p>
         <div class="pr-alert-actions">
-          <button type="button" class="btn btn-outline btn-sm" @click="fermerAlertePrompt" :disabled="sendingAlerts">Plus tard</button>
+          <button type="button" class="btn btn-outline btn-sm" @click="fermerAlertePrompt" :disabled="sendingAlerts">{{ t('presence.later') }}</button>
           <button type="button" class="btn btn-primary btn-sm" @click="envoyerAlertesAbsence" :disabled="sendingAlerts || nbAlertesAEnvoyer === 0">
-            {{ sendingAlerts ? 'Envoi…' : 'Envoyer ' + nbAlertesAEnvoyer + ' alerte(s)' }}
+            {{ sendingAlerts ? t('presence.sending') : t('presence.sendAlerts', { n: nbAlertesAEnvoyer }) }}
           </button>
         </div>
       </div>
@@ -308,6 +307,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { usePresencesStore, ATTENDANCE_STATUS } from '../stores/presences'
 import { useClassesStore } from '../stores/classes'
@@ -321,6 +321,7 @@ import { exportToExcel } from '../utils/exportExcel'
 import { useNotificationsStore, buildMessage } from '../stores/notifications'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const presencesStore = usePresencesStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
@@ -402,11 +403,11 @@ function discardDraft() {
 function formatDraftTime(ts) {
   if (!ts) return ''
   const mins = Math.round((Date.now() - ts) / 60000)
-  if (mins < 1) return "à l'instant"
-  if (mins < 60) return `il y a ${mins} min`
+  if (mins < 1) return t('presence.draftJustNow')
+  if (mins < 60) return t('presence.draftMinAgo', { n: mins })
   const h = Math.floor(mins / 60)
-  if (h < 24) return `il y a ${h} h`
-  return new Date(ts).toLocaleDateString('fr-FR')
+  if (h < 24) return t('presence.draftHAgo', { n: h })
+  return new Date(ts).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR')
 }
 // Sauvegarde en continu tant que l'appel est en cours de saisie
 watch(editEntries, () => { if (isEditing.value) saveDraft() }, { deep: true })
@@ -489,11 +490,11 @@ const toggleFilter = (status) => {
 
 const exportPresences = () => {
   const columns = [
-    { key: 'eleveName', label: 'Nom élève', width: 20 },
-    { key: 'className', label: 'Classe', width: 15 },
-    { key: 'date', label: 'Date', width: 15 },
-    { key: 'status', label: 'Statut', width: 15 },
-    { key: 'note', label: 'Note', width: 25 },
+    { key: 'eleveName', label: t('presence.exportCols.student'), width: 20 },
+    { key: 'className', label: t('presence.exportCols.class'), width: 15 },
+    { key: 'date', label: t('presence.exportCols.date'), width: 15 },
+    { key: 'status', label: t('presence.exportCols.status'), width: 15 },
+    { key: 'note', label: t('presence.exportCols.note'), width: 25 },
   ]
 
   const exportData = displayedEntries.value.map(entry => ({
@@ -504,7 +505,7 @@ const exportPresences = () => {
     note: entry.note || '-',
   }))
 
-  exportToExcel(exportData, columns, 'presences', 'Présences')
+  exportToExcel(exportData, columns, 'presences', t('presence.exportSheet'))
 }
 
 // Commencer l'appel
@@ -591,7 +592,7 @@ async function envoyerAlertesAbsence() {
     else echecs++
   }
   sendingAlerts.value = false
-  alertResult.value = `${envoyes} envoyée(s)` + (simules ? `, ${simules} simulée(s)` : '') + (echecs ? `, ${echecs} échec(s)` : '')
+  alertResult.value = t('presence.resultSent', { n: envoyes }) + (simules ? t('presence.resultSimulated', { n: simules }) : '') + (echecs ? t('presence.resultFailed', { n: echecs }) : '')
   setTimeout(() => { absenceAlertPrompt.value = null; alertResult.value = '' }, 2800)
 }
 
@@ -624,8 +625,9 @@ const getAvatarColor = (entry) => {
 }
 
 const getStatusLabel = (status) => {
-  const found = ATTENDANCE_STATUS.find(s => s.value === status)
-  return found ? found.label : status
+  const k = `presence.statusLabels.${status}`
+  const lbl = t(k)
+  return lbl === k ? status : lbl
 }
 
 const getStatusBadge = (status) => {
@@ -644,8 +646,8 @@ const formatDate = (d) => {
 
 const formatDateShort = (dateStr) => {
   const d = new Date(dateStr + 'T00:00:00')
-  const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam']
-  return `${days[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`
+  const day = d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { weekday: 'short' })
+  return `${day} ${d.getDate()}/${d.getMonth() + 1}`
 }
 
 const getHistoryStats = (date) => {
