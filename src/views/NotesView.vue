@@ -598,7 +598,7 @@
       <template v-if="activeTab === 'distribution' && isDirecteur">
         <div class="info-banner" style="margin-bottom:16px;">
           <Send :size="16" />
-          <span>Distribuez les bulletins signés aux parents. Les bulletins numériques apparaîtront dans l'espace parent. Les bulletins papier seront générés en PDF.</span>
+          <span>{{ t('notes.distribBanner') }}</span>
         </div>
 
         <div style="display:flex; gap:16px; flex-wrap:wrap;">
@@ -607,20 +607,20 @@
             <div style="padding: 16px;">
               <div class="distrib-card-header">
                 <Printer :size="18" />
-                <span>Impression papier</span>
+                <span>{{ t('notes.distribPaperTitle') }}</span>
               </div>
               <p style="font-size: 12px; color: var(--muted); margin: 0 0 12px;">
-                Génère les bulletins PDF pour impression groupée par classe.
+                {{ t('notes.distribPaperDesc') }}
               </p>
               <div class="field" style="margin-bottom: 8px;">
-                <label>Classe</label>
+                <label>{{ t('notes.distribClassLabel') }}</label>
                 <select v-model="massPrintClass" class="input">
-                  <option value="">Classe sélectionnée</option>
+                  <option value="">{{ t('notes.distribSelectedClass') }}</option>
                   <option v-for="c in availableClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
               </div>
               <div style="font-size: 12px; color: var(--text); margin-bottom: 12px;">
-                <strong>{{ massPrintPaperCount }}</strong> {{ massPrintPaperCount > 1 ? 'élèves concernés' : 'élève concerné' }}
+                <strong>{{ massPrintPaperCount }}</strong> {{ massPrintPaperCount > 1 ? t('notes.distribConcernedMany') : t('notes.distribConcernedOne') }}
               </div>
               <button
                 class="btn btn-primary btn-sm"
@@ -631,7 +631,7 @@
                 <Printer v-if="!massPrinting || massPrintingType !== 'papier'" :size="14" />
                 <Loader2 v-else :size="14" class="spinning" />
                 <span v-if="massPrinting && massPrintingType === 'papier'">{{ massPrintProgress }}</span>
-                <span v-else>Imprimer les bulletins</span>
+                <span v-else>{{ t('notes.distribPaperBtn') }}</span>
               </button>
             </div>
           </div>
@@ -641,20 +641,20 @@
             <div style="padding: 16px;">
               <div class="distrib-card-header">
                 <Send :size="18" />
-                <span>Envoi dans l'application</span>
+                <span>{{ t('notes.distribInAppTitle') }}</span>
               </div>
               <p style="font-size: 12px; color: var(--muted); margin: 0 0 12px;">
-                Rend les bulletins visibles dans l'espace parent pour les familles ayant choisi le format numérique.
+                {{ t('notes.distribInAppDesc') }}
               </p>
               <div class="field" style="margin-bottom: 8px;">
-                <label>Classe</label>
+                <label>{{ t('notes.distribClassLabel') }}</label>
                 <select v-model="massPrintClass" class="input">
-                  <option value="">Classe sélectionnée</option>
+                  <option value="">{{ t('notes.distribSelectedClass') }}</option>
                   <option v-for="c in availableClasses" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
               </div>
               <div style="font-size: 12px; color: var(--text); margin-bottom: 12px;">
-                <strong>{{ massPrintDigitalCount }}</strong> {{ massPrintDigitalCount > 1 ? 'élèves concernés' : 'élève concerné' }}
+                <strong>{{ massPrintDigitalCount }}</strong> {{ massPrintDigitalCount > 1 ? t('notes.distribConcernedMany') : t('notes.distribConcernedOne') }}
               </div>
               <button
                 class="btn btn-outline btn-sm"
@@ -663,7 +663,7 @@
                 style="display: inline-flex; align-items: center; gap: 6px; width: 100%;"
               >
                 <Send :size="14" />
-                <span>Distribuer dans l'application</span>
+                <span>{{ t('notes.distribInAppBtn') }}</span>
               </button>
             </div>
           </div>
@@ -674,7 +674,7 @@
     <!-- Loading -->
     <div v-if="loading" class="card empty-state-card">
       <Loader2 :size="32" class="spinning" style="color: var(--primary); margin-bottom: 12px;" />
-      <p>Chargement des notes...</p>
+      <p>{{ t('notes.loadingNotes') }}</p>
     </div>
 
     <!-- Modal: Upload signature -->
@@ -682,29 +682,29 @@
       <div v-if="showSignatureUpload" class="modal-overlay" @click.self="showSignatureUpload = false">
         <div class="modal-card card" style="max-width: 480px;">
           <div class="modal-header">
-            <h3>Signature du directeur</h3>
+            <h3>{{ t('notes.sigTitle') }}</h3>
             <button class="modal-close" @click="showSignatureUpload = false"><X :size="18" /></button>
           </div>
           <div class="modal-body">
             <p style="font-size: 13px; color: var(--muted); margin-bottom: 16px;">
-              Importez une image de votre signature manuscrite. Signez de préférence sur une feuille blanche pour un rendu optimal sur les bulletins.
+              {{ t('notes.sigDesc') }}
             </p>
             <div class="signature-upload-zone">
               <input type="file" accept="image/*" capture="environment" @change="handleSignatureUpload" id="sig-upload" style="display:none;" />
               <label for="sig-upload" class="signature-upload-label">
                 <Upload :size="24" />
-                <span>Importer une image ou prendre une photo</span>
+                <span>{{ t('notes.sigUploadLabel') }}</span>
               </label>
             </div>
             <div v-if="signaturePreview" class="signature-preview-box">
-              <img :src="signaturePreview" alt="Aperçu signature" class="signature-preview-img" />
+              <img :src="signaturePreview" :alt="t('notes.sigPreviewAlt')" class="signature-preview-img" />
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" @click="showSignatureUpload = false; signaturePreview = null;">Annuler</button>
+            <button class="btn btn-outline" @click="showSignatureUpload = false; signaturePreview = null;">{{ t('notes.cancel') }}</button>
             <button class="btn btn-primary" :disabled="!signaturePreview" @click="saveDirectorSignature">
               <Save :size="16" />
-              Enregistrer la signature
+              {{ t('notes.sigSave') }}
             </button>
           </div>
         </div>
@@ -716,83 +716,83 @@
       <div v-if="showNotesSettings" class="modal-overlay" @click.self="showNotesSettings = false">
         <div class="modal-card card" style="max-width: 520px;">
           <div class="modal-header">
-            <h2>Paramètres Notes & Évaluations</h2>
+            <h2>{{ t('notes.setTitle') }}</h2>
             <button class="icon-btn" @click="showNotesSettings = false" type="button"><X :size="20" /></button>
           </div>
           <div class="modal-body">
             <div class="settings-section">
-              <h3 class="settings-section-title">Type d'évaluation</h3>
-              <p class="settings-hint">Choisissez comment les notes sont organisées par trimestre.</p>
+              <h3 class="settings-section-title">{{ t('notes.setEvalType') }}</h3>
+              <p class="settings-hint">{{ t('notes.setEvalTypeHint') }}</p>
               <div class="radio-group">
                 <label class="radio-item" :class="{ 'radio-selected': settingsForm.evaluationType === '2_sequences' }">
                   <input type="radio" v-model="settingsForm.evaluationType" value="2_sequences" />
                   <div class="radio-content">
-                    <strong>2 séquences par trimestre</strong>
-                    <span>La moyenne du trimestre est la moyenne des 2 séquences.</span>
+                    <strong>{{ t('notes.setSeq2') }}</strong>
+                    <span>{{ t('notes.setSeq2Desc') }}</span>
                   </div>
                 </label>
                 <label class="radio-item" :class="{ 'radio-selected': settingsForm.evaluationType === '1_evaluation' }">
                   <input type="radio" v-model="settingsForm.evaluationType" value="1_evaluation" />
                   <div class="radio-content">
-                    <strong>1 évaluation par trimestre</strong>
-                    <span>Une seule note par matière par trimestre.</span>
+                    <strong>{{ t('notes.setEval1') }}</strong>
+                    <span>{{ t('notes.setEval1Desc') }}</span>
                   </div>
                 </label>
               </div>
             </div>
 
             <div class="settings-section">
-              <h3 class="settings-section-title">Barème de notation</h3>
-              <p class="settings-hint">Note maximale pour les évaluations.</p>
+              <h3 class="settings-section-title">{{ t('notes.setScale') }}</h3>
+              <p class="settings-hint">{{ t('notes.setScaleHint') }}</p>
               <select v-model.number="settingsForm.noteMax" class="input" style="max-width: 160px;">
-                <option :value="20">Sur 20</option>
-                <option :value="10">Sur 10</option>
-                <option :value="100">Sur 100</option>
+                <option :value="20">{{ t('notes.setScaleOut', { n: 20 }) }}</option>
+                <option :value="10">{{ t('notes.setScaleOut', { n: 10 }) }}</option>
+                <option :value="100">{{ t('notes.setScaleOut', { n: 100 }) }}</option>
               </select>
             </div>
 
             <div class="settings-section">
-              <h3 class="settings-section-title">Mentions sur le bulletin</h3>
-              <p class="settings-hint">Seuils de moyenne pour les mentions automatiques.</p>
+              <h3 class="settings-section-title">{{ t('notes.setMentionsTitle') }}</h3>
+              <p class="settings-hint">{{ t('notes.setMentionsHint') }}</p>
               <div class="mention-grid">
                 <div class="mention-row">
                   <span class="mention-label" style="color:#D93025">Blâme</span>
-                  <span class="mention-range">Moyenne &lt;</span>
+                  <span class="mention-range">{{ t('notes.setAvgLt') }}</span>
                   <input type="number" v-model.number="settingsForm.mentionBlame" class="input mention-input" min="0" max="20" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#E8A838">Avertissement</span>
-                  <span class="mention-range">&lt;</span>
+                  <span class="mention-range">{{ t('notes.setLt') }}</span>
                   <input type="number" v-model.number="settingsForm.mentionAvertissement" class="input mention-input" min="0" max="20" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#666">Aucune mention</span>
-                  <span class="mention-range">&lt;</span>
+                  <span class="mention-range">{{ t('notes.setLt') }}</span>
                   <input type="number" v-model.number="settingsForm.mentionEncouragement" class="input mention-input" min="0" max="20" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#1B8A5A">Encouragements</span>
-                  <span class="mention-range">&lt;</span>
+                  <span class="mention-range">{{ t('notes.setLt') }}</span>
                   <input type="number" v-model.number="settingsForm.mentionTableau" class="input mention-input" min="0" max="20" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#1B8A5A; font-weight:700">Tableau d'honneur</span>
-                  <span class="mention-range">&lt;</span>
+                  <span class="mention-range">{{ t('notes.setLt') }}</span>
                   <input type="number" v-model.number="settingsForm.mentionFelicitations" class="input mention-input" min="0" max="20" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:var(--pr); font-weight:700">Félicitations</span>
-                  <span class="mention-range">&ge;</span>
+                  <span class="mention-range">{{ t('notes.setGte') }}</span>
                   <span class="mention-value">{{ settingsForm.mentionFelicitations }}</span>
                 </div>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-outline" @click="showNotesSettings = false">Annuler</button>
+            <button class="btn btn-outline" @click="showNotesSettings = false">{{ t('notes.cancel') }}</button>
             <button class="btn btn-primary" @click="saveNotesSettings">
               <Save :size="16" />
-              <span>Enregistrer</span>
+              <span>{{ t('notes.save') }}</span>
             </button>
           </div>
         </div>
@@ -1574,14 +1574,14 @@ async function genererAppreciation() {
   if (result.ok) {
     editingCustomMention.value = result.text
     if (result.mode === 'ia') {
-      appreciationFeedback.value = 'Appréciation générée. Relisez et ajustez avant d\'enregistrer.'
+      appreciationFeedback.value = t('notes.apprOk')
       appreciationFeedbackType.value = 'ok'
     } else {
-      appreciationFeedback.value = 'Proposition générée localement (' + result.reason + '). Relisez et ajustez.'
+      appreciationFeedback.value = t('notes.apprLocal', { reason: result.reason })
       appreciationFeedbackType.value = 'warn'
     }
   } else {
-    appreciationFeedback.value = 'Échec de la génération.'
+    appreciationFeedback.value = t('notes.apprFail')
     appreciationFeedbackType.value = 'err'
   }
 }
@@ -1855,7 +1855,7 @@ function distributeInAppForClass() {
 
 async function massSendDigitalBulletins() {
   // Pour l'instant, genere les PDF et les telecharge (en attendant l'integration email)
-  alert('Fonctionnalite en cours de developpement.\n\nLes bulletins numeriques seront envoyes par email aux parents.\nPour l\'instant, les bulletins PDF sont telecharges pour envoi manuel.')
+  alert(t('notes.inAppTodoAlert'))
   await massPrintBulletins('numerique')
 }
 
