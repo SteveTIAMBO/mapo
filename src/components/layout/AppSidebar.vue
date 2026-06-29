@@ -31,22 +31,26 @@
       </select>
     </div>
 
-    <!-- Navigation principale -->
+    <!-- Navigation principale (groupée par thèmes — #26) -->
     <nav class="sidebar-nav">
-      <RouterLink
-        v-for="item in mainNav"
-        :key="item.to"
-        :to="item.to"
-        class="nav-item"
-        :class="{ active: isActive(item.to) }"
-        :title="collapsed && !mobileOpen ? t(item.label) : undefined"
-        @click="$emit('navigate')"
-      >
-        <component :is="item.icon" :size="19" class="nav-icon" />
-        <transition name="fade">
-          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
-        </transition>
-      </RouterLink>
+      <template v-for="(sec, si) in navSections" :key="'sec' + si">
+        <div v-if="sec.label && (!collapsed || mobileOpen)" class="nav-section-label">{{ sec.label }}</div>
+        <div v-else-if="sec.label" class="nav-section-sep"></div>
+        <RouterLink
+          v-for="item in sec.items"
+          :key="item.to"
+          :to="item.to"
+          class="nav-item"
+          :class="{ active: isActive(item.to) }"
+          :title="collapsed && !mobileOpen ? t(item.label) : undefined"
+          @click="$emit('navigate')"
+        >
+          <component :is="item.icon" :size="19" class="nav-icon" />
+          <transition name="fade">
+            <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
+          </transition>
+        </RouterLink>
+      </template>
     </nav>
 
     <!-- User profile + logout -->
@@ -169,35 +173,46 @@ const selectedAcademicYear = computed({
   }
 })
 
+// Menu staff regroupé par thèmes (#26). `group` = clé navGroups.* (i18n).
 const STAFF_NAV_ITEMS = [
-  { key: 'dashboard', to: '/dashboard', icon: LayoutDashboard, label: 'nav.dashboard' },
-  { key: 'eleves', to: '/eleves', icon: Users, label: 'nav.eleves' },
-  { key: 'inscriptions', to: '/inscriptions', icon: ClipboardList, label: 'nav.inscriptions', dirOnly: true },
-  { key: 'classes', to: '/classes', icon: BookOpen, label: 'nav.classes' },
-  { key: 'matieres', to: '/matieres', icon: Library, label: 'nav.matieres', dirOnly: true },
-  { key: 'notes', to: '/notes', icon: FileText, label: 'nav.notesEval' },
-  { key: 'notes', to: '/examens', icon: Award, label: 'nav.examens', dirOnly: true },
-  { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'nav.diplomes', dirOnly: true },
-  { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'nav.presences' },
-  { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'nav.edt' },
-  { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'nav.devoirs' },
-  { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'nav.suiviRevisions' },
-  { key: 'notes', to: '/suivi-decrochage', icon: TrendingDown, label: 'nav.suiviDecrochage', dirOnly: true },
-  { key: 'discipline', to: '/discipline', icon: Shield, label: 'nav.discipline' },
-  { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
-  { key: 'messagerie', to: '/alertes', icon: Bell, label: 'nav.alertes' },
-  { key: 'salaire', to: '/salaire', icon: Wallet, label: 'nav.salaire' },
-  { key: 'personnel', to: '/personnel', icon: Briefcase, label: 'nav.personnel' },
-  { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true },
-  { key: 'facturation', to: '/facturation', icon: CreditCard, label: 'nav.comptabilite' },
-  { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'nav.rapports' },
-  { key: 'import', to: '/import', icon: Upload, label: 'nav.import' },
-  { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'nav.passageAnnee', dirOnly: true },
+  // Principal (sans en-tête, toujours en haut)
+  { key: 'dashboard', to: '/dashboard', icon: LayoutDashboard, label: 'nav.dashboard', group: 'principal' },
+  // Scolarité
+  { key: 'eleves', to: '/eleves', icon: Users, label: 'nav.eleves', group: 'scolarite' },
+  { key: 'inscriptions', to: '/inscriptions', icon: ClipboardList, label: 'nav.inscriptions', dirOnly: true, group: 'scolarite' },
+  { key: 'classes', to: '/classes', icon: BookOpen, label: 'nav.classes', group: 'scolarite' },
+  { key: 'matieres', to: '/matieres', icon: Library, label: 'nav.matieres', dirOnly: true, group: 'scolarite' },
+  { key: 'emploi-du-temps', to: '/emploi-du-temps', icon: Clock, label: 'nav.edt', group: 'scolarite' },
+  // Évaluation
+  { key: 'notes', to: '/notes', icon: FileText, label: 'nav.notesEval', group: 'evaluation' },
+  { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'nav.devoirs', group: 'evaluation' },
+  { key: 'notes', to: '/examens', icon: Award, label: 'nav.examens', dirOnly: true, group: 'evaluation' },
+  { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'nav.diplomes', dirOnly: true, group: 'evaluation' },
+  // Vie scolaire
+  { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'nav.presences', group: 'vieScolaire' },
+  { key: 'discipline', to: '/discipline', icon: Shield, label: 'nav.discipline', group: 'vieScolaire' },
+  { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'nav.messagerie', group: 'vieScolaire' },
+  { key: 'messagerie', to: '/alertes', icon: Bell, label: 'nav.alertes', group: 'vieScolaire' },
+  // Gestion
+  { key: 'personnel', to: '/personnel', icon: Briefcase, label: 'nav.personnel', group: 'gestion' },
+  { key: 'salaire', to: '/salaire', icon: Wallet, label: 'nav.salaire', group: 'gestion' },
+  { key: 'facturation', to: '/facturation', icon: CreditCard, label: 'nav.comptabilite', group: 'gestion' },
+  { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true, group: 'gestion' },
+  { key: 'import', to: '/import', icon: Upload, label: 'nav.import', group: 'gestion' },
+  { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'nav.passageAnnee', dirOnly: true, group: 'gestion' },
+  // Pilotage & IA
+  { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'nav.rapports', group: 'pilotage' },
+  { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'nav.suiviRevisions', group: 'pilotage' },
+  { key: 'notes', to: '/suivi-decrochage', icon: TrendingDown, label: 'nav.suiviDecrochage', dirOnly: true, group: 'pilotage' },
 ]
 
-const mainNav = computed(() => {
-  if (authStore.userProfile?.role === 'eleve') {
-    return [
+const GROUP_ORDER = ['principal', 'scolarite', 'evaluation', 'vieScolaire', 'gestion', 'pilotage']
+
+// navSections : tableau de { label, items }. label=null → pas d'en-tête de section.
+const navSections = computed(() => {
+  const role = authStore.userProfile?.role
+  if (role === 'eleve') {
+    const items = [
       { to: '/espace-eleve', icon: Home, label: 'nav.monEspace' },
       { key: 'notes', to: '/eleve/notes', icon: FileText, label: 'nav.mesNotes' },
       { to: '/eleve/revisions', icon: Sparkles, label: 'nav.revisions' },
@@ -205,17 +220,15 @@ const mainNav = computed(() => {
       { key: 'presences', to: '/eleve/presences', icon: CalendarCheck, label: 'nav.mesPresences' },
       { key: 'messagerie', to: '/eleve/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
     ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
+    return [{ label: null, items }]
   }
 
-  if (authStore.userProfile?.role === 'parent') {
-    // Parent B2C autonome (hors école) : on ne montre QUE MIAPO+ — les autres
-    // espaces (notes, présences, paiements…) dépendent d'une école et seraient vides.
+  if (role === 'parent') {
+    // Parent B2C autonome (hors école) : on ne montre QUE MIAPO+.
     if (authStore.isB2C) {
-      return [
-        { to: '/parent/miapo', icon: Sparkles, label: 'MIAPO+' },
-      ]
+      return [{ label: null, items: [{ to: '/parent/miapo', icon: Sparkles, label: 'MIAPO+' }] }]
     }
-    return [
+    const items = [
       { to: '/espace-parent', icon: Home, label: 'nav.dashboard' },
       { to: '/parent/inscriptions', icon: ClipboardList, label: 'nav.inscriptions' },
       { key: 'notes', to: '/parent/notes', icon: BookOpen, label: 'nav.notes' },
@@ -225,15 +238,23 @@ const mainNav = computed(() => {
       { key: 'facturation', to: '/parent/finances', icon: CreditCard, label: 'nav.paiements' },
       { key: 'messagerie', to: '/parent/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
     ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
+    return [{ label: null, items }]
   }
 
-  return STAFF_NAV_ITEMS.filter(item => {
-    // Module désactivé pour cette école → masqué pour tout le monde
+  // Staff : groupé par thèmes (#26)
+  const visible = STAFF_NAV_ITEMS.filter(item => {
     if (!schoolIdentityStore.isModuleActif(item.key)) return false
     if (item.dirOnly && !authStore.isDirecteur) return false
     if (!item.dirOnly && !permissionsStore.hasAccess(item.key)) return false
     return true
   })
+  const sections = []
+  for (const g of GROUP_ORDER) {
+    const items = visible.filter(i => i.group === g)
+    if (!items.length) continue
+    sections.push({ label: g === 'principal' ? null : t('navGroups.' + g), items })
+  }
+  return sections
 })
 
 onMounted(() => {
@@ -332,6 +353,26 @@ const handleLogout = async () => {
   padding: 8px 10px;
   flex: 1;
   overflow-y: auto;
+}
+
+/* En-tête de section thématique (#26) */
+.nav-section-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  opacity: .65;
+  padding: 13px 12px 4px;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.sidebar-nav > .nav-section-label:first-child { padding-top: 2px; }
+/* Mode réduit : fin trait à la place du libellé */
+.nav-section-sep {
+  height: 1px;
+  margin: 8px 10px;
+  background: var(--sidebar-hover, rgba(120,130,160,.18));
 }
 
 .nav-item {

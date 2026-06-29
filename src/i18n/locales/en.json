@@ -97,6 +97,13 @@
     "notes": "Grades",
     "paiements": "Payments"
   },
+  "navGroups": {
+    "scolarite": "Academics",
+    "evaluation": "Assessment",
+    "vieScolaire": "School life",
+    "gestion": "Administration",
+    "pilotage": "Insights & AI"
+  },
   "sidebar": {
     "school": "School",
     "user": "User",

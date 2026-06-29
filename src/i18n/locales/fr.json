@@ -97,6 +97,13 @@
     "notes": "Notes",
     "paiements": "Paiements"
   },
+  "navGroups": {
+    "scolarite": "Scolarité",
+    "evaluation": "Évaluation",
+    "vieScolaire": "Vie scolaire",
+    "gestion": "Gestion",
+    "pilotage": "Pilotage & IA"
+  },
   "sidebar": {
     "school": "Établissement",
     "user": "Utilisateur",
