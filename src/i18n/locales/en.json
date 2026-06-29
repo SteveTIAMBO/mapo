@@ -663,6 +663,27 @@
     "emptyTitle": "Select a class to start",
     "emptyDesc": "Choose a class and a term to enter or view grades.",
     "entryBannerSingle": "Enter the grade out of 20 for each student.",
-    "entryBannerSeq": "Enter the grades out of 20 for each sequence. The term average is computed automatically."
+    "entryBannerSeq": "Enter the grades out of 20 for each sequence. The term average is computed automatically.",
+    "subjectLabel": "Subject",
+    "subjectTip": "Available subjects depend on the level of the selected class.",
+    "selectSubject": "Select a subject",
+    "coeff": "coeff.",
+    "avg": "Avg:",
+    "successRate": "Pass rate:",
+    "draftRecovered": "Unsaved grades recovered for {subject} — {count} student(s) entered, {age}. Resume your entry.",
+    "ignore": "Discard",
+    "resumeEntry": "Resume entry",
+    "unsaved": "Unsaved changes",
+    "save": "Save",
+    "validateMyGrades": "Validate my grades",
+    "gradesValidated": "Grades validated",
+    "thStudentName": "Student name",
+    "thGrade20": "Grade /20",
+    "thSeq20": "Seq. {n} /20",
+    "thTermAvg": "Term avg.",
+    "tipSeq1": "Grade of the first sequence of the term",
+    "tipSeq2": "Grade of the second sequence of the term",
+    "tipTermAvg": "Automatic average of the two sequences",
+    "selectSubjectToEnter": "Select a subject to enter grades."
   }
 }

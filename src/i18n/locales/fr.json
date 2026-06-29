@@ -663,6 +663,27 @@
     "emptyTitle": "Sélectionnez une classe pour commencer",
     "emptyDesc": "Choisissez une classe et un trimestre pour saisir ou consulter les notes.",
     "entryBannerSingle": "Saisissez la note sur 20 pour chaque élève.",
-    "entryBannerSeq": "Saisissez les notes sur 20 pour chaque séquence. La moyenne du trimestre se calcule automatiquement."
+    "entryBannerSeq": "Saisissez les notes sur 20 pour chaque séquence. La moyenne du trimestre se calcule automatiquement.",
+    "subjectLabel": "Matière",
+    "subjectTip": "Les matières disponibles dépendent du niveau de la classe sélectionnée.",
+    "selectSubject": "Sélectionnez une matière",
+    "coeff": "coeff.",
+    "avg": "Moy:",
+    "successRate": "Réussite:",
+    "draftRecovered": "Notes non enregistrées récupérées pour {subject} — {count} élève(s) saisi(s), {age}. Reprenez votre saisie.",
+    "ignore": "Ignorer",
+    "resumeEntry": "Reprendre la saisie",
+    "unsaved": "Modifications non enregistrées",
+    "save": "Enregistrer",
+    "validateMyGrades": "Valider mes notes",
+    "gradesValidated": "Notes validées",
+    "thStudentName": "Nom de l'élève",
+    "thGrade20": "Note /20",
+    "thSeq20": "Seq. {n} /20",
+    "thTermAvg": "Moy. Trim.",
+    "tipSeq1": "Note de la première séquence du trimestre",
+    "tipSeq2": "Note de la deuxième séquence du trimestre",
+    "tipTermAvg": "Moyenne automatique des deux séquences",
+    "selectSubjectToEnter": "Sélectionnez une matière pour saisir les notes."
   }
 }

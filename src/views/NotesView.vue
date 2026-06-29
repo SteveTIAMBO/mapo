@@ -147,23 +147,23 @@
           <div class="toolbar">
             <div class="field" style="margin-bottom:0; min-width:220px;">
               <label>
-                Matière
-                <span class="info-tip" title="Les matières disponibles dépendent du niveau de la classe sélectionnée.">?</span>
+                {{ t('notes.subjectLabel') }}
+                <span class="info-tip" :title="t('notes.subjectTip')">?</span>
               </label>
               <select v-model="selectedSubject" class="input">
-                <option value="">Sélectionnez une matière</option>
-                <option v-for="s in classSubjects" :key="s" :value="s">{{ s }} (coeff. {{ getCoeff(s) }})</option>
+                <option value="">{{ t('notes.selectSubject') }}</option>
+                <option v-for="s in classSubjects" :key="s" :value="s">{{ s }} ({{ t('notes.coeff') }} {{ getCoeff(s) }})</option>
               </select>
             </div>
             <div class="toolbar-spacer"></div>
             <div v-if="selectedSubject && seqStats" class="mini-stats">
               <template v-if="isSingleEval">
-                <span>Moy: <strong>{{ seqStats.s1.avg || '-' }}</strong></span>
-                <span>Réussite: <strong>{{ seqStats.s1.successRate || 0 }}%</strong></span>
+                <span>{{ t('notes.avg') }} <strong>{{ seqStats.s1.avg || '-' }}</strong></span>
+                <span>{{ t('notes.successRate') }} <strong>{{ seqStats.s1.successRate || 0 }}%</strong></span>
               </template>
               <template v-else>
-                <span>Moy: <strong>{{ seqStats.s1.avg || '-' }}</strong> (S{{ seqNumbers[0] }}) / <strong>{{ seqStats.s2.avg || '-' }}</strong> (S{{ seqNumbers[1] }})</span>
-                <span>Réussite: <strong>{{ seqStats.s1.successRate || 0 }}%</strong> / <strong>{{ seqStats.s2.successRate || 0 }}%</strong></span>
+                <span>{{ t('notes.avg') }} <strong>{{ seqStats.s1.avg || '-' }}</strong> (S{{ seqNumbers[0] }}) / <strong>{{ seqStats.s2.avg || '-' }}</strong> (S{{ seqNumbers[1] }})</span>
+                <span>{{ t('notes.successRate') }} <strong>{{ seqStats.s1.successRate || 0 }}%</strong> / <strong>{{ seqStats.s2.successRate || 0 }}%</strong></span>
               </template>
             </div>
           </div>
@@ -173,13 +173,13 @@
         <div v-if="restoreNotesPrompt && selectedSubject" class="draft-restore-bar">
           <div class="draft-restore-text">
             <RotateCcw :size="18" />
-            <span>Notes non enregistrées récupérées pour <strong>{{ selectedSubject }}</strong> — {{ restoreNotesPrompt.count }} élève(s) saisi(s), {{ draftAge(restoreNotesPrompt.savedAt) }}. Reprenez votre saisie.</span>
+            <span>{{ t('notes.draftRecovered', { subject: selectedSubject, count: restoreNotesPrompt.count, age: draftAge(restoreNotesPrompt.savedAt) }) }}</span>
           </div>
           <div class="draft-restore-actions">
-            <button class="btn btn-sm btn-outline" @click="discardNotesDraft">Ignorer</button>
+            <button class="btn btn-sm btn-outline" @click="discardNotesDraft">{{ t('notes.ignore') }}</button>
             <button class="btn btn-sm btn-primary" @click="restoreNotesDraft">
               <RotateCcw :size="14" />
-              <span>Reprendre la saisie</span>
+              <span>{{ t('notes.resumeEntry') }}</span>
             </button>
           </div>
         </div>
@@ -187,12 +187,12 @@
         <!-- Notes grid -->
         <div v-if="selectedSubject" class="card">
           <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>{{ selectedSubject }} - {{ selectedClassName }} - {{ currentTrimester?.label }}</h3>
+            <h3>{{ selectedSubject }} - {{ selectedClassName }} - {{ t('notes.periods.' + selectedTrimester) }}</h3>
             <div style="display:flex; gap:8px; align-items:center;">
-              <span v-if="isDirty" class="unsaved-badge">Modifications non enregistrées</span>
+              <span v-if="isDirty" class="unsaved-badge">{{ t('notes.unsaved') }}</span>
               <button v-if="isDirty" class="btn btn-primary btn-sm" @click="saveNotes">
                 <Save :size="16" />
-                <span>Enregistrer</span>
+                <span>{{ t('notes.save') }}</span>
               </button>
               <button
                 v-if="canValidateSubject(selectedSubject) && !isSubjectValidated(selectedSubject) && selectedSubject"
@@ -201,11 +201,11 @@
                 style="display: inline-flex; align-items: center; gap: 6px;"
               >
                 <CircleCheck :size="16" />
-                Valider mes notes
+                {{ t('notes.validateMyGrades') }}
               </button>
               <div v-if="isSubjectValidated(selectedSubject)" class="validation-badge-inline">
                 <CircleCheck :size="14" />
-                <span>Notes validées</span>
+                <span>{{ t('notes.gradesValidated') }}</span>
               </div>
             </div>
           </div>
@@ -214,24 +214,24 @@
               <thead>
                 <tr>
                   <th class="col-rank">#</th>
-                  <th class="col-name">Nom de l'élève</th>
+                  <th class="col-name">{{ t('notes.thStudentName') }}</th>
                   <template v-if="isSingleEval">
                     <th class="col-note">
-                      Note /20
+                      {{ t('notes.thGrade20') }}
                     </th>
                   </template>
                   <template v-else>
                     <th class="col-note">
-                      Seq. {{ seqNumbers[0] }} /20
-                      <span class="info-tip" title="Note de la première séquence du trimestre">?</span>
+                      {{ t('notes.thSeq20', { n: seqNumbers[0] }) }}
+                      <span class="info-tip" :title="t('notes.tipSeq1')">?</span>
                     </th>
                     <th class="col-note">
-                      Seq. {{ seqNumbers[1] }} /20
-                      <span class="info-tip" title="Note de la deuxième séquence du trimestre">?</span>
+                      {{ t('notes.thSeq20', { n: seqNumbers[1] }) }}
+                      <span class="info-tip" :title="t('notes.tipSeq2')">?</span>
                     </th>
                     <th class="col-avg">
-                      Moy. Trim.
-                      <span class="info-tip" title="Moyenne automatique des deux séquences">?</span>
+                      {{ t('notes.thTermAvg') }}
+                      <span class="info-tip" :title="t('notes.tipTermAvg')">?</span>
                     </th>
                   </template>
                 </tr>
@@ -286,7 +286,7 @@
           </div>
         </div>
         <div v-else class="card empty-state-card">
-          <p style="color:var(--muted); font-size:14px;">Sélectionnez une matière pour saisir les notes.</p>
+          <p style="color:var(--muted); font-size:14px;">{{ t('notes.selectSubjectToEnter') }}</p>
         </div>
       </template>
 
@@ -978,7 +978,7 @@ function exportNotes() {
 // ── Computed ──
 const selectedClassObj = computed(() => classesStore.classes.find(c => c.id === selectedClass.value))
 const selectedClassName = computed(() => selectedClassObj.value?.name || '')
-const currentTrimester = computed(() => TRIMESTERS.find(t => t.value === selectedTrimester.value))
+const currentTrimester = computed(() => TRIMESTERS.find(tr => tr.value === selectedTrimester.value))
 
 const isSingleEval = computed(() => schoolStore.schoolSettings?.evaluationType === '1_evaluation')
 
@@ -1752,11 +1752,11 @@ function discardNotesDraft() {
 function draftAge(ts) {
   if (!ts) return ''
   const mins = Math.round((Date.now() - ts) / 60000)
-  if (mins < 1) return "à l'instant"
-  if (mins < 60) return `il y a ${mins} min`
+  if (mins < 1) return t('presence.draftJustNow')
+  if (mins < 60) return t('presence.draftMinAgo', { n: mins })
   const h = Math.floor(mins / 60)
-  if (h < 24) return `il y a ${h} h`
-  return new Date(ts).toLocaleDateString('fr-FR')
+  if (h < 24) return t('presence.draftHAgo', { n: h })
+  return new Date(ts).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR')
 }
 // Sauvegarde en continu tant que la saisie n'est pas enregistrée
 watch(editingNotes, () => { if (isDirty.value) saveNotesDraft() }, { deep: true })
