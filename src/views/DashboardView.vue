@@ -3,11 +3,11 @@
     <!-- Titre -->
     <div class="dash-head">
       <div>
-        <h1 class="dash-title">Tableau de bord</h1>
+        <h1 class="dash-title">{{ t('dashboard.title') }}</h1>
         <p class="dash-sub">{{ dashSubtitle }}</p>
       </div>
       <RouterLink v-if="!authStore.isTeacher" to="/eleves" class="dash-cta">
-        <UserPlus :size="16" /><span>Gérer les élèves</span><ArrowRight :size="16" />
+        <UserPlus :size="16" /><span>{{ t('dashboard.manageStudents') }}</span><ArrowRight :size="16" />
       </RouterLink>
     </div>
 
@@ -15,10 +15,10 @@
     <div v-if="authStore.isTeacher && teacherSalaryInfo" class="salary-card glass">
       <div class="kpi-ic tone-green"><Wallet :size="20" /></div>
       <div>
-        <div class="kpi-lab">Dernier salaire</div>
+        <div class="kpi-lab">{{ t('dashboard.lastSalary') }}</div>
         <div class="salary-amount">{{ salaryHidden ? '••••••' : formatFinanceMoney(teacherSalaryInfo.lastAmount) }}</div>
       </div>
-      <button class="link-btn" @click="salaryHidden = !salaryHidden">{{ salaryHidden ? 'Afficher' : 'Masquer' }}</button>
+      <button class="link-btn" @click="salaryHidden = !salaryHidden">{{ salaryHidden ? t('dashboard.show') : t('dashboard.hide') }}</button>
     </div>
 
     <!-- KPIs -->
@@ -35,7 +35,7 @@
     <template v-if="!authStore.isTeacher">
       <div class="row">
         <div class="glass card">
-          <div class="card-h"><h3>Effectifs par niveau</h3><RouterLink to="/classes" class="more">Voir détail</RouterLink></div>
+          <div class="card-h"><h3>{{ t('dashboard.headcountByLevel') }}</h3><RouterLink to="/classes" class="more">{{ t('dashboard.seeDetail') }}</RouterLink></div>
           <div class="chart">
             <div v-if="effectifsParNiveau.length" class="bars">
               <div v-for="b in effectifsParNiveau" :key="b.level" class="bar-col">
@@ -43,12 +43,12 @@
                 <div class="bar-x">{{ b.label }}</div>
               </div>
             </div>
-            <div v-else class="mini-empty">Aucune classe configurée pour le moment.</div>
+            <div v-else class="mini-empty">{{ t('dashboard.noClassYet') }}</div>
           </div>
         </div>
 
         <div class="glass card">
-          <div class="card-h"><h3>Finances</h3><RouterLink to="/facturation" class="more">Comptabilité</RouterLink></div>
+          <div class="card-h"><h3>{{ t('dashboard.finances') }}</h3><RouterLink to="/facturation" class="more">{{ t('dashboard.accounting') }}</RouterLink></div>
           <div v-if="financeReady" class="fin">
             <div class="gauge">
               <svg class="gauge-ring" viewBox="0 0 36 36" focusable="false">
@@ -58,15 +58,15 @@
                 <text x="18" y="19.6" text-anchor="middle" font-size="8.5" font-weight="700" fill="#1c1c1e">{{ factStore.globalStats.collectionRate }}%</text>
               </svg>
               <div class="fin-meta">
-                <div class="fm-lab">Taux de recouvrement</div>
+                <div class="fm-lab">{{ t('dashboard.collectionRate') }}</div>
                 <div class="fm-val">{{ formatFinanceMoney(factStore.globalStats.totalCollected) }} <span class="fm-of">/ {{ formatFinanceMoney(factStore.globalStats.totalExpected) }}</span></div>
               </div>
             </div>
-            <div class="fin-line"><span class="l">Résultat net (à ce jour)</span><span class="v" :class="(factStore.financialSynthesis && factStore.financialSynthesis.resultatActuel) >= 0 ? 'pos' : 'neg'">{{ formatFinanceMoney(factStore.financialSynthesis ? factStore.financialSynthesis.resultatActuel : 0) }}</span></div>
-            <div class="fin-line"><span class="l">Impayés en attente</span><span class="v warn">{{ factStore.globalStats.unpaidCount }} famille{{ factStore.globalStats.unpaidCount > 1 ? 's' : '' }}</span></div>
+            <div class="fin-line"><span class="l">{{ t('dashboard.netResult') }}</span><span class="v" :class="(factStore.financialSynthesis && factStore.financialSynthesis.resultatActuel) >= 0 ? 'pos' : 'neg'">{{ formatFinanceMoney(factStore.financialSynthesis ? factStore.financialSynthesis.resultatActuel : 0) }}</span></div>
+            <div class="fin-line"><span class="l">{{ t('dashboard.unpaidPending') }}</span><span class="v warn">{{ factStore.globalStats.unpaidCount }} {{ factStore.globalStats.unpaidCount > 1 ? t('dashboard.families') : t('dashboard.family') }}</span></div>
           </div>
           <div v-else class="fin">
-            <div class="mini-empty">Comptabilité non configurée. <RouterLink to="/facturation" class="more">Configurer</RouterLink></div>
+            <div class="mini-empty">{{ t('dashboard.accountingNotConfigured') }} <RouterLink to="/facturation" class="more">{{ t('dashboard.configure') }}</RouterLink></div>
           </div>
         </div>
       </div>
@@ -74,9 +74,9 @@
       <!-- Activité + Aujourd'hui -->
       <div class="row2">
         <div class="glass card">
-          <div class="card-h"><h3>Activité récente</h3></div>
+          <div class="card-h"><h3>{{ t('dashboard.recentActivity') }}</h3></div>
           <div class="feed">
-            <div v-if="activityStore.recentActivities.length === 0" class="mini-empty">Aucune activité récente.</div>
+            <div v-if="activityStore.recentActivities.length === 0" class="mini-empty">{{ t('dashboard.noRecentActivity') }}</div>
             <div v-for="a in activityStore.recentActivities.slice(0, 6)" :key="a.id" class="fi">
               <div class="fi-ic" :class="'tone-' + activityTone(a.type)"><component :is="activityIcon(a.type)" :size="17" /></div>
               <div class="fi-main"><div class="fi-t">{{ a.message }}</div></div>
@@ -86,9 +86,9 @@
         </div>
 
         <div class="glass card">
-          <div class="card-h"><h3>Aujourd'hui</h3></div>
+          <div class="card-h"><h3>{{ t('dashboard.today') }}</h3></div>
           <div class="sched">
-            <div v-if="agendaItems.length === 0" class="mini-empty">Rien à signaler aujourd'hui.</div>
+            <div v-if="agendaItems.length === 0" class="mini-empty">{{ t('dashboard.nothingToday') }}</div>
             <div v-for="(it, i) in agendaItems" :key="i" class="sl">
               <div class="sl-time">{{ it.time }}</div>
               <div class="sl-main"><div class="sl-t">{{ it.title }}</div><div class="sl-s">{{ it.sub }}</div></div>
@@ -103,6 +103,7 @@
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { RouterLink } from 'vue-router'
 import {
   ArrowRight, Search, Zap, Clock, Calendar,
@@ -151,6 +152,7 @@ ChartJS.register(
   Filler
 )
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
@@ -213,7 +215,7 @@ const kpiCards = computed(() => [
     to: '/classes',
   },
   {
-    label: 'Taux de présence',
+    label: t('dashboard.attendanceRate'),
     value: presencesStore.presenceStats?.tauxPresence ? `${presencesStore.presenceStats.tauxPresence}%` : '—',
     icon: CalendarCheck,
     bg: 'rgba(139,92,246,.08)',
@@ -236,7 +238,7 @@ const NIVEAU_LABEL = { '1ere': '1ʳᵉ', '2nde': '2ⁿᵈᵉ', '6e': '6ᵉ', '5e
 
 const dashSubtitle = computed(() => {
   const y = schoolStore.schoolSettings?.academicYear
-  return y ? `Vue d'ensemble · Année ${y}` : "Vue d'ensemble de votre établissement"
+  return y ? t('dashboard.overviewYear', { year: y }) : t('dashboard.overview')
 })
 
 const niveauxCount = computed(() => new Set((classesStore.classes || []).map(c => c.level).filter(Boolean)).size)
@@ -245,10 +247,10 @@ const dirKpis = computed(() => {
   const st = elevesStore.elevesStats || {}
   const presence = presencesStore.presenceStats?.tauxPresence
   return [
-    { label: 'Élèves inscrits', value: st.inscrits || 0, sub: `${st.filles || 0} filles · ${st.garcons || 0} garçons`, icon: Users, tone: 'blue', to: '/eleves' },
-    { label: 'Classes', value: classesStore.classStats?.total || 0, sub: `${niveauxCount.value} niveau${niveauxCount.value > 1 ? 'x' : ''}`, icon: BookOpen, tone: 'purple', to: '/classes' },
-    { label: 'Personnel', value: personnelStore.staffStats?.total || 0, sub: `${personnelStore.staffStats?.enseignement || 0} enseignants`, icon: Briefcase, tone: 'amber', to: '/personnel' },
-    { label: 'Taux de présence', value: (presence != null) ? `${presence}%` : '—', sub: 'Cette semaine', icon: CalendarCheck, tone: 'green', to: '/presences' },
+    { label: t('dashboard.enrolledStudents'), value: st.inscrits || 0, sub: `${st.filles || 0} ${t('dashboard.girls')} · ${st.garcons || 0} ${t('dashboard.boys')}`, icon: Users, tone: 'blue', to: '/eleves' },
+    { label: t('dashboard.classes'), value: classesStore.classStats?.total || 0, sub: `${niveauxCount.value} ${niveauxCount.value > 1 ? t('dashboard.levels') : t('dashboard.level')}`, icon: BookOpen, tone: 'purple', to: '/classes' },
+    { label: t('dashboard.staff'), value: personnelStore.staffStats?.total || 0, sub: `${personnelStore.staffStats?.enseignement || 0} ${t('dashboard.teachers')}`, icon: Briefcase, tone: 'amber', to: '/personnel' },
+    { label: t('dashboard.attendanceRate'), value: (presence != null) ? `${presence}%` : '—', sub: t('dashboard.thisWeek'), icon: CalendarCheck, tone: 'green', to: '/presences' },
   ]
 })
 
@@ -287,12 +289,12 @@ const agendaItems = computed(() => {
   const items = []
   const conseil = upcomingConseil.value
   if (conseil && conseil.date) {
-    items.push({ time: formatAgendaDate(conseil.date), title: 'Conseil de discipline', sub: conseil.label || 'Vie scolaire', pill: 'Vie scolaire', tone: 'blue' })
+    items.push({ time: formatAgendaDate(conseil.date), title: t('dashboard.disciplineCouncil'), sub: conseil.label || t('dashboard.schoolLife'), pill: t('dashboard.schoolLife'), tone: 'blue' })
   }
   const pending = disciplineStore.stats?.pending || 0
-  if (pending > 0) items.push({ time: '—', title: `${pending} dossier${pending > 1 ? 's' : ''} de discipline`, sub: 'À traiter', pill: 'Vie scolaire', tone: 'blue' })
+  if (pending > 0) items.push({ time: '—', title: `${pending} ${pending > 1 ? t('dashboard.disciplineFiles') : t('dashboard.disciplineFile')}`, sub: t('dashboard.toProcess'), pill: t('dashboard.schoolLife'), tone: 'blue' })
   const unpaid = factStore.globalStats?.unpaidCount || 0
-  if (unpaid > 0) items.push({ time: '—', title: `${unpaid} famille${unpaid > 1 ? 's' : ''} en impayé`, sub: 'Relances scolarité', pill: 'Échéance', tone: 'amber' })
+  if (unpaid > 0) items.push({ time: '—', title: `${unpaid} ${unpaid > 1 ? t('dashboard.familiesUnpaid') : t('dashboard.familyUnpaid')}`, sub: t('dashboard.feeReminders'), pill: t('dashboard.deadline'), tone: 'amber' })
   return items
 })
 
@@ -302,7 +304,7 @@ const activityIcon = (type) => ({ eleve: Users, personnel: Briefcase, classe: Bo
 // ── KPI Cards (Teacher) ──
 const teacherKpiCards = computed(() => [
   {
-    label: 'Mes élèves',
+    label: t('dashboard.myStudents'),
     value: teacherStudentCount.value,
     icon: Users,
     bg: 'rgba(27,138,90,.08)',
@@ -310,7 +312,7 @@ const teacherKpiCards = computed(() => [
     to: '/eleves',
   },
   {
-    label: 'Mes classes',
+    label: t('dashboard.myClasses'),
     value: teacherClassIds.value.length,
     icon: BookOpen,
     bg: 'rgba(184,137,42,.08)',
@@ -318,7 +320,7 @@ const teacherKpiCards = computed(() => [
     to: '/classes',
   },
   {
-    label: 'Taux de présence',
+    label: t('dashboard.attendanceRate'),
     value: presencesStore.presenceStats?.tauxPresence ? `${presencesStore.presenceStats.tauxPresence}%` : '—',
     icon: CalendarCheck,
     bg: 'rgba(139,92,246,.08)',
@@ -741,13 +743,13 @@ function formatActivityTime(dateStr) {
   const now = new Date()
   const diffMs = now - d
   const diffMin = Math.floor(diffMs / 60000)
-  if (diffMin < 1) return "A l'instant"
-  if (diffMin < 60) return `Il y a ${diffMin} min`
+  if (diffMin < 1) return t('dashboard.justNow')
+  if (diffMin < 60) return t('dashboard.minAgo', { n: diffMin })
   const diffH = Math.floor(diffMin / 60)
-  if (diffH < 24) return `Il y a ${diffH}h`
+  if (diffH < 24) return t('dashboard.hoursAgo', { n: diffH })
   const diffD = Math.floor(diffH / 24)
-  if (diffD === 1) return 'Hier'
-  if (diffD < 7) return `Il y a ${diffD} jours`
+  if (diffD === 1) return t('dashboard.yesterday')
+  if (diffD < 7) return t('dashboard.daysAgo', { n: diffD })
   return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
 }
 
