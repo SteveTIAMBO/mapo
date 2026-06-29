@@ -1127,5 +1127,26 @@
     "simulatedFeedback": "Simulated ({reason}) — visible in recent alerts.",
     "failedFeedback": "Failed: {reason}",
     "yourSchool": "your school"
+  },
+  "dec": {
+    "title": "Dropout tracking",
+    "subtitle": "Students at risk of dropping out, spotted early through attendance and results — to act before it's too late.",
+    "allClasses": "All classes",
+    "miapoFlags": "MIAPO flags for you",
+    "studentsToTrack": "Students to track",
+    "highRisk": "High risk",
+    "toWatch": "To watch",
+    "atRiskStudents": "At-risk students ({n})",
+    "noSignal": "No sign of dropping out detected yet. Tracking is fed automatically from attendance and grades.",
+    "notifyTutor": "Notify the guardian",
+    "alert": "Alert",
+    "footNote": "Criteria: low attendance (repeated absences) and/or average below the line. Students with no signal don't appear here. Local data — identity stays within the school.",
+    "factorAbs": "{pct}% absences ({n})",
+    "factorAvg": "Average {avg}/20",
+    "insightNone": "No sign of dropping out for now. Keep tracking attendance and results regularly.",
+    "insightHighOne": "{n} student to track, including {high} at high risk (repeated absences + falling results). Quick family contact and targeted support can prevent dropping out.",
+    "insightHighMany": "{n} students to track, including {high} at high risk (repeated absences + falling results). Quick family contact and targeted support can prevent dropping out.",
+    "insightWatchOne": "{n} student to watch: attendance or results signals. An individual check-in now helps reverse the trend before it sets in.",
+    "insightWatchMany": "{n} students to watch: attendance or results signals. An individual check-in now helps reverse the trend before it sets in."
   }
 }

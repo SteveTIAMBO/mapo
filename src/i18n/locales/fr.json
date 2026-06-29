@@ -1127,5 +1127,26 @@
     "simulatedFeedback": "Simulé ({reason}) — visible dans les alertes récentes.",
     "failedFeedback": "Échec : {reason}",
     "yourSchool": "votre établissement"
+  },
+  "dec": {
+    "title": "Suivi du décrochage",
+    "subtitle": "Les élèves à risque de décrochage, repérés tôt par l'assiduité et les résultats — pour agir avant qu'il ne soit trop tard.",
+    "allClasses": "Toutes les classes",
+    "miapoFlags": "MIAPO te signale",
+    "studentsToTrack": "Élèves à suivre",
+    "highRisk": "Risque élevé",
+    "toWatch": "À surveiller",
+    "atRiskStudents": "Élèves à risque ({n})",
+    "noSignal": "Aucun signe de décrochage détecté pour l'instant. Le suivi s'alimente automatiquement à partir des présences et des notes.",
+    "notifyTutor": "Prévenir le tuteur",
+    "alert": "Alerter",
+    "footNote": "Critères : assiduité faible (absences répétées) et/ou moyenne sous la barre. Les élèves sans signal n'apparaissent pas ici. Données locales — l'identité reste dans l'école.",
+    "factorAbs": "{pct}% d'absences ({n})",
+    "factorAvg": "Moyenne {avg}/20",
+    "insightNone": "Aucun signe de décrochage pour le moment. Continue le suivi régulier de l'assiduité et des résultats.",
+    "insightHighOne": "{n} élève à suivre, dont {high} à risque élevé (absences répétées + résultats en baisse). Un contact rapide avec les familles et un appui ciblé peuvent éviter le décrochage.",
+    "insightHighMany": "{n} élèves à suivre, dont {high} à risque élevé (absences répétées + résultats en baisse). Un contact rapide avec les familles et un appui ciblé peuvent éviter le décrochage.",
+    "insightWatchOne": "{n} élève à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe.",
+    "insightWatchMany": "{n} élèves à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe."
   }
 }

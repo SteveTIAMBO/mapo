@@ -2,11 +2,11 @@
   <div class="suivi-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Suivi du décrochage</h1>
-        <p>Les élèves à risque de décrochage, repérés tôt par l'assiduité et les résultats — pour agir avant qu'il ne soit trop tard.</p>
+        <h1>{{ t('dec.title') }}</h1>
+        <p>{{ t('dec.subtitle') }}</p>
       </div>
       <select v-if="classOptions.length > 1" v-model="classFilter" class="select-filter">
-        <option value="">Toutes les classes</option>
+        <option value="">{{ t('dec.allClasses') }}</option>
         <option v-for="c in classOptions" :key="c" :value="c">{{ c }}</option>
       </select>
     </div>
@@ -15,7 +15,7 @@
     <div class="card insight-card">
       <div class="insight-icon"><Sparkles :size="20" /></div>
       <div>
-        <strong>MIAPO te signale</strong>
+        <strong>{{ t('dec.miapoFlags') }}</strong>
         <p>{{ insight }}</p>
       </div>
     </div>
@@ -24,24 +24,24 @@
     <div class="stat-row" v-if="filteredStudents.length">
       <div class="stat-box">
         <span class="stat-v">{{ filteredStudents.length }}</span>
-        <span class="stat-l">Élèves à suivre</span>
+        <span class="stat-l">{{ t('dec.studentsToTrack') }}</span>
       </div>
       <div class="stat-box risk-eleve">
         <span class="stat-v">{{ countByLevel.eleve }}</span>
-        <span class="stat-l">Risque élevé</span>
+        <span class="stat-l">{{ t('dec.highRisk') }}</span>
       </div>
       <div class="stat-box risk-moyen">
         <span class="stat-v">{{ countByLevel.moyen }}</span>
-        <span class="stat-l">À surveiller</span>
+        <span class="stat-l">{{ t('dec.toWatch') }}</span>
       </div>
     </div>
 
     <!-- Élèves à risque -->
     <div class="card">
-      <div class="card-head"><Users :size="18" /><h3>Élèves à risque ({{ filteredStudents.length }})</h3></div>
+      <div class="card-head"><Users :size="18" /><h3>{{ t('dec.atRiskStudents', { n: filteredStudents.length }) }}</h3></div>
 
       <div v-if="filteredStudents.length === 0" class="empty">
-        <p>Aucun signe de décrochage détecté pour l'instant. Le suivi s'alimente automatiquement à partir des présences et des notes.</p>
+        <p>{{ t('dec.noSignal') }}</p>
       </div>
 
       <div v-else class="student-list">
@@ -51,7 +51,7 @@
             <div class="sr-top">
               <span class="sr-name">{{ s.lastName }} {{ s.firstName }}</span>
               <span class="sr-class">{{ s.className }}</span>
-              <span class="risk-badge" :class="'risk-' + s.niveau">{{ s.niveau === 'eleve' ? 'Risque élevé' : 'À surveiller' }}</span>
+              <span class="risk-badge" :class="'risk-' + s.niveau">{{ s.niveau === 'eleve' ? t('dec.highRisk') : t('dec.toWatch') }}</span>
             </div>
             <div class="sr-subjects">
               <span v-for="f in s.facteurs" :key="f.key" class="factor-chip" :class="f.strong ? 'fc-strong' : ''">
@@ -60,8 +60,8 @@
             </div>
           </div>
           <div class="sr-meta">
-            <button class="alert-btn" type="button" @click="alerterParent(s)" title="Prévenir le tuteur">
-              <Send :size="14" /> <span>Alerter</span>
+            <button class="alert-btn" type="button" @click="alerterParent(s)" :title="t('dec.notifyTutor')">
+              <Send :size="14" /> <span>{{ t('dec.alert') }}</span>
             </button>
           </div>
         </div>
@@ -69,13 +69,14 @@
     </div>
 
     <p class="foot-note">
-      <Info :size="13" /> Critères : assiduité faible (absences répétées) et/ou moyenne sous la barre. Les élèves sans signal n'apparaissent pas ici. Données locales — l'identité reste dans l'école.
+      <Info :size="13" /> {{ t('dec.footNote') }}
     </p>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useElevesStore } from '../stores/eleves'
 import { useClassesStore } from '../stores/classes'
@@ -84,6 +85,7 @@ import { usePresencesStore } from '../stores/presences'
 import { Sparkles, Users, Info, Send, CalendarX, TrendingDown } from 'lucide-vue-next'
 
 const router = useRouter()
+const { t } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
 const notesStore = useNotesStore()
@@ -128,8 +130,8 @@ function moyenneFor(eleve, cls) {
   // moyenne générale annuelle si dispo, sinon le trimestre le plus récent
   let m = notesStore.getGeneralAnnualAvg?.(cls.id, eleve.id, cls)
   if (m !== null && m !== undefined) return m
-  for (const t of TRIMS) {
-    const a = notesStore.getGeneralTrimesterAvg?.(cls.id, t, eleve.id, cls)
+  for (const tr of TRIMS) {
+    const a = notesStore.getGeneralTrimesterAvg?.(cls.id, tr, eleve.id, cls)
     if (a !== null && a !== undefined) return a
   }
   return null
@@ -151,13 +153,13 @@ function riskFor(eleve) {
   if (assiduiteFaible) {
     facteurs.push({
       key: 'abs', icon: CalendarX, strong: tauxAbs >= ABS_RATE_HIGH,
-      label: `${Math.round(tauxAbs * 100)}% d'absences (${pr.abs})`,
+      label: t('dec.factorAbs', { pct: Math.round(tauxAbs * 100), n: pr.abs }),
     })
   }
   if (resultatsFaibles) {
     facteurs.push({
       key: 'note', icon: TrendingDown, strong: moyenne < VERY_WEAK,
-      label: `Moyenne ${moyenne.toFixed(1)}/20`,
+      label: t('dec.factorAvg', { avg: moyenne.toFixed(1) }),
     })
   }
   if (!facteurs.length) return null
@@ -199,12 +201,12 @@ const countByLevel = computed(() => ({
 
 const insight = computed(() => {
   const n = filteredStudents.value.length
-  if (n === 0) return "Aucun signe de décrochage pour le moment. Continue le suivi régulier de l'assiduité et des résultats."
+  if (n === 0) return t('dec.insightNone')
   const eleve = countByLevel.value.eleve
   if (eleve > 0) {
-    return `${n} élève${n > 1 ? 's' : ''} à suivre, dont ${eleve} à risque élevé (absences répétées + résultats en baisse). Un contact rapide avec les familles et un appui ciblé peuvent éviter le décrochage.`
+    return n > 1 ? t('dec.insightHighMany', { n, high: eleve }) : t('dec.insightHighOne', { n, high: eleve })
   }
-  return `${n} élève${n > 1 ? 's' : ''} à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe.`
+  return n > 1 ? t('dec.insightWatchMany', { n }) : t('dec.insightWatchOne', { n })
 })
 
 function alerterParent(s) {
