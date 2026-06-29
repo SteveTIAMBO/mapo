@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Tableau de bord</h1>
-        <p>Bienvenue, {{ authStore.userFirstName }}. Voici le suivi de {{ children.length > 1 ? 'vos enfants' : 'votre enfant' }}.</p>
+        <h1>{{ t('parent.dashboardTitle') }}</h1>
+        <p>{{ children.length > 1 ? t('parent.dashboardWelcomeMany', { name: authStore.userFirstName }) : t('parent.dashboardWelcomeOne', { name: authStore.userFirstName }) }}</p>
       </div>
     </div>
 
@@ -13,8 +13,8 @@
     <!-- Pas d'enfant lié -->
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
       <UserX :size="48" style="color: var(--tx3); margin-bottom: 16px;" />
-      <p style="font-size: 16px; font-weight: 500; color: var(--tx); margin-bottom: 8px;">Aucun enfant lié à votre compte</p>
-      <p>Contactez l'administration de l'établissement pour lier votre compte à vos enfants.</p>
+      <p style="font-size: 16px; font-weight: 500; color: var(--tx); margin-bottom: 8px;">{{ t('parent.noChildTitle') }}</p>
+      <p>{{ t('parent.noChildHelp') }}</p>
     </div>
 
     <template v-else>
@@ -23,7 +23,7 @@
         <div class="messages-alert-content">
           <Bell :size="20" />
           <div>
-            <strong>{{ unreadCount }} message{{ unreadCount > 1 ? 's' : '' }} non lu{{ unreadCount > 1 ? 's' : '' }}</strong>
+            <strong>{{ unreadCount > 1 ? t('parent.unreadMany', { n: unreadCount }) : t('parent.unreadOne', { n: unreadCount }) }}</strong>
           </div>
           <ChevronRight :size="18" />
         </div>
@@ -54,10 +54,10 @@
             <div class="child-meta">
               <span>{{ selectedChild.className }}</span>
               <span class="meta-sep">|</span>
-              <span>Matricule : {{ selectedChild.matricule }}</span>
+              <span>{{ t('eleve.matriculeLabel', { id: selectedChild.matricule }) }}</span>
               <span class="meta-sep">|</span>
               <span :class="selectedChild.status === 'inscrit' ? 'cs-green' : 'cs-red'">
-                {{ selectedChild.status === 'inscrit' ? 'Inscrit(e)' : selectedChild.status }}
+                {{ selectedChild.status === 'inscrit' ? t('parent.enrolled') : selectedChild.status }}
               </span>
             </div>
           </div>
@@ -70,21 +70,21 @@
           <span class="stat-bar-dot blue"></span>
           <div>
             <div class="stat-bar-value">{{ childAverage ?? '—' }}</div>
-            <div class="stat-bar-label">Moyenne générale</div>
+            <div class="stat-bar-label">{{ t('eleve.generalAvg') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot green"></span>
           <div>
             <div class="stat-bar-value">{{ childRank ?? '—' }}</div>
-            <div class="stat-bar-label">Rang</div>
+            <div class="stat-bar-label">{{ t('eleve.rankLabel') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" style="background: var(--gold);"></span>
           <div>
             <div class="stat-bar-value">{{ childPresenceRate }}%</div>
-            <div class="stat-bar-label">Taux de présence</div>
+            <div class="stat-bar-label">{{ t('eleve.attendanceRate') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
@@ -94,7 +94,7 @@
             <div class="stat-bar-value" :class="childPaymentStatus === 'payé' ? 'cs-green' : childPaymentStatus === 'impayé' ? 'cs-red' : 'cs-orange'">
               {{ childPaymentLabel }}
             </div>
-            <div class="stat-bar-label">Situation financière</div>
+            <div class="stat-bar-label">{{ t('parent.financialStatus') }}</div>
           </div>
         </div>
       </div>
@@ -106,8 +106,8 @@
             <BookOpen :size="22" />
           </div>
           <div class="module-info">
-            <h3>Notes</h3>
-            <p>Moyennes, bulletins, appréciations</p>
+            <h3>{{ t('parent.modNotes') }}</h3>
+            <p>{{ t('parent.modNotesSub') }}</p>
           </div>
           <ChevronRight :size="18" class="module-arrow" />
         </router-link>
@@ -117,8 +117,8 @@
             <CalendarCheck :size="22" />
           </div>
           <div class="module-info">
-            <h3>Présences</h3>
-            <p>Absences, retards, justifications</p>
+            <h3>{{ t('parent.modPresences') }}</h3>
+            <p>{{ t('parent.modPresencesSub') }}</p>
           </div>
           <ChevronRight :size="18" class="module-arrow" />
         </router-link>
@@ -128,8 +128,8 @@
             <CreditCard :size="22" />
           </div>
           <div class="module-info">
-            <h3>Paiements</h3>
-            <p>Paiements, solde, historique</p>
+            <h3>{{ t('parent.modPayments') }}</h3>
+            <p>{{ t('parent.modPaymentsSub') }}</p>
           </div>
           <ChevronRight :size="18" class="module-arrow" />
         </router-link>
@@ -139,8 +139,8 @@
             <ClipboardCheck :size="22" />
           </div>
           <div class="module-info">
-            <h3>Devoirs</h3>
-            <p>Travaux, soumissions, notes</p>
+            <h3>{{ t('parent.modDevoirs') }}</h3>
+            <p>{{ t('parent.modDevoirsSub') }}</p>
           </div>
           <ChevronRight :size="18" class="module-arrow" />
         </router-link>
@@ -150,9 +150,9 @@
             <MessageSquare :size="22" />
           </div>
           <div class="module-info">
-            <h3>Messagerie</h3>
-            <p>Échangez avec l'établissement</p>
-            <span v-if="unreadCount > 0" class="module-badge">{{ unreadCount }} non lu{{ unreadCount > 1 ? 's' : '' }}</span>
+            <h3>{{ t('parent.modMessages') }}</h3>
+            <p>{{ t('parent.modMessagesSub') }}</p>
+            <span v-if="unreadCount > 0" class="module-badge">{{ unreadCount > 1 ? t('parent.unreadBadgeMany', { n: unreadCount }) : t('parent.unreadBadgeOne', { n: unreadCount }) }}</span>
           </div>
           <ChevronRight :size="18" class="module-arrow" />
         </router-link>
@@ -163,6 +163,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -183,6 +184,7 @@ const presencesStore = usePresencesStore()
 const factStore = useFacturationStore()
 const classesStore = useClassesStore()
 const messagesStore = useMessagesStore()
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const parentChildren = useParentChildrenStore()
 
@@ -214,7 +216,10 @@ const childRank = computed(() => {
   const ranking = notesStore.getClassRanking?.(cls.id, 'T1', classEleves.map(e => e.id), cls) || []
   const entry = ranking.find(r => r.eleveId === selectedChild.value.id)
   if (!entry) return null
-  return `${entry.rank}${entry.rank === 1 ? 'er' : 'e'}/${ranking.length}`
+  let ord
+  if (locale.value === 'en') { const v = entry.rank % 100, s = ['th', 'st', 'nd', 'rd']; ord = s[(v - 20) % 10] || s[v] || s[0] }
+  else { ord = entry.rank === 1 ? 'er' : 'e' }
+  return `${entry.rank}${ord}/${ranking.length}`
 })
 
 const childPresenceRate = computed(() => {
@@ -232,9 +237,9 @@ const childPaymentStatus = computed(() => {
 
 const childPaymentLabel = computed(() => {
   const s = childPaymentStatus.value
-  if (s === 'payé') return 'Soldé'
-  if (s === 'partiel') return 'Partiel'
-  return 'Impayé'
+  if (s === 'payé') return t('parent.pay.paid')
+  if (s === 'partiel') return t('parent.pay.partial')
+  return t('parent.pay.unpaid')
 })
 
 // === Unread messages ===

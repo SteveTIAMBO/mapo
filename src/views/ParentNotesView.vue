@@ -2,19 +2,19 @@
   <div class="parent-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Notes & Bulletins</h1>
-        <p>Consultez les résultats scolaires de {{ children.length > 1 ? 'vos enfants' : 'votre enfant' }}</p>
+        <h1>{{ t('parent.notesTitle') }}</h1>
+        <p>{{ children.length > 1 ? t('parent.notesSubtitleMany') : t('parent.notesSubtitleOne') }}</p>
       </div>
       <div v-if="selectedChild && hasGrades && canDownloadBulletin" class="header-actions">
         <button class="btn btn-primary" @click="previewBulletinPDF">
           <Eye :size="16" />
-          <span>Consulter le bulletin</span>
+          <span>{{ t('parent.viewBulletin') }}</span>
         </button>
       </div>
     </div>
 
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
-      <p>Aucun enfant lié à votre compte.</p>
+      <p>{{ t('parent.noChildLinked') }}</p>
     </div>
 
     <template v-else>
@@ -29,42 +29,42 @@
       <!-- Période selector -->
       <div class="card">
         <div class="card-header">
-          <h3>Notes — {{ periodLabel }}</h3>
+          <h3>{{ t('parent.notesForPeriod', { period: periodLabel }) }}</h3>
           <div class="card-header-actions">
             <select v-model="selectedPeriod" class="select">
-              <optgroup label="Séquences">
-                <option value="S1">Séquence 1</option>
-                <option value="S2">Séquence 2</option>
-                <option value="S3">Séquence 3</option>
-                <option value="S4">Séquence 4</option>
-                <option value="S5">Séquence 5</option>
-                <option value="S6">Séquence 6</option>
+              <optgroup :label="t('parent.seqGroup')">
+                <option value="S1">{{ t('parent.sequence', { n: 1 }) }}</option>
+                <option value="S2">{{ t('parent.sequence', { n: 2 }) }}</option>
+                <option value="S3">{{ t('parent.sequence', { n: 3 }) }}</option>
+                <option value="S4">{{ t('parent.sequence', { n: 4 }) }}</option>
+                <option value="S5">{{ t('parent.sequence', { n: 5 }) }}</option>
+                <option value="S6">{{ t('parent.sequence', { n: 6 }) }}</option>
               </optgroup>
-              <optgroup label="Trimestres">
-                <option value="T1">Trimestre 1</option>
-                <option value="T2">Trimestre 2</option>
-                <option value="T3">Trimestre 3</option>
+              <optgroup :label="t('parent.triGroup')">
+                <option value="T1">{{ t('eleve.trimester', { n: 1 }) }}</option>
+                <option value="T2">{{ t('eleve.trimester', { n: 2 }) }}</option>
+                <option value="T3">{{ t('eleve.trimester', { n: 3 }) }}</option>
               </optgroup>
-              <option value="annual">Annuel</option>
+              <option value="annual">{{ t('parent.annual') }}</option>
             </select>
           </div>
         </div>
 
         <div v-if="childGrades.length === 0" class="empty-state" style="padding: 24px;">
-          <p>Aucune note disponible pour cette période</p>
+          <p>{{ t('parent.noGradesPeriod') }}</p>
         </div>
         <div v-else class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Matière</th>
-                <th class="text-center">Coef.</th>
+                <th>{{ t('eleve.thSubject') }}</th>
+                <th class="text-center">{{ t('parent.coef') }}</th>
                 <!-- Séquences intermédiaires -->
                 <th v-for="seq in currentSequences" :key="seq.value" class="text-center seq-col">
                   {{ seq.shortLabel }}
                 </th>
-                <th class="text-right">Moyenne</th>
-                <th class="text-center">Appréciation</th>
+                <th class="text-right">{{ t('parent.average') }}</th>
+                <th class="text-center">{{ t('eleve.appreciationLabel') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -88,7 +88,7 @@
             </tbody>
             <tfoot>
               <tr class="total-row">
-                <td :colspan="2 + currentSequences.length"><strong>Moyenne générale</strong></td>
+                <td :colspan="2 + currentSequences.length"><strong>{{ t('eleve.generalAvg') }}</strong></td>
                 <td class="text-right font-mono">
                   <strong :class="childAverage !== null ? (childAverage >= 10 ? 'cs-green' : 'cs-red') : ''">
                     {{ childAverage !== null ? childAverage : '—' }}/20
@@ -97,7 +97,7 @@
                 <td class="text-center">
                   <strong>{{ childAppreciation || '—' }}</strong>
                   <span v-if="childRank" style="display: block; font-size: 12px; color: var(--tx3); margin-top: 2px;">
-                    Rang : {{ childRank }}
+                    {{ t('parent.rankColon', { rank: childRank }) }}
                   </span>
                 </td>
               </tr>
@@ -108,7 +108,7 @@
         <!-- Signed notice -->
         <div v-if="canDownloadBulletin && bulletinIsSigned" class="bulletin-signed">
           <Check :size="14" />
-          <span>Bulletin signé par le conseil de classe et la direction</span>
+          <span>{{ t('parent.bulletinSignedNotice') }}</span>
         </div>
       </div>
     </template>
@@ -117,6 +117,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -135,6 +136,7 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const parentChildren = useParentChildrenStore()
 const selectedChildId = computed({
@@ -162,13 +164,9 @@ const childClass = computed(() => {
 })
 
 const periodLabel = computed(() => {
-  if (isAnnual.value) return 'Annuel'
-  if (isSequence.value) {
-    const seq = SEQUENCES.find(s => s.value === selectedPeriod.value)
-    return seq?.label || selectedPeriod.value
-  }
-  const tri = TRIMESTERS.find(t => t.value === selectedPeriod.value)
-  return tri?.label || selectedPeriod.value
+  if (isAnnual.value) return t('parent.annual')
+  if (isSequence.value) return t('parent.sequence', { n: selectedPeriod.value.slice(1) })
+  return t('eleve.trimester', { n: selectedPeriod.value.slice(1) })
 })
 
 // Sequences shown as sub-columns in the table
@@ -321,7 +319,10 @@ const childRank = computed(() => {
   }
   const entry = ranking.find(r => r.eleveId === selectedChild.value.id)
   if (!entry) return null
-  return `${entry.rank}${entry.rank === 1 ? 'er' : 'e'}/${ranking.length}`
+  let ord
+  if (locale.value === 'en') { const v = entry.rank % 100, s = ['th', 'st', 'nd', 'rd']; ord = s[(v - 20) % 10] || s[v] || s[0] }
+  else { ord = entry.rank === 1 ? 'er' : 'e' }
+  return `${entry.rank}${ord}/${ranking.length}`
 })
 
 // === Mention helper ===
