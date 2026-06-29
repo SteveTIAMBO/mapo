@@ -1100,5 +1100,32 @@
     "noteUnsignedSoft": "Ce diplôme ne porte pas encore de signature cryptographique.",
     "poweredBy": "Propulsé par",
     "verifiableDiplomas": "Diplômes vérifiables"
+  },
+  "al": {
+    "title": "Alertes parents",
+    "subtitle": "Prévenez les parents par WhatsApp ou SMS : absence, paiement, bulletin…",
+    "newAlert": "Nouvelle alerte",
+    "class": "Classe",
+    "student": "Élève",
+    "choose": "— Choisir —",
+    "parentColon": "Parent :",
+    "noPhone": "aucun numéro enregistré",
+    "messageType": "Type de message",
+    "messageEditable": "Message (modifiable)",
+    "chars": "{n} caractères",
+    "sending": "Envoi…",
+    "sendSms": "Envoyer le SMS",
+    "sendWhatsApp": "Envoyer le WhatsApp",
+    "simNote": "Tant que Twilio n'est pas configuré, l'envoi passe en mode simulation (le message est enregistré ci-contre mais pas réellement envoyé).",
+    "recentAlerts": "Alertes récentes",
+    "clear": "Vider",
+    "noAlerts": "Aucune alerte pour l'instant.",
+    "statusSent": "Envoyé",
+    "statusFailed": "Échec",
+    "statusSimulated": "Simulé",
+    "sentOk": "Message envoyé ✓",
+    "simulatedFeedback": "Simulé ({reason}) — visible dans les alertes récentes.",
+    "failedFeedback": "Échec : {reason}",
+    "yourSchool": "votre établissement"
   }
 }

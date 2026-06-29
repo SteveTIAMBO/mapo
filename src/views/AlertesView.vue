@@ -2,8 +2,8 @@
   <div class="al-page">
     <header class="al-head">
       <div>
-        <h1 class="al-title">Alertes parents</h1>
-        <p class="al-sub">Prévenez les parents par WhatsApp ou SMS : absence, paiement, bulletin…</p>
+        <h1 class="al-title">{{ t('al.title') }}</h1>
+        <p class="al-sub">{{ t('al.subtitle') }}</p>
       </div>
       <div class="al-channel">
         <button type="button" class="al-ch" :class="{ active: notif.settings.channel === 'whatsapp' }" @click="notif.setChannel('whatsapp')">WhatsApp</button>
@@ -14,63 +14,63 @@
     <div class="al-grid">
       <!-- Composer -->
       <section class="al-card">
-        <h2 class="al-c-title">Nouvelle alerte</h2>
+        <h2 class="al-c-title">{{ t('al.newAlert') }}</h2>
 
         <div class="al-row">
           <label class="al-field">
-            <span>Classe</span>
+            <span>{{ t('al.class') }}</span>
             <select v-model="selectedClass" class="al-input">
-              <option value="">— Choisir —</option>
+              <option value="">{{ t('al.choose') }}</option>
               <option v-for="c in classesList" :key="c" :value="c">{{ c }}</option>
             </select>
           </label>
           <label class="al-field">
-            <span>Élève</span>
+            <span>{{ t('al.student') }}</span>
             <select v-model="selectedEleveId" class="al-input" :disabled="!selectedClass">
-              <option value="">— Choisir —</option>
+              <option value="">{{ t('al.choose') }}</option>
               <option v-for="e in elevesOfClass" :key="e.id" :value="e.id">{{ e.lastName }} {{ e.firstName }}</option>
             </select>
           </label>
         </div>
 
         <div v-if="selectedEleve" class="al-parent">
-          Parent : <strong>{{ parentName || '—' }}</strong> ·
-          <span :class="{ 'al-nophone': !parentPhone }">{{ parentPhone || 'aucun numéro enregistré' }}</span>
+          {{ t('al.parentColon') }} <strong>{{ parentName || '—' }}</strong> ·
+          <span :class="{ 'al-nophone': !parentPhone }">{{ parentPhone || t('al.noPhone') }}</span>
         </div>
 
         <label class="al-field">
-          <span>Type de message</span>
+          <span>{{ t('al.messageType') }}</span>
           <select v-model="templateKey" class="al-input">
-            <option v-for="t in templates" :key="t.key" :value="t.key">{{ t.label }}</option>
+            <option v-for="tpl in templates" :key="tpl.key" :value="tpl.key">{{ tpl.label }}</option>
           </select>
         </label>
 
         <label class="al-field">
-          <span>Message (modifiable)</span>
+          <span>{{ t('al.messageEditable') }}</span>
           <textarea v-model="messageDraft" class="al-input al-textarea" rows="5"></textarea>
-          <span class="al-count">{{ messageDraft.length }} caractères</span>
+          <span class="al-count">{{ t('al.chars', { n: messageDraft.length }) }}</span>
         </label>
 
         <p v-if="feedback" class="al-feedback" :class="feedbackType">{{ feedback }}</p>
 
         <div class="al-actions">
           <button type="button" class="al-btn-primary" :disabled="!canSend || notif.sending" @click="envoyer">
-            {{ notif.sending ? 'Envoi…' : (notif.settings.channel === 'sms' ? 'Envoyer le SMS' : 'Envoyer le WhatsApp') }}
+            {{ notif.sending ? t('al.sending') : (notif.settings.channel === 'sms' ? t('al.sendSms') : t('al.sendWhatsApp')) }}
           </button>
         </div>
 
         <p class="al-note">
-          Tant que Twilio n'est pas configuré, l'envoi passe en <strong>mode simulation</strong> (le message est enregistré ci-contre mais pas réellement envoyé).
+          {{ t('al.simNote') }}
         </p>
       </section>
 
       <!-- Outbox -->
       <section class="al-card">
         <div class="al-c-head">
-          <h2 class="al-c-title">Alertes récentes</h2>
-          <button v-if="notif.outbox.length" type="button" class="al-link" @click="notif.clearOutbox()">Vider</button>
+          <h2 class="al-c-title">{{ t('al.recentAlerts') }}</h2>
+          <button v-if="notif.outbox.length" type="button" class="al-link" @click="notif.clearOutbox()">{{ t('al.clear') }}</button>
         </div>
-        <div v-if="!notif.outbox.length" class="al-empty">Aucune alerte pour l'instant.</div>
+        <div v-if="!notif.outbox.length" class="al-empty">{{ t('al.noAlerts') }}</div>
         <ul v-else class="al-list">
           <li v-for="a in notif.outbox" :key="a.id" class="al-item">
             <div class="al-item-top">
@@ -90,10 +90,12 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useElevesStore } from '../stores/eleves'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 import { useNotificationsStore, TEMPLATES, buildMessage } from '../stores/notifications'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
 const schoolId = useSchoolIdentityStore()
 const notif = useNotificationsStore()
@@ -115,7 +117,7 @@ const elevesOfClass = computed(() => inscrits.value.filter((e) => e.className ==
 const selectedEleve = computed(() => elevesStore.eleves.find((e) => e.id === selectedEleveId.value) || null)
 const parentPhone = computed(() => selectedEleve.value ? (selectedEleve.value.parentPhone || '').trim() : '')
 const parentName = computed(() => selectedEleve.value ? [selectedEleve.value.parentFirstName, selectedEleve.value.parentLastName].filter(Boolean).join(' ') : '')
-const ecoleName = computed(() => schoolId.nom || schoolId.name || schoolId.schoolName || schoolId.acronym || 'votre établissement')
+const ecoleName = computed(() => schoolId.nom || schoolId.name || schoolId.schoolName || schoolId.acronym || t('al.yourSchool'))
 
 const canSend = computed(() => !!selectedEleve.value && !!parentPhone.value && !!messageDraft.value.trim())
 
@@ -125,7 +127,7 @@ function ctx() {
     eleve: e ? `${e.firstName} ${e.lastName}` : '',
     parent: selectedEleve.value?.parentFirstName || '',
     classe: e?.className || '',
-    date: new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    date: new Date().toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
     ecole: ecoleName.value,
     montant: '',
     texteLibre: messageDraft.value,
@@ -139,9 +141,9 @@ function regenerate() {
 }
 watch([selectedEleveId, templateKey], regenerate)
 
-function statusLabel(s) { return s === 'envoyé' ? 'Envoyé' : s === 'échec' ? 'Échec' : 'Simulé' }
+function statusLabel(s) { return s === 'envoyé' ? t('al.statusSent') : s === 'échec' ? t('al.statusFailed') : t('al.statusSimulated') }
 function formatDate(iso) {
-  try { return new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return '' }
+  try { return new Date(iso).toLocaleString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) } catch { return '' }
 }
 
 async function envoyer() {
@@ -153,9 +155,9 @@ async function envoyer() {
     message: messageDraft.value.trim(),
     meta: { eleve: `${e.firstName} ${e.lastName}`, parent: parentName.value, classe: e.className, template: templateKey.value },
   })
-  if (entry.status === 'envoyé') { feedback.value = 'Message envoyé ✓'; feedbackType.value = 'ok' }
-  else if (entry.status === 'simulé') { feedback.value = 'Simulé (' + entry.reason + ') — visible dans les alertes récentes.'; feedbackType.value = 'warn' }
-  else { feedback.value = 'Échec : ' + entry.reason; feedbackType.value = 'err' }
+  if (entry.status === 'envoyé') { feedback.value = t('al.sentOk'); feedbackType.value = 'ok' }
+  else if (entry.status === 'simulé') { feedback.value = t('al.simulatedFeedback', { reason: entry.reason }); feedbackType.value = 'warn' }
+  else { feedback.value = t('al.failedFeedback', { reason: entry.reason }); feedbackType.value = 'err' }
 }
 </script>
 

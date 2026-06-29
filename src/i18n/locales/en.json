@@ -1100,5 +1100,32 @@
     "noteUnsignedSoft": "This diploma does not yet carry a cryptographic signature.",
     "poweredBy": "Powered by",
     "verifiableDiplomas": "Verifiable diplomas"
+  },
+  "al": {
+    "title": "Parent alerts",
+    "subtitle": "Notify parents by WhatsApp or SMS: absence, payment, report card…",
+    "newAlert": "New alert",
+    "class": "Class",
+    "student": "Student",
+    "choose": "— Choose —",
+    "parentColon": "Parent:",
+    "noPhone": "no number on file",
+    "messageType": "Message type",
+    "messageEditable": "Message (editable)",
+    "chars": "{n} characters",
+    "sending": "Sending…",
+    "sendSms": "Send SMS",
+    "sendWhatsApp": "Send WhatsApp",
+    "simNote": "Until Twilio is configured, sending falls back to simulation mode (the message is recorded here but not actually sent).",
+    "recentAlerts": "Recent alerts",
+    "clear": "Clear",
+    "noAlerts": "No alerts yet.",
+    "statusSent": "Sent",
+    "statusFailed": "Failed",
+    "statusSimulated": "Simulated",
+    "sentOk": "Message sent ✓",
+    "simulatedFeedback": "Simulated ({reason}) — visible in recent alerts.",
+    "failedFeedback": "Failed: {reason}",
+    "yourSchool": "your school"
   }
 }
