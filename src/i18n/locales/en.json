@@ -1182,5 +1182,33 @@
     "higherContext": "Compatible with French higher education — Europe and Africa.",
     "discover": "Explore this edition",
     "copy": "© 2026 MAPO — School management"
+  },
+  "sal": {
+    "title": "My Salary",
+    "subtitle": "Pay tracking and payslips",
+    "grossMonthly": "Gross monthly salary",
+    "netEstimated": "Net salary (estimated)",
+    "nextPayment": "Next payment",
+    "paymentHistory": "Payment history",
+    "period": "Period",
+    "gross": "Gross",
+    "netPaid": "Net paid",
+    "status": "Status",
+    "payslip": "Payslip",
+    "paid": "Paid",
+    "pending": "Pending",
+    "downloadPayslip": "Download payslip",
+    "cemacInfo": "Salary information (CEMAC zone)",
+    "claims": "Claims",
+    "noClaims": "No claims in progress",
+    "resolved": "Resolved",
+    "inProgress": "In progress",
+    "newClaim": "New claim",
+    "subject": "Subject",
+    "subjectPlaceholder": "e.g. Error on the March payslip",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe your claim...",
+    "cancel": "Cancel",
+    "send": "Send"
   }
 }

@@ -2,8 +2,8 @@
   <div class="salaire-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Mon Salaire</h1>
-        <p>Suivi de rémunération et fiches de paie</p>
+        <h1>{{ t('sal.title') }}</h1>
+        <p>{{ t('sal.subtitle') }}</p>
       </div>
     </div>
 
@@ -13,21 +13,21 @@
         <span class="stat-bar-dot green"></span>
         <div>
           <div class="stat-bar-value">{{ formatMoney(currentSalary) }}</div>
-          <div class="stat-bar-label">Salaire mensuel brut</div>
+          <div class="stat-bar-label">{{ t('sal.grossMonthly') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <span class="stat-bar-dot blue"></span>
         <div>
           <div class="stat-bar-value">{{ formatMoney(netSalary) }}</div>
-          <div class="stat-bar-label">Salaire net (estimé)</div>
+          <div class="stat-bar-label">{{ t('sal.netEstimated') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <span class="stat-bar-dot orange"></span>
         <div>
           <div class="stat-bar-value">{{ nextPayDate }}</div>
-          <div class="stat-bar-label">Prochain virement</div>
+          <div class="stat-bar-label">{{ t('sal.nextPayment') }}</div>
         </div>
       </div>
     </div>
@@ -36,20 +36,20 @@
     <section class="section">
       <h2 class="section-heading">
         <Wallet :size="18" style="color: var(--pr);" />
-        Historique des virements
+        {{ t('sal.paymentHistory') }}
       </h2>
       <div class="card">
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Période</th>
-                <th class="text-right">Brut</th>
+                <th>{{ t('sal.period') }}</th>
+                <th class="text-right">{{ t('sal.gross') }}</th>
                 <th class="text-right">CNPS</th>
                 <th class="text-right">IRF</th>
-                <th class="text-right">Net versé</th>
-                <th class="text-center">Statut</th>
-                <th class="text-center">Fiche</th>
+                <th class="text-right">{{ t('sal.netPaid') }}</th>
+                <th class="text-center">{{ t('sal.status') }}</th>
+                <th class="text-center">{{ t('sal.payslip') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -61,11 +61,11 @@
                 <td class="text-right font-mono" style="font-weight:600;">{{ formatMoney(p.net) }}</td>
                 <td class="text-center">
                   <span class="status-badge" :class="p.paid ? 'status-paid' : 'status-pending'">
-                    {{ p.paid ? 'Viré' : 'En attente' }}
+                    {{ p.paid ? t('sal.paid') : t('sal.pending') }}
                   </span>
                 </td>
                 <td class="text-center">
-                  <button v-if="p.paid" class="btn-icon" @click="downloadPayslip(p)" title="Télécharger la fiche de paie">
+                  <button v-if="p.paid" class="btn-icon" @click="downloadPayslip(p)" :title="t('sal.downloadPayslip')">
                     <Download :size="16" />
                   </button>
                 </td>
@@ -80,7 +80,7 @@
     <section class="section">
       <h2 class="section-heading">
         <Info :size="18" style="color: var(--pr);" />
-        Informations salariales (zone CEMAC)
+        {{ t('sal.cemacInfo') }}
       </h2>
       <div class="card info-card">
         <div class="info-grid">
@@ -112,11 +112,11 @@
     <section class="section">
       <h2 class="section-heading">
         <MessageSquare :size="18" style="color: var(--pr);" />
-        Réclamations
+        {{ t('sal.claims') }}
       </h2>
       <div class="card" style="padding: 20px;">
         <div v-if="claims.length === 0" class="empty-state" style="padding: 24px;">
-          <p>Aucune réclamation en cours</p>
+          <p>{{ t('sal.noClaims') }}</p>
         </div>
         <div v-else class="claims-list">
           <div v-for="c in claims" :key="c.id" class="claim-item">
@@ -126,14 +126,14 @@
               <span class="claim-date">{{ c.date }}</span>
             </div>
             <span class="status-badge" :class="c.status === 'resolved' ? 'status-paid' : 'status-pending'">
-              {{ c.status === 'resolved' ? 'Résolu' : 'En cours' }}
+              {{ c.status === 'resolved' ? t('sal.resolved') : t('sal.inProgress') }}
             </span>
           </div>
         </div>
         <div style="margin-top: 16px;">
           <button class="btn btn-outline" @click="showClaimModal = true">
             <Plus :size="16" />
-            Nouvelle réclamation
+            {{ t('sal.newClaim') }}
           </button>
         </div>
       </div>
@@ -143,22 +143,22 @@
     <div v-if="showClaimModal" class="modal-overlay" @click.self="showClaimModal = false">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>Nouvelle réclamation</h3>
+          <h3>{{ t('sal.newClaim') }}</h3>
           <button class="modal-close" @click="showClaimModal = false"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Objet</label>
-            <input v-model="newClaim.subject" class="input" placeholder="Ex: Erreur sur le bulletin de mars" />
+            <label>{{ t('sal.subject') }}</label>
+            <input v-model="newClaim.subject" class="input" :placeholder="t('sal.subjectPlaceholder')" />
           </div>
           <div class="field">
-            <label>Description</label>
-            <textarea v-model="newClaim.description" class="input" rows="4" placeholder="Décrivez votre réclamation..."></textarea>
+            <label>{{ t('sal.description') }}</label>
+            <textarea v-model="newClaim.description" class="input" rows="4" :placeholder="t('sal.descriptionPlaceholder')"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showClaimModal = false">Annuler</button>
-          <button class="btn btn-primary" @click="submitClaim" :disabled="!newClaim.subject">Envoyer</button>
+          <button class="btn btn-outline" @click="showClaimModal = false">{{ t('sal.cancel') }}</button>
+          <button class="btn btn-primary" @click="submitClaim" :disabled="!newClaim.subject">{{ t('sal.send') }}</button>
         </div>
       </div>
     </div>
@@ -167,6 +167,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useSchoolStore } from '../stores/school'
@@ -174,6 +175,7 @@ import { Wallet, Download, Info, MessageSquare, Plus, X } from 'lucide-vue-next'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const personnelStore = usePersonnelStore()
 const schoolStore = useSchoolStore()
@@ -209,7 +211,7 @@ const nextPayDate = computed(() => {
   const payDay = now.getDate() <= 25
     ? new Date(now.getFullYear(), now.getMonth(), 25)
     : new Date(now.getFullYear(), now.getMonth() + 1, 25)
-  return payDay.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
+  return payDay.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long' })
 })
 
 // Generate 6 months of pay history
@@ -226,7 +228,7 @@ const payHistory = computed(() => {
     const net = gross - cnps - cf - irf
     const paid = i > 0 // Current month not yet paid
     months.push({
-      period: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      period: d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' }),
       month: d.getMonth(),
       year: d.getFullYear(),
       gross,

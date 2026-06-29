@@ -1182,5 +1182,33 @@
     "higherContext": "Compatible avec l'enseignement supérieur français — Europe et Afrique.",
     "discover": "Découvrir cette version",
     "copy": "© 2026 MAPO — Gestion scolaire"
+  },
+  "sal": {
+    "title": "Mon Salaire",
+    "subtitle": "Suivi de rémunération et fiches de paie",
+    "grossMonthly": "Salaire mensuel brut",
+    "netEstimated": "Salaire net (estimé)",
+    "nextPayment": "Prochain virement",
+    "paymentHistory": "Historique des virements",
+    "period": "Période",
+    "gross": "Brut",
+    "netPaid": "Net versé",
+    "status": "Statut",
+    "payslip": "Fiche",
+    "paid": "Viré",
+    "pending": "En attente",
+    "downloadPayslip": "Télécharger la fiche de paie",
+    "cemacInfo": "Informations salariales (zone CEMAC)",
+    "claims": "Réclamations",
+    "noClaims": "Aucune réclamation en cours",
+    "resolved": "Résolu",
+    "inProgress": "En cours",
+    "newClaim": "Nouvelle réclamation",
+    "subject": "Objet",
+    "subjectPlaceholder": "Ex: Erreur sur le bulletin de mars",
+    "description": "Description",
+    "descriptionPlaceholder": "Décrivez votre réclamation...",
+    "cancel": "Annuler",
+    "send": "Envoyer"
   }
 }
