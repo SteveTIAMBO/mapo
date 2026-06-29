@@ -36,6 +36,7 @@ export const PAYS = [
   { code: 'SN', label: 'Sénégal' },
   { code: 'CI', label: "Côte d'Ivoire" },
   { code: 'GA', label: 'Gabon' },
+  { code: 'FR', label: 'France' },
   { code: 'autre', label: 'Autre' },
 ]
 

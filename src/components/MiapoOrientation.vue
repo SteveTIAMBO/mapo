@@ -98,8 +98,8 @@
         <p v-if="result.conseil" class="reco-conseil"><Lightbulb :size="15" /> {{ result.conseil }}</p>
         <p v-if="result.prudence" class="reco-prudence">{{ result.prudence }}</p>
 
-        <!-- Pont mobilité → Mobi (volet international) -->
-        <div v-if="pays === 'france'" class="mobi-bridge">
+        <!-- Pont mobilité → Mobi (pour ceux qui visent la France depuis l'étranger) -->
+        <div v-if="pays === 'france' && enfant.pays !== 'FR'" class="mobi-bridge">
           <div class="mobi-ic"><Plane :size="20" /></div>
           <div class="mobi-txt">
             <strong>Envie d'étudier en France ?</strong>
@@ -165,7 +165,7 @@ function saveEval() {
 // Aujourd'hui seul le Cameroun a un référentiel LOCAL complet ; la France est la
 // destination « internationale ». Les autres pays n'ont pas encore de référentiel
 // dédié : on l'affiche honnêtement (jamais de Cameroun déguisé en pays de l'enfant).
-const REFERENTIEL_PAR_PAYS = { CM: 'cameroun' }
+const REFERENTIEL_PAR_PAYS = { CM: 'cameroun', FR: 'france' }
 const paysEnfantLabel = computed(() => PAYS.find((p) => p.code === props.enfant.pays)?.label || '')
 const paysCouvert = computed(() => !!REFERENTIEL_PAR_PAYS[props.enfant.pays])
 function defaultPays() { return REFERENTIEL_PAR_PAYS[props.enfant.pays] || 'cameroun' }
