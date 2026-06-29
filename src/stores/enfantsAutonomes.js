@@ -119,7 +119,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL, formation, formationUrl }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: 'ea-' + Date.now().toString(36),
       firstName: (firstName || '').trim(),
@@ -129,8 +129,9 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…) OU « Formation (hors catalogue) »
       pays: pays || 'CM',
       ecole: (ecole || '').trim(),
-      formation: (formation || '').trim(),       // nom libre de la formation (apprenant hors-catalogue)
-      formationUrl: (formationUrl || '').trim(), // URL de la formation (Étape 2)
+      formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
+      formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
+      formationModules: (formationModules || '').trim(), // modules/matières saisis à la main (plan B, séparés par des virgules)
       photoURL: photoURL || '',
       notes: [], // [{ id, matiere, note }]
       revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
@@ -150,7 +151,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'formation', 'formationUrl', 'photoURL']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'formation', 'formationUrl', 'formationModules', 'photoURL']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     persist()

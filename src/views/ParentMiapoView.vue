@@ -276,9 +276,13 @@
               <div class="form-group"><label class="form-label">Niveau</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">Primaire</option><option value="secondaire">Secondaire</option><option value="superieur">Supérieur</option></select></div>
               <div class="form-group"><label class="form-label">Classe</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
-            <div v-if="profil.niveau === NIVEAU_HORS_CATALOGUE" class="form-row">
-              <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="profil.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
-            </div>
+            <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="profil.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
+                <div class="form-group"><label class="form-label">URL du programme <span class="muted small">(optionnel)</span></label><input v-model="profil.formationUrl" class="input" type="url" placeholder="https://… page de la formation" /></div>
+              </div>
+              <div class="form-group"><label class="form-label">Modules / matières <span class="muted small">(séparés par des virgules)</span></label><textarea v-model="profil.formationModules" class="input" rows="2" placeholder="Ex : Stratégie, Finance, Leadership, Marketing…"></textarea></div>
+            </template>
             <div class="form-row">
               <div class="form-group"><label class="form-label">Pays</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
               <div class="form-group"><label class="form-label">École</label><input v-model="profil.ecole" class="input" placeholder="Nom de l'établissement" /></div>
@@ -305,7 +309,11 @@
             <div class="form-group"><label class="form-label">Sexe</label><select v-model="form.gender" class="input"><option value="M">Garçon</option><option value="F">Fille</option></select></div>
             <div class="form-group"><label class="form-label">Classe</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
-          <div v-if="form.niveau === NIVEAU_HORS_CATALOGUE" class="form-group"><label class="form-label">Nom de la formation</label><input v-model="form.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
+          <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
+            <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="form.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
+            <div class="form-group"><label class="form-label">URL du programme <span class="muted small">(optionnel)</span></label><input v-model="form.formationUrl" class="input" type="url" placeholder="https://… page de la formation" /></div>
+            <div class="form-group"><label class="form-label">Modules / matières <span class="muted small">(séparés par des virgules)</span></label><textarea v-model="form.formationModules" class="input" rows="2" placeholder="Ex : Stratégie, Finance, Leadership…"></textarea></div>
+          </template>
           <div class="form-group"><label class="form-label">Pays</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
             <button class="btn btn-outline" @click="showAdd = false">Annuler</button>
@@ -376,7 +384,7 @@ const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.v
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', formation: '', photoURL: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', formation: '', formationUrl: '', formationModules: '', photoURL: '' })
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value
@@ -384,7 +392,7 @@ function syncProfil() {
   profil.value = {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
-    ecole: e.ecole || '', formation: e.formation || '', photoURL: e.photoURL || '',
+    ecole: e.ecole || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
   }
 }
 function onPickPhoto(ev) {
@@ -438,7 +446,7 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '', formationUrl: '', formationModules: '' })
 
 const newMatiere = ref('')
 const newNote = ref(null)
@@ -500,7 +508,7 @@ const insight = computed(() => {
     : `MIAPO a repéré des difficultés en ${m}. Désignez ces matières à réviser — ${e.firstName} progressera plus vite sur ses points faibles.`
 })
 
-function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '' }; showAdd.value = true }
+function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
 function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)
