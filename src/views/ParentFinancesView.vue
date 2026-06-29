@@ -2,13 +2,13 @@
   <div class="parent-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Situation financière</h1>
-        <p>Paiements, solde et historique</p>
+        <h1>{{ t('parent.financialStatus') }}</h1>
+        <p>{{ t('parent.fin.subtitle') }}</p>
       </div>
     </div>
 
     <div v-if="children.length === 0" class="card empty-state" style="padding: 48px 24px;">
-      <p>Aucun enfant lié à votre compte.</p>
+      <p>{{ t('parent.noChildLinked') }}</p>
     </div>
 
     <template v-else>
@@ -26,14 +26,14 @@
           <span class="stat-bar-dot" style="background: var(--pr);"></span>
           <div>
             <div class="stat-bar-value font-mono">{{ formatMoney(childFinance.totalDue) }}</div>
-            <div class="stat-bar-label">Total dû</div>
+            <div class="stat-bar-label">{{ t('parent.fin.totalDue') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" style="background: var(--success);"></span>
           <div>
             <div class="stat-bar-value font-mono cs-green">{{ formatMoney(childFinance.totalPaid) }}</div>
-            <div class="stat-bar-label">Total payé</div>
+            <div class="stat-bar-label">{{ t('parent.fin.totalPaid') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
@@ -42,7 +42,7 @@
             <div class="stat-bar-value font-mono" :class="childFinance.balance > 0 ? 'cs-red' : 'cs-green'">
               {{ formatMoney(childFinance.balance) }}
             </div>
-            <div class="stat-bar-label">Reste à payer</div>
+            <div class="stat-bar-label">{{ t('parent.fin.balance') }}</div>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@
       <!-- Carte résumé + action -->
       <div class="card">
         <div class="card-header">
-          <h3>Résumé</h3>
+          <h3>{{ t('parent.fin.summary') }}</h3>
           <div class="card-header-actions">
             <span class="payment-status-badge" :class="statusClass">
               {{ statusLabel }}
@@ -60,15 +60,15 @@
 
         <div class="finance-detail">
           <div class="finance-line">
-            <span>Scolarité annuelle</span>
+            <span>{{ t('parent.fin.annualTuition') }}</span>
             <span class="font-mono">{{ formatMoney(childFinance.totalDue) }}</span>
           </div>
           <div class="finance-line">
-            <span>Montant payé</span>
+            <span>{{ t('parent.fin.amountPaid') }}</span>
             <span class="font-mono cs-green">- {{ formatMoney(childFinance.totalPaid) }}</span>
           </div>
           <div class="finance-line finance-line-total">
-            <strong>Reste à payer</strong>
+            <strong>{{ t('parent.fin.balance') }}</strong>
             <strong class="font-mono" :class="childFinance.balance > 0 ? 'cs-red' : 'cs-green'">
               {{ formatMoney(childFinance.balance) }}
             </strong>
@@ -79,11 +79,11 @@
         <div class="finance-actions">
           <button v-if="childFinance.balance > 0" class="btn btn-primary" @click="showPaymentModal = true">
             <CreditCard :size="16" />
-            <span>Effectuer un paiement</span>
+            <span>{{ t('parent.fin.makePayment') }}</span>
           </button>
           <button v-if="childPayments.length > 0" class="btn btn-outline" @click="downloadAllReceipts">
             <Download :size="16" />
-            <span>Télécharger les reçus</span>
+            <span>{{ t('parent.fin.downloadReceipts') }}</span>
           </button>
         </div>
       </div>
@@ -91,24 +91,24 @@
       <!-- Historique paiements -->
       <div class="card">
         <div class="card-header">
-          <h3>Historique des paiements</h3>
+          <h3>{{ t('parent.fin.paymentHistory') }}</h3>
         </div>
         <div v-if="childPayments.length === 0" class="empty-state" style="padding: 32px;">
           <CreditCard :size="36" style="color: var(--tx3); margin-bottom: 8px;" />
-          <p style="font-size: 14px;">Aucun paiement enregistré</p>
+          <p style="font-size: 14px;">{{ t('parent.fin.noPayments') }}</p>
           <button v-if="childFinance.balance > 0" class="btn btn-primary btn-sm" style="margin-top: 12px;" @click="showPaymentModal = true">
-            Effectuer le premier paiement
+            {{ t('parent.fin.makeFirstPayment') }}
           </button>
         </div>
         <div v-else class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Date</th>
-                <th class="text-right">Montant</th>
-                <th>Mode</th>
-                <th>Référence</th>
-                <th class="text-center">Reçu</th>
+                <th>{{ t('parent.date') }}</th>
+                <th class="text-right">{{ t('parent.fin.amount') }}</th>
+                <th>{{ t('parent.fin.method') }}</th>
+                <th>{{ t('parent.fin.reference') }}</th>
+                <th class="text-center">{{ t('parent.fin.receipt') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -118,7 +118,7 @@
                 <td>{{ paymentMethodLabel(pay.method) }}</td>
                 <td>{{ pay.reference || '—' }}</td>
                 <td class="text-center">
-                  <button class="btn btn-ghost btn-sm" @click="previewReceipt(pay)" title="Voir le reçu">
+                  <button class="btn btn-ghost btn-sm" @click="previewReceipt(pay)" :title="t('parent.fin.viewReceipt')">
                     <Eye :size="14" />
                   </button>
                 </td>
@@ -133,30 +133,30 @@
     <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
       <div class="modal-card" style="max-width: 520px;">
         <div class="modal-header">
-          <h3>Effectuer un paiement</h3>
+          <h3>{{ t('parent.fin.makePayment') }}</h3>
           <button class="btn btn-ghost btn-sm" @click="showPaymentModal = false"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <!-- Résumé -->
           <div class="payment-summary">
             <div class="payment-summary-line">
-              <span>Élève</span>
+              <span>{{ t('parent.fin.student') }}</span>
               <strong>{{ selectedChild?.lastName }} {{ selectedChild?.firstName }}</strong>
             </div>
             <div class="payment-summary-line">
-              <span>Classe</span>
+              <span>{{ t('parent.fin.class') }}</span>
               <span>{{ selectedChild?.className }}</span>
             </div>
             <div class="payment-summary-line">
-              <span>Reste à payer</span>
+              <span>{{ t('parent.fin.balance') }}</span>
               <strong class="cs-red font-mono">{{ formatMoney(childFinance.balance) }}</strong>
             </div>
           </div>
 
           <!-- Montant -->
           <div class="form-group">
-            <label class="form-label">Montant à payer (FCFA)</label>
-            <input v-model.number="paymentAmount" type="number" class="input" :placeholder="`Max : ${childFinance.balance}`" :max="childFinance.balance" min="1000" step="1000" />
+            <label class="form-label">{{ t('parent.fin.amountToPay') }}</label>
+            <input v-model.number="paymentAmount" type="number" class="input" :placeholder="t('parent.fin.maxPlaceholder', { n: childFinance.balance })" :max="childFinance.balance" min="1000" step="1000" />
             <div class="payment-presets">
               <button v-for="preset in paymentPresets" :key="preset" class="btn btn-outline btn-sm" @click="paymentAmount = preset">
                 {{ formatMoney(preset) }}
@@ -166,7 +166,7 @@
 
           <!-- Mode de paiement -->
           <div class="form-group">
-            <label class="form-label">Mode de paiement</label>
+            <label class="form-label">{{ t('parent.fin.paymentMethod') }}</label>
             <div class="payment-methods">
               <label v-for="method in paymentMethods" :key="method.key" class="payment-method-option" :class="{ selected: paymentMethod === method.key }">
                 <input type="radio" :value="method.key" v-model="paymentMethod" style="display: none;" />
@@ -181,29 +181,28 @@
           <div v-if="paymentMethod === 'mobile_money'" class="payment-info-box online-box">
             <div class="online-box-head">
               <ShieldCheck :size="18" />
-              <span>Paiement sécurisé en ligne</span>
+              <span>{{ t('parent.fin.securedOnline') }}</span>
             </div>
             <p style="font-size: 13px; margin: 0;">
-              Payez immédiatement <strong class="font-mono">{{ formatMoney(paymentAmount || 0) }}</strong>
-              par Orange Money, MTN MoMo, Moov, Wave ou carte bancaire. Votre reçu est généré automatiquement.
+              {{ t('parent.fin.payNowInfo', { amount: formatMoney(paymentAmount || 0) }) }}
             </p>
           </div>
 
           <!-- Info Virement -->
           <div v-if="paymentMethod === 'virement'" class="payment-info-box">
-            <p>Effectuez un virement au compte de l'établissement :</p>
+            <p>{{ t('parent.fin.transferInfo') }}</p>
             <p class="payment-phone font-mono">IBAN : CM21 XXXX XXXX XXXX</p>
-            <p style="font-size: 12px; color: var(--tx3);">Mentionnez le matricule <strong>{{ selectedChild?.matricule }}</strong> en référence.</p>
+            <p style="font-size: 12px; color: var(--tx3);">{{ t('parent.fin.transferRef', { id: selectedChild?.matricule }) }}</p>
           </div>
 
           <p v-if="payError" class="pay-error">{{ payError }}</p>
 
           <div class="compose-actions">
-            <button class="btn btn-outline" @click="showPaymentModal = false">Annuler</button>
+            <button class="btn btn-outline" @click="showPaymentModal = false">{{ t('parent.cancel') }}</button>
             <button class="btn btn-primary" :disabled="!canPay || paying" @click="handlePayment">
               <Loader2 v-if="paying" :size="16" class="spin" />
               <component v-else :is="paymentMethod === 'mobile_money' ? Smartphone : Check" :size="16" />
-              <span>{{ paymentMethod === 'mobile_money' ? 'Payer maintenant' : 'Valider le paiement' }}</span>
+              <span>{{ paymentMethod === 'mobile_money' ? t('parent.fin.payNow') : t('parent.fin.validatePayment') }}</span>
             </button>
           </div>
         </div>
@@ -214,17 +213,17 @@
     <div v-if="showSimGuichet" class="modal-overlay" @click.self="!simProcessing && (showSimGuichet = false)">
       <div class="modal-card" style="max-width: 440px;">
         <div class="modal-header">
-          <h3>Paiement mobile money</h3>
+          <h3>{{ t('parent.fin.mobileMoneyTitle') }}</h3>
           <button v-if="!simProcessing" class="btn btn-ghost btn-sm" @click="showSimGuichet = false"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <div class="guichet-amount">
-            <span>Montant à payer</span>
+            <span>{{ t('parent.fin.amountToPayShort') }}</span>
             <strong class="font-mono">{{ formatMoney(lastPaymentAmount) }}</strong>
           </div>
 
           <template v-if="!simProcessing">
-            <label class="form-label" style="margin-top: 16px;">Choisissez votre moyen de paiement</label>
+            <label class="form-label" style="margin-top: 16px;">{{ t('parent.fin.chooseMethod') }}</label>
             <div class="op-grid">
               <button v-for="op in SIM_OPERATORS" :key="op.key" type="button"
                 class="op-btn" :class="{ selected: simOperator === op.key }"
@@ -235,25 +234,25 @@
             </div>
 
             <div class="form-group" v-if="simOperator !== 'card'" style="margin-top: 16px;">
-              <label class="form-label">Numéro mobile money</label>
-              <input v-model="simPhone" type="tel" class="input" placeholder="Ex : 6XX XXX XXX" />
+              <label class="form-label">{{ t('parent.fin.mobileNumber') }}</label>
+              <input v-model="simPhone" type="tel" class="input" :placeholder="t('parent.fin.phonePlaceholder')" />
             </div>
 
-            <p class="sim-note">Démo : aucun débit réel. En production, c’est le vrai guichet CinetPay qui s’ouvre.</p>
+            <p class="sim-note">{{ t('parent.fin.simNote') }}</p>
 
             <div class="compose-actions">
-              <button class="btn btn-outline" @click="showSimGuichet = false">Annuler</button>
+              <button class="btn btn-outline" @click="showSimGuichet = false">{{ t('parent.cancel') }}</button>
               <button class="btn btn-primary" @click="confirmSimPayment">
                 <Check :size="16" />
-                <span>Payer {{ formatMoney(lastPaymentAmount) }}</span>
+                <span>{{ t('parent.fin.pay', { amount: formatMoney(lastPaymentAmount) }) }}</span>
               </button>
             </div>
           </template>
 
           <div v-else class="guichet-processing">
             <Loader2 :size="40" class="spin" />
-            <p>Paiement en cours…</p>
-            <small>Confirmez sur votre téléphone si demandé.</small>
+            <p>{{ t('parent.fin.processing') }}</p>
+            <small>{{ t('parent.fin.confirmOnPhone') }}</small>
           </div>
         </div>
       </div>
@@ -263,21 +262,21 @@
     <div v-if="showOnlineWait" class="modal-overlay" @click.self="cancelOnlineWait">
       <div class="modal-card" style="max-width: 440px;">
         <div class="modal-header">
-          <h3>Finalisez votre paiement</h3>
+          <h3>{{ t('parent.fin.finalizePayment') }}</h3>
           <button class="btn btn-ghost btn-sm" @click="cancelOnlineWait"><X :size="18" /></button>
         </div>
         <div class="modal-body" style="text-align: center;">
           <div class="guichet-processing">
             <Loader2 :size="40" class="spin" />
-            <p>Le guichet de paiement s’est ouvert dans un nouvel onglet.</p>
-            <small>Payez <strong class="font-mono">{{ formatMoney(lastPaymentAmount) }}</strong>, puis revenez ici. La validation est automatique.</small>
+            <p>{{ t('parent.fin.gatewayOpened') }}</p>
+            <small>{{ t('parent.fin.payThenReturn', { amount: formatMoney(lastPaymentAmount) }) }}</small>
           </div>
           <p v-if="onlineError" class="pay-error">{{ onlineError }}</p>
           <div class="compose-actions" style="justify-content: center;">
-            <button class="btn btn-outline" @click="cancelOnlineWait">Annuler</button>
+            <button class="btn btn-outline" @click="cancelOnlineWait">{{ t('parent.cancel') }}</button>
             <button class="btn btn-primary" @click="checkNow">
               <Check :size="16" />
-              <span>J’ai payé</span>
+              <span>{{ t('parent.fin.iPaid') }}</span>
             </button>
           </div>
         </div>
@@ -291,16 +290,16 @@
           <div class="success-icon">
             <Check :size="32" />
           </div>
-          <h3 style="margin: 16px 0 8px;">Paiement enregistré</h3>
+          <h3 style="margin: 16px 0 8px;">{{ t('parent.fin.paymentRecorded') }}</h3>
           <p style="color: var(--tx2); font-size: 14px; margin-bottom: 24px;">
-            Votre paiement de <strong class="font-mono">{{ formatMoney(lastPaymentAmount) }}</strong> a été enregistré avec succès.
-            <br />Un reçu est disponible dans l'historique.
+            {{ t('parent.fin.paymentSuccess', { amount: formatMoney(lastPaymentAmount) }) }}
+            <br />{{ t('parent.fin.receiptAvailable') }}
           </p>
           <div style="display: flex; gap: 12px; justify-content: center;">
-            <button class="btn btn-outline" @click="showPaymentSuccess = false">Fermer</button>
+            <button class="btn btn-outline" @click="showPaymentSuccess = false">{{ t('parent.fin.close') }}</button>
             <button class="btn btn-primary" @click="previewLastReceipt">
               <Eye :size="14" />
-              <span>Voir le reçu</span>
+              <span>{{ t('parent.fin.viewReceipt') }}</span>
             </button>
           </div>
         </div>
@@ -311,11 +310,11 @@
     <div v-if="showReceiptPreview" class="modal-overlay" @click.self="closeReceiptPreview">
       <div class="modal-card" style="max-width: 620px; max-height: 90vh; display: flex; flex-direction: column;">
         <div class="modal-header">
-          <h3>Reçu de paiement</h3>
+          <h3>{{ t('parent.fin.receiptTitle') }}</h3>
           <div style="display: flex; gap: 8px; align-items: center;">
             <button class="btn btn-primary btn-sm" @click="downloadCurrentReceipt">
               <Download :size="14" />
-              <span>Télécharger</span>
+              <span>{{ t('parent.fin.download') }}</span>
             </button>
             <button class="btn btn-ghost btn-sm" @click="closeReceiptPreview"><X :size="18" /></button>
           </div>
@@ -330,6 +329,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -351,6 +351,7 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const cinetpay = useCinetpayStore()
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const parentChildren = useParentChildrenStore()
 const selectedChildId = computed({
@@ -367,11 +368,11 @@ const paymentMethod = ref('mobile_money')
 const lastPaymentAmount = ref(0)
 const payError = ref('')
 
-const paymentMethods = [
-  { key: 'mobile_money', label: 'Mobile Money / Carte', sub: 'En ligne, immédiat', icon: Smartphone },
-  { key: 'virement', label: 'Virement', sub: 'À déclarer', icon: Building2 },
-  { key: 'especes', label: 'Espèces', sub: 'À déclarer', icon: Banknote },
-]
+const paymentMethods = computed(() => [
+  { key: 'mobile_money', label: t('parent.fin.methodMobileLabel'), sub: t('parent.fin.methodMobileSub'), icon: Smartphone },
+  { key: 'virement', label: t('parent.fin.methodTransferLabel'), sub: t('parent.fin.methodTransferSub'), icon: Building2 },
+  { key: 'especes', label: t('parent.fin.methodCashLabel'), sub: t('parent.fin.methodCashSub'), icon: Banknote },
+])
 
 // ── Paiement en ligne (CinetPay) ──────────────────────────────────────
 const onlineTx = ref('')              // transaction_id en cours
@@ -387,13 +388,13 @@ const showSimGuichet = ref(false)
 const simProcessing = ref(false)
 const simOperator = ref('orange')
 const simPhone = ref('')
-const SIM_OPERATORS = [
+const SIM_OPERATORS = computed(() => [
   { key: 'orange', label: 'Orange Money', color: '#FF6600' },
   { key: 'mtn', label: 'MTN MoMo', color: '#FFCB05' },
   { key: 'moov', label: 'Moov Money', color: '#0066B3' },
   { key: 'wave', label: 'Wave', color: '#1DC8FF' },
-  { key: 'card', label: 'Carte bancaire', color: '#222b45' },
-]
+  { key: 'card', label: t('parent.fin.cardOperator'), color: '#222b45' },
+])
 
 const currency = computed(() => schoolStore.schoolSettings?.currency || 'XAF')
 
@@ -425,9 +426,9 @@ const statusClass = computed(() => {
 })
 
 const statusLabel = computed(() => {
-  if (childFinance.value.balance === 0 && childFinance.value.totalPaid > 0) return 'Soldé'
-  if (childFinance.value.totalPaid > 0) return 'Paiement partiel'
-  return 'Impayé'
+  if (childFinance.value.balance === 0 && childFinance.value.totalPaid > 0) return t('parent.fin.statusPaid')
+  if (childFinance.value.totalPaid > 0) return t('parent.fin.statusPartial')
+  return t('parent.fin.statusUnpaid')
 })
 
 const paymentPresets = computed(() => {
@@ -487,7 +488,7 @@ async function startOnlinePayment() {
     customerEmail: child.parentEmail || '',
   })
   paying.value = false
-  if (!res.ok) { payError.value = res.error || 'Le paiement n’a pas pu démarrer.'; return }
+  if (!res.ok) { payError.value = res.error || t('parent.fin.payStartError'); return }
 
   onlineTx.value = res.transaction_id
   onlineMode.value = res.mode
@@ -632,12 +633,13 @@ function formatMoney(amount) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
-  return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 
 function paymentMethodLabel(method) {
-  const labels = { especes: 'Espèces', mobile_money: 'Mobile Money', virement: 'Virement', cheque: 'Chèque' }
-  return labels[method] || method || '—'
+  const k = 'parent.fin.methods.' + method
+  const l = t(k)
+  return l === k ? (method || '—') : l
 }
 
 onMounted(async () => {
