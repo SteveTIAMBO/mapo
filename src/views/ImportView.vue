@@ -247,7 +247,8 @@ const modules = [
       { key: 'firstName', label: 'Prénom', required: true },
       { key: 'gender', label: 'Sexe (M/F)', required: true },
       { key: 'dateOfBirth', label: 'Date naissance', required: false },
-      { key: 'className', label: 'Classe', required: true },
+      { key: 'niveau', label: 'Niveau', required: false },
+      { key: 'section', label: 'Classe', required: false },
       { key: 'city', label: 'Ville', required: false },
       { key: 'quartier', label: 'Quartier', required: false },
       { key: 'parentLastName', label: 'Nom parent', required: false },
@@ -263,7 +264,8 @@ const modules = [
       'prenom': 'firstName', 'prénom': 'firstName', 'first name': 'firstName',
       'sexe': 'gender', 'sexe (m/f)': 'gender', 'genre': 'gender', 'gender': 'gender',
       'date de naissance': 'dateOfBirth', 'date naissance': 'dateOfBirth', 'naissance': 'dateOfBirth',
-      'classe': 'className', 'class': 'className',
+      'niveau': 'niveau', 'level': 'niveau',
+      'classe': 'section', 'classe (a, b, c)': 'section', 'section': 'section', 'class': 'section',
       'ville': 'city', 'city': 'city',
       'quartier': 'quartier', 'quarter': 'quartier',
       'nom parent': 'parentLastName', 'parent nom': 'parentLastName',
@@ -334,16 +336,16 @@ const modules = [
     icon: markRaw(BookOpen),
     desc: 'Importer la structure des classes et niveaux.',
     columns: [
-      { key: 'name', label: 'Nom classe', required: true },
       { key: 'level', label: 'Niveau', required: true },
-      { key: 'serie', label: 'Série (A/C/D)', required: false },
+      { key: 'serie', label: 'Classe', required: false },
       { key: 'capacity', label: 'Effectif max', required: false },
+      { key: 'name', label: 'Nom (auto)', required: false },
     ],
     headerMap: {
-      'nom': 'name', 'nom classe': 'name', 'classe': 'name', 'class': 'name', 'name': 'name',
       'niveau': 'level', 'level': 'level',
-      'serie': 'serie', 'série': 'serie', 'série (a/c/d)': 'serie', 'serie (a/c/d)': 'serie',
+      'classe': 'serie', 'classe (a, b, c)': 'serie', 'section': 'serie', 'serie': 'serie', 'série': 'serie', 'série (a/c/d)': 'serie', 'serie (a/c/d)': 'serie', 'class': 'serie',
       'effectif': 'capacity', 'effectif max': 'capacity', 'capacite': 'capacity', 'capacité': 'capacity', 'max': 'capacity', 'capacity': 'capacity',
+      'nom': 'name', 'nom classe': 'name', 'nom (auto)': 'name', 'name': 'name',
     },
   },
 ]
@@ -354,8 +356,8 @@ const IMPORT_EXAMPLES = {
     { schoolName: 'Collège Bilingue La Réussite', schoolType: 'Collège', city: 'Yaoundé', country: 'Cameroun', address: 'Quartier Mvog-Ada', phone: '+237 222 00 11 22', email: 'contact@lareussite.cm', academicYear: '2025-2026', currency: 'FCFA', primaryColor: '#1558B0', directorLastName: 'Nkoulou', directorFirstName: 'Joseph', directorPhone: '+237 699 00 11 22', directorEmail: 'directeur@lareussite.cm' },
   ],
   eleves: [
-    { lastName: 'Kamga', firstName: 'Jean', gender: 'M', dateOfBirth: '2012-03-15', className: '4ème A', city: 'Yaoundé', quartier: 'Bastos', parentLastName: 'Kamga', parentFirstName: 'Paul', parentPhone: '+237 699 112 233', parentPhone2: '' },
-    { lastName: 'Ngo', firstName: 'Marie', gender: 'F', dateOfBirth: '2013-08-22', className: '5ème B', city: 'Yaoundé', quartier: 'Mvan', parentLastName: 'Ngo', parentFirstName: 'Rose', parentPhone: '+237 677 445 566', parentPhone2: '' },
+    { lastName: 'Kamga', firstName: 'Jean', gender: 'M', dateOfBirth: '2012-03-15', niveau: '6ème', section: 'A', city: 'Yaoundé', quartier: 'Bastos', parentLastName: 'Kamga', parentFirstName: 'Paul', parentPhone: '+237 699 112 233', parentPhone2: '' },
+    { lastName: 'Ngo', firstName: 'Marie', gender: 'F', dateOfBirth: '2013-08-22', niveau: '6ème', section: '', city: 'Yaoundé', quartier: 'Mvan', parentLastName: 'Ngo', parentFirstName: 'Rose', parentPhone: '+237 677 445 566', parentPhone2: '' },
   ],
   personnel: [
     { lastName: 'Mbarga', firstName: 'Paul', category: 'enseignement', role: 'Professeur', gender: 'M', email: 'p.mbarga@ecole.com', phone: '+237 677 445 566', subjects: 'Français' },
@@ -366,8 +368,8 @@ const IMPORT_EXAMPLES = {
     { name: 'Philosophie', cycle: 'Second cycle', coef_6e: '', coef_5e: '', coef_4e: '', coef_3e: '', coef_2nde: '2', coef_1ere: '3', coef_Tle: '4' },
   ],
   classes: [
-    { name: '6ème A', level: '6e', serie: '', capacity: '60' },
-    { name: '1ère C', level: '1ere', serie: 'C', capacity: '45' },
+    { level: '6ème', serie: 'A', capacity: '60' },
+    { level: '1ère', serie: 'C', capacity: '45' },
   ],
 }
 
@@ -377,8 +379,8 @@ const IMPORT_EXAMPLES_PRIMAIRE = {
     { schoolName: 'École Primaire Les Lauréats', schoolType: 'École primaire', city: 'Douala', country: 'Cameroun', address: 'Quartier Bonapriso', phone: '+237 233 00 22 33', email: 'contact@leslaureats.cm', academicYear: '2025-2026', currency: 'FCFA', primaryColor: '#1558B0', directorLastName: 'Eyenga', directorFirstName: 'Sylvie', directorPhone: '+237 699 22 33 44', directorEmail: 'direction@leslaureats.cm' },
   ],
   eleves: [
-    { lastName: 'Biya', firstName: 'Estelle', gender: 'F', dateOfBirth: '2018-05-12', className: 'CP', city: 'Douala', quartier: 'Bonapriso', parentLastName: 'Biya', parentFirstName: 'Georges', parentPhone: '+237 699 12 34 56', parentPhone2: '' },
-    { lastName: 'Mballa', firstName: 'Junior', gender: 'M', dateOfBirth: '2015-09-03', className: 'CM1', city: 'Douala', quartier: 'Akwa', parentLastName: 'Mballa', parentFirstName: 'Diane', parentPhone: '+237 677 65 43 21', parentPhone2: '' },
+    { lastName: 'Biya', firstName: 'Estelle', gender: 'F', dateOfBirth: '2018-05-12', niveau: 'CP', section: 'A', city: 'Douala', quartier: 'Bonapriso', parentLastName: 'Biya', parentFirstName: 'Georges', parentPhone: '+237 699 12 34 56', parentPhone2: '' },
+    { lastName: 'Mballa', firstName: 'Junior', gender: 'M', dateOfBirth: '2015-09-03', niveau: 'CM1', section: '', city: 'Douala', quartier: 'Akwa', parentLastName: 'Mballa', parentFirstName: 'Diane', parentPhone: '+237 677 65 43 21', parentPhone2: '' },
   ],
   personnel: [
     { lastName: 'Atangana', firstName: 'Bernadette', category: 'enseignement', role: 'Institutrice', gender: 'F', email: 'b.atangana@leslaureats.cm', phone: '+237 677 11 22 33', subjects: '' },
@@ -390,9 +392,9 @@ const IMPORT_EXAMPLES_PRIMAIRE = {
     { name: 'Sciences et technologie', cycle: 'Primaire' },
   ],
   classes: [
-    { name: 'SIL', level: 'SIL', serie: '', capacity: '45' },
-    { name: 'CE1', level: 'CE1', serie: '', capacity: '45' },
-    { name: 'CM2 A', level: 'CM2', serie: 'A', capacity: '40' },
+    { level: 'SIL', serie: 'A', capacity: '45' },
+    { level: 'CE1', serie: 'B', capacity: '45' },
+    { level: 'CM2', serie: 'A', capacity: '40' },
   ],
 }
 
@@ -531,10 +533,20 @@ function validateRow(row, mod) {
     } else if (row.gender) {
       row.gender = row.gender.toUpperCase()
     }
-    // Anti-typo : si des classes existent déjà, la classe de l'élève doit
-    // correspondre à l'une d'elles. Une faute mineure (accent, espace, casse)
-    // est rattrapée en recalant sur le nom EXACT de la classe ; sinon erreur.
-    if (row.className && classesStore.classes.length) {
+    // Composition de la classe : Niveau + Section (« 6ème » + « A » → « 6ème A »).
+    // Avant la rentrée, l'école peut ne renseigner que le Niveau (la répartition
+    // par classe se fait ensuite dans MAPO). Rétro-compat : un ancien fichier qui
+    // met le nom complet dans « Classe » arrive ici comme section → className = ce nom.
+    if (!row.className) {
+      const lvl = [...LEVELS, ...LEVELS_PRIMAIRE].find(l => l.value === row.niveau || l.label === row.niveau)
+      const niveauLabel = lvl ? lvl.label : (row.niveau || '')
+      row.className = [niveauLabel, row.section].filter(Boolean).join(' ').trim()
+    }
+    if (!row.className) errors.push('niveau') // ni niveau ni classe : on ne sait pas où ranger l'élève
+    const niveauOnly = !!row.niveau && !row.section // niveau seul (avant la rentrée) : pas de classe à recaler
+    // Anti-typo : si des classes existent ET qu'une section précise est donnée,
+    // la classe doit correspondre à une classe réelle (faute mineure recalée).
+    if (row.className && classesStore.classes.length && !niveauOnly) {
       const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
       const match = classesStore.classes.find(c => norm(c.name) === norm(row.className))
       if (match) row.className = match.name
@@ -608,6 +620,13 @@ function validateRow(row, mod) {
     // Série / section : libre (définie par l'école). Normalisation de casse seule.
     if (row.serie) row.serie = String(row.serie).toUpperCase().trim()
     if (row.capacity) row.capacity = parseInt(row.capacity, 10) || 60
+    // Le nom de la classe = Niveau + Section (« 6ème A »). Plus besoin de le
+    // saisir : on le dérive si absent (rétro-compat s'il est fourni directement).
+    if (!row.name) {
+      const lvl = [...LEVELS, ...LEVELS_PRIMAIRE].find(l => l.value === row.level)
+      const niveauLabel = lvl ? lvl.label : (row.level || '')
+      row.name = [niveauLabel, row.serie].filter(Boolean).join(' ').trim()
+    }
   }
 
   row._errors = errors
@@ -807,6 +826,8 @@ async function executeImport() {
         // Clean row (remove internal fields)
         const data = { ...row }
         delete data._errors
+        delete data.niveau   // intermédiaires : la classe finale est dans className
+        delete data.section
         data.status = data.status || 'inscrit'
         if (!data.matricule) data.matricule = elevesStore.generateNextMatricule()
 
