@@ -296,12 +296,12 @@
         <div class="card" style="margin-bottom:16px;">
           <div class="toolbar">
             <div class="field" style="margin-bottom:0; min-width:280px;">
-              <label>Élève</label>
+              <label>{{ t('notes.studentLabel') }}</label>
               <select v-model="selectedEleve" class="input">
-                <option value="">Sélectionnez un élève</option>
+                <option value="">{{ t('notes.selectStudent') }}</option>
                 <option v-for="e in classEleves" :key="e.id" :value="e.id">
                   {{ e.lastName }} {{ e.firstName }}
-                  {{ notesStore.isBulletinSigned(selectedClass, selectedPeriod, e.id) ? ' -- Signé' : '' }}
+                  {{ notesStore.isBulletinSigned(selectedClass, selectedPeriod, e.id) ? t('notes.signedSuffix') : '' }}
                 </option>
               </select>
             </div>
@@ -309,26 +309,26 @@
             <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
               <template v-if="isDirecteur && selectedTrimester !== 'annual'">
                 <div class="ai-ton">
-                  <span class="ai-ton-label">Ton</span>
+                  <span class="ai-ton-label">{{ t('notes.tone') }}</span>
                   <select v-model="appreciationTon" class="input ai-ton-select">
-                    <option value="bienveillant">Bienveillant</option>
-                    <option value="neutre">Neutre</option>
-                    <option value="exigeant">Exigeant</option>
+                    <option value="bienveillant">{{ t('notes.toneKind') }}</option>
+                    <option value="neutre">{{ t('notes.toneNeutral') }}</option>
+                    <option value="exigeant">{{ t('notes.toneDemanding') }}</option>
                   </select>
                 </div>
                 <button class="btn btn-ai btn-sm" @click="openBatchModal" :disabled="batch.running || !classEleves.length">
                   <Loader2 v-if="batch.running" :size="14" class="ai-spin" />
                   <Sparkles v-else :size="14" />
-                  {{ batch.running ? `IA ${batch.done}/${batch.total}…` : 'Appréciations IA — classe' }}
+                  {{ batch.running ? t('notes.aiProgress', { done: batch.done, total: batch.total }) : t('notes.aiClassAppr') }}
                 </button>
               </template>
               <button v-if="selectedEleve && notesStore.isBulletinSigned(selectedClass, selectedPeriod, selectedEleve)" class="btn btn-outline btn-sm" disabled style="color: var(--success);">
                 <ShieldCheck :size="14" />
-                Bulletin signé
+                {{ t('notes.bulletinSigned') }}
               </button>
               <button v-if="selectedEleve" class="btn btn-outline btn-sm" @click="printBulletin">
                 <Printer :size="16" />
-                <span>Imprimer</span>
+                <span>{{ t('notes.print') }}</span>
               </button>
             </div>
           </div>
@@ -339,7 +339,7 @@
           <div style="padding:14px 16px;">
             <div v-if="batch.running">
               <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px; color:var(--text);">
-                <span>Génération des appréciations… <strong>{{ batch.current }}</strong></span>
+                <span>{{ t('notes.generating', { current: batch.current }) }}</span>
                 <span>{{ batch.done }} / {{ batch.total }}</span>
               </div>
               <div class="batch-bar"><div class="batch-bar-fill" :style="{ width: (batch.total ? Math.round(batch.done / batch.total * 100) : 0) + '%' }"></div></div>
@@ -351,30 +351,29 @@
         <!-- Modal de confirmation génération en lot -->
         <div v-if="showBatchModal" class="batch-overlay" @click.self="showBatchModal = false">
           <div class="batch-modal">
-            <h3 class="batch-modal-title">Générer les appréciations de la classe</h3>
+            <h3 class="batch-modal-title">{{ t('notes.batchTitle') }}</h3>
             <p class="batch-modal-text">
-              L'IA va rédiger une observation du conseil pour <strong>{{ batchTargets.length }}</strong>
-              élève(s) de {{ selectedClassObj?.name }} ({{ currentPeriodLabel }}), ton « {{ appreciationTon }} ».
+              {{ t('notes.batchText', { n: batchTargets.length, className: selectedClassObj?.name, period: t('notes.periods.' + selectedPeriod), tone: toneLabel(appreciationTon) }) }}
             </p>
             <label class="batch-check">
               <input type="checkbox" v-model="batchSkipExisting" />
-              Ignorer les élèves ayant déjà une observation
+              {{ t('notes.batchSkipExisting') }}
             </label>
             <p class="batch-modal-note">
-              Chaque texte reste modifiable bulletin par bulletin. Si l'IA est indisponible, une version locale est générée automatiquement.
+              {{ t('notes.batchNote') }}
             </p>
             <div class="batch-modal-actions">
-              <button class="btn btn-outline btn-sm" @click="showBatchModal = false">Annuler</button>
+              <button class="btn btn-outline btn-sm" @click="showBatchModal = false">{{ t('notes.cancel') }}</button>
               <button class="btn btn-ai btn-sm" :disabled="!batchTargets.length" @click="runBatch">
                 <Sparkles :size="14" />
-                Générer ({{ batchTargets.length }})
+                {{ t('notes.batchGenerate', { n: batchTargets.length }) }}
               </button>
             </div>
           </div>
         </div>
 
         <div v-if="!selectedEleve" class="card empty-state-card">
-          <p style="color:var(--muted);">Sélectionnez un élève pour voir son bulletin.</p>
+          <p style="color:var(--muted);">{{ t('notes.selectStudentToView') }}</p>
         </div>
 
         <!-- Bulletin card -->
@@ -382,50 +381,50 @@
           <div class="bulletin-card card" id="bulletin-print">
             <div class="bulletin-header">
               <div class="bulletin-school">
-                <strong>{{ schoolStore.schoolSettings?.schoolName || 'Établissement' }}</strong>
+                <strong>{{ schoolStore.schoolSettings?.schoolName || t('notes.docSchoolFallback') }}</strong>
                 <span v-if="schoolStore.schoolSettings?.address || schoolStore.schoolSettings?.city">{{ [schoolStore.schoolSettings.address, schoolStore.schoolSettings.city].filter(Boolean).join(', ') }}</span>
-                <span v-if="schoolStore.schoolSettings?.phone">Tel: {{ schoolStore.schoolSettings.phone }}</span>
+                <span v-if="schoolStore.schoolSettings?.phone">{{ t('notes.docTel') }} {{ schoolStore.schoolSettings.phone }}</span>
                 <span v-if="schoolStore.schoolSettings?.email">{{ schoolStore.schoolSettings.email }}</span>
-                <span class="bulletin-year">Année scolaire {{ schoolStore.schoolSettings?.academicYear || new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) }}</span>
+                <span class="bulletin-year">{{ t('notes.docYear', { year: schoolStore.schoolSettings?.academicYear || new Date().getFullYear() + '-' + (new Date().getFullYear() + 1) }) }}</span>
               </div>
               <div class="bulletin-title">
-                <h2>BULLETIN DE NOTES</h2>
-                <span>{{ currentPeriodLabel }}</span>
+                <h2>{{ t('notes.docTitle') }}</h2>
+                <span>{{ t('notes.periods.' + selectedPeriod) }}</span>
               </div>
             </div>
 
             <div class="bulletin-student-info">
-              <div><strong>Nom :</strong> {{ selectedEleveObj?.lastName }} {{ selectedEleveObj?.firstName }}</div>
-              <div><strong>Classe :</strong> {{ selectedClassName }}</div>
-              <div><strong>Matricule :</strong> {{ selectedEleveObj?.matricule || '-' }}</div>
-              <div><strong>Effectif :</strong> {{ classEleves.length }} élèves</div>
+              <div><strong>{{ t('notes.docName') }}</strong> {{ selectedEleveObj?.lastName }} {{ selectedEleveObj?.firstName }}</div>
+              <div><strong>{{ t('notes.docClass') }}</strong> {{ selectedClassName }}</div>
+              <div><strong>{{ t('notes.docId') }}</strong> {{ selectedEleveObj?.matricule || '-' }}</div>
+              <div><strong>{{ t('notes.docHeadcount') }}</strong> {{ classEleves.length }} {{ t('notes.docStudents') }}</div>
             </div>
 
             <table class="bulletin-table">
               <thead>
                 <tr>
-                  <th>Matière</th>
-                  <th>Coeff.</th>
+                  <th>{{ t('notes.docSubject') }}</th>
+                  <th>{{ t('notes.docCoeff') }}</th>
                   <!-- Sequence: single note column -->
                   <template v-if="selectedPeriod.startsWith('S')">
-                    <th>Note /20</th>
+                    <th>{{ t('notes.docNote20') }}</th>
                   </template>
                   <!-- Trimester -->
                   <template v-else-if="selectedTrimester !== 'annual' && isSingleEval">
-                    <th>Note</th>
+                    <th>{{ t('notes.docNote') }}</th>
                   </template>
                   <template v-else-if="selectedTrimester !== 'annual'">
-                    <th>Seq. {{ seqNumbers[0] }}</th>
-                    <th>Seq. {{ seqNumbers[1] }}</th>
-                    <th>Moy. Trim.</th>
+                    <th>{{ t('notes.docSeq', { n: seqNumbers[0] }) }}</th>
+                    <th>{{ t('notes.docSeq', { n: seqNumbers[1] }) }}</th>
+                    <th>{{ t('notes.docTermAvg') }}</th>
                   </template>
                   <!-- Annual -->
                   <th v-if="selectedTrimester === 'annual'">T1</th>
                   <th v-if="selectedTrimester === 'annual'">T2</th>
                   <th v-if="selectedTrimester === 'annual'">T3</th>
-                  <th v-if="selectedTrimester === 'annual'">Moy. Ann.</th>
-                  <th>Moy. Classe</th>
-                  <th>{{ isApc ? 'Palier (APC)' : 'Appréciation' }}</th>
+                  <th v-if="selectedTrimester === 'annual'">{{ t('notes.docAnnualAvg') }}</th>
+                  <th>{{ t('notes.docClassAvg') }}</th>
+                  <th>{{ isApc ? t('notes.docPalier') : t('notes.docAppreciation') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -467,7 +466,7 @@
               </tbody>
               <tfoot>
                 <tr class="bulletin-total-row">
-                  <td colspan="2"><strong>MOYENNE GÉNÉRALE</strong></td>
+                  <td colspan="2"><strong>{{ t('notes.docOverall') }}</strong></td>
                   <td v-if="selectedPeriod.startsWith('S')" class="bulletin-avg" :class="{ 'note-cell-fail': bulletinGeneralAvg !== null && bulletinGeneralAvg < 10, 'note-cell-success': bulletinGeneralAvg >= 10 }">
                     <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / 20</strong>
                   </td>
@@ -494,19 +493,19 @@
 
             <div class="bulletin-footer">
               <div class="bulletin-summary">
-                <div><strong>Rang :</strong> {{ bulletinRank || '-' }} / {{ classEleves.length }}</div>
-                <div><strong>Mention :</strong> {{ bulletinMention || 'Aucune' }}</div>
-                <div v-if="bulletinCustomMention" class="custom-mention"><strong>Observation du conseil :</strong> {{ bulletinCustomMention }}</div>
-                <div v-if="selectedTrimester === 'annual'"><strong>Décision :</strong> {{ bulletinDecision }}</div>
+                <div><strong>{{ t('notes.docRank') }}</strong> {{ bulletinRank || '-' }} / {{ classEleves.length }}</div>
+                <div><strong>{{ t('notes.docMention') }}</strong> {{ bulletinMention || t('notes.docMentionNone') }}</div>
+                <div v-if="bulletinCustomMention" class="custom-mention"><strong>{{ t('notes.docBoardComment') }}</strong> {{ bulletinCustomMention }}</div>
+                <div v-if="selectedTrimester === 'annual'"><strong>{{ t('notes.docDecision') }}</strong> {{ bulletinDecision }}</div>
               </div>
               <div class="bulletin-signatures">
                 <div class="signature-block">
-                  <p>Le Directeur</p>
+                  <p>{{ t('notes.docDirector') }}</p>
                   <template v-if="selectedEleve && notesStore.isBulletinSigned(selectedClass, selectedPeriod, selectedEleve)">
                     <img v-if="schoolStore.schoolSettings?.directorSignature" :src="schoolStore.schoolSettings.directorSignature" alt="Signature" class="signature-image" />
                     <div class="signature-validated signature-validated-dir">
                       <ShieldCheck :size="14" />
-                      <span>Signé</span>
+                      <span>{{ t('notes.docSigned') }}</span>
                     </div>
                     <span class="signature-name">{{ notesStore.getBulletinSignature(selectedClass, selectedPeriod, selectedEleve).signedBy }}</span>
                     <span class="signature-date">{{ formatDate(notesStore.getBulletinSignature(selectedClass, selectedPeriod, selectedEleve).signedAt) }}</span>
@@ -522,7 +521,7 @@
             <div style="padding: 16px;">
               <div style="margin-bottom: 16px;">
                 <label style="display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px;">
-                  Observation du conseil de classe
+                  {{ t('notes.boardCommentLabel') }}
                 </label>
 
                 <!-- Génération assistée par IA -->
@@ -535,14 +534,14 @@
                   >
                     <Loader2 v-if="appreciationsStore.generating" :size="14" class="ai-spin" />
                     <Sparkles v-else :size="14" />
-                    {{ appreciationsStore.generating ? 'Génération…' : 'Générer avec l\'IA' }}
+                    {{ appreciationsStore.generating ? t('notes.generatingAI') : t('notes.generateAI') }}
                   </button>
                   <div class="ai-ton">
-                    <span class="ai-ton-label">Ton</span>
+                    <span class="ai-ton-label">{{ t('notes.tone') }}</span>
                     <select v-model="appreciationTon" class="input ai-ton-select">
-                      <option value="bienveillant">Bienveillant</option>
-                      <option value="neutre">Neutre</option>
-                      <option value="exigeant">Exigeant</option>
+                      <option value="bienveillant">{{ t('notes.toneKind') }}</option>
+                      <option value="neutre">{{ t('notes.toneNeutral') }}</option>
+                      <option value="exigeant">{{ t('notes.toneDemanding') }}</option>
                     </select>
                   </div>
                 </div>
@@ -554,12 +553,12 @@
                     style="flex:1; min-height:42px; resize:vertical; font-size:13px;"
                     :value="editingCustomMention"
                     @input="editingCustomMention = $event.target.value"
-                    placeholder="Ex: Élève sérieux, doit fournir plus d'efforts en mathématiques..."
+                    :placeholder="t('notes.commentPlaceholder')"
                     rows="3"
                   ></textarea>
                   <button class="btn btn-outline btn-sm" style="white-space:nowrap;" @click="saveCustomMention" :disabled="editingCustomMention === bulletinCustomMention">
                     <Save :size="14" />
-                    Enregistrer
+                    {{ t('notes.save') }}
                   </button>
                 </div>
               </div>
@@ -571,11 +570,11 @@
                 @click="signSingleBulletin"
               >
                 <ShieldCheck :size="20" />
-                Signer ce bulletin
+                {{ t('notes.signBulletin') }}
               </button>
               <div v-else style="text-align: center; padding: 8px; color: var(--success); font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 8px;">
                 <ShieldCheck :size="18" />
-                Bulletin signé par {{ notesStore.getBulletinSignature(selectedClass, selectedPeriod, selectedEleve).signedBy }}
+                {{ t('notes.signedBy', { name: notesStore.getBulletinSignature(selectedClass, selectedPeriod, selectedEleve).signedBy }) }}
               </div>
             </div>
           </div>
@@ -584,11 +583,11 @@
           <div class="bulletin-nav" style="margin-top: 16px;">
             <button class="btn btn-outline" :disabled="!prevEleveId" @click="selectedEleve = prevEleveId">
               <ChevronLeft :size="16" />
-              Retour
+              {{ t('notes.back') }}
             </button>
             <span class="bulletin-nav-info">{{ currentEleveIndex + 1 }} / {{ classEleves.length }}</span>
             <button class="btn btn-outline" :disabled="!nextEleveId" @click="selectedEleve = nextEleveId">
-              Suivant
+              {{ t('notes.next') }}
               <ChevronRight :size="16" />
             </button>
           </div>
@@ -979,6 +978,12 @@ function exportNotes() {
 const selectedClassObj = computed(() => classesStore.classes.find(c => c.id === selectedClass.value))
 const selectedClassName = computed(() => selectedClassObj.value?.name || '')
 const currentTrimester = computed(() => TRIMESTERS.find(tr => tr.value === selectedTrimester.value))
+
+function toneLabel(v) {
+  if (v === 'bienveillant') return t('notes.toneKind')
+  if (v === 'exigeant') return t('notes.toneDemanding')
+  return t('notes.toneNeutral')
+}
 
 const isSingleEval = computed(() => schoolStore.schoolSettings?.evaluationType === '1_evaluation')
 
