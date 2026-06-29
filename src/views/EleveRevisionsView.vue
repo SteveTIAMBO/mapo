@@ -2,13 +2,13 @@
   <div class="eleve-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Révisions</h1>
-        <p>Ton tuteur personnel : entraîne-toi, progresse à ton rythme.</p>
+        <h1>{{ t('eleve.rev.title') }}</h1>
+        <p>{{ t('eleve.rev.subtitle') }}</p>
       </div>
     </div>
 
     <div v-if="!myRecord" class="card empty-state" style="padding: 48px 24px;">
-      <p>Compte non lié à un dossier élève.</p>
+      <p>{{ t('eleve.noStudentRecord') }}</p>
     </div>
 
     <!-- ============ ACCUEIL ============ -->
@@ -17,10 +17,10 @@
       <div class="card priority-card">
         <div class="card-head">
           <Target :size="20" />
-          <h3>À réviser en priorité</h3>
+          <h3>{{ t('eleve.rev.priority') }}</h3>
         </div>
         <p v-if="prioritySubjects.length === 0" class="muted-line">
-          Aucune difficulté détectée pour l’instant. Choisis une matière ci-dessous pour t’entraîner.
+          {{ t('eleve.rev.noPriority') }}
         </p>
         <div v-else class="priority-list">
           <button v-for="p in prioritySubjects" :key="p.subjectId" class="priority-item" @click="startQuiz(p.subjectId)">
@@ -40,7 +40,7 @@
       <div class="card">
         <div class="card-head">
           <BookOpen :size="20" />
-          <h3>Choisir une matière</h3>
+          <h3>{{ t('eleve.rev.chooseSubject') }}</h3>
         </div>
         <div class="subject-grid">
           <button v-for="s in allSubjects" :key="s.id" class="subject-chip" @click="startQuiz(s.id)">
@@ -51,7 +51,7 @@
           </button>
         </div>
         <p class="hint-foot">
-          <Sparkles :size="13" /> Le quiz est généré par l’IA selon ta classe ({{ myRecord.className }}) — adapté à ton niveau.
+          <Sparkles :size="13" /> {{ t('eleve.rev.aiHint', { cls: myRecord.className }) }}
         </p>
       </div>
     </template>
@@ -59,8 +59,8 @@
     <!-- ============ CHARGEMENT ============ -->
     <div v-else-if="mode === 'loading'" class="card loading-card">
       <Loader2 :size="40" class="spin" />
-      <p>Ton tuteur prépare un quiz de <strong>{{ currentSubjectName }}</strong>…</p>
-      <small>Quelques secondes</small>
+      <p>{{ t('eleve.rev.preparing', { subject: currentSubjectName }) }}</p>
+      <small>{{ t('eleve.rev.fewSeconds') }}</small>
     </div>
 
     <!-- ============ QUIZ ============ -->
@@ -69,10 +69,10 @@
         <div class="quiz-top">
           <div class="quiz-meta">
             <span class="quiz-subject">{{ currentSubjectName }}</span>
-            <span class="quiz-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
+            <span class="quiz-counter">{{ t('eleve.rev.counter', { n: index + 1, total: questions.length }) }}</span>
           </div>
           <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
-            <Sparkles :size="12" /> {{ lastMode === 'ia' ? 'IA' : 'Démo' }}
+            <Sparkles :size="12" /> {{ lastMode === 'ia' ? t('eleve.rev.ai') : t('eleve.rev.demo') }}
           </span>
         </div>
         <div class="progress-track"><div class="progress-fill" :style="{ width: ((index) / questions.length * 100) + '%' }"></div></div>
@@ -98,8 +98,8 @@
         <div v-if="phase === 'hinted'" class="feedback hint-box">
           <Lightbulb :size="18" />
           <div>
-            <strong>Indice</strong>
-            <p>{{ current.hint || 'Relis bien la question et élimine les réponses impossibles.' }}</p>
+            <strong>{{ t('eleve.rev.hint') }}</strong>
+            <p>{{ current.hint || t('eleve.rev.hintFallback') }}</p>
           </div>
         </div>
 
@@ -107,17 +107,17 @@
         <div v-if="revealed" class="feedback" :class="firstTry ? 'ok-box' : 'expl-box'">
           <component :is="firstTry ? Check : BookOpen" :size="18" />
           <div>
-            <strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
-            <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p>
+            <strong>{{ firstTry ? t('eleve.rev.correctTitle') : t('eleve.rev.toRemember') }}</strong>
+            <p>{{ current.explanation || t('eleve.rev.answerIs', { answer: current.choices[current.answer] }) }}</p>
           </div>
         </div>
 
         <div class="quiz-actions">
           <button v-if="revealed" class="btn-primary" @click="next">
-            <span>{{ index + 1 < questions.length ? 'Question suivante' : 'Voir mon résultat' }}</span>
+            <span>{{ index + 1 < questions.length ? t('eleve.rev.nextQuestion') : t('eleve.rev.seeResult') }}</span>
             <ChevronRight :size="18" />
           </button>
-          <button class="btn-ghost" @click="quit">Quitter</button>
+          <button class="btn-ghost" @click="quit">{{ t('eleve.rev.quit') }}</button>
         </div>
       </div>
     </template>
@@ -129,18 +129,18 @@
           <span class="result-score">{{ scorePercent }}%</span>
         </div>
         <h2>{{ resultTitle }}</h2>
-        <p class="result-sub">{{ correctCount }} bonne(s) réponse(s) sur {{ questions.length }} — {{ currentSubjectName }}</p>
+        <p class="result-sub">{{ t('eleve.rev.resultSub', { n: correctCount, total: questions.length, subject: currentSubjectName }) }}</p>
 
         <div class="next-review">
           <CalendarClock :size="16" />
-          <span>Prochaine révision conseillée : <strong>{{ nextReviewLabel }}</strong></span>
+          <span>{{ t('eleve.rev.nextReviewPrefix') }} <strong>{{ nextReviewLabel }}</strong></span>
         </div>
 
         <div class="result-actions">
           <button class="btn-primary" @click="startQuiz(currentSubjectId)">
-            <RefreshCw :size="16" /><span>Refaire un quiz</span>
+            <RefreshCw :size="16" /><span>{{ t('eleve.rev.retake') }}</span>
           </button>
-          <button class="btn-ghost" @click="goHome">Retour</button>
+          <button class="btn-ghost" @click="goHome">{{ t('eleve.rev.back') }}</button>
         </div>
       </div>
     </template>
@@ -149,6 +149,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useNotesStore } from '../stores/notes'
@@ -168,6 +169,7 @@ const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const tuteur = useTuteurStore()
+const { t } = useI18n({ useScope: 'global' })
 
 const letters = ['A', 'B', 'C', 'D']
 const mode = ref('home') // home | loading | quiz | result
@@ -190,8 +192,8 @@ const allSubjects = computed(() =>
 function bestAvgForSubject(subjId) {
   if (!myClass.value) return null
   let last = null
-  for (const t of ['T1', 'T2', 'T3']) {
-    const a = notesStore.getSubjectTrimesterAvg?.(myClass.value.id, subjId, t, myRecord.value.id)
+  for (const tr of ['T1', 'T2', 'T3']) {
+    const a = notesStore.getSubjectTrimesterAvg?.(myClass.value.id, subjId, tr, myRecord.value.id)
     if (a !== null && a !== undefined) last = a
   }
   return last
@@ -206,7 +208,7 @@ const prioritySubjects = computed(() => {
   for (const s of allSubjects.value) {
     const avg = bestAvgForSubject(s.id)
     if (avg !== null && avg < 12) {
-      out.push({ subjectId: s.id, subjectName: s.name, avg, reason: avg < 10 ? 'Note insuffisante, à travailler' : 'Résultat fragile à consolider' })
+      out.push({ subjectId: s.id, subjectName: s.name, avg, reason: avg < 10 ? t('eleve.rev.reasonInsufficient') : t('eleve.rev.reasonFragile') })
       seen.add(s.id)
     }
   }
@@ -214,7 +216,7 @@ const prioritySubjects = computed(() => {
   for (const d of tuteur.getDueSubjects(myRecord.value.id)) {
     if (seen.has(d.subjectId)) continue
     const s = allSubjects.value.find(x => x.id === d.subjectId)
-    out.push({ subjectId: d.subjectId, subjectName: d.name || s?.name || 'Matière', avg: bestAvgForSubject(d.subjectId), reason: 'Il est temps de revoir' })
+    out.push({ subjectId: d.subjectId, subjectName: d.name || s?.name || t('eleve.subjectFallback'), avg: bestAvgForSubject(d.subjectId), reason: t('eleve.rev.reasonTimeToReview') })
     seen.add(d.subjectId)
   }
   out.sort((a, b) => (a.avg ?? 99) - (b.avg ?? 99))
@@ -235,7 +237,7 @@ function masteryStyle(m) {
 const questions = ref([])
 const index = ref(0)
 const currentSubjectId = ref('')
-const currentSubjectName = computed(() => allSubjects.value.find(s => s.id === currentSubjectId.value)?.name || 'révision')
+const currentSubjectName = computed(() => allSubjects.value.find(s => s.id === currentSubjectId.value)?.name || t('eleve.rev.subjectFallback'))
 const lastMode = computed(() => tuteur.lastMode)
 
 const phase = ref('answering') // answering | hinted | revealed
@@ -326,14 +328,14 @@ function finish() {
 
 const resultTitle = computed(() => {
   const s = scorePercent.value
-  if (s >= 80) return 'Excellent travail !'
-  if (s >= 50) return 'Bien joué, continue !'
-  return 'Courage, on progresse en s’entraînant'
+  if (s >= 80) return t('eleve.rev.resultExcellent')
+  if (s >= 50) return t('eleve.rev.resultGood')
+  return t('eleve.rev.resultEncourage')
 })
 const nextReviewLabel = computed(() => {
-  if (!nextReviewState.value?.due) return 'bientôt'
+  if (!nextReviewState.value?.due) return t('eleve.rev.soon')
   const days = Math.max(1, Math.round((new Date(nextReviewState.value.due).getTime() - Date.now()) / (24 * 3600 * 1000)))
-  return days <= 1 ? 'demain' : `dans ${days} jours`
+  return days <= 1 ? t('eleve.rev.tomorrow') : t('eleve.rev.inDays', { n: days })
 })
 const ringStyle = computed(() => {
   const s = scorePercent.value
