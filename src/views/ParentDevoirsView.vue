@@ -3,9 +3,9 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Devoirs</h1>
-        <p v-if="selectedChild">Consultez les devoirs de {{ selectedChild.firstName }} {{ selectedChild.lastName }}</p>
-        <p v-else>Aucun enfant lie a votre compte</p>
+        <h1>{{ t('parent.modDevoirs') }}</h1>
+        <p v-if="selectedChild">{{ t('parent.dev.subtitle', { name: selectedChild.firstName + ' ' + selectedChild.lastName }) }}</p>
+        <p v-else>{{ t('parent.noChildTitle') }}</p>
       </div>
     </div>
 
@@ -21,15 +21,15 @@
     <div class="stat-compact" v-if="selectedChild">
       <div class="stat-compact-item">
         <div class="stat-compact-value">{{ devoirsEnCours }}</div>
-        <div class="stat-compact-label">En cours</div>
+        <div class="stat-compact-label">{{ t('parent.dev.inProgress') }}</div>
       </div>
       <div class="stat-compact-item">
         <div class="stat-compact-value">{{ devoirsRendus }}</div>
-        <div class="stat-compact-label">Rendus</div>
+        <div class="stat-compact-label">{{ t('parent.dev.submitted') }}</div>
       </div>
       <div class="stat-compact-item">
         <div class="stat-compact-value">{{ devoirsEnRetard }}</div>
-        <div class="stat-compact-label">En retard</div>
+        <div class="stat-compact-label">{{ t('parent.dev.overdue') }}</div>
       </div>
     </div>
 
@@ -37,18 +37,18 @@
     <div class="filter-section" v-if="selectedChild">
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
         <div style="flex: 1; min-width: 140px;">
-          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 6px;">Statut</label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 6px;">{{ t('parent.status') }}</label>
           <select v-model="selectedStatus" class="input">
-            <option value="tous">Tous</option>
-            <option value="a-rendre">A rendre</option>
-            <option value="rendus">Rendus</option>
-            <option value="notes">Notes</option>
+            <option value="tous">{{ t('parent.dev.all') }}</option>
+            <option value="a-rendre">{{ t('parent.dev.toSubmit') }}</option>
+            <option value="rendus">{{ t('parent.dev.submitted') }}</option>
+            <option value="notes">{{ t('parent.dev.grades') }}</option>
           </select>
         </div>
         <div style="flex: 1; min-width: 140px;">
-          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 6px;">Matiere</label>
+          <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 6px;">{{ t('parent.dev.subject') }}</label>
           <select v-model="selectedMatiere" class="input">
-            <option value="">Toutes les matieres</option>
+            <option value="">{{ t('parent.dev.allSubjects') }}</option>
             <option v-for="mat in matieres" :key="mat" :value="mat">{{ mat }}</option>
           </select>
         </div>
@@ -58,7 +58,7 @@
     <!-- Empty State -->
     <div v-if="selectedChild && filteredDevoirs.length === 0" class="card empty-state" style="padding: 48px 24px;">
       <BookOpen :size="48" style="color: var(--tx3); margin-bottom: 12px;" />
-      <p>Aucun devoir ne correspond a vos filtres</p>
+      <p>{{ t('parent.dev.noMatch') }}</p>
     </div>
 
     <!-- Devoirs List -->
@@ -70,7 +70,7 @@
             {{ devoir.subjectName }}
           </span>
           <span class="type-badge">{{ getTypeLabel(devoir.type) }}</span>
-          <span v-if="devoir.isDigital" class="type-badge" style="background: rgba(59,130,246,0.1); color: #3B82F6;">Numerique</span>
+          <span v-if="devoir.isDigital" class="type-badge" style="background: rgba(59,130,246,0.1); color: #3B82F6;">{{ t('parent.dev.digital') }}</span>
         </div>
 
         <!-- Title -->
@@ -97,20 +97,20 @@
             <!-- Submission status -->
             <div v-if="isDevoirSubmitted(devoir)" style="display: flex; align-items: center; gap: 4px; color: var(--success); font-size: 13px;">
               <Check :size="16" />
-              Rendu
+              {{ t('parent.dev.submittedShort') }}
             </div>
 
             <!-- Details -->
             <button class="btn" style="padding: 6px 12px; font-size: 13px; gap: 4px;" @click="showDetails(devoir)">
               <Eye :size="16" />
-              Details
+              {{ t('parent.dev.details') }}
             </button>
           </div>
         </div>
 
         <!-- Feedback if graded -->
         <div v-if="getDevoirFeedback(devoir)" class="feedback-box">
-          <strong style="color: var(--tx1);">Retour :</strong><br>
+          <strong style="color: var(--tx1);">{{ t('parent.dev.feedback') }}</strong><br>
           {{ getDevoirFeedback(devoir) }}
         </div>
 
@@ -122,7 +122,7 @@
           @click="openSubmitModal(devoir)"
         >
           <Send :size="16" />
-          Soumettre le devoir
+          {{ t('parent.dev.submit') }}
         </button>
       </div>
     </div>
@@ -131,7 +131,7 @@
     <div v-if="submitModalOpen" class="modal-backdrop" @click.self="submitModalOpen = false">
       <div class="modal" style="max-width: 540px;">
         <div class="modal-header">
-          <h3>Soumettre le devoir</h3>
+          <h3>{{ t('parent.dev.submit') }}</h3>
           <button class="btn-icon" @click="submitModalOpen = false"><X :size="20" /></button>
         </div>
         <div class="modal-body">
@@ -141,20 +141,20 @@
           </div>
 
           <div class="field">
-            <label>Votre reponse</label>
-            <textarea v-model="submitContent" rows="8" class="input" placeholder="Ecrivez votre reponse ici..." style="resize: vertical;"></textarea>
+            <label>{{ t('parent.dev.yourAnswer') }}</label>
+            <textarea v-model="submitContent" rows="8" class="input" :placeholder="t('parent.dev.yourAnswerPh')" style="resize: vertical;"></textarea>
           </div>
 
           <div class="field">
-            <label>Nom du fichier joint (optionnel)</label>
-            <input v-model="submitAttachmentName" type="text" class="input" placeholder="Ex: mon_travail.pdf" />
+            <label>{{ t('parent.dev.attachName') }}</label>
+            <input v-model="submitAttachmentName" type="text" class="input" :placeholder="t('parent.dev.attachNamePh')" />
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" @click="submitModalOpen = false">Annuler</button>
+          <button class="btn" @click="submitModalOpen = false">{{ t('parent.cancel') }}</button>
           <button class="btn btn-primary" @click="doSubmit">
             <Send :size="16" />
-            Envoyer
+            {{ t('parent.send') }}
           </button>
         </div>
       </div>
@@ -164,7 +164,7 @@
     <div v-if="detailsModalOpen" class="modal-backdrop" @click.self="detailsModalOpen = false">
       <div class="modal" style="max-width: 540px;">
         <div class="modal-header">
-          <h3>Details du devoir</h3>
+          <h3>{{ t('parent.dev.detailsTitle') }}</h3>
           <button class="btn-icon" @click="detailsModalOpen = false"><X :size="20" /></button>
         </div>
         <div class="modal-body" v-if="currentDetailsDevoir">
@@ -179,8 +179,8 @@
 
           <div style="font-size: 13px; color: var(--tx2); margin-bottom: 16px; display: flex; align-items: center; gap: 6px;">
             <Clock :size="16" />
-            A rendre le {{ formatDate(currentDetailsDevoir.dueDate) }}
-            <span v-if="isDevoirOverdue(currentDetailsDevoir) && !isDevoirSubmitted(currentDetailsDevoir)" style="color: var(--danger); font-weight: 600; margin-left: 8px;">(En retard)</span>
+            {{ t('parent.dev.dueOn', { date: formatDate(currentDetailsDevoir.dueDate) }) }}
+            <span v-if="isDevoirOverdue(currentDetailsDevoir) && !isDevoirSubmitted(currentDetailsDevoir)" style="color: var(--danger); font-weight: 600; margin-left: 8px;">{{ t('parent.dev.overdueParen') }}</span>
           </div>
 
           <div style="background: var(--bg2); padding: 12px; border-radius: 6px; margin-bottom: 16px; line-height: 1.6; white-space: pre-line;">{{ currentDetailsDevoir.description }}</div>
@@ -189,10 +189,10 @@
           <div v-if="isDevoirSubmitted(currentDetailsDevoir)" style="background: rgba(52,168,83,0.05); border: 1px solid rgba(52,168,83,0.2); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
             <div style="font-weight: 600; color: var(--success); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
               <Check :size="16" />
-              Devoir rendu
+              {{ t('parent.dev.submittedBox') }}
             </div>
             <div style="font-size: 13px; color: var(--tx2);">
-              Soumis le {{ formatDate(getDevoirSubmission(currentDetailsDevoir)?.submittedAt) }}
+              {{ t('parent.dev.submittedOn', { date: formatDate(getDevoirSubmission(currentDetailsDevoir)?.submittedAt) }) }}
               <div v-if="getDevoirSubmission(currentDetailsDevoir)?.attachmentName" style="margin-top: 6px;">
                 <FileText :size="16" style="vertical-align: -3px; margin-right: 4px;" />
                 {{ getDevoirSubmission(currentDetailsDevoir).attachmentName }}
@@ -206,19 +206,19 @@
           <!-- Grade and feedback -->
           <div v-if="getDevoirGrade(currentDetailsDevoir) !== null">
             <div style="margin-bottom: 12px;">
-              <div style="font-size: 13px; font-weight: 600; color: var(--tx1); margin-bottom: 6px;">Note</div>
+              <div style="font-size: 13px; font-weight: 600; color: var(--tx1); margin-bottom: 6px;">{{ t('parent.dev.note') }}</div>
               <div class="grade-display" :class="getDevoirGrade(currentDetailsDevoir) >= 10 ? 'grade-good' : 'grade-bad'">
                 {{ getDevoirGrade(currentDetailsDevoir) }}/20
               </div>
             </div>
             <div v-if="getDevoirFeedback(currentDetailsDevoir)" style="margin-bottom: 16px;">
-              <div style="font-size: 13px; font-weight: 600; color: var(--tx1); margin-bottom: 6px;">Retour du professeur</div>
+              <div style="font-size: 13px; font-weight: 600; color: var(--tx1); margin-bottom: 6px;">{{ t('parent.dev.teacherFeedback') }}</div>
               <div class="feedback-box">{{ getDevoirFeedback(currentDetailsDevoir) }}</div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn" @click="detailsModalOpen = false" style="width: 100%;">Fermer</button>
+          <button class="btn" @click="detailsModalOpen = false" style="width: 100%;">{{ t('parent.dev.close') }}</button>
         </div>
       </div>
     </div>
@@ -227,6 +227,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
@@ -234,6 +235,7 @@ import { useDevoirsStore, DEVOIR_TYPES } from '../stores/devoirs'
 import { useClassesStore } from '../stores/classes'
 import { BookOpen, Clock, Check, Send, FileText, Eye, X } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const devoirsStore = useDevoirsStore()
@@ -298,15 +300,15 @@ function isDevoirOverdue(devoir) {
 }
 
 function getDueText(devoir) {
-  if (isDevoirSubmitted(devoir)) return 'Rendu'
+  if (isDevoirSubmitted(devoir)) return t('parent.dev.submittedShort')
   const dueDate = new Date(devoir.dueDate + 'T23:59:59')
   const now = new Date()
   const diffMs = dueDate - now
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
-  if (diffDays < 0) return 'En retard'
-  if (diffDays === 0) return 'Aujourd\'hui'
-  if (diffDays === 1) return 'Demain'
-  return `Dans ${diffDays} jours`
+  if (diffDays < 0) return t('parent.dev.overdue')
+  if (diffDays === 0) return t('parent.dev.today')
+  if (diffDays === 1) return t('parent.dev.tomorrow')
+  return t('parent.dev.inDays', { n: diffDays })
 }
 
 function getDueBadgeClass(devoir) {
@@ -316,12 +318,15 @@ function getDueBadgeClass(devoir) {
 }
 
 function getTypeLabel(type) {
-  return DEVOIR_TYPES.find(t => t.value === type)?.label || type
+  const k = 'devoirs.types.' + type
+  const l = t(k)
+  if (l !== k) return l
+  return DEVOIR_TYPES.find(ty => ty.value === type)?.label || type
 }
 
 function formatDate(dateStr) {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
 }
 
 const SUBJECT_COLORS = {
