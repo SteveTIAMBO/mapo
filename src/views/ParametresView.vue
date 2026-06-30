@@ -3,17 +3,17 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Paramètres de l'établissement</h1>
-        <p>Gérez les informations et la configuration de votre école</p>
+        <h1>{{ t('param.title') }}</h1>
+        <p>{{ t('param.subtitle') }}</p>
       </div>
       <div style="display: flex; gap: 10px;">
         <RouterLink to="/roles" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
           <ShieldCheck :size="16" />
-          <span>Roles & Acces</span>
+          <span>{{ t('param.rolesLink') }}</span>
         </RouterLink>
         <button class="btn btn-primary" @click="saveSettings" :disabled="isSaving">
           <Check v-if="saveSuccess && !isSaving" :size="16" />
-          <span>{{ isSaving ? 'Enregistrement...' : saveSuccess ? 'Enregistré' : 'Enregistrer' }}</span>
+          <span>{{ isSaving ? t('param.saving') : saveSuccess ? t('param.saved') : t('param.save') }}</span>
         </button>
       </div>
     </div>
@@ -22,7 +22,7 @@
     <transition name="slide">
       <div v-if="saveSuccess" class="toast-success">
         <Check :size="18" />
-        <span>Paramètres enregistrés avec succès</span>
+        <span>{{ t('param.savedToast') }}</span>
       </div>
     </transition>
 
@@ -34,44 +34,44 @@
         <!-- Informations générales -->
         <section class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Informations générales</div>
+            <div class="section-label">{{ t('param.secGeneral') }}</div>
           </div>
           <div class="card-body">
             <div class="field">
-              <label>Nom de l'établissement</label>
-              <input v-model="form.schoolName" type="text" class="input" placeholder="Ex: College EDUFREM" />
+              <label>{{ t('param.schoolName') }}</label>
+              <input v-model="form.schoolName" type="text" class="input" :placeholder="t('param.schoolNamePh')" />
             </div>
             <div class="field-row">
               <div class="field">
-                <label>Type d'établissement</label>
+                <label>{{ t('param.schoolType') }}</label>
                 <select v-model="form.schoolType" class="input">
-                  <option value="">Sélectionnez</option>
-                  <option v-for="t in SCHOOL_TYPES" :key="t.value" :value="t.value">{{ t.label }}</option>
+                  <option value="">{{ t('param.select') }}</option>
+                  <option v-for="st in SCHOOL_TYPES" :key="st.value" :value="st.value">{{ st.label }}</option>
                 </select>
               </div>
               <div class="field">
-                <label>Sigle (optionnel)</label>
+                <label>{{ t('param.acronym') }}</label>
                 <input v-model="form.acronym" type="text" class="input" placeholder="Ex: CE" />
               </div>
             </div>
             <div class="field-row">
               <div class="field">
-                <label>Pays</label>
+                <label>{{ t('param.country') }}</label>
                 <select v-model="form.country" class="input" @change="onCountryChange">
-                  <option value="">Sélectionnez</option>
-                  <option value="CM">Cameroun</option>
-                  <option value="SN">Sénégal</option>
-                  <option value="CI">Côte d'Ivoire</option>
+                  <option value="">{{ t('param.select') }}</option>
+                  <option value="CM">{{ t('param.cm') }}</option>
+                  <option value="SN">{{ t('param.sn') }}</option>
+                  <option value="CI">{{ t('param.ci') }}</option>
                 </select>
               </div>
               <div class="field">
-                <label>Ville</label>
+                <label>{{ t('param.city') }}</label>
                 <input v-model="form.city" type="text" class="input" placeholder="Ex: Yaounde" />
               </div>
             </div>
             <div class="field">
-              <label>Adresse</label>
-              <textarea v-model="form.address" class="input textarea" placeholder="Adresse complète" rows="2"></textarea>
+              <label>{{ t('param.address') }}</label>
+              <textarea v-model="form.address" class="input textarea" :placeholder="t('param.addressPh')" rows="2"></textarea>
             </div>
           </div>
         </section>
@@ -79,21 +79,21 @@
         <!-- Contact -->
         <section class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Contact</div>
+            <div class="section-label">{{ t('param.secContact') }}</div>
           </div>
           <div class="card-body">
             <div class="field-row">
               <div class="field">
-                <label>Téléphone</label>
+                <label>{{ t('param.phone') }}</label>
                 <input v-model="form.phone" type="tel" class="input" :placeholder="form.phoneFormat || '+237 6XX XXX XXX'" />
               </div>
               <div class="field">
-                <label>Email</label>
+                <label>{{ t('param.email') }}</label>
                 <input v-model="form.email" type="email" class="input" placeholder="contact@ecole.com" />
               </div>
             </div>
             <div class="field">
-              <label>Site web (optionnel)</label>
+              <label>{{ t('param.website') }}</label>
               <input v-model="form.website" type="text" class="input" placeholder="https://ecole.com" />
             </div>
           </div>
@@ -102,36 +102,36 @@
         <!-- Paramètres régionaux & scolaires -->
         <section class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Paramètres régionaux & scolaires</div>
+            <div class="section-label">{{ t('param.secRegional') }}</div>
           </div>
           <div class="card-body">
             <div class="field-row">
               <div class="field">
-                <label>Année scolaire</label>
+                <label>{{ t('param.academicYear') }}</label>
                 <input v-model="form.academicYear" type="text" class="input" placeholder="2025-2026" />
               </div>
               <div class="field">
-                <label>Devise</label>
+                <label>{{ t('param.currency') }}</label>
                 <select v-model="form.currency" class="input">
-                  <option value="XAF">XAF - Franc CFA (CEMAC)</option>
-                  <option value="XOF">XOF - Franc CFA (UEMOA)</option>
-                  <option value="EUR">EUR - Euro</option>
-                  <option value="USD">USD - Dollar US</option>
-                  <option value="GHS">GHS - Cedi ghanéen</option>
-                  <option value="NGN">NGN - Naira nigérien</option>
+                  <option value="XAF">{{ t('param.curXAF') }}</option>
+                  <option value="XOF">{{ t('param.curXOF') }}</option>
+                  <option value="EUR">{{ t('param.curEUR') }}</option>
+                  <option value="USD">{{ t('param.curUSD') }}</option>
+                  <option value="GHS">{{ t('param.curGHS') }}</option>
+                  <option value="NGN">{{ t('param.curNGN') }}</option>
                 </select>
               </div>
             </div>
             <div class="field-row">
               <div class="field">
-                <label>Langue</label>
+                <label>{{ t('param.language') }}</label>
                 <select v-model="form.language" class="input">
-                  <option value="fr">Français</option>
-                  <option value="en">Anglais</option>
+                  <option value="fr">{{ t('param.langFr') }}</option>
+                  <option value="en">{{ t('param.langEn') }}</option>
                 </select>
               </div>
               <div class="field">
-                <label>Format de date</label>
+                <label>{{ t('param.dateFormat') }}</label>
                 <select v-model="form.dateFormat" class="input">
                   <option value="DD/MM/YYYY">DD/MM/YYYY</option>
                   <option value="MM/DD/YYYY">MM/DD/YYYY</option>
@@ -141,12 +141,12 @@
             </div>
             <div v-if="editionStore.isPrimaire" class="field-row">
               <div class="field">
-                <label>Mode de notation (bulletin)</label>
+                <label>{{ t('param.gradingMode') }}</label>
                 <select v-model="form.gradingMode" class="input">
-                  <option value="notes">Notes sur 20</option>
-                  <option value="apc">Compétences APC (A / ECA / NA)</option>
+                  <option value="notes">{{ t('param.gradeNotes') }}</option>
+                  <option value="apc">{{ t('param.gradeApc') }}</option>
                 </select>
-                <small style="display:block;margin-top:6px;color:var(--tx3);font-size:12px;">Primaire : « Notes /20 » (pratique courante) ou « Compétences » (officiel APC). Choisi à la création de l'école.</small>
+                <small style="display:block;margin-top:6px;color:var(--tx3);font-size:12px;">{{ t('param.gradingHint') }}</small>
               </div>
             </div>
           </div>
@@ -159,7 +159,7 @@
         <!-- Identite visuelle -->
         <section class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Identité visuelle</div>
+            <div class="section-label">{{ t('param.secVisual') }}</div>
           </div>
           <div class="card-body">
             <!-- Logo -->
@@ -169,10 +169,10 @@
                 <ImagePlus v-else :size="32" class="upload-placeholder-icon" />
               </div>
               <div class="upload-meta">
-                <p class="upload-label">Logo de l'établissement</p>
-                <p class="upload-hint">JPEG ou PNG, max 200px</p>
+                <p class="upload-label">{{ t('param.logoLabel') }}</p>
+                <p class="upload-hint">{{ t('param.logoHint') }}</p>
                 <button type="button" class="btn btn-sm btn-outline" @click="$refs.logoInput?.click()">
-                  {{ form.logo ? 'Modifier' : 'Télécharger' }}
+                  {{ form.logo ? t('param.modify') : t('param.upload') }}
                 </button>
               </div>
               <input ref="logoInput" type="file" accept="image/*" hidden @change="handleLogoUpload" />
@@ -180,8 +180,8 @@
 
             <!-- Couleur principale -->
             <div v-if="isDirecteur" class="field" style="margin-top: 20px;">
-              <label>Couleur principale de l'établissement</label>
-              <p class="field-hint" style="margin-bottom: 10px;">Cette couleur sera appliquée à l'interface de votre école.</p>
+              <label>{{ t('param.primaryColor') }}</label>
+              <p class="field-hint" style="margin-bottom: 10px;">{{ t('param.primaryColorHint') }}</p>
               <div class="color-picker-row">
                 <div class="color-swatches">
                   <button
@@ -213,25 +213,24 @@
 
             <!-- Signature du directeur -->
             <div v-if="isDirecteur" class="field" style="margin-top: 24px;">
-              <label>Signature du directeur</label>
+              <label>{{ t('param.directorSignature') }}</label>
               <p class="field-hint" style="margin-bottom: 10px;">
-                Cette image sera apposée sur les bulletins de notes et documents officiels.
-                Utilisez une image avec fond transparent (PNG) pour un meilleur rendu.
+                {{ t('param.signatureHint') }}
               </p>
               <div class="signature-upload-area">
                 <div v-if="form.directorSignature" class="signature-preview">
-                  <img :src="form.directorSignature" alt="Signature du directeur" class="signature-img" />
+                  <img :src="form.directorSignature" :alt="t('param.directorSignature')" class="signature-img" />
                   <div class="signature-actions">
-                    <button type="button" class="btn btn-sm btn-outline" @click="signatureInput?.click()">Modifier</button>
+                    <button type="button" class="btn btn-sm btn-outline" @click="signatureInput?.click()">{{ t('param.modify') }}</button>
                     <button type="button" class="btn btn-sm btn-ghost" style="color: var(--danger);" @click="removeSignature">
                       <Trash2 :size="14" />
-                      Supprimer
+                      {{ t('param.delete') }}
                     </button>
                   </div>
                 </div>
                 <div v-else class="signature-placeholder" @click="signatureInput?.click()">
                   <ImagePlus :size="24" style="color: var(--tx3);" />
-                  <span style="font-size: 13px; color: var(--tx3);">Cliquez pour ajouter la signature</span>
+                  <span style="font-size: 13px; color: var(--tx3);">{{ t('param.addSignature') }}</span>
                 </div>
               </div>
               <input ref="signatureInput" type="file" accept="image/png,image/jpeg" hidden @change="handleSignatureUpload" />
@@ -243,24 +242,24 @@
         <!-- Services de messagerie -->
         <section class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Services de messagerie</div>
+            <div class="section-label">{{ t('param.secServices') }}</div>
           </div>
           <div class="card-body">
             <p style="font-size: 13px; color: var(--tx3); margin: 0 0 16px 0;">
-              Configurez les services internes que les parents pourront contacter via la messagerie.
+              {{ t('param.servicesHint') }}
             </p>
             <div v-for="(svc, idx) in form.services" :key="idx" class="service-row">
               <div class="service-fields">
-                <input v-model="svc.label" class="input" placeholder="Nom du service" style="flex: 1;" />
-                <input v-model="svc.description" class="input" placeholder="Description" style="flex: 2;" />
+                <input v-model="svc.label" class="input" :placeholder="t('param.serviceName')" style="flex: 1;" />
+                <input v-model="svc.description" class="input" :placeholder="t('param.serviceDesc')" style="flex: 2;" />
               </div>
-              <button class="btn btn-ghost btn-sm" @click="removeService(idx)" title="Supprimer" style="color: var(--danger);">
+              <button class="btn btn-ghost btn-sm" @click="removeService(idx)" :title="t('param.delete')" style="color: var(--danger);">
                 <Trash2 :size="14" />
               </button>
             </div>
             <button class="btn btn-outline btn-sm" @click="addService" style="margin-top: 12px;">
               <Plus :size="14" />
-              <span>Ajouter un service</span>
+              <span>{{ t('param.addService') }}</span>
             </button>
           </div>
         </section>
@@ -268,16 +267,15 @@
         <!-- Gestion de l'année scolaire -->
         <section v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Gestion de l'année scolaire</div>
+            <div class="section-label">{{ t('param.secYear') }}</div>
           </div>
           <div class="card-body">
             <p style="font-size: 14px; color: var(--muted); margin: 0 0 16px 0;">
-              En fin d'année, clôturez l'année en cours pour passer tous les élèves à l'année suivante.
-              Les élèves admis montent en classe supérieure, les redoublants restent. Les notes sont archivées.
+              {{ t('param.yearMgmtHint') }}
             </p>
             <router-link to="/transition-annee" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 6px; text-decoration: none;">
               <ArrowRight :size="16" />
-              Clôturer l'année {{ schoolStore.schoolSettings?.academicYear }}
+              {{ t('param.closeYear', { year: schoolStore.schoolSettings?.academicYear }) }}
             </router-link>
           </div>
         </section>
@@ -285,11 +283,11 @@
         <!-- Périodes scolaires -->
         <section v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
-            <div class="section-label">Périodes scolaires</div>
+            <div class="section-label">{{ t('param.secPeriods') }}</div>
           </div>
           <div class="card-body">
             <p style="font-size: 13px; color: var(--tx3); margin: 0 0 16px 0;">
-              Les notes sont verrouillées 7 jours après la fin de la séquence.
+              {{ t('param.periodsHint') }}
             </p>
 
             <!-- Timeline visuelle -->
@@ -313,18 +311,18 @@
                   <!-- Trimester dates -->
                   <div class="field-row">
                     <div class="field">
-                      <label>Début</label>
+                      <label>{{ t('param.start') }}</label>
                       <input v-model="form.periods[trimCode].start" type="date" class="input" />
                     </div>
                     <div class="field">
-                      <label>Fin</label>
+                      <label>{{ t('param.end') }}</label>
                       <input v-model="form.periods[trimCode].end" type="date" class="input" />
                     </div>
                   </div>
 
                   <!-- Sequences -->
                   <div class="sequences-section">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 8px;">Séquences</label>
+                    <label style="display: block; font-size: 12px; font-weight: 600; color: var(--tx2); margin-bottom: 8px;">{{ t('param.sequences') }}</label>
                     <div v-for="(seqData, seqCode) in (trimData.sequences || {})" :key="seqCode" class="sequence-row">
                       <span class="seq-code">{{ seqCode }}</span>
                       <input v-model="trimData.sequences[seqCode].start" type="date" class="input input-sm" />
@@ -335,7 +333,7 @@
 
                   <!-- Conseil date -->
                   <div class="field" style="margin-top: 12px;">
-                    <label>Date conseil de classe</label>
+                    <label>{{ t('param.councilDate') }}</label>
                     <input v-model="form.periods[trimCode].conseil" type="date" class="input" />
                   </div>
                 </div>
@@ -351,12 +349,14 @@
 
 <script setup>
 import { onMounted, ref, reactive, watch, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck } from 'lucide-vue-next'
 import { DEFAULT_SERVICES } from '../stores/messages'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const schoolStore = useSchoolStore()
 const editionStore = useEditionStore()
 const authStore = useAuthStore()
@@ -554,7 +554,7 @@ const removeService = (idx) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return ''
   const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('fr-FR')
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR')
 }
 
 const getTimelineBarStyle = (trimData) => {
