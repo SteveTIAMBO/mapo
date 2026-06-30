@@ -1713,5 +1713,37 @@
       "cantine": "Canteen lead",
       "surveillant": "Supervisor"
     }
+  },
+  "imp": {
+    "title": "Data import",
+    "subtitle": "Import data from an Excel file (.xlsx)",
+    "starterTitle": "New school? Start with a single file.",
+    "starterDesc": "Download the full workbook (configuration, classes, staff, students), fill it in the field, then import each tab.",
+    "starterBtn": "Starter workbook",
+    "expectedCols": "Expected columns:",
+    "downloadTemplate": "Download the Excel template",
+    "dropHere": "Drag an Excel file here or",
+    "chooseFile": "Choose a file",
+    "acceptedFormats": "Accepted formats: .xlsx, .xls, .csv",
+    "rowsDetected": "{file} — {n} row(s) detected",
+    "changeFile": "Change file",
+    "previewTitle": "Data preview",
+    "valid": "{n} valid",
+    "errors": "{n} error(s)",
+    "status": "Status",
+    "moreRows": "... and {n} more row(s)",
+    "modeAdd": "Add only (new entries)",
+    "modeUpdate": "Update existing + add new",
+    "cancel": "Cancel",
+    "importing": "Importing...",
+    "importBtn": "Import {n} entry/entries",
+    "errEmpty": "The file is empty or the format is invalid.",
+    "errRead": "Read error: {msg}",
+    "resultDoneTitle": "Import complete",
+    "added": "{n} added",
+    "updatedSuffix": ", {n} updated",
+    "skippedSuffix": ", {n} skipped",
+    "resultErrTitle": "Import error",
+    "errUnknown": "Unknown error"
   }
 }

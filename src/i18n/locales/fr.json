@@ -1713,5 +1713,37 @@
       "cantine": "Resp. cantine",
       "surveillant": "Surveillant"
     }
+  },
+  "imp": {
+    "title": "Import de données",
+    "subtitle": "Importez des données depuis un fichier Excel (.xlsx)",
+    "starterTitle": "Nouvelle école ? Démarrez avec un seul fichier.",
+    "starterDesc": "Téléchargez le classeur complet (configuration, classes, personnel, élèves), remplissez-le sur le terrain, puis importez chaque onglet.",
+    "starterBtn": "Classeur de démarrage",
+    "expectedCols": "Colonnes attendues :",
+    "downloadTemplate": "Télécharger le modèle Excel",
+    "dropHere": "Glissez un fichier Excel ici ou",
+    "chooseFile": "Choisir un fichier",
+    "acceptedFormats": "Formats acceptés : .xlsx, .xls, .csv",
+    "rowsDetected": "{file} — {n} ligne(s) détectée(s)",
+    "changeFile": "Changer de fichier",
+    "previewTitle": "Aperçu des données",
+    "valid": "{n} valides",
+    "errors": "{n} erreur(s)",
+    "status": "Statut",
+    "moreRows": "... et {n} autre(s) ligne(s)",
+    "modeAdd": "Ajouter uniquement (nouvelles entrées)",
+    "modeUpdate": "Mettre à jour les existants + ajouter les nouveaux",
+    "cancel": "Annuler",
+    "importing": "Import en cours...",
+    "importBtn": "Importer {n} entrée(s)",
+    "errEmpty": "Le fichier est vide ou le format est invalide.",
+    "errRead": "Erreur de lecture : {msg}",
+    "resultDoneTitle": "Import terminé",
+    "added": "{n} ajouté(s)",
+    "updatedSuffix": ", {n} mis à jour",
+    "skippedSuffix": ", {n} ignoré(s)",
+    "resultErrTitle": "Erreur lors de l'import",
+    "errUnknown": "Erreur inconnue"
   }
 }

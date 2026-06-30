@@ -2,8 +2,8 @@
   <div class="import-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Import de données</h1>
-        <p>Importez des données depuis un fichier Excel (.xlsx)</p>
+        <h1>{{ t('imp.title') }}</h1>
+        <p>{{ t('imp.subtitle') }}</p>
       </div>
     </div>
 
@@ -12,13 +12,13 @@
       <div class="starter-banner-text">
         <PackageOpen :size="24" />
         <div>
-          <strong>Nouvelle école ? Démarrez avec un seul fichier.</strong>
-          <span>Téléchargez le classeur complet (configuration, classes, personnel, élèves), remplissez-le sur le terrain, puis importez chaque onglet.</span>
+          <strong>{{ t('imp.starterTitle') }}</strong>
+          <span>{{ t('imp.starterDesc') }}</span>
         </div>
       </div>
       <button class="btn btn-primary btn-sm starter-btn" @click="downloadStarterWorkbook" type="button">
         <Download :size="15" />
-        Classeur de démarrage
+        {{ t('imp.starterBtn') }}
       </button>
     </div>
 
@@ -46,14 +46,14 @@
         </div>
       </div>
       <div class="info-columns">
-        <span class="info-col-label">Colonnes attendues :</span>
+        <span class="info-col-label">{{ t('imp.expectedCols') }}</span>
         <span v-for="col in currentModule.columns" :key="col.key" class="info-col-tag" :class="{ required: col.required }">
           {{ col.label }}{{ col.required ? ' *' : '' }}
         </span>
       </div>
       <button class="btn btn-outline btn-sm" @click="downloadTemplate" type="button">
         <Download :size="14" />
-        Télécharger le modèle Excel
+        {{ t('imp.downloadTemplate') }}
       </button>
     </div>
 
@@ -67,18 +67,18 @@
     >
       <template v-if="!parsedData.length">
         <Upload :size="32" style="color: var(--tx3); margin-bottom: 8px;" />
-        <p class="upload-text">Glissez un fichier Excel ici ou</p>
+        <p class="upload-text">{{ t('imp.dropHere') }}</p>
         <label class="btn btn-primary btn-sm upload-btn">
           <input type="file" accept=".xlsx,.xls,.csv" @change="onFileSelect" style="display:none" />
-          Choisir un fichier
+          {{ t('imp.chooseFile') }}
         </label>
-        <p class="upload-hint">Formats acceptés : .xlsx, .xls, .csv</p>
+        <p class="upload-hint">{{ t('imp.acceptedFormats') }}</p>
       </template>
       <template v-else>
         <div class="file-info">
           <FileSpreadsheet :size="20" style="color: var(--success);" />
-          <span>{{ fileName }} — {{ parsedData.length }} ligne(s) détectée(s)</span>
-          <button class="btn btn-outline btn-sm" @click="clearImport" type="button">Changer de fichier</button>
+          <span>{{ t('imp.rowsDetected', { file: fileName, n: parsedData.length }) }}</span>
+          <button class="btn btn-outline btn-sm" @click="clearImport" type="button">{{ t('imp.changeFile') }}</button>
         </div>
       </template>
     </div>
@@ -92,10 +92,10 @@
     <!-- Preview table -->
     <div v-if="parsedData.length > 0" class="card preview-card">
       <div class="preview-header">
-        <h3>Aperçu des données</h3>
+        <h3>{{ t('imp.previewTitle') }}</h3>
         <div class="preview-stats">
-          <span class="stat-ok">{{ validCount }} valides</span>
-          <span v-if="errorCount > 0" class="stat-err">{{ errorCount }} erreur(s)</span>
+          <span class="stat-ok">{{ t('imp.valid', { n: validCount }) }}</span>
+          <span v-if="errorCount > 0" class="stat-err">{{ t('imp.errors', { n: errorCount }) }}</span>
         </div>
       </div>
 
@@ -105,7 +105,7 @@
             <tr>
               <th class="row-num">#</th>
               <th v-for="col in currentModule.columns" :key="col.key">{{ col.label }}</th>
-              <th>Statut</th>
+              <th>{{ t('imp.status') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -116,7 +116,7 @@
               </td>
               <td>
                 <span v-if="row._errors?.length" class="status-badge badge-error">
-                  {{ row._errors.length }} erreur(s)
+                  {{ t('imp.errors', { n: row._errors.length }) }}
                 </span>
                 <span v-else class="status-badge badge-ok">OK</span>
               </td>
@@ -126,24 +126,24 @@
       </div>
 
       <div v-if="parsedData.length > maxPreview" class="preview-more">
-        ... et {{ parsedData.length - maxPreview }} autre(s) ligne(s)
+        {{ t('imp.moreRows', { n: parsedData.length - maxPreview }) }}
       </div>
 
       <!-- Import mode -->
       <div class="import-options">
         <label class="radio-label">
           <input type="radio" v-model="importMode" value="add" />
-          <span>Ajouter uniquement (nouvelles entrées)</span>
+          <span>{{ t('imp.modeAdd') }}</span>
         </label>
         <label class="radio-label">
           <input type="radio" v-model="importMode" value="update" />
-          <span>Mettre à jour les existants + ajouter les nouveaux</span>
+          <span>{{ t('imp.modeUpdate') }}</span>
         </label>
       </div>
 
       <!-- Actions -->
       <div class="import-actions">
-        <button class="btn btn-outline" @click="clearImport" type="button">Annuler</button>
+        <button class="btn btn-outline" @click="clearImport" type="button">{{ t('imp.cancel') }}</button>
         <button
           class="btn btn-primary"
           :disabled="validCount === 0 || importing"
@@ -151,7 +151,7 @@
           type="button"
         >
           <Loader2 v-if="importing" :size="16" class="spin-icon" />
-          {{ importing ? 'Import en cours...' : `Importer ${validCount} entrée(s)` }}
+          {{ importing ? t('imp.importing') : t('imp.importBtn', { n: validCount }) }}
         </button>
       </div>
     </div>
@@ -170,6 +170,7 @@
 
 <script setup>
 import { ref, computed, markRaw } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Upload, Download, FileSpreadsheet, AlertCircle,
   CheckCircle2, Loader2, Users, Briefcase, BookOpen, GraduationCap, Calendar, Building2, PackageOpen
@@ -188,6 +189,7 @@ import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
 import { useEditionStore } from '../stores/edition'
 
+const { t } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
 const personnelStore = usePersonnelStore()
 const classesStore = useClassesStore()
@@ -462,7 +464,7 @@ function parseFile(file) {
       const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' })
 
       if (!raw.length) {
-        parseError.value = 'Le fichier est vide ou le format est invalide.'
+        parseError.value = t('imp.errEmpty')
         return
       }
 
@@ -512,7 +514,7 @@ function parseFile(file) {
       const validated = rows.map(row => validateRow(row, mod))
       parsedData.value = validated
     } catch (err) {
-      parseError.value = `Erreur de lecture : ${err.message}`
+      parseError.value = t('imp.errRead', { msg: err.message })
     }
   }
   reader.readAsArrayBuffer(file)
@@ -925,15 +927,17 @@ async function executeImport() {
 
     importResult.value = {
       type: 'success',
-      title: 'Import terminé',
-      detail: `${added} ajouté(s)${updated > 0 ? `, ${updated} mis à jour` : ''}${skipped > 0 ? `, ${skipped} ignoré(s)` : ''}`
+      title: t('imp.resultDoneTitle'),
+      detail: t('imp.added', { n: added })
+        + (updated > 0 ? t('imp.updatedSuffix', { n: updated }) : '')
+        + (skipped > 0 ? t('imp.skippedSuffix', { n: skipped }) : '')
     }
     clearImport()
   } catch (err) {
     importResult.value = {
       type: 'error',
-      title: 'Erreur lors de l\'import',
-      detail: err.message || 'Erreur inconnue'
+      title: t('imp.resultErrTitle'),
+      detail: err.message || t('imp.errUnknown')
     }
   } finally {
     importing.value = false
