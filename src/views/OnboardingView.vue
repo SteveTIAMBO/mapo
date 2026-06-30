@@ -4,23 +4,23 @@
     <div v-if="mode === null" class="content-wrapper">
       <div class="glass card-shadow">
         <div class="step-header">
-          <h1 class="heading-1">Bienvenue ! Comment démarrer ?</h1>
-          <p class="body-text text-secondary">Configurez votre école pas à pas, ou importez le classeur de configuration déjà rempli.</p>
+          <h1 class="heading-1">{{ t('onb.welcome') }}</h1>
+          <p class="body-text text-secondary">{{ t('onb.welcomeSub') }}</p>
         </div>
         <div class="init-choices">
           <button type="button" class="init-choice" @click="chooseManual">
             <span class="init-ic">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
             </span>
-            <span class="init-name">Paramétrer à la main</span>
-            <span class="init-desc">Assistant guidé en 4 étapes, en français. Idéal pour configurer directement dans l'application.</span>
+            <span class="init-name">{{ t('onb.manualName') }}</span>
+            <span class="init-desc">{{ t('onb.manualDesc') }}</span>
           </button>
           <button type="button" class="init-choice" @click="chooseImport">
             <span class="init-ic">
               <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
             </span>
-            <span class="init-name">Importer le classeur</span>
-            <span class="init-desc">Vous avez rempli le « classeur de démarrage » Excel ? Importez-le pour pré-remplir automatiquement.</span>
+            <span class="init-name">{{ t('onb.importName') }}</span>
+            <span class="init-desc">{{ t('onb.importDesc') }}</span>
           </button>
         </div>
       </div>
@@ -30,22 +30,22 @@
     <div v-else-if="mode === 'import'" class="content-wrapper">
       <div class="glass card-shadow">
         <div class="step-header">
-          <h1 class="heading-1">Importer le classeur</h1>
-          <p class="body-text text-secondary">Déposez le fichier Excel rempli — MAPO lit l'onglet « Configuration » et pré-remplit tout.</p>
+          <h1 class="heading-1">{{ t('onb.importName') }}</h1>
+          <p class="body-text text-secondary">{{ t('onb.importLead') }}</p>
         </div>
         <label class="photo-upload-area" style="display:block; cursor:pointer;">
           <input type="file" accept=".xlsx,.xls,.csv" class="file-input" @change="onConfigFile" />
           <div class="upload-placeholder">
             <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-            <p class="body-small">{{ importing ? 'Lecture du fichier…' : 'Cliquez pour choisir le fichier Excel' }}</p>
+            <p class="body-small">{{ importing ? t('onb.reading') : t('onb.chooseFile') }}</p>
           </div>
         </label>
         <p v-if="importError" class="body-small" style="color:#c0392b; margin-top:12px;">{{ importError }}</p>
         <p class="body-small text-secondary" style="margin-top:12px;">
-          Pas encore de fichier ? Téléchargez le « Classeur de démarrage » depuis le menu Import, ou
-          <button type="button" class="link-btn" @click="chooseManual">paramétrez à la main</button>.
+          {{ t('onb.noFilePre') }}
+          <button type="button" class="link-btn" @click="chooseManual">{{ t('onb.manualLink') }}</button>.
         </p>
-        <button type="button" class="btn-ghost" style="margin-top:16px; max-width:160px;" @click="mode = null">Retour</button>
+        <button type="button" class="btn-ghost" style="margin-top:16px; max-width:160px;" @click="mode = null">{{ t('onb.back') }}</button>
       </div>
     </div>
 
@@ -63,7 +63,7 @@
           <div v-if="index < steps.length - 1" class="connector" :class="{ filled: index < currentStep }" />
         </div>
       </div>
-      <p class="step-label">Étape {{ currentStep + 1 }} de {{ steps.length }}</p>
+      <p class="step-label">{{ t('onb.stepOf', { n: currentStep + 1, total: steps.length }) }}</p>
     </div>
 
     <!-- Content Area -->
@@ -72,13 +72,13 @@
         <!-- Step 1: School Information -->
         <div v-if="currentStep === 0" class="step-content">
           <div class="step-header">
-            <h1 class="heading-1">Informations de l'établissement</h1>
-            <p class="body-text text-secondary">Configurez les détails de votre école</p>
+            <h1 class="heading-1">{{ t('onb.s1Title') }}</h1>
+            <p class="body-text text-secondary">{{ t('onb.s1Sub') }}</p>
           </div>
 
           <form class="form-grid">
             <div class="form-group">
-              <label for="schoolName" class="form-label">Nom de l'établissement</label>
+              <label for="schoolName" class="form-label">{{ t('param.schoolName') }}</label>
               <input
                 id="schoolName"
                 v-model="formData.schoolName"
@@ -90,9 +90,9 @@
             </div>
 
             <div class="form-group">
-              <label for="schoolType" class="form-label">Type d'établissement</label>
+              <label for="schoolType" class="form-label">{{ t('param.schoolType') }}</label>
               <select v-model="formData.schoolType" class="input-glass" required>
-                <option value="">Sélectionnez un type</option>
+                <option value="">{{ t('onb.selectType') }}</option>
                 <option
                   v-for="type in SCHOOL_TYPES"
                   :key="type.value"
@@ -104,7 +104,7 @@
             </div>
 
             <div class="form-group">
-              <label for="acronym" class="form-label">Sigle (optionnel)</label>
+              <label for="acronym" class="form-label">{{ t('param.acronym') }}</label>
               <input
                 id="acronym"
                 v-model="formData.acronym"
@@ -115,17 +115,17 @@
             </div>
 
             <div class="form-group">
-              <label for="country" class="form-label">Pays</label>
+              <label for="country" class="form-label">{{ t('param.country') }}</label>
               <select v-model="formData.country" class="input-glass" @change="onCountryChange" required>
-                <option value="">Sélectionnez un pays</option>
-                <option value="CM">Cameroun</option>
-                <option value="SN">Sénégal</option>
-                <option value="CI">Côte d'Ivoire</option>
+                <option value="">{{ t('onb.selectCountry') }}</option>
+                <option value="CM">{{ t('param.cm') }}</option>
+                <option value="SN">{{ t('param.sn') }}</option>
+                <option value="CI">{{ t('param.ci') }}</option>
               </select>
             </div>
 
             <div class="form-group">
-              <label for="city" class="form-label">Ville</label>
+              <label for="city" class="form-label">{{ t('param.city') }}</label>
               <input
                 id="city"
                 v-model="formData.city"
@@ -140,13 +140,13 @@
         <!-- Step 2: Academic Year & Cycles -->
         <div v-if="currentStep === 1" class="step-content">
           <div class="step-header">
-            <h1 class="heading-1">Année scolaire & Cycles</h1>
-            <p class="body-text text-secondary">Configurez les cycles scolaires de votre établissement</p>
+            <h1 class="heading-1">{{ t('onb.s2Title') }}</h1>
+            <p class="body-text text-secondary">{{ t('onb.s2Sub') }}</p>
           </div>
 
           <form class="form-grid">
             <div class="form-group full-width">
-              <label for="academicYear" class="form-label">Année scolaire</label>
+              <label for="academicYear" class="form-label">{{ t('param.academicYear') }}</label>
               <input
                 id="academicYear"
                 v-model="formData.academicYear"
@@ -158,7 +158,7 @@
             </div>
 
             <div class="form-group full-width">
-              <label class="form-label">Cycles scolaires</label>
+              <label class="form-label">{{ t('onb.cyclesLabel') }}</label>
               <div class="checkbox-group">
                 <label class="checkbox-item">
                   <input
@@ -166,7 +166,7 @@
                     type="checkbox"
                     value="college"
                   />
-                  <span class="checkbox-label">Collège</span>
+                  <span class="checkbox-label">{{ t('onb.cycleCollege') }}</span>
                 </label>
                 <label class="checkbox-item">
                   <input
@@ -174,14 +174,14 @@
                     type="checkbox"
                     value="lycee"
                   />
-                  <span class="checkbox-label">Lycée</span>
+                  <span class="checkbox-label">{{ t('onb.cycleLycee') }}</span>
                 </label>
               </div>
             </div>
 
             <div class="form-group full-width">
-              <label class="form-label">Systeme d'evaluation</label>
-              <p class="field-hint">Combien d'evaluations par trimestre dans votre etablissement ?</p>
+              <label class="form-label">{{ t('onb.evalSystem') }}</label>
+              <p class="field-hint">{{ t('onb.evalHint') }}</p>
               <div class="radio-group">
                 <label class="radio-item" :class="{ 'radio-selected': formData.evaluationType === '2_sequences' }">
                   <input
@@ -191,8 +191,8 @@
                     value="2_sequences"
                   />
                   <div class="radio-content">
-                    <span class="radio-title">2 sequences par trimestre</span>
-                    <span class="radio-desc">6 evaluations par an (Seq1 + Seq2 = Moyenne trimestre)</span>
+                    <span class="radio-title">{{ t('onb.eval2Title') }}</span>
+                    <span class="radio-desc">{{ t('onb.eval2Desc') }}</span>
                   </div>
                 </label>
                 <label class="radio-item" :class="{ 'radio-selected': formData.evaluationType === '1_evaluation' }">
@@ -203,18 +203,18 @@
                     value="1_evaluation"
                   />
                   <div class="radio-content">
-                    <span class="radio-title">1 evaluation par trimestre</span>
-                    <span class="radio-desc">3 evaluations par an (1 note = Moyenne trimestre)</span>
+                    <span class="radio-title">{{ t('onb.eval1Title') }}</span>
+                    <span class="radio-desc">{{ t('onb.eval1Desc') }}</span>
                   </div>
                 </label>
               </div>
             </div>
 
             <div class="form-group full-width">
-              <label for="language" class="form-label">Langue</label>
+              <label for="language" class="form-label">{{ t('param.language') }}</label>
               <select v-model="formData.language" class="input-glass" required>
-                <option value="fr">Français</option>
-                <option value="en">Anglais</option>
+                <option value="fr">{{ t('param.langFr') }}</option>
+                <option value="en">{{ t('param.langEn') }}</option>
               </select>
             </div>
           </form>
@@ -223,13 +223,13 @@
         <!-- Step 3: Director Information -->
         <div v-if="currentStep === 2" class="step-content">
           <div class="step-header">
-            <h1 class="heading-1">Directeur de l'établissement</h1>
-            <p class="body-text text-secondary">Informations du directeur</p>
+            <h1 class="heading-1">{{ t('onb.s3Title') }}</h1>
+            <p class="body-text text-secondary">{{ t('onb.s3Sub') }}</p>
           </div>
 
           <form class="form-grid">
             <div class="form-group">
-              <label for="directorName" class="form-label">Nom complet</label>
+              <label for="directorName" class="form-label">{{ t('onb.fullName') }}</label>
               <input
                 id="directorName"
                 v-model="formData.directorName"
@@ -241,7 +241,7 @@
             </div>
 
             <div class="form-group">
-              <label for="directorPhone" class="form-label">Téléphone</label>
+              <label for="directorPhone" class="form-label">{{ t('param.phone') }}</label>
               <input
                 id="directorPhone"
                 v-model="formData.directorPhone"
@@ -252,7 +252,7 @@
             </div>
 
             <div class="form-group full-width">
-              <label for="directorEmail" class="form-label">Email</label>
+              <label for="directorEmail" class="form-label">{{ t('param.email') }}</label>
               <input
                 id="directorEmail"
                 v-model="formData.directorEmail"
@@ -263,7 +263,7 @@
             </div>
 
             <div class="form-group full-width">
-              <label class="form-label">Photo du directeur</label>
+              <label class="form-label">{{ t('onb.directorPhoto') }}</label>
               <div class="photo-upload-area">
                 <input
                   ref="photoInput"
@@ -278,11 +278,11 @@
                     <polyline points="17 8 12 3 7 8"></polyline>
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                   </svg>
-                  <p class="body-small">Cliquez ou glissez une image</p>
+                  <p class="body-small">{{ t('onb.clickOrDrag') }}</p>
                 </div>
                 <img v-else :src="photoPreview" class="photo-preview" />
               </div>
-              <p v-if="photoPreview" class="body-small text-secondary">Photo chargée - Max 200px</p>
+              <p v-if="photoPreview" class="body-small text-secondary">{{ t('onb.photoLoaded') }}</p>
             </div>
           </form>
         </div>
@@ -290,72 +290,72 @@
         <!-- Step 4: Confirmation -->
         <div v-if="currentStep === 3" class="step-content">
           <div class="step-header">
-            <h1 class="heading-1">Confirmation</h1>
-            <p class="body-text text-secondary">Vérifiez vos informations avant de démarrer</p>
+            <h1 class="heading-1">{{ t('onb.s4Title') }}</h1>
+            <p class="body-text text-secondary">{{ t('onb.s4Sub') }}</p>
           </div>
 
           <div class="summary-grid">
             <div class="summary-section">
-              <h3 class="summary-title">Établissement</h3>
+              <h3 class="summary-title">{{ t('onb.secEstab') }}</h3>
               <div class="summary-item">
-                <span class="summary-label">Nom:</span>
+                <span class="summary-label">{{ t('onb.lblName') }}</span>
                 <span class="summary-value">{{ formData.schoolName }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Type:</span>
+                <span class="summary-label">{{ t('onb.lblType') }}</span>
                 <span class="summary-value">{{ getSchoolTypeLabel(formData.schoolType) }}</span>
               </div>
               <div v-if="formData.acronym" class="summary-item">
-                <span class="summary-label">Sigle:</span>
+                <span class="summary-label">{{ t('onb.lblAcronym') }}</span>
                 <span class="summary-value">{{ formData.acronym }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Pays:</span>
+                <span class="summary-label">{{ t('onb.lblCountry') }}</span>
                 <span class="summary-value">{{ getCountryLabel(formData.country) }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Ville:</span>
+                <span class="summary-label">{{ t('onb.lblCity') }}</span>
                 <span class="summary-value">{{ formData.city }}</span>
               </div>
             </div>
 
             <div class="summary-section">
-              <h3 class="summary-title">Configuration</h3>
+              <h3 class="summary-title">{{ t('onb.secConfig') }}</h3>
               <div class="summary-item">
-                <span class="summary-label">Année scolaire:</span>
+                <span class="summary-label">{{ t('onb.lblYear') }}</span>
                 <span class="summary-value">{{ formData.academicYear }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Cycles:</span>
-                <span class="summary-value">{{ formData.cycles.join(', ').charAt(0).toUpperCase() + formData.cycles.join(', ').slice(1) }}</span>
+                <span class="summary-label">{{ t('onb.lblCycles') }}</span>
+                <span class="summary-value">{{ cyclesSummary }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Évaluations:</span>
-                <span class="summary-value">{{ formData.evaluationType === '2_sequences' ? '2 séquences / trimestre' : '1 évaluation / trimestre' }}</span>
+                <span class="summary-label">{{ t('onb.lblEval') }}</span>
+                <span class="summary-value">{{ formData.evaluationType === '2_sequences' ? t('onb.evalVal2') : t('onb.evalVal1') }}</span>
               </div>
               <div class="summary-item">
-                <span class="summary-label">Langue:</span>
-                <span class="summary-value">{{ formData.language === 'fr' ? 'Français' : 'Anglais' }}</span>
+                <span class="summary-label">{{ t('onb.lblLang') }}</span>
+                <span class="summary-value">{{ formData.language === 'fr' ? t('param.langFr') : t('param.langEn') }}</span>
               </div>
             </div>
 
             <div class="summary-section">
-              <h3 class="summary-title">Directeur</h3>
+              <h3 class="summary-title">{{ t('onb.secDirector') }}</h3>
               <div class="summary-item">
-                <span class="summary-label">Nom:</span>
+                <span class="summary-label">{{ t('onb.lblName') }}</span>
                 <span class="summary-value">{{ formData.directorName }}</span>
               </div>
               <div v-if="formData.directorPhone" class="summary-item">
-                <span class="summary-label">Téléphone:</span>
+                <span class="summary-label">{{ t('onb.lblPhone') }}</span>
                 <span class="summary-value">{{ formData.directorPhone }}</span>
               </div>
               <div v-if="formData.directorEmail" class="summary-item">
-                <span class="summary-label">Email:</span>
+                <span class="summary-label">{{ t('onb.lblEmail') }}</span>
                 <span class="summary-value">{{ formData.directorEmail }}</span>
               </div>
               <div v-if="photoPreview" class="summary-item">
-                <span class="summary-label">Photo:</span>
-                <span class="summary-value">Chargée</span>
+                <span class="summary-label">{{ t('onb.lblPhoto') }}</span>
+                <span class="summary-value">{{ t('onb.loaded') }}</span>
               </div>
             </div>
           </div>
@@ -370,7 +370,7 @@
         class="btn-ghost"
         @click="previousStep"
       >
-        Précédent
+        {{ t('onb.previous') }}
       </button>
       <div v-else class="btn-placeholder" />
 
@@ -380,7 +380,7 @@
         @click="nextStep"
         :disabled="!canProceedToNextStep"
       >
-        Suivant
+        {{ t('onb.next') }}
       </button>
       <button
         v-else
@@ -388,7 +388,7 @@
         @click="startMAP"
         :disabled="isSubmitting"
       >
-        {{ isSubmitting ? 'Démarrage...' : 'Démarrer MAPO' }}
+        {{ isSubmitting ? t('onb.starting') : t('onb.startApp') }}
       </button>
     </div>
   </div>
@@ -396,9 +396,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const schoolStore = useSchoolStore()
 
@@ -412,7 +414,7 @@ const mode = ref(null)
 const importing = ref(false)
 const importError = ref('')
 
-const steps = ['Établissement', 'Année & Cycles', 'Directeur', 'Confirmation']
+const steps = computed(() => [t('onb.step1'), t('onb.step2'), t('onb.step3'), t('onb.step4')])
 
 const formData = ref({
   schoolName: 'Collège Privé EDUFREM',
@@ -447,18 +449,18 @@ const canProceedToNextStep = computed(() => {
 })
 
 const getSchoolTypeLabel = (value) => {
-  const type = SCHOOL_TYPES.find(t => t.value === value)
+  const type = SCHOOL_TYPES.find(ty => ty.value === value)
   return type ? type.label : value
 }
 
 const getCountryLabel = (code) => {
-  const countries = {
-    'CM': 'Cameroun',
-    'SN': 'Sénégal',
-    'CI': 'Côte d\'Ivoire'
-  }
-  return countries[code] || code
+  const map = { CM: 'param.cm', SN: 'param.sn', CI: 'param.ci' }
+  return map[code] ? t(map[code]) : code
 }
+
+const cyclesSummary = computed(() =>
+  formData.value.cycles.map(c => c === 'lycee' ? t('onb.cycleLycee') : t('onb.cycleCollege')).join(', ')
+)
 
 const onCountryChange = () => {
   const defaults = COUNTRY_DEFAULTS[formData.value.country]
@@ -571,7 +573,7 @@ async function onConfigFile(e) {
       if (has) { cfg = obj; break }
     }
     if (!cfg || !cfg.schoolName) {
-      importError.value = "Onglet « Configuration » introuvable ou vide. Vérifiez que le nom de l'école est rempli dans le fichier."
+      importError.value = t('onb.errNoConfig')
       importing.value = false
       return
     }
@@ -587,9 +589,9 @@ async function onConfigFile(e) {
       onCountryChange()
     }
     if (cfg.schoolType) {
-      const t = norm(cfg.schoolType)
-      if (t.includes('lyc')) f.cycles = ['college', 'lycee']
-      else if (t.includes('prim')) f.cycles = ['college']
+      const st = norm(cfg.schoolType)
+      if (st.includes('lyc')) f.cycles = ['college', 'lycee']
+      else if (st.includes('prim')) f.cycles = ['college']
     }
     const dn = [cfg.directorLastName, cfg.directorFirstName].filter(Boolean).join(' ').trim()
     if (dn) f.directorName = dn
@@ -599,7 +601,7 @@ async function onConfigFile(e) {
     mode.value = 'manual'
     currentStep.value = 3
   } catch (err) {
-    importError.value = 'Erreur de lecture : ' + (err?.message || err)
+    importError.value = t('onb.errRead', { msg: err?.message || err })
   } finally {
     importing.value = false
   }
