@@ -3,17 +3,17 @@
     <!-- ═══ Header ═══ -->
     <div class="rapports-header">
       <div class="rapports-header-left">
-        <h1>Rapports</h1>
-        <p>Synthèses et analyses de votre établissement</p>
+        <h1>{{ t('rap.title') }}</h1>
+        <p>{{ t('rap.subtitle') }}</p>
       </div>
       <div class="rapports-header-actions">
         <button class="btn-outline" @click="refreshData">
           <RefreshCw :size="16" />
-          <span>Actualiser</span>
+          <span>{{ t('rap.refresh') }}</span>
         </button>
         <button class="btn-primary" @click="downloadCurrentReport">
           <Download :size="16" />
-          <span>Télécharger</span>
+          <span>{{ t('rap.download') }}</span>
         </button>
       </div>
     </div>
@@ -23,35 +23,35 @@
       <div class="kpi-card">
         <div class="kpi-accent accent-blue"></div>
         <div class="kpi-body">
-          <span class="kpi-label">Élèves inscrits</span>
+          <span class="kpi-label">{{ t('rap.kpiStudents') }}</span>
           <span class="kpi-value">{{ elevesStore.elevesStats.inscrits }}</span>
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-accent accent-indigo"></div>
         <div class="kpi-body">
-          <span class="kpi-label">Personnel</span>
+          <span class="kpi-label">{{ t('rap.kpiStaff') }}</span>
           <span class="kpi-value">{{ personnelStore.staffStats?.total || 0 }}</span>
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-accent accent-green"></div>
         <div class="kpi-body">
-          <span class="kpi-label">Recouvrement</span>
+          <span class="kpi-label">{{ t('rap.kpiCollection') }}</span>
           <span class="kpi-value">{{ factStore.globalStats.collectionRate }}%</span>
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-accent accent-purple"></div>
         <div class="kpi-body">
-          <span class="kpi-label">Présence</span>
+          <span class="kpi-label">{{ t('rap.kpiAttendance') }}</span>
           <span class="kpi-value">{{ presenceStats.tauxPresence }}%</span>
         </div>
       </div>
       <div class="kpi-card">
         <div class="kpi-accent accent-red"></div>
         <div class="kpi-body">
-          <span class="kpi-label">Incidents</span>
+          <span class="kpi-label">{{ t('rap.kpiIncidents') }}</span>
           <span class="kpi-value">{{ disciplineStore.stats?.pending || 0 }}</span>
         </div>
       </div>
@@ -61,15 +61,15 @@
     <div class="tabs-bar">
       <button class="tab-btn" :class="{ active: activeTab === 'financier' }" @click="activeTab = 'financier'">
         <Banknote :size="16" />
-        Rapports financiers
+        {{ t('rap.tabFinance') }}
       </button>
       <button class="tab-btn" :class="{ active: activeTab === 'academique' }" @click="activeTab = 'academique'">
         <GraduationCap :size="16" />
-        Rapports académiques
+        {{ t('rap.tabAcademic') }}
       </button>
       <button class="tab-btn" :class="{ active: activeTab === 'administratif' }" @click="activeTab = 'administratif'">
         <ClipboardList :size="16" />
-        Rapports administratifs
+        {{ t('rap.tabAdmin') }}
       </button>
     </div>
 
@@ -81,24 +81,24 @@
       <!-- Bilan financier -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Bilan financier</h3>
+          <h3>{{ t('rap.financialReport') }}</h3>
           <select v-model="financeFilter" class="select-filter">
-            <option value="all">Tous les niveaux</option>
+            <option value="all">{{ t('rap.allLevels') }}</option>
             <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
           </select>
         </div>
 
         <div class="metric-grid metric-grid-3">
           <div class="metric-card metric-blue">
-            <span class="metric-label">Recettes prévisionnelles</span>
+            <span class="metric-label">{{ t('rap.expectedRevenue') }}</span>
             <span class="metric-value">{{ formatMoney(filteredFinanceStats.totalExpected) }}</span>
           </div>
           <div class="metric-card metric-green">
-            <span class="metric-label">Recettes encaissées</span>
+            <span class="metric-label">{{ t('rap.collectedRevenue') }}</span>
             <span class="metric-value">{{ formatMoney(filteredFinanceStats.totalCollected) }}</span>
           </div>
           <div class="metric-card metric-red">
-            <span class="metric-label">Impayés</span>
+            <span class="metric-label">{{ t('rap.outstanding') }}</span>
             <span class="metric-value">{{ formatMoney(filteredFinanceStats.totalOutstanding) }}</span>
           </div>
         </div>
@@ -106,7 +106,7 @@
         <!-- Progress bar -->
         <div class="progress-section">
           <div class="progress-header">
-            <span class="progress-label">Taux de recouvrement</span>
+            <span class="progress-label">{{ t('rap.collectionRate') }}</span>
             <span class="progress-pct" :class="filteredFinanceStats.collectionRate >= 70 ? 'pct-green' : filteredFinanceStats.collectionRate >= 40 ? 'pct-orange' : 'pct-red'">
               {{ filteredFinanceStats.collectionRate }}%
             </span>
@@ -120,7 +120,7 @@
       <!-- Recouvrement par classe -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Recouvrement par classe</h3>
+          <h3>{{ t('rap.collectionByClass') }}</h3>
         </div>
         <div class="table-wrap">
           <table class="data-table">
@@ -135,13 +135,13 @@
             </colgroup>
             <thead>
               <tr>
-                <th>Classe</th>
-                <th class="tc">Effectif</th>
-                <th class="tr">Attendu</th>
-                <th class="tr">Encaissé</th>
-                <th class="tr">Reste</th>
-                <th class="tc">Taux</th>
-                <th class="tc">Détails</th>
+                <th>{{ t('rap.thClass') }}</th>
+                <th class="tc">{{ t('rap.thEffectif') }}</th>
+                <th class="tr">{{ t('rap.thExpected') }}</th>
+                <th class="tr">{{ t('rap.thCollected') }}</th>
+                <th class="tr">{{ t('rap.thRemaining') }}</th>
+                <th class="tc">{{ t('rap.thRate') }}</th>
+                <th class="tc">{{ t('rap.thDetails') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -167,7 +167,7 @@
             </tbody>
             <tfoot>
               <tr class="total-row">
-                <td><strong>Total</strong></td>
+                <td><strong>{{ t('rap.total') }}</strong></td>
                 <td class="tc"><strong>{{ recouvrementTotals.effectif }}</strong></td>
                 <td class="tr mono"><strong>{{ formatMoney(recouvrementTotals.totalExpected) }}</strong></td>
                 <td class="tr mono clr-green"><strong>{{ formatMoney(recouvrementTotals.totalCollected) }}</strong></td>
@@ -189,27 +189,27 @@
       <!-- Dépenses -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Synthèse des dépenses</h3>
+          <h3>{{ t('rap.expensesSynthesis') }}</h3>
         </div>
         <div class="metric-grid metric-grid-2">
           <div class="metric-card">
-            <span class="metric-label">Masse salariale mensuelle</span>
+            <span class="metric-label">{{ t('rap.monthlyPayroll') }}</span>
             <span class="metric-value">{{ formatMoney(synthesis.masseSalarialeMensuelle) }}</span>
-            <span class="metric-sub">Annuelle : {{ formatMoney(synthesis.masseSalarialeAnnuelle) }}</span>
+            <span class="metric-sub">{{ t('rap.annual') }} {{ formatMoney(synthesis.masseSalarialeAnnuelle) }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Charges fixes mensuelles</span>
+            <span class="metric-label">{{ t('rap.monthlyFixedCharges') }}</span>
             <span class="metric-value">{{ formatMoney(synthesis.chargesFixesMensuelles) }}</span>
-            <span class="metric-sub">Annuelles : {{ formatMoney(synthesis.totalChargesFixesAnnuel) }}</span>
+            <span class="metric-sub">{{ t('rap.annualF') }} {{ formatMoney(synthesis.totalChargesFixesAnnuel) }}</span>
           </div>
         </div>
         <div class="bilan-row">
           <div class="bilan-item" :class="synthesis.resultatActuel >= 0 ? 'bilan-pos' : 'bilan-neg'">
-            <span class="bilan-label">Résultat actuel</span>
+            <span class="bilan-label">{{ t('rap.currentResult') }}</span>
             <span class="bilan-value">{{ formatMoney(synthesis.resultatActuel) }}</span>
           </div>
           <div class="bilan-item" :class="synthesis.resultatPrevisionnel >= 0 ? 'bilan-pos' : 'bilan-neg'">
-            <span class="bilan-label">Résultat prévisionnel</span>
+            <span class="bilan-label">{{ t('rap.forecastResult') }}</span>
             <span class="bilan-value">{{ formatMoney(synthesis.resultatPrevisionnel) }}</span>
           </div>
         </div>
@@ -224,25 +224,25 @@
       <!-- Filtres -->
       <div class="panel filter-panel">
         <select v-model="acadClass" class="select-filter">
-          <option value="">Toutes les classes</option>
+          <option value="">{{ t('rap.allClasses') }}</option>
           <option v-for="c in classesStore.classes" :key="c.id" :value="c.id">{{ c.name }}</option>
         </select>
         <select v-model="acadTrimester" class="select-filter">
-          <option value="T1">Trimestre 1</option>
-          <option value="T2">Trimestre 2</option>
-          <option value="T3">Trimestre 3</option>
-          <option value="annual">Annuel</option>
+          <option value="T1">{{ t('rap.trimester1') }}</option>
+          <option value="T2">{{ t('rap.trimester2') }}</option>
+          <option value="T3">{{ t('rap.trimester3') }}</option>
+          <option value="annual">{{ t('rap.annualOpt') }}</option>
         </select>
       </div>
 
       <!-- Vue globale -->
       <div v-if="!acadClass" class="panel">
         <div class="panel-header">
-          <h3>Performance par classe — {{ acadTrimester === 'annual' ? 'Année' : acadTrimester }}</h3>
+          <h3>{{ t('rap.perfByClass') }} — {{ acadTrimester === 'annual' ? t('rap.yearLabel') : acadTrimester }}</h3>
         </div>
         <div v-if="classPerformance.length === 0" class="empty-state">
           <GraduationCap :size="40" class="empty-icon" />
-          <p>Aucune note saisie pour cette période</p>
+          <p>{{ t('rap.noGrades') }}</p>
         </div>
         <div v-else class="table-wrap">
           <table class="data-table">
@@ -257,13 +257,13 @@
             </colgroup>
             <thead>
               <tr>
-                <th>Classe</th>
-                <th class="tc">Effectif</th>
-                <th class="tr">Moy. classe</th>
-                <th class="tr">Plus haute</th>
-                <th class="tr">Plus basse</th>
-                <th class="tc">Taux réussite</th>
-                <th class="tc">Appréciation</th>
+                <th>{{ t('rap.thClass') }}</th>
+                <th class="tc">{{ t('rap.thEffectif') }}</th>
+                <th class="tr">{{ t('rap.thAvgClass') }}</th>
+                <th class="tr">{{ t('rap.thHighest') }}</th>
+                <th class="tr">{{ t('rap.thLowest') }}</th>
+                <th class="tc">{{ t('rap.thSuccessRate') }}</th>
+                <th class="tc">{{ t('rap.thAppreciation') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -295,34 +295,34 @@
           <div class="panel-header-left">
             <button class="btn-back" @click="acadClass = ''">
               <ChevronLeft :size="14" />
-              Retour
+              {{ t('rap.back') }}
             </button>
-            <h3>Classement {{ selectedClassName }} — {{ acadTrimester === 'annual' ? 'Année' : acadTrimester }}</h3>
+            <h3>{{ t('rap.ranking') }} {{ selectedClassName }} — {{ acadTrimester === 'annual' ? t('rap.yearLabel') : acadTrimester }}</h3>
           </div>
         </div>
 
         <!-- Class stats -->
         <div v-if="selectedClassStats" class="metric-grid metric-grid-4">
           <div class="metric-card metric-blue">
-            <span class="metric-label">Moyenne de classe</span>
+            <span class="metric-label">{{ t('rap.classAvg') }}</span>
             <span class="metric-value">{{ selectedClassStats.avg !== null ? selectedClassStats.avg.toFixed(2) : '—' }}/20</span>
           </div>
           <div class="metric-card metric-green">
-            <span class="metric-label">Taux de réussite</span>
+            <span class="metric-label">{{ t('rap.successRate') }}</span>
             <span class="metric-value">{{ selectedClassStats.successRate ?? '—' }}%</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Plus haute moyenne</span>
+            <span class="metric-label">{{ t('rap.highestAvg') }}</span>
             <span class="metric-value">{{ selectedClassStats.max !== null ? selectedClassStats.max.toFixed(2) : '—' }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Plus basse moyenne</span>
+            <span class="metric-label">{{ t('rap.lowestAvg') }}</span>
             <span class="metric-value">{{ selectedClassStats.min !== null ? selectedClassStats.min.toFixed(2) : '—' }}</span>
           </div>
         </div>
 
         <div v-if="classRanking.length === 0" class="empty-state">
-          <p>Aucune note disponible pour cette classe et cette période</p>
+          <p>{{ t('rap.noGradesClass') }}</p>
         </div>
         <div v-else class="table-wrap">
           <table class="data-table">
@@ -335,11 +335,11 @@
             </colgroup>
             <thead>
               <tr>
-                <th class="tc">Rang</th>
-                <th>Élève</th>
-                <th class="tr">Moyenne</th>
-                <th class="tc">Appréciation</th>
-                <th class="tc">Décision</th>
+                <th class="tc">{{ t('rap.thRank') }}</th>
+                <th>{{ t('rap.thStudent') }}</th>
+                <th class="tr">{{ t('rap.thAverage') }}</th>
+                <th class="tc">{{ t('rap.thAppreciation') }}</th>
+                <th class="tc">{{ t('rap.thDecision') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -368,7 +368,7 @@
       <!-- Effectifs -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Effectifs par classe</h3>
+          <h3>{{ t('rap.headcountByClass') }}</h3>
         </div>
         <div class="table-wrap">
           <table class="data-table">
@@ -382,12 +382,12 @@
             </colgroup>
             <thead>
               <tr>
-                <th>Classe</th>
-                <th class="tc">Niveau</th>
-                <th class="tc">Garçons</th>
-                <th class="tc">Filles</th>
-                <th class="tc">Total</th>
-                <th class="tc">Capacité</th>
+                <th>{{ t('rap.thClass') }}</th>
+                <th class="tc">{{ t('rap.thLevel') }}</th>
+                <th class="tc">{{ t('rap.thBoys') }}</th>
+                <th class="tc">{{ t('rap.thGirls') }}</th>
+                <th class="tc">{{ t('rap.total') }}</th>
+                <th class="tc">{{ t('rap.thCapacity') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -406,7 +406,7 @@
             </tbody>
             <tfoot>
               <tr class="total-row">
-                <td><strong>Total</strong></td>
+                <td><strong>{{ t('rap.total') }}</strong></td>
                 <td></td>
                 <td class="tc"><strong>{{ effectifsTotals.garcons }}</strong></td>
                 <td class="tc"><strong>{{ effectifsTotals.filles }}</strong></td>
@@ -421,23 +421,23 @@
       <!-- Personnel -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Répartition du personnel</h3>
+          <h3>{{ t('rap.staffDistribution') }}</h3>
         </div>
         <div class="metric-grid metric-grid-4">
           <div class="metric-card metric-blue">
-            <span class="metric-label">Total personnel</span>
+            <span class="metric-label">{{ t('rap.totalStaff') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.total || 0 }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Enseignement</span>
+            <span class="metric-label">{{ t('rap.teaching') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.enseignement || 0 }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Administration</span>
+            <span class="metric-label">{{ t('rap.administration') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.administration || 0 }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Support</span>
+            <span class="metric-label">{{ t('rap.support') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.support || 0 }}</span>
           </div>
         </div>
@@ -445,15 +445,15 @@
         <!-- Personnel extended stats -->
         <div class="metric-grid metric-grid-3" style="margin-top: 12px;">
           <div class="metric-card">
-            <span class="metric-label">Enseignantes femmes</span>
+            <span class="metric-label">{{ t('rap.femaleTeachers') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.enseignantsFemmes || 0 }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Enseignants qualifiés</span>
+            <span class="metric-label">{{ t('rap.qualifiedTeachers') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.enseignantsQualifies || 0 }}</span>
           </div>
           <div class="metric-card">
-            <span class="metric-label">Vacataires</span>
+            <span class="metric-label">{{ t('rap.temps') }}</span>
             <span class="metric-value">{{ personnelStore.staffStats?.vacataires || 0 }}</span>
           </div>
         </div>
@@ -462,36 +462,36 @@
       <!-- Présences -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Bilan des présences</h3>
+          <h3>{{ t('rap.attendanceSummary') }}</h3>
         </div>
         <div v-if="presenceStats.total === 0" class="empty-state">
           <ClipboardList :size="40" class="empty-icon" />
-          <p>Aucune donnée de présence enregistrée</p>
+          <p>{{ t('rap.noAttendance') }}</p>
         </div>
         <template v-else>
           <div class="metric-grid metric-grid-4">
             <div class="metric-card metric-green">
-              <span class="metric-label">Présents</span>
+              <span class="metric-label">{{ t('rap.present') }}</span>
               <span class="metric-value">{{ presenceStats.presents }}</span>
               <span class="metric-sub">{{ presenceStats.total > 0 ? Math.round(presenceStats.presents / presenceStats.total * 100) : 0 }}%</span>
             </div>
             <div class="metric-card metric-red">
-              <span class="metric-label">Absents</span>
+              <span class="metric-label">{{ t('rap.absent') }}</span>
               <span class="metric-value">{{ presenceStats.absents }}</span>
               <span class="metric-sub">{{ presenceStats.total > 0 ? Math.round(presenceStats.absents / presenceStats.total * 100) : 0 }}%</span>
             </div>
             <div class="metric-card metric-orange">
-              <span class="metric-label">Retards</span>
+              <span class="metric-label">{{ t('rap.late') }}</span>
               <span class="metric-value">{{ presenceStats.retards }}</span>
             </div>
             <div class="metric-card">
-              <span class="metric-label">Excusés</span>
+              <span class="metric-label">{{ t('rap.excused') }}</span>
               <span class="metric-value">{{ presenceStats.excuses }}</span>
             </div>
           </div>
           <div class="progress-section">
             <div class="progress-header">
-              <span class="progress-label">Taux de présence global</span>
+              <span class="progress-label">{{ t('rap.globalAttendanceRate') }}</span>
               <span class="progress-pct" :class="presenceStats.tauxPresence >= 80 ? 'pct-green' : presenceStats.tauxPresence >= 60 ? 'pct-orange' : 'pct-red'">
                 {{ presenceStats.tauxPresence }}%
               </span>
@@ -506,31 +506,31 @@
       <!-- Discipline -->
       <div class="panel">
         <div class="panel-header">
-          <h3>Bilan disciplinaire</h3>
+          <h3>{{ t('rap.disciplineSummary') }}</h3>
         </div>
         <div v-if="!disciplineStore.stats?.total" class="empty-state">
           <ClipboardList :size="40" class="empty-icon" />
-          <p>Aucun incident enregistré</p>
+          <p>{{ t('rap.noIncident') }}</p>
         </div>
         <template v-else>
           <div class="metric-grid metric-grid-3">
             <div class="metric-card metric-red">
-              <span class="metric-label">Incidents en cours</span>
+              <span class="metric-label">{{ t('rap.incidentsOngoing') }}</span>
               <span class="metric-value">{{ disciplineStore.stats?.pending || 0 }}</span>
             </div>
             <div class="metric-card metric-green">
-              <span class="metric-label">Incidents résolus</span>
+              <span class="metric-label">{{ t('rap.incidentsResolved') }}</span>
               <span class="metric-value">{{ disciplineStore.stats?.resolved || 0 }}</span>
             </div>
             <div class="metric-card">
-              <span class="metric-label">Total incidents</span>
+              <span class="metric-label">{{ t('rap.totalIncidents') }}</span>
               <span class="metric-value">{{ disciplineStore.stats?.total || 0 }}</span>
             </div>
           </div>
 
           <!-- Incidents par type — horizontal bars -->
           <div v-if="incidentsByType.length > 0" class="type-bars-section">
-            <h4 class="sub-title">Répartition par type</h4>
+            <h4 class="sub-title">{{ t('rap.byType') }}</h4>
             <div class="type-bars">
               <div v-for="item in incidentsByType" :key="item.type" class="type-bar-row">
                 <span class="type-bar-label">{{ item.label }}</span>
@@ -549,6 +549,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFacturationStore } from '../stores/facturation'
 import { useElevesStore } from '../stores/eleves'
 import { useClassesStore } from '../stores/classes'
@@ -562,6 +563,7 @@ import {
 } from 'lucide-vue-next'
 import { useSchoolStore } from '../stores/school'
 
+const { t } = useI18n({ useScope: 'global' })
 const factStore = useFacturationStore()
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
