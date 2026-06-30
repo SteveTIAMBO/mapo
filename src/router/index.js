@@ -4,6 +4,34 @@ import { usePermissionsStore } from '../stores/permissions'
 import { useEditionStore } from '../stores/edition'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 import { getTenant, isMiapoTenant } from '../utils/tenantContext'
+import { i18n } from '../i18n'
+
+// Titres d'onglet (document.title) FR/EN : la valeur meta.title reste en FR
+// (compat) et on la traduit ici via sa clé rt.* au moment de la navigation.
+const TITLE_KEYS = {
+  'Administration EDUFREM': 'rt.adminEdufrem', 'Administration MAPO': 'rt.adminMapo',
+  'Alertes parents': 'rt.alertes', 'Bienvenue': 'rt.welcome', 'Classes': 'rt.classes',
+  'Comptabilité': 'rt.compta', 'Compte non configuré': 'rt.compteNonConfig',
+  'Configuration initiale': 'rt.configInit', 'Devoirs': 'rt.devoirs',
+  'Diplômes vérifiables': 'rt.diplomes', 'Discipline': 'rt.discipline',
+  'Emploi du temps': 'rt.edt', 'Enseignement Supérieur': 'rt.superieur',
+  'Examens nationaux': 'rt.examens', 'Gestion des accès': 'rt.acces',
+  'Import de données': 'rt.import', 'Inscriptions': 'rt.inscriptions',
+  'Matières & Coefficients': 'rt.matieres', 'Mes notes': 'rt.mesNotes',
+  'Mes présences': 'rt.mesPresences', 'Messagerie': 'rt.messagerie',
+  'Mon espace': 'rt.monEspace', 'Mon profil': 'rt.monProfil', 'Mon salaire': 'rt.monSalaire',
+  'Notes & Bulletins': 'rt.notesBulletins', 'Notes & Évaluations': 'rt.notesEval',
+  'Paiements': 'rt.paiements', 'Paramètres école': 'rt.paramEcole',
+  "Passage d'année scolaire": 'rt.passageAnnee', 'Personnel': 'rt.personnel',
+  'Présences': 'rt.presences', 'Rapports': 'rt.rapports', 'Révisions': 'rt.revisions',
+  'Rôles & Permissions': 'rt.roles', 'Suivi des révisions': 'rt.suiviRevisions',
+  'Suivi du décrochage': 'rt.suiviDecrochage', 'Tableau de bord': 'rt.dashboard',
+  'Vérifier un diplôme': 'rt.verifierDiplome', 'Élèves': 'rt.eleves',
+}
+function localizedTitle(raw) {
+  const k = raw && TITLE_KEYS[raw]
+  return k ? i18n.global.t(k) : raw
+}
 
 // Mapping route path → permission module key
 const ROUTE_PERMISSION_MAP = {
@@ -541,12 +569,13 @@ router.beforeEach(async (to) => {
 // Titre de page dynamique
 router.afterEach((to) => {
   // Le tenant MIAPO+ standalone s'affiche MIAPO+, pas MAPO.
+  const title = localizedTitle(to.meta.title)
   if (isMiapoTenant()) {
-    document.title = to.meta.title && to.meta.title !== 'MIAPO+'
-      ? `${to.meta.title} — MIAPO+`
-      : 'MIAPO+ — Le tuteur intelligent par EDUFREM'
+    document.title = title && to.meta.title !== 'MIAPO+'
+      ? `${title} — MIAPO+`
+      : i18n.global.t('rt.taglineMiapo')
   } else {
-    document.title = to.meta.title ? `${to.meta.title} — MAPO` : 'MAPO — Gestion Scolaire by EDUFREM'
+    document.title = title ? `${title} — MAPO` : i18n.global.t('rt.taglineMapo')
   }
 })
 
