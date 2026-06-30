@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Personnel</h1>
-        <p>{{ personnelStore.staffStats.total }} membre{{ personnelStore.staffStats.total > 1 ? 's' : '' }} du personnel</p>
+        <h1>{{ t('pers.title') }}</h1>
+        <p>{{ personnelStore.staffStats.total > 1 ? t('pers.countMany', { n: personnelStore.staffStats.total }) : t('pers.countOne', { n: personnelStore.staffStats.total }) }}</p>
       </div>
       <button class="btn btn-primary" @click="openAddModal">
         <Plus :size="16" />
-        <span>Ajouter</span>
+        <span>{{ t('pers.add') }}</span>
       </button>
     </div>
 
@@ -18,21 +18,21 @@
         <div class="stat-bar-dot blue"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.enseignement }}</div>
-          <div class="stat-bar-label">Enseignement</div>
+          <div class="stat-bar-label">{{ t('pers.cat.enseignement') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: var(--gold)"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.administration }}</div>
-          <div class="stat-bar-label">Administration</div>
+          <div class="stat-bar-label">{{ t('pers.cat.administration') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot green"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.support }}</div>
-          <div class="stat-bar-label">Support</div>
+          <div class="stat-bar-label">{{ t('pers.cat.support') }}</div>
         </div>
       </div>
     </div>
@@ -42,28 +42,28 @@
         <div class="stat-bar-dot" style="background: var(--pr)"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.hommes }}</div>
-          <div class="stat-bar-label">Hommes</div>
+          <div class="stat-bar-label">{{ t('pers.men') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #EC4899"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.femmes }}</div>
-          <div class="stat-bar-label">Femmes</div>
+          <div class="stat-bar-label">{{ t('pers.women') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #F59E0B"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.vacataires }}</div>
-          <div class="stat-bar-label">Vacataires</div>
+          <div class="stat-bar-label">{{ t('pers.temps') }}</div>
         </div>
       </div>
       <div class="stat-bar-item">
         <div class="stat-bar-dot" style="background: #8B5CF6"></div>
         <div>
           <div class="stat-bar-value">{{ personnelStore.staffStats.handicap }}</div>
-          <div class="stat-bar-label">Handicap</div>
+          <div class="stat-bar-label">{{ t('pers.disability') }}</div>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
       <div class="toolbar">
         <div class="search-box">
           <Search :size="18" class="search-icon" />
-          <input v-model="searchQuery" type="text" class="input search-input" placeholder="Rechercher par nom, poste..." />
+          <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('pers.searchPlaceholder')" />
         </div>
         <div class="filter-chips">
           <button
@@ -91,9 +91,9 @@
     <div class="card">
       <div v-if="filteredStaff.length === 0" class="empty-state">
         <UserPlus :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>{{ searchQuery || selectedCategory ? 'Aucun résultat' : 'Aucun membre du personnel' }}</p>
+        <p>{{ searchQuery || selectedCategory ? t('pers.noResult') : t('pers.noStaff') }}</p>
         <button v-if="!searchQuery && !selectedCategory" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="openAddModal">
-          Ajouter un premier membre
+          {{ t('pers.addFirst') }}
         </button>
       </div>
 
@@ -111,14 +111,14 @@
           <table class="table">
             <thead>
               <tr>
-                <th>Nom complet</th>
-                <th>Genre</th>
-                <th>Poste</th>
-                <th>Catégorie</th>
-                <th>Contrat</th>
-                <th>Exp.</th>
-                <th>Statut</th>
-                <th style="width: 90px;">Actions</th>
+                <th>{{ t('pers.fullName') }}</th>
+                <th>{{ t('pers.gender') }}</th>
+                <th>{{ t('pers.role') }}</th>
+                <th>{{ t('pers.category') }}</th>
+                <th>{{ t('pers.contract') }}</th>
+                <th>{{ t('pers.exp') }}</th>
+                <th>{{ t('pers.status') }}</th>
+                <th style="width: 90px;">{{ t('pers.actions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -138,15 +138,15 @@
                   <span v-if="member.contractType" class="badge" :class="member.contractType === 'vacataire' ? 'badge-warning' : 'badge-info'">{{ getContractLabel(member.contractType) }}</span>
                   <span v-else class="text-muted">-</span>
                 </td>
-                <td>{{ member.experienceYears ? member.experienceYears + ' ans' : '-' }}</td>
+                <td>{{ member.experienceYears ? t('pers.years', { n: member.experienceYears }) : '-' }}</td>
                 <td>
-                  <span class="badge" :class="(member.status || '').toLowerCase() === 'actif' ? 'badge-success' : 'badge-danger'">{{ member.status }}</span>
-                  <span v-if="member.handicap" class="tag-mini tag-handicap" title="Handicap">H</span>
+                  <span class="badge" :class="(member.status || '').toLowerCase() === 'actif' ? 'badge-success' : 'badge-danger'">{{ statusLabel(member.status) }}</span>
+                  <span v-if="member.handicap" class="tag-mini tag-handicap" :title="t('pers.disability')">H</span>
                 </td>
                 <td>
                   <div class="action-btns">
-                    <button class="icon-btn" title="Modifier" @click.stop="openEditModal(member)"><Pencil :size="15" /></button>
-                    <button class="icon-btn icon-btn-danger" title="Supprimer" @click.stop="openDeleteConfirm(member)"><Trash2 :size="15" /></button>
+                    <button class="icon-btn" :title="t('pers.edit')" @click.stop="openEditModal(member)"><Pencil :size="15" /></button>
+                    <button class="icon-btn icon-btn-danger" :title="t('pers.delete')" @click.stop="openDeleteConfirm(member)"><Trash2 :size="15" /></button>
                   </div>
                 </td>
               </tr>
@@ -169,35 +169,35 @@
     <div v-if="showModal" class="modal-overlay" @click.self="closeModal">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>{{ editingMember ? 'Modifier' : 'Ajouter un membre' }}</h2>
+          <h2>{{ editingMember ? t('pers.edit') : t('pers.addMember') }}</h2>
           <button class="icon-btn" @click="closeModal"><X :size="20" /></button>
         </div>
 
         <form @submit.prevent="saveMember" class="modal-body">
           <div class="field-row">
             <div class="field">
-              <label>Nom *</label>
-              <input v-model="formData.lastName" type="text" class="input" placeholder="Nom" required />
+              <label>{{ t('pers.lastName') }} *</label>
+              <input v-model="formData.lastName" type="text" class="input" :placeholder="t('pers.lastName')" required />
             </div>
             <div class="field">
-              <label>Prénom *</label>
-              <input v-model="formData.firstName" type="text" class="input" placeholder="Prénom" required />
+              <label>{{ t('pers.firstName') }} *</label>
+              <input v-model="formData.firstName" type="text" class="input" :placeholder="t('pers.firstName')" required />
             </div>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Genre *</label>
+              <label>{{ t('pers.gender') }} *</label>
               <select v-model="formData.gender" class="input" required>
-                <option value="">Sélectionnez</option>
-                <option value="M">Homme</option>
-                <option value="F">Femme</option>
+                <option value="">{{ t('pers.select') }}</option>
+                <option value="M">{{ t('pers.male') }}</option>
+                <option value="F">{{ t('pers.female') }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Catégorie *</label>
+              <label>{{ t('pers.category') }} *</label>
               <select v-model="formData.category" class="input" required>
-                <option value="">Sélectionnez</option>
+                <option value="">{{ t('pers.select') }}</option>
                 <option v-for="cat in STAFF_CATEGORIES" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
               </select>
             </div>
@@ -205,16 +205,16 @@
 
           <div class="field-row">
             <div class="field">
-              <label>Poste *</label>
+              <label>{{ t('pers.role') }} *</label>
               <select v-model="formData.role" class="input" required>
-                <option value="">Sélectionnez</option>
+                <option value="">{{ t('pers.select') }}</option>
                 <option v-for="r in availableRoles" :key="r" :value="r">{{ r }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Type de contrat</label>
+              <label>{{ t('pers.contractType') }}</label>
               <select v-model="formData.contractType" class="input">
-                <option value="">Non renseigné</option>
+                <option value="">{{ t('pers.notSet') }}</option>
                 <option v-for="c in CONTRACT_TYPES" :key="c.value" :value="c.value">{{ c.label }}</option>
               </select>
             </div>
@@ -222,27 +222,27 @@
 
           <div v-if="formData.category === 'enseignement'" class="field-row">
             <div class="field">
-              <label>Qualification / Diplôme</label>
+              <label>{{ t('pers.qualification') }}</label>
               <select v-model="formData.qualification" class="input">
-                <option value="">Non renseigné</option>
+                <option value="">{{ t('pers.notSet') }}</option>
                 <option v-for="q in QUALIFICATION_LEVELS" :key="q.value" :value="q.value">{{ q.label }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Années d'expérience</label>
-              <input v-model.number="formData.experienceYears" type="number" class="input" min="0" max="50" placeholder="Ex : 8" />
+              <label>{{ t('pers.expYears') }}</label>
+              <input v-model.number="formData.experienceYears" type="number" class="input" min="0" max="50" :placeholder="t('pers.expPlaceholder')" />
             </div>
           </div>
 
           <div class="field-row" style="margin-bottom: 16px;">
             <label class="check-field">
               <input type="checkbox" v-model="formData.handicap" />
-              <span>Personne en situation de handicap</span>
+              <span>{{ t('pers.disabledPerson') }}</span>
             </label>
           </div>
 
           <div v-if="formData.category === 'enseignement'" class="field">
-            <label>Matières enseignées</label>
+            <label>{{ t('pers.subjectsTaught') }}</label>
             <div class="subjects-checkboxes">
               <label v-for="s in allSubjectsList" :key="s" class="subject-check-label">
                 <input
@@ -254,32 +254,32 @@
               </label>
             </div>
             <p v-if="formData.subjects.length > 0" class="subjects-summary">
-              {{ formData.subjects.length }} matière{{ formData.subjects.length > 1 ? 's' : '' }} sélectionnée{{ formData.subjects.length > 1 ? 's' : '' }}
+              {{ formData.subjects.length > 1 ? t('pers.subjectsSelectedMany', { n: formData.subjects.length }) : t('pers.subjectsSelectedOne', { n: formData.subjects.length }) }}
             </p>
           </div>
 
           <div class="field-row">
             <div class="field">
-              <label>Téléphone</label>
+              <label>{{ t('pers.phone') }}</label>
               <input v-model="formData.phone" type="tel" class="input" placeholder="+237 6XX XXX XXX" />
             </div>
             <div class="field">
-              <label>Email</label>
+              <label>{{ t('pers.email') }}</label>
               <input v-model="formData.email" type="email" class="input" placeholder="email@exemple.com" />
             </div>
           </div>
 
           <div class="field" style="max-width: 200px;">
-            <label>Statut</label>
+            <label>{{ t('pers.status') }}</label>
             <select v-model="formData.status" class="input">
-              <option value="Actif">Actif</option>
-              <option value="Inactif">Inactif</option>
+              <option value="Actif">{{ t('pers.statusActif') }}</option>
+              <option value="Inactif">{{ t('pers.statusInactif') }}</option>
             </select>
           </div>
 
           <div class="modal-actions">
-            <button type="button" class="btn btn-outline" @click="closeModal">Annuler</button>
-            <button type="submit" class="btn btn-primary">{{ editingMember ? 'Mettre à jour' : 'Ajouter' }}</button>
+            <button type="button" class="btn btn-outline" @click="closeModal">{{ t('pers.cancel') }}</button>
+            <button type="submit" class="btn btn-primary">{{ editingMember ? t('pers.update') : t('pers.add') }}</button>
           </div>
         </form>
       </div>
@@ -289,13 +289,13 @@
     <div v-if="showDeleteConfirm" class="modal-overlay" @click.self="closeDeleteConfirm">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Supprimer ce membre ?</h2>
+          <h2>{{ t('pers.deleteConfirmTitle') }}</h2>
           <button class="icon-btn" @click="closeDeleteConfirm"><X :size="20" /></button>
         </div>
-        <p class="modal-text">{{ deletingMember?.lastName }} {{ deletingMember?.firstName }} sera définitivement supprimé(e).</p>
+        <p class="modal-text">{{ t('pers.deleteConfirmText', { name: (deletingMember?.lastName || '') + ' ' + (deletingMember?.firstName || '') }) }}</p>
         <div class="modal-actions">
-          <button class="btn btn-outline" @click="closeDeleteConfirm">Annuler</button>
-          <button class="btn btn-danger" @click="confirmDelete">Supprimer</button>
+          <button class="btn btn-outline" @click="closeDeleteConfirm">{{ t('pers.cancel') }}</button>
+          <button class="btn btn-danger" @click="confirmDelete">{{ t('pers.delete') }}</button>
         </div>
       </div>
     </div>
@@ -304,10 +304,10 @@
     <div v-if="showDetailModal && detailMember" class="modal-overlay" @click.self="closeDetailModal">
       <div class="modal-card card" style="max-width: 560px;">
         <div class="modal-header">
-          <h2>Fiche personnel</h2>
+          <h2>{{ t('pers.staffCard') }}</h2>
           <div style="display: flex; gap: 8px;">
             <button class="btn btn-sm btn-outline" @click="closeDetailModal(); openEditModal(detailMember)">
-              <Pencil :size="14" /> <span>Modifier</span>
+              <Pencil :size="14" /> <span>{{ t('pers.edit') }}</span>
             </button>
             <button class="icon-btn" @click="closeDetailModal"><X :size="20" /></button>
           </div>
@@ -323,53 +323,53 @@
               <p class="detail-role">{{ detailMember.role }}</p>
             </div>
             <span class="badge" :class="(detailMember.status || '').toLowerCase() === 'actif' ? 'badge-success' : 'badge-danger'" style="margin-left: auto;">
-              {{ detailMember.status }}
+              {{ statusLabel(detailMember.status) }}
             </span>
           </div>
 
           <!-- Infos -->
           <div class="detail-grid">
             <div class="detail-field">
-              <span class="detail-label">Genre</span>
-              <span class="detail-value">{{ detailMember.gender === 'M' ? 'Homme' : detailMember.gender === 'F' ? 'Femme' : '-' }}</span>
+              <span class="detail-label">{{ t('pers.gender') }}</span>
+              <span class="detail-value">{{ detailMember.gender === 'M' ? t('pers.male') : detailMember.gender === 'F' ? t('pers.female') : '-' }}</span>
             </div>
             <div class="detail-field">
-              <span class="detail-label">Catégorie</span>
+              <span class="detail-label">{{ t('pers.category') }}</span>
               <span class="badge" :class="getCategoryBadge(detailMember.category)">{{ getCategoryLabel(detailMember.category) }}</span>
             </div>
             <div class="detail-field">
-              <span class="detail-label">Poste</span>
+              <span class="detail-label">{{ t('pers.role') }}</span>
               <span class="detail-value">{{ detailMember.role }}</span>
             </div>
             <div class="detail-field">
-              <span class="detail-label">Type de contrat</span>
+              <span class="detail-label">{{ t('pers.contractType') }}</span>
               <span class="detail-value">{{ getContractLabel(detailMember.contractType) || '-' }}</span>
             </div>
             <div class="detail-field" v-if="detailMember.qualification">
-              <span class="detail-label">Qualification</span>
+              <span class="detail-label">{{ t('pers.qualification') }}</span>
               <span class="detail-value">{{ getQualificationLabel(detailMember.qualification) }}</span>
             </div>
             <div class="detail-field" v-if="detailMember.experienceYears">
-              <span class="detail-label">Expérience</span>
-              <span class="detail-value">{{ detailMember.experienceYears }} ans</span>
+              <span class="detail-label">{{ t('pers.experience') }}</span>
+              <span class="detail-value">{{ t('pers.years', { n: detailMember.experienceYears }) }}</span>
             </div>
             <div class="detail-field" v-if="detailMember.phone">
-              <span class="detail-label">Téléphone</span>
+              <span class="detail-label">{{ t('pers.phone') }}</span>
               <span class="detail-value">{{ detailMember.phone }}</span>
             </div>
             <div class="detail-field" v-if="detailMember.email">
-              <span class="detail-label">Email</span>
+              <span class="detail-label">{{ t('pers.email') }}</span>
               <span class="detail-value">{{ detailMember.email }}</span>
             </div>
             <div class="detail-field" v-if="detailMember.handicap">
-              <span class="detail-label">Handicap</span>
-              <span class="badge badge-warning">Oui</span>
+              <span class="detail-label">{{ t('pers.disability') }}</span>
+              <span class="badge badge-warning">{{ t('pers.yes') }}</span>
             </div>
           </div>
 
           <!-- Matières -->
           <div v-if="detailMember.subjects && detailMember.subjects.length > 0" class="detail-section">
-            <h4 class="detail-section-title">Matières enseignées</h4>
+            <h4 class="detail-section-title">{{ t('pers.subjectsTaught') }}</h4>
             <div class="detail-subjects">
               <span v-for="s in detailMember.subjects" :key="s" class="badge badge-subject">{{ s }}</span>
             </div>
@@ -377,14 +377,14 @@
 
           <!-- Rémunération -->
           <div class="detail-section">
-            <h4 class="detail-section-title">Rémunération</h4>
+            <h4 class="detail-section-title">{{ t('pers.remuneration') }}</h4>
             <div class="detail-remuneration">
               <div class="remun-item">
-                <span class="detail-label">Salaire brut mensuel</span>
+                <span class="detail-label">{{ t('pers.grossMonthly') }}</span>
                 <span class="remun-value">{{ formatMoney(detailMember.salary || 0) }}</span>
               </div>
               <div class="remun-item">
-                <span class="detail-label">Salaire annuel</span>
+                <span class="detail-label">{{ t('pers.annualSalary') }}</span>
                 <span class="remun-value">{{ formatMoney((detailMember.salary || 0) * 12) }}</span>
               </div>
             </div>
@@ -399,9 +399,11 @@
 import { usePersonnelStore, STAFF_CATEGORIES, STAFF_ROLES, SUBJECTS_BY_CYCLE, QUALIFICATION_LEVELS, CONTRACT_TYPES } from '../stores/personnel'
 import { useSubjectsStore } from '../stores/subjects'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Search, Plus, Pencil, Trash2, X, UserPlus } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
 const searchQuery = ref('')
@@ -415,12 +417,12 @@ const editingMember = ref(null)
 const deletingMember = ref(null)
 const detailMember = ref(null)
 
-const categoryFilters = [
-  { value: '', label: 'Tous' },
-  { value: 'enseignement', label: 'Enseignement' },
-  { value: 'administration', label: 'Administration' },
-  { value: 'support', label: 'Support' },
-]
+const categoryFilters = computed(() => [
+  { value: '', label: t('pers.all') },
+  { value: 'enseignement', label: t('pers.cat.enseignement') },
+  { value: 'administration', label: t('pers.cat.administration') },
+  { value: 'support', label: t('pers.cat.support') },
+])
 
 const formData = reactive({
   firstName: '', lastName: '', gender: '', category: '', role: '',
@@ -488,9 +490,11 @@ const getCategoryBadge = (cat) => {
   return ''
 }
 const getCategoryLabel = (cat) => {
-  const found = STAFF_CATEGORIES.find(c => c.value === cat)
-  return found ? found.label : cat
+  const k = 'pers.cat.' + cat
+  const l = t(k)
+  return l === k ? cat : l
 }
+const statusLabel = (s) => (s || '').toLowerCase() === 'actif' ? t('pers.statusActif') : t('pers.statusInactif')
 const getContractLabel = (val) => {
   const found = CONTRACT_TYPES.find(c => c.value === val)
   return found ? found.label : val || ''
