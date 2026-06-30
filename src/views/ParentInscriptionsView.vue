@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Inscriptions</h1>
-        <p class="page-subtitle">Gerez les dossiers d'inscription de vos enfants</p>
+        <h1 class="page-title">{{ t('pinsc.title') }}</h1>
+        <p class="page-subtitle">{{ t('pinsc.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="openNewDossier">
         <Plus :size="20" />
-        <span>Nouvelle inscription</span>
+        <span>{{ t('pinsc.newInscription') }}</span>
       </button>
     </div>
 
@@ -16,8 +16,8 @@
     <div class="dossiers-container">
       <div v-if="myDossiers.length === 0" class="empty-state">
         <UserPlus :size="48" />
-        <h3>Aucun dossier d'inscription</h3>
-        <p>Commencez par créer une nouvelle inscription pour votre enfant</p>
+        <h3>{{ t('pinsc.emptyTitle') }}</h3>
+        <p>{{ t('pinsc.emptyDesc') }}</p>
       </div>
 
       <div v-else class="dossiers-grid">
@@ -47,7 +47,7 @@
               v-if="dossier.status === 'brouillon'"
               class="icon-btn edit-btn"
               @click="editDossier(dossier)"
-              title="Modifier"
+              :title="t('pinsc.modify')"
             >
               <FileText :size="18" />
             </button>
@@ -55,7 +55,7 @@
               v-else
               class="icon-btn view-btn"
               @click="viewDossier(dossier)"
-              title="Voir les détails"
+              :title="t('pinsc.viewDetails')"
             >
               <Eye :size="18" />
             </button>
@@ -69,7 +69,7 @@
       <div class="modal-card">
         <!-- Modal Header -->
         <div class="modal-header">
-          <h2>{{ editingDossier ? 'Modifier inscription' : 'Nouvelle inscription' }}</h2>
+          <h2>{{ editingDossier ? t('pinsc.editInscription') : t('pinsc.newInscription') }}</h2>
           <button class="icon-btn close-btn" @click="closeModal">
             <X :size="24" />
           </button>
@@ -80,7 +80,7 @@
           <!-- Step 1: Type & Child Info -->
           <div v-if="currentStep === 1" class="step-content">
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">Type d'inscription</legend>
+              <legend class="fieldset-legend">{{ t('pinsc.inscriptionType') }}</legend>
               <div class="field-row">
                 <label class="radio-label">
                   <input
@@ -88,7 +88,7 @@
                     type="radio"
                     value="inscription"
                   />
-                  <span>Nouvelle inscription</span>
+                  <span>{{ t('pinsc.newInscription') }}</span>
                 </label>
                 <label class="radio-label">
                   <input
@@ -96,16 +96,16 @@
                     type="radio"
                     value="reinscription"
                   />
-                  <span>Réinscription</span>
+                  <span>{{ t('pinsc.typeReins') }}</span>
                 </label>
               </div>
             </fieldset>
 
             <!-- Reinscription: Child Selector -->
             <div v-if="formData.type === 'reinscription' && existingChildren.length > 0" class="field">
-              <label class="field-label">Sélectionner l'enfant à réinscrire</label>
+              <label class="field-label">{{ t('pinsc.selectChild') }}</label>
               <select v-model="selectedExistingChild" class="select">
-                <option value="">-- Choisir un enfant --</option>
+                <option value="">{{ t('pinsc.chooseChild') }}</option>
                 <option v-for="child in existingChildren" :key="child.id" :value="child.id">
                   {{ child.prenom }} {{ child.nom }}
                 </option>
@@ -114,38 +114,38 @@
 
             <!-- Child Information -->
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">Informations de l'enfant</legend>
+              <legend class="fieldset-legend">{{ t('pinsc.childInfo') }}</legend>
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field-label">Nom</label>
-                  <input v-model="formData.childLastName" type="text" class="input" placeholder="Nom de l'enfant" />
+                  <label class="field-label">{{ t('pinsc.lastName') }}</label>
+                  <input v-model="formData.childLastName" type="text" class="input" :placeholder="t('pinsc.childLastNamePh')" />
                 </div>
                 <div class="field">
-                  <label class="field-label">Prénom</label>
-                  <input v-model="formData.childFirstName" type="text" class="input" placeholder="Prénom de l'enfant" />
+                  <label class="field-label">{{ t('pinsc.firstName') }}</label>
+                  <input v-model="formData.childFirstName" type="text" class="input" :placeholder="t('pinsc.childFirstNamePh')" />
                 </div>
               </div>
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field-label">Genre</label>
+                  <label class="field-label">{{ t('pinsc.gender') }}</label>
                   <select v-model="formData.childGender" class="select">
-                    <option value="">-- Sélectionner --</option>
-                    <option value="M">Garçon</option>
-                    <option value="F">Fille</option>
+                    <option value="">{{ t('pinsc.selectDash') }}</option>
+                    <option value="M">{{ t('pinsc.boy') }}</option>
+                    <option value="F">{{ t('pinsc.girl') }}</option>
                   </select>
                 </div>
                 <div class="field">
-                  <label class="field-label">Date de naissance</label>
+                  <label class="field-label">{{ t('pinsc.dob') }}</label>
                   <input v-model="formData.childBirthDate" type="date" class="input" />
                 </div>
               </div>
 
               <div class="field">
-                <label class="field-label">Classe demandée</label>
+                <label class="field-label">{{ t('pinsc.requestedClass') }}</label>
                 <select v-model="formData.requestedClass" class="select">
-                  <option value="">-- Sélectionner --</option>
+                  <option value="">{{ t('pinsc.selectDash') }}</option>
                   <option v-for="klass in allClasses" :key="klass.id" :value="klass.name">
                     {{ klass.name }}
                   </option>
@@ -154,12 +154,12 @@
 
               <div class="field-row">
                 <div class="field">
-                  <label class="field-label">Ville</label>
-                  <input v-model="formData.childCity" type="text" class="input" placeholder="Ville" />
+                  <label class="field-label">{{ t('pinsc.city') }}</label>
+                  <input v-model="formData.childCity" type="text" class="input" :placeholder="t('pinsc.city')" />
                 </div>
                 <div class="field">
-                  <label class="field-label">Quartier</label>
-                  <input v-model="formData.childDistrict" type="text" class="input" placeholder="Quartier" />
+                  <label class="field-label">{{ t('pinsc.quartier') }}</label>
+                  <input v-model="formData.childDistrict" type="text" class="input" :placeholder="t('pinsc.quartier')" />
                 </div>
               </div>
             </fieldset>
@@ -168,15 +168,15 @@
           <!-- Step 2: Documents -->
           <div v-if="currentStep === 2" class="step-content">
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">Documents requis</legend>
-              <p class="step-description">Téléchargez les documents obligatoires pour cette inscription</p>
+              <legend class="fieldset-legend">{{ t('pinsc.requiredDocs') }}</legend>
+              <p class="step-description">{{ t('pinsc.uploadDocsHint') }}</p>
 
               <div v-for="docKey in REQUIRED_DOCUMENTS" :key="docKey" class="field">
                 <label class="field-label">{{ getDocumentLabel(docKey) }}</label>
                 <div class="upload-zone" @click="triggerFileInput(docKey)" @dragover.prevent @drop.prevent="handleDrop($event, docKey)">
                   <div v-if="!getUploadedFile(docKey)" class="upload-placeholder">
                     <Upload :size="28" />
-                    <p>Cliquez ou glissez-déposez</p>
+                    <p>{{ t('pinsc.clickOrDrop') }}</p>
                   </div>
                   <div v-else class="upload-success">
                     <CheckCircle :size="24" color="#10B981" />
@@ -196,38 +196,38 @@
           <!-- Step 3: Recap -->
           <div v-if="currentStep === 3" class="step-content">
             <fieldset class="fieldset">
-              <legend class="fieldset-legend">Récapitulatif</legend>
+              <legend class="fieldset-legend">{{ t('pinsc.recap') }}</legend>
 
               <div class="recap-section">
-                <h4>Informations de l'enfant</h4>
+                <h4>{{ t('pinsc.childInfo') }}</h4>
                 <div class="recap-row">
-                  <span class="recap-label">Nom :</span>
+                  <span class="recap-label">{{ t('pinsc.rlName') }}</span>
                   <span class="recap-value">{{ formData.childLastName }}</span>
                 </div>
                 <div class="recap-row">
-                  <span class="recap-label">Prénom :</span>
+                  <span class="recap-label">{{ t('pinsc.rlFirstName') }}</span>
                   <span class="recap-value">{{ formData.childFirstName }}</span>
                 </div>
                 <div class="recap-row">
-                  <span class="recap-label">Genre :</span>
-                  <span class="recap-value">{{ formData.childGender === 'M' ? 'Garçon' : 'Fille' }}</span>
+                  <span class="recap-label">{{ t('pinsc.rlGender') }}</span>
+                  <span class="recap-value">{{ formData.childGender === 'M' ? t('pinsc.boy') : t('pinsc.girl') }}</span>
                 </div>
                 <div class="recap-row">
-                  <span class="recap-label">Date de naissance :</span>
+                  <span class="recap-label">{{ t('pinsc.rlDob') }}</span>
                   <span class="recap-value">{{ formatDate(formData.childBirthDate) }}</span>
                 </div>
                 <div class="recap-row">
-                  <span class="recap-label">Classe demandée :</span>
+                  <span class="recap-label">{{ t('pinsc.rlClass') }}</span>
                   <span class="recap-value">{{ formData.requestedClass }}</span>
                 </div>
                 <div class="recap-row">
-                  <span class="recap-label">Localité :</span>
+                  <span class="recap-label">{{ t('pinsc.rlLocality') }}</span>
                   <span class="recap-value">{{ formData.childCity }}, {{ formData.childDistrict }}</span>
                 </div>
               </div>
 
               <div class="recap-section">
-                <h4>Documents</h4>
+                <h4>{{ t('pinsc.documents') }}</h4>
                 <div v-for="docKey in REQUIRED_DOCUMENTS" :key="docKey" class="recap-doc">
                   <span v-if="getUploadedFile(docKey)" class="doc-status success">
                     <CheckCircle :size="18" />
@@ -251,7 +251,7 @@
             @click="previousStep"
           >
             <ChevronLeft :size="18" />
-            <span>Précédent</span>
+            <span>{{ t('pinsc.previous') }}</span>
           </button>
 
           <div class="spacer"></div>
@@ -261,7 +261,7 @@
             class="btn btn-outline"
             @click="nextStep"
           >
-            <span>Suivant</span>
+            <span>{{ t('pinsc.next') }}</span>
             <ChevronRight :size="18" />
           </button>
 
@@ -272,11 +272,11 @@
             :disabled="!canSubmit"
           >
             <Send :size="18" />
-            <span>Soumettre</span>
+            <span>{{ t('pinsc.submit') }}</span>
           </button>
 
           <button class="btn btn-outline" @click="closeModal">
-            Annuler
+            {{ t('pinsc.cancel') }}
           </button>
         </div>
       </div>
@@ -286,6 +286,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Plus, FileText, Paperclip, Upload, X, CheckCircle, XCircle, AlertTriangle,
   ChevronLeft, ChevronRight, Send, UserPlus, RotateCcw, Eye
@@ -297,6 +298,7 @@ import { useParentChildrenStore } from '../stores/parentChildren'
 import { useAuthStore } from '../stores/auth'
 
 // Stores
+const { t, locale } = useI18n({ useScope: 'global' })
 const inscriptionsStore = useInscriptionsStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
@@ -494,7 +496,7 @@ const validateAndStoreFile = (file, docKey) => {
   // Check file size (max 5MB)
   const maxSize = 5 * 1024 * 1024 // 5MB
   if (file.size > maxSize) {
-    alert('Le fichier est trop volumineux (max 5MB)')
+    alert(t('pinsc.fileTooBig'))
     return
   }
 
@@ -545,7 +547,7 @@ const getAvatarColor = (seed) => {
 }
 
 const getTypeLabel = (type) => {
-  return type === 'inscription' ? 'Nouvelle' : 'Réinscription'
+  return type === 'inscription' ? t('pinsc.typeNew') : t('pinsc.typeReins')
 }
 
 const getTypeBadgeClass = (type) => {
@@ -553,15 +555,11 @@ const getTypeBadgeClass = (type) => {
 }
 
 const getStatusLabel = (status) => {
-  const labels = {
-    'brouillon': 'Brouillon',
-    'soumis': 'Soumis',
-    'complet': 'Complet',
-    'incomplet': 'Incomplet',
-    'valide': 'Valide',
-    'refuse': 'Refusé'
+  const keys = {
+    brouillon: 'stBrouillon', soumis: 'stSoumis', complet: 'stComplet',
+    incomplet: 'stIncomplet', valide: 'stValide', refuse: 'stRefuse',
   }
-  return labels[status] || status
+  return keys[status] ? t('pinsc.' + keys[status]) : status
 }
 
 const getStatusBadgeClass = (status) => {
@@ -579,7 +577,7 @@ const getStatusBadgeClass = (status) => {
 const formatDate = (dateStr) => {
   if (!dateStr) return '-'
   const date = new Date(dateStr)
-  return date.toLocaleDateString('fr-FR', {
+  return date.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric'
