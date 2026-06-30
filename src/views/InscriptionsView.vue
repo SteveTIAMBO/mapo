@@ -3,17 +3,17 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Inscriptions</h1>
-        <p>Gestion des dossiers d'inscription et de réinscription</p>
+        <h1>{{ t('insc.title') }}</h1>
+        <p>{{ t('insc.subtitle') }}</p>
       </div>
       <div style="display: flex; gap: 10px;">
         <RouterLink to="/import" class="btn btn-outline" style="display: inline-flex; align-items: center; gap: 6px;">
           <Upload :size="16" />
-          <span>Import en masse</span>
+          <span>{{ t('insc.bulkImport') }}</span>
         </RouterLink>
         <button class="btn btn-primary" @click="openNewDossier">
           <Plus :size="16" />
-          <span>Nouveau dossier</span>
+          <span>{{ t('insc.newDossier') }}</span>
         </button>
       </div>
     </div>
@@ -24,35 +24,35 @@
         <span class="stat-bar-dot blue"></span>
         <div>
           <div class="stat-bar-value">{{ inscriptionsStore.dossierStats.total }}</div>
-          <div class="stat-bar-label">Total</div>
+          <div class="stat-bar-label">{{ t('insc.statTotal') }}</div>
         </div>
       </div>
       <div class="stat-bar-item stat-bar-clickable-item" :class="{ 'stat-active': filterStatus === 'soumis' }" @click="filterStatus = 'soumis'">
         <span class="stat-bar-dot" style="background: var(--gold);"></span>
         <div>
           <div class="stat-bar-value">{{ inscriptionsStore.dossierStats.soumis + inscriptionsStore.dossierStats.complet }}</div>
-          <div class="stat-bar-label">A traiter</div>
+          <div class="stat-bar-label">{{ t('insc.statToProcess') }}</div>
         </div>
       </div>
       <div class="stat-bar-item stat-bar-clickable-item" :class="{ 'stat-active': filterStatus === 'incomplet' }" @click="filterStatus = 'incomplet'">
         <span class="stat-bar-dot" style="background: var(--danger);"></span>
         <div>
           <div class="stat-bar-value">{{ inscriptionsStore.dossierStats.incomplet }}</div>
-          <div class="stat-bar-label">Incomplets</div>
+          <div class="stat-bar-label">{{ t('insc.statIncomplete') }}</div>
         </div>
       </div>
       <div class="stat-bar-item stat-bar-clickable-item" :class="{ 'stat-active': filterStatus === 'valide' }" @click="filterStatus = 'valide'">
         <span class="stat-bar-dot green"></span>
         <div>
           <div class="stat-bar-value">{{ inscriptionsStore.dossierStats.valide }}</div>
-          <div class="stat-bar-label">Validés</div>
+          <div class="stat-bar-label">{{ t('insc.statValidated') }}</div>
         </div>
       </div>
       <div class="stat-bar-item stat-bar-clickable-item" :class="{ 'stat-active': filterStatus === 'refuse' }" @click="filterStatus = 'refuse'">
         <span class="stat-bar-dot" style="background: var(--tx3);"></span>
         <div>
           <div class="stat-bar-value">{{ inscriptionsStore.dossierStats.refuse }}</div>
-          <div class="stat-bar-label">Refusés</div>
+          <div class="stat-bar-label">{{ t('insc.statRefused') }}</div>
         </div>
       </div>
     </div>
@@ -62,21 +62,21 @@
       <div class="toolbar">
         <div class="search-box">
           <Search :size="18" class="search-icon" />
-          <input v-model="searchQuery" type="text" class="input search-input" placeholder="Rechercher par nom, prénom..." />
+          <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('insc.searchPh')" />
         </div>
         <select v-model="filterType" class="select">
-          <option value="">Tous les types</option>
-          <option value="inscription">Inscription</option>
-          <option value="reinscription">Réinscription</option>
+          <option value="">{{ t('insc.allTypes') }}</option>
+          <option value="inscription">{{ t('insc.typeInscription') }}</option>
+          <option value="reinscription">{{ t('insc.typeReinscription') }}</option>
         </select>
         <select v-model="filterStatus" class="select">
-          <option value="">Tous les statuts</option>
-          <option value="brouillon">Brouillon</option>
-          <option value="soumis">Soumis</option>
-          <option value="complet">Complet</option>
-          <option value="incomplet">Incomplet</option>
-          <option value="valide">Validé</option>
-          <option value="refuse">Refusé</option>
+          <option value="">{{ t('insc.allStatuses') }}</option>
+          <option value="brouillon">{{ t('insc.stBrouillon') }}</option>
+          <option value="soumis">{{ t('insc.stSoumis') }}</option>
+          <option value="complet">{{ t('insc.stComplet') }}</option>
+          <option value="incomplet">{{ t('insc.stIncomplet') }}</option>
+          <option value="valide">{{ t('insc.stValide') }}</option>
+          <option value="refuse">{{ t('insc.stRefuse') }}</option>
         </select>
       </div>
     </div>
@@ -85,22 +85,22 @@
     <div class="card">
       <div v-if="filteredDossiers.length === 0" class="empty-state" style="padding: 48px 24px;">
         <FileText :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>{{ searchQuery || filterStatus || filterType ? 'Aucun dossier trouvé' : 'Aucun dossier d\'inscription' }}</p>
+        <p>{{ searchQuery || filterStatus || filterType ? t('insc.noFileFound') : t('insc.noFile') }}</p>
         <button v-if="!searchQuery && !filterStatus && !filterType" class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="openNewDossier">
-          Créer un premier dossier
+          {{ t('insc.createFirst') }}
         </button>
       </div>
       <div v-else class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Élève</th>
-              <th>Type</th>
-              <th>Classe</th>
-              <th>Statut</th>
-              <th>Pièces</th>
-              <th>Date</th>
-              <th class="text-center">Actions</th>
+              <th>{{ t('insc.thStudent') }}</th>
+              <th>{{ t('insc.thType') }}</th>
+              <th>{{ t('insc.thClass') }}</th>
+              <th>{{ t('insc.thStatus') }}</th>
+              <th>{{ t('insc.thDocs') }}</th>
+              <th>{{ t('insc.thDate') }}</th>
+              <th class="text-center">{{ t('insc.thActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -118,7 +118,7 @@
               </td>
               <td>
                 <span class="badge" :class="d.type === 'reinscription' ? 'badge-info' : 'badge-default'">
-                  {{ d.type === 'reinscription' ? 'Réinscription' : 'Inscription' }}
+                  {{ typeLabel(d.type) }}
                 </span>
               </td>
               <td>{{ d.className || '—' }}</td>
@@ -134,13 +134,13 @@
               <td>{{ formatDate(d.submittedAt || d.createdAt) }}</td>
               <td class="text-center" @click.stop>
                 <div class="action-btns">
-                  <button v-if="d.status === 'brouillon'" class="btn btn-ghost btn-sm" @click="openEditDossier(d)" title="Modifier">
+                  <button v-if="d.status === 'brouillon'" class="btn btn-ghost btn-sm" @click="openEditDossier(d)" :title="t('insc.modify')">
                     <Pencil :size="14" />
                   </button>
-                  <button v-if="canValidate(d)" class="btn btn-ghost btn-sm" style="color: var(--success);" @click="handleValidate(d)" title="Valider">
+                  <button v-if="canValidate(d)" class="btn btn-ghost btn-sm" style="color: var(--success);" @click="handleValidate(d)" :title="t('insc.validate')">
                     <CheckCircle :size="14" />
                   </button>
-                  <button v-if="d.status !== 'valide'" class="btn btn-ghost btn-sm" style="color: var(--danger);" @click="handleDelete(d)" title="Supprimer">
+                  <button v-if="d.status !== 'valide'" class="btn btn-ghost btn-sm" style="color: var(--danger);" @click="handleDelete(d)" :title="t('insc.delete')">
                     <Trash2 :size="14" />
                   </button>
                 </div>
@@ -155,7 +155,7 @@
     <div v-if="showFormModal" class="modal-overlay" @click.self="showFormModal = false">
       <div class="modal-card card modal-lg">
         <div class="modal-header">
-          <h2>{{ editingDossier ? 'Modifier le dossier' : 'Nouveau dossier d\'inscription' }}</h2>
+          <h2>{{ editingDossier ? t('insc.editFile') : t('insc.newFileTitle') }}</h2>
           <button class="icon-btn" @click="showFormModal = false"><X :size="20" /></button>
         </div>
         <form @submit.prevent="saveDossier" class="modal-body">
@@ -169,80 +169,80 @@
 
           <!-- Step 1: Type + Info élève -->
           <div v-if="formStep === 0" class="form-step">
-            <div class="fieldset-legend">Type de dossier</div>
+            <div class="fieldset-legend">{{ t('insc.fileType') }}</div>
             <div class="type-cards">
-              <label v-for="t in DOSSIER_TYPES" :key="t.value" class="type-card" :class="{ selected: form.type === t.value }">
-                <input type="radio" v-model="form.type" :value="t.value" style="display: none;" />
-                <UserPlus v-if="t.value === 'inscription'" :size="20" />
+              <label v-for="dt in DOSSIER_TYPES" :key="dt.value" class="type-card" :class="{ selected: form.type === dt.value }">
+                <input type="radio" v-model="form.type" :value="dt.value" style="display: none;" />
+                <UserPlus v-if="dt.value === 'inscription'" :size="20" />
                 <RotateCcw v-else :size="20" />
-                <span>{{ t.label }}</span>
+                <span>{{ typeLabel(dt.value) }}</span>
               </label>
             </div>
 
-            <div class="fieldset-legend" style="margin-top: 20px;">Informations de l'élève</div>
+            <div class="fieldset-legend" style="margin-top: 20px;">{{ t('insc.studentInfo') }}</div>
             <div class="field-row">
-              <div class="field"><label>Nom *</label><input v-model="form.lastName" type="text" class="input" required /></div>
-              <div class="field"><label>Prénom *</label><input v-model="form.firstName" type="text" class="input" required /></div>
+              <div class="field"><label>{{ t('insc.lastName') }} *</label><input v-model="form.lastName" type="text" class="input" required /></div>
+              <div class="field"><label>{{ t('insc.firstName') }} *</label><input v-model="form.firstName" type="text" class="input" required /></div>
             </div>
             <div class="field-row">
               <div class="field">
-                <label>Genre *</label>
+                <label>{{ t('insc.gender') }} *</label>
                 <select v-model="form.gender" class="input" required>
-                  <option value="">Sélectionnez</option>
-                  <option value="M">Masculin</option>
-                  <option value="F">Féminin</option>
+                  <option value="">{{ t('insc.select') }}</option>
+                  <option value="M">{{ t('insc.male') }}</option>
+                  <option value="F">{{ t('insc.female') }}</option>
                 </select>
               </div>
-              <div class="field"><label>Date de naissance *</label><input v-model="form.dateOfBirth" type="date" class="input" required /></div>
+              <div class="field"><label>{{ t('insc.dob') }} *</label><input v-model="form.dateOfBirth" type="date" class="input" required /></div>
             </div>
             <div class="field-row">
               <div class="field">
-                <label>Classe demandée *</label>
+                <label>{{ t('insc.requestedClass') }} *</label>
                 <select v-model="form.className" class="input" required>
-                  <option value="">Sélectionnez</option>
+                  <option value="">{{ t('insc.select') }}</option>
                   <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
                 </select>
               </div>
               <div class="field" v-if="form.type === 'inscription'">
-                <label>Établissement précédent</label>
-                <input v-model="form.previousSchool" type="text" class="input" placeholder="Nom de l'ancien établissement" />
+                <label>{{ t('insc.previousSchool') }}</label>
+                <input v-model="form.previousSchool" type="text" class="input" :placeholder="t('insc.previousSchoolPh')" />
               </div>
               <div class="field" v-if="form.type === 'reinscription'">
-                <label>Classe précédente</label>
+                <label>{{ t('insc.previousClass') }}</label>
                 <select v-model="form.previousClass" class="input">
-                  <option value="">Sélectionnez</option>
+                  <option value="">{{ t('insc.select') }}</option>
                   <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
                 </select>
               </div>
             </div>
             <div class="field-row">
-              <div class="field"><label>Ville</label><input v-model="form.city" type="text" class="input" placeholder="Yaoundé" /></div>
-              <div class="field"><label>Quartier</label><input v-model="form.quartier" type="text" class="input" placeholder="Santa Barbara" /></div>
+              <div class="field"><label>{{ t('insc.city') }}</label><input v-model="form.city" type="text" class="input" placeholder="Yaoundé" /></div>
+              <div class="field"><label>{{ t('insc.quartier') }}</label><input v-model="form.quartier" type="text" class="input" placeholder="Santa Barbara" /></div>
             </div>
           </div>
 
           <!-- Step 2: Tuteur -->
           <div v-if="formStep === 1" class="form-step">
-            <div class="fieldset-legend">Tuteur / Parent</div>
+            <div class="fieldset-legend">{{ t('insc.tutorParent') }}</div>
             <div class="field-row">
-              <div class="field"><label>Nom du tuteur *</label><input v-model="form.parentLastName" type="text" class="input" required /></div>
-              <div class="field"><label>Prénom du tuteur *</label><input v-model="form.parentFirstName" type="text" class="input" required /></div>
+              <div class="field"><label>{{ t('insc.tutorLastName') }} *</label><input v-model="form.parentLastName" type="text" class="input" required /></div>
+              <div class="field"><label>{{ t('insc.tutorFirstName') }} *</label><input v-model="form.parentFirstName" type="text" class="input" required /></div>
             </div>
             <div class="field-row">
-              <div class="field"><label>Téléphone principal *</label><input v-model="form.parentPhone" type="tel" class="input" placeholder="+237 6XX XXX XXX" required /></div>
-              <div class="field"><label>Téléphone secondaire</label><input v-model="form.parentPhone2" type="tel" class="input" placeholder="+237 6XX XXX XXX" /></div>
+              <div class="field"><label>{{ t('insc.mainPhone') }} *</label><input v-model="form.parentPhone" type="tel" class="input" placeholder="+237 6XX XXX XXX" required /></div>
+              <div class="field"><label>{{ t('insc.secondPhone') }}</label><input v-model="form.parentPhone2" type="tel" class="input" placeholder="+237 6XX XXX XXX" /></div>
             </div>
             <div class="field">
-              <label>Email du parent</label>
+              <label>{{ t('insc.parentEmail') }}</label>
               <input v-model="form.parentEmail" type="email" class="input" placeholder="parent@email.com" />
-              <span class="field-hint">Permettra au parent d'accéder à l'espace parent</span>
+              <span class="field-hint">{{ t('insc.parentEmailHint') }}</span>
             </div>
 
             <!-- Format de reception des documents -->
             <div class="field" style="margin-top: 16px;">
-              <label>Format de reception des documents scolaires</label>
+              <label>{{ t('insc.docFormat') }}</label>
               <p style="font-size: 12px; color: var(--tx3); margin: 0 0 8px;">
-                Comment les parents souhaitent recevoir les bulletins et documents ?
+                {{ t('insc.docFormatHint') }}
               </p>
               <div class="doc-format-options">
                 <label
@@ -265,12 +265,12 @@
 
           <!-- Step 3: Pièces jointes -->
           <div v-if="formStep === 2" class="form-step">
-            <div class="fieldset-legend">Pièces du dossier</div>
+            <div class="fieldset-legend">{{ t('insc.dossierPieces') }}</div>
             <div class="documents-grid">
               <div v-for="doc in REQUIRED_DOCUMENTS" :key="doc.key" class="doc-slot" :class="{ 'doc-uploaded': hasDocument(doc.key), 'doc-required': doc.required && !hasDocument(doc.key) }">
                 <div class="doc-slot-header">
                   <span class="doc-slot-label">{{ doc.label }}</span>
-                  <span v-if="doc.required" class="doc-required-tag">Obligatoire</span>
+                  <span v-if="doc.required" class="doc-required-tag">{{ t('insc.mandatory') }}</span>
                 </div>
                 <div v-if="hasDocument(doc.key)" class="doc-slot-file">
                   <Paperclip :size="14" />
@@ -281,7 +281,7 @@
                 </div>
                 <label v-else class="doc-upload-zone">
                   <Upload :size="18" />
-                  <span>Cliquez pour ajouter</span>
+                  <span>{{ t('insc.clickToAdd') }}</span>
                   <input type="file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" @change="handleDocUpload($event, doc.key)" style="display: none;" />
                 </label>
               </div>
@@ -290,53 +290,53 @@
 
           <!-- Step 4: Récapitulatif -->
           <div v-if="formStep === 3" class="form-step">
-            <div class="fieldset-legend">Récapitulatif</div>
+            <div class="fieldset-legend">{{ t('insc.recap') }}</div>
             <div class="recap-grid">
               <div class="recap-section">
-                <h4>Élève</h4>
-                <div class="recap-line"><span>Nom complet</span><strong>{{ form.lastName }} {{ form.firstName }}</strong></div>
-                <div class="recap-line"><span>Genre</span><span>{{ form.gender === 'F' ? 'Féminin' : 'Masculin' }}</span></div>
-                <div class="recap-line"><span>Date de naissance</span><span>{{ form.dateOfBirth }}</span></div>
-                <div class="recap-line"><span>Classe</span><strong>{{ form.className }}</strong></div>
-                <div class="recap-line" v-if="form.previousSchool"><span>Établissement précédent</span><span>{{ form.previousSchool }}</span></div>
+                <h4>{{ t('insc.thStudent') }}</h4>
+                <div class="recap-line"><span>{{ t('insc.fullName') }}</span><strong>{{ form.lastName }} {{ form.firstName }}</strong></div>
+                <div class="recap-line"><span>{{ t('insc.gender') }}</span><span>{{ form.gender === 'F' ? t('insc.female') : t('insc.male') }}</span></div>
+                <div class="recap-line"><span>{{ t('insc.dob') }}</span><span>{{ form.dateOfBirth }}</span></div>
+                <div class="recap-line"><span>{{ t('insc.thClass') }}</span><strong>{{ form.className }}</strong></div>
+                <div class="recap-line" v-if="form.previousSchool"><span>{{ t('insc.previousSchool') }}</span><span>{{ form.previousSchool }}</span></div>
               </div>
               <div class="recap-section">
-                <h4>Tuteur</h4>
-                <div class="recap-line"><span>Nom</span><strong>{{ form.parentLastName }} {{ form.parentFirstName }}</strong></div>
-                <div class="recap-line"><span>Téléphone</span><span>{{ form.parentPhone }}</span></div>
-                <div class="recap-line" v-if="form.parentEmail"><span>Email</span><span>{{ form.parentEmail }}</span></div>
-                <div class="recap-line"><span>Format documents</span><span>{{ formatDocLabel(form.documentFormat) }}</span></div>
+                <h4>{{ t('insc.tutor') }}</h4>
+                <div class="recap-line"><span>{{ t('insc.lastName') }}</span><strong>{{ form.parentLastName }} {{ form.parentFirstName }}</strong></div>
+                <div class="recap-line"><span>{{ t('insc.phone') }}</span><span>{{ form.parentPhone }}</span></div>
+                <div class="recap-line" v-if="form.parentEmail"><span>{{ t('insc.email') }}</span><span>{{ form.parentEmail }}</span></div>
+                <div class="recap-line"><span>{{ t('insc.formatDocs') }}</span><span>{{ formatDocLabel(form.documentFormat) }}</span></div>
               </div>
               <div class="recap-section">
-                <h4>Pièces jointes</h4>
+                <h4>{{ t('insc.attachments') }}</h4>
                 <div v-for="doc in REQUIRED_DOCUMENTS" :key="doc.key" class="recap-line">
                   <span>{{ doc.label }}</span>
                   <span :class="hasDocument(doc.key) ? 'cs-green' : (doc.required ? 'cs-red' : '')" style="font-weight: 500;">
-                    {{ hasDocument(doc.key) ? 'Fourni' : 'Manquant' }}
+                    {{ hasDocument(doc.key) ? t('insc.provided') : t('insc.missing') }}
                   </span>
                 </div>
               </div>
             </div>
             <div v-if="missingRequired.length > 0" class="alert-box alert-warning">
               <AlertTriangle :size="14" />
-              <span>Pièces obligatoires manquantes : {{ missingRequired.join(', ') }}. Le dossier sera marqué comme incomplet.</span>
+              <span>{{ t('insc.missingWarn', { list: missingRequired.join(', ') }) }}</span>
             </div>
           </div>
 
           <!-- Navigation buttons -->
           <div class="modal-actions">
             <button v-if="formStep > 0" type="button" class="btn btn-outline" @click="formStep--">
-              <ChevronLeft :size="16" /> Précédent
+              <ChevronLeft :size="16" /> {{ t('insc.previous') }}
             </button>
             <div style="flex: 1;"></div>
             <button v-if="formStep < 3" type="button" class="btn btn-primary" @click="nextStep" :disabled="!canNextStep">
-              Suivant <ChevronRight :size="16" />
+              {{ t('insc.next') }} <ChevronRight :size="16" />
             </button>
             <button v-if="formStep === 3" type="button" class="btn btn-outline" @click="saveDraft">
-              Enregistrer brouillon
+              {{ t('insc.saveDraftBtn') }}
             </button>
             <button v-if="formStep === 3" type="submit" class="btn btn-primary">
-              <Send :size="16" /> Soumettre le dossier
+              <Send :size="16" /> {{ t('insc.submitFile') }}
             </button>
           </div>
         </form>
@@ -348,7 +348,7 @@
       <div class="modal-card card modal-lg">
         <div class="modal-header">
           <div>
-            <h2>Dossier {{ detailDossier?.type === 'reinscription' ? 'de réinscription' : 'd\'inscription' }}</h2>
+            <h2>{{ detailDossier?.type === 'reinscription' ? t('insc.detailTitleReins') : t('insc.detailTitleIns') }}</h2>
             <span class="badge" :class="statusBadgeClass(detailDossier?.status)" style="margin-top: 4px;">{{ statusLabel(detailDossier?.status) }}</span>
           </div>
           <button class="icon-btn" @click="showDetailModal = false"><X :size="20" /></button>
@@ -356,40 +356,40 @@
         <div class="modal-body" v-if="detailDossier">
           <div class="detail-grid">
             <div class="detail-section">
-              <h4>Élève</h4>
-              <div class="detail-line"><span>Nom complet</span><strong>{{ detailDossier.lastName }} {{ detailDossier.firstName }}</strong></div>
-              <div class="detail-line"><span>Genre</span><span>{{ detailDossier.gender === 'F' ? 'Féminin' : 'Masculin' }}</span></div>
-              <div class="detail-line"><span>Date de naissance</span><span>{{ detailDossier.dateOfBirth || '—' }}</span></div>
-              <div class="detail-line"><span>Classe</span><strong>{{ detailDossier.className }}</strong></div>
-              <div class="detail-line" v-if="detailDossier.matricule"><span>Matricule</span><strong class="cs-green">{{ detailDossier.matricule }}</strong></div>
-              <div class="detail-line" v-if="detailDossier.previousSchool"><span>Établissement précédent</span><span>{{ detailDossier.previousSchool }}</span></div>
-              <div class="detail-line" v-if="detailDossier.previousClass"><span>Classe précédente</span><span>{{ detailDossier.previousClass }}</span></div>
+              <h4>{{ t('insc.thStudent') }}</h4>
+              <div class="detail-line"><span>{{ t('insc.fullName') }}</span><strong>{{ detailDossier.lastName }} {{ detailDossier.firstName }}</strong></div>
+              <div class="detail-line"><span>{{ t('insc.gender') }}</span><span>{{ detailDossier.gender === 'F' ? t('insc.female') : t('insc.male') }}</span></div>
+              <div class="detail-line"><span>{{ t('insc.dob') }}</span><span>{{ detailDossier.dateOfBirth || '—' }}</span></div>
+              <div class="detail-line"><span>{{ t('insc.thClass') }}</span><strong>{{ detailDossier.className }}</strong></div>
+              <div class="detail-line" v-if="detailDossier.matricule"><span>{{ t('insc.matricule') }}</span><strong class="cs-green">{{ detailDossier.matricule }}</strong></div>
+              <div class="detail-line" v-if="detailDossier.previousSchool"><span>{{ t('insc.previousSchool') }}</span><span>{{ detailDossier.previousSchool }}</span></div>
+              <div class="detail-line" v-if="detailDossier.previousClass"><span>{{ t('insc.previousClass') }}</span><span>{{ detailDossier.previousClass }}</span></div>
             </div>
             <div class="detail-section">
-              <h4>Tuteur</h4>
-              <div class="detail-line"><span>Nom</span><strong>{{ detailDossier.parentLastName }} {{ detailDossier.parentFirstName }}</strong></div>
-              <div class="detail-line"><span>Téléphone</span><span>{{ detailDossier.parentPhone }}</span></div>
-              <div class="detail-line" v-if="detailDossier.parentPhone2"><span>Tél. secondaire</span><span>{{ detailDossier.parentPhone2 }}</span></div>
-              <div class="detail-line" v-if="detailDossier.parentEmail"><span>Email</span><span>{{ detailDossier.parentEmail }}</span></div>
-              <div class="detail-line" v-if="detailDossier.documentFormat"><span>Format documents</span><span>{{ formatDocLabel(detailDossier.documentFormat) }}</span></div>
+              <h4>{{ t('insc.tutor') }}</h4>
+              <div class="detail-line"><span>{{ t('insc.lastName') }}</span><strong>{{ detailDossier.parentLastName }} {{ detailDossier.parentFirstName }}</strong></div>
+              <div class="detail-line"><span>{{ t('insc.phone') }}</span><span>{{ detailDossier.parentPhone }}</span></div>
+              <div class="detail-line" v-if="detailDossier.parentPhone2"><span>{{ t('insc.secondPhoneShort') }}</span><span>{{ detailDossier.parentPhone2 }}</span></div>
+              <div class="detail-line" v-if="detailDossier.parentEmail"><span>{{ t('insc.email') }}</span><span>{{ detailDossier.parentEmail }}</span></div>
+              <div class="detail-line" v-if="detailDossier.documentFormat"><span>{{ t('insc.formatDocs') }}</span><span>{{ formatDocLabel(detailDossier.documentFormat) }}</span></div>
             </div>
           </div>
           <div class="detail-section" style="margin-top: 20px;">
-            <h4>Pièces du dossier</h4>
+            <h4>{{ t('insc.dossierPieces') }}</h4>
             <div class="documents-grid detail-docs">
               <div v-for="doc in REQUIRED_DOCUMENTS" :key="doc.key" class="doc-slot" :class="{ 'doc-uploaded': hasDetailDoc(doc.key), 'doc-missing': doc.required && !hasDetailDoc(doc.key) }">
                 <div class="doc-slot-header">
                   <span class="doc-slot-label">{{ doc.label }}</span>
-                  <span v-if="hasDetailDoc(doc.key)" class="cs-green" style="font-size: 12px; font-weight: 600;">Fourni</span>
-                  <span v-else-if="doc.required" class="cs-red" style="font-size: 12px; font-weight: 600;">Manquant</span>
-                  <span v-else style="font-size: 12px; color: var(--tx3);">Optionnel</span>
+                  <span v-if="hasDetailDoc(doc.key)" class="cs-green" style="font-size: 12px; font-weight: 600;">{{ t('insc.provided') }}</span>
+                  <span v-else-if="doc.required" class="cs-red" style="font-size: 12px; font-weight: 600;">{{ t('insc.missing') }}</span>
+                  <span v-else style="font-size: 12px; color: var(--tx3);">{{ t('insc.optional') }}</span>
                 </div>
               </div>
             </div>
           </div>
           <!-- Validation notes -->
           <div v-if="detailDossier.notes" class="detail-section" style="margin-top: 16px;">
-            <h4>Notes</h4>
+            <h4>{{ t('insc.notesH') }}</h4>
             <p style="font-size: 13px; color: var(--tx2); background: var(--input-bg); padding: 12px 16px; border-radius: 8px;">{{ detailDossier.notes }}</p>
           </div>
 
@@ -397,27 +397,27 @@
           <div v-if="detailDossier.status !== 'valide' && detailDossier.status !== 'refuse'" class="detail-actions">
             <template v-if="detailDossier.status === 'soumis'">
               <button class="btn btn-outline" @click="handleMarkIncomplete(detailDossier)">
-                <AlertTriangle :size="14" /> Dossier incomplet
+                <AlertTriangle :size="14" /> {{ t('insc.markIncompleteBtn') }}
               </button>
               <button class="btn btn-outline" style="color: var(--success); border-color: var(--success);" @click="handleMarkComplete(detailDossier)">
-                <CheckCircle :size="14" /> Dossier complet
+                <CheckCircle :size="14" /> {{ t('insc.markCompleteBtn') }}
               </button>
             </template>
             <template v-if="detailDossier.status === 'complet' || detailDossier.status === 'soumis'">
               <button class="btn btn-primary" @click="handleValidate(detailDossier)">
-                <CheckCircle :size="16" /> Valider l'inscription
+                <CheckCircle :size="16" /> {{ t('insc.validateEnrol') }}
               </button>
               <button class="btn btn-outline" style="color: var(--danger); border-color: var(--danger);" @click="handleReject(detailDossier)">
-                <XCircle :size="14" /> Refuser
+                <XCircle :size="14" /> {{ t('insc.refuse') }}
               </button>
             </template>
           </div>
           <div v-if="detailDossier.status === 'valide'" class="validated-banner">
             <CheckCircle :size="18" />
             <div>
-              <strong>Dossier validé</strong>
+              <strong>{{ t('insc.fileValidated') }}</strong>
               <span v-if="detailDossier.validatedAt"> — {{ formatDate(detailDossier.validatedAt) }}</span>
-              <span v-if="detailDossier.validatedBy"> par {{ detailDossier.validatedBy }}</span>
+              <span v-if="detailDossier.validatedBy"> {{ t('insc.by') }} {{ detailDossier.validatedBy }}</span>
             </div>
           </div>
         </div>
@@ -437,8 +437,8 @@
             <textarea v-model="notesModalText" class="input" rows="3" :placeholder="notesModalPlaceholder"></textarea>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="showNotesModal = false">Annuler</button>
-            <button class="btn btn-primary" @click="confirmNotesAction" :disabled="!notesModalText.trim()">Confirmer</button>
+            <button class="btn btn-outline" @click="showNotesModal = false">{{ t('insc.cancel') }}</button>
+            <button class="btn btn-primary" @click="confirmNotesAction" :disabled="!notesModalText.trim()">{{ t('insc.confirm') }}</button>
           </div>
         </div>
       </div>
@@ -456,6 +456,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   Plus, Search, FileText, Paperclip, Upload, X, Pencil, Trash2,
   CheckCircle, XCircle, AlertTriangle, ChevronLeft, ChevronRight,
@@ -465,6 +466,7 @@ import { useInscriptionsStore, REQUIRED_DOCUMENTS, DOSSIER_TYPES, DOCUMENT_FORMA
 import { useClassesStore } from '../stores/classes'
 import { useAuthStore } from '../stores/auth'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const inscriptionsStore = useInscriptionsStore()
 const classesStore = useClassesStore()
 const authStore = useAuthStore()
@@ -487,7 +489,10 @@ const notesModalPlaceholder = ref('')
 const notesModalText = ref('')
 const notesModalAction = ref(null)
 
-const formSteps = ['Élève', 'Tuteur', 'Pièces', 'Récapitulatif']
+const formSteps = computed(() => [t('insc.stepStudent'), t('insc.stepTutor'), t('insc.stepDocs'), t('insc.stepRecap')])
+function typeLabel(v) {
+  return v === 'reinscription' ? t('insc.typeReinscription') : t('insc.typeInscription')
+}
 
 const form = reactive({
   type: 'inscription',
@@ -520,8 +525,8 @@ const filteredDossiers = computed(() => {
 })
 
 function statusLabel(s) {
-  const labels = { brouillon: 'Brouillon', soumis: 'Soumis', complet: 'Complet', incomplet: 'Incomplet', valide: 'Validé', refuse: 'Refusé' }
-  return labels[s] || s
+  const keys = { brouillon: 'stBrouillon', soumis: 'stSoumis', complet: 'stComplet', incomplet: 'stIncomplet', valide: 'stValide', refuse: 'stRefuse' }
+  return keys[s] ? t('insc.' + keys[s]) : s
 }
 function statusBadgeClass(s) {
   const map = { brouillon: 'badge-default', soumis: 'badge-warning', complet: 'badge-info', incomplet: 'badge-danger', valide: 'badge-success', refuse: 'badge-danger' }
@@ -529,7 +534,7 @@ function statusBadgeClass(s) {
 }
 function formatDate(d) {
   if (!d) return '—'
-  return new Date(d).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(d).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 function canValidate(d) {
   return d.status === 'soumis' || d.status === 'complet'
@@ -552,7 +557,7 @@ function removeDocument(key) {
 function handleDocUpload(e, key) {
   const file = e.target.files?.[0]
   if (!file) return
-  if (file.size > 5 * 1024 * 1024) { alert('Fichier trop volumineux (max 5 Mo)'); return }
+  if (file.size > 5 * 1024 * 1024) { alert(t('insc.fileTooBig')); return }
   const reader = new FileReader()
   reader.onload = () => {
     removeDocument(key) // replace existing
@@ -637,7 +642,7 @@ async function saveDraft() {
     await inscriptionsStore.createDossier(data)
   }
   showFormModal.value = false
-  showToast('Brouillon enregistré')
+  showToast(t('insc.toastDraftSaved'))
 }
 
 async function saveDossier() {
@@ -651,40 +656,40 @@ async function saveDossier() {
   }
   await inscriptionsStore.submitDossier(dossierId)
   showFormModal.value = false
-  showToast('Dossier soumis avec succès')
+  showToast(t('insc.toastSubmitted'))
 }
 
 async function handleValidate(d) {
   const userName = authStore.userProfile?.displayName || `${authStore.userProfile?.lastName || ''} ${authStore.userProfile?.firstName || ''}`.trim()
-  await inscriptionsStore.validateDossier(d.id, userName || 'Directeur')
+  await inscriptionsStore.validateDossier(d.id, userName || t('insc.directorFallback'))
   showDetailModal.value = false
-  showToast(`${d.lastName} ${d.firstName} inscrit(e) avec succès — Matricule généré`)
+  showToast(t('insc.toastEnrolled', { name: `${d.lastName} ${d.firstName}` }))
 }
 
 function handleReject(d) {
-  notesModalTitle.value = 'Refuser le dossier'
-  notesModalLabel.value = 'Motif du refus'
-  notesModalPlaceholder.value = 'Précisez la raison du refus...'
+  notesModalTitle.value = t('insc.rejectTitle')
+  notesModalLabel.value = t('insc.rejectLabel')
+  notesModalPlaceholder.value = t('insc.rejectPh')
   notesModalText.value = ''
   notesModalAction.value = async () => {
     await inscriptionsStore.rejectDossier(d.id, notesModalText.value)
     showNotesModal.value = false
     showDetailModal.value = false
-    showToast('Dossier refusé')
+    showToast(t('insc.toastRefused'))
   }
   showNotesModal.value = true
 }
 
 function handleMarkIncomplete(d) {
-  notesModalTitle.value = 'Dossier incomplet'
-  notesModalLabel.value = 'Pièces ou informations manquantes'
-  notesModalPlaceholder.value = 'Précisez ce qui manque au dossier...'
+  notesModalTitle.value = t('insc.markIncompleteBtn')
+  notesModalLabel.value = t('insc.incompleteLabel')
+  notesModalPlaceholder.value = t('insc.incompletePh')
   notesModalText.value = ''
   notesModalAction.value = async () => {
     await inscriptionsStore.markIncomplete(d.id, notesModalText.value)
     showNotesModal.value = false
     detailDossier.value = inscriptionsStore.dossiers.find(x => x.id === d.id)
-    showToast('Dossier marqué incomplet')
+    showToast(t('insc.toastMarkedIncomplete'))
   }
   showNotesModal.value = true
 }
@@ -692,14 +697,14 @@ function handleMarkIncomplete(d) {
 async function handleMarkComplete(d) {
   await inscriptionsStore.markComplete(d.id)
   detailDossier.value = inscriptionsStore.dossiers.find(x => x.id === d.id)
-  showToast('Dossier marqué complet')
+  showToast(t('insc.toastMarkedComplete'))
 }
 
 async function handleDelete(d) {
-  if (!confirm(`Supprimer le dossier de ${d.lastName} ${d.firstName} ?`)) return
+  if (!confirm(t('insc.confirmDelete', { name: `${d.lastName} ${d.firstName}` }))) return
   await inscriptionsStore.deleteDossier(d.id)
   showDetailModal.value = false
-  showToast('Dossier supprimé')
+  showToast(t('insc.toastDeleted'))
 }
 
 function confirmNotesAction() {
