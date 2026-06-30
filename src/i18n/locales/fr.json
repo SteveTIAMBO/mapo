@@ -1302,5 +1302,19 @@
     "authorizeAccount": "Autoriser la création d'un compte élève",
     "accessInfo": "En activant l'accès, votre enfant pourra consulter ses notes, son emploi du temps et sa scolarité depuis son propre compte sur smartphone.",
     "roles": { "admin": "Administrateur", "directeur": "Directeur", "enseignant": "Enseignant", "secretaire": "Secrétaire", "comptable": "Comptable", "parent": "Parent d'élève" }
+  },
+  "rolesv": {
+    "title": "Rôles & Permissions",
+    "subtitle": "Configurez les accès de chaque rôle aux modules de l'application",
+    "accessLevels": "Niveaux d'accès",
+    "roleColon": "Rôle :",
+    "module": "Module",
+    "reset": "Réinitialiser",
+    "resetTitle": "Réinitialisation",
+    "resetInfo": "Remettre un rôle à ses permissions par défaut. Le rôle Directeur ne peut pas être modifié.",
+    "readOnly": "Seul le directeur peut modifier les permissions des rôles. Vous consultez cette page en lecture seule.",
+    "unsaved": "Modifications non enregistrées",
+    "cancel": "Annuler",
+    "save": "Enregistrer"
   }
 }

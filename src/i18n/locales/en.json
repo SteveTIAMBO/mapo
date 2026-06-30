@@ -1302,5 +1302,19 @@
     "authorizeAccount": "Authorize creation of a student account",
     "accessInfo": "By enabling access, your child will be able to view their grades, timetable and schooling from their own account on a smartphone.",
     "roles": { "admin": "Administrator", "directeur": "Director", "enseignant": "Teacher", "secretaire": "Secretary", "comptable": "Accountant", "parent": "Parent" }
+  },
+  "rolesv": {
+    "title": "Roles & Permissions",
+    "subtitle": "Configure each role's access to the application's modules",
+    "accessLevels": "Access levels",
+    "roleColon": "Role:",
+    "module": "Module",
+    "reset": "Reset",
+    "resetTitle": "Reset",
+    "resetInfo": "Restore a role to its default permissions. The Director role cannot be changed.",
+    "readOnly": "Only the director can change role permissions. You are viewing this page in read-only mode.",
+    "unsaved": "Unsaved changes",
+    "cancel": "Cancel",
+    "save": "Save"
   }
 }

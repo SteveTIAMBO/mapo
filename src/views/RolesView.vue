@@ -3,14 +3,14 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Rôles & Permissions</h1>
-        <p>Configurez les accès de chaque rôle aux modules de l'application</p>
+        <h1>{{ t('rolesv.title') }}</h1>
+        <p>{{ t('rolesv.subtitle') }}</p>
       </div>
     </div>
 
     <!-- Legend -->
     <div class="card legend-card">
-      <div class="legend-title">Niveaux d'accès</div>
+      <div class="legend-title">{{ t('rolesv.accessLevels') }}</div>
       <div class="legend-items">
         <div v-for="level in PERMISSION_LEVELS" :key="level.value" class="legend-item">
           <span class="perm-badge" :style="{ background: level.color + '18', color: level.color, borderColor: level.color + '30' }">
@@ -23,7 +23,7 @@
 
     <!-- Role selector (mobile/tablet) -->
     <div class="role-selector-mobile">
-      <label class="role-selector-label">Rôle :</label>
+      <label class="role-selector-label">{{ t('rolesv.roleColon') }}</label>
       <select v-model="selectedRole" class="input">
         <option v-for="(role, key) in roles" :key="key" :value="key">
           {{ role.label }}
@@ -37,7 +37,7 @@
         <table class="table matrix-table">
           <thead>
             <tr>
-              <th class="module-col">Module</th>
+              <th class="module-col">{{ t('rolesv.module') }}</th>
               <th
                 v-for="(role, key) in roles"
                 :key="key"
@@ -107,7 +107,7 @@
           @click="resetSelectedRole"
         >
           <RotateCcw :size="14" />
-          <span>Réinitialiser</span>
+          <span>{{ t('rolesv.reset') }}</span>
         </button>
       </div>
       <div class="mobile-perm-list">
@@ -143,8 +143,8 @@
       <div class="reset-info">
         <ShieldAlert :size="18" style="color: var(--gold); flex-shrink: 0;" />
         <div>
-          <strong>Réinitialisation</strong>
-          <p>Remettre un rôle à ses permissions par défaut. Le rôle Directeur ne peut pas être modifié.</p>
+          <strong>{{ t('rolesv.resetTitle') }}</strong>
+          <p>{{ t('rolesv.resetInfo') }}</p>
         </div>
       </div>
       <div class="reset-buttons">
@@ -164,19 +164,19 @@
     <!-- Info for non-directeur -->
     <div v-if="!isDirecteur" class="info-banner card">
       <Info :size="18" style="color: var(--pr); flex-shrink: 0;" />
-      <p>Seul le directeur peut modifier les permissions des rôles. Vous consultez cette page en lecture seule.</p>
+      <p>{{ t('rolesv.readOnly') }}</p>
     </div>
 
     <!-- Sticky Save Bar -->
     <div v-if="dirty && isDirecteur" class="save-bar">
       <div class="save-bar-content">
-        <span class="save-message">Modifications non enregistrées</span>
+        <span class="save-message">{{ t('rolesv.unsaved') }}</span>
         <div class="save-buttons">
           <button class="btn btn-sm btn-outline" @click="handleCancel">
-            Annuler
+            {{ t('rolesv.cancel') }}
           </button>
           <button class="btn btn-sm btn-primary" @click="handleSave">
-            Enregistrer
+            {{ t('rolesv.save') }}
           </button>
         </div>
       </div>
@@ -186,6 +186,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { usePermissionsStore, APP_MODULES, PERMISSION_LEVELS } from '../stores/permissions'
 import { useAuthStore } from '../stores/auth'
 import {
@@ -194,6 +195,7 @@ import {
   Upload, Settings, ShieldCheck, RotateCcw, ShieldAlert, Info
 } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const permissionsStore = usePermissionsStore()
 const authStore = useAuthStore()
 
