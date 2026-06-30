@@ -332,6 +332,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
+import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
@@ -344,7 +345,12 @@ async function logout() { await authStore.logout(); router.push(isMiapoTenant() 
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
+const analytics = useMiapoAnalyticsStore()
 const enfants = computed(() => store.enfants)
+
+// Suivi d'adoption MIAPO+ : marque l'install PWA. Défini ici pour pouvoir le
+// retirer proprement au démontage (évite les écouteurs en double).
+function onAppInstalled() { try { analytics.markInstalled() } catch { /* best-effort */ } }
 
 // Mode apprenant : MIAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
 // profil unique = lui) plutôt que par un parent qui suit ses enfants. Même moteur.
@@ -609,8 +615,21 @@ onMounted(async () => {
   await store.hydrate()
   activeId.value = enfants.value[0]?.id || ''
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
+  // ── Suivi d'adoption MIAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
+  try {
+    const persona = store.mode === 'apprenant' ? 'apprenant' : 'parent'
+    const country = enfants.value[0]?.pays || ''
+    await analytics.registerUser({ persona, country })
+    analytics.recordSession()
+    const standalone = window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone
+    if (standalone) analytics.markInstalled()
+    window.addEventListener('appinstalled', onAppInstalled)
+  } catch { /* best-effort */ }
 })
-onUnmounted(() => window.removeEventListener('miapo-toggle-menu', onToggleMenu))
+onUnmounted(() => {
+  window.removeEventListener('miapo-toggle-menu', onToggleMenu)
+  window.removeEventListener('appinstalled', onAppInstalled)
+})
 </script>
 
 <style scoped>

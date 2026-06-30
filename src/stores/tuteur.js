@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { isMiapoTenant } from '../utils/tenantContext'
+import { useMiapoAnalyticsStore } from './miapoAnalytics'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -203,6 +205,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
       due,
     }
     saveRevisions(studentId, data)
+    // Suivi d'adoption MIAPO+ (B2C) : on ne compte QUE dans le tenant MIAPO+,
+    // pas les quiz des élèves d'école. Best-effort (n'impacte jamais le quiz).
+    if (isMiapoTenant()) {
+      try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }
+    }
     return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL }
   }
 
