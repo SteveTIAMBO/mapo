@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Messagerie</h1>
-        <p>Communiquez avec les parents, enseignants et services</p>
+        <h1>{{ t('mess.title') }}</h1>
+        <p>{{ t('mess.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" @click="openCompose()">
           <Plus :size="16" />
-          <span>Nouveau message</span>
+          <span>{{ t('mess.newMessage') }}</span>
         </button>
       </div>
     </div>
@@ -34,28 +34,28 @@
         <span class="stat-bar-dot blue"></span>
         <div>
           <div class="stat-bar-value">{{ inboxMessages.length }}</div>
-          <div class="stat-bar-label">Reçus</div>
+          <div class="stat-bar-label">{{ t('mess.received') }}</div>
         </div>
       </div>
       <div class="stat-bar-item" :class="{ 'stat-active': activeTab === 'sent' }" @click="switchTo('sent')">
         <span class="stat-bar-dot green"></span>
         <div>
           <div class="stat-bar-value">{{ sentMessages.length }}</div>
-          <div class="stat-bar-label">Envoyés</div>
+          <div class="stat-bar-label">{{ t('mess.sent') }}</div>
         </div>
       </div>
       <div class="stat-bar-item" :class="{ 'stat-active': filterUnread }" @click="switchTo('unread')">
         <span class="stat-bar-dot" style="background: var(--gold);"></span>
         <div>
           <div class="stat-bar-value">{{ unreadCount }}</div>
-          <div class="stat-bar-label">Non lus</div>
+          <div class="stat-bar-label">{{ t('mess.unread') }}</div>
         </div>
       </div>
       <div class="stat-bar-item" :class="{ 'stat-active': activeTab === 'drafts' }" @click="switchTo('drafts')">
         <span class="stat-bar-dot" style="background: var(--tx3);"></span>
         <div>
           <div class="stat-bar-value">{{ draftMessages.length }}</div>
-          <div class="stat-bar-label">Brouillons</div>
+          <div class="stat-bar-label">{{ t('mess.drafts') }}</div>
         </div>
       </div>
     </div>
@@ -66,7 +66,7 @@
         <h3>{{ currentTabTitle }}</h3>
         <div class="card-header-actions">
           <select v-model="filterType" class="select">
-            <option value="">Tous les types</option>
+            <option value="">{{ t('mess.allTypes') }}</option>
             <option v-for="(info, key) in MESSAGE_TYPES" :key="key" :value="key">{{ info.label }}</option>
           </select>
         </div>
@@ -77,7 +77,7 @@
         <MessageSquare :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
         <p>{{ emptyLabel }}</p>
         <button v-if="activeTab !== 'inbox'" class="btn btn-primary btn-sm" style="margin-top: 16px;" @click="openCompose()">
-          Écrire un message
+          {{ t('mess.writeMessage') }}
         </button>
       </div>
 
@@ -94,9 +94,9 @@
             <div class="msg-details">
               <span class="msg-type-tag" :style="{ color: getTypeColor(msg.type) }">{{ getTypeLabel(msg.type) }}</span>
               <span class="msg-sep">—</span>
-              <span v-if="activeTab === 'inbox'">De : {{ msg.senderName }}</span>
-              <span v-else-if="activeTab === 'sent'">À : {{ getRecipientLabel(msg) }}</span>
-              <span v-else>À : {{ getRecipientLabel(msg) }}</span>
+              <span v-if="activeTab === 'inbox'">{{ t('mess.from') }} {{ msg.senderName }}</span>
+              <span v-else-if="activeTab === 'sent'">{{ t('mess.to') }} {{ getRecipientLabel(msg) }}</span>
+              <span v-else>{{ t('mess.to') }} {{ getRecipientLabel(msg) }}</span>
               <span class="msg-sep">—</span>
               <span>{{ formatDate(msg.sentAt) }}</span>
               <span v-if="msg.attachmentName" class="attachment-indicator">
@@ -109,13 +109,13 @@
             </div>
           </div>
           <div class="msg-actions" @click.stop>
-            <button v-if="activeTab !== 'drafts'" class="btn btn-ghost btn-sm" @click="messagesStore.togglePin(msg.id)" :title="msg.pinned ? 'Désépingler' : 'Épingler'">
+            <button v-if="activeTab !== 'drafts'" class="btn btn-ghost btn-sm" @click="messagesStore.togglePin(msg.id)" :title="msg.pinned ? t('mess.unpin') : t('mess.pin')">
               <Pin :size="14" :class="{ 'pin-active': msg.pinned }" />
             </button>
-            <button v-if="activeTab === 'drafts'" class="btn btn-ghost btn-sm" @click="editDraft(msg)" title="Modifier">
+            <button v-if="activeTab === 'drafts'" class="btn btn-ghost btn-sm" @click="editDraft(msg)" :title="t('mess.edit')">
               <Edit3 :size="14" />
             </button>
-            <button class="btn btn-ghost btn-sm" @click="confirmDelete(msg.id)" title="Supprimer">
+            <button class="btn btn-ghost btn-sm" @click="confirmDelete(msg.id)" :title="t('mess.delete')">
               <Trash2 :size="14" />
             </button>
           </div>
@@ -156,7 +156,7 @@
               v-model="replyText"
               class="input"
               rows="3"
-              placeholder="Écrire une réponse..."
+              :placeholder="t('mess.replyPlaceholder')"
               style="resize: vertical;"
             ></textarea>
             <div class="thread-reply-actions">
@@ -166,7 +166,7 @@
                 @click="handleReply"
               >
                 <Send :size="14" />
-                <span>Répondre</span>
+                <span>{{ t('mess.reply') }}</span>
               </button>
             </div>
           </div>
@@ -178,13 +178,13 @@
     <div v-if="showCompose" class="modal-overlay" @click.self="closeCompose">
       <div class="modal-card" style="max-width: 640px;">
         <div class="modal-header">
-          <h3>{{ editingDraftId ? 'Modifier le brouillon' : 'Nouveau message' }}</h3>
+          <h3>{{ editingDraftId ? t('mess.editDraft') : t('mess.newMessage') }}</h3>
           <button class="btn btn-ghost btn-sm" @click="closeCompose"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <!-- Type -->
           <div class="form-group">
-            <label class="form-label">Type de message</label>
+            <label class="form-label">{{ t('mess.typeLabel') }}</label>
             <select v-model="compose.type" class="select" style="width: 100%;">
               <option v-for="(info, key) in MESSAGE_TYPES" :key="key" :value="key">{{ info.label }}</option>
             </select>
@@ -192,41 +192,41 @@
 
           <!-- Destinataire type -->
           <div class="form-group">
-            <label class="form-label">Destinataires</label>
+            <label class="form-label">{{ t('mess.recipients') }}</label>
             <select v-model="compose.recipientType" class="select" style="width: 100%;">
-              <option value="all">Tous les parents</option>
-              <option value="teachers">Tous les professeurs</option>
-              <option value="class">Parents d'une classe</option>
-              <option value="individual">Un individu</option>
-              <option value="service">Un service</option>
+              <option value="all">{{ t('mess.allParents') }}</option>
+              <option value="teachers">{{ t('mess.allTeachers') }}</option>
+              <option value="class">{{ t('mess.classParents') }}</option>
+              <option value="individual">{{ t('mess.individual') }}</option>
+              <option value="service">{{ t('mess.service') }}</option>
             </select>
           </div>
 
           <!-- Classe -->
           <div v-if="compose.recipientType === 'class'" class="form-group">
-            <label class="form-label">Classe</label>
+            <label class="form-label">{{ t('mess.classLabel') }}</label>
             <select v-model="compose.recipientValue" class="select" style="width: 100%;">
-              <option value="">Choisir une classe</option>
+              <option value="">{{ t('mess.chooseClass') }}</option>
               <option v-for="cls in classesStore.classes" :key="cls.id" :value="cls.name">{{ cls.name }}</option>
             </select>
           </div>
 
           <!-- Service -->
           <div v-if="compose.recipientType === 'service'" class="form-group">
-            <label class="form-label">Service</label>
+            <label class="form-label">{{ t('mess.serviceLabel') }}</label>
             <select v-model="compose.recipientValue" class="select" style="width: 100%;">
-              <option value="">Choisir un service</option>
+              <option value="">{{ t('mess.chooseService') }}</option>
               <option v-for="svc in availableServices" :key="svc.key" :value="svc.key">{{ svc.label }}</option>
             </select>
           </div>
 
           <!-- Individu picker -->
           <div v-if="compose.recipientType === 'individual'" class="form-group">
-            <label class="form-label">Rechercher un destinataire</label>
+            <label class="form-label">{{ t('mess.searchRecipient') }}</label>
             <input
               v-model="recipientSearch"
               class="input"
-              placeholder="Tapez un nom..."
+              :placeholder="t('mess.typeName')"
               @input="filterRecipients"
             />
             <div v-if="filteredRecipientList.length > 0" class="recipient-dropdown">
@@ -251,24 +251,24 @@
 
           <!-- Objet -->
           <div class="form-group">
-            <label class="form-label">Objet</label>
-            <input v-model="compose.subject" class="input" placeholder="Objet du message" />
+            <label class="form-label">{{ t('mess.subject') }}</label>
+            <input v-model="compose.subject" class="input" :placeholder="t('mess.subjectPh')" />
           </div>
 
           <!-- Corps -->
           <div class="form-group">
-            <label class="form-label">Message</label>
-            <textarea v-model="compose.body" class="input" rows="6" placeholder="Rédigez votre message ici..." style="resize: vertical;"></textarea>
+            <label class="form-label">{{ t('mess.messageLabel') }}</label>
+            <textarea v-model="compose.body" class="input" rows="6" :placeholder="t('mess.bodyPh')" style="resize: vertical;"></textarea>
           </div>
 
           <!-- Pièce jointe -->
           <div class="form-group">
-            <label class="form-label">Pièce jointe (optionnel)</label>
+            <label class="form-label">{{ t('mess.attachment') }}</label>
             <div class="file-upload-zone" @click="$refs.composeFileInput?.click()">
               <input ref="composeFileInput" type="file" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" @change="handleComposeFile" />
               <div v-if="!compose.attachment" class="file-upload-placeholder">
                 <Paperclip :size="18" />
-                <span style="font-size: 13px; color: var(--tx3);">Ajouter un fichier (PDF, image, document — max 5 Mo)</span>
+                <span style="font-size: 13px; color: var(--tx3);">{{ t('mess.addFile') }}</span>
               </div>
               <div v-else class="file-upload-selected">
                 <span style="font-size: 13px; color: var(--pr); font-weight: 500;">{{ compose.attachment.name }}</span>
@@ -281,16 +281,16 @@
           <div class="compose-actions">
             <button class="btn btn-outline" @click="handleSaveDraft">
               <Save :size="14" />
-              <span>Brouillon</span>
+              <span>{{ t('mess.draftBtn') }}</span>
             </button>
-            <button class="btn btn-outline" @click="closeCompose">Annuler</button>
+            <button class="btn btn-outline" @click="closeCompose">{{ t('mess.cancel') }}</button>
             <button
               class="btn btn-primary"
               :disabled="!canSend"
               @click="handleSend"
             >
               <Send :size="16" />
-              <span>Envoyer</span>
+              <span>{{ t('mess.send') }}</span>
             </button>
           </div>
         </div>
@@ -301,6 +301,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMessagesStore, MESSAGE_TYPES, DEFAULT_SERVICES } from '../stores/messages'
 import { useClassesStore } from '../stores/classes'
 import { usePersonnelStore } from '../stores/personnel'
@@ -312,6 +313,7 @@ import {
   Plus, Pin, Trash2, X, Send, MessageSquare, Edit3, Save, Paperclip
 } from 'lucide-vue-next'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const messagesStore = useMessagesStore()
 const classesStore = useClassesStore()
 const personnelStore = usePersonnelStore()
@@ -349,7 +351,7 @@ function defaultCompose() {
 function handleComposeFile(e) {
   const file = e.target.files?.[0]
   if (!file) return
-  if (file.size > 5 * 1024 * 1024) { alert('Le fichier ne doit pas dépasser 5 Mo.'); return }
+  if (file.size > 5 * 1024 * 1024) { alert(t('mess.fileTooBig')); return }
   compose.value.attachment = file
 }
 
@@ -407,14 +409,14 @@ const draftMessages = computed(() => messagesStore.getDrafts(myUserId.value))
 const unreadCount = computed(() => messagesStore.getUnreadCount(inboxContext.value))
 
 const tabs = computed(() => [
-  { key: 'inbox', label: 'Boîte de réception', count: unreadCount.value },
-  { key: 'sent', label: 'Envoyés', count: 0 },
-  { key: 'drafts', label: 'Brouillons', count: draftMessages.value.length },
+  { key: 'inbox', label: t('mess.tabInbox'), count: unreadCount.value },
+  { key: 'sent', label: t('mess.sent'), count: 0 },
+  { key: 'drafts', label: t('mess.drafts'), count: draftMessages.value.length },
 ])
 
 const currentTabTitle = computed(() => {
-  const t = tabs.value.find(t => t.key === activeTab.value)
-  return t?.label || 'Messages'
+  const tb = tabs.value.find(tb => tb.key === activeTab.value)
+  return tb?.label || t('mess.title')
 })
 
 const currentMessages = computed(() => {
@@ -445,25 +447,17 @@ function switchTo(target) {
 }
 
 const emptyLabel = computed(() => {
-  if (activeTab.value === 'inbox') return 'Aucun message reçu'
-  if (activeTab.value === 'sent') return 'Aucun message envoyé'
-  return 'Aucun brouillon'
+  if (activeTab.value === 'inbox') return t('mess.emptyInbox')
+  if (activeTab.value === 'sent') return t('mess.emptySent')
+  return t('mess.emptyDrafts')
 })
 
 // === Helpers ===
-const roleLabels = {
-  admin: 'Administrateur',
-  directeur: 'Directeur',
-  enseignant: 'Enseignant',
-  secretaire: 'Secrétaire',
-  comptable: 'Comptable',
-  parent: 'Parent',
-  cantine: 'Resp. cantine',
-  surveillant: 'Surveillant',
-}
-
 function getRoleLabel(role) {
-  return roleLabels[role] || role || ''
+  if (!role) return ''
+  const k = 'mess.roles.' + role
+  const l = t(k)
+  return l === k ? role : l
 }
 
 function getTypeColor(type) {
@@ -475,20 +469,20 @@ function getTypeLabel(type) {
 }
 
 function getRecipientLabel(msg) {
-  if (msg.recipientType === 'all') return 'Tous les parents'
-  if (msg.recipientType === 'teachers') return 'Tous les professeurs'
-  if (msg.recipientType === 'class') return `Parents de ${msg.recipientValue}`
-  if (msg.recipientType === 'individual') return msg.recipientName || 'Individu'
+  if (msg.recipientType === 'all') return t('mess.allParents')
+  if (msg.recipientType === 'teachers') return t('mess.allTeachers')
+  if (msg.recipientType === 'class') return t('mess.recipParentsOf', { cls: msg.recipientValue })
+  if (msg.recipientType === 'individual') return msg.recipientName || t('mess.recipIndividual')
   if (msg.recipientType === 'service') {
     const svc = availableServices.value.find(s => s.key === msg.recipientValue)
     return svc?.label || msg.recipientValue
   }
-  return 'Destinataire'
+  return t('mess.recipDest')
 }
 
 function formatDate(isoStr) {
   if (!isoStr) return ''
-  return new Date(isoStr).toLocaleDateString('fr-FR', {
+  return new Date(isoStr).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', {
     day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
   })
 }
@@ -680,7 +674,7 @@ async function handleReply() {
 }
 
 function confirmDelete(id) {
-  if (confirm('Supprimer ce message ?')) {
+  if (confirm(t('mess.confirmDelete'))) {
     messagesStore.deleteMessage(id)
   }
 }
