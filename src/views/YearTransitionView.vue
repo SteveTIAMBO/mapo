@@ -3,8 +3,8 @@
     <!-- Progress Bar -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Passage d'année scolaire</h1>
-        <p>{{ schoolStore.schoolSettings?.academicYear }} vers {{ transitionStore.nextAcademicYear }}</p>
+        <h1>{{ t('yt.title') }}</h1>
+        <p>{{ schoolStore.schoolSettings?.academicYear }} {{ t('yt.subtitleTo') }} {{ transitionStore.nextAcademicYear }}</p>
       </div>
     </div>
 
@@ -19,56 +19,56 @@
 
     <!-- ═══════ STEP 0: BILAN ═══════ -->
     <div v-if="transitionStore.transitionStep === 0" class="card step-card">
-      <h2>Bilan de l'année {{ schoolStore.schoolSettings?.academicYear }}</h2>
-      <p class="step-desc">Résumé des résultats de l'année scolaire en cours.</p>
+      <h2>{{ t('yt.bilanTitle', { year: schoolStore.schoolSettings?.academicYear }) }}</h2>
+      <p class="step-desc">{{ t('yt.bilanDesc') }}</p>
 
       <div class="stats-grid">
         <div class="stat-card">
           <span class="stat-value">{{ transitionStore.transitionStats.total }}</span>
-          <span class="stat-label">Élèves</span>
+          <span class="stat-label">{{ t('yt.students') }}</span>
         </div>
         <div class="stat-card stat-success">
           <span class="stat-value">{{ transitionStore.transitionStats.tauxReussite }}%</span>
-          <span class="stat-label">Taux de réussite</span>
+          <span class="stat-label">{{ t('yt.successRate') }}</span>
         </div>
         <div class="stat-card">
           <span class="stat-value">{{ transitionStore.transitionStats.moyenneGenerale !== null ? transitionStore.transitionStats.moyenneGenerale.toFixed(2) : '-' }}/20</span>
-          <span class="stat-label">Moyenne générale</span>
+          <span class="stat-label">{{ t('yt.generalAvg') }}</span>
         </div>
         <div class="stat-card stat-warn">
           <span class="stat-value">{{ transitionStore.transitionStats.redoublants }}</span>
-          <span class="stat-label">Redoublants</span>
+          <span class="stat-label">{{ t('yt.repeaters') }}</span>
         </div>
       </div>
 
       <div class="bilan-breakdown">
         <div class="breakdown-row">
-          <span class="breakdown-label">Admis en classe supérieure</span>
+          <span class="breakdown-label">{{ t('yt.promoted') }}</span>
           <span class="breakdown-value success-text">{{ transitionStore.transitionStats.admis }}</span>
         </div>
         <div class="breakdown-row">
-          <span class="breakdown-label">Diplômés (Terminale)</span>
+          <span class="breakdown-label">{{ t('yt.graduates') }}</span>
           <span class="breakdown-value">{{ transitionStore.transitionStats.diplomes }}</span>
         </div>
         <div class="breakdown-row">
-          <span class="breakdown-label">Redoublants</span>
+          <span class="breakdown-label">{{ t('yt.repeaters') }}</span>
           <span class="breakdown-value warn-text">{{ transitionStore.transitionStats.redoublants }}</span>
         </div>
         <div class="breakdown-row">
-          <span class="breakdown-label">Transférés</span>
+          <span class="breakdown-label">{{ t('yt.transferred') }}</span>
           <span class="breakdown-value">{{ transitionStore.transitionStats.transferes }}</span>
         </div>
       </div>
 
       <div v-if="studentsWithoutAvg > 0" class="warning-banner" style="margin-top: 16px;">
         <AlertCircle :size="16" />
-        <span><strong>{{ studentsWithoutAvg }}</strong> élèves n'ont pas de moyenne annuelle. Leurs décisions devront être ajustées manuellement à l'étape suivante.</span>
+        <span>{{ t('yt.noAvgWarn', { n: studentsWithoutAvg }) }}</span>
       </div>
 
       <div class="step-actions">
-        <button class="btn btn-ghost" @click="$router.push('/parametres')">Annuler</button>
+        <button class="btn btn-ghost" @click="$router.push('/parametres')">{{ t('yt.cancel') }}</button>
         <button class="btn btn-primary" @click="transitionStore.transitionStep = 1">
-          Continuer
+          {{ t('yt.continue') }}
           <ArrowRight :size="16" />
         </button>
       </div>
@@ -76,31 +76,31 @@
 
     <!-- ═══════ STEP 1: DECISIONS PAR ELEVE ═══════ -->
     <div v-if="transitionStore.transitionStep === 1" class="card step-card">
-      <h2>Décisions individuelles</h2>
-      <p class="step-desc">Vérifiez et ajustez les décisions pour chaque élève. Les décisions sont pré-remplies en fonction de la moyenne annuelle (admis si >= 10/20).</p>
+      <h2>{{ t('yt.decisionsTitle') }}</h2>
+      <p class="step-desc">{{ t('yt.decisionsDesc') }}</p>
 
       <!-- Class filter -->
       <div class="toolbar" style="margin-bottom: 16px;">
         <div class="field" style="margin-bottom:0; min-width:180px;">
-          <label>Filtrer par classe</label>
+          <label>{{ t('yt.filterByClass') }}</label>
           <select v-model="filterClass" class="input">
-            <option value="">Toutes les classes</option>
+            <option value="">{{ t('yt.allClasses') }}</option>
             <option v-for="c in classesStore.classes" :key="c.id" :value="c.name">{{ c.name }}</option>
           </select>
         </div>
         <div class="field" style="margin-bottom:0; min-width:150px;">
-          <label>Filtrer par décision</label>
+          <label>{{ t('yt.filterByDecision') }}</label>
           <select v-model="filterDecision" class="input">
-            <option value="">Toutes</option>
-            <option value="admis">Admis</option>
-            <option value="redoublant">Redoublant</option>
-            <option value="diplome">Diplômé</option>
-            <option value="transfere">Transféré</option>
+            <option value="">{{ t('yt.allDecisions') }}</option>
+            <option value="admis">{{ t('yt.decisions.admis') }}</option>
+            <option value="redoublant">{{ t('yt.decisions.redoublant') }}</option>
+            <option value="diplome">{{ t('yt.decisions.diplome') }}</option>
+            <option value="transfere">{{ t('yt.decisions.transfere') }}</option>
           </select>
         </div>
         <div class="toolbar-spacer"></div>
         <div class="mini-stats">
-          <span>{{ filteredResults.length }} élèves affichés</span>
+          <span>{{ t('yt.studentsShown', { n: filteredResults.length }) }}</span>
         </div>
       </div>
 
@@ -109,10 +109,10 @@
           <thead>
             <tr>
               <th class="col-rank">#</th>
-              <th>Nom</th>
-              <th>Classe</th>
-              <th>Moyenne</th>
-              <th>Décision</th>
+              <th>{{ t('yt.thName') }}</th>
+              <th>{{ t('yt.thClass') }}</th>
+              <th>{{ t('yt.thAvg') }}</th>
+              <th>{{ t('yt.thDecision') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -125,10 +125,10 @@
               </td>
               <td>
                 <select :value="getDecision(r.eleveId)" @change="transitionStore.setDecision(r.eleveId, $event.target.value)" class="input decision-select" :class="'decision-' + getDecision(r.eleveId)">
-                  <option value="admis">Admis</option>
-                  <option value="redoublant">Redoublant</option>
-                  <option v-if="r.level === 'Tle'" value="diplome">Diplômé</option>
-                  <option value="transfere">Transféré</option>
+                  <option value="admis">{{ t('yt.decisions.admis') }}</option>
+                  <option value="redoublant">{{ t('yt.decisions.redoublant') }}</option>
+                  <option v-if="r.level === 'Tle'" value="diplome">{{ t('yt.decisions.diplome') }}</option>
+                  <option value="transfere">{{ t('yt.decisions.transfere') }}</option>
                 </select>
               </td>
             </tr>
@@ -139,10 +139,10 @@
       <div class="step-actions">
         <button class="btn btn-ghost" @click="transitionStore.transitionStep = 0">
           <ArrowLeft :size="16" />
-          Précédent
+          {{ t('yt.previous') }}
         </button>
         <button class="btn btn-primary" @click="transitionStore.transitionStep = 2">
-          Continuer
+          {{ t('yt.continue') }}
           <ArrowRight :size="16" />
         </button>
       </div>
@@ -150,50 +150,50 @@
 
     <!-- ═══════ STEP 2: PARAMETRES NOUVELLE ANNEE ═══════ -->
     <div v-if="transitionStore.transitionStep === 2" class="card step-card">
-      <h2>Paramètres {{ transitionStore.nextAcademicYear }}</h2>
-      <p class="step-desc">Vérifiez et ajustez les informations de l'établissement pour la nouvelle année scolaire. Les données de l'année en cours sont pré-remplies.</p>
+      <h2>{{ t('yt.settingsTitle', { year: transitionStore.nextAcademicYear }) }}</h2>
+      <p class="step-desc">{{ t('yt.settingsDesc') }}</p>
 
       <form class="settings-form">
         <div class="form-row">
           <div class="field">
-            <label>Nom de l'établissement</label>
+            <label>{{ t('yt.schoolName') }}</label>
             <input v-model="transitionStore.newYearSettings.schoolName" class="input" type="text" />
           </div>
           <div class="field">
-            <label>Année scolaire</label>
+            <label>{{ t('yt.academicYear') }}</label>
             <input v-model="transitionStore.newYearSettings.academicYear" class="input" type="text" />
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label>Directeur</label>
+            <label>{{ t('yt.director') }}</label>
             <input v-model="transitionStore.newYearSettings.directorName" class="input" type="text" />
           </div>
           <div class="field">
-            <label>Téléphone</label>
+            <label>{{ t('yt.phone') }}</label>
             <input v-model="transitionStore.newYearSettings.phone" class="input" type="text" />
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label>Email</label>
+            <label>{{ t('yt.email') }}</label>
             <input v-model="transitionStore.newYearSettings.email" class="input" type="email" />
           </div>
           <div class="field">
-            <label>Adresse</label>
+            <label>{{ t('yt.address') }}</label>
             <input v-model="transitionStore.newYearSettings.address" class="input" type="text" />
           </div>
         </div>
         <div class="form-row">
           <div class="field">
-            <label>Ville</label>
+            <label>{{ t('yt.city') }}</label>
             <input v-model="transitionStore.newYearSettings.city" class="input" type="text" />
           </div>
           <div class="field">
-            <label>Type d'évaluation</label>
+            <label>{{ t('yt.evalType') }}</label>
             <select v-model="transitionStore.newYearSettings.evaluationType" class="input">
-              <option value="2_sequences">2 séquences par trimestre</option>
-              <option value="1_evaluation">1 évaluation par trimestre</option>
+              <option value="2_sequences">{{ t('yt.eval2seq') }}</option>
+              <option value="1_evaluation">{{ t('yt.eval1') }}</option>
             </select>
           </div>
         </div>
@@ -202,10 +202,10 @@
       <div class="step-actions">
         <button class="btn btn-ghost" @click="transitionStore.transitionStep = 1">
           <ArrowLeft :size="16" />
-          Précédent
+          {{ t('yt.previous') }}
         </button>
         <button class="btn btn-primary" @click="transitionStore.transitionStep = 3">
-          Continuer
+          {{ t('yt.continue') }}
           <ArrowRight :size="16" />
         </button>
       </div>
@@ -213,8 +213,8 @@
 
     <!-- ═══════ STEP 3: PREVISUALISATION ═══════ -->
     <div v-if="transitionStore.transitionStep === 3" class="card step-card">
-      <h2>Prévisualisation {{ transitionStore.nextAcademicYear }}</h2>
-      <p class="step-desc">Voici l'aperçu des classes et effectifs pour la nouvelle année. Les élèves admis montent en classe supérieure, les redoublants restent. Tous passent en "en attente d'inscription".</p>
+      <h2>{{ t('yt.previewTitle', { year: transitionStore.nextAcademicYear }) }}</h2>
+      <p class="step-desc">{{ t('yt.previewDesc') }}</p>
 
       <div class="preview-grid">
         <div v-for="(data, className) in transitionStore.newYearPreview" :key="className" class="preview-class-card" :class="{ 'preview-empty': data.students.length === 0 }">
@@ -222,35 +222,35 @@
             <h3>{{ className }}</h3>
             <span class="preview-count" :class="{ 'count-warn': data.students.length > data.capacity }">{{ data.students.length }} / {{ data.capacity }}</span>
           </div>
-          <div class="preview-teacher">Prof. principal : {{ data.homeroomTeacher || '-' }}</div>
+          <div class="preview-teacher">{{ t('yt.headTeacher', { name: data.homeroomTeacher || '-' }) }}</div>
           <div class="preview-students">
             <div v-for="s in data.students.slice(0, 5)" :key="s.eleveId" class="preview-student">
               <span :class="'decision-badge badge-' + s.decision">{{ s.decision === 'redoublant' ? 'R' : '↑' }}</span>
               <span>{{ s.lastName }} {{ s.firstName }}</span>
             </div>
             <div v-if="data.students.length > 5" class="preview-more">
-              + {{ data.students.length - 5 }} autres élèves
+              {{ t('yt.moreStudents', { n: data.students.length - 5 }) }}
             </div>
             <div v-if="data.students.length === 0" class="preview-empty-msg">
-              Aucun élève affecté
+              {{ t('yt.noStudentAssigned') }}
             </div>
           </div>
         </div>
       </div>
 
       <div class="summary-banner" style="margin-top: 20px;">
-        <div class="summary-row"><strong>Total élèves reportés :</strong> {{ transitionStore.transitionStats.admis + transitionStore.transitionStats.redoublants }}</div>
-        <div class="summary-row"><strong>Diplômés (sortants) :</strong> {{ transitionStore.transitionStats.diplomes }}</div>
-        <div class="summary-row"><strong>Transférés (sortants) :</strong> {{ transitionStore.transitionStats.transferes }}</div>
+        <div class="summary-row"><strong>{{ t('yt.totalCarried') }}</strong> {{ transitionStore.transitionStats.admis + transitionStore.transitionStats.redoublants }}</div>
+        <div class="summary-row"><strong>{{ t('yt.graduatesOut') }}</strong> {{ transitionStore.transitionStats.diplomes }}</div>
+        <div class="summary-row"><strong>{{ t('yt.transferredOut') }}</strong> {{ transitionStore.transitionStats.transferes }}</div>
       </div>
 
       <div class="step-actions">
         <button class="btn btn-ghost" @click="transitionStore.transitionStep = 2">
           <ArrowLeft :size="16" />
-          Précédent
+          {{ t('yt.previous') }}
         </button>
         <button class="btn btn-primary" @click="transitionStore.transitionStep = 4">
-          Confirmer et exécuter
+          {{ t('yt.confirmExecute') }}
           <ArrowRight :size="16" />
         </button>
       </div>
@@ -259,33 +259,33 @@
     <!-- ═══════ STEP 4: CONFIRMATION FINALE ═══════ -->
     <div v-if="transitionStore.transitionStep === 4" class="card step-card">
       <template v-if="!transitionStore.transitionComplete">
-        <h2>Confirmation</h2>
-        <p class="step-desc">Vous êtes sur le point de clôturer l'année <strong>{{ schoolStore.schoolSettings?.academicYear }}</strong> et de démarrer <strong>{{ transitionStore.nextAcademicYear }}</strong>.</p>
+        <h2>{{ t('yt.confirmTitle') }}</h2>
+        <p class="step-desc">{{ t('yt.confirmDesc', { from: schoolStore.schoolSettings?.academicYear, to: transitionStore.nextAcademicYear }) }}</p>
 
         <div class="confirm-summary">
-          <div class="confirm-item"><strong>{{ transitionStore.transitionStats.admis }}</strong> élèves passeront en classe supérieure</div>
-          <div class="confirm-item"><strong>{{ transitionStore.transitionStats.redoublants }}</strong> élèves redoubleront</div>
-          <div class="confirm-item"><strong>{{ transitionStore.transitionStats.diplomes }}</strong> élèves seront diplômés</div>
-          <div class="confirm-item"><strong>{{ transitionStore.transitionStats.transferes }}</strong> élèves seront transférés</div>
+          <div class="confirm-item">{{ t('yt.confirmPromoted', { n: transitionStore.transitionStats.admis }) }}</div>
+          <div class="confirm-item">{{ t('yt.confirmRepeat', { n: transitionStore.transitionStats.redoublants }) }}</div>
+          <div class="confirm-item">{{ t('yt.confirmGrad', { n: transitionStore.transitionStats.diplomes }) }}</div>
+          <div class="confirm-item">{{ t('yt.confirmTransfer', { n: transitionStore.transitionStats.transferes }) }}</div>
         </div>
 
         <div class="warning-banner" style="margin: 20px 0;">
           <AlertCircle :size="16" />
-          <span>Cette action est irréversible. Les notes de l'année en cours seront archivées et les compteurs remis à zéro pour la nouvelle année.</span>
+          <span>{{ t('yt.irreversible') }}</span>
         </div>
 
         <div class="step-actions">
           <button class="btn btn-ghost" @click="transitionStore.transitionStep = 3">
             <ArrowLeft :size="16" />
-            Revenir
+            {{ t('yt.back') }}
           </button>
           <button class="btn btn-danger" @click="executeTransition" :disabled="transitionStore.isExecuting">
             <template v-if="transitionStore.isExecuting">
               <Loader2 :size="16" class="spin" />
-              Transition en cours...
+              {{ t('yt.transitioning') }}
             </template>
             <template v-else>
-              Clôturer et démarrer {{ transitionStore.nextAcademicYear }}
+              {{ t('yt.closeAndStart', { year: transitionStore.nextAcademicYear }) }}
             </template>
           </button>
         </div>
@@ -294,12 +294,12 @@
       <template v-else>
         <div class="success-card">
           <CheckCircle :size="48" class="success-icon" />
-          <h2>Transition terminée</h2>
-          <p>L'année <strong>{{ transitionStore.nextAcademicYear }}</strong> est prête. Tous les élèves sont en statut "en attente d'inscription".</p>
-          <p>Vous pouvez maintenant confirmer les inscriptions dans le module Élèves.</p>
+          <h2>{{ t('yt.doneTitle') }}</h2>
+          <p>{{ t('yt.doneDesc1', { year: transitionStore.nextAcademicYear }) }}</p>
+          <p>{{ t('yt.doneDesc2') }}</p>
           <div class="step-actions" style="justify-content: center;">
             <button class="btn btn-primary" @click="$router.push('/dashboard')">
-              Aller au tableau de bord
+              {{ t('yt.goDashboard') }}
             </button>
           </div>
         </div>
@@ -310,16 +310,22 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useYearTransitionStore } from '../stores/year-transition'
 import { useSchoolStore } from '../stores/school'
 import { useClassesStore } from '../stores/classes'
 import { AlertCircle, ArrowRight, ArrowLeft, Loader2, CheckCircle } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const transitionStore = useYearTransitionStore()
 const schoolStore = useSchoolStore()
 const classesStore = useClassesStore()
+
+const steps = computed(() => [
+  t('yt.stepBilan'), t('yt.stepDecisions'), t('yt.stepSettings'), t('yt.stepPreview'), t('yt.stepConfirm'),
+])
 
 const filterClass = ref('')
 const filterDecision = ref('')
@@ -351,7 +357,7 @@ async function executeTransition() {
   try {
     await transitionStore.executeTransition()
   } catch (err) {
-    alert('Erreur lors de la transition: ' + err.message)
+    alert(t('yt.errorAlert', { msg: err.message }))
   }
 }
 </script>
