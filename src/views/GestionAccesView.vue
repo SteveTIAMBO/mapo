@@ -1,18 +1,17 @@
 <template>
   <div class="ga">
     <div class="ga-head">
-      <h1 class="ga-h1">Gestion des accès</h1>
-      <p class="ga-sub">Invitez les membres du personnel et gérez leurs rôles dans l'établissement.</p>
+      <h1 class="ga-h1">{{ t('ga.title') }}</h1>
+      <p class="ga-sub">{{ t('ga.subtitle') }}</p>
     </div>
 
     <!-- Mode démonstration : fonctionnalité inactive -->
     <div v-if="authStore.isDemo" class="ga-demo-notice">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
       <div>
-        <strong>Disponible en mode réel</strong>
+        <strong>{{ t('ga.demoTitle') }}</strong>
         <p>
-          La gestion des accès s'active une fois MAPO installé dans votre établissement.
-          En démonstration, les comptes (directeur, enseignant, parent, élève) sont fixes.
+          {{ t('ga.demoInfo') }}
         </p>
       </div>
     </div>
@@ -20,32 +19,31 @@
     <template v-else>
       <!-- Formulaire d'accès -->
       <section class="ga-card">
-        <h2 class="ga-h2">Donner un accès à un membre du personnel</h2>
+        <h2 class="ga-h2">{{ t('ga.giveAccess') }}</h2>
 
         <div class="ga-mode">
-          <button type="button" class="ga-mode-btn" :class="{ active: accessMode === 'email' }" @click="switchMode('email')">Par email</button>
-          <button type="button" class="ga-mode-btn" :class="{ active: accessMode === 'phone' }" @click="switchMode('phone')">Par téléphone</button>
+          <button type="button" class="ga-mode-btn" :class="{ active: accessMode === 'email' }" @click="switchMode('email')">{{ t('ga.byEmail') }}</button>
+          <button type="button" class="ga-mode-btn" :class="{ active: accessMode === 'phone' }" @click="switchMode('phone')">{{ t('ga.byPhone') }}</button>
         </div>
 
         <!-- Mode email -->
         <template v-if="accessMode === 'email'">
           <p class="ga-card-hint">
-            La personne reçoit un lien à sa première connexion avec cette adresse email
-            (puis mot de passe ou compte Google).
+            {{ t('ga.emailHint') }}
           </p>
           <form class="ga-invite-form" @submit.prevent="envoyerInvitation">
             <div class="ga-field ga-field-email">
-              <label class="ga-label">Adresse email</label>
+              <label class="ga-label">{{ t('ga.email') }}</label>
               <input v-model="inviteEmail" type="email" class="ga-input" placeholder="nom@exemple.com" required />
             </div>
             <div class="ga-field">
-              <label class="ga-label">Rôle</label>
+              <label class="ga-label">{{ t('ga.role') }}</label>
               <select v-model="inviteRole" class="ga-input">
                 <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
               </select>
             </div>
             <button type="submit" class="ga-btn-primary" :disabled="sending">
-              {{ sending ? 'Envoi…' : 'Inviter' }}
+              {{ sending ? t('ga.sending') : t('ga.invite') }}
             </button>
           </form>
         </template>
@@ -53,30 +51,29 @@
         <!-- Mode téléphone (sans email) -->
         <template v-else>
           <p class="ga-card-hint">
-            Pour les personnes sans email. Le compte est créé tout de suite : communiquez-leur
-            le numéro et le mot de passe affichés ci-dessous.
+            {{ t('ga.phoneHint') }}
           </p>
           <form class="ga-invite-form" @submit.prevent="creerAccesTel">
             <div class="ga-field">
-              <label class="ga-label">Nom</label>
-              <input v-model="phoneLastName" type="text" class="ga-input" placeholder="Nom" required />
+              <label class="ga-label">{{ t('ga.lastName') }}</label>
+              <input v-model="phoneLastName" type="text" class="ga-input" :placeholder="t('ga.lastName')" required />
             </div>
             <div class="ga-field">
-              <label class="ga-label">Prénom</label>
-              <input v-model="phoneFirstName" type="text" class="ga-input" placeholder="Prénom" />
+              <label class="ga-label">{{ t('ga.firstName') }}</label>
+              <input v-model="phoneFirstName" type="text" class="ga-input" :placeholder="t('ga.firstName')" />
             </div>
             <div class="ga-field ga-field-email">
-              <label class="ga-label">Téléphone</label>
+              <label class="ga-label">{{ t('ga.phone') }}</label>
               <input v-model="phoneNumber" type="tel" class="ga-input" placeholder="+237 6XX XX XX XX" required />
             </div>
             <div class="ga-field">
-              <label class="ga-label">Rôle</label>
+              <label class="ga-label">{{ t('ga.role') }}</label>
               <select v-model="inviteRole" class="ga-input">
                 <option v-for="r in roles" :key="r.value" :value="r.value">{{ r.label }}</option>
               </select>
             </div>
             <button type="submit" class="ga-btn-primary" :disabled="sending">
-              {{ sending ? 'Création…' : "Créer l'accès" }}
+              {{ sending ? t('ga.creating') : t('ga.createAccess') }}
             </button>
           </form>
         </template>
@@ -85,10 +82,10 @@
 
         <!-- Identifiants générés -->
         <div v-if="createdAccess" class="ga-creds">
-          <strong>Accès créé — à communiquer à la personne</strong>
-          <div class="ga-creds-row"><span>Identifiant (téléphone)</span><code>{{ createdAccess.phone }}</code></div>
-          <div class="ga-creds-row"><span>Mot de passe initial</span><code>{{ createdAccess.password }}</code></div>
-          <p class="ga-creds-note">Elle se connecte avec son numéro et ce mot de passe, puis pourra le modifier.</p>
+          <strong>{{ t('ga.accessCreated') }}</strong>
+          <div class="ga-creds-row"><span>{{ t('ga.loginPhone') }}</span><code>{{ createdAccess.phone }}</code></div>
+          <div class="ga-creds-row"><span>{{ t('ga.initialPassword') }}</span><code>{{ createdAccess.password }}</code></div>
+          <p class="ga-creds-note">{{ t('ga.credsNote') }}</p>
         </div>
 
         <p v-if="formMessage" class="ga-msg" :class="formOk ? 'is-ok' : 'is-error'">{{ formMessage }}</p>
@@ -97,12 +94,12 @@
       <!-- Invitations en attente -->
       <section class="ga-card">
         <div class="ga-card-head">
-          <h2 class="ga-h2">Invitations en attente</h2>
+          <h2 class="ga-h2">{{ t('ga.pendingInvites') }}</h2>
           <span class="ga-count">{{ store.pendingInvitations.length }}</span>
         </div>
-        <div v-if="store.loading" class="ga-empty">Chargement…</div>
+        <div v-if="store.loading" class="ga-empty">{{ t('ga.loading') }}</div>
         <div v-else-if="store.pendingInvitations.length === 0" class="ga-empty">
-          Aucune invitation en attente.
+          {{ t('ga.noInvites') }}
         </div>
         <ul v-else class="ga-list">
           <li v-for="inv in store.pendingInvitations" :key="inv.id" class="ga-row">
@@ -110,7 +107,7 @@
               <span class="ga-row-email">{{ accountId(inv) }}</span>
               <span class="ga-pill">{{ roleLabel(inv.role) }}</span>
             </div>
-            <button class="ga-btn-ghost" type="button" @click="annuler(inv.id)">Annuler</button>
+            <button class="ga-btn-ghost" type="button" @click="annuler(inv.id)">{{ t('ga.cancel') }}</button>
           </li>
         </ul>
       </section>
@@ -118,12 +115,12 @@
       <!-- Personnel actif -->
       <section class="ga-card">
         <div class="ga-card-head">
-          <h2 class="ga-h2">Personnel de l'établissement</h2>
+          <h2 class="ga-h2">{{ t('ga.schoolStaff') }}</h2>
           <span class="ga-count">{{ store.staff.length }}</span>
         </div>
-        <div v-if="store.loading" class="ga-empty">Chargement…</div>
+        <div v-if="store.loading" class="ga-empty">{{ t('ga.loading') }}</div>
         <div v-else-if="store.staff.length === 0" class="ga-empty">
-          Aucun membre du personnel n'a encore rejoint l'établissement.
+          {{ t('ga.noStaff') }}
         </div>
         <ul v-else class="ga-list">
           <li v-for="m in store.staff" :key="m.id" class="ga-row">
@@ -146,6 +143,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useInvitationsStore, ROLES_PERSONNEL, roleLabel } from '../stores/invitations'
 import { isPhoneEmail, emailToPhone } from '../utils/identifier'
@@ -157,6 +155,7 @@ function accountId(x) {
   return x.email
 }
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const store = useInvitationsStore()
 
@@ -198,11 +197,11 @@ async function envoyerInvitation() {
   sending.value = false
   if (result.success) {
     formOk.value = true
-    formMessage.value = `Invitation envoyée à ${inviteEmail.value.trim().toLowerCase()}.`
+    formMessage.value = t('ga.inviteSent', { email: inviteEmail.value.trim().toLowerCase() })
     inviteEmail.value = ''
   } else {
     formOk.value = false
-    formMessage.value = result.error || "L'invitation n'a pas pu être créée."
+    formMessage.value = result.error || t('ga.inviteFailed')
   }
 }
 
@@ -225,7 +224,7 @@ async function creerAccesTel() {
     phoneNumber.value = ''
   } else {
     formOk.value = false
-    formMessage.value = result.error || "L'accès n'a pas pu être créé."
+    formMessage.value = result.error || t('ga.accessFailed')
   }
 }
 
