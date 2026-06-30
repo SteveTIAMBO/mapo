@@ -2,37 +2,37 @@
   <div class="dip-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Diplômes vérifiables</h1>
-        <p>Émettez des diplômes infalsifiables — chacun reçoit un code de vérification public.</p>
+        <h1>{{ t('dip.title') }}</h1>
+        <p>{{ t('dip.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="openEmettre">
-        <Award :size="16" /><span>Émettre un diplôme</span>
+        <Award :size="16" /><span>{{ t('dip.issueDiploma') }}</span>
       </button>
     </div>
 
     <!-- Bandeau explicatif -->
     <div class="info-banner">
       <ShieldCheck :size="18" />
-      <span>Chaque diplôme porte un <strong>code public</strong> et une <strong>empreinte SHA-256</strong> : n'importe qui peut en vérifier l'authenticité sur <strong>{{ verifBaseUrl }}</strong>, sans compte.</span>
+      <span>{{ t('dip.banner', { url: verifBaseUrl }) }}</span>
     </div>
 
     <!-- Liste des diplômes émis -->
     <div class="card">
       <div v-if="diplomes.length === 0" class="empty-state">
         <Award :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-        <p>Aucun diplôme émis pour le moment.</p>
-        <button class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="openEmettre">Émettre le premier</button>
+        <p>{{ t('dip.noDiplomas') }}</p>
+        <button class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="openEmettre">{{ t('dip.issueFirst') }}</button>
       </div>
       <div v-else class="table-wrap">
         <table class="table">
           <thead>
             <tr>
-              <th>Élève</th>
-              <th>Diplôme</th>
-              <th class="hide-mobile">Année</th>
-              <th>Code de vérification</th>
-              <th class="hide-mobile">Émis le</th>
-              <th>Statut</th>
+              <th>{{ t('dip.student') }}</th>
+              <th>{{ t('dip.diploma') }}</th>
+              <th class="hide-mobile">{{ t('dip.year') }}</th>
+              <th>{{ t('dip.verifCode') }}</th>
+              <th class="hide-mobile">{{ t('dip.issuedOn') }}</th>
+              <th>{{ t('dip.status') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -42,7 +42,7 @@
               <td>{{ d.typeLabel }}<span v-if="d.serie"> {{ d.serie }}</span><span v-if="d.mention" class="mention"> · {{ d.mention }}</span></td>
               <td class="hide-mobile td-mono">{{ d.annee }}</td>
               <td>
-                <button class="code-chip" :title="'Copier ' + d.code" @click="copyCode(d.code)">
+                <button class="code-chip" :title="t('dip.copyCode', { code: d.code })" @click="copyCode(d.code)">
                   <span class="code-txt">{{ d.code }}</span>
                   <Check v-if="copiedCode === d.code" :size="13" /><Copy v-else :size="13" />
                 </button>
@@ -50,12 +50,12 @@
               <td class="hide-mobile td-mono">{{ formatDate(d.emisLe) }}</td>
               <td>
                 <span class="badge" :class="d.statut === 'valide' ? 'badge-success' : 'badge-danger'">
-                  {{ d.statut === 'valide' ? 'Valide' : 'Révoqué' }}
+                  {{ d.statut === 'valide' ? t('dip.valid') : t('dip.revoked') }}
                 </span>
               </td>
               <td class="td-actions">
-                <button class="icon-btn" title="Voir le diplôme" @click="openCertificat(d)"><Eye :size="17" /></button>
-                <button v-if="d.statut === 'valide'" class="icon-btn icon-danger" title="Révoquer" @click="askRevoke(d)"><Ban :size="16" /></button>
+                <button class="icon-btn" :title="t('dip.viewDiploma')" @click="openCertificat(d)"><Eye :size="17" /></button>
+                <button v-if="d.statut === 'valide'" class="icon-btn icon-danger" :title="t('dip.revoke')" @click="askRevoke(d)"><Ban :size="16" /></button>
               </td>
             </tr>
           </tbody>
@@ -67,48 +67,48 @@
     <div v-if="showEmettre" class="modal-overlay" @click.self="showEmettre = false">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>Émettre un diplôme</h2>
+          <h2>{{ t('dip.issueDiploma') }}</h2>
           <button class="icon-btn" @click="showEmettre = false"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Élève</label>
+            <label>{{ t('dip.student') }}</label>
             <select v-model="form.eleveId" class="input">
-              <option value="">Sélectionnez un élève</option>
+              <option value="">{{ t('dip.selectStudent') }}</option>
               <option v-for="e in elevesInscrits" :key="e.id" :value="e.id">{{ e.lastName }} {{ e.firstName }} — {{ e.className }}</option>
             </select>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Diplôme</label>
+              <label>{{ t('dip.diploma') }}</label>
               <select v-model="form.type" class="input">
-                <option v-for="t in DIPLOME_TYPES" :key="t.key" :value="t.key">{{ t.label }}</option>
+                <option v-for="dt in DIPLOME_TYPES" :key="dt.key" :value="dt.key">{{ dt.label }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Série (optionnel)</label>
+              <label>{{ t('dip.serieOptional') }}</label>
               <input v-model="form.serie" type="text" class="input" placeholder="A, C, D…" maxlength="4" />
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Mention</label>
+              <label>{{ t('dip.mention') }}</label>
               <select v-model="form.mention" class="input">
-                <option value="">— Aucune —</option>
+                <option value="">{{ t('dip.none') }}</option>
                 <option v-for="m in MENTIONS" :key="m" :value="m">{{ m }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Année scolaire</label>
+              <label>{{ t('dip.schoolYear') }}</label>
               <input v-model="form.annee" type="text" class="input" placeholder="2024-2025" />
             </div>
           </div>
           <p v-if="emettreError" class="form-error">{{ emettreError }}</p>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showEmettre = false">Annuler</button>
+          <button class="btn btn-outline" @click="showEmettre = false">{{ t('dip.cancel') }}</button>
           <button class="btn btn-primary" :disabled="emitting" @click="emettre">
-            <Award :size="16" /><span>{{ emitting ? 'Émission…' : 'Émettre' }}</span>
+            <Award :size="16" /><span>{{ emitting ? t('dip.issuing') : t('dip.issue') }}</span>
           </button>
         </div>
       </div>
@@ -118,9 +118,9 @@
     <div v-if="certificat" class="modal-overlay" @click.self="certificat = null">
       <div class="modal-card card cert-modal">
         <div class="modal-header no-print">
-          <h2>Diplôme</h2>
+          <h2>{{ t('dip.diplomaModalTitle') }}</h2>
           <div style="display:flex; gap:8px;">
-            <button class="btn btn-outline btn-sm" @click="printCert"><Printer :size="15" /><span>Imprimer</span></button>
+            <button class="btn btn-outline btn-sm" @click="printCert"><Printer :size="15" /><span>{{ t('dip.print') }}</span></button>
             <button class="icon-btn" @click="certificat = null"><X :size="20" /></button>
           </div>
         </div>
@@ -148,7 +148,7 @@
           </div>
         </div>
         <div class="cert-actions no-print">
-          <a class="btn btn-ghost btn-sm" :href="verifUrl(certificat.code)" target="_blank" rel="noopener"><ExternalLink :size="15" /><span>Ouvrir la page de vérification</span></a>
+          <a class="btn btn-ghost btn-sm" :href="verifUrl(certificat.code)" target="_blank" rel="noopener"><ExternalLink :size="15" /><span>{{ t('dip.openVerifPage') }}</span></a>
         </div>
       </div>
     </div>
@@ -156,13 +156,13 @@
     <!-- Confirmation révocation -->
     <div v-if="toRevoke" class="modal-overlay" @click.self="toRevoke = null">
       <div class="modal-card card modal-sm">
-        <div class="modal-header"><h2>Révoquer ce diplôme ?</h2><button class="icon-btn" @click="toRevoke = null"><X :size="20" /></button></div>
+        <div class="modal-header"><h2>{{ t('dip.revokeTitle') }}</h2><button class="icon-btn" @click="toRevoke = null"><X :size="20" /></button></div>
         <div class="modal-body">
-          <p>Le diplôme <strong>{{ toRevoke.code }}</strong> de {{ toRevoke.eleveName }} sera marqué <strong>révoqué</strong> : la page de vérification publique le signalera comme non valide. Cette action est réversible côté registre.</p>
+          <p>{{ t('dip.revokeBody', { code: toRevoke.code, name: toRevoke.eleveName }) }}</p>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="toRevoke = null">Annuler</button>
-          <button class="btn btn-danger" @click="confirmRevoke">Révoquer</button>
+          <button class="btn btn-outline" @click="toRevoke = null">{{ t('dip.cancel') }}</button>
+          <button class="btn btn-danger" @click="confirmRevoke">{{ t('dip.revoke') }}</button>
         </div>
       </div>
     </div>
@@ -171,6 +171,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useDiplomesStore, DIPLOME_TYPES, MENTIONS } from '../stores/diplomes'
 import { useElevesStore } from '../stores/eleves'
 import { useSchoolStore } from '../stores/school'
@@ -178,6 +179,7 @@ import { useAuthStore } from '../stores/auth'
 import { Award, ShieldCheck, Check, Copy, Eye, Ban, X, Printer, ExternalLink } from 'lucide-vue-next'
 import QRCode from 'qrcode'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const dipStore = useDiplomesStore()
 const elevesStore = useElevesStore()
 const schoolStore = useSchoolStore()
@@ -222,8 +224,8 @@ function openEmettre() {
 async function emettre() {
   emettreError.value = ''
   const e = elevesStore.eleves.find((x) => x.id === form.value.eleveId)
-  if (!e) { emettreError.value = 'Sélectionnez un élève.'; return }
-  if (!form.value.annee.trim()) { emettreError.value = "Renseignez l'année scolaire."; return }
+  if (!e) { emettreError.value = t('dip.errSelectStudent'); return }
+  if (!form.value.annee.trim()) { emettreError.value = t('dip.errYear'); return }
   emitting.value = true
   try {
     const d = await dipStore.emettre({
@@ -280,7 +282,7 @@ function confirmRevoke() {
 
 function formatDate(iso) {
   if (!iso) return '-'
-  try { return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return '-' }
+  try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }) } catch { return '-' }
 }
 
 onMounted(async () => {
