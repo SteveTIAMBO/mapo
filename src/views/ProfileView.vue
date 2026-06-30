@@ -2,19 +2,19 @@
   <div class="profile-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Mon profil</h1>
-        <p>Gérez vos informations personnelles</p>
+        <h1>{{ t('prof.title') }}</h1>
+        <p>{{ t('prof.subtitle') }}</p>
       </div>
       <button class="btn btn-primary" @click="saveProfile" :disabled="isSaving">
         <Check v-if="saveSuccess && !isSaving" :size="16" />
-        <span>{{ isSaving ? 'Enregistrement...' : saveSuccess ? 'Enregistré' : 'Enregistrer' }}</span>
+        <span>{{ isSaving ? t('prof.saving') : saveSuccess ? t('prof.saved') : t('prof.save') }}</span>
       </button>
     </div>
 
     <transition name="slide">
       <div v-if="saveSuccess" class="toast-success">
         <Check :size="18" />
-        <span>Profil mis à jour avec succès</span>
+        <span>{{ t('prof.savedToast') }}</span>
       </div>
     </transition>
 
@@ -41,26 +41,26 @@
       <div class="profile-col-right">
         <section class="card profile-card-form">
           <div class="card-header">
-            <div class="section-label">Informations personnelles</div>
+            <div class="section-label">{{ t('prof.personalInfo') }}</div>
           </div>
           <div class="card-body">
             <div class="field-row">
               <div class="field">
-                <label>Nom</label>
-                <input v-model="form.lastName" type="text" class="input" placeholder="Votre nom" />
+                <label>{{ t('prof.lastName') }}</label>
+                <input v-model="form.lastName" type="text" class="input" :placeholder="t('prof.lastNamePh')" />
               </div>
               <div class="field">
-                <label>Prénom</label>
-                <input v-model="form.firstName" type="text" class="input" placeholder="Votre prénom" />
+                <label>{{ t('prof.firstName') }}</label>
+                <input v-model="form.firstName" type="text" class="input" :placeholder="t('prof.firstNamePh')" />
               </div>
             </div>
             <div class="field">
-              <label>Adresse email</label>
+              <label>{{ t('prof.email') }}</label>
               <input v-model="form.email" type="email" class="input" disabled />
-              <span class="field-hint">L'email ne peut pas être modifié</span>
+              <span class="field-hint">{{ t('prof.emailHint') }}</span>
             </div>
             <div class="field">
-              <label>Téléphone (optionnel)</label>
+              <label>{{ t('prof.phoneOptional') }}</label>
               <input v-model="form.phone" type="tel" class="input" placeholder="+237 6XX XXX XXX" />
             </div>
           </div>
@@ -68,19 +68,19 @@
 
         <section class="card profile-card-form">
           <div class="card-header">
-            <div class="section-label">Rôle & Accès</div>
+            <div class="section-label">{{ t('prof.roleAccess') }}</div>
           </div>
           <div class="card-body">
             <div class="field">
-              <label>Rôle dans l'établissement</label>
+              <label>{{ t('prof.roleInSchool') }}</label>
               <select v-model="form.role" class="input" :disabled="!isAdmin">
-                <option value="admin">Administrateur</option>
-                <option value="directeur">Directeur</option>
-                <option value="enseignant">Enseignant</option>
-                <option value="secretaire">Secrétaire</option>
-                <option value="comptable">Comptable</option>
+                <option value="admin">{{ t('prof.roles.admin') }}</option>
+                <option value="directeur">{{ t('prof.roles.directeur') }}</option>
+                <option value="enseignant">{{ t('prof.roles.enseignant') }}</option>
+                <option value="secretaire">{{ t('prof.roles.secretaire') }}</option>
+                <option value="comptable">{{ t('prof.roles.comptable') }}</option>
               </select>
-              <span v-if="!isAdmin" class="field-hint">Seul un administrateur peut modifier le rôle</span>
+              <span v-if="!isAdmin" class="field-hint">{{ t('prof.onlyAdminRole') }}</span>
             </div>
           </div>
         </section>
@@ -88,11 +88,11 @@
         <!-- Section enfants (parent uniquement) -->
         <section v-if="isParentRole" class="card profile-card-form">
           <div class="card-header">
-            <div class="section-label">Mes enfants</div>
+            <div class="section-label">{{ t('prof.myChildren') }}</div>
           </div>
           <div class="card-body">
             <p v-if="linkedChildren.length === 0" class="field-hint" style="margin-bottom: 0;">
-              Aucun enfant rattaché à votre compte. La liaison parent-enfant se fait au niveau de l'établissement.
+              {{ t('prof.noChildren') }}
             </p>
             <div v-else class="children-list">
               <div v-for="child in linkedChildren" :key="child.id" class="child-row">
@@ -106,8 +106,8 @@
                 <div class="child-actions">
                   <div class="child-account-toggle">
                     <label class="toggle-label">
-                      <span class="toggle-text">{{ child.childAccountAuthorized ? 'Accès autorisé' : 'Autoriser l\'accès' }}</span>
-                      <button class="toggle-switch" :class="{ active: child.childAccountAuthorized }" @click="toggleChildAccess(child)" :title="child.childAccountAuthorized ? 'Révoquer l\'accès élève' : 'Autoriser la création d\'un compte élève'">
+                      <span class="toggle-text">{{ child.childAccountAuthorized ? t('prof.accessGranted') : t('prof.grantAccess') }}</span>
+                      <button class="toggle-switch" :class="{ active: child.childAccountAuthorized }" @click="toggleChildAccess(child)" :title="child.childAccountAuthorized ? t('prof.revokeAccess') : t('prof.authorizeAccount')">
                         <span class="toggle-knob"></span>
                       </button>
                     </label>
@@ -117,7 +117,7 @@
             </div>
             <div class="children-info-box">
               <UserCheck :size="14" />
-              <span>En activant l'accès, votre enfant pourra consulter ses notes, son emploi du temps et sa scolarité depuis son propre compte sur smartphone.</span>
+              <span>{{ t('prof.accessInfo') }}</span>
             </div>
           </div>
         </section>
@@ -128,10 +128,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { Camera, Check, UserCheck } from 'lucide-vue-next'
 
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 const elevesStore = useElevesStore()
 const isSaving = ref(false)
@@ -182,15 +184,11 @@ function toggleChildAccess(child) {
   }
 }
 
-const roleLabels = {
-  admin: 'Administrateur',
-  directeur: 'Directeur',
-  enseignant: 'Enseignant',
-  secretaire: 'Secrétaire',
-  comptable: 'Comptable',
-  parent: 'Parent d\'élève',
-}
-const roleLabel = computed(() => roleLabels[form.role] || form.role)
+const roleLabel = computed(() => {
+  const k = 'prof.roles.' + form.role
+  const l = t(k)
+  return l === k ? form.role : l
+})
 
 const initials = computed(() => {
   const f = form.firstName?.[0] || ''

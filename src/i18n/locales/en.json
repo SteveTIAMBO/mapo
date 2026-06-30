@@ -1275,5 +1275,32 @@
     "revokeBody": "Diploma {code} for {name} will be marked revoked: the public verification page will flag it as invalid. This action is reversible in the registry.",
     "errSelectStudent": "Select a student.",
     "errYear": "Enter the school year."
+  },
+  "prof": {
+    "title": "My profile",
+    "subtitle": "Manage your personal information",
+    "saving": "Saving...",
+    "saved": "Saved",
+    "save": "Save",
+    "savedToast": "Profile updated successfully",
+    "personalInfo": "Personal information",
+    "lastName": "Last name",
+    "lastNamePh": "Your last name",
+    "firstName": "First name",
+    "firstNamePh": "Your first name",
+    "email": "Email address",
+    "emailHint": "Email cannot be changed",
+    "phoneOptional": "Phone (optional)",
+    "roleAccess": "Role & Access",
+    "roleInSchool": "Role in the school",
+    "onlyAdminRole": "Only an administrator can change the role",
+    "myChildren": "My children",
+    "noChildren": "No child linked to your account. Parent-child linking is done at the school level.",
+    "accessGranted": "Access granted",
+    "grantAccess": "Grant access",
+    "revokeAccess": "Revoke student access",
+    "authorizeAccount": "Authorize creation of a student account",
+    "accessInfo": "By enabling access, your child will be able to view their grades, timetable and schooling from their own account on a smartphone.",
+    "roles": { "admin": "Administrator", "directeur": "Director", "enseignant": "Teacher", "secretaire": "Secretary", "comptable": "Accountant", "parent": "Parent" }
   }
 }

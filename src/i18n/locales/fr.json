@@ -1275,5 +1275,32 @@
     "revokeBody": "Le diplôme {code} de {name} sera marqué révoqué : la page de vérification publique le signalera comme non valide. Cette action est réversible côté registre.",
     "errSelectStudent": "Sélectionnez un élève.",
     "errYear": "Renseignez l'année scolaire."
+  },
+  "prof": {
+    "title": "Mon profil",
+    "subtitle": "Gérez vos informations personnelles",
+    "saving": "Enregistrement...",
+    "saved": "Enregistré",
+    "save": "Enregistrer",
+    "savedToast": "Profil mis à jour avec succès",
+    "personalInfo": "Informations personnelles",
+    "lastName": "Nom",
+    "lastNamePh": "Votre nom",
+    "firstName": "Prénom",
+    "firstNamePh": "Votre prénom",
+    "email": "Adresse email",
+    "emailHint": "L'email ne peut pas être modifié",
+    "phoneOptional": "Téléphone (optionnel)",
+    "roleAccess": "Rôle & Accès",
+    "roleInSchool": "Rôle dans l'établissement",
+    "onlyAdminRole": "Seul un administrateur peut modifier le rôle",
+    "myChildren": "Mes enfants",
+    "noChildren": "Aucun enfant rattaché à votre compte. La liaison parent-enfant se fait au niveau de l'établissement.",
+    "accessGranted": "Accès autorisé",
+    "grantAccess": "Autoriser l'accès",
+    "revokeAccess": "Révoquer l'accès élève",
+    "authorizeAccount": "Autoriser la création d'un compte élève",
+    "accessInfo": "En activant l'accès, votre enfant pourra consulter ses notes, son emploi du temps et sa scolarité depuis son propre compte sur smartphone.",
+    "roles": { "admin": "Administrateur", "directeur": "Directeur", "enseignant": "Enseignant", "secretaire": "Secrétaire", "comptable": "Comptable", "parent": "Parent d'élève" }
   }
 }
