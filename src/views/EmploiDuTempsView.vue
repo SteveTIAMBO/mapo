@@ -422,18 +422,18 @@
       <!-- Header -->
       <div class="page-header">
         <div class="page-header-text">
-          <h1>{{ authStore.isTeacher ? 'Mon emploi du temps' : 'Emploi du temps' }}</h1>
-          <p>{{ authStore.isTeacher ? 'Votre planning de cours' : 'Consultation et gestion de l\'emploi du temps' }}</p>
+          <h1>{{ authStore.isTeacher ? t('edt.myTimetable') : t('edt.timetable') }}</h1>
+          <p>{{ authStore.isTeacher ? t('edt.teacherSub') : t('edt.adminSub') }}</p>
         </div>
         <div v-if="!authStore.isTeacher" class="page-header-actions">
           <button class="btn btn-outline" @click="edtStore.setSetupStep(1)" type="button">
             <Settings :size="16" />
-            <span>Reconfigurer</span>
+            <span>{{ t('edt.reconfigure') }}</span>
           </button>
           <button class="btn btn-outline" @click="regenerateSchedule" :disabled="regenerating" type="button">
             <Loader2 v-if="regenerating" :size="16" class="spin-icon" />
             <RotateCcw v-else :size="16" />
-            <span>{{ regenerating ? 'Régénération...' : 'Régénérer' }}</span>
+            <span>{{ regenerating ? t('edt.regenerating') : t('edt.regenerate') }}</span>
           </button>
         </div>
       </div>
@@ -444,21 +444,21 @@
           <div class="stat-bar-dot" style="background: var(--success)"></div>
           <div>
             <div class="stat-bar-value">{{ classesStore.classes.length }}</div>
-            <div class="stat-bar-label">Classes</div>
+            <div class="stat-bar-label">{{ t('edt.classesLabel') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <div class="stat-bar-dot" style="background: var(--pr)"></div>
           <div>
             <div class="stat-bar-value">{{ edtStore.assignedTeachers.length }}</div>
-            <div class="stat-bar-label">Enseignants</div>
+            <div class="stat-bar-label">{{ t('edt.teachersLabel') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <div class="stat-bar-dot" style="background: #F59E0B"></div>
           <div>
             <div class="stat-bar-value">{{ edtStore.schedule.length }}</div>
-            <div class="stat-bar-label">Créneaux placés</div>
+            <div class="stat-bar-label">{{ t('edt.slotsPlaced') }}</div>
           </div>
         </div>
       </div>
@@ -471,7 +471,7 @@
           @click="activeTab = 'par-classe'"
           type="button"
         >
-          Par classe
+          {{ t('edt.tabByClass') }}
         </button>
         <button
           class="tab-button"
@@ -479,7 +479,7 @@
           @click="activeTab = 'par-enseignant'"
           type="button"
         >
-          Par enseignant
+          {{ t('edt.tabByTeacher') }}
         </button>
         <button
           class="tab-button"
@@ -487,7 +487,7 @@
           @click="activeTab = 'evenements'"
           type="button"
         >
-          Événements & Jours fériés
+          {{ t('edt.tabEvents') }}
         </button>
       </div>
 
@@ -505,12 +505,12 @@
       <div v-if="!authStore.isTeacher && edtStore.generationConflicts.length > 0" class="conflict-banner">
         <div class="conflict-banner-header">
           <AlertTriangle :size="18" />
-          <span>{{ edtStore.generationConflicts.length }} conflit(s) détecté(s)</span>
+          <span>{{ t('edt.conflictsDetected', { n: edtStore.generationConflicts.length }) }}</span>
           <button class="btn btn-sm btn-outline" @click="showConflictPanel = !showConflictPanel" type="button">
-            {{ showConflictPanel ? 'Masquer' : 'Détails' }}
+            {{ showConflictPanel ? t('edt.hide') : t('edt.details') }}
           </button>
           <button class="btn btn-sm btn-primary" @click="autoResolveConflicts" type="button">
-            Résoudre automatiquement
+            {{ t('edt.autoResolve') }}
           </button>
         </div>
         <div v-if="showConflictPanel" class="conflict-list">
@@ -533,7 +533,7 @@
           &rarr;
         </button>
         <button class="btn btn-sm btn-outline" @click="edtStore.setCurrentWeek(todayMonday)" type="button" style="margin-left: 8px;">
-          Aujourd'hui
+          {{ t('edt.today') }}
         </button>
       </div>
 
@@ -543,9 +543,9 @@
           <div class="card-body">
             <div class="selector-bar">
               <div class="field" style="margin-bottom: 0; min-width: 250px;">
-                <label>Classe</label>
+                <label>{{ t('edt.classLabel') }}</label>
                 <select v-model="selectedClassForView" class="input">
-                  <option value="">Sélectionnez une classe</option>
+                  <option value="">{{ t('edt.selectClass') }}</option>
                   <option v-for="cls in classesStore.classes" :key="cls.id" :value="cls.id">
                     {{ cls.name }}
                   </option>
@@ -554,7 +554,7 @@
               <div class="selector-spacer"></div>
               <button class="btn btn-sm btn-outline" @click="printTimetable" type="button">
                 <Printer :size="16" />
-                <span>Imprimer</span>
+                <span>{{ t('edt.print') }}</span>
               </button>
             </div>
           </div>
@@ -563,8 +563,8 @@
         <div v-if="selectedClassForView" class="card timetable-card" :id="'timetable-print'">
           <div class="timetable-print-header">
             <span class="timetable-print-school">{{ schoolStore.schoolSettings?.schoolName }}</span>
-            <span class="timetable-print-class">Emploi du temps — {{ getSelectedClassName() }}</span>
-            <span class="timetable-print-week">Semaine du {{ edtStore.getWeekLabel(edtStore.currentWeek) }}</span>
+            <span class="timetable-print-class">{{ t('edt.timetable') }} — {{ getSelectedClassName() }}</span>
+            <span class="timetable-print-week">{{ t('edt.weekOf', { week: edtStore.getWeekLabel(edtStore.currentWeek) }) }}</span>
           </div>
           <div class="timetable-grid" :style="{ gridTemplateColumns: `80px repeat(${classViewDays.length}, 1fr)` }">
             <!-- Header row -->
@@ -572,7 +572,7 @@
             <div v-for="day in classViewDays" :key="day" class="timetable-header" :class="{ 'day-cancelled': isDayCancelled(day), 'day-today': isToday(day) && isCurrentWeek }">
               <span class="day-name">{{ getDayLabel(day) }}</span>
               <span class="day-date">{{ getDayDate(day) }}</span>
-              <span v-if="isDayCancelled(day)" class="day-cancelled-badge">Férié</span>
+              <span v-if="isDayCancelled(day)" class="day-cancelled-badge">{{ t('edt.holiday') }}</span>
             </div>
 
             <!-- Slots with breaks -->
@@ -605,7 +605,7 @@
                     @dragend="onDragEnd"
                   >
                     <template v-if="isDayCancelled(day)">
-                      <div class="cell-holiday-text" v-if="row.index === 0">Férié</div>
+                      <div class="cell-holiday-text" v-if="row.index === 0">{{ t('edt.holiday') }}</div>
                     </template>
                     <template v-else-if="getClassScheduleCell(day, row.index).includes('filled')">
                       <div class="cell-subject">{{ getClassScheduleEntry(day, row.index)?.subjectId }}</div>
@@ -626,9 +626,9 @@
           <div class="card-body">
             <div class="selector-bar">
               <div v-if="!authStore.isTeacher" class="field" style="margin-bottom: 0; min-width: 250px;">
-                <label>Enseignant</label>
+                <label>{{ t('edt.teacherLabel') }}</label>
                 <select v-model="selectedTeacherForView" class="input">
-                  <option value="">Sélectionnez un enseignant</option>
+                  <option value="">{{ t('edt.selectTeacher') }}</option>
                   <option v-for="teacherId in edtStore.assignedTeachers" :key="teacherId" :value="teacherId">
                     {{ getTeacherName(teacherId) }}
                   </option>
@@ -637,7 +637,7 @@
               <div class="selector-spacer"></div>
               <button class="btn btn-sm btn-outline" @click="printTimetable" type="button">
                 <Printer :size="16" />
-                <span>Imprimer</span>
+                <span>{{ t('edt.print') }}</span>
               </button>
             </div>
           </div>
@@ -688,16 +688,16 @@
         <div class="card">
           <div class="card-header">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <h3>Événements de l'école</h3>
+              <h3>{{ t('edt.schoolEvents') }}</h3>
               <button class="btn btn-sm btn-primary" @click="showEventModal = true" type="button">
                 <Plus :size="16" />
-                <span>Ajouter</span>
+                <span>{{ t('edt.add') }}</span>
               </button>
             </div>
           </div>
           <div class="card-body">
             <div v-if="edtStore.schoolEvents.filter(e => e.type === 'event').length === 0" class="empty-state">
-              <p>Aucun événement planifié</p>
+              <p>{{ t('edt.noEvent') }}</p>
             </div>
             <div v-else class="events-list">
               <div v-for="evt in sortedEvents" :key="evt.id" class="event-item">
@@ -709,7 +709,7 @@
                   <div class="event-title">{{ evt.title }}</div>
                   <div class="event-meta">
                     <span :class="evt.cancelsCourses ? 'badge badge-danger' : 'badge badge-success'">
-                      {{ evt.cancelsCourses ? 'Cours suspendus' : 'Cours maintenus' }}
+                      {{ evt.cancelsCourses ? t('edt.coursesSuspended') : t('edt.coursesHeld') }}
                     </span>
                     <span v-if="evt.description" class="event-desc">{{ evt.description }}</span>
                   </div>
@@ -725,15 +725,15 @@
         <div class="card">
           <div class="card-header">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <h3>Jours fériés</h3>
+              <h3>{{ t('edt.holidays') }}</h3>
               <button class="btn btn-sm btn-outline" @click="prefillHolidaysFromCountry" type="button">
-                Pré-remplir ({{ schoolCountryLabel }})
+                {{ t('edt.prefill') }} ({{ schoolCountryLabel }})
               </button>
             </div>
           </div>
           <div class="card-body">
             <div v-if="edtStore.schoolEvents.filter(e => e.type === 'holiday').length === 0" class="empty-state">
-              <p>Aucun jour férié enregistré</p>
+              <p>{{ t('edt.noHoliday') }}</p>
             </div>
             <div v-else class="events-list">
               <div v-for="evt in sortedHolidays" :key="evt.id" class="event-item holiday-item">
@@ -758,29 +758,29 @@
     <div v-if="showAddBreakModal" class="modal-overlay" @click.self="showAddBreakModal = false">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Ajouter une pause</h2>
+          <h2>{{ t('edt.addBreak') }}</h2>
           <button class="icon-btn" @click="showAddBreakModal = false" type="button">
             <X :size="20" />
           </button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Nom de la pause</label>
-            <input v-model="newBreak.label" type="text" class="input" placeholder="Ex: Récréation" />
+            <label>{{ t('edt.breakName') }}</label>
+            <input v-model="newBreak.label" type="text" class="input" :placeholder="t('edt.breakNamePh')" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Heure de début</label>
+              <label>{{ t('edt.startTime') }}</label>
               <input v-model="newBreak.start" type="time" class="input" />
             </div>
             <div class="field">
-              <label>Heure de fin</label>
+              <label>{{ t('edt.endTime') }}</label>
               <input v-model="newBreak.end" type="time" class="input" />
             </div>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="showAddBreakModal = false" type="button">Annuler</button>
-            <button class="btn btn-primary" @click="addBreak" type="button">Ajouter</button>
+            <button class="btn btn-outline" @click="showAddBreakModal = false" type="button">{{ t('edt.cancel') }}</button>
+            <button class="btn btn-primary" @click="addBreak" type="button">{{ t('edt.add') }}</button>
           </div>
         </div>
       </div>
@@ -790,24 +790,24 @@
     <div v-if="showSlotEditor" class="modal-overlay" @click.self="closeSlotEditor">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Modifier le créneau</h2>
+          <h2>{{ t('edt.editSlot') }}</h2>
           <button class="icon-btn" @click="closeSlotEditor" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <p class="slot-editor-info">{{ editingSlot.dayLabel }} - {{ editingSlot.slotLabel }}</p>
           <div class="field">
-            <label>Matière</label>
+            <label>{{ t('edt.subjectLabel') }}</label>
             <select v-model="editingSlot.subjectId" class="input" @change="onSlotSubjectChange">
-              <option value="">Libre (pas de cours)</option>
+              <option value="">{{ t('edt.freeNoCourse') }}</option>
               <option v-for="subject in slotEditorSubjects" :key="subject" :value="subject">{{ subject }}</option>
             </select>
           </div>
           <div v-if="editingSlot.subjectId" class="field">
-            <label>Enseignant</label>
+            <label>{{ t('edt.teacherLabel') }}</label>
             <select v-model="editingSlot.teacherId" class="input">
-              <option value="">Non assigné</option>
-              <option v-for="t in slotEditorTeachers" :key="t.id" :value="t.id">
-                {{ t.firstName }} {{ t.lastName }}
+              <option value="">{{ t('edt.notAssigned') }}</option>
+              <option v-for="it in slotEditorTeachers" :key="it.id" :value="it.id">
+                {{ it.firstName }} {{ it.lastName }}
               </option>
             </select>
           </div>
@@ -816,10 +816,10 @@
             <span>{{ slotConflictWarning }}</span>
           </div>
           <div class="modal-actions">
-            <button v-if="editingSlot.hasExisting" class="btn btn-danger" @click="removeSlotEntry" type="button">Supprimer</button>
+            <button v-if="editingSlot.hasExisting" class="btn btn-danger" @click="removeSlotEntry" type="button">{{ t('edt.delete') }}</button>
             <div style="flex: 1;"></div>
-            <button class="btn btn-outline" @click="closeSlotEditor" type="button">Annuler</button>
-            <button class="btn btn-primary" @click="saveSlotEdit" type="button">Enregistrer</button>
+            <button class="btn btn-outline" @click="closeSlotEditor" type="button">{{ t('edt.cancel') }}</button>
+            <button class="btn btn-primary" @click="saveSlotEdit" type="button">{{ t('edt.save') }}</button>
           </div>
         </div>
       </div>
@@ -829,31 +829,31 @@
     <div v-if="showEventModal" class="modal-overlay" @click.self="showEventModal = false">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Ajouter un événement</h2>
+          <h2>{{ t('edt.addEvent') }}</h2>
           <button class="icon-btn" @click="showEventModal = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Titre *</label>
-            <input v-model="newEvent.title" type="text" class="input" placeholder="Ex: Journée citoyenne" />
+            <label>{{ t('edt.titleReq') }}</label>
+            <input v-model="newEvent.title" type="text" class="input" :placeholder="t('edt.titlePh')" />
           </div>
           <div class="field">
-            <label>Date *</label>
+            <label>{{ t('edt.dateReq') }}</label>
             <input v-model="newEvent.date" type="date" class="input" />
           </div>
           <div class="field">
-            <label>Description</label>
-            <input v-model="newEvent.description" type="text" class="input" placeholder="Détails optionnels" />
+            <label>{{ t('edt.description') }}</label>
+            <input v-model="newEvent.description" type="text" class="input" :placeholder="t('edt.descPh')" />
           </div>
           <div class="field">
             <label class="checkbox-label" style="display: flex; gap: 8px; align-items: center; cursor: pointer;">
               <input type="checkbox" v-model="newEvent.cancelsCourses" />
-              <span>Les cours sont suspendus ce jour</span>
+              <span>{{ t('edt.coursesSuspendedDay') }}</span>
             </label>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="showEventModal = false" type="button">Annuler</button>
-            <button class="btn btn-primary" @click="saveEvent" type="button">Ajouter</button>
+            <button class="btn btn-outline" @click="showEventModal = false" type="button">{{ t('edt.cancel') }}</button>
+            <button class="btn btn-primary" @click="saveEvent" type="button">{{ t('edt.add') }}</button>
           </div>
         </div>
       </div>
@@ -861,23 +861,23 @@
     <div v-if="showSlotTimeModal" class="modal-overlay" @click.self="showSlotTimeModal = false">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Modifier le créneau {{ editingSlotTime.index + 1 }}</h2>
+          <h2>{{ t('edt.editSlotN', { n: editingSlotTime.index + 1 }) }}</h2>
           <button class="icon-btn" @click="showSlotTimeModal = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field-row">
             <div class="field">
-              <label>Début</label>
+              <label>{{ t('edt.startLabel') }}</label>
               <input v-model="editingSlotTime.start" type="time" class="input" />
             </div>
             <div class="field">
-              <label>Fin</label>
+              <label>{{ t('edt.endLabel') }}</label>
               <input v-model="editingSlotTime.end" type="time" class="input" />
             </div>
           </div>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="showSlotTimeModal = false" type="button">Annuler</button>
-            <button class="btn btn-primary" @click="saveSlotTimeEdit" type="button">Enregistrer</button>
+            <button class="btn btn-outline" @click="showSlotTimeModal = false" type="button">{{ t('edt.cancel') }}</button>
+            <button class="btn btn-primary" @click="saveSlotTimeEdit" type="button">{{ t('edt.save') }}</button>
           </div>
         </div>
       </div>
@@ -886,29 +886,27 @@
     <div v-if="showMoveConfirm" class="modal-overlay" @click.self="cancelMove">
       <div class="modal-card card modal-sm">
         <div class="modal-header">
-          <h2>Déplacer le cours</h2>
+          <h2>{{ t('edt.moveCourse') }}</h2>
           <button class="icon-btn" @click="cancelMove" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <p v-if="pendingMove" style="margin-bottom: 12px;">
-            Déplacer <strong>{{ pendingMove.subjectId }}</strong>
-            vers <strong>{{ DAYS.find(d => d.value === pendingMove.targetDay)?.label }}</strong>,
-            créneau {{ edtStore.timeSlots[pendingMove.targetSlotIndex]?.start }} - {{ edtStore.timeSlots[pendingMove.targetSlotIndex]?.end }}
+            {{ t('edt.moveText', { subject: pendingMove.subjectId, day: dayLabel(pendingMove.targetDay), start: edtStore.timeSlots[pendingMove.targetSlotIndex]?.start, end: edtStore.timeSlots[pendingMove.targetSlotIndex]?.end }) }}
           </p>
           <div v-if="moveConflicts.length > 0" class="move-conflict-warnings">
             <div class="move-conflict-banner">
               <AlertTriangle :size="16" />
-              <span>Attention : {{ moveConflicts.length }} conflit{{ moveConflicts.length > 1 ? 's' : '' }} détecté{{ moveConflicts.length > 1 ? 's' : '' }}</span>
+              <span>{{ t('edt.moveConflictWarn', { n: moveConflicts.length }) }}</span>
             </div>
             <ul class="move-conflict-list">
               <li v-for="(c, i) in moveConflicts" :key="i">{{ c.message }}</li>
             </ul>
           </div>
-          <p v-else style="color: var(--color-success, #0C7A52);">Aucun conflit détecté.</p>
+          <p v-else style="color: var(--color-success, #0C7A52);">{{ t('edt.noConflictDetected') }}</p>
           <div class="modal-actions">
-            <button class="btn btn-outline" @click="cancelMove" type="button">Annuler</button>
+            <button class="btn btn-outline" @click="cancelMove" type="button">{{ t('edt.cancel') }}</button>
             <button class="btn btn-primary" @click="confirmMove" type="button">
-              {{ moveConflicts.length > 0 ? 'Déplacer quand même' : 'Confirmer' }}
+              {{ moveConflicts.length > 0 ? t('edt.moveAnyway') : t('edt.confirm') }}
             </button>
           </div>
         </div>
@@ -1363,7 +1361,7 @@ const openSlotEditor = (day, slotIndex, viewType) => {
   editingSlot.value = {
     day,
     slotIndex,
-    dayLabel: dayObj?.label || day,
+    dayLabel: dayLabel(day) || dayObj?.label || day,
     slotLabel: `${slot.start} - ${slot.end}`,
     subjectId: '',
     teacherId: '',
@@ -1626,9 +1624,9 @@ const regenerateSchedule = async () => {
     const required = result.totalRequired || 0
     const conflicts = result.conflicts?.length || 0
     const missing = result.missingTeachers || 0
-    regenerationMessage.value = `${placed}/${required} créneaux placés`
-      + (missing > 0 ? ` — ${missing} sans enseignant` : '')
-      + (conflicts > 0 ? ` — ${conflicts} conflit(s)` : '')
+    regenerationMessage.value = t('edt.regenPlaced', { placed, required })
+      + (missing > 0 ? t('edt.regenMissing', { n: missing }) : '')
+      + (conflicts > 0 ? t('edt.regenConflicts', { n: conflicts }) : '')
 
     setTimeout(() => { regenerationMessage.value = '' }, 5000)
   } catch (err) {
@@ -1750,6 +1748,9 @@ const getSelectedClassName = () => {
 }
 
 const getDayLabel = (day) => {
+  const k = 'edt.daysShort.' + day
+  const l = t(k)
+  if (l !== k) return l
   const d = DAYS.find(x => x.value === day)
   return d?.short || day
 }
