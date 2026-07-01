@@ -318,7 +318,7 @@
           <div class="toolbar">
             <div class="search-box">
               <Search :size="18" class="search-icon" />
-              <input v-model="salarySearch" type="text" class="input search-input" placeholder="Rechercher un membre du personnel..." />
+              <input v-model="salarySearch" type="text" class="input search-input" :placeholder="t('fact.salarySearchPh')" />
             </div>
             <select v-model="salaryMonth" class="select">
               <option v-for="m in monthOptions" :key="m.value" :value="m.value">{{ m.label }}</option>
@@ -329,19 +329,19 @@
         <!-- Résumé masse salariale -->
         <div class="salary-summary-bar">
           <div class="salary-summary-item">
-            <span class="salary-summary-label">Masse salariale mensuelle</span>
+            <span class="salary-summary-label">{{ t('fact.payrollMonthly') }}</span>
             <span class="salary-summary-value">{{ formatMoney(salaryStats.totalMensuel) }}</span>
           </div>
           <div class="salary-summary-item">
-            <span class="salary-summary-label">Payés ce mois</span>
+            <span class="salary-summary-label">{{ t('fact.paidThisMonth') }}</span>
             <span class="salary-summary-value cs-green">{{ salaryStats.paidCount }} / {{ salaryStats.total }}</span>
           </div>
           <div class="salary-summary-item">
-            <span class="salary-summary-label">Total versé</span>
+            <span class="salary-summary-label">{{ t('fact.totalPaidLabel') }}</span>
             <span class="salary-summary-value cs-green">{{ formatMoney(salaryStats.totalPaid) }}</span>
           </div>
           <div class="salary-summary-item">
-            <span class="salary-summary-label">Reste à verser</span>
+            <span class="salary-summary-label">{{ t('fact.toPay') }}</span>
             <span class="salary-summary-value cs-red">{{ formatMoney(salaryStats.totalRemaining) }}</span>
           </div>
         </div>
@@ -349,7 +349,7 @@
         <div class="card">
           <div v-if="filteredStaff.length === 0" class="empty-state">
             <Briefcase :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-            <p>Aucun membre du personnel</p>
+            <p>{{ t('fact.noStaff') }}</p>
           </div>
           <div v-else class="table-wrapper">
             <table class="data-table" style="table-layout: fixed; width: 100%;">
@@ -364,13 +364,13 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th class="col-eleve">Nom</th>
-                  <th style="width:120px">Fonction</th>
-                  <th class="col-montant text-right">Salaire brut</th>
-                  <th class="col-montant text-right">Versé</th>
-                  <th class="col-montant text-right">Reste</th>
-                  <th class="col-statut">Statut</th>
-                  <th class="col-actions text-center">Actions</th>
+                  <th class="col-eleve">{{ t('fact.thName') }}</th>
+                  <th style="width:120px">{{ t('fact.thFunction') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thGrossSalary') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thPaidOut') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thRemaining') }}</th>
+                  <th class="col-statut">{{ t('fact.thStatus') }}</th>
+                  <th class="col-actions text-center">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -384,13 +384,13 @@
                   <td class="col-montant text-right font-mono" style="white-space: nowrap;" :class="{ 'cs-red': row.remaining > 0 }">{{ formatMoney(row.remaining) }}</td>
                   <td class="col-statut">
                     <span class="payment-badge" :class="row.paid >= row.salary ? 'badge-payé' : row.paid > 0 ? 'badge-partiel' : 'badge-impayé'">
-                      {{ row.paid >= row.salary ? 'Payé' : row.paid > 0 ? 'Partiel' : 'Non payé' }}
+                      {{ row.paid >= row.salary ? t('fact.statusPaid') : row.paid > 0 ? t('fact.statusPartial') : t('fact.notPaid') }}
                     </span>
                   </td>
                   <td class="col-actions text-center" @click.stop>
                     <button class="btn btn-sm btn-primary" @click="openSalaryPayModal(row)">
                       <Plus :size="14" />
-                      <span>Payer</span>
+                      <span>{{ t('fact.pay') }}</span>
                     </button>
                   </td>
                 </tr>
@@ -404,31 +404,31 @@
       <div v-if="activeTab === 'charges'">
         <div class="card">
           <div class="card-header">
-            <h3>Charges fixes</h3>
+            <h3>{{ t('fact.tabCharges') }}</h3>
             <button class="btn btn-sm btn-primary" @click="showAddCharge = true">
               <Plus :size="14" />
-              <span>Ajouter une charge</span>
+              <span>{{ t('fact.addCharge') }}</span>
             </button>
           </div>
 
           <!-- Résumé charges -->
           <div class="charges-summary-bar">
             <div class="charges-summary-item">
-              <span class="charges-summary-label">Total mensuel</span>
+              <span class="charges-summary-label">{{ t('fact.totalMonthly') }}</span>
               <span class="charges-summary-value">{{ formatMoney(chargeStats.totalMensuel) }}</span>
             </div>
             <div class="charges-summary-item">
-              <span class="charges-summary-label">Total trimestriel</span>
+              <span class="charges-summary-label">{{ t('fact.totalQuarterly') }}</span>
               <span class="charges-summary-value">{{ formatMoney(chargeStats.totalTrimestriel) }}</span>
             </div>
             <div class="charges-summary-item">
-              <span class="charges-summary-label">Total annuel</span>
+              <span class="charges-summary-label">{{ t('fact.totalAnnual') }}</span>
               <span class="charges-summary-value">{{ formatMoney(chargeStats.totalAnnuel) }}</span>
             </div>
           </div>
 
           <div v-if="factStore.charges?.length === 0" class="empty-state" style="padding: 24px;">
-            <p>Aucune charge définie</p>
+            <p>{{ t('fact.noCharge') }}</p>
           </div>
 
           <div v-else class="table-wrapper">
@@ -442,11 +442,11 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th>Libellé</th>
-                  <th>Catégorie</th>
-                  <th class="col-montant text-right">Montant</th>
-                  <th>Fréquence</th>
-                  <th class="text-center" style="width:90px">Actions</th>
+                  <th>{{ t('fact.thLabel') }}</th>
+                  <th>{{ t('fact.thCategory') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thAmount') }}</th>
+                  <th>{{ t('fact.thFrequency') }}</th>
+                  <th class="text-center" style="width:90px">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -472,12 +472,12 @@
 
           <!-- Résumé par catégorie -->
           <div v-if="factStore.charges?.length > 0" class="category-summary">
-            <h4>Détail par catégorie</h4>
+            <h4>{{ t('fact.detailByCategory') }}</h4>
             <div class="category-grid">
               <div v-for="cat in chargesByCategory" :key="cat.category" class="category-card">
                 <div class="category-name">{{ cat.categoryLabel }}</div>
-                <div class="category-total">{{ formatMoney(cat.totalMensuel) }}/mois</div>
-                <div class="category-detail">{{ cat.count }} charge(s)</div>
+                <div class="category-total">{{ formatMoney(cat.totalMensuel) }}{{ t('fact.perMonth') }}</div>
+                <div class="category-detail">{{ t('fact.chargeCount', { n: cat.count }) }}</div>
               </div>
             </div>
           </div>
@@ -488,64 +488,64 @@
       <div v-if="activeTab === 'synthese'">
         <div class="card">
           <div class="card-header">
-            <h3>Synthèse financière</h3>
+            <h3>{{ t('fact.synthesisTitle') }}</h3>
           </div>
 
           <div class="synthesis-section">
-            <h4>Recettes</h4>
+            <h4>{{ t('fact.revenues') }}</h4>
             <div class="synthesis-grid">
               <div class="synthesis-item">
-                <span class="synthesis-label">Scolarité encaissée</span>
+                <span class="synthesis-label">{{ t('fact.tuitionCollected') }}</span>
                 <span class="synthesis-value green">{{ formatMoney(synthesis.recettesScolarite) }}</span>
               </div>
               <div class="synthesis-item">
-                <span class="synthesis-label">Recettes prévisionnelles</span>
+                <span class="synthesis-label">{{ t('fact.expectedRevenue') }}</span>
                 <span class="synthesis-value blue">{{ formatMoney(synthesis.recettesPrevisionnelles) }}</span>
               </div>
             </div>
           </div>
 
           <div class="synthesis-section">
-            <h4>Dépenses — Salaires</h4>
+            <h4>{{ t('fact.expenseSalaries') }}</h4>
             <div class="synthesis-grid synthesis-grid-3">
               <div class="synthesis-item">
-                <span class="synthesis-label">Masse salariale mensuelle</span>
+                <span class="synthesis-label">{{ t('fact.payrollMonthly') }}</span>
                 <span class="synthesis-value">{{ formatMoney(synthesis.masseSalarialeMensuelle) }}</span>
               </div>
               <div class="synthesis-item">
-                <span class="synthesis-label">Masse salariale annuelle</span>
+                <span class="synthesis-label">{{ t('fact.payrollAnnual') }}</span>
                 <span class="synthesis-value">{{ formatMoney(synthesis.masseSalarialeAnnuelle) }}</span>
               </div>
               <div class="synthesis-item">
-                <span class="synthesis-label">Salaires versés à ce jour</span>
+                <span class="synthesis-label">{{ t('fact.salariesPaidToDate') }}</span>
                 <span class="synthesis-value">{{ formatMoney(synthesis.totalSalairesVerses) }}</span>
               </div>
             </div>
           </div>
 
           <div class="synthesis-section">
-            <h4>Dépenses — Charges fixes</h4>
+            <h4>{{ t('fact.expenseCharges') }}</h4>
             <div class="synthesis-grid">
               <div class="synthesis-item">
-                <span class="synthesis-label">Charges fixes mensuelles</span>
+                <span class="synthesis-label">{{ t('fact.chargesMonthly') }}</span>
                 <span class="synthesis-value">{{ formatMoney(synthesis.chargesFixesMensuelles) }}</span>
               </div>
               <div class="synthesis-item">
-                <span class="synthesis-label">Total charges annuel</span>
+                <span class="synthesis-label">{{ t('fact.totalChargesAnnual') }}</span>
                 <span class="synthesis-value">{{ formatMoney(synthesis.totalChargesFixesAnnuel) }}</span>
               </div>
             </div>
           </div>
 
           <div class="synthesis-section">
-            <h4>Bilan</h4>
+            <h4>{{ t('fact.balance') }}</h4>
             <div class="synthesis-balance">
               <div class="balance-item" :class="{ positive: synthesis.resultatActuel >= 0, negative: synthesis.resultatActuel < 0 }">
-                <span class="balance-label">Résultat actuel</span>
+                <span class="balance-label">{{ t('fact.currentResult') }}</span>
                 <span class="balance-value">{{ formatMoney(synthesis.resultatActuel) }}</span>
               </div>
               <div class="balance-item" :class="{ positive: synthesis.resultatPrevisionnel >= 0, negative: synthesis.resultatPrevisionnel < 0 }">
-                <span class="balance-label">Résultat prévisionnel</span>
+                <span class="balance-label">{{ t('fact.forecastResult') }}</span>
                 <span class="balance-value">{{ formatMoney(synthesis.resultatPrevisionnel) }}</span>
               </div>
             </div>
@@ -557,24 +557,24 @@
       <div v-if="activeTab === 'grille'">
         <div class="card">
           <div class="card-header">
-            <h3>Grille tarifaire par niveau</h3>
+            <h3>{{ t('fact.gridTitle') }}</h3>
             <div class="card-header-actions">
               <button class="btn btn-sm btn-outline" @click="toggleEcheances">
                 <Calendar :size="14" />
-                <span>{{ showEcheances ? 'Masquer' : 'Gérer' }} les échéances</span>
+                <span>{{ showEcheances ? t('fact.hideSchedule') : t('fact.manageSchedule') }}</span>
               </button>
               <button class="btn btn-sm btn-primary" @click="showAddFee = true">
                 <Plus :size="14" />
-                <span>Ajouter un tarif</span>
+                <span>{{ t('fact.addFee') }}</span>
               </button>
             </div>
           </div>
 
           <div v-if="feeStructure.length === 0" class="empty-state">
             <TableProperties :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-            <p>Aucun tarif défini</p>
+            <p>{{ t('fact.noFee') }}</p>
             <button class="btn btn-sm btn-outline" style="margin-top: 12px;" @click="showAddFee = true">
-              Ajouter un premier tarif
+              {{ t('fact.addFirstFee') }}
             </button>
           </div>
 
@@ -589,11 +589,11 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th>Type de frais</th>
-                  <th>Libellé</th>
-                  <th>Niveau</th>
-                  <th class="col-montant text-right">Montant</th>
-                  <th class="text-center" style="width:90px">Actions</th>
+                  <th>{{ t('fact.thFeeType') }}</th>
+                  <th>{{ t('fact.thLabel') }}</th>
+                  <th>{{ t('fact.thLevel') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thAmount') }}</th>
+                  <th class="text-center" style="width:90px">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -602,7 +602,7 @@
                     <span class="fee-type-badge">{{ getFeeTypeLabel(fee.feeType) }}</span>
                   </td>
                   <td>{{ fee.label }}</td>
-                  <td>{{ fee.level === 'all' ? 'Tous les niveaux' : fee.level }}</td>
+                  <td>{{ fee.level === 'all' ? t('fact.allLevels') : fee.level }}</td>
                   <td class="col-montant text-right font-mono font-semibold" style="white-space: nowrap;">{{ formatMoney(fee.amount) }}</td>
                   <td class="text-center">
                     <div class="action-btns">
@@ -621,12 +621,12 @@
 
           <!-- Résumé par niveau -->
           <div v-if="feeStructure.length > 0" class="level-summary">
-            <h4>Résumé par niveau</h4>
+            <h4>{{ t('fact.summaryByLevel') }}</h4>
             <div class="level-grid">
               <div v-for="lvl in levelTotals" :key="lvl.level" class="level-card">
                 <div class="level-name">{{ lvl.level }}</div>
                 <div class="level-total">{{ formatMoney(lvl.total) }}</div>
-                <div class="level-detail">{{ lvl.count }} frais</div>
+                <div class="level-detail">{{ t('fact.feeCount', { n: lvl.count }) }}</div>
               </div>
             </div>
           </div>
@@ -635,16 +635,16 @@
         <!-- Section échéances -->
         <div v-if="showEcheances" ref="echeancesSection" class="card" style="margin-top: 20px;">
           <div class="card-header">
-            <h3>Plan d'échéances de paiement</h3>
+            <h3>{{ t('fact.scheduleTitle') }}</h3>
             <button class="btn btn-sm btn-primary" @click="editingEcheanceId = null; echeanceForm = { label: '', dueDate: '', percent: null, level: 'all' }; showAddEcheance = true">
               <Plus :size="14" />
-              <span>Ajouter une échéance</span>
+              <span>{{ t('fact.addSchedule') }}</span>
             </button>
           </div>
           <div v-if="factStore.echeances.length === 0" class="empty-state" style="padding: 24px;">
-            <p>Aucune échéance définie. Les parents pourront payer en une seule fois ou librement.</p>
+            <p>{{ t('fact.noSchedule') }}</p>
             <p style="font-size: 13px; color: var(--tx3); margin-top: 4px;">
-              Définissez des échéances pour planifier les paiements : acompte à l'inscription, 2e tranche en janvier, etc.
+              {{ t('fact.scheduleHint') }}
             </p>
           </div>
           <div v-else class="table-wrapper">
@@ -658,17 +658,17 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th>Libellé</th>
-                  <th>Niveau</th>
-                  <th>Date limite</th>
+                  <th>{{ t('fact.thLabel') }}</th>
+                  <th>{{ t('fact.thLevel') }}</th>
+                  <th>{{ t('fact.thDueDate') }}</th>
                   <th class="col-montant text-right">%</th>
-                  <th class="text-center">Actions</th>
+                  <th class="text-center">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="ech in factStore.echeances" :key="ech.id">
                   <td><strong>{{ ech.label }}</strong></td>
-                  <td>{{ ech.level === 'all' || !ech.level ? 'Tous les niveaux' : ech.level }}</td>
+                  <td>{{ ech.level === 'all' || !ech.level ? t('fact.allLevels') : ech.level }}</td>
                   <td style="white-space: nowrap;">{{ formatDate(ech.dueDate) }}</td>
                   <td class="col-montant text-right font-mono font-semibold" style="white-space: nowrap;">{{ ech.percent }}%</td>
                   <td class="text-center">
@@ -683,7 +683,7 @@
                   </td>
                 </tr>
                 <tr class="total-row">
-                  <td><strong>Total</strong></td>
+                  <td><strong>{{ t('fact.total') }}</strong></td>
                   <td></td>
                   <td></td>
                   <td class="col-montant text-right font-mono font-semibold" :class="{ 'text-danger': echeanceTotalPercent !== 100 }" style="white-space: nowrap;">
@@ -695,14 +695,14 @@
             </table>
           </div>
           <div v-if="echeanceTotalPercent !== 100 && factStore.echeances.length > 0" class="echeance-warning">
-            Le total des échéances doit atteindre 100%. Actuellement : {{ echeanceTotalPercent }}%.
+            {{ t('fact.scheduleWarn', { pct: echeanceTotalPercent }) }}
           </div>
         </div>
 
         <div v-if="feeStructure.length > 0 && !factStore.setupDone" class="setup-confirm">
           <button class="btn btn-primary btn-lg" @click="factStore.completeSetup()">
             <CheckCircle2 :size="18" />
-            <span>Valider la grille tarifaire</span>
+            <span>{{ t('fact.validateGrid') }}</span>
           </button>
         </div>
       </div>
