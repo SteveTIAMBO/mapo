@@ -1181,7 +1181,8 @@
     "higherTag": "Universities, higher schools and BTS",
     "higherContext": "Compatible with French higher education — Europe and Africa.",
     "discover": "Explore this edition",
-    "copy": "© 2026 MAPO — School management"
+    "copy": "© 2026 MAPO — School management",
+    "complexeLink": "Do you run a school complex? Access the group workspace"
   },
   "sal": {
     "title": "My Salary",
@@ -2393,5 +2394,22 @@
     "insightWeakLearner": "MIAPO spotted difficulties in {subjects}. Start a targeted revision — you'll progress faster on your weak points.",
     "insightWeakParent": "MIAPO spotted difficulties in {subjects}. Pick these subjects to review — {name} will progress faster on their weak points.",
     "andJoin": "{a} and {b}"
+  },
+  "cx": {
+    "appTitle": "Complex workspace",
+    "appSub": "Consolidated view of your schools",
+    "logout": "Log out",
+    "director": "Director",
+    "nSchools": "{n} schools",
+    "demoNote": "Demonstration data — a sample complex. Your real schools will appear here once linked to your account.",
+    "kpiSchools": "Schools",
+    "kpiStudents": "Students",
+    "kpiStaff": "Staff",
+    "kpiRevenue": "Revenue (yearly)",
+    "studentsPerSchool": "Students per school",
+    "mySchools": "My schools",
+    "openSchool": "Open school",
+    "types": { "francophone": "Francophone", "anglophone": "Anglophone", "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." },
+    "editions": { "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." }
   }
 }

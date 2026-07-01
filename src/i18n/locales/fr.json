@@ -1181,7 +1181,8 @@
     "higherTag": "Universités, écoles supérieures et BTS",
     "higherContext": "Compatible avec l'enseignement supérieur français — Europe et Afrique.",
     "discover": "Découvrir cette version",
-    "copy": "© 2026 MAPO — Gestion scolaire"
+    "copy": "© 2026 MAPO — Gestion scolaire",
+    "complexeLink": "Vous dirigez un complexe scolaire ? Accéder à l'espace groupe"
   },
   "sal": {
     "title": "Mon Salaire",
@@ -2393,5 +2394,22 @@
     "insightWeakLearner": "MIAPO a repéré des difficultés en {subjects}. Lance une révision ciblée — tu progresseras plus vite sur tes points faibles.",
     "insightWeakParent": "MIAPO a repéré des difficultés en {subjects}. Désignez ces matières à réviser — {name} progressera plus vite sur ses points faibles.",
     "andJoin": "{a} et {b}"
+  },
+  "cx": {
+    "appTitle": "Espace complexe",
+    "appSub": "Vue consolidée de vos écoles",
+    "logout": "Se déconnecter",
+    "director": "Directeur",
+    "nSchools": "{n} écoles",
+    "demoNote": "Données de démonstration — un complexe d'exemple. Vos écoles réelles s'afficheront ici une fois rattachées à votre compte.",
+    "kpiSchools": "Écoles",
+    "kpiStudents": "Élèves",
+    "kpiStaff": "Personnel",
+    "kpiRevenue": "Recettes (annuel)",
+    "studentsPerSchool": "Effectifs par école",
+    "mySchools": "Mes écoles",
+    "openSchool": "Ouvrir l'école",
+    "types": { "francophone": "Francophone", "anglophone": "Anglophone", "primaire": "Primaire", "secondaire": "Secondaire", "superieur": "Supérieur" },
+    "editions": { "primaire": "Primaire", "secondaire": "Secondaire", "superieur": "Supérieur" }
   }
 }

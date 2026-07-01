@@ -85,6 +85,11 @@
 
       </div>
 
+      <!-- Accès complexe scolaire (groupe multi-écoles) -->
+      <div class="welcome-complexe">
+        <button type="button" class="welcome-complexe-link" @click="router.push('/complexe')">{{ t('wv.complexeLink') }}</button>
+      </div>
+
       <!-- Footer -->
       <footer class="welcome-footer">
         <p class="welcome-footer-org">EDUFREM SAS</p>
@@ -299,6 +304,28 @@ function choisir(edition) {
 }
 .choice-card:hover .choice-cta {
   gap: 12px;
+}
+
+/* ── Accès complexe scolaire ── */
+.welcome-complexe {
+  text-align: center;
+  margin-top: 30px;
+}
+.welcome-complexe-link {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.82);
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: 22px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.welcome-complexe-link:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.32);
 }
 
 /* ── Footer ── */

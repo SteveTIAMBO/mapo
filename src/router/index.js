@@ -85,6 +85,12 @@ const routes = [
     meta: { requiresAuth: false, title: 'Vérifier un diplôme' }
   },
   {
+    path: '/complexe',
+    name: 'ComplexeAdmin',
+    component: () => import('../views/ComplexeAdminView.vue'),
+    meta: { requiresAuth: false, title: 'Complexe scolaire' }
+  },
+  {
     path: '/compte-non-configure',
     name: 'CompteNonConfigure',
     component: () => import('../views/CompteNonConfigureView.vue'),
