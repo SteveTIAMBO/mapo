@@ -24,7 +24,7 @@
           <span>{{ s.label }}</span>
         </button>
       </nav>
-      <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>Se déconnecter</span></button>
+      <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
     </aside>
 
     <!-- ───────── Contenu ───────── -->
@@ -40,7 +40,7 @@
       <template v-else-if="activeEnfant">
         <header class="main-head">
           <h1>{{ currentSection.label }}</h1>
-          <button v-if="!isApprenant" class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
+          <button v-if="!isApprenant" class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
         </header>
 
         <!-- ========== ACCUEIL ========== -->
@@ -55,30 +55,30 @@
 
           <div class="card insight-card">
             <div class="insight-icon"><Sparkles :size="20" /></div>
-            <div><strong>Points de vigilance</strong><p>{{ insight }}</p></div>
+            <div><strong>{{ t('mia.watchPoints') }}</strong><p>{{ insight }}</p></div>
           </div>
 
           <div class="stat-grid">
-            <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">Moyenne /20</span></div>
-            <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">À réviser</span></div>
-            <div class="stat" role="button" tabindex="0" @click="section = 'orientation'" @keyup.enter="section = 'orientation'"><span class="stat-v">{{ hasEval ? 'Fait' : '—' }}</span><span class="stat-l">Profil 6C</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">{{ t('mia.toReview') }}</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'orientation'" @keyup.enter="section = 'orientation'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
           </div>
 
           <div v-if="hasEval" class="card radar-dash" role="button" tabindex="0" @click="section = 'orientation'">
-            <div class="card-head"><Target :size="18" /><h3>Profil 6C</h3></div>
+            <div class="card-head"><Target :size="18" /><h3>{{ t('mia.profile6c') }}</h3></div>
             <Radar6C :scores="activeEnfant.comp6c || {}" />
           </div>
 
           <div class="quick">
-            <button class="btn btn-primary" @click="section = 'tuteur'"><GraduationCap :size="16" /> <span>Lancer une révision</span></button>
-            <button class="btn btn-outline" @click="section = 'orientation'"><Compass :size="16" /> <span>Explorer l'orientation</span></button>
+            <button class="btn btn-primary" @click="section = 'tuteur'"><GraduationCap :size="16" /> <span>{{ t('mia.startRevision') }}</span></button>
+            <button class="btn btn-outline" @click="section = 'orientation'"><Compass :size="16" /> <span>{{ t('mia.exploreOrientation') }}</span></button>
           </div>
         </section>
 
         <!-- ========== MES ENFANTS ========== -->
         <section v-else-if="section === 'enfants'" class="sec">
           <div class="card">
-            <div class="card-head"><Users :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profils' }}</h3></div>
+            <div class="card-head"><Users :size="18" /><h3>{{ isApprenant ? t('mia.myProfileTitle') : t('mia.profilesTitle') }}</h3></div>
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
                 <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'">{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</span>
@@ -86,12 +86,12 @@
                 <Trash2 v-if="e.id === activeId" :size="16" class="er-del" @click.stop="confirmRemove" />
               </button>
             </div>
-            <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>Ajouter un enfant</span></button>
+            <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
           </div>
 
           <!-- Notes -->
           <div class="card">
-            <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? 'Tes notes' : 'Notes de ' + activeEnfant.firstName }}</h3></div>
+            <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName }) }}</h3></div>
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}</span>
@@ -99,9 +99,9 @@
                 <button class="btn btn-ghost btn-xs" @click="store.removeNote(activeEnfant.id, n.id)"><X :size="14" /></button>
               </div>
             </div>
-            <p v-else class="muted">Aucune note saisie. Ajoutez-en pour que MIAPO analyse les points faibles.</p>
+            <p v-else class="muted">{{ t('mia.noNotesHint') }}</p>
             <div class="add-note">
-              <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Module / matière…' : 'Matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+              <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.moduleOrSubject') : t('mia.subjectPlaceholder') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
               <input v-model.number="newNote" type="number" min="0" max="20" step="0.5" class="input note-input" placeholder="/20" />
               <button class="btn btn-primary btn-sm" :disabled="!canAddNote" @click="addNote"><Plus :size="15" /></button>
             </div>
@@ -109,24 +109,24 @@
 
           <!-- Lecture de copie -->
           <div class="card vision-card">
-            <div class="card-head"><Camera :size="18" /><h3>Lire une copie d'examen</h3></div>
+            <div class="card-head"><Camera :size="18" /><h3>{{ t('mia.readExamCopy') }}</h3></div>
             <div v-if="visionState === 'idle'" class="vision-pick">
-              <p class="muted">Photographiez une copie : MIAPO la lit, estime la note et repère les points faibles.</p>
-              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>Choisir / prendre une photo</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" /></label>
+              <p class="muted">{{ t('mia.visionPickHint') }}</p>
+              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" /></label>
             </div>
-            <div v-else-if="visionState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>MIAPO lit la copie…</p><small>Quelques secondes</small></div>
+            <div v-else-if="visionState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.visionLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="visionState === 'done' && visionResult" class="vision-result">
-              <div class="vr-head"><span class="vr-mat">{{ visionResult.matiere || 'Copie analysée' }}</span><span v-if="visionResult.note !== null" class="vr-note" :class="noteClass(visionResult.note)">{{ visionResult.note }}/20</span></div>
-              <div v-if="visionResult.points_faibles.length" class="vr-weak"><span class="reco-lab">Points faibles</span><div class="chips"><span v-for="(p, i) in visionResult.points_faibles" :key="i" class="chip chip-w">{{ p }}</span></div></div>
+              <div class="vr-head"><span class="vr-mat">{{ visionResult.matiere || t('mia.copyAnalyzed') }}</span><span v-if="visionResult.note !== null" class="vr-note" :class="noteClass(visionResult.note)">{{ visionResult.note }}/20</span></div>
+              <div v-if="visionResult.points_faibles.length" class="vr-weak"><span class="reco-lab">{{ t('mia.weakPoints') }}</span><div class="chips"><span v-for="(p, i) in visionResult.points_faibles" :key="i" class="chip chip-w">{{ p }}</span></div></div>
               <p v-if="visionResult.conseil" class="reco-conseil"><Lightbulb :size="15" /> {{ visionResult.conseil }}</p>
               <div class="vr-actions">
-                <button v-if="visionResult.matiere && visionResult.note !== null" class="btn btn-outline btn-sm" @click="addVisionNote"><Plus :size="14" /> <span>Ajouter la note</span></button>
-                <button v-if="visionResult.matiere && visionResult.points_faibles.length" class="btn btn-outline btn-sm" @click="addToRevisions"><Target :size="14" /> <span>Ajouter aux révisions</span></button>
-                <button v-if="visionResult.matiere" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere, visionResult.points_faibles)"><Sparkles :size="14" /> <span>Réviser {{ visionResult.matiere }}</span></button>
-                <button class="btn btn-ghost btn-sm" @click="resetVision">Autre copie</button>
+                <button v-if="visionResult.matiere && visionResult.note !== null" class="btn btn-outline btn-sm" @click="addVisionNote"><Plus :size="14" /> <span>{{ t('mia.addNoteBtn') }}</span></button>
+                <button v-if="visionResult.matiere && visionResult.points_faibles.length" class="btn btn-outline btn-sm" @click="addToRevisions"><Target :size="14" /> <span>{{ t('mia.addToReviews') }}</span></button>
+                <button v-if="visionResult.matiere" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere, visionResult.points_faibles)"><Sparkles :size="14" /> <span>{{ t('mia.reviseSubject', { subject: visionResult.matiere }) }}</span></button>
+                <button class="btn btn-ghost btn-sm" @click="resetVision">{{ t('mia.otherCopy') }}</button>
               </div>
             </div>
-            <div v-else-if="visionState === 'error'" class="err"><p>{{ visionError }}</p><button class="btn btn-outline btn-sm" @click="resetVision">Réessayer</button></div>
+            <div v-else-if="visionState === 'error'" class="err"><p>{{ visionError }}</p><button class="btn btn-outline btn-sm" @click="resetVision">{{ t('mia.retry') }}</button></div>
           </div>
         </section>
 
@@ -137,46 +137,46 @@
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
-              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? 'À réviser en priorité' : 'Matières à réviser' }}</h3></div>
+              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent') }}</h3></div>
               <div class="weak-list">
                 <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && goRevise(w.matiere, w.themes)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
-                  <span class="wi-right"><span class="wi-level">Niveau {{ levelFor(w.matiere) }}/5</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
+                  <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
                 </component>
               </div>
-              <p v-if="!isApprenant" class="muted small wl-note">Ce que {{ activeEnfant.firstName }} doit travailler — {{ activeEnfant.firstName }} lance ses révisions de son côté.</p>
+              <p v-if="!isApprenant" class="muted small wl-note">{{ t('mia.whatToWork', { name: activeEnfant.firstName }) }}</p>
             </div>
 
             <!-- Apprenant : lancer une révision -->
             <div v-if="isApprenant" class="card">
-              <div class="card-head"><GraduationCap :size="18" /><h3>Cours particulier — réviser une matière</h3></div>
-              <p class="muted">MIAPO génère un exercice adapté à ton niveau et t'accompagne pas à pas (méthode, indices, explication).</p>
+              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.privateLessonTitle') }}</h3></div>
+              <p class="muted">{{ t('mia.privateLessonHint') }}</p>
               <div class="revise-pick">
-                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Choisir un module…' : 'Choisir une matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
-                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>Démarrer</span></button>
+                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>{{ t('mia.start') }}</span></button>
               </div>
             </div>
             <!-- Parent : désigner une matière à réviser (sans la lancer) -->
             <div v-else class="card">
-              <div class="card-head"><GraduationCap :size="18" /><h3>Demander une révision</h3></div>
-              <p class="muted">Désignez une matière : elle apparaîtra dans « À réviser » de {{ activeEnfant.firstName }}, qui la travaillera avec MIAPO. Vous suivez, {{ activeEnfant.firstName }} révise.</p>
+              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.requestRevision') }}</h3></div>
+              <p class="muted">{{ t('mia.requestRevisionHint', { name: activeEnfant.firstName }) }}</p>
               <div class="revise-pick">
-                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? 'Choisir un module…' : 'Choisir une matière…' }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
-                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>Demander</span></button>
+                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.request') }}</span></button>
               </div>
-              <p v-if="revisionDemandee" class="muted small saved-ok">« {{ revisionDemandee }} » ajoutée à « À réviser ».</p>
+              <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
 
             <!-- Prépa examen -->
             <div class="card prepa-card">
-              <div class="card-head"><Trophy :size="18" /><h3>Préparer un examen</h3></div>
+              <div class="card-head"><Trophy :size="18" /><h3>{{ t('mia.prepareExam') }}</h3></div>
               <div v-if="prepaState === 'idle'">
-                <p class="muted">Un programme ciblé sur les points faibles de {{ activeEnfant.firstName }}.</p>
-                <button class="btn btn-outline" @click="getPrepa"><Trophy :size="16" /> <span>Construire le programme</span></button>
+                <p class="muted">{{ t('mia.prepaHint', { name: activeEnfant.firstName }) }}</p>
+                <button class="btn btn-outline" @click="getPrepa"><Trophy :size="16" /> <span>{{ t('mia.buildProgram') }}</span></button>
               </div>
-              <div v-else-if="prepaState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>MIAPO construit le programme…</p></div>
+              <div v-else-if="prepaState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.prepaLoading') }}</p></div>
               <div v-else-if="prepaState === 'done' && prepaResult" class="prepa-result">
-                <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || 'Programme' }}</span><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
+                <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || t('mia.program') }}</span><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
                 <div class="prepa-plan">
                   <div v-for="(s, i) in prepaResult.plan" :key="i" class="etape">
                     <div class="etape-head"><span class="etape-num">{{ i + 1 }}</span><strong>{{ s.etape }}</strong></div>
@@ -184,9 +184,9 @@
                     <ul v-if="s.actions.length" class="etape-actions"><li v-for="(a, j) in s.actions" :key="j">{{ a }}</li></ul>
                   </div>
                 </div>
-                <button class="btn btn-ghost btn-sm" @click="prepaState = 'idle'">Régénérer</button>
+                <button class="btn btn-ghost btn-sm" @click="prepaState = 'idle'">{{ t('mia.regenerate') }}</button>
               </div>
-              <div v-else-if="prepaState === 'error'" class="err"><p>{{ prepaError }}</p><button class="btn btn-outline btn-sm" @click="prepaState = 'idle'">Réessayer</button></div>
+              <div v-else-if="prepaState === 'error'" class="err"><p>{{ prepaError }}</p><button class="btn btn-outline btn-sm" @click="prepaState = 'idle'">{{ t('mia.retry') }}</button></div>
             </div>
           </template>
         </section>
@@ -194,20 +194,20 @@
         <!-- ========== PROGRESSION ========== -->
         <section v-else-if="section === 'progression'" class="sec">
           <div class="card">
-            <div class="card-head"><TrendingUp :size="18" /><h3>Niveau par matière</h3></div>
-            <p class="muted">Le niveau monte (1 → 5) quand {{ activeEnfant.firstName }} réussit les révisions. C'est le suivi dans la durée.</p>
+            <div class="card-head"><TrendingUp :size="18" /><h3>{{ t('mia.levelBySubject') }}</h3></div>
+            <p class="muted">{{ t('mia.levelRises', { name: activeEnfant.firstName }) }}</p>
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
                 <span class="prog-dots"><span v-for="i in 5" :key="i" class="dot" :class="{ on: i <= p.level }"></span></span>
-                <span class="prog-lv">Niv. {{ p.level }}</span>
+                <span class="prog-lv">{{ t('mia.levShort', { n: p.level }) }}</span>
               </div>
             </div>
-            <p v-else class="muted">{{ isApprenant ? 'Lance des' : 'Demandez des' }} révisions dans <button class="lnk" @click="section = 'tuteur'">Tuteur</button> pour voir la progression apparaître ici.</p>
+            <p v-else class="muted">{{ isApprenant ? t('mia.progEmptyLearner') : t('mia.progEmptyParent') }} <button class="lnk" @click="section = 'tuteur'">{{ t('mia.tutorWord') }}</button> {{ t('mia.progEmptyTail') }}</p>
           </div>
 
           <div v-if="activeEnfant.notes.length" class="card">
-            <div class="card-head"><FileText :size="18" /><h3>Aperçu des notes</h3></div>
+            <div class="card-head"><FileText :size="18" /><h3>{{ t('mia.notesOverview') }}</h3></div>
             <div class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}</span><span class="nr-note" :class="noteClass(n.note)">{{ n.note }}/20</span>
@@ -225,16 +225,16 @@
         <section v-else-if="section === 'abonnement'" class="sec">
           <div class="card abo-card">
             <div class="abo-ic"><Sparkles :size="24" /></div>
-            <h2>MIAPO+ — l'accompagnement complet</h2>
-            <p>Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO {{ isApprenant ? "t'accompagne" : 'accompagne ' + activeEnfant.firstName }} comme un professeur particulier.</p>
+            <h2>{{ t('mia.aboTitle') }}</h2>
+            <p>{{ isApprenant ? t('mia.aboTextLearner') : t('mia.aboTextParent', { name: activeEnfant.firstName }) }}</p>
             <ul class="abo-feats">
-              <li><Check :size="15" /> Révisions adaptées et progressives</li>
-              <li><Check :size="15" /> Lecture des copies + suivi dans la durée</li>
-              <li><Check :size="15" /> Orientation argumentée, adaptée au pays</li>
+              <li><Check :size="15" /> {{ t('mia.aboFeat1') }}</li>
+              <li><Check :size="15" /> {{ t('mia.aboFeat2') }}</li>
+              <li><Check :size="15" /> {{ t('mia.aboFeat3') }}</li>
             </ul>
             <div class="abo-trial">
               <Sparkles :size="16" />
-              <span>Période d'essai gratuite en cours — {{ isApprenant ? 'profites-en pour progresser' : 'profitez-en pour accompagner ' + activeEnfant.firstName }}.</span>
+              <span>{{ isApprenant ? t('mia.aboTrialLearner') : t('mia.aboTrialParent', { name: activeEnfant.firstName }) }}</span>
             </div>
           </div>
         </section>
@@ -243,53 +243,53 @@
         <section v-else-if="section === 'profil'" class="sec">
           <!-- Profil du PARENT (mode parent) — d'abord -->
           <div v-if="!isApprenant" class="card">
-            <div class="card-head"><Settings :size="18" /><h3>Mon profil (parent)</h3></div>
+            <div class="card-head"><Settings :size="18" /><h3>{{ t('mia.myParentProfile') }}</h3></div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Prénom</label><input v-model="parentProfil.firstName" class="input" /></div>
-              <div class="form-group"><label class="form-label">Nom</label><input v-model="parentProfil.lastName" class="input" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.firstName') }}</label><input v-model="parentProfil.firstName" class="input" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="parentProfil.lastName" class="input" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Email</label><input :value="parentProfil.email" class="input" disabled /></div>
-              <div class="form-group"><label class="form-label">Téléphone</label><input v-model="parentProfil.phone" class="input" type="tel" placeholder="+237 6XX XXX XXX" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.email') }}</label><input :value="parentProfil.email" class="input" disabled /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.phone') }}</label><input v-model="parentProfil.phone" class="input" type="tel" :placeholder="t('mia.phonePlaceholder')" /></div>
             </div>
             <div class="compose-actions">
-              <button class="btn btn-primary" @click="saveParentProfil"><Check :size="16" /> <span>Enregistrer</span></button>
-              <span v-if="parentSaved" class="muted small saved-ok">Enregistré ✓</span>
+              <button class="btn btn-primary" @click="saveParentProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
+              <span v-if="parentSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
             </div>
           </div>
 
           <!-- Profil de l'ENFANT rattaché (ou de l'apprenant lui-même) — en dessous -->
           <div class="card">
-            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? 'Mon profil' : 'Profil de ' + activeEnfant.firstName + ' — enfant rattaché' }}</h3></div>
+            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? t('mia.myProfile') : t('mia.childProfileOf', { name: activeEnfant.firstName }) }}</h3></div>
             <div class="profil-photo">
               <span class="er-avatar pp-avatar" :class="profil.gender === 'F' ? 'av-f' : 'av-m'">
                 <img v-if="profil.photoURL" :src="profil.photoURL" alt="" />
                 <template v-else>{{ (profil.firstName[0] || '') + (profil.lastName[0] || '') }}</template>
               </span>
-              <label class="btn btn-outline btn-sm"><Camera :size="15" /> <span>Changer la photo</span><input type="file" accept="image/*" style="display:none" @change="onPickPhoto" /></label>
+              <label class="btn btn-outline btn-sm"><Camera :size="15" /> <span>{{ t('mia.changePhoto') }}</span><input type="file" accept="image/*" style="display:none" @change="onPickPhoto" /></label>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Prénom</label><input v-model="profil.firstName" class="input" /></div>
-              <div class="form-group"><label class="form-label">Nom</label><input v-model="profil.lastName" class="input" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.firstName') }}</label><input v-model="profil.firstName" class="input" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="profil.lastName" class="input" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Niveau</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">Primaire</option><option value="secondaire">Secondaire</option><option value="superieur">Supérieur</option></select></div>
-              <div class="form-group"><label class="form-label">Classe</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
               <div class="form-row">
-                <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="profil.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
-                <div class="form-group"><label class="form-label">URL du programme <span class="muted small">(optionnel)</span></label><input v-model="profil.formationUrl" class="input" type="url" placeholder="https://… page de la formation" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
               </div>
-              <div class="form-group"><label class="form-label">Modules / matières <span class="muted small">(séparés par des virgules)</span></label><textarea v-model="profil.formationModules" class="input" rows="2" placeholder="Ex : Stratégie, Finance, Leadership, Marketing…"></textarea></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
             </template>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">Pays</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
-              <div class="form-group"><label class="form-label">École</label><input v-model="profil.ecole" class="input" placeholder="Nom de l'établissement" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
             </div>
             <div class="compose-actions">
-              <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>Enregistrer</span></button>
-              <span v-if="profilSaved" class="muted small saved-ok">Enregistré ✓</span>
+              <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
+              <span v-if="profilSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
             </div>
           </div>
         </section>
@@ -299,25 +299,25 @@
     <!-- Modal ajout enfant -->
     <div v-if="showAdd" class="modal-overlay" @click.self="showAdd = false">
       <div class="modal-card">
-        <div class="modal-header"><h3>{{ isApprenant ? 'Créer mon profil' : 'Ajouter mon enfant' }}</h3><button class="btn btn-ghost btn-sm" @click="showAdd = false"><X :size="18" /></button></div>
+        <div class="modal-header"><h3>{{ isApprenant ? t('mia.createMyProfile') : t('mia.addMyChild') }}</h3><button class="btn btn-ghost btn-sm" @click="showAdd = false"><X :size="18" /></button></div>
         <div class="modal-body">
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Prénom</label><input v-model="form.firstName" class="input" placeholder="Prénom" /></div>
-            <div class="form-group"><label class="form-label">Nom</label><input v-model="form.lastName" class="input" placeholder="Nom" /></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.firstName') }}</label><input v-model="form.firstName" class="input" :placeholder="t('mia.firstName')" /></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="form.lastName" class="input" :placeholder="t('mia.lastName')" /></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Sexe</label><select v-model="form.gender" class="input"><option value="M">Garçon</option><option value="F">Fille</option></select></div>
-            <div class="form-group"><label class="form-label">Classe</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.sex') }}</label><select v-model="form.gender" class="input"><option value="M">{{ t('mia.boy') }}</option><option value="F">{{ t('mia.girl') }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
-            <div class="form-group"><label class="form-label">Nom de la formation</label><input v-model="form.formation" class="input" placeholder="Ex : Executive MBA — IRIIG" /></div>
-            <div class="form-group"><label class="form-label">URL du programme <span class="muted small">(optionnel)</span></label><input v-model="form.formationUrl" class="input" type="url" placeholder="https://… page de la formation" /></div>
-            <div class="form-group"><label class="form-label">Modules / matières <span class="muted small">(séparés par des virgules)</span></label><textarea v-model="form.formationModules" class="input" rows="2" placeholder="Ex : Stratégie, Finance, Leadership…"></textarea></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholderShort')"></textarea></div>
           </template>
-          <div class="form-group"><label class="form-label">Pays</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+          <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
-            <button class="btn btn-outline" @click="showAdd = false">Annuler</button>
-            <button class="btn btn-primary" :disabled="!form.firstName.trim()" @click="doAdd"><Check :size="16" /> <span>Créer le profil</span></button>
+            <button class="btn btn-outline" @click="showAdd = false">{{ t('mia.cancel') }}</button>
+            <button class="btn btn-primary" :disabled="!form.firstName.trim()" @click="doAdd"><Check :size="16" /> <span>{{ t('mia.createProfile') }}</span></button>
           </div>
         </div>
       </div>
@@ -328,6 +328,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES } from '../stores/enfantsAutonomes'
@@ -340,6 +341,7 @@ import Radar6C from '../components/Radar6C.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings } from 'lucide-vue-next'
 
 const router = useRouter()
+const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
 async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/miapo' : '/login') }
 
@@ -358,13 +360,13 @@ const isApprenant = computed(() => store.mode === 'apprenant')
 function setMode(m) { store.setMode(m) }
 
 const SECTIONS = computed(() => [
-  { key: 'accueil', label: 'Accueil', icon: Home },
-  { key: 'enfants', label: isApprenant.value ? 'Mes notes' : 'Mes enfants', icon: isApprenant.value ? FileText : Users },
-  { key: 'tuteur', label: 'Tuteur', icon: GraduationCap },
-  { key: 'progression', label: 'Progression', icon: TrendingUp },
-  { key: 'orientation', label: 'Orientation', icon: Compass },
-  { key: 'abonnement', label: 'Abonnement', icon: CreditCard },
-  { key: 'profil', label: 'Profil', icon: Settings },
+  { key: 'accueil', label: t('mia.secHome'), icon: Home },
+  { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
+  { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
+  { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
+  { key: 'orientation', label: t('mia.secOrientation'), icon: Compass },
+  { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
+  { key: 'profil', label: t('mia.secProfile'), icon: Settings },
 ])
 const section = ref('accueil')
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
@@ -374,15 +376,15 @@ const currentSection = computed(() => SECTIONS.value.find((s) => s.key === secti
 
 // Libellés selon le mode (parent vs apprenant)
 const L = computed(() => isApprenant.value ? {
-  brandSub: 'Ton coach de révision',
-  introTitle: 'Pilote ton apprentissage avec MIAPO',
-  introText: "Saisis tes notes (ou photographie tes copies) : MIAPO repère tes points faibles, te propose des révisions adaptées et t'accompagne dans ton orientation.",
-  introBtn: 'Créer mon profil',
+  brandSub: t('mia.brandSubLearner'),
+  introTitle: t('mia.introTitleLearner'),
+  introText: t('mia.introTextLearner'),
+  introBtn: t('mia.introBtnLearner'),
 } : {
-  brandSub: 'Suivi & cours à la maison',
-  introTitle: 'Confiez le suivi de votre enfant à MIAPO',
-  introText: "Ajoutez votre enfant, saisissez ses notes (ou photographiez ses copies) : MIAPO repère ses points faibles, lui propose des révisions adaptées et l'accompagne dans son orientation.",
-  introBtn: 'Ajouter mon enfant',
+  brandSub: t('mia.brandSubParent'),
+  introTitle: t('mia.introTitleParent'),
+  introText: t('mia.introTextParent'),
+  introBtn: t('mia.introBtnParent'),
 })
 
 const activeId = ref('')
@@ -519,17 +521,17 @@ const insight = computed(() => {
   if (!e) return ''
   const ap = isApprenant.value
   if (!e.notes.length) return ap
-    ? `Saisis tes notes (ou photographie tes copies) : MIAPO repèrera tes points faibles et te proposera des révisions adaptées à ${niveauLabel(e)}.`
-    : `Saisissez les notes de ${e.firstName} (ou photographiez ses copies) : MIAPO repèrera ses points faibles et lui proposera des révisions adaptées à ${niveauLabel(e)}.`
+    ? t('mia.insightNoNotesLearner', { level: niveauLabel(e) })
+    : t('mia.insightNoNotesParent', { name: e.firstName, level: niveauLabel(e) })
   const f = faiblesses.value
   if (!f.length) return ap
-    ? `Bon niveau d'ensemble ! Continue les révisions régulières pour consolider.`
-    : `Bon niveau d'ensemble pour ${e.firstName} ! Continuez les révisions régulières pour consolider.`
+    ? t('mia.insightGoodLearner')
+    : t('mia.insightGoodParent', { name: e.firstName })
   const noms = f.slice(0, 2).map((x) => x.matiere)
-  const m = noms.length === 2 ? `${noms[0]} et ${noms[1]}` : noms[0]
+  const m = noms.length === 2 ? t('mia.andJoin', { a: noms[0], b: noms[1] }) : noms[0]
   return ap
-    ? `MIAPO a repéré des difficultés en ${m}. Lance une révision ciblée — tu progresseras plus vite sur tes points faibles.`
-    : `MIAPO a repéré des difficultés en ${m}. Désignez ces matières à réviser — ${e.firstName} progressera plus vite sur ses points faibles.`
+    ? t('mia.insightWeakLearner', { subjects: m })
+    : t('mia.insightWeakParent', { subjects: m, name: e.firstName })
 })
 
 function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
@@ -546,7 +548,7 @@ function addNote() {
 }
 function confirmRemove() {
   if (!activeEnfant.value) return
-  if (confirm(`Retirer le profil de ${activeEnfant.value.firstName} ?`)) {
+  if (confirm(t('mia.confirmRemoveProfile', { name: activeEnfant.value.firstName }))) {
     store.removeEnfant(activeEnfant.value.id)
     activeId.value = enfants.value[0]?.id || ''
   }
@@ -579,8 +581,8 @@ async function onPickCopie(e) {
     const dataUrl = await downscaleImage(file)
     const res = await tuteur.analyserCopie({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
     if (res.ok && res.analyse) { visionResult.value = res.analyse; visionState.value = 'done' }
-    else { visionError.value = res.reason || 'Lecture impossible.'; visionState.value = 'error' }
-  } catch { visionError.value = 'Image illisible. Réessayez avec une photo plus nette.'; visionState.value = 'error' }
+    else { visionError.value = res.reason || t('mia.visionUnreadable'); visionState.value = 'error' }
+  } catch { visionError.value = t('mia.visionBlurry'); visionState.value = 'error' }
 }
 function addVisionNote() {
   const a = visionResult.value
@@ -608,7 +610,7 @@ async function getPrepa() {
   const faibles = e.notes.filter((n) => n.note < 10).map((n) => n.matiere)
   const res = await tuteur.prepaExamen({ niveau: e.niveau, pays: e.pays, faibles })
   if (res.ok && res.prepa) { prepaResult.value = res.prepa; prepaState.value = 'done' }
-  else { prepaError.value = res.reason || 'Préparation indisponible.'; prepaState.value = 'error' }
+  else { prepaError.value = res.reason || t('mia.prepaUnavailable'); prepaState.value = 'error' }
 }
 
 onMounted(async () => {
