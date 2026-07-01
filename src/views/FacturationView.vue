@@ -712,67 +712,67 @@
     <div v-if="showPaymentModal" class="modal-overlay" @click.self="showPaymentModal = false">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>Enregistrer un paiement</h2>
+          <h2>{{ t('fact.recordPayment') }}</h2>
           <button class="icon-btn" @click="showPaymentModal = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div v-if="payTarget" class="pay-eleve-info">
             <div class="pay-info-row">
-              <span>Élève :</span>
+              <span>{{ t('fact.infoStudent') }}</span>
               <strong>{{ payTarget.lastName }} {{ payTarget.firstName }}</strong>
             </div>
             <div class="pay-info-row">
-              <span>Classe :</span>
+              <span>{{ t('fact.infoClass') }}</span>
               <strong>{{ payTarget.className }}</strong>
             </div>
             <div class="pay-info-row">
-              <span>Total dû :</span>
+              <span>{{ t('fact.infoTotalDue') }}</span>
               <strong>{{ formatMoney(payTargetTotal) }}</strong>
             </div>
             <div class="pay-info-row pay-info-highlight">
-              <span>Reste à payer :</span>
+              <span>{{ t('fact.infoToPay') }}</span>
               <strong>{{ formatMoney(payTargetBalance) }}</strong>
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Type de paiement</label>
+              <label>{{ t('fact.paymentType') }}</label>
               <select v-model="payForm.tranche" class="input">
-                <option value="">— Choisir —</option>
+                <option value="">{{ t('fact.chooseDash') }}</option>
                 <option v-for="ech in factStore.echeances" :key="ech.id" :value="ech.label">
                   {{ ech.label }} ({{ ech.percent }}%)
                 </option>
-                <option value="Paiement intégral">Paiement intégral</option>
-                <option value="Autre">Autre</option>
+                <option value="Paiement intégral">{{ t('fact.fullPayment') }}</option>
+                <option value="Autre">{{ t('fact.other') }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Montant (XAF)</label>
+              <label>{{ t('fact.amountXAF') }}</label>
               <input v-model.number="payForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Mode de paiement</label>
+              <label>{{ t('fact.paymentMethod') }}</label>
               <select v-model="payForm.method" class="input">
                 <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">{{ m.label }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Date</label>
+              <label>{{ t('fact.dateLabel') }}</label>
               <input v-model="payForm.date" type="date" class="input" />
             </div>
           </div>
           <div class="field">
-            <label>Notes</label>
-            <textarea v-model="payForm.note" class="input" placeholder="Notes supplémentaires..." style="resize: vertical; min-height: 80px;"></textarea>
+            <label>{{ t('fact.notesLabel') }}</label>
+            <textarea v-model="payForm.note" class="input" :placeholder="t('fact.notesPh')" style="resize: vertical; min-height: 80px;"></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showPaymentModal = false">Annuler</button>
+          <button class="btn btn-outline" @click="showPaymentModal = false">{{ t('fact.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!canSubmitPayment" @click="submitPayment">
             <CheckCircle2 :size="16" />
-            <span>Enregistrer</span>
+            <span>{{ t('fact.save') }}</span>
           </button>
         </div>
       </div>
@@ -782,39 +782,39 @@
     <div v-if="showAddFee" class="modal-overlay" @click.self="showAddFee = false">
       <div class="modal-card card" style="max-width: 520px;">
         <div class="modal-header">
-          <h2>{{ editingFeeId ? 'Modifier le tarif' : 'Ajouter un tarif' }}</h2>
+          <h2>{{ editingFeeId ? t('fact.editFee') : t('fact.addFee') }}</h2>
           <button class="icon-btn" @click="closeFeeMod()" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Type de frais</label>
+            <label>{{ t('fact.thFeeType') }}</label>
             <select v-model="feeForm.feeType" class="input">
               <option v-for="ft in FEE_TYPES" :key="ft.value" :value="ft.value">{{ ft.label }}</option>
             </select>
           </div>
           <div class="field">
-            <label>Libellé</label>
-            <input v-model="feeForm.label" type="text" class="input" placeholder="Ex: Scolarité premier trimestre" />
+            <label>{{ t('fact.thLabel') }}</label>
+            <input v-model="feeForm.label" type="text" class="input" :placeholder="t('fact.feeLabelPh')" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Niveau</label>
+              <label>{{ t('fact.thLevel') }}</label>
               <select v-model="feeForm.level" class="input">
-                <option value="all">Tous les niveaux</option>
+                <option value="all">{{ t('fact.allLevels') }}</option>
                 <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
               </select>
             </div>
             <div class="field">
-              <label>Montant (XAF)</label>
+              <label>{{ t('fact.amountXAF') }}</label>
               <input v-model.number="feeForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="closeFeeMod()">Annuler</button>
+          <button class="btn btn-outline" @click="closeFeeMod()">{{ t('fact.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!canSubmitFee" @click="submitFee">
             <CheckCircle2 :size="16" />
-            <span>{{ editingFeeId ? 'Modifier' : 'Ajouter' }}</span>
+            <span>{{ editingFeeId ? t('fact.modify') : t('fact.add') }}</span>
           </button>
         </div>
       </div>
@@ -824,37 +824,37 @@
     <div v-if="showAddEcheance" class="modal-overlay" @click.self="showAddEcheance = false">
       <div class="modal-card card" style="max-width: 440px;">
         <div class="modal-header">
-          <h2>{{ editingEcheanceId ? 'Modifier' : 'Ajouter' }} une échéance</h2>
+          <h2>{{ editingEcheanceId ? t('fact.editScheduleTitle') : t('fact.addScheduleTitle') }}</h2>
           <button class="icon-btn" @click="showAddEcheance = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Libellé</label>
-            <input v-model="echeanceForm.label" class="input" placeholder="Ex: Acompte à l'inscription" />
+            <label>{{ t('fact.thLabel') }}</label>
+            <input v-model="echeanceForm.label" class="input" :placeholder="t('fact.scheduleLabelPh')" />
           </div>
           <div class="field">
-            <label>Niveau concerné</label>
+            <label>{{ t('fact.concernedLevel') }}</label>
             <select v-model="echeanceForm.level" class="input">
-              <option value="all">Tous les niveaux</option>
+              <option value="all">{{ t('fact.allLevels') }}</option>
               <option v-for="lvl in availableLevels" :key="lvl" :value="lvl">{{ lvl }}</option>
             </select>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Date limite</label>
+              <label>{{ t('fact.thDueDate') }}</label>
               <input v-model="echeanceForm.dueDate" type="date" class="input" />
             </div>
             <div class="field">
-              <label>Pourcentage du total (%)</label>
+              <label>{{ t('fact.percentOfTotal') }}</label>
               <input v-model.number="echeanceForm.percent" type="number" class="input" placeholder="30" min="1" max="100" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showAddEcheance = false">Annuler</button>
+          <button class="btn btn-outline" @click="showAddEcheance = false">{{ t('fact.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!echeanceForm.label || !echeanceForm.dueDate || !echeanceForm.percent" @click="submitEcheance">
             <CheckCircle2 :size="16" />
-            <span>{{ editingEcheanceId ? 'Enregistrer' : 'Ajouter' }}</span>
+            <span>{{ editingEcheanceId ? t('fact.save') : t('fact.add') }}</span>
           </button>
         </div>
       </div>
@@ -864,35 +864,35 @@
     <div v-if="showSalaryModal" class="modal-overlay" @click.self="showSalaryModal = false">
       <div class="modal-card card">
         <div class="modal-header">
-          <h2>Payer un salaire</h2>
+          <h2>{{ t('fact.paySalary') }}</h2>
           <button class="icon-btn" @click="showSalaryModal = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div v-if="salaryPayTarget" class="pay-eleve-info">
             <div class="pay-info-row">
-              <span>Personnel :</span>
+              <span>{{ t('fact.infoStaff') }}</span>
               <strong>{{ salaryPayTarget.staff.lastName }} {{ salaryPayTarget.staff.firstName }}</strong>
             </div>
             <div class="pay-info-row">
-              <span>Fonction :</span>
+              <span>{{ t('fact.infoFunction') }}</span>
               <strong>{{ salaryPayTarget.staff.role || '—' }}</strong>
             </div>
             <div class="pay-info-row">
-              <span>Salaire brut :</span>
+              <span>{{ t('fact.infoGrossSalary') }}</span>
               <strong>{{ formatMoney(salaryPayTarget.salary) }}</strong>
             </div>
             <div class="pay-info-row pay-info-highlight">
-              <span>Reste à verser :</span>
+              <span>{{ t('fact.infoToPayOut') }}</span>
               <strong>{{ formatMoney(salaryPayTarget.remaining) }}</strong>
             </div>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Montant (XAF)</label>
+              <label>{{ t('fact.amountXAF') }}</label>
               <input v-model.number="salaryPayForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
             <div class="field">
-              <label>Mode de paiement</label>
+              <label>{{ t('fact.paymentMethod') }}</label>
               <select v-model="salaryPayForm.method" class="input">
                 <option v-for="m in PAYMENT_METHODS" :key="m.value" :value="m.value">{{ m.label }}</option>
               </select>
@@ -900,20 +900,20 @@
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Référence</label>
+              <label>{{ t('fact.thReference') }}</label>
               <input v-model="salaryPayForm.reference" class="input" placeholder="SAL-00001" />
             </div>
             <div class="field">
-              <label>Date</label>
+              <label>{{ t('fact.dateLabel') }}</label>
               <input v-model="salaryPayForm.date" type="date" class="input" />
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showSalaryModal = false">Annuler</button>
+          <button class="btn btn-outline" @click="showSalaryModal = false">{{ t('fact.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!salaryPayForm.amount || salaryPayForm.amount <= 0" @click="submitSalaryPayment">
             <CheckCircle2 :size="16" />
-            <span>Payer</span>
+            <span>{{ t('fact.pay') }}</span>
           </button>
         </div>
       </div>
@@ -923,9 +923,9 @@
     <div v-if="showBulletinModal && currentBulletin" class="modal-overlay" @click.self="showBulletinModal = false">
       <div class="modal-card card" style="max-width: 600px;">
         <div class="modal-header">
-          <h2>Bulletin de paie</h2>
+          <h2>{{ t('fact.payslip') }}</h2>
           <div class="modal-header-actions">
-            <button class="icon-btn" @click="printBulletin" title="Imprimer" type="button"><Printer :size="20" /></button>
+            <button class="icon-btn" @click="printBulletin" :title="t('fact.printLabel')" type="button"><Printer :size="20" /></button>
             <button class="icon-btn" @click="showBulletinModal = false" type="button"><X :size="20" /></button>
           </div>
         </div>
@@ -937,21 +937,21 @@
             </div>
             <div class="bulletin-info">
               <div class="bulletin-row">
-                <span class="bulletin-label">Période :</span>
+                <span class="bulletin-label">{{ t('fact.periodColon') }}</span>
                 <span class="bulletin-value">{{ bulletinMonth }}</span>
               </div>
               <div class="bulletin-row">
-                <span class="bulletin-label">Référence :</span>
+                <span class="bulletin-label">{{ t('fact.referenceColon') }}</span>
                 <span class="bulletin-value">BP-{{ currentBulletin.staff.id }}-{{ bulletinMonthShort }}</span>
               </div>
               <div class="bulletin-row">
-                <span class="bulletin-label">Date :</span>
+                <span class="bulletin-label">{{ t('fact.dateColon') }}</span>
                 <span class="bulletin-value">{{ formatDate(new Date().toISOString().split('T')[0]) }}</span>
               </div>
             </div>
             <div class="bulletin-salary">
               <div class="bulletin-salary-item">
-                <span>Salaire brut mensuel</span>
+                <span>{{ t('fact.grossMonthlySalary') }}</span>
                 <span class="bulletin-value-large">{{ formatMoney(currentBulletin.salary) }}</span>
               </div>
             </div>
@@ -964,40 +964,40 @@
     <div v-if="showAddCharge" class="modal-overlay" @click.self="showAddCharge = false">
       <div class="modal-card card" style="max-width: 520px;">
         <div class="modal-header">
-          <h2>{{ editingChargeId ? 'Modifier la charge' : 'Ajouter une charge fixe' }}</h2>
+          <h2>{{ editingChargeId ? t('fact.editCharge') : t('fact.addChargeFixed') }}</h2>
           <button class="icon-btn" @click="closeChargeModal()" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
           <div class="field">
-            <label>Libellé</label>
-            <input v-model="chargeForm.label" type="text" class="input" placeholder="Ex: Loyer bureaux" />
+            <label>{{ t('fact.thLabel') }}</label>
+            <input v-model="chargeForm.label" type="text" class="input" :placeholder="t('fact.chargeLabelPh')" />
           </div>
           <div class="field">
-            <label>Catégorie</label>
+            <label>{{ t('fact.thCategory') }}</label>
             <select v-model="chargeForm.category" class="input">
               <option v-for="cat in CHARGE_CATEGORIES" :key="cat.value" :value="cat.value">{{ cat.label }}</option>
             </select>
           </div>
           <div class="field-row">
             <div class="field">
-              <label>Montant (XAF)</label>
+              <label>{{ t('fact.amountXAF') }}</label>
               <input v-model.number="chargeForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
             <div class="field">
-              <label>Fréquence</label>
+              <label>{{ t('fact.thFrequency') }}</label>
               <select v-model="chargeForm.frequency" class="input">
-                <option value="mensuel">Mensuel</option>
-                <option value="trimestriel">Trimestriel</option>
-                <option value="annuel">Annuel</option>
+                <option value="mensuel">{{ t('fact.freqMonthly') }}</option>
+                <option value="trimestriel">{{ t('fact.freqQuarterly') }}</option>
+                <option value="annuel">{{ t('fact.freqAnnual') }}</option>
               </select>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="closeChargeModal()">Annuler</button>
+          <button class="btn btn-outline" @click="closeChargeModal()">{{ t('fact.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!canSubmitCharge" @click="submitCharge">
             <CheckCircle2 :size="16" />
-            <span>{{ editingChargeId ? 'Modifier' : 'Ajouter' }}</span>
+            <span>{{ editingChargeId ? t('fact.modify') : t('fact.add') }}</span>
           </button>
         </div>
       </div>
@@ -1007,15 +1007,15 @@
     <div v-if="confirmDeleteId" class="modal-overlay" @click.self="confirmDeleteId = null">
       <div class="modal-card card" style="max-width: 400px;">
         <div class="modal-header">
-          <h2>Confirmer la suppression</h2>
+          <h2>{{ t('fact.confirmDeleteTitle') }}</h2>
           <button class="icon-btn" @click="confirmDeleteId = null" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
-          <p>Êtes-vous sûr de vouloir supprimer cet élément ? Cette action ne peut pas être annulée.</p>
+          <p>{{ t('fact.confirmDeleteText') }}</p>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="confirmDeleteId = null">Annuler</button>
-          <button class="btn btn-danger" @click="confirmDelete">Supprimer</button>
+          <button class="btn btn-outline" @click="confirmDeleteId = null">{{ t('fact.cancel') }}</button>
+          <button class="btn btn-danger" @click="confirmDelete">{{ t('fact.delete') }}</button>
         </div>
       </div>
     </div>
@@ -1024,7 +1024,7 @@
     <div v-if="showDetailModal && detailData" class="modal-overlay" @click.self="showDetailModal = false">
       <div class="modal-card card" style="max-width: 520px;">
         <div class="modal-header">
-          <h2>{{ detailType === 'eleve' ? 'Détail élève' : 'Détail du paiement' }}</h2>
+          <h2>{{ detailType === 'eleve' ? t('fact.detailStudent') : t('fact.detailPayment') }}</h2>
           <button class="icon-btn" @click="showDetailModal = false" type="button"><X :size="20" /></button>
         </div>
         <div class="modal-body">
@@ -1036,24 +1036,24 @@
             </div>
             <div class="detail-grid">
               <div class="detail-item">
-                <span class="detail-label">Total dû</span>
+                <span class="detail-label">{{ t('fact.thTotalDue') }}</span>
                 <span class="detail-value font-mono">{{ formatMoney(detailData.totalDue) }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Total payé</span>
+                <span class="detail-label">{{ t('fact.totalPaidDetail') }}</span>
                 <span class="detail-value font-mono cs-green">{{ formatMoney(detailData.totalPaid) }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Reste à payer</span>
+                <span class="detail-label">{{ t('fact.toPayDetail') }}</span>
                 <span class="detail-value font-mono" :class="{ 'cs-red': detailData.balance > 0 }">{{ formatMoney(detailData.balance) }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Statut</span>
-                <span class="status-chip" :class="'chip-' + detailData.status">{{ getStatusLabel(detailData.status) }}</span>
+                <span class="detail-label">{{ t('fact.thStatus') }}</span>
+                <span class="status-chip" :class="'chip-' + detailData.status">{{ statusText(detailData.status) }}</span>
               </div>
             </div>
             <div v-if="detailData.payments && detailData.payments.length > 0" class="detail-section" style="margin-top: 16px;">
-              <h4 class="detail-section-title">Historique des versements</h4>
+              <h4 class="detail-section-title">{{ t('fact.paymentHistory') }}</h4>
               <div v-for="p in detailData.payments" :key="p.id" class="detail-payment-row">
                 <span>{{ formatDate(p.date) }}</span>
                 <span class="font-mono">{{ formatMoney(p.amount) }}</span>
@@ -1070,36 +1070,36 @@
             </div>
             <div class="detail-grid">
               <div class="detail-item">
-                <span class="detail-label">Montant</span>
+                <span class="detail-label">{{ t('fact.thAmount') }}</span>
                 <span class="detail-value font-mono">{{ formatMoney(detailData.amount) }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Mode de paiement</span>
+                <span class="detail-label">{{ t('fact.paymentMethod') }}</span>
                 <span class="detail-value">{{ getMethodLabel(detailData.method) }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Référence</span>
+                <span class="detail-label">{{ t('fact.thReference') }}</span>
                 <span class="detail-value">{{ detailData.reference || '—' }}</span>
               </div>
               <div v-if="detailData.tranche" class="detail-item">
-                <span class="detail-label">Type de paiement</span>
+                <span class="detail-label">{{ t('fact.paymentType') }}</span>
                 <span class="detail-value">{{ detailData.tranche }}</span>
               </div>
               <div class="detail-item">
-                <span class="detail-label">Enregistré par</span>
+                <span class="detail-label">{{ t('fact.thRecordedBy') }}</span>
                 <span class="detail-value">{{ detailData.recordedBy || '—' }}</span>
               </div>
               <div v-if="detailData.note" class="detail-item" style="grid-column: 1 / -1;">
-                <span class="detail-label">Note</span>
+                <span class="detail-label">{{ t('fact.noteLabel') }}</span>
                 <span class="detail-value">{{ detailData.note }}</span>
               </div>
             </div>
           </template>
         </div>
         <div class="modal-footer">
-          <button class="btn btn-outline" @click="showDetailModal = false">Fermer</button>
+          <button class="btn btn-outline" @click="showDetailModal = false">{{ t('fact.close') }}</button>
           <button v-if="detailType === 'payment'" class="btn btn-outline" @click="showDetailModal = false; printReceipt(detailData)">
-            <Printer :size="14" /> <span>Imprimer le reçu</span>
+            <Printer :size="14" /> <span>{{ t('fact.printReceipt') }}</span>
           </button>
         </div>
       </div>
