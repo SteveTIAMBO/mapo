@@ -3,21 +3,21 @@
     <!-- Header -->
     <div class="page-header">
       <div class="page-header-text">
-        <h1>Comptabilité</h1>
-        <p>Gestion des frais de scolarité, paiements et salaires</p>
+        <h1>{{ t('fact.title') }}</h1>
+        <p>{{ t('fact.subtitle') }}</p>
       </div>
       <div class="header-actions">
         <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportPayments">
           <Download :size="16" />
-          <span>Exporter</span>
+          <span>{{ t('fact.export') }}</span>
         </button>
         <button v-if="factStore.setupDone" class="btn btn-outline" @click="activeTab = 'grille'">
           <Settings :size="16" />
-          <span>Grille tarifaire</span>
+          <span>{{ t('fact.feeGrid') }}</span>
         </button>
         <button class="btn btn-primary" @click="openPaymentModal()">
           <Plus :size="16" />
-          <span>Enregistrer un paiement</span>
+          <span>{{ t('fact.recordPayment') }}</span>
         </button>
       </div>
     </div>
@@ -28,11 +28,11 @@
         <div class="setup-icon">
           <Banknote :size="48" />
         </div>
-        <h2>Configurer la grille tarifaire</h2>
-        <p>Définissez les frais de scolarité par niveau avant de commencer à enregistrer les paiements.</p>
+        <h2>{{ t('fact.setupTitle') }}</h2>
+        <p>{{ t('fact.setupDesc') }}</p>
         <button class="btn btn-primary" @click="activeTab = 'grille'; showAddFee = true">
           <Plus :size="16" />
-          <span>Ajouter un premier tarif</span>
+          <span>{{ t('fact.addFirstFee') }}</span>
         </button>
       </div>
     </div>
@@ -45,28 +45,28 @@
           <span class="stat-bar-dot blue"></span>
           <div>
             <div class="stat-bar-value">{{ formatMoney(displayStats.totalExpected) }}</div>
-            <div class="stat-bar-label">Attendu</div>
+            <div class="stat-bar-label">{{ t('fact.expected') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot green"></span>
           <div>
             <div class="stat-bar-value">{{ formatMoney(displayStats.totalCollected) }}</div>
-            <div class="stat-bar-label">Encaissé</div>
+            <div class="stat-bar-label">{{ t('fact.collected') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot orange"></span>
           <div>
             <div class="stat-bar-value">{{ formatMoney(displayStats.totalOutstanding) }}</div>
-            <div class="stat-bar-label">Impayés</div>
+            <div class="stat-bar-label">{{ t('fact.outstanding') }}</div>
           </div>
         </div>
         <div class="stat-bar-item">
           <span class="stat-bar-dot" :style="{ background: displayStats.collectionRate >= 70 ? 'var(--success, #34A853)' : displayStats.collectionRate >= 40 ? 'var(--gold, #F9AB00)' : 'var(--danger, #D93025)' }"></span>
           <div>
             <div class="stat-bar-value">{{ displayStats.collectionRate }}%</div>
-            <div class="stat-bar-label">Taux de recouvrement</div>
+            <div class="stat-bar-label">{{ t('fact.collectionRate') }}</div>
           </div>
         </div>
       </div>
@@ -75,22 +75,22 @@
       <div v-if="filterClass && activeTab === 'eleves'" class="class-summary-bar">
         <div class="class-summary-title">
           <BookOpen :size="16" />
-          Bilan {{ filterClass }}
+          {{ t('fact.classSummary', { cls: filterClass }) }}
         </div>
         <div class="class-summary-stats">
-          <span><strong>{{ classStats.total }}</strong> élèves</span>
+          <span><strong>{{ classStats.total }}</strong> {{ t('fact.students') }}</span>
           <span class="cs-sep">|</span>
-          <span class="cs-green"><strong>{{ classStats.paidCount }}</strong> soldés</span>
+          <span class="cs-green"><strong>{{ classStats.paidCount }}</strong> {{ t('fact.paidLow') }}</span>
           <span class="cs-sep">|</span>
-          <span class="cs-orange"><strong>{{ classStats.partialCount }}</strong> partiels</span>
+          <span class="cs-orange"><strong>{{ classStats.partialCount }}</strong> {{ t('fact.partialLow') }}</span>
           <span class="cs-sep">|</span>
-          <span class="cs-red"><strong>{{ classStats.unpaidCount }}</strong> impayés</span>
+          <span class="cs-red"><strong>{{ classStats.unpaidCount }}</strong> {{ t('fact.unpaidLow') }}</span>
           <span class="cs-sep">|</span>
-          <span>Attendu : <strong>{{ formatMoney(classStats.totalExpected) }}</strong></span>
+          <span>{{ t('fact.expectedColon') }} <strong>{{ formatMoney(classStats.totalExpected) }}</strong></span>
           <span class="cs-sep">|</span>
-          <span>Encaissé : <strong class="cs-green">{{ formatMoney(classStats.totalCollected) }}</strong></span>
+          <span>{{ t('fact.collectedColon') }} <strong class="cs-green">{{ formatMoney(classStats.totalCollected) }}</strong></span>
           <span class="cs-sep">|</span>
-          <span>Reste : <strong class="cs-red">{{ formatMoney(classStats.totalOutstanding) }}</strong></span>
+          <span>{{ t('fact.remainingColon') }} <strong class="cs-red">{{ formatMoney(classStats.totalOutstanding) }}</strong></span>
         </div>
       </div>
 
@@ -98,31 +98,31 @@
       <div class="tabs-bar">
         <button class="tab-btn" :class="{ active: activeTab === 'eleves' }" @click="activeTab = 'eleves'">
           <Users :size="16" />
-          <span>Paiements élèves</span>
+          <span>{{ t('fact.tabStudents') }}</span>
           <span class="tab-count">{{ stats.totalEleves }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'historique' }" @click="activeTab = 'historique'">
           <Receipt :size="16" />
-          <span>Historique</span>
+          <span>{{ t('fact.tabHistory') }}</span>
           <span class="tab-count">{{ factStore.payments.length }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'salaires' }" @click="activeTab = 'salaires'">
           <Briefcase :size="16" />
-          <span>Salaires</span>
+          <span>{{ t('fact.tabSalaries') }}</span>
           <span class="tab-count">{{ personnelStore.staff.length }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'charges' }" @click="activeTab = 'charges'">
           <DollarSign :size="16" />
-          <span>Charges fixes</span>
+          <span>{{ t('fact.tabCharges') }}</span>
           <span class="tab-count">{{ factStore.charges?.length || 0 }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'synthese' }" @click="activeTab = 'synthese'">
           <BarChart3 :size="16" />
-          <span>Synthèse</span>
+          <span>{{ t('fact.tabSynthesis') }}</span>
         </button>
         <button class="tab-btn" :class="{ active: activeTab === 'grille' }" @click="activeTab = 'grille'">
           <TableProperties :size="16" />
-          <span>Grille tarifaire</span>
+          <span>{{ t('fact.feeGrid') }}</span>
         </button>
       </div>
 
@@ -133,17 +133,17 @@
           <div class="toolbar">
             <div class="search-box">
               <Search :size="18" class="search-icon" />
-              <input v-model="searchQuery" type="text" class="input search-input" placeholder="Rechercher par nom ou matricule..." />
+              <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('fact.searchPh')" />
             </div>
             <select v-model="filterClass" class="select">
-              <option value="">Toutes les classes</option>
+              <option value="">{{ t('fact.allClasses') }}</option>
               <option v-for="c in classesStore.classes" :key="c.id" :value="c.name">{{ c.name }}</option>
             </select>
             <select v-model="filterStatus" class="select">
-              <option value="">Tous les statuts</option>
-              <option value="payé">Soldé</option>
-              <option value="partiel">Partiel</option>
-              <option value="impayé">Impayé</option>
+              <option value="">{{ t('fact.allStatuses') }}</option>
+              <option value="payé">{{ t('fact.statusPaid') }}</option>
+              <option value="partiel">{{ t('fact.statusPartial') }}</option>
+              <option value="impayé">{{ t('fact.statusUnpaid') }}</option>
             </select>
           </div>
         </div>
@@ -151,16 +151,16 @@
         <!-- Status résumé -->
         <div class="status-summary">
           <button class="status-chip" :class="{ active: filterStatus === '' }" @click="filterStatus = ''">
-            Tous ({{ displayStats.totalEleves }})
+            {{ t('fact.all') }} ({{ displayStats.totalEleves }})
           </button>
           <button class="status-chip chip-paid" :class="{ active: filterStatus === 'payé' }" @click="filterStatus = filterStatus === 'payé' ? '' : 'payé'">
-            Soldés ({{ displayStats.paidCount }})
+            {{ t('fact.paidPlural') }} ({{ displayStats.paidCount }})
           </button>
           <button class="status-chip chip-partial" :class="{ active: filterStatus === 'partiel' }" @click="filterStatus = filterStatus === 'partiel' ? '' : 'partiel'">
-            Partiels ({{ displayStats.partialCount }})
+            {{ t('fact.partialPlural') }} ({{ displayStats.partialCount }})
           </button>
           <button class="status-chip chip-unpaid" :class="{ active: filterStatus === 'impayé' }" @click="filterStatus = filterStatus === 'impayé' ? '' : 'impayé'">
-            Impayés ({{ displayStats.unpaidCount }})
+            {{ t('fact.unpaidPlural') }} ({{ displayStats.unpaidCount }})
           </button>
         </div>
 
@@ -168,7 +168,7 @@
         <div class="card">
           <div v-if="filteredEleves.length === 0" class="empty-state">
             <Users :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-            <p>{{ searchQuery || filterClass || filterStatus ? 'Aucun résultat pour cette recherche' : 'Aucun élève inscrit' }}</p>
+            <p>{{ searchQuery || filterClass || filterStatus ? t('fact.noResult') : t('fact.noStudents') }}</p>
           </div>
           <div v-else class="table-wrapper">
             <table class="data-table" style="table-layout: fixed; width: 100%;">
@@ -183,13 +183,13 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th class="col-eleve">Élève</th>
-                  <th class="col-classe">Classe</th>
-                  <th class="col-montant text-right">Total dû</th>
-                  <th class="col-montant text-right">Payé</th>
-                  <th class="col-montant text-right">Reste</th>
-                  <th class="col-statut">Statut</th>
-                  <th class="col-actions text-center">Actions</th>
+                  <th class="col-eleve">{{ t('fact.thStudent') }}</th>
+                  <th class="col-classe">{{ t('fact.thClass') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thTotalDue') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thPaid') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thRemaining') }}</th>
+                  <th class="col-statut">{{ t('fact.thStatus') }}</th>
+                  <th class="col-actions text-center">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -206,13 +206,13 @@
                   <td class="col-montant text-right font-mono" style="white-space: nowrap;" :class="{ 'text-danger': row.balance > 0 }">{{ formatMoney(row.balance) }}</td>
                   <td class="col-statut">
                     <span class="payment-badge" :class="'badge-' + row.status">
-                      {{ row.statusLabel }}
+                      {{ statusText(row.status) }}
                     </span>
                   </td>
                   <td class="col-actions text-center" @click.stop>
                     <button class="btn btn-sm btn-primary" @click="openPaymentModal(row.eleve)">
                       <Plus :size="14" />
-                      <span>Payer</span>
+                      <span>{{ t('fact.pay') }}</span>
                     </button>
                   </td>
                 </tr>
@@ -223,7 +223,7 @@
           <!-- Pagination -->
           <div v-if="filteredEleves.length > perPage" class="pagination-bar">
             <span class="pagination-info">
-              {{ (currentPage - 1) * perPage + 1 }}-{{ Math.min(currentPage * perPage, filteredEleves.length) }} sur {{ filteredEleves.length }}
+              {{ t('fact.paginationOf', { from: (currentPage - 1) * perPage + 1, to: Math.min(currentPage * perPage, filteredEleves.length), total: filteredEleves.length }) }}
             </span>
             <div class="pagination-btns">
               <button class="btn btn-sm btn-outline" :disabled="currentPage <= 1" @click="currentPage--">
@@ -242,7 +242,7 @@
         <div class="card">
           <div v-if="factStore.payments.length === 0" class="empty-state">
             <Receipt :size="40" style="color: var(--tx3); margin-bottom: 12px;" />
-            <p>Aucun paiement enregistré</p>
+            <p>{{ t('fact.noPayment') }}</p>
           </div>
           <div v-else class="table-wrapper">
             <table class="data-table" style="table-layout: fixed; width: 100%;">
@@ -258,14 +258,14 @@
               </colgroup>
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Élève</th>
-                  <th>Classe</th>
-                  <th class="col-montant text-right">Montant</th>
-                  <th>Mode</th>
-                  <th>Référence</th>
-                  <th>Enregistré par</th>
-                  <th class="text-center">Actions</th>
+                  <th>{{ t('fact.thDate') }}</th>
+                  <th>{{ t('fact.thStudent') }}</th>
+                  <th>{{ t('fact.thClass') }}</th>
+                  <th class="col-montant text-right">{{ t('fact.thAmount') }}</th>
+                  <th>{{ t('fact.thMethod') }}</th>
+                  <th>{{ t('fact.thReference') }}</th>
+                  <th>{{ t('fact.thRecordedBy') }}</th>
+                  <th class="text-center">{{ t('fact.thActions') }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -283,10 +283,10 @@
                   <td style="white-space: nowrap; font-size: 12px; color: var(--tx2);">{{ pay.recordedBy || '—' }}</td>
                   <td class="text-center">
                     <div class="action-btns">
-                      <button class="btn btn-sm btn-outline" title="Imprimer le reçu" @click.stop="printReceipt(pay)">
+                      <button class="btn btn-sm btn-outline" :title="t('fact.printReceipt')" @click.stop="printReceipt(pay)">
                         <Printer :size="14" />
                       </button>
-                      <button class="btn btn-sm btn-outline btn-danger" title="Supprimer" @click.stop="confirmDeletePayment(pay.id)">
+                      <button class="btn btn-sm btn-outline btn-danger" :title="t('fact.delete')" @click.stop="confirmDeletePayment(pay.id)">
                         <Trash2 :size="14" />
                       </button>
                     </div>
@@ -298,7 +298,7 @@
           <!-- Pagination historique -->
           <div v-if="factStore.payments.length > payPerPage" class="pagination-bar">
             <span class="pagination-info">
-              {{ (payPage - 1) * payPerPage + 1 }}-{{ Math.min(payPage * payPerPage, factStore.payments.length) }} sur {{ factStore.payments.length }}
+              {{ t('fact.paginationOf', { from: (payPage - 1) * payPerPage + 1, to: Math.min(payPage * payPerPage, factStore.payments.length), total: factStore.payments.length }) }}
             </span>
             <div class="pagination-btns">
               <button class="btn btn-sm btn-outline" :disabled="payPage <= 1" @click="payPage--">
@@ -1109,6 +1109,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { useFacturationStore, FEE_TYPES, PAYMENT_METHODS, PAYMENT_STATUS } from '../stores/facturation'
 import { useElevesStore } from '../stores/eleves'
@@ -1142,6 +1143,14 @@ const personnelStore = usePersonnelStore()
 const authStore = useAuthStore()
 
 // ── State ──
+const { t, locale } = useI18n({ useScope: 'global' })
+// Libellé de statut de paiement traduit (valeurs stockées : payé/partiel/impayé)
+function statusText(s) {
+  if (s === 'payé') return t('fact.statusPaid')
+  if (s === 'partiel') return t('fact.statusPartial')
+  if (s === 'impayé') return t('fact.statusUnpaid')
+  return s
+}
 const activeTab = ref('eleves')
 const searchQuery = ref('')
 const filterClass = ref('')
@@ -1221,7 +1230,7 @@ function getCurrentMonth() {
 function getMonthLabel(yearMonth) {
   const [year, month] = yearMonth.split('-')
   const date = new Date(year, parseInt(month) - 1)
-  return date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
+  return date.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' })
 }
 
 function formatMoney(amount) {
@@ -1234,7 +1243,7 @@ function formatMoney(amount) {
 function formatDate(dateStr) {
   if (!dateStr) return '—'
   const d = new Date(dateStr + 'T00:00:00')
-  return d.toLocaleDateString('fr-FR')
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR')
 }
 
 function getEleveName(eleveId) {
@@ -1286,7 +1295,7 @@ const monthOptions = computed(() => {
     const yearMonth = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     opts.push({
       value: yearMonth,
-      label: d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }),
+      label: d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' }),
     })
     if (d > now) break
   }
