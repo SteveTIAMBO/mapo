@@ -118,8 +118,11 @@ export const useComplexeStore = defineStore('complexe', () => {
       }
       rows.sort((a, b) => (b.eleves || 0) - (a.eleves || 0))
       schools.value = rows
+      // Le nom du complexe est porté par les docs école (champ complexeName, posé
+      // par le super-admin EDUFREM), avec repli sur le profil du directeur.
+      const nameFromSchools = snap.docs.map((d) => d.data()?.complexeName).find(Boolean)
       identity.value = {
-        name: auth.userProfile?.complexeName || 'Mon complexe scolaire',
+        name: nameFromSchools || auth.userProfile?.complexeName || 'Mon complexe scolaire',
         ville: auth.userProfile?.ville || '',
         pays: auth.userProfile?.pays || '',
         directeur: auth.displayName || '',

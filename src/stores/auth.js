@@ -28,6 +28,9 @@ const DEMO_ACCOUNTS = {
   eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo' },
   // MIAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MIAPO+ seul.
   miapo: { uid: 'demo-miapo', firstName: 'Famille', lastName: 'Démo', role: 'parent', email: 'miapo@demo', b2c: true },
+  // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).
+  // → espace groupe consolidé (/complexe). En démo, complexeId 'demo' = seed d'exemple.
+  complexe: { uid: 'demo-complexe', firstName: 'Rose', lastName: 'Ngo Bell', role: 'directeur_complexe', email: 'complexe@demo', complexeId: 'demo' },
 }
 
 // Comptes demo SUPERIEUR (clic = login, pas de mot de passe).
@@ -139,6 +142,9 @@ export const useAuthStore = defineStore('auth', () => {
   const isB2C = computed(() => !!userProfile.value?.b2c) // parent autonome (hors école)
   const isTeacher = computed(() => userProfile.value?.role === 'enseignant')
   const isEleve = computed(() => userProfile.value?.role === 'eleve')
+  // Directeur de complexe scolaire (vue « groupe » consolidée sur plusieurs écoles).
+  const isDirecteurComplexe = computed(() => userProfile.value?.role === 'directeur_complexe')
+  const complexeId = computed(() => userProfile.value?.complexeId || null)
 
   // Édition de l'utilisateur courant ('secondaire' | 'superieur' | null).
   // En démo, l'édition est portée par le profil (cf loginDemoSup).
@@ -194,6 +200,7 @@ export const useAuthStore = defineStore('auth', () => {
       photoURL: null,
       isDemo: true,
       b2c: account.b2c || false,
+      complexeId: account.complexeId || null,
     }
 
     isDemo.value = true
@@ -729,6 +736,7 @@ export const useAuthStore = defineStore('auth', () => {
   return {
     user, userProfile, loading,
     isAuthenticated, isAdmin, isDirecteur, isParent, isB2C, isTeacher, isEleve,
+    isDirecteurComplexe, complexeId,
     edition, isEditionSuperieur, isEditionSecondaire,
     isDemo, notProvisioned, isSuperAdmin, schoolId, userFirstName,
     loginDemo, loginDemoSup, loginWithEmail, loginWithIdentifier, signUpWithEmail, loginWithGoogle, resetPassword,

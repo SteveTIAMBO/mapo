@@ -45,7 +45,8 @@
       "directeur": "Director",
       "enseignant": "Teacher",
       "parent": "Parent",
-      "eleve": "Student"
+      "eleve": "Student",
+      "complexe": "Complex"
     }
   },
   "header": {

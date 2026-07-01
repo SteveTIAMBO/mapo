@@ -436,6 +436,14 @@ router.beforeEach(async (to) => {
     }
   }
 
+  // ── Directeur de COMPLEXE : espace « groupe » consolidé sur plusieurs écoles ──
+  // Un compte `directeur_complexe` vit dans /complexe (vue agrégée), pas dans le
+  // tableau de bord mono-école : on l'y renvoie depuis toute route MAPO standard.
+  if (isLoggedIn && authStore.isDirecteurComplexe && tenant.mode !== 'megaAdmin' && tenant.mode !== 'miapo') {
+    const complexeAllowed = new Set(['ComplexeAdmin', 'VerifierDiplome', 'Login'])
+    if (!complexeAllowed.has(to.name)) return { name: 'ComplexeAdmin' }
+  }
+
   // ── Tenant école : on saute la page de choix (Welcome interdite) ──
   // L'édition de l'école est fixée par le doc Firestore `schools/{id}`.
   // On consulte schoolIdentity (déjà initialisé en pre-load si tenant=school)

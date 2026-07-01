@@ -107,6 +107,7 @@
                   {{ s.id }}.app-edufrem.com
                 </a>
                 <div class="ma-modules-tags">
+                  <span v-if="s.complexeName" class="ma-tag ma-tag-complexe">Complexe : {{ s.complexeName }}</span>
                   <span v-if="s.pack && s.pack !== 'custom'" class="ma-tag ma-tag-pack">{{ packLabel(s) }}</span>
                   <span v-if="essaiActif(s)" class="ma-tag ma-tag-essai">Essai → {{ formatDate(s.trialUntil) }}</span>
                   <template v-if="(!s.pack || s.pack === 'custom') && s.modulesActifs && s.modulesActifs.length">
@@ -123,6 +124,9 @@
               <td class="num">
                 <button class="ma-btn-ghost" type="button" @click="ouvrirModules(s)">
                   Modules
+                </button>
+                <button class="ma-btn-ghost" type="button" @click="promptComplexe(s)" title="Rattacher cette école à un complexe scolaire">
+                  Complexe
                 </button>
                 <a class="ma-btn-ghost" :href="`https://${s.id}.app-edufrem.com`" target="_blank" rel="noopener">
                   Ouvrir
@@ -798,6 +802,22 @@ const modulesEditPacks = computed(() => {
   return PACKS[modulesEdit.value.school.edition] || PACKS.secondaire
 })
 
+// Rattache une école à un complexe scolaire (directeur multi-écoles).
+// Prompt léger (outil interne) : identifiant partagé + nom du complexe.
+async function promptComplexe(school) {
+  const cid = window.prompt(
+    'Identifiant du complexe (partagé par toutes les écoles du groupe ET le compte du directeur de complexe).\nLaisser vide pour détacher cette école.',
+    school.complexeId || ''
+  )
+  if (cid === null) return
+  let name = school.complexeName || ''
+  if (cid.trim()) {
+    name = window.prompt('Nom du complexe (affiché) :', name || school.nom || school.schoolName || '') || name
+  }
+  const res = await store.assignComplexe(school.id, cid, name)
+  if (!res.success) window.alert(res.error || 'Échec de l\'enregistrement.')
+}
+
 function ouvrirModules(school) {
   const ed = EDITIONS[school.edition] || EDITIONS.secondaire
   const current = Array.isArray(school.modulesActifs) && school.modulesActifs.length
@@ -1258,6 +1278,10 @@ watch(() => form.slug, (v) => {
 .ma-tag-essai {
   background: rgba(232, 168, 56, 0.15);
   color: #B8892A;
+}
+.ma-tag-complexe {
+  background: rgba(124, 58, 237, 0.12);
+  color: #7c3aed;
 }
 
 /* Ligne checkbox (essai version complète) */

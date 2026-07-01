@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db, auth as fbAuth } from '../firebase'
 import {
-  collection, doc, getDocs, getCountFromServer,
+  collection, doc, getDocs, getCountFromServer, updateDoc,
   writeBatch, serverTimestamp, query, where
 } from 'firebase/firestore'
 import { sendSignInLinkToEmail } from 'firebase/auth'
@@ -347,6 +347,31 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
   }
 
   /**
+   * Rattache (ou détache) une école à un COMPLEXE scolaire.
+   * Écrit `complexeId` + `complexeName` sur le doc `schools/{schoolId}`.
+   * Le directeur de complexe (compte `role: directeur_complexe` portant ce
+   * `complexeId`) verra alors toutes ses écoles agrégées dans /complexe.
+   * Passer complexeId vide = détacher l'école du complexe.
+   */
+  async function assignComplexe(schoolId, complexeId, complexeName) {
+    if (!authStore.isSuperAdmin || !schoolId) return { success: false, error: 'Non autorisé.' }
+    try {
+      const cid = (complexeId || '').trim()
+      await updateDoc(doc(db, 'schools', schoolId), {
+        complexeId: cid || null,
+        complexeName: cid ? (complexeName || '').trim() : null,
+      })
+      // Reflet local immédiat (évite un rechargement complet).
+      const s = schools.value.find((x) => x.id === schoolId)
+      if (s) { s.complexeId = cid || null; s.complexeName = cid ? (complexeName || '').trim() : null }
+      return { success: true }
+    } catch (e) {
+      console.error('assignComplexe:', e)
+      return { success: false, error: "Impossible d'enregistrer le complexe." }
+    }
+  }
+
+  /**
    * Valide un identifiant de sous-domaine d'école.
    * Renvoie null si OK, sinon un message d'erreur.
    */
@@ -599,6 +624,7 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     loading,
     error,
     loadSchools,
+    assignComplexe,
     validateSlug,
     createSchool,
     updateSchoolModules,
