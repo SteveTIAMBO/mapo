@@ -22,7 +22,7 @@
       <!-- Page header -->
       <div class="page-header">
         <div class="page-header-text">
-          <h1>Configurer l'emploi du temps</h1>
+          <h1>{{ t('edt.setupTitle') }}</h1>
           <p>{{ stepTitles[edtStore.setupStep - 1] }}</p>
         </div>
       </div>
@@ -39,7 +39,7 @@
           <div class="wizard-col">
             <div class="card">
               <div class="card-header">
-                <h3>Jours de classe</h3>
+                <h3>{{ t('edt.schoolDays') }}</h3>
               </div>
               <div class="card-body">
                 <div class="day-checkboxes">
@@ -49,7 +49,7 @@
                       :checked="timeGridForm.days.includes(day.value)"
                       @change="toggleDay(day.value)"
                     />
-                    <span>{{ day.label }}</span>
+                    <span>{{ dayLabel(day.value) }}</span>
                   </label>
                 </div>
               </div>
@@ -57,19 +57,19 @@
 
             <div class="card">
               <div class="card-header">
-                <h3>Horaires</h3>
+                <h3>{{ t('edt.hours') }}</h3>
               </div>
               <div class="card-body">
                 <div class="field">
-                  <label>Heure de début</label>
+                  <label>{{ t('edt.startTime') }}</label>
                   <input v-model="timeGridForm.startTime" type="time" class="input" />
                 </div>
                 <div class="field">
-                  <label>Heure de fin</label>
+                  <label>{{ t('edt.endTime') }}</label>
                   <input v-model="timeGridForm.endTime" type="time" class="input" />
                 </div>
                 <div class="field">
-                  <label>Durée d'un cours (minutes)</label>
+                  <label>{{ t('edt.slotDuration') }}</label>
                   <select v-model.number="timeGridForm.slotDuration" class="input">
                     <option value="45">45 minutes</option>
                     <option value="50">50 minutes</option>
@@ -82,12 +82,12 @@
 
             <div class="card">
               <div class="card-header">
-                <h3>Pauses et récréations</h3>
+                <h3>{{ t('edt.breaksTitle') }}</h3>
               </div>
               <div class="card-body">
                 <div v-if="timeGridForm.breaks.length > 0" class="breaks-list">
                   <div v-for="(brk, idx) in timeGridForm.breaks" :key="idx" class="break-item-editable">
-                    <input v-model="brk.label" class="input input-sm break-edit-label" placeholder="Nom" />
+                    <input v-model="brk.label" class="input input-sm break-edit-label" :placeholder="t('edt.nameShort')" />
                     <input v-model="brk.start" type="time" class="input input-sm break-edit-time" />
                     <span class="break-edit-sep">-</span>
                     <input v-model="brk.end" type="time" class="input input-sm break-edit-time" />
@@ -98,17 +98,17 @@
                 </div>
                 <button class="btn btn-sm btn-outline" @click="showAddBreakModal = true" type="button">
                   <Plus :size="16" />
-                  <span>Ajouter une pause</span>
+                  <span>{{ t('edt.addBreak') }}</span>
                 </button>
               </div>
             </div>
             <div class="card">
               <div class="card-header">
-                <h3>Horaires par niveau</h3>
+                <h3>{{ t('edt.hoursByLevel') }}</h3>
               </div>
               <div class="card-body">
                 <p style="font-size: 13px; color: var(--tx3); margin: 0 0 12px 0;">
-                  Certains niveaux ont des jours ou horaires différents (ex: samedi pour les classes d'examen).
+                  {{ t('edt.levelHoursHint') }}
                 </p>
                 <div class="level-overrides-list">
                   <div v-for="lvl in availableLevelsForOverride" :key="lvl" class="level-override-item">
@@ -120,10 +120,10 @@
                           :checked="hasLevelOverride(lvl, 'samedi')"
                           @change="toggleLevelDay(lvl, 'samedi', $event.target.checked)"
                         />
-                        <span>Samedi</span>
+                        <span>{{ dayLabel('samedi') }}</span>
                       </label>
                       <div v-if="levelOverrideEndTime[lvl]" class="level-override-time">
-                        <label style="font-size: 12px; margin-right: 6px;">Fin :</label>
+                        <label style="font-size: 12px; margin-right: 6px;">{{ t('edt.endColon') }}</label>
                         <input
                           type="time"
                           :value="levelOverrideEndTime[lvl]"
@@ -143,12 +143,12 @@
           <div class="wizard-col">
             <div class="card">
               <div class="card-header">
-                <h3>Aperçu des créneaux</h3>
+                <h3>{{ t('edt.slotsPreview') }}</h3>
               </div>
               <div class="card-body">
                 <div class="preview-slots">
                   <div v-if="previewSlots.length === 0" class="preview-empty">
-                    <p>Aucun créneau valide</p>
+                    <p>{{ t('edt.noValidSlot') }}</p>
                   </div>
                   <template v-else>
                     <div
@@ -164,7 +164,7 @@
                       <template v-else>
                         <span class="preview-slot-num">{{ slot.index + 1 }}</span>
                         <span class="preview-slot-time">{{ slot.start }} - {{ slot.end }}</span>
-                        <button class="preview-slot-delete" @click.stop="deletePreviewSlot(slot.index)" type="button" title="Supprimer ce créneau">
+                        <button class="preview-slot-delete" @click.stop="deletePreviewSlot(slot.index)" type="button" :title="t('edt.deleteSlot')">
                           <X :size="12" />
                         </button>
                       </template>
@@ -172,16 +172,16 @@
                   </template>
                   <button class="btn btn-sm btn-outline" style="margin-top: 8px;" @click="addSlotAtEnd" type="button">
                     <Plus :size="14" />
-                    <span>Ajouter un créneau</span>
+                    <span>{{ t('edt.addSlot') }}</span>
                   </button>
                 </div>
                 <div v-if="previewSlots.length > 0" class="preview-stats">
                   <div class="stat-item">
-                    <span class="stat-label">Créneaux par jour</span>
+                    <span class="stat-label">{{ t('edt.slotsPerDay') }}</span>
                     <span class="stat-value">{{ nonBreakSlots }}</span>
                   </div>
                   <div class="stat-item">
-                    <span class="stat-label">Total par semaine</span>
+                    <span class="stat-label">{{ t('edt.totalPerWeek') }}</span>
                     <span class="stat-value">{{ nonBreakSlots * timeGridForm.days.length }}</span>
                   </div>
                 </div>
@@ -192,8 +192,8 @@
 
         <!-- Wizard nav -->
         <div class="wizard-nav">
-          <button class="btn btn-outline" disabled type="button">Précédent</button>
-          <button class="btn btn-primary" @click="goToStep(2)" type="button">Suivant</button>
+          <button class="btn btn-outline" disabled type="button">{{ t('edt.previous') }}</button>
+          <button class="btn btn-primary" @click="goToStep(2)" type="button">{{ t('edt.next') }}</button>
         </div>
       </template>
 
@@ -202,9 +202,9 @@
         <div v-if="hasSecondCycleLevels" class="info-hint-banner">
           <AlertCircle :size="18" />
           <div>
-            <p style="margin: 0; font-weight: 600;">Séries du second cycle</p>
+            <p style="margin: 0; font-weight: 600;">{{ t('edt.secondCycleSeries') }}</p>
             <p style="margin: 6px 0 0 0; font-size: 12px;">
-              Les classes de 1ère et Terminale sont réparties par série (A, C, D) avec des volumes horaires adaptés. La 2nde reste en tronc commun.
+              {{ t('edt.secondCycleHint') }}
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@
         <div class="card">
           <div class="card-header">
             <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <h3>Matières par niveau</h3>
+              <h3>{{ t('edt.subjectsByLevel') }}</h3>
               <button class="btn btn-sm btn-outline" @click="prefillSubjectHours" type="button">
                 {{ prefillButtonLabel }}
               </button>
@@ -223,9 +223,9 @@
               <table class="table">
                 <thead>
                   <tr>
-                    <th>Matière</th>
+                    <th>{{ t('edt.thSubject') }}</th>
                     <th v-for="levelKey in availableLevelKeys" :key="levelKey">{{ getLevelKeyLabel(levelKey) }}</th>
-                    <th>Total</th>
+                    <th>{{ t('edt.total') }}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -249,7 +249,7 @@
 
             <!-- Totals by level -->
             <div class="totals-row">
-              <span class="totals-label">Total heures / semaine</span>
+              <span class="totals-label">{{ t('edt.totalHoursWeek') }}</span>
               <div
                 v-for="levelKey in availableLevelKeys"
                 :key="levelKey"
@@ -266,10 +266,10 @@
             <div v-if="hasOverloadWarning" class="warning-banner">
               <AlertTriangle :size="18" />
               <div>
-                <p style="margin: 0 0 8px 0;">Les niveaux suivants dépassent les créneaux disponibles :</p>
+                <p style="margin: 0 0 8px 0;">{{ t('edt.overloadTitle') }}</p>
                 <ul style="margin: 0; padding-left: 20px;">
                   <li v-for="item in overloadedLevels" :key="item.level">
-                    {{ item.level }} dépasse de {{ item.excess }}h ({{ item.hours }}h sur {{ item.available }} créneaux)
+                    {{ t('edt.overloadItem', { level: item.level, excess: item.excess, hours: item.hours, available: item.available }) }}
                   </li>
                 </ul>
               </div>
@@ -279,8 +279,8 @@
 
         <!-- Wizard nav -->
         <div class="wizard-nav">
-          <button class="btn btn-outline" @click="goToStep(1)" type="button">Précédent</button>
-          <button class="btn btn-primary" @click="goToStep(3)" type="button">Suivant</button>
+          <button class="btn btn-outline" @click="goToStep(1)" type="button">{{ t('edt.previous') }}</button>
+          <button class="btn btn-primary" @click="goToStep(3)" type="button">{{ t('edt.next') }}</button>
         </div>
       </template>
 
@@ -288,7 +288,7 @@
       <template v-if="edtStore.setupStep === 3">
         <div class="card">
           <div class="card-header">
-            <h3>Affectation des enseignants</h3>
+            <h3>{{ t('edt.stepTitle3') }}</h3>
           </div>
           <div class="card-body">
             <div class="assignments-grid">
@@ -303,7 +303,7 @@
                 <div v-for="(assignment, aIdx) in getAssignmentsForSubject(subject)" :key="aIdx" class="assignment-entry">
                   <div class="assignment-teacher-info">
                     <span class="teacher-name-tag">{{ assignment.teacherName }}</span>
-                    <button class="icon-btn icon-btn-sm icon-btn-danger" @click="removeAssignment(assignment)" type="button" title="Retirer">
+                    <button class="icon-btn icon-btn-sm icon-btn-danger" @click="removeAssignment(assignment)" type="button" :title="t('edt.remove')">
                       <Trash2 :size="14" />
                     </button>
                   </div>
@@ -326,7 +326,7 @@
                     @change="addTeacherToSubject(subject, $event)"
                     class="input input-sm"
                   >
-                    <option value="">+ Ajouter un enseignant</option>
+                    <option value="">{{ t('edt.addTeacher') }}</option>
                     <option
                       v-for="teacher in getAvailableTeachersForSubject(subject)"
                       :key="teacher.id"
@@ -336,7 +336,7 @@
                     </option>
                   </select>
                   <span v-if="getSubjectTeachersList(subject).length === 0" class="teacher-warning">
-                    Aucun enseignant n'enseigne cette matière. Ajoutez-en dans Personnel.
+                    {{ t('edt.noTeacherForSubject') }}
                   </span>
                 </div>
               </div>
@@ -347,16 +347,16 @@
         <!-- Teacher load summary -->
         <div class="card">
           <div class="card-header">
-            <h3>Charge enseignants</h3>
+            <h3>{{ t('edt.teacherLoad') }}</h3>
           </div>
           <div class="card-body">
             <div v-if="teacherLoadSummary.length === 0" class="empty-state">
-              <p>Aucun enseignant assigné</p>
+              <p>{{ t('edt.noTeacherAssigned') }}</p>
             </div>
             <div v-else class="teacher-load-grid">
               <div v-for="load in teacherLoadSummary" :key="load.teacherId" class="teacher-load-card">
                 <div class="teacher-load-name">{{ load.teacherName }}</div>
-                <div class="teacher-load-hours" :class="load.badgeClass">{{ load.totalHours }}h / semaine</div>
+                <div class="teacher-load-hours" :class="load.badgeClass">{{ t('edt.hoursPerWeek', { n: load.totalHours }) }}</div>
               </div>
             </div>
           </div>
@@ -364,8 +364,8 @@
 
         <!-- Wizard nav -->
         <div class="wizard-nav">
-          <button class="btn btn-outline" @click="goToStep(2)" type="button">Précédent</button>
-          <button class="btn btn-primary" @click="goToStep(4)" type="button">Générer</button>
+          <button class="btn btn-outline" @click="goToStep(2)" type="button">{{ t('edt.previous') }}</button>
+          <button class="btn btn-primary" @click="goToStep(4)" type="button">{{ t('edt.generate') }}</button>
         </div>
       </template>
 
@@ -373,7 +373,7 @@
       <template v-if="edtStore.setupStep === 4">
         <div class="card">
           <div class="card-header">
-            <h3>Génération de l'emploi du temps</h3>
+            <h3>{{ t('edt.stepTitle4') }}</h3>
           </div>
           <div class="card-body">
             <button
@@ -384,7 +384,7 @@
               type="button"
             >
               <Wand2 :size="20" />
-              <span>{{ edtStore.loading ? 'Génération en cours...' : 'Générer l\'emploi du temps' }}</span>
+              <span>{{ edtStore.loading ? t('edt.generating') : t('edt.generateTimetable') }}</span>
             </button>
 
             <div v-if="edtStore.generationLog.length > 0" class="generation-log">
@@ -395,22 +395,22 @@
 
             <div v-if="generationDone" class="generation-stats">
               <div class="stat-block" :class="{ 'success': generationStats.totalPlaced === generationStats.totalRequired }">
-                <span class="stat-label">Créneaux placés</span>
+                <span class="stat-label">{{ t('edt.slotsPlaced') }}</span>
                 <span class="stat-value">{{ generationStats.totalPlaced }} / {{ generationStats.totalRequired }}</span>
               </div>
               <div v-if="generationStats.autoResolved > 0" class="stat-block info">
-                <span class="stat-label">Résolus automatiquement</span>
+                <span class="stat-label">{{ t('edt.autoResolved') }}</span>
                 <span class="stat-value">{{ generationStats.autoResolved }}</span>
               </div>
               <div v-if="generationStats.conflicts > 0" class="stat-block warning">
-                <span class="stat-label">Conflits restants</span>
+                <span class="stat-label">{{ t('edt.conflictsLeft') }}</span>
                 <span class="stat-value">{{ generationStats.conflicts }}</span>
               </div>
             </div>
 
             <div v-if="generationDone" class="generation-actions">
-              <button class="btn btn-outline" @click="goToStep(3)" type="button">Reconfigurer</button>
-              <button class="btn btn-primary" @click="finishSetup" type="button">Voir l'emploi du temps</button>
+              <button class="btn btn-outline" @click="goToStep(3)" type="button">{{ t('edt.reconfigure') }}</button>
+              <button class="btn btn-primary" @click="finishSetup" type="button">{{ t('edt.viewTimetable') }}</button>
             </div>
           </div>
         </div>
@@ -920,6 +920,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useEmploiDuTempsStore, DAYS, SUBJECT_COLORS, DEFAULT_SUBJECT_HOURS, getSubjectTextColor, HOLIDAYS_BY_COUNTRY, SERIES, SERIES_SUBJECT_HOURS, getDefaultHoursForLevel, getSubjectHoursKey } from '../stores/emploi-du-temps'
 import { useClassesStore, LEVELS } from '../stores/classes'
 import { usePersonnelStore, SUBJECTS_BY_CYCLE } from '../stores/personnel'
@@ -993,19 +994,21 @@ const showEventModal = ref(false)
 const newEvent = ref({ title: '', date: '', description: '', cancelsCourses: false })
 
 // Computed
-const stepTitles = [
-  'Configuration de la grille horaire',
-  'Volume horaire des matières',
-  'Affectation des enseignants',
-  'Génération de l\'emploi du temps'
-]
+const { t, locale } = useI18n({ useScope: 'global' })
+// Libellé de jour traduit (valeurs stockées : lundi/mardi/... inchangées)
+function dayLabel(value) {
+  const k = 'edt.days.' + value
+  const l = t(k)
+  return l === k ? value : l
+}
 
-const stepHints = [
-  'Configurez les horaires de cours de votre établissement. Les créneaux seront calculés automatiquement en fonction de l\'heure de début, de fin et de la durée d\'un cours.',
-  'Définissez le nombre d\'heures par semaine pour chaque matière et chaque niveau. Le total ne doit pas dépasser le nombre de créneaux disponibles dans votre grille horaire.',
-  'Associez chaque enseignant aux matières et classes qu\'il enseigne. L\'outil vérifiera automatiquement qu\'aucun enseignant n\'est surchargé.',
-  'Générez l\'emploi du temps en fonction de vos paramètres. L\'algorithme planifiera automatiquement les cours et signalera les conflits.'
-]
+const stepTitles = computed(() => [
+  t('edt.stepTitle1'), t('edt.stepTitle2'), t('edt.stepTitle3'), t('edt.stepTitle4'),
+])
+
+const stepHints = computed(() => [
+  t('edt.stepHint1'), t('edt.stepHint2'), t('edt.stepHint3'), t('edt.stepHint4'),
+])
 
 const progressPercent = computed(() => {
   return (edtStore.setupStep / 4) * 100
@@ -1014,9 +1017,9 @@ const progressPercent = computed(() => {
 const prefillButtonLabel = computed(() => {
   const country = schoolStore.schoolSettings?.country
   if (['CM', 'SN', 'CI'].includes(country)) {
-    return 'Pré-remplir (programme CEMAC)'
+    return t('edt.prefillCemac')
   }
-  return 'Pré-remplir (valeurs recommandées)'
+  return t('edt.prefillRecommended')
 })
 
 const previewSlots = computed(() => {
