@@ -248,7 +248,11 @@ function loginDemoAs(role) {
 onMounted(() => {
   if (isSchoolTenantMode) return
   try {
-    const role = new URLSearchParams(window.location.search).get('demo')
+    const params = new URLSearchParams(window.location.search)
+    let role = params.get('demo')
+    // Repli : intention relayée par main.js quand le routeur a retiré le param.
+    if (!role) { try { role = sessionStorage.getItem('mapo_demo_autostart') } catch (e) { role = null } }
+    if (role) { try { sessionStorage.removeItem('mapo_demo_autostart') } catch (e) { /* silent */ } }
     if (role && ['directeur', 'enseignant', 'parent', 'eleve', 'complexe'].includes(role)) {
       loginDemoAs(role)
     }

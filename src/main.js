@@ -58,6 +58,11 @@ try {
   if (tenant.mode === 'preview') {
     const qEd = qp.get('edition')
     if (['primaire', 'secondaire', 'superieur'].includes(qEd)) editionStore.setEdition(qEd)
+    // `?demo=<role>` : on relaie l'intention de démo à LoginView via sessionStorage,
+    // car le routeur retire les query params en redirigeant `/`→`/login` (un
+    // visiteur froid qui scanne un QR perd sinon le paramètre avant LoginView).
+    const qDemo = qp.get('demo')
+    if (qDemo) { try { sessionStorage.setItem('mapo_demo_autostart', qDemo) } catch (e) { /* silent */ } }
   }
 } catch (e) { /* silent */ }
 
