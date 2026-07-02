@@ -38,9 +38,9 @@ function demoComplexe() {
       directeur: 'Mme Ngo Bell Épouse',
     },
     schools: [
-      { id: 'lareussite-fr', slug: 'lareussite-fr', name: 'Collège La Réussite — Section Francophone', type: 'francophone', edition: 'secondaire', eleves: 642, personnel: 38, directeur: 'M. Atangana Paul', recettes: 96300000 },
-      { id: 'lareussite-en', slug: 'lareussite-en', name: 'La Réussite Bilingual College — English Section', type: 'anglophone', edition: 'secondaire', eleves: 418, personnel: 27, directeur: 'Mr. Ashu Divine', recettes: 62700000 },
-      { id: 'lareussite-prim', slug: 'lareussite-prim', name: 'École Primaire La Réussite', type: 'primaire', edition: 'primaire', eleves: 531, personnel: 24, directeur: 'Mme Fotso Claire', recettes: 53100000 },
+      { id: 'lareussite-fr', slug: 'lareussite-fr', name: 'Collège La Réussite — Section Francophone', type: 'francophone', edition: 'secondaire', lang: 'fr', eleves: 642, personnel: 38, directeur: 'M. Atangana Paul', recettes: 96300000 },
+      { id: 'lareussite-en', slug: 'lareussite-en', name: 'La Réussite Bilingual College — English Section', type: 'anglophone', edition: 'secondaire', lang: 'en', eleves: 418, personnel: 27, directeur: 'Mr. Ashu Divine', recettes: 62700000 },
+      { id: 'lareussite-prim', slug: 'lareussite-prim', name: 'École Primaire La Réussite', type: 'primaire', edition: 'primaire', lang: 'fr', eleves: 531, personnel: 24, directeur: 'Mme Fotso Claire', recettes: 53100000 },
     ],
   }
 }
@@ -62,8 +62,17 @@ export const useComplexeStore = defineStore('complexe', () => {
   const typesPresents = computed(() => [...new Set(schools.value.map((e) => e.type))])
 
   function url(school) {
-    // Chaque sous-école est servie sur son sous-domaine <slug>.app-edufrem.com.
     if (school.url) return school.url
+    // En démonstration, chaque « école » du complexe ouvre la VRAIE démo MAPO de
+    // son édition sur la vitrine, pré-chargée dans sa langue par défaut (FR/EN)
+    // et directement en session directeur. La section anglophone s'ouvre donc en
+    // anglais, le primaire dans la démo primaire, etc.
+    if (isDemo.value) {
+      const lang = school.lang === 'en' ? 'en' : 'fr'
+      const edition = school.edition || 'secondaire'
+      return `https://mapo.app-edufrem.com/?edition=${edition}&lang=${lang}&demo=directeur`
+    }
+    // En production, chaque sous-école est servie sur son sous-domaine.
     if (school.slug) return `https://${school.slug}.app-edufrem.com`
     return null
   }

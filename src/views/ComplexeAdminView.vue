@@ -71,7 +71,10 @@
         <div v-for="s in store.schools" :key="s.id" class="cx-school">
           <div class="cx-school-top">
             <span class="cx-badge" :class="'ty-' + s.type">{{ t('cx.types.' + s.type) }}</span>
-            <span class="cx-edition">{{ t('cx.editions.' + s.edition) }}</span>
+            <span class="cx-top-right-min">
+              <span class="cx-edition">{{ t('cx.editions.' + s.edition) }}</span>
+              <span class="cx-lang-chip" :title="t('cx.defaultLang')">{{ (s.lang || 'fr').toUpperCase() }}</span>
+            </span>
           </div>
           <h4 class="cx-school-name">{{ s.name }}</h4>
           <div v-if="s.directeur" class="cx-school-dir"><UserRound :size="14" /> {{ s.directeur }}</div>
@@ -178,7 +181,9 @@ onMounted(() => { store.load() })
 .cx-school { background: #fff; border: 1px solid #e6e9f0; border-radius: 15px; padding: 16px 17px; box-shadow: 0 1px 3px rgba(20,40,90,.04); display: flex; flex-direction: column; gap: 9px; }
 .cx-school-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .cx-badge { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+.cx-top-right-min { display: inline-flex; align-items: center; gap: 8px; }
 .cx-edition { font-size: 11.5px; color: #9aa0b0; text-transform: capitalize; }
+.cx-lang-chip { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; color: #4b5563; background: #eef1f5; border-radius: 6px; padding: 2px 6px; }
 .cx-school-name { font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600; color: #1A1D1F; margin: 0; line-height: 1.35; }
 .cx-school-dir { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #6b7280; }
 .cx-school-stats { display: flex; gap: 22px; padding: 6px 0 2px; }

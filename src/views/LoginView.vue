@@ -143,7 +143,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -241,6 +241,19 @@ function loginDemoAs(role) {
     errorMessage.value = result.error
   }
 }
+
+// Deep-link « ouvrir la démo » : ?demo=directeur|enseignant|parent|eleve|complexe
+// lance directement la session de démonstration (utilisé par les liens du
+// complexe et les QR codes des plaquettes). Ignoré sur une vraie école / MIAPO+.
+onMounted(() => {
+  if (isSchoolTenantMode) return
+  try {
+    const role = new URLSearchParams(window.location.search).get('demo')
+    if (role && ['directeur', 'enseignant', 'parent', 'eleve', 'complexe'].includes(role)) {
+      loginDemoAs(role)
+    }
+  } catch (e) { /* silent */ }
+})
 
 function resetDemo() {
   const keys = Object.keys(localStorage).filter(k => k.startsWith('mapo_demo'))

@@ -6,7 +6,7 @@ import { useAuthStore } from './stores/auth'
 import { useEditionStore } from './stores/edition'
 import { useSchoolIdentityStore } from './stores/schoolIdentity'
 import { getTenant } from './utils/tenantContext'
-import { i18n } from './i18n'
+import { i18n, setLang } from './i18n'
 import './assets/main.css'
 
 const app = createApp(App)
@@ -45,6 +45,21 @@ if (tenant.mode === 'miapo') {
   set('meta[name="theme-color"]', 'content', '#7c3aed')
   set('meta[name="description"]', 'content', "MIAPO+ — le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
 }
+
+// Deep-link « ouvrir la démo » : ?edition=primaire|secondaire|superieur pré-charge
+// l'édition et ?lang=fr|en fixe la langue. Utilisé par les liens « ouvrir l'école »
+// du complexe et par les QR codes des plaquettes commerciales. L'édition n'est
+// appliquée que sur la vitrine (jamais sur une instance école/MIAPO+/admin où
+// l'édition est imposée par le sous-domaine).
+try {
+  const qp = new URLSearchParams(window.location.search)
+  const qLang = qp.get('lang')
+  if (qLang === 'fr' || qLang === 'en') setLang(qLang)
+  if (tenant.mode === 'preview') {
+    const qEd = qp.get('edition')
+    if (['primaire', 'secondaire', 'superieur'].includes(qEd)) editionStore.setEdition(qEd)
+  }
+} catch (e) { /* silent */ }
 
 // Initialiser l'écoute d'authentification Firebase au démarrage
 const authStore = useAuthStore()

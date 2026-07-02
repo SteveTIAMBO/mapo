@@ -2411,6 +2411,7 @@
     "studentsPerSchool": "Effectifs par école",
     "mySchools": "Mes écoles",
     "openSchool": "Ouvrir l'école",
+    "defaultLang": "Langue par défaut de la démo",
     "types": { "francophone": "Francophone", "anglophone": "Anglophone", "primaire": "Primaire", "secondaire": "Secondaire", "superieur": "Supérieur" },
     "editions": { "primaire": "Primaire", "secondaire": "Secondaire", "superieur": "Supérieur" }
   }

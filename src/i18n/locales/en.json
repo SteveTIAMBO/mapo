@@ -2411,6 +2411,7 @@
     "studentsPerSchool": "Students per school",
     "mySchools": "My schools",
     "openSchool": "Open school",
+    "defaultLang": "Default demo language",
     "types": { "francophone": "Francophone", "anglophone": "Anglophone", "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." },
     "editions": { "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." }
   }
