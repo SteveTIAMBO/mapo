@@ -340,6 +340,12 @@ const routes = [
         meta: { title: 'Personnel' }
       },
       {
+        path: 'apee',
+        name: 'Apee',
+        component: () => import('../views/ApeeView.vue'),
+        meta: { title: 'APEE' }
+      },
+      {
         path: 'roles',
         name: 'Roles',
         component: () => import('../views/RolesView.vue'),

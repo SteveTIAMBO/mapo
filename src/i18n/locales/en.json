@@ -96,7 +96,8 @@
     "revisions": "Revision",
     "mesPresences": "My attendance",
     "notes": "Grades",
-    "paiements": "Payments"
+    "paiements": "Payments",
+    "apee": "PTA"
   },
   "navGroups": {
     "scolarite": "Academics",

@@ -119,7 +119,8 @@ import {
   Award,
   Sparkles,
   TrendingDown,
-  BadgeCheck
+  BadgeCheck,
+  HeartHandshake
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -195,6 +196,7 @@ const STAFF_NAV_ITEMS = [
   { key: 'messagerie', to: '/alertes', icon: Bell, label: 'nav.alertes', group: 'vieScolaire' },
   // Gestion
   { key: 'personnel', to: '/personnel', icon: Briefcase, label: 'nav.personnel', group: 'gestion' },
+  { key: 'apee', to: '/apee', icon: HeartHandshake, label: 'nav.apee', dirOnly: true, group: 'gestion' },
   { key: 'salaire', to: '/salaire', icon: Wallet, label: 'nav.salaire', group: 'gestion' },
   { key: 'facturation', to: '/facturation', icon: CreditCard, label: 'nav.comptabilite', group: 'gestion' },
   { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true, group: 'gestion' },
