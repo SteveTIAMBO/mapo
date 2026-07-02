@@ -73,10 +73,10 @@
           <div class="stat-grid">
             <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">{{ t('mia.toReview') }}</span></div>
-            <div class="stat" role="button" tabindex="0" @click="section = 'orientation'" @keyup.enter="section = 'orientation'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
+            <div class="stat" role="button" tabindex="0" @click="section = 'profil6c'" @keyup.enter="section = 'profil6c'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
           </div>
 
-          <div v-if="hasEval" class="card radar-dash" role="button" tabindex="0" @click="section = 'orientation'">
+          <div v-if="hasEval" class="card radar-dash" role="button" tabindex="0" @click="section = 'profil6c'">
             <div class="card-head"><Target :size="18" /><h3>{{ t('mia.profile6c') }}</h3></div>
             <Radar6C :scores="activeEnfant.comp6c || {}" />
           </div>
@@ -241,8 +241,13 @@
         </section>
 
         <!-- ========== ORIENTATION ========== -->
+        <!-- ========== PROFIL 6C ========== -->
+        <section v-else-if="section === 'profil6c'" class="sec">
+          <Miapo6C :enfant="activeEnfant" />
+        </section>
+
         <section v-else-if="section === 'orientation'" class="sec">
-          <MiapoOrientation :enfant="activeEnfant" />
+          <MiapoOrientation :enfant="activeEnfant" @eval="section = 'profil6c'" />
         </section>
 
         <!-- ========== ABONNEMENT ========== -->
@@ -398,6 +403,7 @@ import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
+import Miapo6C from '../components/Miapo6C.vue'
 import Radar6C from '../components/Radar6C.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2 } from 'lucide-vue-next'
 
@@ -425,6 +431,7 @@ const SECTIONS = computed(() => [
   { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
   { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
   { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
+  { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
   { key: 'orientation', label: t('mia.secOrientation'), icon: Compass },
   { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
 ])

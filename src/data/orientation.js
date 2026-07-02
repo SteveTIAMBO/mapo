@@ -12,43 +12,93 @@
 
 // 6 compétences IRIIG (ordre fixe).
 // 'court'    = définition en 1 phrase (pour lycéens).
-// 'question' = formulation à la 1re personne pour l'auto-évaluation (échelle 1 à 5).
+// 'question' = formulation courte à la 1re personne (compat ancien slider unique).
+// 'items'    = banque de 5 énoncés Likert (fr/en) — l'auto-évaluation en calcule
+//              la moyenne (1 à 5) pour définir le radar objectivement.
 export const COMPETENCES_6C = [
   {
     key: 'creativite',
     label: 'Créativité',
+    label_en: 'Creativity',
     court: "Imaginer des idées originales et trouver des solutions nouvelles.",
     question: 'Je propose des idées et des solutions nouvelles.',
+    items: [
+      { fr: "Je trouve facilement des idées nouvelles ou originales.", en: "I easily come up with new or original ideas." },
+      { fr: "Face à un problème, j'imagine plusieurs solutions différentes.", en: "When facing a problem, I imagine several different solutions." },
+      { fr: "J'aime inventer, créer ou détourner les choses de leur usage habituel.", en: "I enjoy inventing, creating, or using things in unexpected ways." },
+      { fr: "La routine m'ennuie vite et je cherche à faire autrement.", en: "Routine bores me quickly and I look for new ways to do things." },
+      { fr: "On me dit souvent que j'ai de l'imagination.", en: "People often tell me I'm imaginative." },
+    ],
   },
   {
     key: 'esprit_critique',
     label: 'Esprit critique',
+    label_en: 'Critical thinking',
     court: "Analyser les faits, raisonner avec rigueur et ne pas tout accepter sans réfléchir.",
     question: "J'analyse les informations avant de me forger une opinion.",
+    items: [
+      { fr: "Je vérifie une information avant de la croire.", en: "I check information before believing it." },
+      { fr: "Je sais distinguer un fait d'une opinion.", en: "I can tell a fact from an opinion." },
+      { fr: "Avant de décider, je pèse le pour et le contre.", en: "Before deciding, I weigh the pros and cons." },
+      { fr: "Je repère les arguments faibles ou les pièges dans un raisonnement.", en: "I spot weak arguments or flaws in reasoning." },
+      { fr: "Je n'accepte pas une idée juste parce que tout le monde la répète.", en: "I don't accept an idea just because everyone repeats it." },
+    ],
   },
   {
     key: 'communication',
     label: 'Communication',
+    label_en: 'Communication',
     court: "S'exprimer clairement à l'écrit comme à l'oral et savoir écouter.",
     question: "Je m'exprime clairement et je sais me faire comprendre.",
+    items: [
+      { fr: "Je m'exprime clairement, à l'oral comme à l'écrit.", en: "I express myself clearly, both speaking and writing." },
+      { fr: "Je sais adapter mes mots à la personne qui m'écoute.", en: "I adapt my words to the person listening." },
+      { fr: "J'écoute vraiment avant de répondre.", en: "I truly listen before I answer." },
+      { fr: "Je suis à l'aise pour parler devant un groupe.", en: "I'm comfortable speaking in front of a group." },
+      { fr: "J'arrive à expliquer simplement une idée compliquée.", en: "I can explain a complicated idea simply." },
+    ],
   },
   {
     key: 'cooperation',
     label: 'Coopération',
+    label_en: 'Cooperation',
     court: "Travailler en équipe, partager et avancer avec les autres vers un but commun.",
     question: "J'aime travailler en équipe et avancer avec les autres.",
+    items: [
+      { fr: "J'aime travailler en équipe vers un objectif commun.", en: "I enjoy working in a team toward a common goal." },
+      { fr: "Je partage volontiers l'information et l'aide avec les autres.", en: "I willingly share information and help others." },
+      { fr: "Je tiens compte de l'avis des autres, même différent du mien.", en: "I take others' views into account, even when different from mine." },
+      { fr: "Je fais ma part pour que le groupe réussisse.", en: "I do my part so the group succeeds." },
+      { fr: "Je sais gérer un désaccord sans casser l'ambiance.", en: "I can handle a disagreement without ruining the mood." },
+    ],
   },
   {
     key: 'courage',
     label: 'Courage',
+    label_en: 'Courage',
     court: "Oser, persévérer face aux difficultés et sortir de sa zone de confort.",
     question: "J'ose me lancer et je persévère face aux difficultés.",
+    items: [
+      { fr: "J'ose me lancer même si je ne suis pas sûr de réussir.", en: "I dare to start even when I'm not sure I'll succeed." },
+      { fr: "Je persévère quand c'est difficile, sans abandonner.", en: "I persevere when things get hard, without giving up." },
+      { fr: "Je sors de ma zone de confort pour apprendre.", en: "I step out of my comfort zone to learn." },
+      { fr: "Je défends mes idées même si elles ne plaisent pas à tous.", en: "I stand up for my ideas even if not everyone likes them." },
+      { fr: "Un échec ne m'arrête pas : je recommence autrement.", en: "A failure doesn't stop me: I try again differently." },
+    ],
   },
   {
     key: 'confiance',
     label: 'Confiance',
+    label_en: 'Confidence',
     court: "Croire en ses capacités, prendre des décisions et assumer ses choix.",
     question: "J'ai confiance en mes capacités pour réussir ce que j'entreprends.",
+    items: [
+      { fr: "J'ai confiance en mes capacités pour réussir ce que j'entreprends.", en: "I trust my abilities to succeed at what I take on." },
+      { fr: "Je prends des décisions sans avoir besoin d'être rassuré en permanence.", en: "I make decisions without needing constant reassurance." },
+      { fr: "J'assume mes choix et leurs conséquences.", en: "I own my choices and their consequences." },
+      { fr: "Je reste calme et sûr de moi dans une situation nouvelle.", en: "I stay calm and self-assured in a new situation." },
+      { fr: "Je connais mes points forts et je m'appuie dessus.", en: "I know my strengths and rely on them." },
+    ],
   },
 ]
 

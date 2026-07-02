@@ -17,27 +17,14 @@
         <span v-if="hasEval && !editing" class="done-pill"><Check :size="13" /> évalué</span>
       </div>
 
-      <template v-if="!hasEval || editing">
-        <p class="muted small">Pour chaque phrase, glissez de 1 (pas du tout) à 5 (tout à fait). Soyez honnête : c'est ce qui rend les pistes justes.</p>
-        <div class="c-list">
-          <div v-for="c in COMPETENCES_6C" :key="c.key" class="c-row">
-            <div class="c-top">
-              <span class="c-label">{{ c.label }}</span>
-              <span class="c-val">{{ scores[c.key] }}/5</span>
-            </div>
-            <p class="c-q">{{ c.question }}</p>
-            <input type="range" min="1" max="5" step="1" v-model.number="scores[c.key]" class="c-range" />
-          </div>
-        </div>
-        <div class="step-actions">
-          <button v-if="hasEval" class="btn btn-ghost btn-sm" @click="editing = false">Annuler</button>
-          <button class="btn btn-primary btn-sm" @click="saveEval"><Check :size="15" /> <span>Enregistrer le profil</span></button>
-        </div>
+      <template v-if="!hasEval">
+        <p class="muted small">Le profil se définit via un court questionnaire (30 questions) dans l'onglet <strong>« Profil 6C »</strong> — c'est ce qui rend les pistes justes.</p>
+        <button class="btn btn-primary btn-sm" @click="emit('eval')"><Target :size="15" /> <span>Faire mon Profil 6C</span></button>
       </template>
 
       <template v-else>
         <Radar6C :scores="enfant.comp6c || {}" />
-        <button class="btn btn-ghost btn-sm refaire" @click="startEdit"><Sliders :size="14" /> <span>Refaire l'auto-évaluation</span></button>
+        <button class="btn btn-ghost btn-sm refaire" @click="emit('eval')"><Sliders :size="14" /> <span>Revoir dans « Profil 6C »</span></button>
       </template>
     </div>
 
@@ -126,10 +113,11 @@ import { ref, computed, watch } from 'vue'
 import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientation'
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info } from 'lucide-vue-next'
+import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target } from 'lucide-vue-next'
 import Radar6C from './Radar6C.vue'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
+const emit = defineEmits(['eval'])
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()

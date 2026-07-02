@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -84,6 +84,7 @@ function buildPrompts($task, $d) {
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
+  if ($task === 'bilan6c') return buildBilan6cPrompts($d);
   if ($task === 'prepa_examen') return buildPrepaExamenPrompts($d);
   if ($task === 'course_plan') return buildCoursePlanPrompts($d);
   if ($task === 'commande') return buildCommandePrompts($d);
@@ -268,6 +269,59 @@ function buildOrientationPrompts($d) {
   // reasoning_effort:none → tout le budget tokens passe dans la sortie JSON
   // (sinon le « raisonnement » Gemini consomme les tokens et tronque le JSON).
   return [$system, $u, 1400, true, null];
+}
+
+// ── Bilan 6C : profil auto-évalué (6 scores /5) → forces + axes + comment ──
+// À partir des 6 scores, MIAPO rédige un bilan personnalisé (2 points forts,
+// 2 axes à améliorer + conseils concrets), au ton adapté au persona (enfant /
+// élève / adulte en formation) et à la langue de l'app. N'invente pas de score.
+function buildBilan6cPrompts($d) {
+  $labels6c = [
+    'creativite' => 'Créativité', 'esprit_critique' => 'Esprit critique', 'communication' => 'Communication',
+    'cooperation' => 'Coopération', 'courage' => 'Courage', 'confiance' => 'Confiance',
+  ];
+  $comp = is_array($d['competences'] ?? null) ? $d['competences'] : [];
+  $compLines = [];
+  foreach ($labels6c as $k => $lab) {
+    if (isset($comp[$k])) {
+      $v = (float) $comp[$k]; if ($v < 0) $v = 0; if ($v > 5) $v = 5;
+      $compLines[] = "{$lab} : " . number_format($v, 1, '.', '') . "/5";
+    }
+  }
+  $persona = in_array(($d['persona'] ?? 'eleve'), ['enfant', 'eleve', 'adulte'], true) ? $d['persona'] : 'eleve';
+  $niveau  = clean($d['niveau'] ?? '', 60);
+  $formation = clean($d['formation'] ?? '', 100);
+  $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+
+  if ($langue === 'en') {
+    $who = ['enfant' => 'a young learner', 'eleve' => 'a student', 'adulte' => 'an adult in training' . ($formation ? " ({$formation})" : '')][$persona];
+    $system = "You are MIAPO, a caring and rigorous learning coach. You receive a SELF-ASSESSED competency profile based on the 6C "
+      . "framework (Creativity, Critical thinking, Communication, Cooperation, Courage, Confidence — each rated out of 5) for {$who}. "
+      . "Write a short, warm and honest feedback report addressed DIRECTLY to the person. Identify the 2 STRENGTHS (highest scores) and the "
+      . "2 AREAS TO IMPROVE (lowest scores); for each area, give 2 to 3 CONCRETE, actionable tips (things to actually do). Never be harsh. "
+      . "Reply STRICTLY in valid JSON, no markdown, EXACT format: "
+      . "{\"synthese\":\"2 sentences summarising the profile\",\"forces\":[{\"competence\":\"...\",\"pourquoi\":\"why it is a strength\"}],\"axes\":[{\"competence\":\"...\",\"pourquoi\":\"why to work on it\",\"comment\":[\"tip 1\",\"tip 2\"]}],\"conseil\":\"one motivating closing sentence\"}. "
+      . "Give EXACTLY 2 items in \"forces\" and 2 in \"axes\". Write everything in English.";
+    $u = "Profile (6C, out of 5):\n" . ($compLines ? implode("\n", $compLines) : "(not provided)") . "\n";
+    if ($niveau) $u .= "Level / class: {$niveau}\n";
+    $u .= "\nProduce the report in the requested JSON.";
+  } else {
+    $who = ['enfant' => 'un jeune élève', 'eleve' => 'un élève ou étudiant', 'adulte' => 'un adulte en formation' . ($formation ? " ({$formation})" : '')][$persona];
+    $tu = $persona === 'adulte' ? 'vous (vouvoiement)' : 'tu (tutoiement bienveillant)';
+    $system = "Tu es MIAPO, un coach d'apprentissage bienveillant et rigoureux. On te donne un profil de compétences AUTO-ÉVALUÉ selon le "
+      . "référentiel des 6C (Créativité, Esprit critique, Communication, Coopération, Courage, Confiance — chacune notée sur 5) pour {$who}. "
+      . "Rédige un bilan court, chaleureux et honnête, adressé DIRECTEMENT à la personne en employant {$tu}. Repère les 2 POINTS FORTS (scores les "
+      . "plus élevés) et les 2 AXES À AMÉLIORER (scores les plus bas) ; pour chaque axe, donne 2 à 3 conseils CONCRETS et actionnables (des choses à "
+      . "faire vraiment). Ne sois jamais dur ni culpabilisant. Réponds STRICTEMENT en JSON valide, sans markdown, au format EXACT : "
+      . "{\"synthese\":\"2 phrases qui résument le profil\",\"forces\":[{\"competence\":\"...\",\"pourquoi\":\"pourquoi c'est un point fort\"}],\"axes\":[{\"competence\":\"...\",\"pourquoi\":\"pourquoi travailler dessus\",\"comment\":[\"conseil 1\",\"conseil 2\"]}],\"conseil\":\"une phrase de clôture motivante\"}. "
+      . "Donne EXACTEMENT 2 éléments dans \"forces\" et 2 dans \"axes\".";
+    $u = "Profil (6C, sur 5) :\n" . ($compLines ? implode("\n", $compLines) : "(non fourni)") . "\n";
+    if ($niveau) $u .= "Niveau / classe : {$niveau}\n";
+    $u .= "\nProduis le bilan au format JSON demandé.";
+  }
+
+  // reasoning_effort:none → tout le budget passe dans la sortie JSON.
+  return [$system, $u, 1500, true, null];
 }
 
 // ── Orientation 6C : argumentation FONDÉE sur des domaines pré-sélectionnés ──

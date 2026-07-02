@@ -232,21 +232,30 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   // ── Auto-évaluation 6C (orientation) ────────────────────────────────
   // Profil de compétences (Créativité, Esprit critique, Communication,
   // Coopération, Courage, Confiance), noté /5, persisté avec l'enfant.
-  function setComp6c(enfantId, scores) {
+  function setComp6c(enfantId, scores, answers) {
     const e = getEnfant(enfantId)
     if (!e || !scores) return
     const clean = {}
     for (const k of Object.keys(scores)) {
-      const v = Math.max(1, Math.min(5, Number(scores[k])))
-      if (!Number.isNaN(v)) clean[k] = v
+      let v = Math.max(1, Math.min(5, Number(scores[k])))
+      if (!Number.isNaN(v)) clean[k] = Math.round(v * 10) / 10 // score = moyenne des items (1 décimale)
     }
     e.comp6c = clean
     e.comp6cAt = new Date().toISOString()
+    if (answers && typeof answers === 'object') e.comp6cAnswers = answers // réponses brutes (refaire/traçabilité)
+    e.comp6cBilan = null // le profil change → l'ancien bilan n'est plus valable
     persist()
   }
   function getComp6c(enfantId) {
     const e = getEnfant(enfantId)
     return e && e.comp6c ? e.comp6c : null
+  }
+  /** Mémorise le bilan 6C généré (MIAPO ou local) pour l'afficher sans re-générer. */
+  function setBilan6c(enfantId, bilan) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    e.comp6cBilan = bilan || null
+    persist()
   }
 
   // Amorçage démo : un écolier cohérent (notes + profil 6C) pour montrer MIAPO+
@@ -289,6 +298,6 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
     addRevisionCiblee, removeRevision,
-    setComp6c, getComp6c, seedDemoAs, setFormationPlan,
+    setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,
   }
 })

@@ -501,12 +501,96 @@ export const useTuteurStore = defineStore('tuteur', () => {
     return { ok: !!local.modules.length, ...local, mode: 'simulation', reason: 'Plan généré localement (IA indisponible)' }
   }
 
+  /**
+   * Bilan 6C : à partir des 6 scores auto-évalués, MIAPO rédige un bilan
+   * (synthèse + 2 points forts + 2 axes à améliorer avec conseils concrets),
+   * au ton adapté au persona (enfant/élève/adulte) et à la langue. Repli LOCAL
+   * (règles + conseils pré-écrits bilingues) si l'IA est indisponible.
+   * @param {{competences:Object, persona?:string, niveau?:string, formation?:string, langue?:string}} o
+   * @returns {Promise<{ok, bilan:{synthese,forces,axes,conseil}, mode}>}
+   */
+  async function generateBilan6c({ competences = {}, persona = 'eleve', niveau = '', formation = '', langue = 'fr' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const bilan = normalizeBilan6c(parseJsonObject(json.text))
+        if (bilan) return { ok: true, bilan, mode: 'ia' }
+      }
+    } catch { /* repli local */ }
+    return { ok: true, bilan: localBilan6c(competences, langue), mode: 'simulation' }
+  }
+
   return {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c,
   }
 })
+
+// ── Bilan 6C : normalisation IA + repli local bilingue ──────────────────
+function normalizeBilan6c(o) {
+  if (!o || typeof o !== 'object') return null
+  const arr = (x) => (Array.isArray(x) ? x : [])
+  const forces = arr(o.forces).map((f) => ({
+    competence: String(f?.competence || '').trim(),
+    pourquoi: String(f?.pourquoi || '').trim(),
+  })).filter((f) => f.competence).slice(0, 3)
+  const axes = arr(o.axes).map((a) => ({
+    competence: String(a?.competence || '').trim(),
+    pourquoi: String(a?.pourquoi || '').trim(),
+    comment: arr(a?.comment).map((c) => String(c).trim()).filter(Boolean).slice(0, 4),
+  })).filter((a) => a.competence).slice(0, 3)
+  if (!forces.length && !axes.length) return null
+  return { synthese: String(o.synthese || '').trim(), forces, axes, conseil: String(o.conseil || '').trim() }
+}
+
+const SIXC_META = {
+  creativite: { fr: 'Créativité', en: 'Creativity' },
+  esprit_critique: { fr: 'Esprit critique', en: 'Critical thinking' },
+  communication: { fr: 'Communication', en: 'Communication' },
+  cooperation: { fr: 'Coopération', en: 'Cooperation' },
+  courage: { fr: 'Courage', en: 'Courage' },
+  confiance: { fr: 'Confiance', en: 'Confidence' },
+}
+const SIXC_TIPS = {
+  creativite: { fr: ["Note chaque jour une idée nouvelle, même minuscule.", "Face à un problème, cherche 3 solutions différentes avant de choisir."], en: ["Jot down one new idea every day, even a tiny one.", "For a problem, find 3 different solutions before you choose."] },
+  esprit_critique: { fr: ["Avant de partager une info, vérifie sa source.", "Entraîne-toi à distinguer un fait d'une opinion dans ce que tu lis."], en: ["Before sharing information, check its source.", "Practise telling a fact from an opinion in what you read."] },
+  communication: { fr: ["Explique une idée compliquée à quelqu'un en une minute.", "Reformule ce que dit l'autre avant de répondre."], en: ["Explain a complex idea to someone in one minute.", "Rephrase what the other person said before answering."] },
+  cooperation: { fr: ["Propose ton aide sur un projet de groupe cette semaine.", "Demande l'avis des autres avant de trancher seul."], en: ["Offer your help on a group project this week.", "Ask others' opinion before deciding alone."] },
+  courage: { fr: ["Choisis une chose qui te fait un peu peur et lance-toi.", "Après un échec, note ce que tu réessaieras autrement."], en: ["Pick one thing that scares you a bit and go for it.", "After a setback, note what you'll try differently."] },
+  confiance: { fr: ["Liste 3 réussites récentes et relis-les avant un défi.", "Prends une petite décision par jour sans demander l'avis de tous."], en: ["List 3 recent wins and reread them before a challenge.", "Make one small decision a day without asking everyone."] },
+}
+function localBilan6c(competences, langue = 'fr') {
+  const L = langue === 'en' ? 'en' : 'fr'
+  const entries = Object.keys(SIXC_META).map((k) => ({ k, v: Number(competences?.[k]) || 0 }))
+  const scored = entries.filter((e) => e.v > 0)
+  const base = scored.length ? scored : entries
+  const sorted = [...base].sort((a, b) => b.v - a.v)
+  const top = sorted.slice(0, 2)
+  const low = [...sorted].reverse().slice(0, 2)
+  const forces = top.map((e) => ({
+    competence: SIXC_META[e.k][L],
+    pourquoi: L === 'en' ? 'One of your clear strengths — keep building on it.' : "L'une de tes forces nettes — appuie-toi dessus.",
+  }))
+  const axes = low.map((e) => ({
+    competence: SIXC_META[e.k][L],
+    pourquoi: L === 'en' ? 'A bit lower than the rest — a real lever for progress.' : 'Un peu plus bas que le reste — un vrai levier de progrès.',
+    comment: SIXC_TIPS[e.k][L],
+  }))
+  return {
+    synthese: L === 'en' ? 'Your 6C profile shows clear strengths and realistic room to grow.' : 'Ton profil 6C montre des forces nettes et des marges de progression réalistes.',
+    forces, axes,
+    conseil: L === 'en' ? 'Go step by step: a small regular exercise beats one big effort.' : 'Avance pas à pas : un petit exercice régulier vaut mieux qu\'un grand coup ponctuel.',
+  }
+}
 
 // ── Moteur de cours : normalisation + repli local ───────────────────────
 function normalizeModules(arr) {
