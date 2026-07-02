@@ -84,11 +84,11 @@
         </button>
       </div>
 
-      <!-- Compte en ligne -->
+      <!-- Créer un compte (vraie instance persistante) / se connecter -->
       <div class="miapo-account">
-        <button type="button" class="miapo-login-link" @click="goLogin">
-          {{ t('welcome.haveAccount') }}
-        </button>
+        <p class="miapo-demo-hint">{{ t('welcome.demoHint') }}</p>
+        <button type="button" class="miapo-create-btn" @click="goCreate">{{ t('welcome.createAccount') }}</button>
+        <button type="button" class="miapo-login-link" @click="goLogin">{{ t('welcome.haveAccount') }}</button>
       </div>
 
       <!-- Footer -->
@@ -140,6 +140,15 @@ function entrer(profil) {
 function goLogin() {
   editionStore.setEdition('secondaire')
   router.push('/login')
+}
+
+// Créer un VRAI compte (persistant, propre à chaque personne) : on ouvre la page
+// de connexion directement en mode inscription (?signup=1). C'est le chemin à
+// privilégier pour les utilisateurs à qui on partage MIAPO+ (les cartes ci-dessus
+// restent une démo commune, non persistante).
+function goCreate() {
+  editionStore.setEdition('secondaire')
+  router.push({ path: '/login', query: { signup: '1' } })
 }
 </script>
 
@@ -346,9 +355,39 @@ function goLogin() {
   gap: 12px;
 }
 
-/* Compte en ligne */
+/* Créer un compte / se connecter */
 .miapo-account {
   margin-top: 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+.miapo-demo-hint {
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.72);
+  max-width: 540px;
+  text-align: center;
+  margin: 0 0 2px;
+  line-height: 1.5;
+}
+.miapo-create-btn {
+  background: #fff;
+  border: none;
+  color: var(--m-accent);
+  font-family: 'Poppins', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 13px 30px;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(20, 16, 50, 0.32);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.miapo-create-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 38px rgba(0, 0, 0, 0.36);
 }
 .miapo-login-link {
   background: transparent;

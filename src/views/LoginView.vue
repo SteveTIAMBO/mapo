@@ -246,6 +246,14 @@ function loginDemoAs(role) {
 // lance directement la session de démonstration (utilisé par les liens du
 // complexe et les QR codes des plaquettes). Ignoré sur une vraie école / MIAPO+.
 onMounted(() => {
+  // Deep-link « Créer mon compte » : ?signup=1 ouvre directement le formulaire
+  // d'inscription (compte persistant). Vaut sur toutes les instances, MIAPO+ inclus.
+  try {
+    if (new URLSearchParams(window.location.search).get('signup')) {
+      mode.value = 'signup'
+      showLogin.value = true
+    }
+  } catch (e) { /* silent */ }
   if (isSchoolTenantMode) return
   try {
     const params = new URLSearchParams(window.location.search)
