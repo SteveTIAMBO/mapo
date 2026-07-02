@@ -64,6 +64,24 @@
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
           </span>
         </button>
+
+        <!-- Apprenant adulte / formation pro & certifications (hors catalogue) -->
+        <button class="m-tile" type="button" @click="entrer('pro')">
+          <span class="m-icon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" />
+              <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+              <path d="M2 13h20" />
+            </svg>
+          </span>
+          <span class="m-name">{{ t('welcome.proName') }}</span>
+          <span class="m-tagline">{{ t('welcome.proTag') }}</span>
+          <span class="m-context">{{ t('welcome.proText') }}</span>
+          <span class="m-cta">
+            {{ t('welcome.proCta') }}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></svg>
+          </span>
+        </button>
       </div>
 
       <!-- Compte en ligne -->
@@ -101,11 +119,18 @@ const miapoStore = useEnfantsAutonomesStore()
 // à MIAPO+ par le guard), en réglant juste le point de vue —
 //   parent   : un parent qui suit son enfant (« Mes enfants »)
 //   apprenant : l'élève qui pilote son propre apprentissage (« Mon profil »).
+// Trois portes d'entrée :
+//   parent : un parent qui suit son enfant (« Mes enfants »)
+//   eleve  : l'élève qui pilote son propre apprentissage (« Mon profil »)
+//   pro    : l'adulte en formation (MBA, concours, certif…) — apprenant
+//            hors-catalogue qui apprend à partir de son propre programme.
 function entrer(profil) {
   editionStore.setEdition('secondaire')
   const result = authStore.loginDemo('miapo', 'demo1234')
   if (result && result.success) {
     miapoStore.setMode(profil === 'parent' ? 'parent' : 'apprenant')
+    // Démo : on pose le persona correspondant (écolier vs apprenant adulte).
+    miapoStore.seedDemoAs(profil === 'pro' ? 'pro' : 'ecolier')
     router.push('/parent/miapo')
   } else {
     router.push('/login')
@@ -245,10 +270,10 @@ function goLogin() {
 /* Cartes de choix */
 .miapo-choices {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 22px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
   width: 100%;
-  max-width: 720px;
+  max-width: 940px;
   margin: 0 auto;
 }
 .m-tile {
@@ -361,11 +386,17 @@ function goLogin() {
 }
 
 /* Responsive */
-@media (max-width: 900px) {
+@media (max-width: 940px) {
+  .miapo-choices {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    max-width: 620px;
+  }
+}
+@media (max-width: 620px) {
   .miapo-choices {
     grid-template-columns: 1fr;
-    gap: 18px;
-    max-width: 460px;
+    max-width: 420px;
   }
 }
 @media (max-width: 720px) {

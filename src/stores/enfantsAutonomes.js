@@ -238,11 +238,34 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     setComp6c(id, { creativite: 4, esprit_critique: 3, communication: 4, cooperation: 4, courage: 3, confiance: 3 })
   }
 
+  // Démo : (re)pose un profil UNIQUE cohérent avec le point de vue choisi sur
+  // l'accueil MIAPO+ (parent/élève → un écolier ; formation pro → un apprenant
+  // ADULTE hors-catalogue, ex. MBA). Uniquement en démo — on repart propre à
+  // chaque entrée pour montrer le bon persona. `kind` : 'ecolier' | 'pro'.
+  function seedDemoAs(kind) {
+    enfants.value = []
+    if (kind === 'pro') {
+      const id = addEnfant({
+        firstName: 'Diane', lastName: 'Démo', gender: 'F',
+        niveau: NIVEAU_HORS_CATALOGUE, pays: 'CM', cycle: 'superieur',
+        formation: 'MBA — Management',
+        formationModules: "Contrôle de gestion, Finance d'entreprise, Marketing, Stratégie",
+      })
+      addNote(id, 'Contrôle de gestion', 8)
+      addNote(id, "Finance d'entreprise", 9)
+      addNote(id, 'Marketing', 14)
+      addNote(id, 'Stratégie', 12)
+    } else {
+      seedDemoIfEmpty()
+    }
+    persist()
+  }
+
   return {
     enfants, mode, setMode, load, hydrate,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
     addRevisionCiblee, removeRevision,
-    setComp6c, getComp6c,
+    setComp6c, getComp6c, seedDemoAs,
   }
 })

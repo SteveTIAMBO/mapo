@@ -4,8 +4,8 @@
     "lang": "Language"
   },
   "welcome": {
-    "title": "The smart tutor that supports every child",
-    "subtitle": "AI-powered revision, monitoring and guidance — at home and at school.",
+    "title": "The smart tutor that supports every learner",
+    "subtitle": "AI-powered revision, monitoring and guidance — for the child, the student and the adult in training.",
     "parentName": "I'm a parent",
     "parentTag": "Family space",
     "parentText": "Follow your child's school life — grades, attendance, homework — and turn on their smart tutor to help them progress.",
@@ -14,6 +14,10 @@
     "eleveTag": "Student space",
     "eleveText": "Revise with your smart tutor, take quizzes tailored to your level and keep track of your lessons, at your own pace.",
     "eleveCta": "Enter the student space",
+    "proName": "I'm training",
+    "proTag": "Training & certifications",
+    "proText": "MBA, exams, certification… Add your program, even off-catalogue: MIAPO+ helps you revise with quizzes and a plan tailored to your syllabus.",
+    "proCta": "Enter the training space",
     "haveAccount": "I already have a MIAPO+ account",
     "footerCopy": "© 2026 MIAPO+ — Learning, supported"
   },
