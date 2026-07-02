@@ -36,20 +36,40 @@
       <template v-for="(sec, si) in navSections" :key="'sec' + si">
         <div v-if="sec.label && (!collapsed || mobileOpen)" class="nav-section-label">{{ sec.label }}</div>
         <div v-else-if="sec.label" class="nav-section-sep"></div>
-        <RouterLink
-          v-for="item in sec.items"
-          :key="item.to"
-          :to="item.to"
-          class="nav-item"
-          :class="{ active: isActive(item.to) }"
-          :title="collapsed && !mobileOpen ? t(item.label) : undefined"
-          @click="$emit('navigate')"
-        >
-          <component :is="item.icon" :size="19" class="nav-icon" />
-          <transition name="fade">
-            <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
-          </transition>
-        </RouterLink>
+        <template v-for="item in sec.items" :key="item.to || item.action">
+          <!-- Carré : bouton d'action (ouvre un onglet), pas une route -->
+          <button
+            v-if="item.action === 'carre'"
+            type="button"
+            class="nav-item"
+            :title="collapsed && !mobileOpen ? t(item.label) : undefined"
+            :disabled="carreLoading"
+            @click="handleCarre"
+          >
+            <component
+              :is="carreLoading ? Loader2 : item.icon"
+              :size="19"
+              class="nav-icon"
+              :class="{ 'nav-icon-spin': carreLoading }"
+            />
+            <transition name="fade">
+              <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
+            </transition>
+          </button>
+          <RouterLink
+            v-else
+            :to="item.to"
+            class="nav-item"
+            :class="{ active: isActive(item.to) }"
+            :title="collapsed && !mobileOpen ? t(item.label) : undefined"
+            @click="$emit('navigate')"
+          >
+            <component :is="item.icon" :size="19" class="nav-icon" />
+            <transition name="fade">
+              <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
+            </transition>
+          </RouterLink>
+        </template>
       </template>
     </nav>
 
@@ -84,9 +104,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
+import { openCarre } from '../../services/carreSso'
 import { useAuthStore } from '../../stores/auth'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
@@ -120,7 +141,9 @@ import {
   Sparkles,
   TrendingDown,
   BadgeCheck,
-  HeartHandshake
+  HeartHandshake,
+  NotebookPen,
+  Loader2
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -253,11 +276,28 @@ const navSections = computed(() => {
   const sections = []
   for (const g of GROUP_ORDER) {
     const items = visible.filter(i => i.group === g)
+    // Carré : action (pas une route) qui ouvre Carré web déjà connecté (SSO).
+    if (g === 'scolarite') items.push({ action: 'carre', icon: NotebookPen, label: 'nav.carre' })
     if (!items.length) continue
     sections.push({ label: g === 'principal' ? null : t('navGroups.' + g), items })
   }
   return sections
 })
+
+// Bouton « Carré » : ouvre la version web de Carré déjà connectée (custom token).
+const carreLoading = ref(false)
+const handleCarre = async () => {
+  if (carreLoading.value) return
+  carreLoading.value = true
+  try {
+    await openCarre()
+    emit('navigate')
+  } catch (err) {
+    window.alert(err?.code === 403 ? t('nav.carreNotEnabled') : t('nav.carreError'))
+  } finally {
+    carreLoading.value = false
+  }
+}
 
 onMounted(() => {
   permissionsStore.loadRoles()
@@ -422,6 +462,12 @@ const handleLogout = async () => {
 }
 .nav-item.active .nav-icon {
   opacity: 1;
+}
+.nav-icon-spin {
+  animation: carre-spin 0.9s linear infinite;
+}
+@keyframes carre-spin {
+  to { transform: rotate(360deg); }
 }
 
 .nav-label {
