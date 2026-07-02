@@ -8,6 +8,7 @@
       <div class="volet-brand">
         <div class="brand-ic"><Sparkles :size="18" /></div>
         <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
+        <button type="button" class="volet-close" @click="menuOpen = false" aria-label="Fermer le menu"><X :size="20" /></button>
       </div>
 
       <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
@@ -641,6 +642,8 @@ onUnmounted(() => {
 /* Menu figé : il reste en place (sticky pleine hauteur), seul le contenu défile. */
 .volet { width: 224px; flex-shrink: 0; align-self: flex-start; border-right: 1px solid var(--bd, #e5e7eb); padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
 .volet-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
+.volet-close { display: none; margin-left: auto; background: none; border: none; color: var(--tx3, #6b7280); cursor: pointer; padding: 4px; border-radius: 8px; }
+.volet-close:hover { background: rgba(0,0,0,.05); }
 .brand-ic { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .brand-tx { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-tx strong { font-size: 16px; color: var(--tx, #1f2937); }
@@ -816,6 +819,7 @@ onUnmounted(() => {
     box-shadow: 0 18px 44px rgba(0, 0, 0, .22); align-self: auto;
   }
   .volet.open { transform: translateX(0); }
+  .volet-close { display: flex; align-items: center; justify-content: center; }
   .volet-nav { flex-direction: column; overflow-x: visible; }
   .volet-logout { margin-top: auto; }
   .miapo-main { padding: 16px 14px; max-width: 100%; width: 100%; box-sizing: border-box; }
