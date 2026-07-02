@@ -1,7 +1,9 @@
 <template>
   <header class="header">
     <div class="header-left">
-      <button class="collapse-toggle" @click="$emit('toggle-sidebar')" :title="t('header.menu')">
+      <!-- Sur MIAPO+ (B2C), le menu est FIXE en desktop : pas de bouton toggle
+           (il ne ferait rien). On garde le hamburger uniquement en mobile. -->
+      <button v-if="isMobile || !authStore.isB2C" class="collapse-toggle" @click="$emit('toggle-sidebar')" :title="t('header.menu')">
         <Menu v-if="isMobile" :size="22" />
         <PanelLeftClose v-else-if="!sidebarCollapsed" :size="18" />
         <PanelLeftOpen v-else :size="18" />
