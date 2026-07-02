@@ -74,6 +74,7 @@ const REVISION_KEY = (sid) => `mapo_revisions_v1_${sid || 'demo'}`
 
 export const useTuteurStore = defineStore('tuteur', () => {
   const generating = ref(false)
+  const planning = ref(false) // moteur de cours : génération du plan en cours
   const lastMode = ref('')   // 'ia' | 'simulation'
   const lastReason = ref('')
   // Compteur réactif incrémenté à chaque sauvegarde de révision : permet aux vues
@@ -458,12 +459,98 @@ export const useTuteurStore = defineStore('tuteur', () => {
     }
   }
 
+  /**
+   * Moteur de cours (apprenant hors-catalogue) : à partir du NOM de la formation
+   * et, si fourni, du TEXTE du programme collé, MIAPO décompose la formation en
+   * MODULES (avec notions clés) et bâtit un PLAN d'apprentissage séquencé.
+   * Repli LOCAL si l'IA n'est pas déployée/indisponible : on découpe le
+   * programme collé en modules (lignes / puces / points-virgules / virgules) →
+   * la fonctionnalité reste utilisable, l'IA ne fait que l'enrichir.
+   * @param {{formation:string, programme?:string, niveau?:string}} opts
+   * @returns {Promise<{ok, modules, plan, conseil, mode, reason}>}
+   *   modules: [{titre, notions[]}]   plan: [{periode, module, objectif, actions[]}]
+   */
+  async function generateCoursePlan({ formation, programme = '', niveau = '' }) {
+    planning.value = true
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'course_plan', data: { formation, programme, niveau } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj) {
+          const modules = normalizeModules(obj.modules)
+          const plan = normalizePlan(obj.plan)
+          if (modules.length) {
+            planning.value = false
+            return { ok: true, modules, plan, conseil: String(obj.conseil || '').trim(), mode: 'ia', reason: '' }
+          }
+        }
+      }
+      // IA non configurée / illisible / hors-ligne → on bascule sur le repli local.
+    } catch { /* proxy indisponible → repli local */ }
+    planning.value = false
+    const local = localCoursePlan(formation, programme)
+    return { ok: !!local.modules.length, ...local, mode: 'simulation', reason: 'Plan généré localement (IA indisponible)' }
+  }
+
   return {
-    generating, lastMode, lastReason, revisionsVersion,
+    generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan,
   }
 })
+
+// ── Moteur de cours : normalisation + repli local ───────────────────────
+function normalizeModules(arr) {
+  if (!Array.isArray(arr)) return []
+  return arr.map((m) => ({
+    titre: String(m?.titre ?? m ?? '').trim(),
+    notions: Array.isArray(m?.notions) ? m.notions.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+  })).filter((m) => m.titre).slice(0, 10)
+}
+function normalizePlan(arr) {
+  if (!Array.isArray(arr)) return []
+  return arr.map((p) => ({
+    periode: String(p?.periode ?? p?.etape ?? '').trim(),
+    module: String(p?.module ?? '').trim(),
+    objectif: String(p?.objectif ?? '').trim(),
+    actions: Array.isArray(p?.actions) ? p.actions.map((x) => String(x).trim()).filter(Boolean).slice(0, 6) : [],
+  })).filter((p) => p.periode || p.module || p.objectif).slice(0, 12)
+}
+// Repli sans IA : découpe le texte collé (ou, à défaut, le nom de la formation)
+// en modules, puis génère un plan hebdomadaire simple (1 module par semaine).
+function localCoursePlan(formation, programme) {
+  let titles = []
+  const txt = String(programme || '').trim()
+  if (txt) {
+    titles = txt
+      .split(/\r?\n|[•·▪◦]|;|(?:^|\s)\d+[.)]\s+/)
+      .map((s) => s.replace(/^[\s\-–—*•.)\d]+/, '').trim())
+      .filter((s) => s.length >= 3 && s.length <= 80)
+    // Une seule ligne longue avec des virgules → on tente le découpage par virgules.
+    if (titles.length <= 1 && txt.includes(',')) {
+      titles = txt.split(',').map((s) => s.trim()).filter((s) => s.length >= 3 && s.length <= 80)
+    }
+  }
+  titles = [...new Set(titles)].slice(0, 10)
+  if (!titles.length && formation) titles = [String(formation).trim()]
+  const modules = titles.map((titre) => ({ titre, notions: [] }))
+  const plan = modules.map((m, i) => ({
+    periode: `Semaine ${i + 1}`,
+    module: m.titre,
+    objectif: `Maîtriser : ${m.titre}`,
+    actions: ['Relire le cours', 'Faire un quiz MIAPO'],
+  }))
+  return { modules, plan, conseil: '' }
+}
 
 function clampNote(n) {
   const v = Number(n)

@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'prepa_examen', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -85,6 +85,7 @@ function buildPrompts($task, $d) {
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'prepa_examen') return buildPrepaExamenPrompts($d);
+  if ($task === 'course_plan') return buildCoursePlanPrompts($d);
   if ($task === 'commande') return buildCommandePrompts($d);
   if ($task === 'pedagogie') return buildPedagogiePrompts($d);
   return buildAppreciationPrompts($d);
@@ -202,6 +203,43 @@ function buildPrepaExamenPrompts($d) {
 
   // reasoning_effort:none (sinon JSON tronqué) ; programme = un peu plus long.
   return [$system, $u, 1800, true, null];
+}
+
+// ── Moteur de cours : formation (hors-catalogue) → modules + plan JSON ─
+// L'apprenant ADULTE (formation pro, certification, MBA, concours…) donne le
+// NOM de sa formation et, s'il l'a, le TEXTE de son programme/syllabus collé.
+// MIAPO le décompose en MODULES (avec les notions clés) puis bâtit un PLAN
+// d'apprentissage séquencé par périodes. L'app pilote ensuite la boucle
+// notes → quiz → progression sur CES modules.
+function buildCoursePlanPrompts($d) {
+  $formation = clean($d['formation'] ?? '', 120);
+  $niveau    = clean($d['niveau'] ?? '', 80);
+  // Programme collé : on PRÉSERVE les sauts de ligne (structure du syllabus),
+  // on ne compresse que les espaces/tabulations, et on borne la longueur.
+  $programme = trim(preg_replace('/[ \t]+/u', ' ', (string) ($d['programme'] ?? '')));
+  $programme = preg_replace("/\n{3,}/", "\n\n", $programme);
+  $programme = mb_substr($programme, 0, 4000);
+
+  $system = "Tu es MIAPO, un tuteur pédagogique bienveillant et structuré qui accompagne un ADULTE dans sa formation "
+    . "(formation professionnelle, certification, MBA, préparation à un concours, apprentissage autonome…). "
+    . "À partir du NOM de la formation et, s'il est fourni, du TEXTE de son programme/syllabus, tu construis un PLAN DE COURS exploitable : "
+    . "(1) tu décomposes la formation en 4 à 8 MODULES cohérents, chacun avec 2 à 5 NOTIONS clés à maîtriser ; "
+    . "(2) tu bâtis un PLAN d'apprentissage séquencé par périodes (ex. « Semaine 1 »), en couvrant les modules dans un ordre logique "
+    . "(des fondamentaux vers l'avancé), avec pour chaque période un OBJECTIF clair et 2 à 4 ACTIONS concrètes "
+    . "(lire une notion, s'entraîner, faire un quiz MIAPO…). "
+    . "Si un programme est fourni, appuie-toi FIDÈLEMENT dessus ; sinon, déduis un contenu réaliste et standard pour cette formation. "
+    . "Reste concret et motivant, sans survendre. Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"modules\":[{\"titre\":\"...\",\"notions\":[\"...\"]}],\"plan\":[{\"periode\":\"...\",\"module\":\"...\",\"objectif\":\"...\",\"actions\":[\"...\"]}],\"conseil\":\"...\"}. "
+    . "Donne 4 à 8 modules et 4 à 8 périodes dans le plan.";
+
+  $u  = "Formation : " . ($formation !== '' ? $formation : 'non précisée') . "\n";
+  if ($niveau !== '' && $niveau !== $formation) $u .= "Contexte / niveau : {$niveau}\n";
+  if ($programme !== '') $u .= "\nProgramme / syllabus fourni par l'apprenant :\n\"\"\"\n{$programme}\n\"\"\"\n";
+  else $u .= "\n(Aucun programme collé : déduis un contenu standard et réaliste pour cette formation.)\n";
+  $u .= "\nProduis le plan de cours au format JSON demandé.";
+
+  // reasoning_effort:none → tout le budget passe dans la sortie JSON (sinon tronqué).
+  return [$system, $u, 2400, true, null];
 }
 
 // ── Orientation scolaire contextualisée (pays) → pistes JSON ──────────

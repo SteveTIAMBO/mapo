@@ -161,6 +161,29 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return enfants.value.find((e) => e.id === id) || null
   }
 
+  /**
+   * Moteur de cours (apprenant hors-catalogue) : enregistre le résultat de la
+   * décomposition MIAPO — les MODULES (→ formationModules, string, qui pilote la
+   * boucle notes/quiz/progression + le détail des notions) et le PLAN séquencé
+   * (formationPlan : [{periode, module, objectif, actions[]}]).
+   */
+  function setFormationPlan(enfantId, { modules = [], plan = [] } = {}) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    const mods = (Array.isArray(modules) ? modules : [])
+      .map((m) => (typeof m === 'string'
+        ? { titre: m.trim(), notions: [] }
+        : { titre: String(m?.titre || '').trim(), notions: Array.isArray(m?.notions) ? m.notions.map((x) => String(x).trim()).filter(Boolean) : [] }))
+      .filter((m) => m.titre)
+    if (mods.length) {
+      e.formationModules = mods.map((m) => m.titre).join(', ')
+      e.formationModulesDetail = mods
+    }
+    if (Array.isArray(plan)) e.formationPlan = plan
+    e.formationPlanAt = new Date().toISOString()
+    persist()
+  }
+
   function addNote(enfantId, matiere, note) {
     const e = getEnfant(enfantId)
     if (!e) return
@@ -266,6 +289,6 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
     addRevisionCiblee, removeRevision,
-    setComp6c, getComp6c, seedDemoAs,
+    setComp6c, getComp6c, seedDemoAs, setFormationPlan,
   }
 })

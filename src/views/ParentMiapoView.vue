@@ -81,6 +81,18 @@
             <Radar6C :scores="activeEnfant.comp6c || {}" />
           </div>
 
+          <!-- Plan de cours généré par MIAPO (apprenant hors-catalogue) -->
+          <div v-if="coursPlan.length" class="card cplan-card">
+            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myCoursePlan') }}</h3><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
+            <div class="cplan-list">
+              <div v-for="(p, i) in coursPlan" :key="i" class="cplan-step">
+                <div class="ps-head"><span class="ps-per">{{ p.periode }}</span><button v-if="p.module && isApprenant" class="ps-mod" @click="goRevise(p.module)"><Sparkles :size="12" /> {{ p.module }}</button><span v-else-if="p.module" class="ps-mod-static">{{ p.module }}</span></div>
+                <p v-if="p.objectif" class="ps-obj">{{ p.objectif }}</p>
+                <ul v-if="p.actions.length" class="ps-actions"><li v-for="(a, j) in p.actions" :key="j">{{ a }}</li></ul>
+              </div>
+            </div>
+          </div>
+
           <div class="quick">
             <button class="btn btn-primary" @click="section = 'tuteur'"><GraduationCap :size="16" /> <span>{{ t('mia.startRevision') }}</span></button>
             <button class="btn btn-outline" @click="section = 'orientation'"><Compass :size="16" /> <span>{{ t('mia.exploreOrientation') }}</span></button>
@@ -294,6 +306,19 @@
                 <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
               </div>
               <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
+              <!-- Moteur de cours : MIAPO décompose la formation en modules + plan -->
+              <div class="course-engine">
+                <div class="ce-head"><Sparkles :size="15" /><strong>{{ t('mia.courseEngineTitle') }}</strong></div>
+                <p class="ce-hint">{{ t('mia.courseEngineHint') }}</p>
+                <textarea v-model="coursProgramme" class="input" rows="3" :placeholder="t('mia.coursePastePlaceholder')"></textarea>
+                <div class="ce-actions">
+                  <button class="btn btn-primary btn-sm" :disabled="coursLoading || !profil.formation.trim()" @click="genererPlanCours">
+                    <Loader2 v-if="coursLoading" :size="15" class="spin" /><Sparkles v-else :size="15" />
+                    <span>{{ coursLoading ? t('mia.courseGenerating') : t('mia.courseGenerate') }}</span>
+                  </button>
+                  <span v-if="coursMsg" class="muted small saved-ok">{{ coursMsg }}</span>
+                </div>
+              </div>
             </template>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
@@ -467,6 +492,35 @@ function saveProfil() {
   store.updateEnfant(activeEnfant.value.id, { ...profil.value })
   profilSaved.value = true
   setTimeout(() => { profilSaved.value = false }, 2000)
+}
+
+// ── Moteur de cours : MIAPO décompose la formation (nom + programme collé) en
+// modules + plan séquencé, puis alimente la boucle notes/quiz sur CES modules. ──
+const coursProgramme = ref('')
+const coursLoading = ref(false)
+const coursMsg = ref('')
+const coursPlan = computed(() => Array.isArray(activeEnfant.value?.formationPlan) ? activeEnfant.value.formationPlan : [])
+async function genererPlanCours() {
+  const e = activeEnfant.value
+  if (!e || !profil.value.formation.trim() || coursLoading.value) return
+  coursLoading.value = true
+  coursMsg.value = ''
+  // Persiste d'abord le nom/URL de la formation saisis (contexte de génération).
+  store.updateEnfant(e.id, { formation: profil.value.formation, formationUrl: profil.value.formationUrl })
+  const r = await tuteur.generateCoursePlan({
+    formation: profil.value.formation.trim(),
+    programme: coursProgramme.value.trim(),
+    niveau: profil.value.formation.trim(),
+  })
+  coursLoading.value = false
+  if (r && r.modules && r.modules.length) {
+    store.setFormationPlan(e.id, { modules: r.modules, plan: r.plan })
+    profil.value.formationModules = r.modules.map((m) => m.titre).join(', ')
+    coursMsg.value = t('mia.coursePlanReady', { n: r.modules.length })
+  } else {
+    coursMsg.value = t('mia.coursePlanFailed')
+  }
+  setTimeout(() => { coursMsg.value = '' }, 4000)
 }
 // Profil du PARENT (compte) — affiché d'abord en mode parent ; le profil enfant suit.
 const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '' })
@@ -882,6 +936,22 @@ onUnmounted(() => {
 .etape { border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; }
 .etape-head { display: flex; align-items: center; gap: 10px; } .etape-num { width: 26px; height: 26px; border-radius: 50%; background: #E8953A; color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; } .etape-head strong { font-size: 15px; color: var(--tx); }
 .etape-obj { margin: 8px 0; font-size: 13px; color: var(--tx2); line-height: 1.5; } .etape-actions { margin: 0; padding-left: 18px; } .etape-actions li { font-size: 13px; color: var(--tx2); line-height: 1.6; }
+
+/* Moteur de cours (apprenant hors-catalogue) : générateur + plan */
+.course-engine { margin-top: 12px; padding: 14px; border: 1px dashed rgba(var(--pr-rgb,21,88,176),.35); border-radius: 12px; background: rgba(var(--pr-rgb,21,88,176),.04); display: flex; flex-direction: column; gap: 10px; }
+.ce-head { display: flex; align-items: center; gap: 7px; color: var(--pr); } .ce-head strong { font-size: 14px; }
+.ce-hint { margin: 0; font-size: 12.5px; color: var(--tx2); line-height: 1.5; }
+.ce-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cplan-card { border-left: 3px solid var(--pr, #1558B0); }
+.cplan-list { display: flex; flex-direction: column; gap: 10px; }
+.cplan-step { border: 1px solid var(--bd); border-radius: 12px; padding: 12px 14px; }
+.ps-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.ps-per { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--tx2); }
+.ps-mod { display: inline-flex; align-items: center; gap: 5px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.08); border: none; border-radius: 20px; padding: 4px 11px; cursor: pointer; transition: background .15s; }
+.ps-mod:hover { background: rgba(var(--pr-rgb,21,88,176),.16); }
+.ps-mod-static { font-size: 13px; font-weight: 600; color: var(--tx); }
+.ps-obj { margin: 8px 0 6px; font-size: 13px; color: var(--tx2); line-height: 1.5; }
+.ps-actions { margin: 0; padding-left: 18px; } .ps-actions li { font-size: 12.5px; color: var(--tx2); line-height: 1.6; }
 
 .abo-card { text-align: center; padding: 30px 26px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .abo-ic { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; }
