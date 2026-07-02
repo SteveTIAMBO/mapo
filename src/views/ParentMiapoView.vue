@@ -4,12 +4,17 @@
     <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
 
     <!-- ───────── Volet menu (sidebar sur PC ; hamburger coulissant sur mobile) ───────── -->
-    <aside class="volet" :class="{ open: menuOpen }">
+    <aside class="volet" :class="{ open: menuOpen, collapsed: voletCollapsed }">
       <div class="volet-brand">
         <div class="brand-ic"><Sparkles :size="18" /></div>
         <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
         <button type="button" class="volet-close" @click="menuOpen = false" aria-label="Fermer le menu"><X :size="20" /></button>
       </div>
+      <!-- Replier le menu en icônes (desktop) — le menu reste fixe. -->
+      <button type="button" class="volet-collapse" @click="toggleCollapse" :title="voletCollapsed ? t('mia.expandMenu') : t('mia.collapseMenu')">
+        <PanelLeftClose v-if="!voletCollapsed" :size="18" /><PanelLeftOpen v-else :size="18" />
+        <span>{{ t('mia.collapseMenu') }}</span>
+      </button>
 
       <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
       <div v-if="enfants.length && !isApprenant" class="volet-child">
@@ -303,6 +308,30 @@
       </template>
     </main>
 
+    <!-- ───────── Rail droit : agenda de révision (desktop large) ───────── -->
+    <aside class="miapo-aside">
+      <div class="aside-card">
+        <div class="aside-head"><CalendarDays :size="17" /><h3>{{ t('mia.weekAgenda') }}</h3></div>
+        <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
+        <div class="agenda-days">
+          <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today }">
+            <div class="ad-date"><span class="ad-dow">{{ d.label }}</span><span class="ad-num">{{ d.date }}</span></div>
+            <div class="ad-body">
+              <button v-if="d.matiere" class="ad-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
+              <span v-else class="ad-rest">{{ t('mia.restDay') }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="aside-card">
+        <div class="aside-head"><Link2 :size="17" /><h3>{{ t('mia.myAgenda') }}</h3></div>
+        <p class="aside-sub">{{ t('mia.myAgendaSub') }}</p>
+        <input class="input aside-input" v-model="agendaUrl" :placeholder="t('mia.calendarUrlPlaceholder')" />
+        <button class="btn btn-outline btn-sm aside-connect" type="button" @click="saveAgenda">{{ agendaSaved ? t('mia.connected') : t('mia.connect') }}</button>
+        <p class="aside-note">{{ t('mia.syncSoon') }}</p>
+      </div>
+    </aside>
+
     <!-- Modal ajout enfant -->
     <div v-if="showAdd" class="modal-overlay" @click.self="showAdd = false">
       <div class="modal-card">
@@ -345,7 +374,7 @@ import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Radar6C from '../components/Radar6C.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2 } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t } = useI18n({ useScope: 'global' })
@@ -378,6 +407,23 @@ const section = ref('accueil')
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
 const menuOpen = ref(false)
 function onToggleMenu() { menuOpen.value = !menuOpen.value }
+
+// Menu repliable en icônes (desktop) — persisté ; le menu reste fixe (ne défile pas).
+const voletCollapsed = ref(false)
+function toggleCollapse() {
+  voletCollapsed.value = !voletCollapsed.value
+  try { localStorage.setItem('mapo_miapo_volet_collapsed', voletCollapsed.value ? '1' : '0') } catch { /* silent */ }
+}
+
+// ── Agenda perso (Google/Outlook) : on stocke le lien iCal ; la synchro des
+// événements arrive ensuite (fetch via proxy pour contourner le CORS). ──
+const agendaUrl = ref('')
+const agendaSaved = ref(false)
+function saveAgenda() {
+  try { localStorage.setItem('mapo_miapo_agenda_url', agendaUrl.value.trim()) } catch { /* silent */ }
+  agendaSaved.value = true
+  setTimeout(() => { agendaSaved.value = false }, 2000)
+}
 const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
 
 // Libellés selon le mode (parent vs apprenant)
@@ -507,6 +553,24 @@ const aReviser = computed(() => {
   }
   return [...map.values()]
 })
+
+// ── Agenda de révision de la semaine : le tuteur propose 1 sujet à réviser par
+// jour ouvré, à partir des points faibles de l'apprenant (week-end = repos). ──
+function _startOfWeek(d) { const x = new Date(d); const dow = (x.getDay() + 6) % 7; x.setDate(x.getDate() - dow); x.setHours(0, 0, 0, 0); return x }
+function _sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate() }
+const planHebdo = computed(() => {
+  const jours = [t('mia.dowMon'), t('mia.dowTue'), t('mia.dowWed'), t('mia.dowThu'), t('mia.dowFri'), t('mia.dowSat'), t('mia.dowSun')]
+  const mats = (aReviser.value.length ? aReviser.value.map((w) => w.matiere) : matieresList.value).filter(Boolean)
+  const monday = _startOfWeek(new Date())
+  const today = new Date()
+  const out = []
+  for (let i = 0; i < 7; i++) {
+    const dt = new Date(monday); dt.setDate(monday.getDate() + i)
+    const weekend = i >= 5
+    out.push({ key: i, label: jours[i], date: dt.getDate(), today: _sameDay(dt, today), matiere: (!weekend && mats.length) ? mats[i % mats.length] : null })
+  }
+  return out
+})
 const hasEval = computed(() => !!activeEnfant.value?.comp6c && Object.keys(activeEnfant.value.comp6c).length >= 6)
 const moyenne = computed(() => {
   const ns = activeEnfant.value?.notes || []
@@ -623,6 +687,8 @@ onMounted(async () => {
   await store.hydrate()
   activeId.value = enfants.value[0]?.id || ''
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
+  try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
+  try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
   // ── Suivi d'adoption MIAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
   try {
     const persona = store.mode === 'apprenant' ? 'apprenant' : 'parent'
@@ -680,6 +746,49 @@ onUnmounted(() => {
   .volet { position: static; top: auto; height: auto; align-self: stretch; }
   .miapo-main { min-height: 0; }
 }
+
+/* Bouton replier + menu réduit aux icônes (desktop). Le menu reste FIXE. */
+.volet-collapse { display: none; align-items: center; gap: 11px; padding: 8px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 13px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
+.volet-collapse:hover { background: var(--input-bg, #f1f3f5); }
+@media (min-width: 769px) {
+  .volet-collapse { display: flex; }
+  .volet.collapsed { width: 66px; padding-left: 8px; padding-right: 8px; }
+  .volet.collapsed .brand-tx,
+  .volet.collapsed .volet-collapse span,
+  .volet.collapsed .nav-item span,
+  .volet.collapsed .volet-logout span,
+  .volet.collapsed .volet-mode,
+  .volet.collapsed .volet-child { display: none; }
+  .volet.collapsed .nav-item,
+  .volet.collapsed .volet-logout,
+  .volet.collapsed .volet-collapse,
+  .volet.collapsed .volet-brand { justify-content: center; }
+}
+
+/* Rail droit : agenda de révision (remplit l'espace vide à droite sur grand écran). */
+.miapo-aside { display: none; }
+@media (min-width: 1180px) {
+  .miapo-aside { display: flex; flex-direction: column; gap: 14px; width: 322px; flex-shrink: 0; padding: 22px 22px 22px 6px; overflow-y: auto; }
+  .miapo-main { max-width: none; }
+}
+.aside-card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 15px 16px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.aside-head { display: flex; align-items: center; gap: 8px; color: var(--pr); margin-bottom: 3px; }
+.aside-head h3 { font-size: 14.5px; font-weight: 600; margin: 0; color: var(--tx); }
+.aside-sub { font-size: 12px; color: var(--tx3); margin: 0 0 11px; line-height: 1.4; }
+.agenda-days { display: flex; flex-direction: column; gap: 5px; }
+.agenda-day { display: flex; gap: 11px; align-items: center; padding: 6px 7px; border-radius: 10px; }
+.agenda-day.today { background: rgba(var(--pr-rgb,21,88,176),.08); }
+.ad-date { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
+.ad-dow { font-size: 10px; color: var(--tx3); text-transform: uppercase; letter-spacing: .03em; }
+.ad-num { font-size: 15px; font-weight: 700; color: var(--tx); line-height: 1.1; }
+.agenda-day.today .ad-num { color: var(--pr); }
+.ad-body { flex: 1; min-width: 0; }
+.ad-exo { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; background: rgba(var(--pr-rgb,21,88,176),.09); color: var(--pr); border: none; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
+.ad-exo:hover { background: rgba(var(--pr-rgb,21,88,176),.16); }
+.ad-rest { font-size: 12px; color: var(--tx3); font-style: italic; }
+.aside-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 13px; }
+.aside-connect { width: 100%; }
+.aside-note { font-size: 11px; color: var(--tx3); margin: 8px 0 0; }
 .main-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 .main-head h1 { font-size: 23px; font-weight: 700; margin: 0; }
 .sec { display: flex; flex-direction: column; gap: 16px; }
