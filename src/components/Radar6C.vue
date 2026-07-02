@@ -14,13 +14,16 @@
     </g>
     <!-- Libellés -->
     <text v-for="(c, i) in COMPETENCES_6C" :key="'lbl' + i"
-          :x="label(i).x" :y="label(i).y" :text-anchor="label(i).anchor" class="r-label">{{ c.label }}</text>
+          :x="label(i).x" :y="label(i).y" :text-anchor="label(i).anchor" class="r-label">{{ locale === 'en' ? (c.label_en || c.label) : c.label }}</text>
   </svg>
 </template>
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { COMPETENCES_6C } from '../data/orientation'
+
+const { locale } = useI18n({ useScope: 'global' })
 
 const props = defineProps({
   // { creativite: 1..5, esprit_critique: ..., ... }

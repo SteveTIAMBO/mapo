@@ -2,29 +2,25 @@
   <div class="orient">
     <!-- En-tête + rappel de la méthode (3 temps) -->
     <div class="orient-intro">
-      <p class="muted">
-        L'orientation de MIAPO se fait en 3 temps : <strong>1.</strong> on évalue le profil de
-        {{ enfant.firstName }} (6 compétences), <strong>2.</strong> on le croise avec les filières et
-        débouchés réels du pays, <strong>3.</strong> on propose des pistes argumentées — jamais au hasard.
-      </p>
+      <p class="muted">{{ t('mia.oriIntro', { name: enfant.firstName }) }}</p>
     </div>
 
-    <!-- ÉTAPE 1 — Auto-évaluation 6C -->
+    <!-- ÉTAPE 1 — Profil 6C -->
     <div class="card step-card">
       <div class="step-head">
         <span class="step-num">1</span>
-        <h3>Le profil de {{ enfant.firstName }} <span class="six-c">les 6C</span></h3>
-        <span v-if="hasEval && !editing" class="done-pill"><Check :size="13" /> évalué</span>
+        <h3>{{ t('mia.oriProfileOf', { name: enfant.firstName }) }} <span class="six-c">{{ t('mia.ori6cBadge') }}</span></h3>
+        <span v-if="hasEval && !editing" class="done-pill"><Check :size="13" /> {{ t('mia.oriEvaluated') }}</span>
       </div>
 
       <template v-if="!hasEval">
-        <p class="muted small">Le profil se définit via un court questionnaire (30 questions) dans l'onglet <strong>« Profil 6C »</strong> — c'est ce qui rend les pistes justes.</p>
-        <button class="btn btn-primary btn-sm" @click="emit('eval')"><Target :size="15" /> <span>Faire mon Profil 6C</span></button>
+        <p class="muted small">{{ t('mia.oriS1Hint') }}</p>
+        <button class="btn btn-primary btn-sm" @click="emit('eval')"><Target :size="15" /> <span>{{ t('mia.oriS1Cta') }}</span></button>
       </template>
 
       <template v-else>
         <Radar6C :scores="enfant.comp6c || {}" />
-        <button class="btn btn-ghost btn-sm refaire" @click="emit('eval')"><Sliders :size="14" /> <span>Revoir dans « Profil 6C »</span></button>
+        <button class="btn btn-ghost btn-sm refaire" @click="emit('eval')"><Sliders :size="14" /> <span>{{ t('mia.oriS1Redo') }}</span></button>
       </template>
     </div>
 
@@ -32,12 +28,12 @@
     <div class="card step-card" :class="{ disabled: !hasEval }">
       <div class="step-head">
         <span class="step-num">2</span>
-        <h3>Où viser ?</h3>
+        <h3>{{ t('mia.oriS2Title') }}</h3>
       </div>
-      <p class="muted small">Les pistes seront calées sur les filières, écoles et débouchés <strong>réels</strong> de la destination choisie.</p>
+      <p class="muted small">{{ t('mia.oriS2Hint') }}</p>
       <div v-if="!paysCouvert" class="pays-note">
         <Info :size="16" />
-        <p>Le référentiel d'orientation propre au pays de {{ enfant.firstName }} (<strong>{{ paysEnfantLabel || 'non précisé' }}</strong>) n'est pas encore disponible. En attendant, MIAPO s'appuie sur des repères <strong>régionaux (Cameroun)</strong> et <strong>internationaux (France)</strong> pour situer filières et débouchés.</p>
+        <p>{{ t('mia.oriPaysNote', { name: enfant.firstName, pays: paysEnfantLabel || t('mia.oriUnspecified') }) }}</p>
       </div>
       <div class="pays-pick">
         <button v-for="p in PAYS_ORIENTATION" :key="p.code" class="pays-btn" :class="{ active: pays === p.code }" :disabled="!hasEval" @click="selectPays(p.code)">
@@ -51,17 +47,17 @@
     <div class="card step-card" :class="{ disabled: !hasEval }">
       <div class="step-head">
         <span class="step-num">3</span>
-        <h3>Pistes argumentées</h3>
+        <h3>{{ t('mia.oriS3Title') }}</h3>
         <span class="ia-badge"><Sparkles :size="12" /> MIAPO</span>
       </div>
 
       <div v-if="state === 'idle'">
-        <p class="muted small">MIAPO croise le profil 6C de {{ enfant.firstName }}, son niveau ({{ enfant.niveau }}) et les données réelles de {{ paysLabel }}.</p>
-        <button class="btn btn-primary" :disabled="!hasEval" @click="getSuggestions"><Compass :size="16" /> <span>Obtenir les pistes pour {{ paysLabel }}</span></button>
+        <p class="muted small">{{ t('mia.oriS3Idle', { name: enfant.firstName, niveau: enfant.niveau, pays: paysLabel }) }}</p>
+        <button class="btn btn-primary" :disabled="!hasEval" @click="getSuggestions"><Compass :size="16" /> <span>{{ t('mia.oriGet', { pays: paysLabel }) }}</span></button>
       </div>
 
       <div v-else-if="state === 'loading'" class="loading">
-        <Loader2 :size="32" class="spin" /><p>MIAPO analyse le profil et les filières…</p><small>Quelques secondes</small>
+        <Loader2 :size="32" class="spin" /><p>{{ t('mia.oriAnalyzing') }}</p><small>{{ t('mia.oriFewSec') }}</small>
       </div>
 
       <div v-else-if="state === 'done' && result" class="reco">
@@ -70,15 +66,15 @@
           <div class="reco-head">
             <GraduationCap :size="17" />
             <strong>{{ r.domaine }}</strong>
-            <span class="adq" :class="r.adequation === 'forte' ? 'adq-h' : 'adq-m'">{{ r.adequation === 'forte' ? 'Forte adéquation' : 'Adéquation moyenne' }}</span>
+            <span class="adq" :class="r.adequation === 'forte' ? 'adq-h' : 'adq-m'">{{ r.adequation === 'forte' ? t('mia.oriAdqStrong') : t('mia.oriAdqMed') }}</span>
           </div>
           <p class="reco-why">{{ r.pourquoi }}</p>
           <div v-if="r.metiers_cles.length" class="reco-block">
-            <span class="reco-lab">Métiers</span>
+            <span class="reco-lab">{{ t('mia.oriJobs') }}</span>
             <div class="chips"><span v-for="(m, j) in r.metiers_cles" :key="j" class="chip chip-m">{{ m }}</span></div>
           </div>
           <div v-if="r.etablissements_cles.length" class="reco-block">
-            <span class="reco-lab">Où étudier</span>
+            <span class="reco-lab">{{ t('mia.oriWhere') }}</span>
             <div class="chips"><span v-for="(e, j) in r.etablissements_cles" :key="j" class="chip chip-e">{{ e }}</span></div>
           </div>
         </div>
@@ -89,20 +85,20 @@
         <div v-if="pays === 'france' && enfant.pays !== 'FR'" class="mobi-bridge">
           <div class="mobi-ic"><Plane :size="20" /></div>
           <div class="mobi-txt">
-            <strong>Envie d'étudier en France ?</strong>
-            <p>La mobilité étudiante (admission, visa « Études en France », logement, budget) se prépare. Mobi, l'app mobilité d'EDUFREM, accompagne {{ enfant.firstName }} pas à pas.</p>
+            <strong>{{ t('mia.oriMobiTitle') }}</strong>
+            <p>{{ t('mia.oriMobiText', { name: enfant.firstName }) }}</p>
           </div>
-          <a class="btn btn-primary btn-sm mobi-cta" href="https://mobi.app-edufrem.com" target="_blank" rel="noopener"><span>Découvrir Mobi</span><ArrowRight :size="15" /></a>
+          <a class="btn btn-primary btn-sm mobi-cta" href="https://mobi.app-edufrem.com" target="_blank" rel="noopener"><span>{{ t('mia.oriMobiCta') }}</span><ArrowRight :size="15" /></a>
         </div>
 
         <div class="reco-foot">
-          <span class="src-note">Pistes fondées sur des données publiques (à affiner avec un conseiller).</span>
-          <button class="btn btn-ghost btn-sm" @click="state = 'idle'">Régénérer</button>
+          <span class="src-note">{{ t('mia.oriSrcNote') }}</span>
+          <button class="btn btn-ghost btn-sm" @click="state = 'idle'">{{ t('mia.regenerate') }}</button>
         </div>
       </div>
 
       <div v-else-if="state === 'error'" class="err">
-        <p>{{ error }}</p><button class="btn btn-outline btn-sm" @click="state = 'idle'">Réessayer</button>
+        <p>{{ error }}</p><button class="btn btn-outline btn-sm" @click="state = 'idle'">{{ t('mia.retry') }}</button>
       </div>
     </div>
   </div>
@@ -110,6 +106,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientation'
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
@@ -118,6 +115,7 @@ import Radar6C from './Radar6C.vue'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 const emit = defineEmits(['eval'])
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
@@ -198,6 +196,7 @@ async function getSuggestions() {
     competences: e.comp6c || {},
     forts, faibles,
     candidats: topCandidats(),
+    langue: locale.value === 'en' ? 'en' : 'fr',
   })
   if (res.ok && res.result && res.result.recommandations.length) {
     result.value = res.result

@@ -374,7 +374,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @param {{niveau, pays, competences:Object, forts:string[], faibles:string[], candidats:Array}} o
    * @returns {Promise<{ok, result?:{profil,recommandations,conseil,prudence}, reason?}>}
    */
-  async function orientation6c({ niveau, pays = '', competences = {}, forts = [], faibles = [], candidats = [] }) {
+  async function orientation6c({ niveau, pays = '', competences = {}, forts = [], faibles = [], candidats = [], langue = 'fr' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -383,7 +383,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats } }),
+        body: JSON.stringify({ task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats, langue } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {

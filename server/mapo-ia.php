@@ -373,6 +373,13 @@ function buildOrientation6cPrompts($d) {
     . "{\"profil\":\"2 phrases sur son profil 6C\",\"recommandations\":[{\"domaine\":\"...\",\"adequation\":\"forte|moyenne\",\"pourquoi\":\"argumentaire lié à ses 6C et son niveau\",\"metiers_cles\":[\"...\"],\"etablissements_cles\":[\"...\"]}],\"conseil\":\"...\",\"prudence\":\"...\"}. "
     . "Donne 2 à 4 recommandations, classées.";
 
+  // Langue de sortie : par défaut FR ; en 'en', on force l'anglais pour toutes
+  // les valeurs du JSON (le format reste identique).
+  $langue = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  if ($langue === 'en') {
+    $system .= " IMPORTANT: write ALL the JSON string values (profil, pourquoi, metiers_cles, etablissements_cles, conseil, prudence) entirely in ENGLISH, while keeping the exact same JSON keys.";
+  }
+
   $u  = "Pays visé : {$pays}\n";
   $u .= "Niveau scolaire : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
   if ($compLines) $u .= "Profil 6C (auto-évaluation) : " . implode(' · ', $compLines) . "\n";
