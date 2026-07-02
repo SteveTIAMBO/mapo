@@ -315,10 +315,10 @@
         <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
         <div class="agenda-days">
           <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today }">
-            <div class="ad-date"><span class="ad-dow">{{ d.label }}</span><span class="ad-num">{{ d.date }}</span></div>
-            <div class="ad-body">
-              <button v-if="d.matiere" class="ad-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
-              <span v-else class="ad-rest">{{ t('mia.restDay') }}</span>
+            <div class="dy-date"><span class="dy-dow">{{ d.label }}</span><span class="dy-num">{{ d.date }}</span></div>
+            <div class="dy-body">
+              <button v-if="d.matiere" class="dy-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
+              <span v-else class="dy-rest">{{ t('mia.restDay') }}</span>
             </div>
           </div>
         </div>
@@ -778,14 +778,14 @@ onUnmounted(() => {
 .agenda-days { display: flex; flex-direction: column; gap: 5px; }
 .agenda-day { display: flex; gap: 11px; align-items: center; padding: 6px 7px; border-radius: 10px; }
 .agenda-day.today { background: rgba(var(--pr-rgb,21,88,176),.08); }
-.ad-date { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
-.ad-dow { font-size: 10px; color: var(--tx3); text-transform: uppercase; letter-spacing: .03em; }
-.ad-num { font-size: 15px; font-weight: 700; color: var(--tx); line-height: 1.1; }
-.agenda-day.today .ad-num { color: var(--pr); }
-.ad-body { flex: 1; min-width: 0; }
-.ad-exo { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; background: rgba(var(--pr-rgb,21,88,176),.09); color: var(--pr); border: none; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
-.ad-exo:hover { background: rgba(var(--pr-rgb,21,88,176),.16); }
-.ad-rest { font-size: 12px; color: var(--tx3); font-style: italic; }
+.dy-date { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
+.dy-dow { font-size: 10px; color: var(--tx3); text-transform: uppercase; letter-spacing: .03em; }
+.dy-num { font-size: 15px; font-weight: 700; color: var(--tx); line-height: 1.1; }
+.agenda-day.today .dy-num { color: var(--pr); }
+.dy-body { flex: 1; min-width: 0; }
+.dy-exo { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; background: rgba(var(--pr-rgb,21,88,176),.09); color: var(--pr); border: none; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
+.dy-exo:hover { background: rgba(var(--pr-rgb,21,88,176),.16); }
+.dy-rest { font-size: 12px; color: var(--tx3); font-style: italic; }
 .aside-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 13px; }
 .aside-connect { width: 100%; }
 .aside-note { font-size: 11px; color: var(--tx3); margin: 8px 0 0; }
