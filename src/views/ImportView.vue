@@ -339,14 +339,15 @@ const modules = [
     desc: 'Importer la structure des classes et niveaux.',
     columns: [
       { key: 'level', label: 'Niveau', required: true },
-      { key: 'serie', label: 'Classe', required: false },
+      { key: 'serie', label: 'Série (A/B/C/D)', required: false },
       { key: 'capacity', label: 'Effectif max', required: false },
-      { key: 'name', label: 'Nom (auto)', required: false },
     ],
     headerMap: {
       'niveau': 'level', 'level': 'level',
-      'classe': 'serie', 'classe (a, b, c)': 'serie', 'section': 'serie', 'serie': 'serie', 'série': 'serie', 'série (a/c/d)': 'serie', 'serie (a/c/d)': 'serie', 'class': 'serie',
+      'classe': 'serie', 'classe (a, b, c)': 'serie', 'section': 'serie', 'serie': 'serie', 'série': 'serie', 'série (a/c/d)': 'serie', 'serie (a/c/d)': 'serie', 'série (a/b/c/d)': 'serie', 'serie (a/b/c/d)': 'serie', 'class': 'serie',
       'effectif': 'capacity', 'effectif max': 'capacity', 'capacite': 'capacity', 'capacité': 'capacity', 'max': 'capacity', 'capacity': 'capacity',
+      // Le nom de la classe est dérivé (Niveau + Série). On garde ces alias en
+      // rétro-compat : un ancien fichier avec une colonne « Nom classe » reste importable.
       'nom': 'name', 'nom classe': 'name', 'nom (auto)': 'name', 'name': 'name',
     },
   },
@@ -713,8 +714,9 @@ async function downloadTemplate() {
     )
   } else if (mod.id === 'classes') {
     instrData.push([''], ['NOTES :'],
-      ['   - Niveau : 6e, 5e, 4e, 3e, 2nde, 1ère, ou Tle'],
-      ['   - Série : A, C, ou D (uniquement pour 1ère et Tle)'],
+      ['   - Niveau : le niveau de votre établissement (SIL…CM2 au primaire ; 6e…Tle au secondaire).'],
+      ['   - Série (A/B/C/D) : section ou série, optionnelle (ex. A, B ; ou C/D en 1ère et Tle).'],
+      ['   - Le NOM de la classe est généré automatiquement : Niveau + Série (ex. « 6ème A »). Rien à saisir.'],
     )
   }
 
