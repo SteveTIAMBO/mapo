@@ -240,6 +240,7 @@ const navSections = computed(() => {
     const items = [
       { to: '/espace-eleve', icon: Home, label: 'nav.monEspace' },
       { key: 'notes', to: '/eleve/notes', icon: FileText, label: 'nav.mesNotes' },
+      { to: '/eleve/cours', icon: NotebookPen, label: 'nav.cours' },
       { to: '/eleve/revisions', icon: Sparkles, label: 'nav.revisions' },
       { key: 'emploi-du-temps', to: '/eleve/emploi-du-temps', icon: Clock, label: 'nav.edt' },
       { key: 'presences', to: '/eleve/presences', icon: CalendarCheck, label: 'nav.mesPresences' },
@@ -276,8 +277,10 @@ const navSections = computed(() => {
   const sections = []
   for (const g of GROUP_ORDER) {
     const items = visible.filter(i => i.group === g)
-    // Carré : action (pas une route) qui ouvre Carré web déjà connecté (SSO).
-    if (g === 'scolarite') items.push({ action: 'carre', icon: NotebookPen, label: 'nav.carre' })
+    // « Cours » : contenus pédagogiques (enseignant publie, directeur en lecture
+    // seule). Le bouton Carré vit désormais DANS la vue Cours (en-tête), conditionné
+    // à l'activation de Carré dans les paramètres de l'école.
+    if (g === 'scolarite') items.push({ to: '/cours', icon: NotebookPen, label: 'nav.cours' })
     if (!items.length) continue
     sections.push({ label: g === 'principal' ? null : t('navGroups.' + g), items })
   }

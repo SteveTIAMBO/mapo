@@ -224,6 +224,12 @@ const routes = [
         component: () => import('../views/EleveMessagesView.vue'),
         meta: { title: 'Messagerie', eleveOnly: true }
       },
+      {
+        path: 'eleve/cours',
+        name: 'EleveCours',
+        component: () => import('../views/EleveCoursView.vue'),
+        meta: { title: 'Cours', eleveOnly: true }
+      },
       // === Staff routes ===
       {
         path: 'messagerie',
@@ -254,6 +260,12 @@ const routes = [
         name: 'Matieres',
         component: () => import('../views/MatieresView.vue'),
         meta: { title: 'Matières & Coefficients' }
+      },
+      {
+        path: 'cours',
+        name: 'Cours',
+        component: () => import('../views/CoursView.vue'),
+        meta: { title: 'Cours' }
       },
       {
         path: 'notes',
