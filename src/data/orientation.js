@@ -103,8 +103,8 @@ export const COMPETENCES_6C = [
 ]
 
 export const PAYS_ORIENTATION = [
-  { code: 'cameroun', label: 'Cameroun' },
-  { code: 'france', label: 'France (international)' },
+  { code: 'cameroun', label: 'Cameroun', label_en: 'Cameroon' },
+  { code: 'france', label: 'France (international)', label_en: 'France (international)' },
 ]
 
 export const ORIENTATION = {

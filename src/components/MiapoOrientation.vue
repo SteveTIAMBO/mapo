@@ -38,7 +38,7 @@
       <div class="pays-pick">
         <button v-for="p in PAYS_ORIENTATION" :key="p.code" class="pays-btn" :class="{ active: pays === p.code }" :disabled="!hasEval" @click="selectPays(p.code)">
           <Globe v-if="p.code === 'france'" :size="16" /><MapPin v-else :size="16" />
-          <span>{{ p.label }}</span>
+          <span>{{ locale === 'en' ? (p.label_en || p.label) : p.label }}</span>
         </button>
       </div>
     </div>
@@ -156,7 +156,11 @@ const paysEnfantLabel = computed(() => PAYS.find((p) => p.code === props.enfant.
 const paysCouvert = computed(() => !!REFERENTIEL_PAR_PAYS[props.enfant.pays])
 function defaultPays() { return REFERENTIEL_PAR_PAYS[props.enfant.pays] || 'cameroun' }
 const pays = ref(defaultPays())
-const paysLabel = computed(() => PAYS_ORIENTATION.find((p) => p.code === pays.value)?.label || 'Cameroun')
+const paysLabel = computed(() => {
+  const p = PAYS_ORIENTATION.find((x) => x.code === pays.value)
+  if (!p) return 'Cameroun'
+  return locale.value === 'en' ? (p.label_en || p.label) : p.label
+})
 function selectPays(code) { pays.value = code; state.value = 'idle'; result.value = null }
 
 // ── Matching front : on classe les domaines RÉELS par adéquation au profil 6C ─
