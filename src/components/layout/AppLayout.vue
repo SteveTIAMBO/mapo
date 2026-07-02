@@ -207,6 +207,13 @@ onUnmounted(() => {
   min-width: 0;
 }
 
+/* B2C MIAPO+ (≥769px) : on borne la hauteur pour que SEUL le contenu défile —
+   le volet MIAPO+ reste fixe et entièrement visible (en-tête figé en haut). */
+@media (min-width: 769px) {
+  .layout-main.no-sidebar { height: 100vh; overflow: hidden; }
+  .layout-main.no-sidebar .layout-content { padding: 0; overflow: hidden; min-height: 0; display: flex; }
+}
+
 /* Backdrop for mobile drawer */
 .sidebar-backdrop {
   position: fixed;

@@ -64,6 +64,7 @@ import { useSchoolStore } from '../../stores/school'
 import { PanelLeftClose, PanelLeftOpen, Bell, Settings, Menu, Search } from 'lucide-vue-next'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
+import { useEnfantsAutonomesStore } from '../../stores/enfantsAutonomes'
 import { setLang } from '../../i18n'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -73,6 +74,7 @@ defineEmits(['toggle-sidebar'])
 const authStore = useAuthStore()
 const schoolStore = useSchoolStore()
 const permissionsStore = usePermissionsStore()
+const miapoStore = useEnfantsAutonomesStore()
 const { isOnline, pendingSyncCount, syncStatus } = useConnectionStatus()
 
 // Indicateur connexion + synchronisation (robustesse réseau rendue visible)
@@ -96,7 +98,14 @@ onMounted(() => { checkMobile(); window.addEventListener('resize', checkMobile) 
 onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
 
 const canAccessSettings = computed(() => permissionsStore.hasAccess('parametres'))
-const firstName = computed(() => authStore.userFirstName)
+const firstName = computed(() => {
+  // MIAPO+ en mode apprenant : on salue l'apprenant lui-même (ex. Diane), pas le
+  // nom du compte (« Famille »). En mode parent, on garde le nom du compte.
+  if (authStore.isB2C && miapoStore.mode === 'apprenant' && miapoStore.enfants.length) {
+    return miapoStore.enfants[0].firstName || authStore.userFirstName
+  }
+  return authStore.userFirstName
+})
 // B2C (MIAPO+) : pas de nom d'école dans l'en-tête (la famille n'appartient pas à une école).
 const schoolName = computed(() => authStore.isB2C ? '' : (schoolStore.schoolSettings?.schoolName || ''))
 const schoolLogo = computed(() => schoolStore.schoolSettings?.logo || null)

@@ -25,7 +25,13 @@
           <span>{{ s.label }}</span>
         </button>
       </nav>
-      <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
+      <div class="volet-bottom">
+        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false">
+          <Settings :size="18" />
+          <span>{{ t('mia.secProfile') }}</span>
+        </button>
+        <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
+      </div>
     </aside>
 
     <!-- ───────── Contenu ───────── -->
@@ -367,7 +373,6 @@ const SECTIONS = computed(() => [
   { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
   { key: 'orientation', label: t('mia.secOrientation'), icon: Compass },
   { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
-  { key: 'profil', label: t('mia.secProfile'), icon: Settings },
 ])
 const section = ref('accueil')
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
@@ -636,7 +641,7 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.miapo-shell { display: flex; align-items: flex-start; gap: 0; min-height: 100%; }
+.miapo-shell { display: flex; align-items: stretch; gap: 0; min-height: 100%; }
 
 /* ───────── Volet menu ───────── */
 /* Menu figé : il reste en place (sticky pleine hauteur), seul le contenu défile. */
@@ -657,14 +662,24 @@ onUnmounted(() => {
 .child-single { font-size: 14px; font-weight: 600; color: var(--tx); padding: 4px 6px; } .child-single span { font-size: 12px; font-weight: 500; color: var(--tx3); background: var(--input-bg, #eef1f4); padding: 2px 8px; border-radius: 20px; margin-left: 4px; }
 
 .volet-nav { display: flex; flex-direction: column; gap: 3px; }
-.volet-logout { margin-top: auto; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
+/* Profil + Déconnexion groupés en bas du volet (Profil juste au-dessus). */
+.volet-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
+.volet-logout { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
 .volet-logout:hover { background: rgba(217,48,37,.07); color: #D93025; }
 .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx2, #4b5563); text-align: left; width: 100%; }
 .nav-item:hover { background: var(--input-bg, #f1f3f5); }
 .nav-item.active { background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); font-weight: 600; }
 
 /* ───────── Main ───────── */
-.miapo-main { flex: 1; min-width: 0; padding: 22px 26px; max-width: 760px; }
+.miapo-main { flex: 1; min-width: 0; padding: 22px 26px; max-width: 760px; overflow-y: auto; }
+
+/* ── Bureau (≥769px) : menu latéral FIXE et entièrement visible ; seule la zone
+   principale défile. La hauteur est bornée par AppLayout (.no-sidebar). ── */
+@media (min-width: 769px) {
+  .miapo-shell { flex: 1; min-height: 0; }
+  .volet { position: static; top: auto; height: auto; align-self: stretch; }
+  .miapo-main { min-height: 0; }
+}
 .main-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 .main-head h1 { font-size: 23px; font-weight: 700; margin: 0; }
 .sec { display: flex; flex-direction: column; gap: 16px; }
