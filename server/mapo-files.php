@@ -52,6 +52,13 @@ if (!$uid) {
 }
 
 if (!is_dir(MAPO_UPLOAD_DIR)) @mkdir(MAPO_UPLOAD_DIR, 0755, true);
+// Sécurité : les fichiers ne doivent JAMAIS être servis directement par Apache
+// (uniquement par ce script, après vérification du jeton). On dépose un .htaccess
+// qui interdit tout accès HTTP direct au dossier uploads (idempotent).
+$ht = MAPO_UPLOAD_DIR . '/.htaccess';
+if (is_dir(MAPO_UPLOAD_DIR) && !file_exists($ht)) {
+  @file_put_contents($ht, "<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n  Order allow,deny\n  Deny from all\n</IfModule>\n");
+}
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
   handleUpload($ALLOWED);
