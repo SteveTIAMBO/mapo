@@ -96,6 +96,7 @@ import { useAuthStore } from '../stores/auth'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import { usePersonnelStore } from '../stores/personnel'
 import { openCarre } from '../services/carreSso'
 import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
 import CoursFileViewer from '../components/CoursFileViewer.vue'
@@ -107,13 +108,22 @@ const authStore = useAuthStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
+const personnelStore = usePersonnelStore()
 
 const isDirecteur = computed(() => authStore.isDirecteur)
-// Matières enseignées par l'utilisateur (profil). Accepte tableau OU chaîne « Français;Anglais ».
+// Matières enseignées par l'utilisateur : d'abord le profil (démo / profil enrichi),
+// sinon on retrouve sa fiche personnel par e-mail et on lit ses matières.
 const mySubjects = computed(() => {
   let s = authStore.userProfile?.subjects
   if (typeof s === 'string') s = s.split(/[;,]/)
-  return Array.isArray(s) ? s.map((x) => String(x).trim()).filter(Boolean) : []
+  let list = Array.isArray(s) ? s.map((x) => String(x).trim()).filter(Boolean) : []
+  if (list.length) return list
+  const email = (authStore.userProfile?.email || authStore.user?.email || '').toLowerCase()
+  if (email) {
+    const me = (personnelStore.staff || []).find((m) => String(m.email || '').toLowerCase() === email)
+    if (me && Array.isArray(me.subjects)) list = me.subjects.map((x) => String(x).trim()).filter(Boolean)
+  }
+  return list
 })
 // Un enseignant ne publie QUE dans ses matières ; le directeur (lecture seule) voit
 // tout. Si aucune matière n'est définie sur son profil, on ne bloque pas (toutes).
@@ -186,6 +196,8 @@ onMounted(() => {
   store.load()
   if (!subjectsStore.subjects?.length) subjectsStore.loadSubjects?.()
   if (!classesStore.classes?.length) classesStore.loadClasses?.()
+  // Enseignant : on charge le personnel pour retrouver ses matières (si absentes du profil).
+  if (!isDirecteur.value && !personnelStore.staff?.length) personnelStore.loadStaff?.()
 })
 </script>
 
