@@ -96,10 +96,13 @@ onMounted(() => store.load())
 .card-head h3 { font-size: 16px; font-weight: 600; margin: 0; flex: 1; color: var(--tx, #1f2937); }
 .count { font-size: 12px; font-weight: 700; color: var(--tx2); background: var(--input-bg, #eef1f4); padding: 2px 9px; border-radius: 20px; }
 .items { display: flex; flex-direction: column; gap: 8px; }
-.item { border: 1px solid var(--bd, #e5e7eb); border-left: 3px solid var(--pr, #1558B0); border-radius: 12px; padding: 10px 13px; }
-.item.t-devoir { border-left-color: #E8953A; } .item.t-examen { border-left-color: #B3261E; } .item.t-ressource { border-left-color: #1B8A5A; }
+.item { border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 10px 13px; }
 .it-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.it-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: var(--pr); }
+/* Différenciation par couleur = pastille de type teintée (pas de ligne sur la tranche). */
+.it-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .3px; color: #1558B0; background: rgba(21, 88, 176, .10); padding: 2px 8px; border-radius: 20px; }
+.item.t-devoir .it-type { color: #C2751A; background: rgba(232, 149, 58, .16); }
+.item.t-examen .it-type { color: #B3261E; background: rgba(179, 38, 30, .10); }
+.item.t-ressource .it-type { color: #1B8A5A; background: rgba(27, 138, 90, .12); }
 .it-classe { font-size: 11px; color: var(--tx3); background: var(--input-bg, #eef1f4); padding: 1px 8px; border-radius: 20px; }
 .it-meta { font-size: 11.5px; color: var(--tx3); margin-left: auto; }
 .it-title { display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; background: none; border: none; cursor: pointer; font-size: 15px; font-weight: 600; color: var(--tx, #1f2937); padding: 6px 0 0; font-family: inherit; }
