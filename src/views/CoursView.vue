@@ -163,4 +163,18 @@ onMounted(() => {
 .it-meta { font-size: 11.5px; color: var(--tx3); margin-top: 6px; }
 .empty { text-align: center; padding: 16px; }
 .spin { animation: spin .9s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .cv-head { flex-direction: column; align-items: stretch; }
+  .cv-head h1 { font-size: 20px; }
+  .cv-head-actions { justify-content: space-between; }
+  .card { padding: 14px 15px; border-radius: 14px; }
+  .pub-row { flex-direction: column; gap: 10px; }
+  .fg { min-width: 0; }
+  .miapo-btn { align-self: stretch; justify-content: center; }
+  .pub-actions { flex-wrap: wrap; }
+  .pub-actions .btn { flex: 1; justify-content: center; }
+  .item { flex-wrap: wrap; }
+}
 </style>

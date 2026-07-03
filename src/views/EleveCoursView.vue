@@ -98,4 +98,15 @@ onMounted(() => store.load())
 .it-contenu { margin: 0 0 10px; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.6; white-space: pre-line; }
 .empty-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px; text-align: center; color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Mobile ── */
+@media (max-width: 640px) {
+  .ec-head { flex-direction: column; align-items: stretch; gap: 8px; }
+  .ec-head h1 { font-size: 20px; }
+  .ec-head .btn { align-self: flex-start; }
+  .card { padding: 14px 15px; }
+  .it-meta { margin-left: 0; width: 100%; }
+  .it-top { gap: 6px; }
+  .it-body { padding-left: 14px; }
+}
 </style>
