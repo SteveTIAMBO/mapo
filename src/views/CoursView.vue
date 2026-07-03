@@ -89,7 +89,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useAuthStore } from '../stores/auth'
@@ -109,7 +109,21 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 
 const isDirecteur = computed(() => authStore.isDirecteur)
-const subjects = computed(() => subjectsStore.subjects || [])
+// Matières enseignées par l'utilisateur (profil). Accepte tableau OU chaîne « Français;Anglais ».
+const mySubjects = computed(() => {
+  let s = authStore.userProfile?.subjects
+  if (typeof s === 'string') s = s.split(/[;,]/)
+  return Array.isArray(s) ? s.map((x) => String(x).trim()).filter(Boolean) : []
+})
+// Un enseignant ne publie QUE dans ses matières ; le directeur (lecture seule) voit
+// tout. Si aucune matière n'est définie sur son profil, on ne bloque pas (toutes).
+const subjects = computed(() => {
+  const all = subjectsStore.subjects || []
+  if (isDirecteur.value || !mySubjects.value.length) return all
+  const set = new Set(mySubjects.value.map((x) => x.toLowerCase()))
+  const filtered = all.filter((s) => set.has(String(s.name || '').toLowerCase()))
+  return filtered.length ? filtered : mySubjects.value.map((name) => ({ name }))
+})
 const classes = computed(() => classesStore.classes || [])
 const carreEnabled = computed(() => !!schoolStore.schoolSettings?.carreEnabled)
 const myUid = computed(() => authStore.userProfile?.uid || authStore.user?.uid || null)
@@ -124,6 +138,11 @@ const viewer = ref(null)
 const visibleItems = computed(() => isDirecteur.value ? store.items : store.forAuteur(myUid.value))
 const hasAttachment = computed(() => !!pendingFile.value.fileName)
 const canPublish = computed(() => form.value.matiere && form.value.titre.trim() && (form.value.contenu.trim() || form.value.url.trim() || hasAttachment.value))
+
+// Enseignant d'une seule matière → on la présélectionne (il ne publie que là).
+watch(subjects, (list) => {
+  if (!isDirecteur.value && list.length === 1 && !form.value.matiere) form.value.matiere = list[0].name
+}, { immediate: true })
 
 function isMine(it) { return !it.auteurId || it.auteurId === myUid.value }
 function typeLabel(ty) { return t('cours.type' + ty.charAt(0).toUpperCase() + ty.slice(1)) }

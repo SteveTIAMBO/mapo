@@ -23,9 +23,11 @@ import { identifierToEmail } from '../utils/identifier'
 // Comptes demo SECONDAIRE (pas de Firebase, bypass complet, mot de passe requis)
 const DEMO_ACCOUNTS = {
   directeur: { uid: 'demo-directeur', firstName: 'Michel', lastName: 'Teussop', role: 'directeur', email: 'directeur@demo' },
-  enseignant: { uid: 'demo-enseignant', firstName: 'Jean', lastName: 'Kamga', role: 'enseignant', email: 'enseignant@demo' },
+  // Jean Kamga : prof principal de 6ème A, enseigne les Mathématiques (il ne
+  // peut publier des cours QUE dans sa/ses matière(s)). Hélène est son élève.
+  enseignant: { uid: 'demo-enseignant', firstName: 'Jean', lastName: 'Kamga', role: 'enseignant', email: 'enseignant@demo', subjects: ['Mathématiques'], className: '6ème A' },
   parent: { uid: 'demo-parent', firstName: 'Thomas', lastName: 'Mbarga', role: 'parent', email: 'parent@demo' },
-  eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo' },
+  eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo', className: '6ème A' },
   // MIAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MIAPO+ seul.
   miapo: { uid: 'demo-miapo', firstName: 'Famille', lastName: 'Démo', role: 'parent', email: 'miapo@demo', b2c: true },
   // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).

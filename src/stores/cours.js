@@ -133,12 +133,14 @@ function parseJsonObject(text) {
   try { return JSON.parse(t) } catch { return null }
 }
 
-// Petit échantillon démo (pour que l'onglet Cours ne soit pas vide en démo).
+// Petit échantillon démo (6ème A = classe de l'enseignant démo Jean Kamga ET de
+// l'élève démo Hélène) : le prof voit SES publications (Maths), l'élève voit tous
+// les contenus de sa classe, le directeur voit tout.
 function demoSeed() {
   const now = Date.now()
   return [
-    { id: 'co-demo1', matiere: 'Mathématiques', classe: '3ème A', type: 'cours', titre: 'Théorème de Pythagore', contenu: "Objectifs : reconnaître un triangle rectangle et appliquer le théorème.\nDéroulé : rappel, démonstration, exercices d'application.\nÀ retenir : dans un triangle rectangle, le carré de l'hypoténuse est égal à la somme des carrés des deux autres côtés.", corrige: '', url: '', auteur: 'Joseph Tagne', auteurId: null, createdAt: new Date(now - 2 * 86400000).toISOString() },
-    { id: 'co-demo2', matiere: 'Français', classe: '3ème A', type: 'devoir', titre: 'Rédaction — l\'argumentation', contenu: "Sujet : rédigez un texte argumentatif (20 lignes) défendant l'importance de la lecture.\nBarème : introduction /4, arguments /10, conclusion /3, langue /3.\nDurée : 1h.", corrige: '', url: '', auteur: 'Sylvie Mballa', auteurId: null, createdAt: new Date(now - 86400000).toISOString() },
-    { id: 'co-demo3', matiere: 'SVT', classe: '3ème A', type: 'ressource', titre: 'Vidéo — la digestion', contenu: 'Une vidéo courte à regarder avant le prochain cours.', corrige: '', url: 'https://example.org/svt-digestion', auteur: 'Claire Ngo', auteurId: null, createdAt: new Date(now - 3 * 86400000).toISOString() },
+    { id: 'co-demo1', matiere: 'Mathématiques', classe: '6ème A', type: 'cours', titre: 'Les fractions', contenu: "Objectifs : comprendre, comparer et représenter des fractions simples.\nDéroulé : rappel des parts d'un tout, exemples concrets, exercices d'application.\nÀ retenir : une fraction représente une ou plusieurs parts égales d'un tout.", corrige: '', url: '', auteur: 'Jean Kamga', auteurId: 'demo-enseignant', createdAt: new Date(now - 2 * 86400000).toISOString() },
+    { id: 'co-demo2', matiere: 'Mathématiques', classe: '6ème A', type: 'devoir', titre: 'Devoir — additions de fractions', contenu: "Exercices 1 à 5 : additionner des fractions de même dénominateur.\nBarème : /20. Durée conseillée : 45 min.\nSoignez la présentation et simplifiez le résultat.", corrige: '', url: '', auteur: 'Jean Kamga', auteurId: 'demo-enseignant', createdAt: new Date(now - 86400000).toISOString() },
+    { id: 'co-demo3', matiere: 'Français', classe: '6ème A', type: 'ressource', titre: 'Vidéo — les types de phrases', contenu: 'Une courte vidéo à regarder avant le prochain cours.', corrige: '', url: 'https://example.org/francais-types-de-phrases', auteur: 'Claire Ngo', auteurId: null, createdAt: new Date(now - 3 * 86400000).toISOString() },
   ]
 }
