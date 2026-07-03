@@ -20,7 +20,11 @@
             <button class="it-title" @click="toggle(it.id)"><ChevronRight :size="16" class="chev" :class="{ open: opened === it.id }" /> {{ it.titre || t('cours.untitled') }}</button>
             <div v-if="opened === it.id" class="it-body">
               <p v-if="it.contenu" class="it-contenu">{{ it.contenu }}</p>
-              <a v-if="it.url" :href="it.url" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><LinkIcon :size="14" /> {{ t('cours.openResource') }}</a>
+              <div class="it-actions">
+                <a v-if="it.url" :href="it.url" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><LinkIcon :size="14" /> {{ t('cours.openResource') }}</a>
+                <button v-if="isViewable(it)" class="btn btn-primary btn-sm" @click="viewer = it"><Eye :size="14" /> {{ t('cours.viewFile') }}</button>
+                <button v-if="hasFile(it)" class="btn btn-outline btn-sm" @click="dl(it)"><Download :size="14" /> {{ t('cours.download') }}</button>
+              </div>
             </div>
           </div>
         </div>
@@ -30,6 +34,8 @@
       <BookOpen :size="30" />
       <p>{{ t('cours.emptyStudent') }}</p>
     </div>
+
+    <CoursFileViewer v-if="viewer" :item="viewer" @close="viewer = null" />
   </div>
 </template>
 
@@ -40,7 +46,9 @@ import { useCoursStore } from '../stores/cours'
 import { useAuthStore } from '../stores/auth'
 import { useSchoolStore } from '../stores/school'
 import { openCarre } from '../services/carreSso'
-import { BookOpen, ChevronRight, Loader2, NotebookPen, Link as LinkIcon } from 'lucide-vue-next'
+import { hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
+import CoursFileViewer from '../components/CoursFileViewer.vue'
+import { BookOpen, ChevronRight, Loader2, NotebookPen, Link as LinkIcon, Eye, Download } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useCoursStore()
@@ -49,7 +57,9 @@ const schoolStore = useSchoolStore()
 
 const carreEnabled = computed(() => !!schoolStore.schoolSettings?.carreEnabled)
 const opened = ref('')
+const viewer = ref(null)
 function toggle(id) { opened.value = opened.value === id ? '' : id }
+function dl(it) { downloadCoursFile(it) }
 function typeLabel(ty) { return t('cours.type' + ty.charAt(0).toUpperCase() + ty.slice(1)) }
 
 const studentClass = computed(() => {
@@ -96,6 +106,7 @@ onMounted(() => store.load())
 .chev { transition: transform .15s; flex-shrink: 0; color: var(--tx3); } .chev.open { transform: rotate(90deg); }
 .it-body { padding: 6px 0 4px 22px; }
 .it-contenu { margin: 0 0 10px; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.6; white-space: pre-line; }
+.it-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .empty-card { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px; text-align: center; color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
 

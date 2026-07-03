@@ -42,8 +42,18 @@
         <div class="fg"><label>{{ t('cours.itemTitle') }}</label><input v-model="form.titre" class="input" :placeholder="t('cours.resourceTitlePlaceholder')" /></div>
         <div class="fg"><label>{{ t('cours.link') }}</label><input v-model="form.url" class="input" type="url" placeholder="https://…" /></div>
         <div class="fg"><label>{{ t('cours.note') }} <span class="muted small">{{ t('cours.optional') }}</span></label><textarea v-model="form.contenu" class="input" rows="2"></textarea></div>
-        <p class="muted small upload-note"><Info :size="14" /> {{ t('cours.uploadSoon') }}</p>
       </template>
+
+      <!-- Pièce jointe PDF / PPT — commune à tous les types -->
+      <div class="fg file-fg">
+        <label>{{ t('cours.attachFile') }} <span class="muted small">{{ t('cours.attachHint') }}</span></label>
+        <div class="file-row">
+          <label class="btn btn-outline btn-sm"><Paperclip :size="15" /> <span>{{ t('cours.chooseFile') }}</span><input type="file" accept=".pdf,.ppt,.pptx" style="display:none" @change="onPickFile" /></label>
+          <span v-if="uploading" class="muted small up-load"><Loader2 :size="14" class="spin" /> {{ t('cours.uploading') }}</span>
+          <span v-else-if="pendingFile.fileName" class="file-chip"><FileText :size="14" /> {{ pendingFile.fileName }} <button class="chip-x" @click="clearFile"><X :size="12" /></button></span>
+        </div>
+        <span v-if="fileError" class="err-txt small">{{ fileError }}</span>
+      </div>
 
       <div class="pub-actions">
         <button class="btn btn-primary" :disabled="!canPublish" @click="doPublish"><Upload :size="16" /> <span>{{ t('cours.publish') }}</span></button>
@@ -61,6 +71,11 @@
             <strong class="it-title">{{ it.titre || t('cours.untitled') }}</strong>
             <p v-if="it.contenu" class="it-preview">{{ it.contenu.slice(0, 180) }}{{ it.contenu.length > 180 ? '…' : '' }}</p>
             <a v-if="it.url" :href="it.url" target="_blank" rel="noopener" class="it-link"><LinkIcon :size="13" /> {{ t('cours.openLink') }}</a>
+            <div v-if="hasFile(it)" class="it-file">
+              <button v-if="isViewable(it)" class="btn btn-outline btn-xs" @click="viewer = it"><Eye :size="13" /> <span>{{ t('cours.viewFile') }}</span></button>
+              <button class="btn btn-ghost btn-xs" @click="dl(it)"><Download :size="13" /> <span>{{ t('cours.download') }}</span></button>
+              <span class="it-fname">{{ it.fileName }}</span>
+            </div>
             <div class="it-meta">{{ it.auteur }} · {{ fmtDate(it.createdAt) }}</div>
           </div>
           <button v-if="!isDirecteur && isMine(it)" class="btn btn-ghost btn-xs" :title="t('cours.remove')" @click="store.remove(it.id)"><Trash2 :size="15" /></button>
@@ -68,6 +83,8 @@
       </div>
       <p v-else class="muted empty">{{ isDirecteur ? t('cours.emptyDirector') : t('cours.emptyTeacher') }}</p>
     </div>
+
+    <CoursFileViewer v-if="viewer" :item="viewer" @close="viewer = null" />
   </div>
 </template>
 
@@ -80,7 +97,9 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 import { openCarre } from '../services/carreSso'
-import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon } from 'lucide-vue-next'
+import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
+import CoursFileViewer from '../components/CoursFileViewer.vue'
+import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X } from 'lucide-vue-next'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const store = useCoursStore()
@@ -97,9 +116,14 @@ const myUid = computed(() => authStore.userProfile?.uid || authStore.user?.uid |
 
 const form = ref({ matiere: '', classe: '', type: 'cours', theme: '', titre: '', contenu: '', corrige: '', url: '' })
 const justPublished = ref(false)
+const pendingFile = ref({ fileName: '', fileExt: '', fileId: '', fileData: '', fileViewable: false })
+const uploading = ref(false)
+const fileError = ref('')
+const viewer = ref(null)
 
 const visibleItems = computed(() => isDirecteur.value ? store.items : store.forAuteur(myUid.value))
-const canPublish = computed(() => form.value.matiere && form.value.titre.trim() && (form.value.type === 'ressource' ? (form.value.url.trim() || form.value.contenu.trim()) : form.value.contenu.trim()))
+const hasAttachment = computed(() => !!pendingFile.value.fileName)
+const canPublish = computed(() => form.value.matiere && form.value.titre.trim() && (form.value.contenu.trim() || form.value.url.trim() || hasAttachment.value))
 
 function isMine(it) { return !it.auteurId || it.auteurId === myUid.value }
 function typeLabel(ty) { return t('cours.type' + ty.charAt(0).toUpperCase() + ty.slice(1)) }
@@ -113,11 +137,24 @@ async function prepare() {
 }
 function doPublish() {
   if (!canPublish.value) return
-  store.publish({ ...form.value })
+  store.publish({ ...form.value, ...pendingFile.value })
   justPublished.value = true
   form.value = { matiere: form.value.matiere, classe: form.value.classe, type: form.value.type, theme: '', titre: '', contenu: '', corrige: '', url: '' }
+  clearFile()
   setTimeout(() => { justPublished.value = false }, 2500)
 }
+async function onPickFile(ev) {
+  const f = ev.target.files && ev.target.files[0]
+  if (!f) return
+  uploading.value = true; fileError.value = ''
+  const r = await uploadCoursFile(f)
+  uploading.value = false
+  if (r.ok) pendingFile.value = { fileName: r.fileName, fileExt: r.fileExt, fileId: r.fileId || '', fileData: r.fileData || '', fileViewable: r.fileViewable }
+  else fileError.value = r.reason === 'demo_too_large' ? t('cours.fileDemoTooLarge') : r.reason === 'too_large' ? t('cours.fileTooLarge') : r.reason === 'bad_type' ? t('cours.fileBadType') : t('cours.fileUploadError')
+  ev.target.value = ''
+}
+function clearFile() { pendingFile.value = { fileName: '', fileExt: '', fileId: '', fileData: '', fileViewable: false } }
+function dl(it) { downloadCoursFile(it) }
 
 const carreLoading = ref(false)
 async function openCarreBtn() {
@@ -162,6 +199,13 @@ onMounted(() => {
 .it-link { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--pr); text-decoration: none; }
 .it-meta { font-size: 11.5px; color: var(--tx3); margin-top: 6px; }
 .empty { text-align: center; padding: 16px; }
+.file-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.file-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--tx2); background: var(--input-bg, #eef1f4); padding: 4px 8px 4px 10px; border-radius: 20px; }
+.chip-x { display: inline-flex; background: none; border: none; cursor: pointer; color: var(--tx3); padding: 2px; }
+.up-load { display: inline-flex; align-items: center; gap: 5px; }
+.err-txt { color: #D93025; }
+.it-file { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0 0; }
+.it-fname { font-size: 11.5px; color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; } @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Mobile ── */

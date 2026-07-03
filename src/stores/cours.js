@@ -51,7 +51,7 @@ export const useCoursStore = defineStore('cours', () => {
     } catch (e) { console.error('Erreur sauvegarde cours:', e) }
   }
 
-  function publish({ matiere, classe = '', type = 'cours', titre, contenu = '', corrige = '', url = '' }) {
+  function publish({ matiere, classe = '', type = 'cours', titre, contenu = '', corrige = '', url = '', fileId = '', fileName = '', fileExt = '', fileData = '', fileViewable = false }) {
     const authStore = useAuthStore()
     const p = authStore.userProfile || {}
     const item = {
@@ -63,6 +63,12 @@ export const useCoursStore = defineStore('cours', () => {
       contenu: String(contenu || '').trim(),
       corrige: String(corrige || '').trim(),
       url: String(url || '').trim(),
+      // Fichier joint (PDF/PPT) : fileId côté serveur LWS, OU fileData (data URL, démo).
+      fileId: String(fileId || ''),
+      fileName: String(fileName || ''),
+      fileExt: String(fileExt || ''),
+      fileData: String(fileData || ''),
+      fileViewable: !!fileViewable,
       auteur: p.displayName || [p.firstName, p.lastName].filter(Boolean).join(' ') || 'Enseignant',
       auteurId: p.uid || auth.currentUser?.uid || null,
       createdAt: new Date().toISOString(),
