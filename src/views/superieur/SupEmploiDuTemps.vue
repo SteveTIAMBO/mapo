@@ -270,23 +270,18 @@ function getSession(jour, debut) {
   box-sizing: border-box;
   padding: 9px 11px;
   border-radius: 9px;
-  border-left: 3px solid;
 }
 .st-session.t-fondamentale {
   background: var(--pr-light);
-  border-left-color: var(--pr);
 }
 .st-session.t-methodologique {
   background: rgba(27, 138, 90, 0.09);
-  border-left-color: var(--success);
 }
 .st-session.t-professionnelle {
   background: rgba(184, 137, 42, 0.1);
-  border-left-color: var(--gold);
 }
 .st-session.t-electif {
   background: rgba(99, 102, 241, 0.09);
-  border-left-color: #6366F1;
 }
 .st-session-code {
   font-family: 'Poppins', sans-serif;

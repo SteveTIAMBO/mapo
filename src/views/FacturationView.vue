@@ -2325,15 +2325,14 @@ watch(() => route.query, applyMiapoQuery)
   padding: 16px;
   background: var(--input-bg);
   border-radius: 6px;
-  border-left: 4px solid var(--card-border);
 }
 
 .balance-item.positive {
-  border-left-color: var(--success, #34A853);
+  background: rgba(52,168,83,.08);
 }
 
 .balance-item.negative {
-  border-left-color: var(--danger, #D93025);
+  background: rgba(217,48,37,.08);
 }
 
 .balance-label {

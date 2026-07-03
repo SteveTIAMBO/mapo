@@ -68,7 +68,7 @@
             </template>
             <template v-else>
               <div v-for="day in activeDays" :key="day.value" class="schedule-cell">
-                <div v-if="getSlotEntry(day.value, slot.index)" class="schedule-entry" :style="{ backgroundColor: getEntryColor(getSlotEntry(day.value, slot.index).subjectId) + '30', borderLeftColor: getEntryColor(getSlotEntry(day.value, slot.index).subjectId) }">
+                <div v-if="getSlotEntry(day.value, slot.index)" class="schedule-entry" :style="{ backgroundColor: getEntryColor(getSlotEntry(day.value, slot.index).subjectId) + '33' }">
                   <span class="entry-subject">{{ getSlotEntry(day.value, slot.index).subjectId }}</span>
                   <span class="entry-teacher">{{ getSlotEntry(day.value, slot.index).teacherName || '' }}</span>
                 </div>
@@ -211,7 +211,7 @@ onMounted(async () => {
 
 .schedule-entry {
   height: 100%; padding: 6px 8px; border-radius: 6px;
-  border-left: 3px solid; display: flex; flex-direction: column;
+  display: flex; flex-direction: column;
   justify-content: center; gap: 2px;
 }
 .entry-subject { font-size: 12px; font-weight: 600; color: var(--text); }

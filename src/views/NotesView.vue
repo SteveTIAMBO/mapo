@@ -2288,11 +2288,10 @@ onMounted(async () => {
 }
 
 .subject-validation-row.validated {
-  border-left: 3px solid var(--success, #34A853);
+  background: rgba(52,168,83,.10);
 }
 
 .subject-validation-row.pending {
-  border-left: 3px solid var(--tx3);
   opacity: 0.7;
 }
 

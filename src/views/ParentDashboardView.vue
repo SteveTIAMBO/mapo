@@ -322,7 +322,8 @@ onMounted(async () => {
   text-decoration: none;
   cursor: pointer;
   padding: 16px 20px;
-  border-left: 3px solid var(--pr);
+  background: rgba(var(--pr-rgb),.05);
+  border-radius: 12px;
   transition: background 0.15s;
 }
 .messages-alert:hover { background: var(--pr-light); text-decoration: none; }

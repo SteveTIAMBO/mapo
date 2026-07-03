@@ -1214,12 +1214,11 @@ onMounted(async () => {
   flex-direction: column;
   gap: 4px;
   min-width: 0;
-  border-left: 3px solid transparent;
 }
-.metric-blue { background: rgba(var(--pr-rgb),.04); border-left-color: var(--pr); }
-.metric-green { background: rgba(27,138,90,.04); border-left-color: #1B8A5A; }
-.metric-red { background: rgba(217,48,37,.04); border-left-color: #D93025; }
-.metric-orange { background: rgba(232,149,10,.04); border-left-color: #E8A838; }
+.metric-blue { background: rgba(var(--pr-rgb),.07); }
+.metric-green { background: rgba(27,138,90,.07); }
+.metric-red { background: rgba(217,48,37,.07); }
+.metric-orange { background: rgba(232,149,10,.09); }
 
 .metric-label {
   font-size: 13px;

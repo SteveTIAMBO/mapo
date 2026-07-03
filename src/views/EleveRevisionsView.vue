@@ -363,7 +363,7 @@ onMounted(async () => {
 .muted-line { color: var(--tx3); font-size: 14px; margin: 0; }
 
 /* Priorités */
-.priority-card { border-left: 3px solid var(--pr); }
+.priority-card { background: rgba(var(--pr-rgb),.04); }
 .priority-list { display: flex; flex-direction: column; gap: 10px; }
 .priority-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; transition: all .15s; text-align: left; width: 100%; }
 .priority-item:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb),.08); }

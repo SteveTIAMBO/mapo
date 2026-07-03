@@ -923,7 +923,7 @@ onUnmounted(() => {
 .prog-dots { display: flex; gap: 5px; } .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--input-bg, #e6e9ee); } .dot.on { background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); }
 .prog-lv { font-size: 12px; font-weight: 700; color: var(--pr); width: 52px; text-align: right; }
 
-.vision-card { border-left: 3px solid var(--pr); } .vision-btn { cursor: pointer; }
+.vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; color: var(--pr); } @keyframes spin { to { transform: rotate(360deg); } }
 .vision-result { display: flex; flex-direction: column; gap: 12px; }
@@ -937,7 +937,7 @@ onUnmounted(() => {
 .vr-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .err p { color: #D93025; font-size: 14px; margin: 0 0 10px; }
 
-.prepa-card { border-left: 3px solid #E8953A; }
+.prepa-card { background: rgba(232,149,58,.05); }
 .prepa-result { display: flex; flex-direction: column; gap: 12px; }
 .prepa-plan { display: flex; flex-direction: column; gap: 10px; }
 .etape { border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; }
@@ -949,7 +949,7 @@ onUnmounted(() => {
 .ce-head { display: flex; align-items: center; gap: 7px; color: var(--pr); } .ce-head strong { font-size: 14px; }
 .ce-hint { margin: 0; font-size: 12.5px; color: var(--tx2); line-height: 1.5; }
 .ce-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.cplan-card { border-left: 3px solid var(--pr, #1558B0); }
+.cplan-card { background: rgba(var(--pr-rgb,21,88,176),.04); }
 .cplan-list { display: flex; flex-direction: column; gap: 10px; }
 .cplan-step { border: 1px solid var(--bd); border-radius: 12px; padding: 12px 14px; }
 .ps-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }

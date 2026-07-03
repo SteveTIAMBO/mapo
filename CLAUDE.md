@@ -1,7 +1,9 @@
  tu as acces à firebase, et cpanel pour debugger et dev mais pour les upload de fichier sur le server, tu m'indiques les fichiers à uploader et le dossier local et c'est moi qui deploie. 
 si besoin tu as aussi claude in chrome pour analyser 
 
-## Mémoire partagée EDUFREM (À LIRE EN PREMIER)
-La mémoire commune à tous les chats EDUFREM (vision, roadmap des modules IA, décisions clés, profil de Steve) vit dans le dossier **`00_MEMOIRE/`** à la racine du projet EDUFREM. Au démarrage, lis **`../../00_MEMOIRE/MEMOIRE-EDUFREM.md`**.
+## Mémoire partagée (À LIRE EN PREMIER)
+La mémoire UNIQUE de Steve (tous ses projets, partagée par tous les chats + kIAlel + Gemini) vit dans **`00_MEMORY/`** à la racine du dossier Projects. Au démarrage, lis **`../../../00_MEMORY/MEMORY.md`** (index) puis `edufrem.md` et les fiches utiles. Règles transverses (design, typo, frugalité) : `_regles.md`.
 
-Idéalement, ouvre tes chats avec le **dossier EDUFREM global** sélectionné (pas seulement MAPO) pour que cette mémoire soit chargée automatiquement. Quand une décision est prise, mets à jour les fichiers de `00_MEMOIRE/` (pas seulement la mémoire interne, qui n'est pas partagée entre tous les chats).
+Idéalement, ouvre tes chats avec le **dossier EDUFREM global** sélectionné pour que cette mémoire soit chargée automatiquement. Quand une décision est prise ou qu'un fait durable apparaît, mets à jour la fiche concernée dans `00_MEMORY/` (corrige le fait dépassé, ne duplique pas).
+
+Note : l'ancienne mémoire `00_MEMOIRE/MEMOIRE-EDUFREM.md` a été archivée le 29/06/2026 (dans `_ARCHIVE_memoire_2026-06-29/`).
