@@ -1614,7 +1614,21 @@
     "start": "Start",
     "end": "End",
     "sequences": "Sequences",
-    "councilDate": "Class council date"
+    "councilDate": "Class council date",
+    "secFeedback": "Feedback & support",
+    "fbHint": "Found a bug or have a feature idea? Let us know — every report is emailed to us.",
+    "fbBug": "Report a bug",
+    "fbFeature": "Suggest an idea",
+    "fbSubject": "Subject",
+    "fbOptional": "(optional)",
+    "fbSubjectPh": "In a few words…",
+    "fbMessage": "Your message",
+    "fbMessagePh": "Describe the problem (what you were doing, what happened) or your idea…",
+    "fbSend": "Send",
+    "fbSending": "Sending…",
+    "fbSent": "Thanks! Your feedback has been sent.",
+    "fbError": "Sending failed.",
+    "fbMailto": "Send by email instead"
   },
   "onb": {
     "welcome": "Welcome! How would you like to start?",

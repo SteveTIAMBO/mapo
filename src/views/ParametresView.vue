@@ -342,6 +342,45 @@
           </div>
         </section>
 
+        <!-- Feedback / Support -->
+        <section class="card settings-card">
+          <div class="card-header">
+            <div class="section-label">{{ t('param.secFeedback') }}</div>
+          </div>
+          <div class="card-body">
+            <p style="font-size: 13px; color: var(--tx3); margin: 0 0 16px 0;">{{ t('param.fbHint') }}</p>
+            <div class="fb-type">
+              <button type="button" class="fb-seg" :class="{ active: fb.type === 'bug' }" @click="fb.type = 'bug'">
+                <Bug :size="15" /><span>{{ t('param.fbBug') }}</span>
+              </button>
+              <button type="button" class="fb-seg" :class="{ active: fb.type === 'feature' }" @click="fb.type = 'feature'">
+                <Lightbulb :size="15" /><span>{{ t('param.fbFeature') }}</span>
+              </button>
+            </div>
+            <div class="field" style="margin-top: 14px;">
+              <label>{{ t('param.fbSubject') }} <span style="font-weight: 400; color: var(--tx3);">{{ t('param.fbOptional') }}</span></label>
+              <input v-model="fb.subject" type="text" class="input" :placeholder="t('param.fbSubjectPh')" maxlength="160" />
+            </div>
+            <div class="field">
+              <label>{{ t('param.fbMessage') }}</label>
+              <textarea v-model="fb.message" class="input textarea" rows="4" :placeholder="t('param.fbMessagePh')" maxlength="5000"></textarea>
+            </div>
+            <!-- Honeypot anti-spam (invisible pour l'humain) -->
+            <input v-model="fb.hp" class="fb-hp" tabindex="-1" autocomplete="off" aria-hidden="true" />
+            <div class="fb-actions">
+              <button class="btn btn-primary" :disabled="!fb.message.trim() || fb.sending" @click="submitFeedback">
+                <Send :size="15" />
+                <span>{{ fb.sending ? t('param.fbSending') : t('param.fbSend') }}</span>
+              </button>
+              <span v-if="fb.sent" class="fb-ok"><Check :size="15" /> {{ t('param.fbSent') }}</span>
+            </div>
+            <p v-if="fb.error" class="fb-err">
+              {{ t('param.fbError') }}
+              <a :href="fbMailtoLink" class="fb-mailto">{{ t('param.fbMailto') }}</a>
+            </p>
+          </div>
+        </section>
+
       </div>
     </div>
   </div>
@@ -353,8 +392,9 @@ import { useI18n } from 'vue-i18n'
 import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
-import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck } from 'lucide-vue-next'
+import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck, Bug, Lightbulb, Send } from 'lucide-vue-next'
 import { DEFAULT_SERVICES } from '../stores/messages'
+import { sendFeedback, feedbackMailto } from '../services/feedback'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const schoolStore = useSchoolStore()
@@ -571,6 +611,27 @@ const getTimelineBarStyle = (trimData) => {
   return {
     left: `${Math.max(0, startOffset)}%`,
     width: `${Math.max(0, width)}%`,
+  }
+}
+
+// ── Feedback (bug / demande de fonctionnalité) ──────────────────────
+const fb = reactive({ type: 'bug', subject: '', message: '', hp: '', sending: false, sent: false, error: false })
+const fbMailtoLink = computed(() => feedbackMailto({ type: fb.type, subject: fb.subject, message: fb.message }))
+
+const submitFeedback = async () => {
+  if (!fb.message.trim() || fb.sending) return
+  fb.sending = true
+  fb.sent = false
+  fb.error = false
+  const r = await sendFeedback({ type: fb.type, subject: fb.subject, message: fb.message, hp: fb.hp })
+  fb.sending = false
+  if (r.ok) {
+    fb.sent = true
+    fb.subject = ''
+    fb.message = ''
+    setTimeout(() => { fb.sent = false }, 5000)
+  } else {
+    fb.error = true
   }
 }
 
@@ -826,6 +887,78 @@ const saveSettings = async () => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 24px;
+}
+
+/* Feedback / Support */
+.fb-type {
+  display: flex;
+  gap: 8px;
+}
+.fb-seg {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 12px;
+  border: 1px solid var(--card-border, rgba(0,0,0,.1));
+  border-radius: 10px;
+  background: var(--input-bg, #F6F6F4);
+  color: var(--tx2, #6F767E);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.fb-seg:hover {
+  border-color: var(--pr, #0A84FF);
+}
+.fb-seg.active {
+  background: rgba(var(--pr-rgb), 0.10);
+  border-color: var(--pr, #0A84FF);
+  color: var(--pr, #0A84FF);
+}
+.fb-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.fb-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.fb-ok {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--success, #1B8A5A);
+  font-size: 13px;
+  font-weight: 500;
+}
+.fb-err {
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--danger, #D93025);
+}
+.fb-mailto {
+  color: var(--pr, #0A84FF);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Feedback mobile : segments + bouton pleine largeur */
+@media (max-width: 600px) {
+  .fb-type {
+    flex-direction: column;
+  }
+  .fb-actions .btn {
+    width: 100%;
+  }
 }
 
 /* Responsive */

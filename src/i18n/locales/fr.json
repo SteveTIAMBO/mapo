@@ -1614,7 +1614,21 @@
     "start": "Début",
     "end": "Fin",
     "sequences": "Séquences",
-    "councilDate": "Date conseil de classe"
+    "councilDate": "Date conseil de classe",
+    "secFeedback": "Feedback & support",
+    "fbHint": "Un bug à signaler ou une idée de fonctionnalité ? Écrivez-nous : chaque retour nous est envoyé par e-mail.",
+    "fbBug": "Signaler un bug",
+    "fbFeature": "Proposer une idée",
+    "fbSubject": "Sujet",
+    "fbOptional": "(facultatif)",
+    "fbSubjectPh": "En quelques mots…",
+    "fbMessage": "Votre message",
+    "fbMessagePh": "Décrivez le problème (ce que vous faisiez, ce qui s'est passé) ou votre idée…",
+    "fbSend": "Envoyer",
+    "fbSending": "Envoi…",
+    "fbSent": "Merci ! Votre retour a bien été envoyé.",
+    "fbError": "L'envoi a échoué.",
+    "fbMailto": "Envoyer par e-mail à la place"
   },
   "onb": {
     "welcome": "Bienvenue ! Comment démarrer ?",
