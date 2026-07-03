@@ -346,6 +346,8 @@
     "subDirector": "Les contenus pédagogiques publiés par vos enseignants (lecture seule).",
     "subStudent": "Les cours et ressources mis à disposition par vos enseignants.",
     "readOnly": "Lecture seule",
+    "blockedTitle": "Aucune matière assignée",
+    "blockedText": "Aucune matière ne vous est encore attribuée. Contactez la direction pour qu'elle renseigne vos matières dans votre fiche personnel : vous pourrez alors publier des cours.",
     "publishTitle": "Préparer et publier",
     "subject": "Matière",
     "choose": "Choisir…",

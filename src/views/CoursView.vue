@@ -15,7 +15,13 @@
     </header>
 
     <!-- ENSEIGNANT : préparer + publier -->
-    <div v-if="!isDirecteur" class="card publish-card">
+    <!-- Enseignant sans matière assignée → publication bloquée -->
+    <div v-if="blockedNoSubject" class="card block-card">
+      <div class="card-head"><Lock :size="18" /><h3>{{ t('cours.blockedTitle') }}</h3></div>
+      <p class="muted">{{ t('cours.blockedText') }}</p>
+    </div>
+
+    <div v-else-if="!isDirecteur" class="card publish-card">
       <div class="card-head"><Sparkles :size="18" /><h3>{{ t('cours.publishTitle') }}</h3></div>
       <div class="pub-row">
         <div class="fg"><label>{{ t('cours.subject') }}</label><select v-model="form.matiere" class="input"><option value="" disabled>{{ t('cours.choose') }}</option><option v-for="s in subjects" :key="s.id || s.name" :value="s.name">{{ s.name }}</option></select></div>
@@ -100,7 +106,7 @@ import { usePersonnelStore } from '../stores/personnel'
 import { openCarre } from '../services/carreSso'
 import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
 import CoursFileViewer from '../components/CoursFileViewer.vue'
-import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X } from 'lucide-vue-next'
+import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X, Lock } from 'lucide-vue-next'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const store = useCoursStore()
@@ -109,6 +115,7 @@ const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
+const staffChecked = ref(false) // vrai une fois les matières du prof résolues (évite le flash)
 
 const isDirecteur = computed(() => authStore.isDirecteur)
 // Matières enseignées par l'utilisateur : d'abord le profil (démo / profil enrichi),
@@ -129,11 +136,14 @@ const mySubjects = computed(() => {
 // tout. Si aucune matière n'est définie sur son profil, on ne bloque pas (toutes).
 const subjects = computed(() => {
   const all = subjectsStore.subjects || []
-  if (isDirecteur.value || !mySubjects.value.length) return all
+  if (isDirecteur.value) return all
+  if (!mySubjects.value.length) return [] // prof sans matière assignée → aucune (publication bloquée)
   const set = new Set(mySubjects.value.map((x) => x.toLowerCase()))
   const filtered = all.filter((s) => set.has(String(s.name || '').toLowerCase()))
   return filtered.length ? filtered : mySubjects.value.map((name) => ({ name }))
 })
+// Enseignant sans aucune matière assignée → publication bloquée (après chargement).
+const blockedNoSubject = computed(() => !isDirecteur.value && staffChecked.value && !subjects.value.length)
 const classes = computed(() => classesStore.classes || [])
 const carreEnabled = computed(() => !!schoolStore.schoolSettings?.carreEnabled)
 const myUid = computed(() => authStore.userProfile?.uid || authStore.user?.uid || null)
@@ -192,12 +202,15 @@ async function openCarreBtn() {
   try { await openCarre() } catch (e) { window.alert(e?.code === 403 ? t('nav.carreNotEnabled') : t('nav.carreError')) } finally { carreLoading.value = false }
 }
 
-onMounted(() => {
+onMounted(async () => {
   store.load()
   if (!subjectsStore.subjects?.length) subjectsStore.loadSubjects?.()
   if (!classesStore.classes?.length) classesStore.loadClasses?.()
   // Enseignant : on charge le personnel pour retrouver ses matières (si absentes du profil).
-  if (!isDirecteur.value && !personnelStore.staff?.length) personnelStore.loadStaff?.()
+  if (!isDirecteur.value && !personnelStore.staff?.length) {
+    try { await personnelStore.loadStaff?.() } catch { /* règle absente : on garde les matières du profil */ }
+  }
+  staffChecked.value = true
 })
 </script>
 

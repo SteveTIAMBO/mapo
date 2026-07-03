@@ -346,6 +346,8 @@
     "subDirector": "The teaching content published by your teachers (read-only).",
     "subStudent": "Courses and resources shared by your teachers.",
     "readOnly": "Read-only",
+    "blockedTitle": "No subject assigned",
+    "blockedText": "No subject has been assigned to you yet. Please contact the administration so they can set your subjects in your staff record — you will then be able to publish courses.",
     "publishTitle": "Prepare and publish",
     "subject": "Subject",
     "choose": "Choose…",
