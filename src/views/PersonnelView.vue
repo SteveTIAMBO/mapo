@@ -415,7 +415,7 @@
 import { usePersonnelStore, STAFF_CATEGORIES, STAFF_ROLES, SUBJECTS_BY_CYCLE, QUALIFICATION_LEVELS, CONTRACT_TYPES } from '../stores/personnel'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
-import { onMounted, ref, reactive, computed, watch } from 'vue'
+import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus, Pencil, Trash2, X, UserPlus } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
@@ -447,6 +447,10 @@ const formData = reactive({
   subjects: [], classesBySubject: {}, phone: '', email: '', status: 'Actif',
   contractType: '', qualification: '', experienceYears: null, handicap: false,
 })
+
+// Vrai pendant qu'on pré-remplit le formulaire (édition) : empêche le watch sur
+// la catégorie d'effacer rôle/matières/classes qu'on vient de charger.
+const populatingForm = ref(false)
 
 const availableRoles = computed(() => formData.category ? (STAFF_ROLES[formData.category] || []) : [])
 
@@ -502,7 +506,7 @@ const paginatedStaff = computed(() => {
 })
 
 watch([searchQuery, selectedCategory, perPage], () => { currentPage.value = 1 })
-watch(() => formData.category, () => { formData.role = ''; formData.subjects = []; formData.classesBySubject = {} })
+watch(() => formData.category, () => { if (populatingForm.value) return; formData.role = ''; formData.subjects = []; formData.classesBySubject = {} })
 
 const getInitials = (m) => ((m.lastName?.[0] || '') + (m.firstName?.[0] || '')).toUpperCase()
 const getCategoryColor = (cat) => {
@@ -544,6 +548,7 @@ const openAddModal = () => { editingMember.value = null; resetForm(); showModal.
 
 const openEditModal = (member) => {
   editingMember.value = member
+  populatingForm.value = true // fige le watch pendant le chargement des champs
   formData.firstName = member.firstName || ''
   formData.lastName = member.lastName || ''
   formData.gender = member.gender || ''
@@ -559,6 +564,7 @@ const openEditModal = (member) => {
   formData.experienceYears = member.experienceYears || null
   formData.handicap = !!member.handicap
   showModal.value = true
+  nextTick(() => { populatingForm.value = false })
 }
 
 const closeModal = () => { showModal.value = false; editingMember.value = null }
