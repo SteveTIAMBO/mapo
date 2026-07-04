@@ -54,6 +54,27 @@
           <Sparkles :size="13" /> {{ t('eleve.rev.aiHint', { cls: myRecord.className }) }}
         </p>
       </div>
+
+      <!-- Mes révisions passées (rejouables, sans re-générer) -->
+      <div v-if="history.length" class="card">
+        <div class="card-head">
+          <History :size="20" />
+          <h3>{{ t('eleve.rev.pastTitle') }}</h3>
+        </div>
+        <p class="muted-line" style="margin-top: -6px;">{{ t('eleve.rev.pastHint') }}</p>
+        <div class="hist-list">
+          <button v-for="h in history" :key="h.id" class="hist-item" @click="replaySession(h)">
+            <span class="hi-left">
+              <span class="hi-subj">{{ h.subjectName }}</span>
+              <span class="hi-meta">{{ fmtHistDate(h.date) }} · {{ t('eleve.rev.pastQuestions', { n: h.total || (h.questions ? h.questions.length : 0) }) }}</span>
+            </span>
+            <span class="hi-right">
+              <span v-if="typeof h.scorePercent === 'number'" class="hi-score" :style="histScoreStyle(h.scorePercent)">{{ h.scorePercent }}%</span>
+              <span class="hi-redo"><RotateCcw :size="15" /> {{ t('eleve.rev.redo') }}</span>
+            </span>
+          </button>
+        </div>
+      </div>
     </template>
 
     <!-- ============ CHARGEMENT ============ -->
@@ -174,7 +195,7 @@ import { useSchoolStore } from '../stores/school'
 import { useTuteurStore } from '../stores/tuteur'
 import {
   Target, BookOpen, ChevronRight, Sparkles, Loader2, Check, X,
-  Lightbulb, RefreshCw, CalendarClock, Volume2, VolumeX, Mic,
+  Lightbulb, RefreshCw, CalendarClock, Volume2, VolumeX, Mic, History, RotateCcw,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -309,6 +330,29 @@ watch(mode, (m) => { if (m !== 'quiz') stopSpeaking() })
 onMounted(() => warmUpVoices())
 onUnmounted(() => stopSpeaking())
 
+// ── Historique des révisions (rejouable, sans re-générer l'IA) ──
+const history = ref([])
+function refreshHistory() { history.value = myRecord.value ? tuteur.getRevisionHistory(myRecord.value.id) : [] }
+watch(myRecord, async (r) => { if (r) { await tuteur.syncHistoryFromCloud(r.id); refreshHistory() } }, { immediate: true })
+
+function replaySession(s) {
+  if (!s || !Array.isArray(s.questions) || !s.questions.length) return
+  stopSpeaking()
+  currentSubjectId.value = s.subjectId
+  questions.value = s.questions
+  index.value = 0
+  firstTryFlags.value = []
+  resetQuestion()
+  mode.value = 'quiz'
+}
+function fmtHistDate(iso) {
+  try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' }) } catch { return '' }
+}
+function histScoreStyle(p) {
+  const c = p >= 80 ? '#1B8A5A' : p >= 50 ? '#B87A00' : '#D93025'
+  return { color: c, backgroundColor: c + '1f' }
+}
+
 async function startQuiz(subjectId) {
   currentSubjectId.value = subjectId
   mode.value = 'loading'
@@ -383,6 +427,17 @@ const nextReviewState = ref(null)
 function finish() {
   const st = tuteur.recordResult(myRecord.value.id, currentSubjectId.value, currentSubjectName.value, scorePercent.value)
   nextReviewState.value = st
+  // Archive la session (questions incluses) → rejouable plus tard, sans re-générer.
+  tuteur.saveRevisionSession(myRecord.value.id, {
+    subjectId: currentSubjectId.value,
+    subjectName: currentSubjectName.value,
+    mode: lastMode.value,
+    scorePercent: scorePercent.value,
+    total: questions.value.length,
+    correct: correctCount.value,
+    questions: questions.value,
+  })
+  refreshHistory()
   mode.value = 'result'
 }
 
@@ -427,6 +482,15 @@ onMounted(async () => {
 .priority-list { display: flex; flex-direction: column; gap: 10px; }
 .priority-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 16px; border: 1px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; transition: all .15s; text-align: left; width: 100%; }
 .priority-item:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb),.08); }
+.hist-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.hist-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; transition: all .15s; text-align: left; width: 100%; }
+.hist-item:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb),.08); }
+.hi-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.hi-subj { font-weight: 600; font-size: 14px; color: var(--tx); }
+.hi-meta { font-size: 12px; color: var(--tx3); }
+.hi-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.hi-score { font-size: 12px; font-weight: 700; padding: 3px 9px; border-radius: 20px; }
+.hi-redo { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--pr); }
 .pi-left { display: flex; flex-direction: column; gap: 2px; }
 .pi-name { font-weight: 600; font-size: 15px; color: var(--tx); }
 .pi-reason { font-size: 12px; color: var(--tx3); }

@@ -71,6 +71,10 @@ async function appendBankQuiz({ matiere, niveau, difficulte, questions }) {
 
 const IA_URL = '/mapo-ia.php'
 const REVISION_KEY = (sid) => `mapo_revisions_v1_${sid || 'demo'}`
+// Historique des sessions de révision (rejouables, sans régénérer l'IA).
+const HISTORY_KEY = (sid) => `mapo_revision_history_v1_${sid || 'demo'}`
+const HISTORY_MAX = 30
+function historyDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions', 'history_' + (studentId || 'self')) }
 
 export const useTuteurStore = defineStore('tuteur', () => {
   const generating = ref(false)
@@ -212,6 +216,40 @@ export const useTuteurStore = defineStore('tuteur', () => {
       try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }
     }
     return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL }
+  }
+
+  // ── Historique des révisions (rejouable, économe : pas de re-génération IA) ──
+  function loadHistory(studentId) {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY(studentId)) || '[]') } catch { return [] }
+  }
+  /** Enregistre une session terminée (questions incluses) pour pouvoir la revoir. */
+  function saveRevisionSession(studentId, session) {
+    const list = loadHistory(studentId)
+    const entry = { id: 'rs-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), date: new Date().toISOString(), ...session }
+    list.unshift(entry)
+    const capped = list.slice(0, HISTORY_MAX)
+    try { localStorage.setItem(HISTORY_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
+    revisionsVersion.value++
+    const uid = cloudUid()
+    if (uid) {
+      setDoc(historyDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() })
+        .catch(() => { /* offline : le cache Firestore réessaiera */ })
+    }
+    return entry.id
+  }
+  /** Liste des sessions passées (les plus récentes d'abord). */
+  function getRevisionHistory(studentId) { return loadHistory(studentId) }
+  /** Hydrate l'historique depuis Firestore (vrais comptes, multi-appareils). */
+  async function syncHistoryFromCloud(studentId) {
+    const uid = cloudUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(historyDocRef(uid, studentId))
+      if (snap.exists()) {
+        const l = snap.data()?.list
+        if (Array.isArray(l)) { try { localStorage.setItem(HISTORY_KEY(studentId), JSON.stringify(l.slice(0, HISTORY_MAX))) } catch { /* quota */ } }
+      }
+    } catch { /* offline / non autorisé : on garde l'historique local */ }
   }
 
   /** Niveau de difficulté courant pour (élève, matière). Défaut : 1. */
@@ -531,6 +569,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
   return {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
+    saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c,
   }
 })
