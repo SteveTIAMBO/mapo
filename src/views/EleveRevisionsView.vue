@@ -71,13 +71,23 @@
             <span class="quiz-subject">{{ currentSubjectName }}</span>
             <span class="quiz-counter">{{ t('eleve.rev.counter', { n: index + 1, total: questions.length }) }}</span>
           </div>
-          <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
-            <Sparkles :size="12" /> {{ lastMode === 'ia' ? t('eleve.rev.ai') : t('eleve.rev.demo') }}
-          </span>
+          <div class="quiz-top-right">
+            <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
+              <Sparkles :size="12" /> {{ lastMode === 'ia' ? t('eleve.rev.ai') : t('eleve.rev.demo') }}
+            </span>
+            <button v-if="voiceSupported" class="voice-toggle" :class="{ on: voiceOn }" @click="toggleVoice" :title="t('eleve.rev.voiceMode')" :aria-pressed="voiceOn ? 'true' : 'false'">
+              <component :is="voiceOn ? Volume2 : VolumeX" :size="16" />
+            </button>
+          </div>
         </div>
         <div class="progress-track"><div class="progress-fill" :style="{ width: ((index) / questions.length * 100) + '%' }"></div></div>
 
-        <h2 class="quiz-question">{{ current.q }}</h2>
+        <div class="quiz-q-row">
+          <h2 class="quiz-question">{{ current.q }}</h2>
+          <button v-if="voiceSupported" class="listen-btn" @click="readQuestion" :title="t('eleve.rev.listen')" :aria-label="t('eleve.rev.listen')">
+            <Volume2 :size="16" />
+          </button>
+        </div>
 
         <div class="choices">
           <button
@@ -93,6 +103,10 @@
             <X v-else-if="wrongSet.has(i)" :size="18" class="choice-ic ko" />
           </button>
         </div>
+
+        <button v-if="sttSupported && !revealed" class="mic-btn" :class="{ live: listening }" @click="answerByVoice">
+          <Mic :size="16" /> <span>{{ listening ? t('eleve.rev.listening') : t('eleve.rev.answerByVoice') }}</span>
+        </button>
 
         <!-- Indice socratique -->
         <div v-if="phase === 'hinted'" class="feedback hint-box">
@@ -148,8 +162,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { speak, stopSpeaking, isSpeechSupported, isRecognitionSupported, listenOnce, warmUpVoices } from '../services/voice'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useNotesStore } from '../stores/notes'
@@ -159,7 +174,7 @@ import { useSchoolStore } from '../stores/school'
 import { useTuteurStore } from '../stores/tuteur'
 import {
   Target, BookOpen, ChevronRight, Sparkles, Loader2, Check, X,
-  Lightbulb, RefreshCw, CalendarClock,
+  Lightbulb, RefreshCw, CalendarClock, Volume2, VolumeX, Mic,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -169,7 +184,7 @@ const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const tuteur = useTuteurStore()
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const letters = ['A', 'B', 'C', 'D']
 const mode = ref('home') // home | loading | quiz | result
@@ -248,6 +263,51 @@ const wrongSet = ref(new Set())
 const firstTryFlags = ref([])
 
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
+
+// ── Voix (MIAPO lit la question / l'explication, et écoute la réponse) ──
+const voiceSupported = isSpeechSupported()
+const sttSupported = isRecognitionSupported()
+const voiceOn = ref(false)
+const listening = ref(false)
+
+function questionSpeech() {
+  const q = current.value
+  let s = q.q || ''
+  ;(q.choices || []).forEach((c, i) => { s += `. ${letters[i]}: ${c}` })
+  return s
+}
+function readQuestion() { if (voiceSupported) speak(questionSpeech(), { lang: locale.value }) }
+function readExplanation() {
+  const q = current.value
+  speak(q.explanation || t('eleve.rev.answerIs', { answer: q.choices?.[q.answer] }), { lang: locale.value })
+}
+function toggleVoice() {
+  voiceOn.value = !voiceOn.value
+  if (voiceOn.value) { revealed.value ? readExplanation() : readQuestion() }
+  else stopSpeaking()
+}
+// Dictée : on associe la parole à un choix (lettre A–D, ou texte de la réponse).
+async function answerByVoice() {
+  if (listening.value || revealed.value) return
+  stopSpeaking()
+  listening.value = true
+  try {
+    const said = (await listenOnce({ lang: locale.value })).toLowerCase()
+    listening.value = false
+    if (!said) return
+    let idx = -1
+    const m = said.match(/\b([a-d])\b/)
+    if (m) idx = letters.indexOf(m[1].toUpperCase())
+    if (idx < 0) idx = (current.value.choices || []).findIndex((c) => c && said.includes(String(c).toLowerCase().slice(0, 14)))
+    if (idx >= 0 && idx < current.value.choices.length && !wrongSet.value.has(idx)) selectChoice(idx)
+  } catch { listening.value = false }
+}
+
+watch(() => current.value.q, () => { if (voiceOn.value && mode.value === 'quiz' && !revealed.value) readQuestion() })
+watch(revealed, (v) => { if (v && voiceOn.value) readExplanation() })
+watch(mode, (m) => { if (m !== 'quiz') stopSpeaking() })
+onMounted(() => warmUpVoices())
+onUnmounted(() => stopSpeaking())
 
 async function startQuiz(subjectId) {
   currentSubjectId.value = subjectId
@@ -399,6 +459,18 @@ onMounted(async () => {
 .ia-badge.is-sim { color: #6b7280; background: rgba(0,0,0,.05); }
 .progress-track { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 14px 0 18px; overflow: hidden; }
 .progress-fill { height: 100%; background: var(--pr); border-radius: 6px; transition: width .3s; }
+.quiz-top-right { display: flex; align-items: center; gap: 8px; }
+.voice-toggle { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--bd, #e5e7eb); background: var(--card, #fff); color: var(--tx2, #6F767E); cursor: pointer; transition: all .15s ease; }
+.voice-toggle:hover { border-color: var(--pr); color: var(--pr); }
+.voice-toggle.on { background: rgba(var(--pr-rgb), .10); border-color: var(--pr); color: var(--pr); }
+.quiz-q-row { display: flex; align-items: flex-start; gap: 10px; }
+.quiz-q-row .quiz-question { flex: 1; }
+.listen-btn { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-top: 2px; border-radius: 9px; border: 1px solid var(--bd, #e5e7eb); background: var(--card, #fff); color: var(--pr); cursor: pointer; transition: all .15s ease; }
+.listen-btn:hover { background: rgba(var(--pr-rgb), .10); }
+.mic-btn { display: inline-flex; align-items: center; gap: 7px; margin: 6px 0 0; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--bd, #e5e7eb); background: var(--card, #fff); color: var(--tx2, #6F767E); font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s ease; }
+.mic-btn:hover { border-color: var(--pr); color: var(--pr); }
+.mic-btn.live { border-color: #D93025; color: #D93025; background: rgba(217, 48, 37, .06); animation: micpulse 1.2s ease-in-out infinite; }
+@keyframes micpulse { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 .quiz-question { font-size: 19px; font-weight: 600; line-height: 1.4; margin: 0 0 18px; color: var(--tx); }
 .choices { display: flex; flex-direction: column; gap: 10px; }
 .choice { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 15px; text-align: left; transition: all .15s; color: var(--tx); }
