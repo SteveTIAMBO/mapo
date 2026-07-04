@@ -89,7 +89,7 @@ const DEMO_STAFF_DATA = [
   { id: 'p-024', firstName: 'Véronique', lastName: 'Tchinda', category: 'enseignement', role: 'Professeur', email: 'v.tchinda@edufrem.com', phone: '+237 690 556 012', subjects: ['Français'], status: 'Actif' },
   { id: 'p-025', firstName: 'André', lastName: 'Mefane', category: 'enseignement', role: 'Professeur', email: 'a.mefane@edufrem.com', phone: '+237 655 667 123', subjects: ['Français'], status: 'Actif' },
   // ── Mathématiques (3 profs) ──
-  { id: 'p-001', firstName: 'Jean', lastName: 'Kamga', category: 'enseignement', role: 'Professeur Principal', email: 'j.kamga@edufrem.com', phone: '+237 699 112 233', subjects: ['Mathématiques'], status: 'Actif' },
+  { id: 'p-001', firstName: 'Jean', lastName: 'Kamga', category: 'enseignement', role: 'Professeur Principal', email: 'j.kamga@edufrem.com', phone: '+237 699 112 233', subjects: ['Mathématiques'], classesBySubject: { 'Mathématiques': ['c-6a', 'c-tc'] }, status: 'Actif' },
   { id: 'p-026', firstName: 'Gaston', lastName: 'Nkemeni', category: 'enseignement', role: 'Professeur', email: 'g.nkemeni@edufrem.com', phone: '+237 677 778 234', subjects: ['Mathématiques'], status: 'Actif' },
   { id: 'p-027', firstName: 'Cécile', lastName: 'Ewane', category: 'enseignement', role: 'Professeur', email: 'c.ewane@edufrem.com', phone: '+237 699 889 345', subjects: ['Mathématiques'], status: 'Actif' },
   // ── Anglais (2 profs) ──
@@ -137,7 +137,7 @@ const DEMO_STAFF_DATA = [
 
 const DEMO_STAFF_KEY = 'mapo_demo_personnel'
 const DEMO_STAFF_VERSION_KEY = 'mapo_demo_personnel_version'
-const DEMO_STAFF_VERSION = 6
+const DEMO_STAFF_VERSION = 7 // v7: affectations classesBySubject (Jean Kamga = Maths 6ème A + Tle C)
 
 // Salaires par défaut par catégorie/rôle (XAF mensuel)
 const DEMO_SALARIES = {
@@ -341,15 +341,33 @@ export const usePersonnelStore = defineStore('personnel', () => {
   }
 
   /**
-   * Retourne les IDs de classes où l'enseignant intervient,
-   * basé sur les teacherAssignments de l'emploi du temps.
-   * Le store EDT doit être passé en paramètre pour éviter l'import circulaire.
-   * Sinon on essaie de le résoudre via Pinia.
+   * IDs de classes où l'enseignant enseigne une matière donnée, d'après ses
+   * AFFECTATIONS (fiche personnel → classesBySubject). Vide si non renseigné.
+   */
+  function getTeacherClassIdsForSubject(userProfile, subjectName) {
+    const record = getTeacherStaffRecord(userProfile)
+    const cbs = record && record.classesBySubject
+    if (!cbs || !subjectName) return []
+    return Array.isArray(cbs[subjectName]) ? [...cbs[subjectName]] : []
+  }
+
+  /**
+   * Retourne les IDs de classes où l'enseignant intervient.
+   * Source de vérité = les AFFECTATIONS de la fiche personnel (classesBySubject) ;
+   * repli = les teacherAssignments de l'emploi du temps (compat écoles existantes).
+   * Le store EDT peut être passé pour éviter l'import circulaire.
    */
   function getTeacherClassIds(userProfile, edtStore) {
     const record = getTeacherStaffRecord(userProfile)
     if (!record) return []
-    // Si le store EDT n'est pas passé, essayer de le résoudre
+    // 1) Affectations de la fiche prof (nouvelle source de vérité)
+    const cbs = record.classesBySubject && typeof record.classesBySubject === 'object' ? record.classesBySubject : null
+    if (cbs) {
+      const set = new Set()
+      for (const subj of Object.keys(cbs)) for (const cid of (cbs[subj] || [])) set.add(cid)
+      if (set.size) return [...set]
+    }
+    // 2) Repli : emploi du temps
     let assignments = []
     if (edtStore && edtStore.teacherAssignments) {
       assignments = edtStore.teacherAssignments
@@ -376,6 +394,6 @@ export const usePersonnelStore = defineStore('personnel', () => {
     staff, loading, searchQuery, selectedCategory,
     filteredStaff, staffStats,
     loadStaff, addStaff, updateStaff, deleteStaff,
-    getTeacherStaffRecord, getTeacherClassIds,
+    getTeacherStaffRecord, getTeacherClassIds, getTeacherClassIdsForSubject,
   }
 })

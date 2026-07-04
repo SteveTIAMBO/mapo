@@ -258,6 +258,22 @@
             </p>
           </div>
 
+          <!-- Affectations : pour chaque matière, les classes où le prof l'enseigne -->
+          <div v-if="formData.category === 'enseignement' && formData.subjects.length" class="field">
+            <label>{{ t('pers.teachingTitle') }}</label>
+            <p class="teach-hint">{{ t('pers.teachingHint') }}</p>
+            <div v-for="s in formData.subjects" :key="s" class="teach-block">
+              <div class="teach-subject">{{ s }}</div>
+              <div v-if="classesStore.classes.length" class="teach-classes">
+                <label v-for="c in classesStore.classes" :key="c.id" class="teach-class">
+                  <input type="checkbox" :checked="(formData.classesBySubject[s] || []).includes(c.id)" @change="toggleTeachClass(s, c.id)" />
+                  <span>{{ c.name }}</span>
+                </label>
+              </div>
+              <p v-else class="teach-empty">{{ t('pers.teachingNoClasses') }}</p>
+            </div>
+          </div>
+
           <div class="field-row">
             <div class="field">
               <label>{{ t('pers.phone') }}</label>
@@ -398,6 +414,7 @@
 <script setup>
 import { usePersonnelStore, STAFF_CATEGORIES, STAFF_ROLES, SUBJECTS_BY_CYCLE, QUALIFICATION_LEVELS, CONTRACT_TYPES } from '../stores/personnel'
 import { useSubjectsStore } from '../stores/subjects'
+import { useClassesStore } from '../stores/classes'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus, Pencil, Trash2, X, UserPlus } from 'lucide-vue-next'
@@ -406,6 +423,7 @@ import PaginationBar from '../components/ui/PaginationBar.vue'
 const { t } = useI18n({ useScope: 'global' })
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
+const classesStore = useClassesStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const currentPage = ref(1)
@@ -426,7 +444,7 @@ const categoryFilters = computed(() => [
 
 const formData = reactive({
   firstName: '', lastName: '', gender: '', category: '', role: '',
-  subjects: [], phone: '', email: '', status: 'Actif',
+  subjects: [], classesBySubject: {}, phone: '', email: '', status: 'Actif',
   contractType: '', qualification: '', experienceYears: null, handicap: false,
 })
 
@@ -447,9 +465,19 @@ const toggleSubject = (subject) => {
   const idx = formData.subjects.indexOf(subject)
   if (idx > -1) {
     formData.subjects.splice(idx, 1)
+    delete formData.classesBySubject[subject] // on retire aussi ses classes
   } else {
     formData.subjects.push(subject)
   }
+}
+
+// Coche/décoche une classe pour une matière enseignée (affectation).
+const toggleTeachClass = (subject, classId) => {
+  if (!Array.isArray(formData.classesBySubject[subject])) formData.classesBySubject[subject] = []
+  const arr = formData.classesBySubject[subject]
+  const i = arr.indexOf(classId)
+  if (i > -1) arr.splice(i, 1)
+  else arr.push(classId)
 }
 
 const filteredStaff = computed(() => {
@@ -474,7 +502,7 @@ const paginatedStaff = computed(() => {
 })
 
 watch([searchQuery, selectedCategory, perPage], () => { currentPage.value = 1 })
-watch(() => formData.category, () => { formData.role = ''; formData.subjects = [] })
+watch(() => formData.category, () => { formData.role = ''; formData.subjects = []; formData.classesBySubject = {} })
 
 const getInitials = (m) => ((m.lastName?.[0] || '') + (m.firstName?.[0] || '')).toUpperCase()
 const getCategoryColor = (cat) => {
@@ -506,7 +534,7 @@ const getQualificationLabel = (val) => {
 
 const resetForm = () => {
   formData.firstName = ''; formData.lastName = ''; formData.gender = ''; formData.category = ''
-  formData.role = ''; formData.subjects = []; formData.phone = ''
+  formData.role = ''; formData.subjects = []; formData.classesBySubject = {}; formData.phone = ''
   formData.email = ''; formData.status = 'Actif'
   formData.contractType = ''; formData.qualification = ''; formData.experienceYears = null
   formData.handicap = false
@@ -522,6 +550,7 @@ const openEditModal = (member) => {
   formData.category = member.category || ''
   formData.role = member.role || ''
   formData.subjects = [...(member.subjects || [])]
+  formData.classesBySubject = member.classesBySubject ? JSON.parse(JSON.stringify(member.classesBySubject)) : {}
   formData.phone = member.phone || ''
   formData.email = member.email || ''
   formData.status = member.status || 'Actif'
@@ -540,6 +569,9 @@ const saveMember = async () => {
     gender: formData.gender || null,
     category: formData.category, role: formData.role,
     subjects: formData.category === 'enseignement' ? [...formData.subjects] : [],
+    classesBySubject: formData.category === 'enseignement'
+      ? Object.fromEntries(formData.subjects.map((s) => [s, [...(formData.classesBySubject[s] || [])]]).filter(([, arr]) => arr.length))
+      : {},
     phone: formData.phone || null,
     email: formData.email || null, status: formData.status,
     contractType: formData.contractType || null,
@@ -567,7 +599,7 @@ const closeDetailModal = () => { showDetailModal.value = false; detailMember.val
 const moneyFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
 const formatMoney = (v) => `${moneyFormatter.format(v)} FCFA`
 
-onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects() })
+onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); classesStore.loadClasses() })
 </script>
 
 <style scoped>
@@ -772,6 +804,15 @@ onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects() })
 }
 .field-row:last-child { margin-bottom: 0; }
 .field-row .field { margin-bottom: 0; }
+
+/* Enseignements (affectations matière → classes) */
+.teach-hint { font-size: 12px; color: var(--tx3); margin: 0 0 10px; }
+.teach-block { padding: 12px 14px; border: 1px solid var(--divider); border-radius: 10px; margin-bottom: 8px; background: rgba(0,0,0,.02); }
+.teach-block:last-child { margin-bottom: 0; }
+.teach-subject { font-size: 13px; font-weight: 700; color: var(--pr); margin-bottom: 8px; }
+.teach-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px 14px; }
+.teach-class { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--tx); cursor: pointer; }
+.teach-empty { font-size: 12px; color: var(--tx3); margin: 0; }
 
 /* Subjects checkboxes */
 .subjects-checkboxes {

@@ -346,6 +346,20 @@ const userClasses = computed(() => {
   return classesStore.classes.filter(c => teacherClassIds.value.includes(c.id))
 })
 
+// Enseignant : seulement ses matières (fiche personnel, repli profil)
+const teacherSubjectNames = computed(() => {
+  if (!authStore.isTeacher) return null
+  const rec = personnelStore.getTeacherStaffRecord?.(authStore.userProfile)
+  const fromRec = Array.isArray(rec?.subjects) ? rec.subjects : []
+  const fromProfile = Array.isArray(authStore.userProfile?.subjects) ? authStore.userProfile.subjects : []
+  return (fromRec.length ? fromRec : fromProfile).map(s => String(s).toLowerCase())
+})
+function limitToTeacherSubjects(list) {
+  if (!teacherSubjectNames.value || !teacherSubjectNames.value.length) return list
+  const set = new Set(teacherSubjectNames.value)
+  return (list || []).filter(s => set.has(String(s.name || '').toLowerCase()))
+}
+
 // Filter state
 const filterClass = ref('')
 const filterSubject = ref('')
@@ -372,20 +386,24 @@ const formData = ref({
 const gradingInputs = ref({})
 const feedbackInputs = ref({})
 
-// Computed: Filtered subjects for filter toolbar
+// Computed: Filtered subjects for filter toolbar (bornées aux matières du prof)
 const filteredSubjects = computed(() => {
-  if (!filterClass.value) return subjectsStore.subjects
-  const cls = classesStore.classes.find(c => c.id === filterClass.value)
-  if (!cls) return []
-  return subjectsStore.getSubjectObjectsForClass(cls)
+  let base = subjectsStore.subjects
+  if (filterClass.value) {
+    const cls = classesStore.classes.find(c => c.id === filterClass.value)
+    base = cls ? subjectsStore.getSubjectObjectsForClass(cls) : []
+  }
+  return limitToTeacherSubjects(base)
 })
 
-// Computed: Filtered subjects for create/edit form
+// Computed: Filtered subjects for create/edit form (bornées aux matières du prof)
 const formFilteredSubjects = computed(() => {
-  if (!formData.value.classId) return subjectsStore.subjects
-  const cls = classesStore.classes.find(c => c.id === formData.value.classId)
-  if (!cls) return []
-  return subjectsStore.getSubjectObjectsForClass(cls)
+  let base = subjectsStore.subjects
+  if (formData.value.classId) {
+    const cls = classesStore.classes.find(c => c.id === formData.value.classId)
+    base = cls ? subjectsStore.getSubjectObjectsForClass(cls) : []
+  }
+  return limitToTeacherSubjects(base)
 })
 
 // Computed: Filtered devoirs

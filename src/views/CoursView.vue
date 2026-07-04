@@ -144,7 +144,19 @@ const subjects = computed(() => {
 })
 // Enseignant sans aucune matière assignée → publication bloquée (après chargement).
 const blockedNoSubject = computed(() => !isDirecteur.value && staffChecked.value && !subjects.value.length)
-const classes = computed(() => classesStore.classes || [])
+// Classes proposées : directeur = toutes ; enseignant = ses classes pour la matière
+// sélectionnée (affectations), repli sur toutes ses classes, sinon toutes (jamais bloquant).
+const classes = computed(() => {
+  const all = classesStore.classes || []
+  if (isDirecteur.value) return all
+  const subj = form.value.matiere
+  if (subj) {
+    const ids = personnelStore.getTeacherClassIdsForSubject?.(authStore.userProfile, subj) || []
+    if (ids.length) return all.filter((c) => ids.includes(c.id))
+  }
+  const allIds = personnelStore.getTeacherClassIds?.(authStore.userProfile) || []
+  return allIds.length ? all.filter((c) => allIds.includes(c.id)) : all
+})
 const carreEnabled = computed(() => !!schoolStore.schoolSettings?.carreEnabled)
 const myUid = computed(() => authStore.userProfile?.uid || authStore.user?.uid || null)
 
@@ -162,6 +174,15 @@ const canPublish = computed(() => form.value.matiere && form.value.titre.trim() 
 // Enseignant d'une seule matière → on la présélectionne (il ne publie que là).
 watch(subjects, (list) => {
   if (!isDirecteur.value && list.length === 1 && !form.value.matiere) form.value.matiere = list[0].name
+}, { immediate: true })
+
+// Enseignant : présélectionne la classe s'il n'en a qu'une pour cette matière,
+// et réinitialise la classe si elle n'est plus dans son périmètre.
+watch(() => [form.value.matiere, classes.value.length], () => {
+  if (isDirecteur.value) return
+  const list = classes.value
+  if (list.length === 1) form.value.classe = list[0].name
+  else if (form.value.classe && !list.some((c) => c.name === form.value.classe)) form.value.classe = ''
 }, { immediate: true })
 
 function isMine(it) { return !it.auteurId || it.auteurId === myUid.value }
