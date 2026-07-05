@@ -34,42 +34,57 @@
     <!-- Navigation principale (groupée par thèmes — #26) -->
     <nav class="sidebar-nav">
       <template v-for="(sec, si) in navSections" :key="'sec' + si">
-        <div v-if="sec.label && (!collapsed || mobileOpen)" class="nav-section-label">{{ sec.label }}</div>
+        <!-- En-tête de thème cliquable (accordéon) -->
+        <button
+          v-if="sec.label && (!collapsed || mobileOpen)"
+          type="button"
+          class="nav-section-header"
+          :class="{ open: isSectionOpen(si) }"
+          @click="toggleSection(si)"
+        >
+          <span>{{ sec.label }}</span>
+          <ChevronDown :size="15" class="section-chevron" />
+        </button>
+        <!-- Mode réduit : fin trait à la place du libellé -->
         <div v-else-if="sec.label" class="nav-section-sep"></div>
-        <template v-for="item in sec.items" :key="item.to || item.action">
-          <!-- Carré : bouton d'action (ouvre un onglet), pas une route -->
-          <button
-            v-if="item.action === 'carre'"
-            type="button"
-            class="nav-item"
-            :title="collapsed && !mobileOpen ? t(item.label) : undefined"
-            :disabled="carreLoading"
-            @click="handleCarre"
-          >
-            <component
-              :is="carreLoading ? Loader2 : item.icon"
-              :size="19"
-              class="nav-icon"
-              :class="{ 'nav-icon-spin': carreLoading }"
-            />
-            <transition name="fade">
-              <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
-            </transition>
-          </button>
-          <RouterLink
-            v-else
-            :to="item.to"
-            class="nav-item"
-            :class="{ active: isActive(item.to) }"
-            :title="collapsed && !mobileOpen ? t(item.label) : undefined"
-            @click="$emit('navigate')"
-          >
-            <component :is="item.icon" :size="19" class="nav-icon" />
-            <transition name="fade">
-              <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
-            </transition>
-          </RouterLink>
-        </template>
+
+        <!-- Sous-menus du thème (repliables) -->
+        <div v-show="isSectionOpen(si)" class="nav-section-items">
+          <template v-for="item in sec.items" :key="item.to || item.action">
+            <!-- Carré : bouton d'action (ouvre un onglet), pas une route -->
+            <button
+              v-if="item.action === 'carre'"
+              type="button"
+              class="nav-item"
+              :title="collapsed && !mobileOpen ? t(item.label) : undefined"
+              :disabled="carreLoading"
+              @click="handleCarre"
+            >
+              <component
+                :is="carreLoading ? Loader2 : item.icon"
+                :size="19"
+                class="nav-icon"
+                :class="{ 'nav-icon-spin': carreLoading }"
+              />
+              <transition name="fade">
+                <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
+              </transition>
+            </button>
+            <RouterLink
+              v-else
+              :to="item.to"
+              class="nav-item"
+              :class="{ active: isActive(item.to) }"
+              :title="collapsed && !mobileOpen ? t(item.label) : undefined"
+              @click="$emit('navigate')"
+            >
+              <component :is="item.icon" :size="19" class="nav-icon" />
+              <transition name="fade">
+                <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(item.label) }}</span>
+              </transition>
+            </RouterLink>
+          </template>
+        </div>
       </template>
     </nav>
 
@@ -104,7 +119,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { openCarre } from '../../services/carreSso'
@@ -143,7 +158,8 @@ import {
   BadgeCheck,
   HeartHandshake,
   NotebookPen,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -287,6 +303,18 @@ const navSections = computed(() => {
   return sections
 })
 
+// ── Accordéon des thèmes : un seul groupe ouvert à la fois ──
+const openGroup = ref(null)
+function isSectionOpen(si) {
+  if (props.collapsed && !props.mobileOpen) return true // mode réduit (icônes) : tout visible
+  const sec = navSections.value[si]
+  if (!sec || !sec.label) return true // section principale (Tableau de bord, sans en-tête)
+  return openGroup.value === si
+}
+function toggleSection(si) {
+  openGroup.value = openGroup.value === si ? null : si
+}
+
 // Bouton « Carré » : ouvre la version web de Carré déjà connectée (custom token).
 const carreLoading = ref(false)
 const handleCarre = async () => {
@@ -319,6 +347,22 @@ const handleLogout = async () => {
   // Sur l'instance MIAPO+, on revient à l'accueil MIAPO+ (et non au login MAPO).
   await router.push(isMiapoTenant() ? '/miapo' : '/login')
 }
+
+// Ouvre automatiquement le thème contenant la page active ; sinon, par défaut,
+// seul le PREMIER thème est ouvert (le reste fermé).
+watch(
+  [navSections, () => route.path],
+  () => {
+    const secs = navSections.value
+    const active = secs.findIndex((s) => s.label && s.items.some((it) => it.to && isActive(it.to)))
+    if (active >= 0) openGroup.value = active
+    else if (openGroup.value === null) {
+      const first = secs.findIndex((s) => s.label)
+      if (first >= 0) openGroup.value = first
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
@@ -419,6 +463,33 @@ const handleLogout = async () => {
   margin: 8px 10px;
   background: var(--sidebar-hover, rgba(120,130,160,.18));
 }
+
+/* En-tête de thème cliquable (accordéon) */
+.nav-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--sidebar-muted);
+  opacity: .7;
+  padding: 12px 12px 5px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  -webkit-user-select: none;
+  user-select: none;
+  transition: color .15s ease, opacity .15s ease;
+}
+.nav-section-header:hover { opacity: 1; color: var(--tx2); }
+.nav-section-header.open { opacity: .85; }
+.section-chevron { flex-shrink: 0; transition: transform .2s ease; opacity: .7; }
+.nav-section-header.open .section-chevron { transform: rotate(180deg); }
+.nav-section-items { display: flex; flex-direction: column; gap: 2px; }
+.sidebar-nav > .nav-section-header:first-child { padding-top: 2px; }
 
 .nav-item {
   display: flex;
