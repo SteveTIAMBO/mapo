@@ -464,31 +464,33 @@ watch(
   background: var(--sidebar-hover, rgba(120,130,160,.18));
 }
 
-/* En-tête de thème cliquable (accordéon) */
+/* En-tête de thème cliquable (accordéon) — plus grand et bien visible,
+   couleur FONCÉE distincte des sous-menus. */
 .nav-section-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
-  font-size: 10.5px;
+  font-size: 14px;
   font-weight: 700;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--sidebar-muted);
-  opacity: .7;
-  padding: 12px 12px 5px;
+  letter-spacing: .01em;
+  color: var(--tx);
+  padding: 14px 12px 7px;
   background: transparent;
   border: none;
   cursor: pointer;
   -webkit-user-select: none;
   user-select: none;
-  transition: color .15s ease, opacity .15s ease;
+  transition: color .15s ease;
 }
-.nav-section-header:hover { opacity: 1; color: var(--tx2); }
-.nav-section-header.open { opacity: .85; }
-.section-chevron { flex-shrink: 0; transition: transform .2s ease; opacity: .7; }
+.nav-section-header:hover { color: var(--pr); }
+.nav-section-header.open { color: var(--pr); }
+.section-chevron { flex-shrink: 0; transition: transform .2s ease; opacity: .8; }
 .nav-section-header.open .section-chevron { transform: rotate(180deg); }
+/* Sous-menus : couleur plus douce que le thème + léger retrait (hiérarchie). */
 .nav-section-items { display: flex; flex-direction: column; gap: 2px; }
+.nav-section-items .nav-item { padding-left: 18px; font-size: 13.5px; color: var(--sidebar-muted); }
+.nav-section-items .nav-item.active { color: var(--pr); }
 .sidebar-nav > .nav-section-header:first-child { padding-top: 2px; }
 
 .nav-item {

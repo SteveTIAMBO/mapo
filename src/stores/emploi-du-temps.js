@@ -667,6 +667,42 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     return { before, after: best.conflicts.length, resolved: Math.max(0, before - best.conflicts.length) }
   }
 
+  // Analyse MIAPO : à partir des conflits restants, produit des recommandations
+  // CONCRÈTES (quoi changer pour que ça passe). Déterministe, sans IA.
+  function analyzeConflicts() {
+    const conflicts = generationConflicts.value || []
+    const recs = []
+    // 1) Heures non placées → regroupées par classe (grille trop pleine).
+    const unplaced = conflicts.filter((c) => c.type === 'unplaced')
+    const byClass = {}
+    for (const c of unplaced) {
+      const miss = Math.max(0, (c.needed || 0) - (c.placed || 0))
+      if (!byClass[c.className]) byClass[c.className] = { missing: 0, subjects: [] }
+      byClass[c.className].missing += miss
+      byClass[c.className].subjects.push(`${c.subjectId} (${miss}h)`)
+    }
+    for (const [cls, info] of Object.entries(byClass)) {
+      recs.push({
+        type: 'creneaux',
+        title: `${cls} : ${info.missing}h non placées`,
+        detail: `Matières concernées : ${info.subjects.join(', ')}. La grille horaire de ${cls} n'a pas assez de créneaux libres. À FAIRE : ajouter des créneaux (jours ou heures) pour ce niveau dans les paramètres de l'emploi du temps, ou réduire le volume horaire d'une matière.`,
+      })
+    }
+    // 2) Enseignants demandés en même temps dans 2 classes.
+    const doubles = conflicts.filter((c) => c.type === 'teacher_double')
+    const byTeacher = {}
+    for (const c of doubles) byTeacher[c.teacherName] = (byTeacher[c.teacherName] || 0) + 1
+    for (const [teacher, n] of Object.entries(byTeacher)) {
+      recs.push({
+        type: 'enseignant',
+        title: `${teacher} : ${n} chevauchement(s)`,
+        detail: `${teacher} est affecté à plusieurs classes sur le même créneau. À FAIRE : affecter un autre enseignant à l'une de ces classes (fiche personnel → Enseignements), ou déplacer un de ses cours vers un créneau libre.`,
+      })
+    }
+    if (!recs.length) recs.push({ type: 'ok', title: 'Aucun conflit', detail: 'L\'emploi du temps ne présente plus de conflit.' })
+    return recs
+  }
+
   // --- Persistence (localStorage for demo, Firestore for prod) ---
   function applyEdtData(data) {
     timeGrid.value = data.timeGrid || timeGrid.value
@@ -1031,7 +1067,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     scheduleByClass, scheduleByTeacher, assignedTeachers,
     isConfigured, hasSchedule,
     // Actions
-    loadData, generateSchedule, resolveConflicts, updateTimeGrid,
+    loadData, generateSchedule, resolveConflicts, analyzeConflicts, updateTimeGrid,
     updateSubjectHours, setSubjectHoursForLevel,
     addTeacherAssignment, removeTeacherAssignment,
     setSetupStep, moveEntry, saveToStorage, getSubjectColor,

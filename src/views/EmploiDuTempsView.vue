@@ -512,6 +512,9 @@
           <button class="btn btn-sm btn-primary" @click="autoResolveConflicts" type="button">
             {{ t('edt.autoResolve') }}
           </button>
+          <button class="btn btn-sm btn-outline" @click="runAnalysis" type="button">
+            <Sparkles :size="14" /> {{ t('edt.analyze') }}
+          </button>
         </div>
         <div v-if="showConflictPanel" class="conflict-list">
           <div v-for="(c, idx) in edtStore.generationConflicts" :key="idx" class="conflict-item">
@@ -519,6 +522,15 @@
               {{ c.type === 'teacher_double' ? 'T' : 'H' }}
             </span>
             <span class="conflict-message">{{ c.message }}</span>
+          </div>
+        </div>
+
+        <!-- Analyse MIAPO : quoi changer pour que ça passe -->
+        <div v-if="analysisRecs.length" class="miapo-analysis">
+          <div class="ma-head"><Sparkles :size="15" /> {{ t('edt.miapoAnalysis') }}</div>
+          <div v-for="(r, i) in analysisRecs" :key="i" class="ma-rec">
+            <strong>{{ r.title }}</strong>
+            <p>{{ r.detail }}</p>
           </div>
         </div>
       </div>
@@ -933,7 +945,7 @@ import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
 import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
 import {
-  AlertCircle, AlertTriangle, Plus, Trash2, Wand2, Settings, RotateCcw, Printer, X, Calendar, Loader2, CheckCircle2
+  AlertCircle, AlertTriangle, Plus, Trash2, Wand2, Settings, RotateCcw, Printer, X, Calendar, Loader2, CheckCircle2, Sparkles
 } from 'lucide-vue-next'
 
 const edtStore = useEmploiDuTempsStore()
@@ -1645,9 +1657,11 @@ const regenerateSchedule = async () => {
 
 const autoResolveMsg = ref('')
 const autoResolveOk = ref(false)
+const analysisRecs = ref([])
 const autoResolveConflicts = async () => {
   regenerating.value = true
   autoResolveMsg.value = ''
+  analysisRecs.value = []
   await new Promise((r) => setTimeout(r, 30)) // laisse l'UI afficher l'état occupé
   const res = edtStore.resolveConflicts()
   regenerating.value = false
@@ -1655,7 +1669,16 @@ const autoResolveConflicts = async () => {
   autoResolveMsg.value = res.after === 0
     ? t('edt.conflictsAllResolved', { n: res.resolved })
     : t('edt.conflictsPartlyResolved', { resolved: res.resolved, left: res.after })
-  setTimeout(() => { autoResolveMsg.value = '' }, 9000)
+  // S'il reste des conflits, MIAPO les analyse et dit quoi changer.
+  if (res.after > 0) {
+    analysisRecs.value = edtStore.analyzeConflicts()
+    showConflictPanel.value = true
+  }
+  setTimeout(() => { autoResolveMsg.value = '' }, 12000)
+}
+const runAnalysis = () => {
+  analysisRecs.value = edtStore.analyzeConflicts()
+  showConflictPanel.value = true
 }
 
 // --- Week navigation ---
@@ -3085,6 +3108,12 @@ watch(() => edtStore.setupStep, (newStep) => {
 }
 .auto-resolve-toast.ok { background: rgba(27,138,90,.08); border: 1px solid rgba(27,138,90,.2); color: #1B8A5A; }
 .auto-resolve-toast.warn { background: rgba(184,137,42,.08); border: 1px solid rgba(184,137,42,.2); color: #8A6410; }
+.miapo-analysis { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(var(--pr-rgb), .05); border: 1px solid rgba(var(--pr-rgb), .18); }
+.ma-head { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; color: var(--pr); margin-bottom: 8px; }
+.ma-rec { padding: 8px 0; border-top: 1px solid rgba(var(--pr-rgb), .12); }
+.ma-rec:first-of-type { border-top: none; }
+.ma-rec strong { display: block; font-size: 13.5px; color: var(--tx); margin-bottom: 2px; }
+.ma-rec p { margin: 0; font-size: 13px; color: var(--tx2); line-height: 1.5; }
 .conflict-banner-header {
   display: flex;
   align-items: center;

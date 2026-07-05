@@ -2326,6 +2326,8 @@
     "autoResolve": "Resolve automatically",
     "conflictsAllResolved": "All conflicts resolved ({n} fixed).",
     "conflictsPartlyResolved": "{resolved} conflict(s) resolved, {left} left: structural (missing teachers or time slots).",
+    "analyze": "Analyze (MIAPO)",
+    "miapoAnalysis": "MIAPO analysis — what to change",
     "today": "Today",
     "classLabel": "Class",
     "selectClass": "Select a class",
