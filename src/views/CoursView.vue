@@ -38,9 +38,34 @@
             <span>{{ store.preparing ? t('cours.preparing') : t('cours.prepareWithMiapo') }}</span>
           </button>
         </div>
+
+        <!-- Options de génération (calibrage MIAPO) -->
+        <div class="pub-row gen-opts">
+          <div class="fg"><label>{{ t('cours.difficulty') }}</label>
+            <select v-model="form.difficulte" class="input">
+              <option value="facile">{{ t('cours.diffEasy') }}</option>
+              <option value="moyen">{{ t('cours.diffMedium') }}</option>
+              <option value="difficile">{{ t('cours.diffHard') }}</option>
+            </select>
+          </div>
+          <template v-if="form.type === 'devoir' || form.type === 'examen'">
+            <div class="fg"><label>{{ t('cours.duration') }}</label><input v-model="form.duree" class="input" type="number" min="0" step="5" placeholder="45" /></div>
+            <div class="fg"><label>{{ t('cours.exercises') }}</label><input v-model="form.nbExercices" class="input" type="number" min="1" max="20" placeholder="5" /></div>
+          </template>
+        </div>
+
         <div class="fg"><label>{{ t('cours.itemTitle') }}</label><input v-model="form.titre" class="input" :placeholder="t('cours.titlePlaceholder')" /></div>
         <div class="fg"><label>{{ t('cours.content') }}</label><textarea v-model="form.contenu" class="input" rows="6" :placeholder="t('cours.contentPlaceholder')"></textarea></div>
         <div v-if="form.corrige" class="fg"><label>{{ t('cours.answerKey') }} <span class="muted small">{{ t('cours.answerKeyNote') }}</span></label><textarea v-model="form.corrige" class="input" rows="4"></textarea></div>
+
+        <!-- Adapter le contenu généré en un clic -->
+        <div v-if="form.contenu" class="adapt-row">
+          <span class="adapt-label"><Sparkles :size="13" /> {{ t('cours.adapt') }}</span>
+          <button type="button" class="chip" :disabled="store.preparing" @click="prepare('simplifie : rends le contenu plus facile et accessible')">{{ t('cours.adaptSimpler') }}</button>
+          <button type="button" class="chip" :disabled="store.preparing" @click="prepare('complexifie : rends le contenu plus exigeant')">{{ t('cours.adaptHarder') }}</button>
+          <button type="button" class="chip" :disabled="store.preparing" @click="prepare('raccourcis : propose une version plus courte')">{{ t('cours.adaptShorter') }}</button>
+          <button type="button" class="chip" :disabled="store.preparing" @click="prepare('reformule differemment en gardant le meme niveau')">{{ t('cours.adaptRephrase') }}</button>
+        </div>
       </template>
 
       <!-- Ressource : lien -->
@@ -160,7 +185,7 @@ const classes = computed(() => {
 const carreEnabled = computed(() => !!schoolStore.schoolSettings?.carreEnabled)
 const myUid = computed(() => authStore.userProfile?.uid || authStore.user?.uid || null)
 
-const form = ref({ matiere: '', classe: '', type: 'cours', theme: '', titre: '', contenu: '', corrige: '', url: '' })
+const form = ref({ matiere: '', classe: '', type: 'cours', theme: '', difficulte: 'moyen', duree: '', nbExercices: '', titre: '', contenu: '', corrige: '', url: '' })
 const justPublished = ref(false)
 const pendingFile = ref({ fileName: '', fileExt: '', fileId: '', fileData: '', fileViewable: false })
 const uploading = ref(false)
@@ -189,9 +214,26 @@ function isMine(it) { return !it.auteurId || it.auteurId === myUid.value }
 function typeLabel(ty) { return t('cours.type' + ty.charAt(0).toUpperCase() + ty.slice(1)) }
 function fmtDate(iso) { try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR') } catch { return '' } }
 
-async function prepare() {
-  if (!form.value.matiere) return
-  const r = await store.preparerAvecMiapo({ type: form.value.type, matiere: form.value.matiere, niveau: form.value.classe || '', theme: form.value.theme })
+// Assemble les consignes envoyées à MIAPO : thème + calibrage (difficulté, durée,
+// nombre d'exercices) + une éventuelle demande d'adaptation ("plus simple"…).
+// Tout est concaténé dans `theme` (le serveur le lit tel quel), donc aucune
+// dépendance à un redéploiement PHP.
+function buildInstructions(adapt) {
+  const parts = []
+  if (form.value.theme && form.value.theme.trim()) parts.push(form.value.theme.trim())
+  const diff = { facile: 'niveau facile', moyen: 'niveau moyen', difficile: 'niveau difficile' }[form.value.difficulte]
+  if (diff) parts.push(diff)
+  if (form.value.type === 'devoir' || form.value.type === 'examen') {
+    if (form.value.duree) parts.push(`duree conseillee ${form.value.duree} min`)
+    if (form.value.nbExercices) parts.push(`${form.value.nbExercices} exercices`)
+  }
+  if (adapt) parts.push(adapt)
+  return parts.join(' ; ')
+}
+async function prepare(adapt) {
+  if (!form.value.matiere || store.preparing) return
+  const theme = buildInstructions(typeof adapt === 'string' ? adapt : '')
+  const r = await store.preparerAvecMiapo({ type: form.value.type, matiere: form.value.matiere, niveau: form.value.classe || '', theme })
   if (r.ok) { form.value.titre = r.titre || form.value.titre; form.value.contenu = r.document || ''; form.value.corrige = r.corrige || '' }
   else window.alert(r.reason || t('cours.miapoError'))
 }
@@ -199,7 +241,7 @@ function doPublish() {
   if (!canPublish.value) return
   store.publish({ ...form.value, ...pendingFile.value })
   justPublished.value = true
-  form.value = { matiere: form.value.matiere, classe: form.value.classe, type: form.value.type, theme: '', titre: '', contenu: '', corrige: '', url: '' }
+  form.value = { matiere: form.value.matiere, classe: form.value.classe, type: form.value.type, theme: '', difficulte: form.value.difficulte, duree: '', nbExercices: '', titre: '', contenu: '', corrige: '', url: '' }
   clearFile()
   setTimeout(() => { justPublished.value = false }, 2500)
 }
@@ -250,6 +292,15 @@ onMounted(async () => {
 .fg { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 150px; } .fg.grow { flex: 3; }
 .fg label { font-size: 12.5px; font-weight: 600; color: var(--tx2, #4b5563); }
 .miapo-btn { align-self: flex-end; white-space: nowrap; }
+.gen-opts .fg { flex: 0 1 auto; min-width: 130px; }
+.adapt-row { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 2px 0 12px; }
+.adapt-label { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600; color: var(--pr); }
+.adapt-row .chip {
+  border: 1px solid var(--divider); background: transparent; color: var(--tx2, #4b5563);
+  border-radius: 100px; padding: 5px 12px; font-size: 12.5px; font-family: inherit; cursor: pointer; transition: .15s;
+}
+.adapt-row .chip:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb), .05); }
+.adapt-row .chip:disabled { opacity: .5; cursor: default; }
 .pub-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; } .ok { color: #1B8A5A; font-weight: 600; }
 .upload-note { display: flex; align-items: center; gap: 6px; }
 .items { display: flex; flex-direction: column; gap: 10px; }
