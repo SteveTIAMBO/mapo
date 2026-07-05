@@ -134,10 +134,9 @@
                 <th class="hide-mobile">{{ t('eleves.thId') }}</th>
                 <th>{{ t('eleves.thClass') }}</th>
                 <th>{{ t('eleves.thGender') }}</th>
-                <th class="hide-mobile">{{ t('eleves.thBirthdate') }}</th>
                 <th class="hide-mobile">{{ t('eleves.thGuardian') }}</th>
                 <th>{{ t('eleves.thStatus') }}</th>
-                <th style="width: 90px;">{{ t('eleves.thActions') }}</th>
+                <th style="width: 120px;">{{ t('eleves.thActions') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -147,13 +146,12 @@
                     <span class="student-avatar" :style="{ background: eleve.gender === 'F' ? 'var(--gold)' : 'var(--pr)' }">
                       {{ getInitials(eleve) }}
                     </span>
-                    <span>{{ eleve.lastName }} {{ eleve.firstName }}</span>
+                    <button type="button" class="name-link" @click="openDetail(eleve)">{{ eleve.lastName }} {{ eleve.firstName }}</button>
                   </div>
                 </td>
                 <td class="td-mono hide-mobile">{{ eleve.matricule }}</td>
-                <td><span class="badge badge-info">{{ eleve.className }}</span></td>
+                <td><span class="badge badge-info class-badge">{{ eleve.className }}</span></td>
                 <td>{{ eleve.gender === 'M' ? 'M' : 'F' }}</td>
-                <td class="hide-mobile">{{ formatDate(eleve.dateOfBirth) }}</td>
                 <td class="hide-mobile">
                   <div class="parent-cell">
                     <span>{{ getParentFullName(eleve) }}</span>
@@ -169,8 +167,9 @@
                 </td>
                 <td>
                   <div class="action-btns">
-                    <button class="icon-btn" :title="t('eleves.edit')" @click="openEditModal(eleve)"><Pencil :size="15" /></button>
-                    <button class="icon-btn icon-btn-danger" :title="t('eleves.delete')" @click="openDeleteConfirm(eleve)"><Trash2 :size="15" /></button>
+                    <button class="icon-btn" :title="t('eleves.view')" @click="openDetail(eleve)"><Eye :size="15" /></button>
+                    <button v-if="!authStore.isTeacher" class="icon-btn" :title="t('eleves.edit')" @click="openEditModal(eleve)"><Pencil :size="15" /></button>
+                    <button v-if="!authStore.isTeacher" class="icon-btn icon-btn-danger" :title="t('eleves.delete')" @click="openDeleteConfirm(eleve)"><Trash2 :size="15" /></button>
                   </div>
                 </td>
               </tr>
@@ -339,6 +338,58 @@
         </div>
       </div>
     </div>
+
+    <!-- Fiche élève (consultation) -->
+    <div v-if="showDetail && detailEleve" class="modal-overlay" @click.self="closeDetail">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <div class="detail-head">
+            <span class="student-avatar lg" :style="{ background: detailEleve.gender === 'F' ? 'var(--gold)' : 'var(--pr)' }">{{ getInitials(detailEleve) }}</span>
+            <div>
+              <h2>{{ detailEleve.lastName }} {{ detailEleve.firstName }}</h2>
+              <div class="detail-sub">
+                <span class="td-mono">{{ detailEleve.matricule }}</span>
+                <span class="badge badge-info class-badge">{{ detailEleve.className }}</span>
+                <span class="badge" :class="getStatusBadge(detailEleve.status)">{{ getStatusLabel(detailEleve.status) }}</span>
+              </div>
+            </div>
+          </div>
+          <button class="icon-btn" @click="closeDetail"><X :size="20" /></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="fieldset-legend">{{ t('eleves.studentInfo') }}</div>
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.classField') }}</span><span class="detail-value">{{ detailEleve.className || '—' }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.genderField') }}</span><span class="detail-value">{{ detailEleve.gender ? t('eleves.genders.' + detailEleve.gender) : '—' }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.birthdate') }}</span><span class="detail-value">{{ formatDate(detailEleve.dateOfBirth) }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.city') }}</span><span class="detail-value">{{ detailEleve.city || '—' }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.district') }}</span><span class="detail-value">{{ detailEleve.quartier || '—' }}</span></div>
+          </div>
+
+          <div class="fieldset-legend" style="margin-top: 20px;">{{ t('eleves.guardian') }}</div>
+          <div class="detail-grid">
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.thGuardian') }}</span><span class="detail-value">{{ getParentFullName(detailEleve) }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.phonePrimary') }}</span><span class="detail-value">{{ detailEleve.parentPhone || '—' }}</span></div>
+            <div class="detail-item"><span class="detail-label">{{ t('eleves.phoneSecondary') }}</span><span class="detail-value">{{ detailEleve.parentPhone2 || '—' }}</span></div>
+          </div>
+
+          <div class="fieldset-legend" style="margin-top: 20px;">{{ t('eleves.extraProfile') }}</div>
+          <div class="detail-tags">
+            <span v-if="detailEleve.handicap" class="badge badge-info">{{ t('eleves.profileDisability') }}<template v-if="detailEleve.handicapDetail"> · {{ detailEleve.handicapDetail }}</template></span>
+            <span v-if="detailEleve.redoublant" class="badge badge-warning">{{ t('eleves.profileRepeater') }}</span>
+            <span v-if="detailEleve.boursier" class="badge badge-success">{{ t('eleves.profileScholarship') }}</span>
+            <span v-for="v in (detailEleve.vulnerabilities || [])" :key="v" class="badge badge-danger">{{ vulnLabel(v) }}</span>
+            <span v-if="!detailEleve.handicap && !detailEleve.redoublant && !detailEleve.boursier && !(detailEleve.vulnerabilities || []).length" class="detail-value">—</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn btn-outline" @click="closeDetail">{{ t('eleves.cancel') }}</button>
+          <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="editFromDetail"><Pencil :size="15" /> {{ t('eleves.edit') }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -349,7 +400,7 @@ import { useSchoolStore } from '../stores/school'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { Search, Plus, Pencil, Trash2, X, UserPlus, Download } from 'lucide-vue-next'
+import { Search, Plus, Pencil, Trash2, X, UserPlus, Download, Eye } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
@@ -377,8 +428,10 @@ const selectedStatus = ref('')
 const selectedProfile = ref('')
 const showModal = ref(false)
 const showDeleteConfirm = ref(false)
+const showDetail = ref(false)
 const editingEleve = ref(null)
 const deletingEleve = ref(null)
+const detailEleve = ref(null)
 const currentPage = ref(1)
 const perPage = ref(20)
 // pageSize is now reactive via perPage ref
@@ -584,6 +637,12 @@ const saveEleve = async () => {
   closeModal()
 }
 
+const vulnLabel = (v) => { const k = 'eleves.vulns.' + v; const lbl = t(k); return lbl === k ? v : lbl }
+
+const openDetail = (eleve) => { detailEleve.value = eleve; showDetail.value = true }
+const closeDetail = () => { showDetail.value = false; detailEleve.value = null }
+const editFromDetail = () => { const e = detailEleve.value; closeDetail(); if (e) openEditModal(e) }
+
 const openDeleteConfirm = (eleve) => { deletingEleve.value = eleve; showDeleteConfirm.value = true }
 const closeDeleteConfirm = () => { showDeleteConfirm.value = false; deletingEleve.value = null }
 const confirmDelete = async () => {
@@ -599,6 +658,11 @@ function applyMiapoQuery() {
   if (q.statut) selectedStatus.value = String(q.statut)
   if (q.q) searchQuery.value = String(q.q)
   currentPage.value = 1
+  // MIAPO peut demander d'ouvrir directement la fiche d'un élève (?fiche=<id>)
+  if (q.fiche) {
+    const target = elevesStore.eleves.find(e => String(e.id) === String(q.fiche))
+    if (target) openDetail(target)
+  }
 }
 
 onMounted(async () => {
@@ -717,6 +781,38 @@ watch(() => route.query, applyMiapoQuery)
 
 .parent-cell { display: flex; flex-direction: column; gap: 2px; }
 .parent-phone { font-size: 11px; color: var(--tx3); }
+
+/* Classe : jamais sur 2 lignes */
+.class-badge { white-space: nowrap; }
+
+/* Nom cliquable → ouvre la fiche */
+.name-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--tx);
+  cursor: pointer;
+  text-align: left;
+}
+.name-link:hover { color: var(--pr); text-decoration: underline; }
+
+/* Fiche élève (consultation) */
+.detail-head { display: flex; align-items: center; gap: 14px; }
+.detail-head h2 { margin: 0; }
+.student-avatar.lg { width: 46px; height: 46px; font-size: 15px; }
+.detail-sub { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 20px; }
+.detail-item { display: flex; flex-direction: column; gap: 3px; }
+.detail-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--tx3);
+}
+.detail-value { font-size: 14px; color: var(--tx); }
+.detail-tags { display: flex; flex-wrap: wrap; gap: 8px; }
 
 /* Tags mini pour indicateurs handicap/redoublant/boursier/vulnérable */
 .tag-mini {
@@ -920,16 +1016,15 @@ watch(() => route.query, applyMiapoQuery)
     font-size: 16px;
   }
 
-  /* Table: hide less important columns (matricule, date of birth) */
-  .table th:nth-child(2), .table td:nth-child(2),
-  .table th:nth-child(5), .table td:nth-child(5) {
-    display: none;
-  }
+  /* Colonnes masquées sur mobile via la classe .hide-mobile (matricule, tuteur) */
 
   /* Hide parent phone in table on mobile */
   .parent-phone {
     display: none;
   }
+
+  /* Fiche : une seule colonne sur mobile */
+  .detail-grid { grid-template-columns: 1fr; }
 
   /* Action buttons: touch-friendly (44px min) */
   .icon-btn {

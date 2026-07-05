@@ -82,6 +82,32 @@
               <p>{{ result.reponse }}</p>
             </div>
 
+            <!-- Plusieurs élèves correspondent → choisir -->
+            <div v-else-if="step === 'students'" class="miapo-students">
+              <p class="miapo-students-title">
+                <Sparkles :size="14" />
+                {{ result.total }} élèves correspondent — choisissez la fiche à ouvrir :
+              </p>
+              <button
+                v-for="e in result.students"
+                :key="e.id"
+                class="miapo-student"
+                @click="openStudentFiche(e)"
+              >
+                <span class="miapo-student-av" :style="{ background: e.gender === 'F' ? 'var(--gold)' : 'var(--pr)' }">
+                  {{ ((e.lastName?.[0] || '') + (e.firstName?.[0] || '')).toUpperCase() }}
+                </span>
+                <span class="miapo-student-main">
+                  <span class="miapo-student-name">{{ e.lastName }} {{ e.firstName }}</span>
+                  <span class="miapo-student-meta">{{ e.className }} · {{ e.matricule }}</span>
+                </span>
+                <ArrowRight :size="15" />
+              </button>
+              <p v-if="result.total > result.students.length" class="miapo-students-more">
+                … et {{ result.total - result.students.length }} autres. Précisez la classe (ex. « en 6ème C ») pour affiner.
+              </p>
+            </div>
+
             <!-- Brouillon de communication (VALIDATION requise) -->
             <div v-else-if="step === 'draft'" class="miapo-draft">
               <div class="miapo-draft-badge">
@@ -150,12 +176,14 @@ import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck } from '
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES } from '../../stores/miapoCopilot'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
+import { useElevesStore } from '../../stores/eleves'
 
 const router = useRouter()
 const route = useRoute()
 const copilot = useMiapoCopilotStore()
 const personnelStore = usePersonnelStore()
 const classesStore = useClassesStore()
+const elevesStore = useElevesStore()
 
 // ── Résolution LOCALE (données MAPO, sans IA) : questions sur un membre du
 // personnel, ex. « affiche les matières gérées par Jean Kamga ». Instantané,
@@ -194,17 +222,67 @@ function buildStaffAnswer(m) {
   if (pp.length) ans += ` Professeur principal de ${pp.join(', ')}.`
   return ans
 }
+// ── Résolution LOCALE : fiche d'un ÉLÈVE, ex. « informations de l'élève Abega
+// Céline » ou « la fiche de X en 6e ». Traduit le niveau parlé (6e/6ème/cm2/tle…)
+// vers la classe réelle de l'outil et gère les homonymes.
+const _esc = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+// Canonicalise un libellé de classe : « 6ème C »→"6ec", « 6e »→"6e", « 2nde A »→"2ea", « Tle D »→"tled".
+function canonClass(s) {
+  let t = _norm(s).trim()
+  t = t.replace(/(\d+)\s*(?:emes?|iemes?|eres?|ndes?|er|nd|e)\b/g, '$1e')
+  return t.replace(/[^a-z0-9]/g, '')
+}
+function extractClassHint(tn) {
+  const re = /\b(\d{1,2}\s*(?:emes?|iemes?|eres?|ndes?|er|nd|e)\b(?:\s*[a-e]\b)?|cm\s*[12](?:\s*[a-e]\b)?|ce\s*[12]|cp|sil|tle(?:\s*[a-e]\b)?|terminale(?:\s*[a-e]\b)?|seconde|premiere)/
+  const m = tn.match(re)
+  return m ? m[1] : null
+}
+function classMatchesHint(className, hint) {
+  if (!hint) return true
+  const c = canonClass(className), h = canonClass(hint)
+  return c === h || c.startsWith(h)
+}
+function looksLikeStudentQuery(text) {
+  return /\b(el[eè]ves?|apprenant|informations?|infos?|fiche|dossier|profil|coordonn[eé]es|parent|tuteur)\b/i.test(text)
+}
+function findStudentsInText(text) {
+  const tn = _norm(text)
+  const hint = extractClassHint(tn)
+  const list = elevesStore.eleves || []
+  const strong = [], byLast = [], byFirst = []
+  for (const e of list) {
+    const fn = _norm(e.firstName), ln = _norm(e.lastName)
+    const hasFn = fn && new RegExp(`\\b${_esc(fn)}\\b`).test(tn)
+    const hasLn = ln && new RegExp(`\\b${_esc(ln)}\\b`).test(tn)
+    if (hasFn && hasLn) strong.push(e)
+    else if (hasLn && ln.length >= 3) byLast.push(e)
+    else if (hasFn && fn.length >= 3) byFirst.push(e)
+  }
+  let cands = strong.length ? strong : (byLast.length ? byLast : byFirst)
+  if (hint) { const f = cands.filter((e) => classMatchesHint(e.className, hint)); if (f.length) cands = f }
+  return cands
+}
+
 async function resolveLocalQuery(text) {
-  if (!looksLikeStaffQuery(text)) return null
-  if (!personnelStore.staff?.length) { try { await personnelStore.loadStaff() } catch { /* ignore */ } }
-  if (!classesStore.classes?.length) { try { await classesStore.loadClasses?.() } catch { /* ignore */ } }
-  const m = findStaffInText(text)
-  return m ? buildStaffAnswer(m) : null
+  // 1) Personnel (matières/classes d'un prof) — prioritaire.
+  if (looksLikeStaffQuery(text)) {
+    if (!personnelStore.staff?.length) { try { await personnelStore.loadStaff() } catch { /* ignore */ } }
+    if (!classesStore.classes?.length) { try { await classesStore.loadClasses?.() } catch { /* ignore */ } }
+    const m = findStaffInText(text)
+    if (m) return { kind: 'text', text: buildStaffAnswer(m) }
+  }
+  // 2) Fiche élève.
+  if (looksLikeStudentQuery(text)) {
+    if (!elevesStore.eleves?.length) { try { await elevesStore.loadEleves() } catch { /* ignore */ } }
+    const found = findStudentsInText(text)
+    if (found.length) return { kind: 'students', students: found }
+  }
+  return null
 }
 
 const inputEl = ref(null)
 const instruction = ref('')
-const step = ref('idle') // idle | answer | nav | draft | peda
+const step = ref('idle') // idle | answer | nav | draft | peda | students
 const result = ref({})
 const draft = ref({ destinataires: '', sujet: '', message: '' })
 const peda = ref({ titre: '', document: '', corrige: '', type: 'devoir' })
@@ -247,13 +325,33 @@ function runExample(ex) {
   submit()
 }
 
+function openStudentFiche(e) {
+  router.push({ path: '/eleves', query: { miapo: '1', fiche: String(e.id) } })
+  close()
+}
+
 async function submit() {
   const text = instruction.value.trim()
   if (!text || copilot.thinking) return
-  // 1) Réponse LOCALE si la question porte sur la donnée MAPO (ex. matières d'un
-  //    enseignant) — instantané, sans appel IA.
+  // 1) Réponse LOCALE si la question porte sur la donnée MAPO (matières d'un
+  //    enseignant, fiche d'un élève) — instantané, sans appel IA.
   const local = await resolveLocalQuery(text)
-  if (local) { step.value = 'answer'; result.value = { reponse: local }; return }
+  if (local) {
+    if (local.kind === 'text') { step.value = 'answer'; result.value = { reponse: local.text }; return }
+    if (local.kind === 'students') {
+      const list = local.students
+      if (list.length === 1) {
+        const e = list[0]
+        step.value = 'nav'
+        result.value = { reponse: `Voici la fiche de ${e.lastName} ${e.firstName} (${e.className}).` }
+        setTimeout(() => { openStudentFiche(e); close() }, 650)
+        return
+      }
+      step.value = 'students'
+      result.value = { students: list.slice(0, 12), total: list.length }
+      return
+    }
+  }
   // 2) Sinon, on demande à l'IA d'interpréter l'instruction.
   const r = await copilot.interpret({ instruction: text, vueActuelle: route.path.replace(/^\//, '') })
   result.value = r
@@ -495,6 +593,32 @@ onUnmounted(() => {
   padding: 12px 4px 16px;
 }
 .miapo-answer p { margin: 0; font-size: 15px; color: var(--tx); line-height: 1.5; }
+
+/* Liste d'élèves (homonymes) */
+.miapo-students { padding: 8px 2px 14px; }
+.miapo-students-title {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 0 10px; font-size: 14px; color: var(--tx2);
+}
+.miapo-students-title svg { color: var(--pr); flex-shrink: 0; }
+.miapo-student {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 10px 12px; margin-bottom: 6px;
+  background: var(--input-bg); border: 1px solid transparent;
+  border-radius: 10px; cursor: pointer; font-family: inherit;
+  text-align: left; transition: .15s;
+}
+.miapo-student:hover { border-color: var(--pr); }
+.miapo-student > svg { color: var(--pr); flex-shrink: 0; margin-left: auto; }
+.miapo-student-av {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: var(--font-display); font-size: 11px; font-weight: 700;
+}
+.miapo-student-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.miapo-student-name { font-size: 14px; font-weight: 600; color: var(--tx); }
+.miapo-student-meta { font-size: 12px; color: var(--tx3); }
+.miapo-students-more { margin: 6px 2px 0; font-size: 12px; color: var(--tx3); line-height: 1.45; }
 
 .miapo-draft { padding: 6px 2px 14px; }
 .miapo-draft-badge {
