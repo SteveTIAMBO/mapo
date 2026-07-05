@@ -33,6 +33,26 @@
 
     <!-- Directeur : Effectifs + Finances -->
     <template v-if="!authStore.isTeacher">
+      <!-- MIAPO — À traiter aujourd'hui (copilote directeur proactif) -->
+      <div class="glass card attn-card">
+        <div class="card-h">
+          <span class="attn-spark"><Sparkles :size="15" /></span>
+          <h3>{{ t('dashboard.attn.title') }}</h3>
+          <span v-if="attentionItems.length" class="attn-count">{{ attentionItems.length }}</span>
+        </div>
+        <div v-if="attentionItems.length" class="attn-list">
+          <div v-for="it in attentionItems" :key="it.key" class="attn-item">
+            <div class="attn-ic" :class="'atone-' + it.tone"><component :is="it.icon" :size="18" /></div>
+            <div class="attn-main">
+              <div class="attn-t">{{ it.title }}</div>
+              <div v-if="it.detail" class="attn-d">{{ it.detail }}</div>
+            </div>
+            <RouterLink :to="{ path: it.to, query: it.query }" class="attn-cta">{{ it.cta }} <ArrowRight :size="14" /></RouterLink>
+          </div>
+        </div>
+        <div v-else class="attn-empty"><CheckCircle2 :size="18" /> <span>{{ t('dashboard.attn.allClear') }}</span></div>
+      </div>
+
       <div class="row">
         <div class="glass card">
           <div class="card-h"><h3>{{ t('dashboard.headcountByLevel') }}</h3><RouterLink to="/classes" class="more">{{ t('dashboard.seeDetail') }}</RouterLink></div>
@@ -109,7 +129,7 @@ import {
   ArrowRight, Search, Zap, Clock, Calendar,
   UserPlus, Briefcase, BookOpen, Settings, Users, CreditCard, AlertTriangle,
   CalendarCheck, MessageSquare, BarChart3, ClipboardList, Wallet, FileText, ClipboardCheck,
-  TrendingUp, AlertCircle, Activity
+  TrendingUp, AlertCircle, Activity, Sparkles, CheckCircle2
 } from 'lucide-vue-next'
 import { Line, Doughnut, Radar } from 'vue-chartjs'
 import {
@@ -640,6 +660,52 @@ const unresolvedIncidents = computed(() => {
 
 const unresolvedIncidentsCount = computed(() => unresolvedIncidents.value.length)
 
+// ═══ MIAPO — À TRAITER AUJOURD'HUI (copilote directeur proactif) ═══
+// MIAPO surveille la donnée déjà en base et remonte, priorisé, ce qui appelle une
+// action : impayés (→ relance), recouvrement faible, classes en difficulté,
+// incidents, conseil à venir, classes en surcapacité. Chaque item a une action.
+const attentionItems = computed(() => {
+  if (authStore.isTeacher) return []
+  const items = []
+  const unpaid = factStore.globalStats?.unpaidCount || 0
+  if (unpaid > 0) items.push({
+    key: 'unpaid', icon: CreditCard, tone: 'amber', priority: 3,
+    title: t('dashboard.attn.unpaidTitle', { n: unpaid }), detail: t('dashboard.attn.unpaidDetail'),
+    cta: t('dashboard.attn.relaunch'), to: '/facturation', query: { focus: 'impayes' },
+  })
+  const rate = factStore.globalStats?.collectionRate
+  if (factStore.setupDone && rate != null && rate < 50) items.push({
+    key: 'collect', icon: TrendingUp, tone: 'red', priority: 2,
+    title: t('dashboard.attn.collectTitle', { r: rate }), detail: t('dashboard.attn.collectDetail'),
+    cta: t('dashboard.attn.seeAccounting'), to: '/facturation', query: {},
+  })
+  const diff = classesInDifficulty.value
+  if (diff.length) items.push({
+    key: 'diff', icon: AlertTriangle, tone: 'red', priority: 2,
+    title: t('dashboard.attn.diffTitle', { n: diff.length }), detail: diff.slice(0, 3).map((c) => c.name).join(', '),
+    cta: t('dashboard.attn.seeTracking'), to: '/suivi-decrochage', query: {},
+  })
+  const pending = disciplineStore.stats?.pending || 0
+  if (pending > 0) items.push({
+    key: 'disc', icon: AlertCircle, tone: 'red', priority: 1,
+    title: t('dashboard.attn.discTitle', { n: pending }), detail: t('dashboard.attn.discDetail'),
+    cta: t('dashboard.attn.process'), to: '/discipline', query: {},
+  })
+  const conseil = upcomingConseil.value
+  if (conseil && conseil.date) items.push({
+    key: 'conseil', icon: Calendar, tone: 'blue', priority: 1,
+    title: t('dashboard.attn.conseilTitle'), detail: formatAgendaDate(conseil.date) + (conseil.label ? ' · ' + conseil.label : ''),
+    cta: t('dashboard.attn.seeNotes'), to: '/notes', query: {},
+  })
+  const over = (classesStore.classes || []).filter((c) => c.capacity && (c.enrolled || 0) > c.capacity)
+  if (over.length) items.push({
+    key: 'over', icon: Users, tone: 'amber', priority: 0,
+    title: t('dashboard.attn.overTitle', { n: over.length }), detail: over.slice(0, 3).map((c) => c.name).join(', '),
+    cta: t('dashboard.attn.seeClasses'), to: '/classes', query: {},
+  })
+  return items.sort((a, b) => b.priority - a.priority)
+})
+
 function getIncidentTypeColor(type) {
   const colors = { 'retard': '#E8A838', 'absence': '#D93025', 'insolence': '#D93025', 'violence': '#991b1b', 'vol': '#991b1b', 'default': '#E8A838' }
   return colors[type?.toLowerCase()] || colors.default
@@ -854,6 +920,24 @@ onMounted(async () => {
 .sl-pill.pill-amber { background: rgba(255,159,10,.18); color: #a86400; }
 
 .mini-empty { padding: 26px 12px; text-align: center; color: var(--tx3); font-size: 13px; }
+
+/* MIAPO — À traiter aujourd'hui */
+.attn-card { margin-bottom: 16px; }
+.attn-spark { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; color: #fff; background: linear-gradient(135deg, var(--pr), #7c5cff); box-shadow: 0 3px 10px rgba(var(--pr-rgb), .35); flex: none; }
+.attn-count { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--pr); background: rgba(var(--pr-rgb), .12); padding: 2px 9px; border-radius: 20px; }
+.attn-list { padding: 6px 10px 12px; display: flex; flex-direction: column; }
+.attn-item { display: flex; align-items: center; gap: 12px; padding: 11px 8px; }
+.attn-item + .attn-item { border-top: 1px solid rgba(120,130,160,.16); }
+.attn-ic { width: 34px; height: 34px; border-radius: 10px; flex: none; display: flex; align-items: center; justify-content: center; }
+.atone-red { background: rgba(217,48,37,.10); color: #D93025; }
+.atone-amber { background: rgba(255,159,10,.16); color: #cf7e00; }
+.atone-blue { background: rgba(var(--pr-rgb),.12); color: var(--pr); }
+.attn-main { min-width: 0; flex: 1; }
+.attn-t { font-size: 14px; font-weight: 600; color: var(--tx); line-height: 1.25; }
+.attn-d { font-size: 12.5px; color: var(--tx2); margin-top: 1px; }
+.attn-cta { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 600; color: var(--pr); text-decoration: none; white-space: nowrap; padding: 6px 10px; border-radius: 9px; }
+.attn-cta:hover { background: rgba(var(--pr-rgb),.08); text-decoration: none; }
+.attn-empty { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 22px 12px; color: #1B8A5A; font-size: 14px; font-weight: 500; }
 
 /* Salaire enseignant */
 .salary-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin-bottom: 16px; }
