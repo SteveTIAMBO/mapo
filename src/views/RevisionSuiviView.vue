@@ -32,6 +32,36 @@
       </div>
     </div>
 
+    <!-- Adapter le prochain cours (MIAPO) -->
+    <div class="card" v-if="subjectRollup.length">
+      <div class="card-head"><Sparkles :size="18" /><h3>{{ t('revsuivi.adaptTitle') }}</h3></div>
+      <p class="adapt-intro">{{ t('revsuivi.adaptIntro') }}</p>
+      <div class="adapt-list">
+        <div v-for="r in subjectRollup.slice(0, 4)" :key="r.name" class="adapt-item">
+          <span class="adapt-subj">{{ r.name }}</span>
+          <span class="adapt-cnt">{{ r.count > 1 ? t('revsuivi.studentsCountMany', { n: r.count }) : t('revsuivi.studentsCountOne', { n: r.count }) }}</span>
+          <button class="btn btn-outline btn-sm" :disabled="!!remedBusy" @click="prepareRemediation(r.name)">
+            <component :is="remedBusy === r.name ? Loader2 : Sparkles" :size="15" :class="{ spin: remedBusy === r.name }" />
+            <span>{{ remedBusy === r.name ? t('revsuivi.preparing') : t('revsuivi.prepareRemed') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-if="remedPlan" class="remed-result">
+        <div class="remed-head">
+          <strong>{{ remedForSubject }}<template v-if="remedPlan.titre"> — {{ remedPlan.titre }}</template></strong>
+          <button class="icon-x" :title="t('revsuivi.close')" @click="closeRemed"><X :size="16" /></button>
+        </div>
+        <p v-if="remedPlan.error" class="remed-err">{{ remedPlan.error }}</p>
+        <template v-else>
+          <pre class="remed-doc">{{ remedPlan.document }}</pre>
+          <div class="remed-actions">
+            <button class="btn btn-primary btn-sm" @click="copyRemed">{{ remedCopied ? t('revsuivi.copied') : t('revsuivi.copyPlan') }}</button>
+          </div>
+        </template>
+      </div>
+    </div>
+
     <!-- Élèves en difficulté -->
     <div class="card">
       <div class="card-head"><Users :size="18" /><h3>{{ t('revsuivi.studentsToSupport', { n: filteredStudents.length }) }}</h3></div>
@@ -75,7 +105,8 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useNotesStore } from '../stores/notes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, AlertTriangle, Users, Info } from 'lucide-vue-next'
+import { Sparkles, AlertTriangle, Users, Info, Loader2, X } from 'lucide-vue-next'
+import { useCoursStore } from '../stores/cours'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
@@ -83,8 +114,34 @@ const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const notesStore = useNotesStore()
 const tuteur = useTuteurStore()
+const coursStore = useCoursStore()
 
 const classFilter = ref('')
+// Remédiation MIAPO : à partir des matières en difficulté, prépare une séance ciblée.
+const remedBusy = ref('')       // matière en cours de génération
+const remedForSubject = ref('') // matière du plan affiché
+const remedPlan = ref(null)     // { titre, document, error? }
+const remedCopied = ref(false)
+
+async function prepareRemediation(subjectName) {
+  if (remedBusy.value) return
+  remedBusy.value = subjectName
+  remedForSubject.value = subjectName
+  remedPlan.value = null
+  const theme = 'seance de remediation ciblee : plusieurs eleves en difficulte sur cette matiere ; reprendre les notions de base, prevoir des activites differenciees et progressives, puis un court controle de verification'
+  try {
+    const r = await coursStore.preparerAvecMiapo({ type: 'cours', matiere: subjectName, niveau: classFilter.value || '', theme })
+    remedPlan.value = r.ok ? { titre: r.titre || '', document: r.document || '' } : { error: r.reason || t('revsuivi.remedError') }
+  } catch {
+    remedPlan.value = { error: t('revsuivi.remedError') }
+  } finally {
+    remedBusy.value = ''
+  }
+}
+function closeRemed() { remedPlan.value = null; remedForSubject.value = '' }
+async function copyRemed() {
+  try { await navigator.clipboard.writeText(remedPlan.value?.document || ''); remedCopied.value = true; setTimeout(() => { remedCopied.value = false }, 1800) } catch { /* clipboard indispo */ }
+}
 const states = ref({})   // états de révision réels (Tuteur) : { studentId: { subjectId: {...} } }
 const loaded = ref(false)
 
@@ -279,6 +336,30 @@ onMounted(async () => {
 
 .empty { text-align: center; color: var(--tx3); padding: 28px 16px; font-size: 14px; }
 .foot-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tx3); margin: 0; }
+
+/* Adapter le prochain cours (remédiation) */
+.adapt-intro { margin: -4px 0 14px; font-size: 13.5px; color: var(--tx2); line-height: 1.5; }
+.adapt-list { display: flex; flex-direction: column; gap: 8px; }
+.adapt-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--divider, #eee); }
+.adapt-item:last-child { border-bottom: none; }
+.adapt-subj { font-size: 14px; font-weight: 600; color: var(--tx); flex: 1; }
+.adapt-cnt { font-size: 12px; color: var(--tx3); white-space: nowrap; }
+.adapt-item .btn { flex-shrink: 0; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.remed-result { margin-top: 14px; border-top: 1px solid var(--divider, #eee); padding-top: 14px; }
+.remed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.remed-head strong { font-size: 14px; color: var(--tx); }
+.icon-x { border: none; background: transparent; color: var(--tx3); cursor: pointer; padding: 4px; border-radius: 6px; display: inline-flex; }
+.icon-x:hover { background: rgba(0,0,0,.05); color: var(--tx); }
+.remed-err { font-size: 13.5px; color: #B3261E; margin: 4px 0 0; }
+.remed-doc {
+  margin: 0 0 12px; padding: 14px 16px; background: var(--input-bg, #f7f7f9);
+  border: 1px solid var(--divider, #eee); border-radius: 10px;
+  font-family: inherit; font-size: 13.5px; line-height: 1.55; color: var(--tx);
+  white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow-y: auto;
+}
+.remed-actions { display: flex; justify-content: flex-end; }
 
 @media (max-width: 640px) {
   .rollup-item { grid-template-columns: 110px 1fr 60px; gap: 8px; }
