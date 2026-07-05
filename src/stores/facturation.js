@@ -9,6 +9,7 @@ import { usePersonnelStore } from './personnel'
 
 const DEMO_KEY = 'mapo_demo_facturation'
 const DEMO_VERSION_KEY = 'mapo_demo_facturation_version'
+const RELANCES_KEY = 'mapo_relances' // suivi des relances impayés : { [eleveId]: ISODate }
 const DEMO_VERSION = 7
 
 // Types de frais courants
@@ -47,6 +48,14 @@ export const useFacturationStore = defineStore('facturation', () => {
   const charges = ref([])        // Charges fixes : [{ id, label, category, amount, frequency }]
   const loading = ref(false)
   const setupDone = ref(false)
+  // Suivi des relances de paiement (par élève) — évite de relancer 2× la même famille.
+  const relances = ref((() => { try { return JSON.parse(localStorage.getItem(RELANCES_KEY)) || {} } catch { return {} } })())
+
+  function getLastRelance(eleveId) { return relances.value[eleveId] || null }
+  function recordRelance(eleveId, at) {
+    relances.value = { ...relances.value, [eleveId]: at || new Date().toISOString() }
+    try { localStorage.setItem(RELANCES_KEY, JSON.stringify(relances.value)) } catch { /* silencieux */ }
+  }
 
   // ── Computed ──
 
@@ -561,6 +570,7 @@ export const useFacturationStore = defineStore('facturation', () => {
     addEcheance, updateEcheance, deleteEcheance,
     getSalaryPayments, addSalaryPayment,
     addCharge, updateCharge, deleteCharge,
+    relances, getLastRelance, recordRelance,
     completeSetup, loadFacturation, saveAll,
   }
 })

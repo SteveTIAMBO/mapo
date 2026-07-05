@@ -145,6 +145,10 @@
               <option value="partiel">{{ t('fact.statusPartial') }}</option>
               <option value="impayé">{{ t('fact.statusUnpaid') }}</option>
             </select>
+            <button class="btn btn-primary btn-relance" @click="openRelance">
+              <Sparkles :size="16" />
+              <span>{{ t('fact.relanceBtn') }}</span>
+            </button>
           </div>
         </div>
 
@@ -1104,6 +1108,92 @@
         </div>
       </div>
     </div>
+
+    <!-- Relances impayés (MIAPO) — supervisées -->
+    <div v-if="showRelance" class="modal-overlay" @click.self="closeRelance">
+      <div class="modal-card card relance-modal">
+        <div class="modal-header">
+          <div class="relance-head">
+            <span class="relance-spark"><Sparkles :size="18" /></span>
+            <div>
+              <h2>{{ t('fact.relanceTitle') }}</h2>
+              <p class="relance-sub">{{ t('fact.relanceGuard') }}</p>
+            </div>
+          </div>
+          <button class="icon-btn" @click="closeRelance"><X :size="20" /></button>
+        </div>
+
+        <!-- Résultat d'envoi -->
+        <div v-if="relanceResult" class="modal-body">
+          <div class="relance-done">
+            <CheckCircle2 :size="42" style="color: var(--success);" />
+            <p class="relance-done-title">{{ t('fact.relanceSentTitle', { n: relanceResult.total }) }}</p>
+            <p class="relance-done-text">{{ t('fact.relanceSentDetail', { sent: relanceResult.sent, sim: relanceResult.simulated, fail: relanceResult.failed }) }}</p>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" @click="closeRelance">{{ t('fact.close') }}</button>
+          </div>
+        </div>
+
+        <!-- Composition -->
+        <div v-else class="modal-body">
+          <div v-if="relanceCandidates.length === 0" class="empty-state">
+            <CheckCircle2 :size="40" style="color: var(--success); margin-bottom: 12px;" />
+            <p>{{ t('fact.relanceNone') }}</p>
+          </div>
+          <template v-else>
+            <div class="relance-row">
+              <span class="relance-label">{{ t('fact.relanceChannel') }}</span>
+              <div class="relance-seg">
+                <button type="button" :class="{ active: relanceChannel === 'whatsapp' }" @click="relanceChannel = 'whatsapp'">WhatsApp</button>
+                <button type="button" :class="{ active: relanceChannel === 'sms' }" @click="relanceChannel = 'sms'">SMS</button>
+              </div>
+            </div>
+
+            <label class="relance-field">
+              <span>{{ t('fact.relanceMessage') }}</span>
+              <textarea v-model="relanceMessage" rows="4"></textarea>
+              <span class="relance-hint">{{ t('fact.relanceVarsLabel') }} : {{ RELANCE_VARS }}</span>
+            </label>
+
+            <div v-if="relancePreview" class="relance-preview">
+              <span class="relance-preview-label"><Sparkles :size="12" /> {{ t('fact.relancePreview') }}</span>
+              <p>{{ relancePreview }}</p>
+            </div>
+
+            <div class="relance-listhead">
+              <label class="relance-check">
+                <input type="checkbox" :checked="allSelected" @change="toggleRelanceAll" />
+                <span>{{ t('fact.relanceSelectAll') }}</span>
+              </label>
+              <span class="relance-count">{{ t('fact.relanceSelected', { n: selectedCount }) }}</span>
+            </div>
+            <div class="relance-list">
+              <div v-for="row in relanceCandidates" :key="row.eleve.id" class="relance-item" :class="{ disabled: !row.phone }">
+                <input type="checkbox" :checked="!!relanceSel[row.eleve.id]" :disabled="!row.phone" @change="toggleRelanceOne(row.eleve.id)" />
+                <div class="relance-item-main">
+                  <span class="relance-item-name">{{ row.eleve.lastName }} {{ row.eleve.firstName }}</span>
+                  <span class="relance-item-meta">{{ row.eleve.className }} · {{ t('fact.relanceDue', { m: fmtMoney(row.balance) }) }}</span>
+                </div>
+                <div class="relance-item-side">
+                  <span v-if="row.phone" class="relance-item-phone">{{ row.parent || '—' }} · {{ row.phone }}</span>
+                  <span v-else class="relance-item-nophone"><AlertTriangle :size="13" /> {{ t('fact.relanceNoPhone') }}</span>
+                  <span v-if="row.lastRelance" class="relance-item-last">{{ t('fact.relanceLast', { d: fmtDate(row.lastRelance) }) }}</span>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <div v-if="relanceCandidates.length" class="modal-actions">
+            <button class="btn btn-outline" @click="closeRelance">{{ t('fact.cancel') }}</button>
+            <button class="btn btn-primary" :disabled="selectedCount === 0 || relanceSending" @click="sendRelances">
+              <Send :size="16" />
+              <span>{{ relanceSending ? t('fact.relanceSending') : t('fact.relanceSend', { n: selectedCount }) }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -1121,9 +1211,10 @@ import {
   Plus, Search, X, Pencil, Trash2, CheckCircle2, Settings,
   Users, Receipt, TableProperties, Banknote, Printer, Download,
   ChevronLeft, ChevronRight, Briefcase, BookOpen, Calendar,
-  DollarSign, BarChart3
+  DollarSign, BarChart3, Sparkles, Send, AlertTriangle
 } from 'lucide-vue-next'
 import { exportToExcel } from '../utils/exportExcel'
+import { useNotificationsStore } from '../stores/notifications'
 
 const CHARGE_CATEGORIES = [
   { value: 'immobilier', label: 'Immobilier' },
@@ -1141,6 +1232,7 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const authStore = useAuthStore()
+const notif = useNotificationsStore()
 
 // ── State ──
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -1795,6 +1887,93 @@ function confirmDelete() {
   deleteType.value = ''
 }
 
+// ── Relances impayés (MIAPO) — supervisées ──
+// MIAPO repère les familles avec un solde, prépare un message personnalisé par
+// famille, le directeur coche/valide, puis l'envoi part par WhatsApp/SMS (proxy
+// Twilio, ou simulé si pas encore branché). Garde-fou : rien ne part sans validation.
+const RELANCE_VARS = '{parent}, {eleve}, {classe}, {montant}, {ecole}'
+const DEFAULT_RELANCE = {
+  fr: 'Bonjour {parent}, un solde de scolarite de {montant} reste a regler pour {eleve} ({classe}). Merci de bien vouloir regulariser des que possible. Cordialement, {ecole}.',
+  en: 'Hello {parent}, a tuition balance of {montant} is still due for {eleve} ({classe}). Please settle it as soon as possible. Best regards, {ecole}.',
+}
+const showRelance = ref(false)
+const relanceChannel = ref(notif.settings.channel || 'whatsapp')
+const relanceMessage = ref(DEFAULT_RELANCE.fr)
+const relanceSel = ref({})
+const relanceSending = ref(false)
+const relanceResult = ref(null)
+
+const ecoleName = computed(() => schoolStore.schoolSettings?.schoolName || (locale.value === 'en' ? 'the school' : "l'établissement"))
+const fmtMoney = (n) => (n || 0).toLocaleString('fr-FR') + ' FCFA'
+const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR') } catch { return '' } }
+
+const relanceCandidates = computed(() => elevesWithPayments.value
+  .filter(r => r.balance > 0)
+  .map(r => {
+    const e = r.eleve
+    const parent = (e.parentLastName && e.parentFirstName) ? `${e.parentFirstName} ${e.parentLastName}` : (e.parentName || '')
+    return { eleve: e, balance: r.balance, parent, phone: (e.parentPhone || '').trim(), lastRelance: factStore.getLastRelance(e.id) }
+  })
+  .sort((a, b) => b.balance - a.balance))
+
+const selectableCount = computed(() => relanceCandidates.value.filter(r => r.phone).length)
+const selectedCount = computed(() => relanceCandidates.value.filter(r => relanceSel.value[r.eleve.id]).length)
+const allSelected = computed(() => selectableCount.value > 0 && selectedCount.value === selectableCount.value)
+
+function buildRelanceText(row) {
+  return relanceMessage.value
+    .replace(/\{parent\}/g, row.parent || (locale.value === 'en' ? 'dear parent' : 'cher parent'))
+    .replace(/\{eleve\}/g, `${row.eleve.lastName} ${row.eleve.firstName}`)
+    .replace(/\{classe\}/g, row.eleve.className || '')
+    .replace(/\{montant\}/g, fmtMoney(row.balance))
+    .replace(/\{ecole\}/g, ecoleName.value)
+}
+const relancePreview = computed(() => {
+  const first = relanceCandidates.value.find(r => relanceSel.value[r.eleve.id]) || relanceCandidates.value[0]
+  return first ? buildRelanceText(first) : ''
+})
+
+function toggleRelanceOne(id) { relanceSel.value = { ...relanceSel.value, [id]: !relanceSel.value[id] } }
+function toggleRelanceAll() {
+  const next = {}
+  if (!allSelected.value) relanceCandidates.value.forEach(r => { if (r.phone) next[r.eleve.id] = true })
+  relanceSel.value = next
+}
+function openRelance() {
+  relanceResult.value = null
+  relanceChannel.value = notif.settings.channel || 'whatsapp'
+  if (relanceMessage.value === DEFAULT_RELANCE.fr || relanceMessage.value === DEFAULT_RELANCE.en) {
+    relanceMessage.value = DEFAULT_RELANCE[locale.value === 'en' ? 'en' : 'fr']
+  }
+  const sel = {}
+  relanceCandidates.value.forEach(r => { if (r.phone) sel[r.eleve.id] = true })
+  relanceSel.value = sel
+  showRelance.value = true
+}
+function closeRelance() { showRelance.value = false }
+
+async function sendRelances() {
+  if (relanceSending.value) return
+  relanceSending.value = true
+  notif.setChannel(relanceChannel.value)
+  let sent = 0, simulated = 0, failed = 0
+  const targets = relanceCandidates.value.filter(r => relanceSel.value[r.eleve.id] && r.phone)
+  for (const row of targets) {
+    const entry = await notif.sendAlert({
+      to: row.phone,
+      message: buildRelanceText(row),
+      channel: relanceChannel.value,
+      meta: { eleve: `${row.eleve.lastName} ${row.eleve.firstName}`, parent: row.parent, classe: row.eleve.className, template: 'relance' },
+    })
+    if (entry.status === 'envoyé') sent++
+    else if (entry.status === 'simulé') simulated++
+    else failed++
+    factStore.recordRelance(row.eleve.id)
+  }
+  relanceResult.value = { total: targets.length, sent, simulated, failed }
+  relanceSending.value = false
+}
+
 // ── Copilote MIAPO : applique les filtres passés en query (?focus/classe/q) ──
 const route = useRoute()
 function applyMiapoQuery() {
@@ -1808,6 +1987,7 @@ function applyMiapoQuery() {
   if (q.classe) filterClass.value = String(q.classe)
   if (q.q) searchQuery.value = String(q.q)
   currentPage.value = 1
+  if (q.relance) nextTick(() => openRelance())
 }
 
 onMounted(async () => {
@@ -2585,6 +2765,8 @@ watch(() => route.query, applyMiapoQuery)
 
   /* Modal responsiveness */
   .modal-card { width: 95%; max-width: 100%; padding: 12px; margin: 8px auto; }
+  .relance-item { flex-wrap: wrap; }
+  .relance-item-side { align-items: flex-start; text-align: left; margin-left: 30px; }
   .modal-header { padding: 12px 16px; }
   .modal-header h2 { font-size: 16px; }
   .modal-body { padding: 16px; }
@@ -2633,4 +2815,69 @@ watch(() => route.query, applyMiapoQuery)
   .detail-grid { grid-template-columns: 1fr; }
   .bulletin-value-large { font-size: 16px; }
 }
+
+/* ── Relances impayés (MIAPO) ── */
+.btn-relance { margin-left: auto; white-space: nowrap; }
+.relance-modal { max-width: 620px; width: 100%; display: flex; flex-direction: column; max-height: 88vh; }
+.relance-modal .modal-body { overflow-y: auto; }
+.relance-head { display: flex; align-items: center; gap: 12px; }
+.relance-head h2 { margin: 0; }
+.relance-spark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pr), #7c5cff);
+  box-shadow: 0 3px 10px rgba(var(--pr-rgb), .35);
+}
+.relance-sub { margin: 3px 0 0; font-size: 12.5px; color: var(--tx3); }
+.relance-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.relance-label { font-size: 13px; font-weight: 600; color: var(--tx2); }
+.relance-seg { display: inline-flex; border: 1px solid var(--divider); border-radius: 9px; overflow: hidden; }
+.relance-seg button {
+  border: none; background: transparent; padding: 7px 16px; font-size: 13px;
+  font-family: inherit; color: var(--tx2); cursor: pointer; transition: .15s;
+}
+.relance-seg button.active { background: var(--pr); color: #fff; }
+.relance-field { display: block; margin-bottom: 16px; }
+.relance-field > span { display: block; font-size: 13px; font-weight: 600; color: var(--tx2); margin-bottom: 6px; }
+.relance-field textarea {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--divider); border-radius: 10px;
+  background: var(--input-bg); color: var(--tx); font-size: 14px; font-family: inherit;
+  resize: vertical; outline: none; line-height: 1.5;
+}
+.relance-field textarea:focus { border-color: var(--pr); }
+.relance-hint { display: block; margin-top: 6px; font-size: 11.5px; color: var(--tx3); }
+.relance-preview {
+  background: rgba(var(--pr-rgb), .06); border: 1px solid rgba(var(--pr-rgb), .18);
+  border-radius: 10px; padding: 10px 14px; margin-bottom: 18px;
+}
+.relance-preview-label {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--pr); margin-bottom: 4px;
+}
+.relance-preview p { margin: 2px 0 0; font-size: 13.5px; color: var(--tx); line-height: 1.5; }
+.relance-listhead {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 2px 8px; border-bottom: 1px solid var(--divider); margin-bottom: 6px;
+}
+.relance-check { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--tx2); cursor: pointer; }
+.relance-count { font-size: 12.5px; color: var(--tx3); }
+.relance-list { display: flex; flex-direction: column; }
+.relance-item {
+  display: flex; align-items: center; gap: 12px; padding: 10px 2px;
+  border-bottom: 1px solid var(--divider);
+}
+.relance-item.disabled { opacity: .55; }
+.relance-item > input[type="checkbox"] { width: 17px; height: 17px; accent-color: var(--pr); flex-shrink: 0; cursor: pointer; }
+.relance-item.disabled > input { cursor: not-allowed; }
+.relance-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.relance-item-name { font-size: 14px; font-weight: 600; color: var(--tx); }
+.relance-item-meta { font-size: 12.5px; color: var(--tx3); }
+.relance-item-side { display: flex; flex-direction: column; gap: 2px; align-items: flex-end; text-align: right; flex-shrink: 0; }
+.relance-item-phone { font-size: 12px; color: var(--tx2); }
+.relance-item-nophone { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--warn); }
+.relance-item-last { font-size: 11px; color: var(--tx3); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; }
+.relance-done { text-align: center; padding: 18px 8px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.relance-done-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--tx); margin: 4px 0 0; }
+.relance-done-text { font-size: 14px; color: var(--tx2); margin: 0; line-height: 1.5; }
 </style>

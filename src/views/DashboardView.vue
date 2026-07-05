@@ -671,7 +671,7 @@ const attentionItems = computed(() => {
   if (unpaid > 0) items.push({
     key: 'unpaid', icon: CreditCard, tone: 'amber', priority: 3,
     title: t('dashboard.attn.unpaidTitle', { n: unpaid }), detail: t('dashboard.attn.unpaidDetail'),
-    cta: t('dashboard.attn.relaunch'), to: '/facturation', query: { focus: 'impayes' },
+    cta: t('dashboard.attn.relaunch'), to: '/facturation', query: { focus: 'impayes', relance: '1' },
   })
   const rate = factStore.globalStats?.collectionRate
   if (factStore.setupDone && rate != null && rate < 50) items.push({
