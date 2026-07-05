@@ -112,7 +112,7 @@
                 <span class="class-icon" :style="{ background: getLevelColor(cls.level) }">
                   {{ cls.section || cls.name?.[0] || '?' }}
                 </span>
-                <span>{{ cls.name }}</span>
+                <button class="class-name-btn" @click="openClassDetail(cls)" :title="t('classes.viewDetail')">{{ cls.name }}</button>
               </td>
               <td><span class="badge" :class="getLevelBadge(cls.level)">{{ getLevelLabel(cls.level) }}</span></td>
               <td class="td-number">{{ cls.enrolled || 0 }}</td>
@@ -221,6 +221,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Détail d'une classe -->
+    <div v-if="showDetailModal && detailClass" class="modal-overlay" @click.self="closeDetailModal">
+      <div class="modal-card card">
+        <div class="modal-header">
+          <h2>{{ detailClass.name }}</h2>
+          <button class="icon-btn" @click="closeDetailModal"><X :size="20" /></button>
+        </div>
+        <div class="modal-body">
+          <div class="cd-grid">
+            <div class="cd-item">
+              <span class="cd-lbl">{{ t('classes.thLevel') }}</span>
+              <span>{{ getLevelLabel(detailClass.level) }}<template v-if="detailClass.serie"> · {{ t('classes.serie') }} {{ detailClass.serie }}</template></span>
+            </div>
+            <div class="cd-item">
+              <span class="cd-lbl">{{ t('classes.thHeadcount') }}</span>
+              <span>{{ detailClass.enrolled || 0 }} / {{ detailClass.capacity || '—' }}</span>
+            </div>
+            <div class="cd-item">
+              <span class="cd-lbl">{{ t('classes.thHomeroom') }}</span>
+              <span>{{ detailClass.homeroomTeacher || '—' }}</span>
+            </div>
+          </div>
+
+          <h3 class="cd-section">{{ t('classes.teachersBySubject') }}</h3>
+          <div v-if="detailTeachers.length" class="cd-teachers">
+            <div v-for="row in detailTeachers" :key="row.subject" class="cd-teacher-row">
+              <span class="cd-subject">{{ row.subject }}</span>
+              <span class="cd-tnames">{{ row.teachers.join(', ') }}</span>
+            </div>
+          </div>
+          <p v-else class="cd-empty">{{ t('classes.noTeachersAssigned') }}</p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-outline" @click="closeDetailModal">{{ t('classes.close') }}</button>
+          <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="editFromDetail">{{ t('classes.edit') }}</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -255,6 +294,30 @@ const showModal = ref(false)
 const showDeleteConfirm = ref(false)
 const editingClass = ref(null)
 const deletingClass = ref(null)
+
+// Détail d'une classe (prof principal + profs par matière)
+const showDetailModal = ref(false)
+const detailClass = ref(null)
+const openClassDetail = (cls) => { detailClass.value = cls; showDetailModal.value = true }
+const closeDetailModal = () => { showDetailModal.value = false; detailClass.value = null }
+const editFromDetail = () => { const c = detailClass.value; closeDetailModal(); if (c) openEditModal(c) }
+// Reverse lookup des affectations : quels profs enseignent quelle matière dans cette classe.
+const detailTeachers = computed(() => {
+  const cls = detailClass.value
+  if (!cls) return []
+  const map = {}
+  for (const m of personnelStore.staff || []) {
+    const cbs = m.classesBySubject
+    if (!cbs || typeof cbs !== 'object') continue
+    for (const subj of Object.keys(cbs)) {
+      if (Array.isArray(cbs[subj]) && cbs[subj].includes(cls.id)) {
+        const name = `${m.firstName || ''} ${m.lastName || ''}`.trim() || (m.email || '')
+        ;(map[subj] = map[subj] || []).push(name)
+      }
+    }
+  }
+  return Object.keys(map).sort((a, b) => a.localeCompare(b)).map((subject) => ({ subject, teachers: map[subject] }))
+})
 const currentPage = ref(1)
 const perPage = ref(20)
 
@@ -523,7 +586,21 @@ watch(() => route.query, applyMiapoQuery)
   align-items: center;
   gap: 10px;
   font-weight: 600;
+  white-space: nowrap;
 }
+.td-name .class-icon { flex-shrink: 0; }
+.class-name-btn { background: none; border: none; padding: 0; font: inherit; font-weight: 600; color: var(--tx, #1f2937); cursor: pointer; text-align: left; }
+.class-name-btn:hover { color: var(--pr); text-decoration: underline; }
+/* Détail d'une classe */
+.cd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.cd-item { display: flex; flex-direction: column; gap: 3px; }
+.cd-lbl { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; color: var(--tx3); }
+.cd-section { font-size: 14px; font-weight: 700; color: var(--tx); margin: 4px 0 10px; }
+.cd-teachers { display: flex; flex-direction: column; gap: 6px; }
+.cd-teacher-row { display: flex; justify-content: space-between; gap: 12px; padding: 9px 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; }
+.cd-subject { font-weight: 600; color: var(--pr); }
+.cd-tnames { color: var(--tx2); text-align: right; }
+.cd-empty { font-size: 13px; color: var(--tx3); }
 .td-number {
   font-family: 'Poppins', sans-serif;
   font-weight: 600;
