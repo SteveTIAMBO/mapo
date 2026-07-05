@@ -148,10 +148,59 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck } from 'lucide-vue-next'
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES } from '../../stores/miapoCopilot'
+import { usePersonnelStore } from '../../stores/personnel'
+import { useClassesStore } from '../../stores/classes'
 
 const router = useRouter()
 const route = useRoute()
 const copilot = useMiapoCopilotStore()
+const personnelStore = usePersonnelStore()
+const classesStore = useClassesStore()
+
+// ── Résolution LOCALE (données MAPO, sans IA) : questions sur un membre du
+// personnel, ex. « affiche les matières gérées par Jean Kamga ». Instantané,
+// gratuit, marche hors-ligne. Retourne une réponse texte, ou null si non concerné.
+const _norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+function looksLikeStaffQuery(text) {
+  return /\b(mati[eè]re|classe|enseigne|g[eè]re|g[eè]rees|fiche|professeur|\bprof\b|intervient)\b/i.test(text)
+}
+function findStaffInText(text) {
+  const tn = _norm(text)
+  const staff = personnelStore.staff || []
+  let best = null
+  for (const m of staff) {
+    const fn = _norm(m.firstName), ln = _norm(m.lastName)
+    if (fn && ln && tn.includes(fn) && tn.includes(ln)) return m // nom complet = certain
+    if (ln && ln.length >= 4 && new RegExp(`\\b${ln}\\b`).test(tn)) best = best || m
+  }
+  return best
+}
+function buildStaffAnswer(m) {
+  const name = `${m.firstName || ''} ${m.lastName || ''}`.trim()
+  if (m.category !== 'enseignement') {
+    return `${name} — ${m.role || 'personnel'}. Ce membre n'est pas enseignant.`
+  }
+  const subjects = Array.isArray(m.subjects) ? m.subjects : []
+  const cbs = m.classesBySubject || {}
+  const nameById = Object.fromEntries((classesStore.classes || []).map((c) => [c.id, c.name]))
+  const parts = subjects.map((subj) => {
+    const names = (cbs[subj] || []).map((id) => nameById[id]).filter(Boolean)
+    return names.length ? `${subj} (${names.join(', ')})` : subj
+  })
+  let ans = subjects.length
+    ? `${name} enseigne : ${parts.join(' ; ')}.`
+    : `${name} est enseignant, mais aucune matière ne lui est encore affectée.`
+  const pp = (classesStore.classes || []).filter((c) => (c.homeroomTeacher || '') === name).map((c) => c.name)
+  if (pp.length) ans += ` Professeur principal de ${pp.join(', ')}.`
+  return ans
+}
+async function resolveLocalQuery(text) {
+  if (!looksLikeStaffQuery(text)) return null
+  if (!personnelStore.staff?.length) { try { await personnelStore.loadStaff() } catch { /* ignore */ } }
+  if (!classesStore.classes?.length) { try { await classesStore.loadClasses?.() } catch { /* ignore */ } }
+  const m = findStaffInText(text)
+  return m ? buildStaffAnswer(m) : null
+}
 
 const inputEl = ref(null)
 const instruction = ref('')
@@ -201,6 +250,11 @@ function runExample(ex) {
 async function submit() {
   const text = instruction.value.trim()
   if (!text || copilot.thinking) return
+  // 1) Réponse LOCALE si la question porte sur la donnée MAPO (ex. matières d'un
+  //    enseignant) — instantané, sans appel IA.
+  const local = await resolveLocalQuery(text)
+  if (local) { step.value = 'answer'; result.value = { reponse: local }; return }
+  // 2) Sinon, on demande à l'IA d'interpréter l'instruction.
   const r = await copilot.interpret({ instruction: text, vueActuelle: route.path.replace(/^\//, '') })
   result.value = r
 
