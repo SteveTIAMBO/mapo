@@ -92,6 +92,60 @@
       </div>
     </div>
 
+    <!-- Correction de copie (MIAPO) — enseignant -->
+    <div v-if="!isDirecteur && !blockedNoSubject" class="card correct-card">
+      <div class="card-head"><Sparkles :size="18" /><h3>{{ t('cours.correctTitle') }}</h3></div>
+      <p class="muted small corr-intro">{{ t('cours.correctHint') }}</p>
+
+      <div class="pub-row">
+        <div class="fg"><label>{{ t('cours.classLabel') }} <span class="muted small">{{ t('cours.optional') }}</span></label>
+          <select v-model="corr.classe" class="input">
+            <option value="">{{ t('cours.allClasses') }}</option>
+            <option v-for="c in classes" :key="c.id || c.name" :value="c.name">{{ c.name }}</option>
+          </select>
+        </div>
+        <label class="btn btn-outline miapo-btn"><Camera :size="16" /> <span>{{ corrImage ? t('cours.correctChange') : t('cours.correctPick') }}</span>
+          <input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" />
+        </label>
+      </div>
+
+      <div v-if="corrImage" class="corr-shot">
+        <img :src="corrImage" alt="copie" />
+        <button class="btn btn-primary" :disabled="corrBusy" @click="runCorrection">
+          <component :is="corrBusy ? Loader2 : Sparkles" :size="16" :class="{ spin: corrBusy }" />
+          <span>{{ corrBusy ? t('cours.correcting') : t('cours.correctRun') }}</span>
+        </button>
+      </div>
+
+      <p v-if="corrError" class="err-txt small">{{ corrError }}</p>
+
+      <div v-if="corrResult" class="corr-result">
+        <div class="corr-note">
+          <span class="corr-note-val">{{ corrResult.note }}<span class="corr-note-max">/20</span></span>
+          <div class="corr-note-side">
+            <span v-if="corrResult.matiere" class="corr-mat">{{ corrResult.matiere }}</span>
+            <span class="corr-guard">{{ t('cours.correctGuard') }}</span>
+          </div>
+        </div>
+        <div v-if="corrResult.points_faibles && corrResult.points_faibles.length" class="corr-block">
+          <label>{{ t('cours.correctWeak') }}</label>
+          <ul><li v-for="(p, i) in corrResult.points_faibles" :key="i">{{ p }}</li></ul>
+        </div>
+        <div v-if="corrResult.conseil" class="corr-block">
+          <label>{{ t('cours.correctAdvice') }}</label>
+          <p class="muted">{{ corrResult.conseil }}</p>
+        </div>
+        <div class="fg">
+          <label>{{ t('cours.correctAppreciation') }}</label>
+          <textarea v-model="corrAppreciation" class="input" rows="3"></textarea>
+        </div>
+        <div class="pub-actions">
+          <button class="btn btn-outline btn-sm" @click="copyText(corrAppreciation)">{{ copied ? t('cours.copied') : t('cours.copyAppreciation') }}</button>
+          <button class="btn btn-ghost btn-sm" @click="resetCorrection">{{ t('cours.correctReset') }}</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Liste des contenus -->
     <div class="card">
       <div class="card-head"><BookOpen :size="18" /><h3>{{ isDirecteur ? t('cours.allContent') : t('cours.myContent') }}</h3><span v-if="!isDirecteur" class="count">{{ visibleItems.length }}</span></div>
@@ -131,7 +185,8 @@ import { usePersonnelStore } from '../stores/personnel'
 import { openCarre } from '../services/carreSso'
 import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
 import CoursFileViewer from '../components/CoursFileViewer.vue'
-import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X, Lock } from 'lucide-vue-next'
+import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X, Lock, Camera } from 'lucide-vue-next'
+import { useTuteurStore } from '../stores/tuteur'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const store = useCoursStore()
@@ -140,6 +195,7 @@ const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
+const tuteur = useTuteurStore()
 const staffChecked = ref(false) // vrai une fois les matières du prof résolues (évite le flash)
 
 const isDirecteur = computed(() => authStore.isDirecteur)
@@ -245,6 +301,61 @@ function doPublish() {
   clearFile()
   setTimeout(() => { justPublished.value = false }, 2500)
 }
+
+// ── Correction de copie assistée (MIAPO vision → note + points faibles + conseil) ──
+const corr = ref({ classe: '' })
+const corrImage = ref('')      // photo réduite en data URL
+const corrBusy = ref(false)
+const corrResult = ref(null)   // { matiere, note, points_faibles, conseil }
+const corrAppreciation = ref('')
+const corrError = ref('')
+const copied = ref(false)
+
+function downscaleImage(file, maxDim = 1100, quality = 0.8) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let { width, height } = img
+      if (Math.max(width, height) > maxDim) { const r = maxDim / Math.max(width, height); width = Math.round(width * r); height = Math.round(height * r) }
+      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height); URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image illisible')) }
+    img.src = url
+  })
+}
+async function onPickCopie(e) {
+  const file = e.target.files?.[0]; e.target.value = ''
+  if (!file) return
+  corrError.value = ''; corrResult.value = ''
+  try { corrImage.value = await downscaleImage(file) } catch { corrError.value = t('cours.correctBlurry') }
+}
+async function runCorrection() {
+  if (!corrImage.value || corrBusy.value) return
+  corrBusy.value = true; corrError.value = ''
+  try {
+    const res = await tuteur.analyserCopie({ imageDataUrl: corrImage.value, niveau: corr.value.classe })
+    if (res.ok && res.analyse) { corrResult.value = res.analyse; corrAppreciation.value = composeAppreciation(res.analyse) }
+    else corrError.value = res.reason || t('cours.correctUnreadable')
+  } catch { corrError.value = t('cours.correctUnreadable') } finally { corrBusy.value = false }
+}
+function composeAppreciation(a) {
+  const n = Number(a.note)
+  const en = locale.value === 'en'
+  const band = en
+    ? (n >= 16 ? 'Excellent work' : n >= 14 ? 'Very good work' : n >= 12 ? 'Good work' : n >= 10 ? 'Satisfactory work' : n >= 8 ? 'Still fragile, keep working' : 'Serious difficulties to address')
+    : (n >= 16 ? 'Excellent travail' : n >= 14 ? 'Très bon travail' : n >= 12 ? 'Bon travail' : n >= 10 ? 'Travail satisfaisant' : n >= 8 ? 'Travail encore fragile' : 'Des difficultés importantes')
+  let s = `${band} (${n}/20).`
+  const pf = (a.points_faibles || []).slice(0, 3)
+  if (pf.length) s += en ? ` To review: ${pf.join(', ')}.` : ` À revoir : ${pf.join(', ')}.`
+  if (a.conseil) s += ' ' + a.conseil
+  return s
+}
+function resetCorrection() { corrImage.value = ''; corrResult.value = null; corrAppreciation.value = ''; corrError.value = '' }
+async function copyText(txt) {
+  try { await navigator.clipboard.writeText(txt || ''); copied.value = true; setTimeout(() => { copied.value = false }, 1800) } catch { /* clipboard indispo */ }
+}
 async function onPickFile(ev) {
   const f = ev.target.files && ev.target.files[0]
   if (!f) return
@@ -301,6 +412,21 @@ onMounted(async () => {
 }
 .adapt-row .chip:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb), .05); }
 .adapt-row .chip:disabled { opacity: .5; cursor: default; }
+.corr-intro { margin: -2px 0 12px; }
+.corr-shot { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; margin: 4px 0 10px; }
+.corr-shot img { width: 130px; height: auto; max-height: 170px; object-fit: cover; border-radius: 10px; border: 1px solid var(--divider); }
+.corr-result { margin-top: 6px; border-top: 1px solid var(--divider); padding-top: 14px; }
+.corr-note { display: flex; align-items: center; gap: 14px; margin-bottom: 12px; }
+.corr-note-val { font-family: var(--font-display); font-weight: 800; font-size: 34px; line-height: 1; color: var(--pr); }
+.corr-note-max { font-size: 16px; font-weight: 600; color: var(--tx3); margin-left: 2px; }
+.corr-note-side { display: flex; flex-direction: column; gap: 3px; }
+.corr-mat { font-size: 14px; font-weight: 600; color: var(--tx); }
+.corr-guard { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--pr); }
+.corr-block { margin-bottom: 12px; }
+.corr-block > label { display: block; font-size: 12.5px; font-weight: 600; color: var(--tx2, #4b5563); margin-bottom: 4px; }
+.corr-block ul { margin: 0; padding-left: 18px; }
+.corr-block li { font-size: 13.5px; color: var(--tx); margin-bottom: 2px; }
+.corr-block p { margin: 0; font-size: 13.5px; line-height: 1.5; }
 .pub-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; } .ok { color: #1B8A5A; font-weight: 600; }
 .upload-note { display: flex; align-items: center; gap: 6px; }
 .items { display: flex; flex-direction: column; gap: 10px; }
