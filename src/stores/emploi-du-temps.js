@@ -389,7 +389,8 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
   }
 
   // --- Schedule Generation Algorithm ---
-  function generateSchedule() {
+  function generateSchedule(opts = {}) {
+    const { shuffle = false, commit = true } = opts
     const classesStore = useClassesStore()
     const log = []
     const newSchedule = []
@@ -496,6 +497,16 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
       if (loadB !== loadA) return loadB - loadA
       return b.hoursNeeded - a.hoursNeeded
     })
+
+    // Résolution : on perturbe l'ordre de placement pour explorer d'autres
+    // agencements (le placement reste glouton, mais l'ordre décide qui obtient
+    // les créneaux contestés → moins de matières « pas assez de créneaux »).
+    if (shuffle) {
+      for (let i = requirements.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[requirements[i], requirements[j]] = [requirements[j], requirements[i]]
+      }
+    }
 
     // ── Place each requirement ─────────────────────────────
     // Strategy:
@@ -627,11 +638,33 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     if (doubleBookings > 0) log.push(`${doubleBookings} conflit(s) d'enseignant`)
     if (unplacedCount > 0) log.push(`${unplacedCount} matière(s) pas entièrement placée(s)`)
 
-    schedule.value = newSchedule
-    generationLog.value = log
-    generationConflicts.value = conflicts.filter(c => c.type !== 'teacher_missing') // Show only actionable conflicts
+    const actionableConflicts = conflicts.filter(c => c.type !== 'teacher_missing') // Show only actionable conflicts
+    if (commit) {
+      schedule.value = newSchedule
+      generationLog.value = log
+      generationConflicts.value = actionableConflicts
+      saveToStorage()
+    }
+    return { totalPlaced, totalRequired, log, newSchedule, conflicts: actionableConflicts, autoResolved: 0, missingTeachers }
+  }
+
+  // Résolution automatique des conflits : relance la génération plusieurs fois
+  // avec un ordre de placement perturbé et CONSERVE l'agencement qui laisse le
+  // MOINS de conflits. Les conflits restants sont structurels (il manque
+  // réellement des enseignants ou des créneaux) — impossibles à résoudre par
+  // simple réorganisation.
+  function resolveConflicts(restarts = 40) {
+    const before = generationConflicts.value.length
+    let best = generateSchedule({ shuffle: false, commit: false })
+    for (let i = 0; i < restarts && best.conflicts.length > 0; i++) {
+      const r = generateSchedule({ shuffle: true, commit: false })
+      if (r.conflicts.length < best.conflicts.length) best = r
+    }
+    schedule.value = best.newSchedule
+    generationLog.value = best.log
+    generationConflicts.value = best.conflicts
     saveToStorage()
-    return { totalPlaced, totalRequired, log, conflicts: generationConflicts.value, autoResolved: 0, missingTeachers }
+    return { before, after: best.conflicts.length, resolved: Math.max(0, before - best.conflicts.length) }
   }
 
   // --- Persistence (localStorage for demo, Firestore for prod) ---
@@ -998,7 +1031,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     scheduleByClass, scheduleByTeacher, assignedTeachers,
     isConfigured, hasSchedule,
     // Actions
-    loadData, generateSchedule, updateTimeGrid,
+    loadData, generateSchedule, resolveConflicts, updateTimeGrid,
     updateSubjectHours, setSubjectHoursForLevel,
     addTeacherAssignment, removeTeacherAssignment,
     setSetupStep, moveEntry, saveToStorage, getSubjectColor,

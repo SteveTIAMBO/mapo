@@ -125,10 +125,10 @@ const mySubjects = computed(() => {
   if (typeof s === 'string') s = s.split(/[;,]/)
   let list = Array.isArray(s) ? s.map((x) => String(x).trim()).filter(Boolean) : []
   if (list.length) return list
-  const email = (authStore.userProfile?.email || authStore.user?.email || '').toLowerCase()
-  if (email) {
-    const me = (personnelStore.staff || []).find((m) => String(m.email || '').toLowerCase() === email)
-    if (me && Array.isArray(me.subjects)) list = me.subjects.map((x) => String(x).trim()).filter(Boolean)
+  // Repli : fiche personnel retrouvée par e-mail OU par nom (getTeacherStaffRecord).
+  const me = personnelStore.getTeacherStaffRecord?.(authStore.userProfile)
+  if (me && Array.isArray(me.subjects) && me.subjects.length) {
+    return me.subjects.map((x) => String(x).trim()).filter(Boolean)
   }
   return list
 })

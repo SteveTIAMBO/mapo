@@ -203,6 +203,9 @@ export const useAuthStore = defineStore('auth', () => {
       isDemo: true,
       b2c: account.b2c || false,
       complexeId: account.complexeId || null,
+      // Matières/classe de l'enseignant démo → indispensable au cloisonnement Cours/Devoirs.
+      subjects: account.subjects || [],
+      className: account.className || null,
     }
 
     isDemo.value = true

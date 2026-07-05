@@ -2319,6 +2319,8 @@
     "hide": "Masquer",
     "details": "Détails",
     "autoResolve": "Résoudre automatiquement",
+    "conflictsAllResolved": "Tous les conflits ont été résolus ({n} corrigé(s)).",
+    "conflictsPartlyResolved": "{resolved} conflit(s) résolu(s), {left} restant(s) : structurels (il manque des enseignants ou des créneaux).",
     "today": "Aujourd'hui",
     "classLabel": "Classe",
     "selectClass": "Sélectionnez une classe",

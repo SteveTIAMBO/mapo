@@ -523,6 +523,11 @@
         </div>
       </div>
 
+      <!-- Résultat de la résolution automatique -->
+      <div v-if="autoResolveMsg" class="auto-resolve-toast" :class="autoResolveOk ? 'ok' : 'warn'">
+        <span>{{ autoResolveMsg }}</span>
+      </div>
+
       <!-- Week navigation -->
       <div class="week-nav">
         <button class="btn btn-sm btn-outline" @click="edtStore.navigateWeek(-1)" type="button">
@@ -1638,8 +1643,19 @@ const regenerateSchedule = async () => {
   }
 }
 
+const autoResolveMsg = ref('')
+const autoResolveOk = ref(false)
 const autoResolveConflicts = async () => {
-  await regenerateSchedule()
+  regenerating.value = true
+  autoResolveMsg.value = ''
+  await new Promise((r) => setTimeout(r, 30)) // laisse l'UI afficher l'état occupé
+  const res = edtStore.resolveConflicts()
+  regenerating.value = false
+  autoResolveOk.value = res.after === 0
+  autoResolveMsg.value = res.after === 0
+    ? t('edt.conflictsAllResolved', { n: res.resolved })
+    : t('edt.conflictsPartlyResolved', { resolved: res.resolved, left: res.after })
+  setTimeout(() => { autoResolveMsg.value = '' }, 9000)
 }
 
 // --- Week navigation ---
@@ -3060,6 +3076,15 @@ watch(() => edtStore.setupStep, (newStep) => {
   padding: 14px 18px;
   margin-bottom: 16px;
 }
+.auto-resolve-toast {
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 500;
+}
+.auto-resolve-toast.ok { background: rgba(27,138,90,.08); border: 1px solid rgba(27,138,90,.2); color: #1B8A5A; }
+.auto-resolve-toast.warn { background: rgba(184,137,42,.08); border: 1px solid rgba(184,137,42,.2); color: #8A6410; }
 .conflict-banner-header {
   display: flex;
   align-items: center;
