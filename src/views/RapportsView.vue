@@ -11,6 +11,10 @@
           <RefreshCw :size="16" />
           <span>{{ t('rap.refresh') }}</span>
         </button>
+        <button class="btn-outline" @click="printOfficialReport">
+          <FileText :size="16" />
+          <span>{{ t('rap.officialReport') }}</span>
+        </button>
         <button class="btn-primary" @click="downloadCurrentReport">
           <Download :size="16" />
           <span>{{ t('rap.download') }}</span>
@@ -559,11 +563,11 @@ import { usePresencesStore } from '../stores/presences'
 import { useDisciplineStore } from '../stores/discipline'
 import {
   RefreshCw, Banknote, GraduationCap, ClipboardList,
-  ChevronLeft, Download
+  ChevronLeft, Download, FileText
 } from 'lucide-vue-next'
 import { useSchoolStore } from '../stores/school'
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 const factStore = useFacturationStore()
 const elevesStore = useElevesStore()
 const classesStore = useClassesStore()
@@ -769,6 +773,112 @@ const effectifsTotals = computed(() => {
     total: rows.reduce((s, r) => s + r.total, 0),
   }
 })
+
+// ── Rapport officiel (paperasse inspection / carte scolaire) ──
+// Compile les statistiques clés dans un document imprimable (→ « Enregistrer en
+// PDF »). Tout vient de la donnée déjà saisie ; MIAPO rédige la synthèse.
+function printOfficialReport() {
+  const en = locale.value === 'en'
+  const L = en
+    ? { rep: 'OFFICIAL STATISTICAL REPORT', ident: 'School identification', school: 'School', type: 'Type', city: 'City', year: 'Academic year', edited: 'Issued on', eff: 'Enrolment by level', level: 'Level', boys: 'Boys', girls: 'Girls', total: 'Total', ind: 'Key indicators', students: 'Enrolled students', teachers: 'Teachers', ratio: 'Students per teacher', attend: 'Attendance rate', collect: 'Fee collection rate', disc: 'Discipline incidents', synth: 'Summary', head: 'The Head of School', footer: 'Issued via MAPO' }
+    : { rep: 'RAPPORT STATISTIQUE OFFICIEL', ident: "Identification de l'établissement", school: 'Établissement', type: 'Type', city: 'Ville', year: 'Année scolaire', edited: 'Édité le', eff: 'Effectifs par niveau', level: 'Niveau', boys: 'Garçons', girls: 'Filles', total: 'Total', ind: 'Indicateurs clés', students: 'Élèves inscrits', teachers: 'Enseignants', ratio: 'Élèves par enseignant', attend: "Taux d'assiduité", collect: 'Taux de recouvrement', disc: 'Incidents de discipline', synth: 'Synthèse', head: "Le Chef d'établissement", footer: 'Édité via MAPO' }
+
+  const s = schoolStore.schoolSettings || {}
+  const schoolName = s.schoolName || s.acronym || (en ? 'School' : 'Établissement')
+  const yearTxt = s.academicYear || ''
+  const rows = effectifsParClasse.value
+  const byLevel = {}
+  for (const r of rows) {
+    const lv = r.level || '—'
+    if (!byLevel[lv]) byLevel[lv] = { g: 0, f: 0, t: 0 }
+    byLevel[lv].g += r.garcons; byLevel[lv].f += r.filles; byLevel[lv].t += r.total
+  }
+  const tot = effectifsTotals.value
+  const staff = personnelStore.staff || []
+  const teachers = staff.filter(m => m.category === 'enseignement').length
+  const ratio = teachers > 0 ? (tot.total / teachers).toFixed(1) : '—'
+  const attend = presenceStats.value?.tauxPresence ?? 0
+  const collect = factStore.globalStats?.collectionRate ?? 0
+  const incidents = disciplineStore.stats?.total || 0
+  const today = new Date().toLocaleDateString(en ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  const esc = (v) => String(v == null ? '' : v).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+
+  const levelRows = Object.keys(byLevel).sort().map((lv) =>
+    `<tr><td>${esc(lv)}</td><td class="n">${byLevel[lv].g}</td><td class="n">${byLevel[lv].f}</td><td class="n"><b>${byLevel[lv].t}</b></td></tr>`).join('')
+
+  const synth = en
+    ? `The school has ${tot.total} enrolled students (${tot.garcons} boys, ${tot.filles} girls) across ${Object.keys(byLevel).length} level(s), taught by ${teachers} teacher(s) — a ratio of ${ratio} students per teacher. Attendance stands at ${attend}% and fee collection at ${collect}%. ${incidents} discipline incident(s) were recorded over the period.`
+    : `L'établissement compte ${tot.total} élèves inscrits (${tot.garcons} garçons, ${tot.filles} filles) répartis sur ${Object.keys(byLevel).length} niveau(x), encadrés par ${teachers} enseignant(s), soit un ratio de ${ratio} élèves par enseignant. Le taux d'assiduité s'établit à ${attend} % et le taux de recouvrement de la scolarité à ${collect} %. ${incidents} incident(s) de discipline ont été enregistrés sur la période.`
+
+  const html = `<!DOCTYPE html><html lang="${en ? 'en' : 'fr'}"><head><meta charset="utf-8"><title>${esc(schoolName)} — ${esc(L.rep)}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; color: #1a1a2e; margin: 32px; font-size: 13px; }
+  .hd { text-align: center; border-bottom: 2px solid #4a3fb8; padding-bottom: 14px; margin-bottom: 22px; }
+  .hd .sn { font-size: 20px; font-weight: 800; letter-spacing: .3px; }
+  .hd .sub { font-size: 12px; color: #555; margin-top: 3px; }
+  .hd .rt { margin-top: 10px; font-size: 15px; font-weight: 700; color: #4a3fb8; letter-spacing: 1px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #4a3fb8; border-bottom: 1px solid #e5e5ef; padding-bottom: 5px; margin: 22px 0 10px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { border: 1px solid #d8d8e4; padding: 6px 9px; text-align: left; }
+  th { background: #f3f2fb; font-size: 11px; text-transform: uppercase; letter-spacing: .03em; }
+  td.n, th.n { text-align: right; }
+  tr.tot td { background: #faf9ff; font-weight: 700; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px; }
+  .kv { display: flex; justify-content: space-between; border-bottom: 1px dotted #ddd; padding: 5px 0; }
+  .kv span:last-child { font-weight: 700; }
+  .synth { line-height: 1.6; text-align: justify; background: #faf9ff; border: 1px solid #e8e6f6; border-radius: 8px; padding: 12px 14px; }
+  .sig { margin-top: 40px; display: flex; justify-content: flex-end; }
+  .sig .box { width: 240px; text-align: center; border-top: 1px solid #333; padding-top: 6px; font-size: 12px; }
+  .ft { margin-top: 30px; text-align: center; font-size: 10px; color: #999; }
+  @media print { body { margin: 12mm; } }
+</style></head><body>
+  <div class="hd">
+    <div class="sn">${esc(schoolName)}</div>
+    <div class="sub">${esc(s.city || '')}${s.city && yearTxt ? ' · ' : ''}${esc(yearTxt)}</div>
+    <div class="rt">${esc(L.rep)}</div>
+  </div>
+
+  <h2>${esc(L.ident)}</h2>
+  <div class="grid">
+    <div class="kv"><span>${esc(L.school)}</span><span>${esc(schoolName)}</span></div>
+    <div class="kv"><span>${esc(L.city)}</span><span>${esc(s.city || '—')}</span></div>
+    <div class="kv"><span>${esc(L.year)}</span><span>${esc(yearTxt || '—')}</span></div>
+    <div class="kv"><span>${esc(L.edited)}</span><span>${esc(today)}</span></div>
+  </div>
+
+  <h2>${esc(L.eff)}</h2>
+  <table>
+    <thead><tr><th>${esc(L.level)}</th><th class="n">${esc(L.boys)}</th><th class="n">${esc(L.girls)}</th><th class="n">${esc(L.total)}</th></tr></thead>
+    <tbody>${levelRows}
+      <tr class="tot"><td>${esc(L.total)}</td><td class="n">${tot.garcons}</td><td class="n">${tot.filles}</td><td class="n">${tot.total}</td></tr>
+    </tbody>
+  </table>
+
+  <h2>${esc(L.ind)}</h2>
+  <div class="grid">
+    <div class="kv"><span>${esc(L.students)}</span><span>${tot.total}</span></div>
+    <div class="kv"><span>${esc(L.teachers)}</span><span>${teachers}</span></div>
+    <div class="kv"><span>${esc(L.ratio)}</span><span>${ratio}</span></div>
+    <div class="kv"><span>${esc(L.attend)}</span><span>${attend} %</span></div>
+    <div class="kv"><span>${esc(L.collect)}</span><span>${collect} %</span></div>
+    <div class="kv"><span>${esc(L.disc)}</span><span>${incidents}</span></div>
+  </div>
+
+  <h2>${esc(L.synth)}</h2>
+  <p class="synth">${esc(synth)}</p>
+
+  <div class="sig"><div class="box">${esc(L.head)}</div></div>
+  <div class="ft">${esc(L.footer)} — ${esc(schoolName)} · ${esc(today)}</div>
+</body></html>`
+
+  const win = window.open('', '', 'width=900,height=1000')
+  if (!win) return
+  win.document.write(html)
+  win.document.close()
+  win.focus()
+  setTimeout(() => { try { win.print() } catch { /* ignore */ } }, 350)
+}
 
 // ── Discipline ──
 const INCIDENT_LABELS = {
