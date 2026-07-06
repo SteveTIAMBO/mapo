@@ -22,6 +22,70 @@
       </button>
     </div>
 
+    <!-- Setup express : photo d'un registre → élèves (MIAPO vision) -->
+    <div class="card express-card">
+      <div class="express-head">
+        <span class="express-spark"><Sparkles :size="18" /></span>
+        <div>
+          <h3>{{ t('imp.expressTitle') }}</h3>
+          <p>{{ t('imp.expressDesc') }}</p>
+        </div>
+      </div>
+
+      <div class="express-controls">
+        <div class="express-fg">
+          <label>{{ t('imp.expressClass') }}</label>
+          <select v-model="expressClass" class="input">
+            <option value="">{{ t('imp.expressClassNone') }}</option>
+            <option v-for="c in classesStore.classes" :key="c.id || c.name" :value="c.name">{{ c.name }}</option>
+          </select>
+        </div>
+        <label class="btn btn-outline"><Camera :size="16" /> <span>{{ expressImage ? t('imp.expressChange') : t('imp.expressPick') }}</span>
+          <input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickRegistre" />
+        </label>
+        <button v-if="expressImage" class="btn btn-primary" :disabled="expressBusy" @click="runRegistre">
+          <component :is="expressBusy ? Loader2 : Sparkles" :size="16" :class="{ spin: expressBusy }" />
+          <span>{{ expressBusy ? t('imp.expressReading') : t('imp.expressRun') }}</span>
+        </button>
+      </div>
+
+      <p v-if="expressError" class="express-err"><AlertCircle :size="14" /> {{ expressError }}</p>
+      <p v-if="expressDone" class="express-ok-banner"><CheckCircle2 :size="15" /> {{ t('imp.expressCreated', { n: expressDone }) }}</p>
+
+      <div v-if="expressRows.length" class="express-result">
+        <div class="express-result-head">
+          <strong>{{ t('imp.expressReview', { n: expressRows.length }) }}</strong>
+          <span class="express-hint">{{ t('imp.expressReviewHint') }}</span>
+        </div>
+        <div class="express-table-wrap">
+          <table class="express-table">
+            <thead><tr><th>{{ t('imp.expressColLast') }}</th><th>{{ t('imp.expressColFirst') }}</th><th>{{ t('imp.expressColSex') }}</th><th>{{ t('imp.expressColClass') }}</th><th></th></tr></thead>
+            <tbody>
+              <tr v-for="(r, i) in expressRows" :key="i">
+                <td><input v-model="r.nom" class="cell" /></td>
+                <td><input v-model="r.prenom" class="cell" /></td>
+                <td>
+                  <select v-model="r.sexe" class="cell">
+                    <option value="">—</option>
+                    <option value="M">M</option>
+                    <option value="F">F</option>
+                  </select>
+                </td>
+                <td><input v-model="r.classe" class="cell" :placeholder="expressClass || '—'" /></td>
+                <td><button class="icon-x" :title="t('imp.expressRemove')" @click="expressRows.splice(i, 1)"><Trash2 :size="14" /></button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="express-actions">
+          <button class="btn btn-ghost btn-sm" @click="expressRows.push({ nom: '', prenom: '', sexe: '', classe: expressClass })"><Plus :size="14" /> {{ t('imp.expressAddRow') }}</button>
+          <button class="btn btn-primary" :disabled="!creatableCount || expressCreating" @click="createFromRegistre">
+            <span>{{ expressCreating ? t('imp.expressCreating') : t('imp.expressCreate', { n: creatableCount }) }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Module tabs -->
     <div class="tabs-bar">
       <button
@@ -173,8 +237,10 @@ import { ref, computed, markRaw } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   Upload, Download, FileSpreadsheet, AlertCircle,
-  CheckCircle2, Loader2, Users, Briefcase, BookOpen, GraduationCap, Calendar, Building2, PackageOpen
+  CheckCircle2, Loader2, Users, Briefcase, BookOpen, GraduationCap, Calendar, Building2, PackageOpen,
+  Camera, Sparkles, Trash2, Plus
 } from 'lucide-vue-next'
+import { analyserRegistre } from '../services/aiVision'
 // XLSX is lazy-loaded on demand to avoid 437KB in the initial bundle
 let XLSX = null
 async function loadXLSX() {
@@ -197,6 +263,88 @@ const subjectsStore = useSubjectsStore()
 const activityStore = useActivityStore()
 const schoolStore = useSchoolStore()
 const editionStore = useEditionStore()
+
+// ── Setup express : photo d'un registre → élèves (MIAPO vision) ──
+// MIAPO lit la photo, le directeur RELIT/corrige le tableau, puis valide la
+// création. Filet de sécurité : rien n'est créé sans clic explicite.
+const expressClass = ref('')
+const expressImage = ref('')     // photo réduite en data URL
+const expressBusy = ref(false)   // lecture IA en cours
+const expressError = ref('')
+const expressRows = ref([])      // [{ nom, prenom, sexe, classe }]
+const expressCreating = ref(false)
+const expressDone = ref(0)
+
+function expressDownscale(file, maxDim = 1400, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const img = new Image(); const url = URL.createObjectURL(file)
+    img.onload = () => {
+      let { width, height } = img
+      if (Math.max(width, height) > maxDim) { const r = maxDim / Math.max(width, height); width = Math.round(width * r); height = Math.round(height * r) }
+      const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height); URL.revokeObjectURL(url)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image illisible')) }
+    img.src = url
+  })
+}
+function matchClass(name) {
+  if (!name) return ''
+  const n = String(name).toLowerCase().replace(/\s+/g, '')
+  const hit = (classesStore.classes || []).find((c) => String(c.name).toLowerCase().replace(/\s+/g, '') === n)
+  return hit ? hit.name : name
+}
+async function onPickRegistre(e) {
+  const file = e.target.files?.[0]; if (e.target) e.target.value = ''
+  if (!file) return
+  expressError.value = ''; expressDone.value = 0
+  try { expressImage.value = await expressDownscale(file); expressRows.value = [] }
+  catch { expressError.value = t('imp.expressBlurry') }
+}
+async function runRegistre() {
+  if (!expressImage.value || expressBusy.value) return
+  expressBusy.value = true; expressError.value = ''; expressDone.value = 0
+  try {
+    const res = await analyserRegistre({ imageDataUrl: expressImage.value, niveau: expressClass.value })
+    if (res.ok) {
+      if (!expressClass.value && res.classe) expressClass.value = matchClass(res.classe)
+      const fallbackClass = expressClass.value || matchClass(res.classe)
+      expressRows.value = (res.eleves || []).map((el) => ({ nom: el.nom, prenom: el.prenom, sexe: el.sexe, classe: fallbackClass }))
+      if (!expressRows.value.length) expressError.value = t('imp.expressEmpty')
+    } else {
+      expressError.value = res.reason || t('imp.expressFail')
+    }
+  } catch { expressError.value = t('imp.expressFail') } finally { expressBusy.value = false }
+}
+const creatableCount = computed(() => expressRows.value.filter((r) => (r.nom || r.prenom) && (r.classe || expressClass.value)).length)
+async function createFromRegistre() {
+  if (!creatableCount.value || expressCreating.value) return
+  expressCreating.value = true
+  try {
+    await elevesStore.loadEleves()
+    let n = 0
+    for (const r of expressRows.value) {
+      const className = (r.classe || expressClass.value || '').trim()
+      if (!(r.nom || r.prenom) || !className) continue
+      await elevesStore.addEleve({
+        lastName: (r.nom || '').trim(),
+        firstName: (r.prenom || '').trim(),
+        gender: r.sexe === 'F' ? 'F' : (r.sexe === 'M' ? 'M' : ''),
+        className,
+        status: 'inscrit',
+        matricule: elevesStore.generateNextMatricule(),
+      })
+      n++
+    }
+    expressDone.value = n
+    try { activityStore.log('import', `Registre photo : ${n} élève(s) créé(s)`) } catch { /* noop */ }
+    expressRows.value = []
+    expressImage.value = ''
+  } finally {
+    expressCreating.value = false
+  }
+}
 
 // ── Module definitions ─────────────────────────────────
 const modules = [
@@ -1288,5 +1436,44 @@ async function executeImport() {
   .page-header { flex-direction: column; align-items: flex-start; gap: 12px; }
   .page-header-actions { width: 100%; flex-direction: column; }
   .page-header-actions .btn { width: 100%; }
+  .express-controls { flex-direction: column; align-items: stretch; }
+  .express-fg { min-width: 0; }
 }
+
+/* ── Setup express (photo du registre → élèves) ── */
+.express-card { margin-bottom: 18px; }
+.express-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.express-head h3 { margin: 0; font-size: 16px; font-weight: 700; color: var(--tx); }
+.express-head p { margin: 3px 0 0; font-size: 13px; color: var(--tx2); line-height: 1.45; }
+.express-spark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 34px; border-radius: 10px; color: #fff; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--pr), #7c5cff);
+  box-shadow: 0 3px 10px rgba(var(--pr-rgb), .35);
+}
+.express-controls { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+.express-fg { display: flex; flex-direction: column; gap: 4px; min-width: 180px; }
+.express-fg label { font-size: 12.5px; font-weight: 600; color: var(--tx2); }
+.express-err { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 13px; color: #b3261e; }
+.express-ok-banner { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 13px; color: #1B8A5A; font-weight: 600; }
+.express-result { margin-top: 16px; border-top: 1px solid var(--divider, #eee); padding-top: 14px; }
+.express-result-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.express-result-head strong { font-size: 14px; color: var(--tx); }
+.express-hint { font-size: 12px; color: var(--tx3); }
+.express-table-wrap { overflow-x: auto; }
+.express-table { width: 100%; border-collapse: collapse; }
+.express-table th {
+  text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--tx3); font-weight: 600; padding: 4px 8px; border-bottom: 1px solid var(--divider, #eee);
+}
+.express-table td { padding: 4px 8px; border-bottom: 1px solid var(--divider, #f0f0f0); }
+.express-table .cell {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--divider, #e5e7eb); border-radius: 8px;
+  background: var(--input-bg, #fff); color: var(--tx); font-size: 13px; font-family: inherit; outline: none;
+}
+.express-table .cell:focus { border-color: var(--pr); }
+.icon-x { border: none; background: transparent; color: var(--tx3); cursor: pointer; padding: 5px; border-radius: 6px; display: inline-flex; }
+.icon-x:hover { background: rgba(217,48,37,.08); color: var(--danger, #b3261e); }
+.express-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.spin { animation: spin 1s linear infinite; }
 </style>

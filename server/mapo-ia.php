@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -82,6 +82,7 @@ if (!empty($r['ok'])) {
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
+  if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'bilan6c') return buildBilan6cPrompts($d);
@@ -415,6 +416,32 @@ function buildVisionPrompts($d) {
   // reasoning_effort:none pour éviter que le « raisonnement » Gemini ne
   // consomme le budget et tronque le JSON ; 1100 tokens suffisent largement.
   return [$system, $u, 1100, true, $img];
+}
+
+// ── Vision : numérise un REGISTRE de classe (liste d'élèves) → JSON ────
+function buildVisionRegistrePrompts($d) {
+  $niveau = clean($d['niveau'] ?? '', 40);
+  // Image attendue en data URL (data:image/...;base64,XXXX) ou base64 brut.
+  $img = (string) ($d['image'] ?? '');
+  if ($img !== '' && strpos($img, 'data:') !== 0) {
+    $img = 'data:image/jpeg;base64,' . $img;
+  }
+
+  $system = "Tu es un assistant de scolarité qui NUMÉRISE un registre de classe d'une école d'Afrique francophone. "
+    . "On te fournit la PHOTO d'une liste d'élèves (registre, cahier d'appel, tableau ou liste manuscrite). "
+    . "Extrais chaque élève avec : NOM (de famille), PRENOM, et SEXE ('M' ou 'F'). "
+    . "Déduis le sexe du prénom si aucune colonne sexe n'est visible ; si tu n'es pas sûr, mets sexe=''. "
+    . "Ignore les en-têtes, numéros de ligne, totaux et signatures. Si une classe est écrite sur le document, renseigne 'classe'. "
+    . "N'invente AUCUN élève : ne renvoie que des lignes réellement lisibles. Si l'image n'est pas une liste d'élèves, renvoie eleves=[]. "
+    . "Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"classe\":\"...\",\"eleves\":[{\"nom\":\"...\",\"prenom\":\"...\",\"sexe\":\"M\"}]}. "
+    . "Limite à 60 élèves maximum.";
+
+  $u = "Classe / niveau indiqué par l'utilisateur : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
+  $u .= "Numérise la liste des élèves sur la photo et renvoie le JSON demandé.";
+
+  // reasoning_effort:none (5e param via image) ; 2600 tokens pour une classe longue.
+  return [$system, $u, 2600, true, $img];
 }
 
 // ── Tuteur de révision : génère un quiz QCM en JSON ───────────────────
