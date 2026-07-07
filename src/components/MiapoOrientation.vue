@@ -61,6 +61,7 @@
       </div>
 
       <div v-else-if="state === 'done' && result" class="reco">
+        <p class="reco-disclaimer"><Info :size="15" /> {{ t('mia.oriDisclaimer') }}</p>
         <p v-if="result.profil" class="reco-profil">{{ result.profil }}</p>
         <div v-for="(r, i) in result.recommandations" :key="i" class="reco-card">
           <div class="reco-head">
@@ -264,6 +265,13 @@ async function getSuggestions() {
 
 /* Recommandations */
 .reco { display: flex; flex-direction: column; gap: 12px; }
+.reco-disclaimer {
+  display: flex; align-items: flex-start; gap: 8px; margin: 0 0 4px;
+  padding: 9px 12px; border-radius: 10px;
+  background: rgba(var(--pr-rgb, 124,58,237), .07); border: 1px solid rgba(var(--pr-rgb, 124,58,237), .16);
+  font-size: 12.5px; line-height: 1.45; color: var(--tx2, #4b5563);
+}
+.reco-disclaimer svg { color: var(--pr); flex-shrink: 0; margin-top: 1px; }
 .reco-profil { margin: 0; font-size: 14px; line-height: 1.55; color: var(--tx, #1f2937); }
 .reco-card { border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; }
 .reco-head { display: flex; align-items: center; gap: 8px; color: #7c3aed; flex-wrap: wrap; }
