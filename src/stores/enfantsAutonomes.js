@@ -24,12 +24,16 @@ function enfantsDocRef(uid) { return doc(db, 'users', uid, 'b2c', 'enfants') }
 const KEY = (owner) => `mapo_enfants_autonomes_${owner || 'demo'}`
 
 // Niveaux courants (secondaire Afrique francophone) — series pour le lycée.
-export const NIVEAUX = [
+// Niveaux du primaire (Cameroun / Afrique francophone) et du secondaire.
+export const NIVEAUX_PRIMAIRE = ['SIL', 'CP', 'CE1', 'CE2', 'CM1', 'CM2']
+export const NIVEAUX_SECONDAIRE = [
   '6ème', '5ème', '4ème', '3ème',
   '2nde A', '2nde C', '2nde D',
   '1ère A', '1ère C', '1ère D',
   'Tle A', 'Tle C', 'Tle D',
 ]
+// Liste plate (primaire puis secondaire) — conservée pour compatibilité.
+export const NIVEAUX = [...NIVEAUX_PRIMAIRE, ...NIVEAUX_SECONDAIRE]
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
@@ -48,10 +52,19 @@ export const PAYS = [
 ]
 
 // Matières proposées à la saisie (le parent choisit + met une note /20).
+// Secondaire (défaut) et primaire, pour que la liste colle au niveau de l'enfant.
 export const MATIERES = [
   'Mathématiques', 'Français', 'Anglais', 'Physique-Chimie', 'SVT',
   'Histoire-Géographie', 'Philosophie', 'Informatique', 'Espagnol', 'Allemand', 'ECM',
 ]
+export const MATIERES_PRIMAIRE = [
+  'Français', 'Mathématiques', 'Anglais', 'Sciences', 'Histoire-Géographie',
+  'Éducation civique et morale', 'Informatique',
+]
+// Renvoie la liste de matières adaptée au niveau (primaire vs secondaire).
+export function matieresPourNiveau(niveau) {
+  return NIVEAUX_PRIMAIRE.includes(niveau) ? MATIERES_PRIMAIRE : MATIERES
+}
 
 export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const authStore = useAuthStore()

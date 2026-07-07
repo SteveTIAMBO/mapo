@@ -303,7 +303,7 @@
             </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
-              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
               <div class="form-row">
@@ -373,7 +373,7 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">{{ t('mia.sex') }}</label><select v-model="form.gender" class="input"><option value="M">{{ t('mia.boy') }}</option><option value="F">{{ t('mia.girl') }}</option></select></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><option v-for="n in NIVEAUX" :key="n" :value="n">{{ n }}</option><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
@@ -397,7 +397,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { isMiapoTenant } from '../utils/tenantContext'
@@ -591,7 +591,7 @@ const matieresList = computed(() => {
     const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
     if (mods.length) return mods
   }
-  return MATIERES
+  return matieresPourNiveau(e?.niveau)
 })
 // Contexte passé au quiz IA : pour un apprenant hors-catalogue, le NOM de la
 // formation donne de bien meilleures questions que « Formation (hors catalogue) ».
