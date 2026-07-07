@@ -152,6 +152,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       photoURL: photoURL || '',
       notes: [], // [{ id, matiere, note }]
       revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
+      edt: [], // [{ id, jour, heure, matiere }] — emploi du temps (saisie / scan / import)
       createdAt: new Date().toISOString(),
     }
     enfants.value.push(enfant)
@@ -217,6 +218,27 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const e = getEnfant(enfantId)
     if (!e) return
     e.notes = e.notes.filter((x) => x.id !== noteId)
+    persist()
+  }
+
+  // ── Emploi du temps (créneaux) ──
+  function addCreneau(enfantId, creneau) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    if (!Array.isArray(e.edt)) e.edt = []
+    e.edt.push({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: creneau.jour || '', heure: creneau.heure || '', matiere: (creneau.matiere || '').trim() })
+    persist()
+  }
+  function removeCreneau(enfantId, crId) {
+    const e = getEnfant(enfantId)
+    if (!e || !Array.isArray(e.edt)) return
+    e.edt = e.edt.filter((x) => x.id !== crId)
+    persist()
+  }
+  function setEdt(enfantId, creneaux) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    e.edt = (creneaux || []).map((c) => ({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: c.jour || '', heure: c.heure || '', matiere: (c.matiere || '').trim() })).filter((c) => c.matiere)
     persist()
   }
 
@@ -314,6 +336,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     enfants, mode, setMode, load, hydrate,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses,
+    addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,
     setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,
   }

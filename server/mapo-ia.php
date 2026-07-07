@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -84,6 +84,7 @@ function buildPrompts($task, $d) {
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
   if ($task === 'vision_bulletin') return buildVisionBulletinPrompts($d);
+  if ($task === 'vision_edt') return buildVisionEdtPrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'bilan6c') return buildBilan6cPrompts($d);
@@ -467,6 +468,29 @@ function buildVisionBulletinPrompts($d) {
   $u .= "Lis le bulletin sur la photo et renvoie le JSON demandé.";
 
   return [$system, $u, 1800, true, $img];
+}
+
+// ── Vision : lit un EMPLOI DU TEMPS → JSON {creneaux:[{jour,heure,matiere}]} ──
+function buildVisionEdtPrompts($d) {
+  $niveau = clean($d['niveau'] ?? '', 40);
+  $img = (string) ($d['image'] ?? '');
+  if ($img !== '' && strpos($img, 'data:') !== 0) {
+    $img = 'data:image/jpeg;base64,' . $img;
+  }
+
+  $system = "Tu lis un EMPLOI DU TEMPS scolaire/universitaire sur une PHOTO. "
+    . "Extrais chaque cours avec : JOUR (lundi, mardi, mercredi, jeudi, vendredi, samedi ou dimanche, en minuscules), "
+    . "HEURE de début au format HH:MM (24h), et MATIÈRE (nom court). "
+    . "Ignore les pauses, récréations et cases vides. "
+    . "N'invente AUCUN cours : ne renvoie que ce qui est lisible. Si l'image n'est pas un emploi du temps, renvoie creneaux=[]. "
+    . "Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"creneaux\":[{\"jour\":\"lundi\",\"heure\":\"08:00\",\"matiere\":\"Mathématiques\"}]}. "
+    . "Limite à 40 créneaux.";
+
+  $u = "Niveau / classe : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
+  $u .= "Lis l'emploi du temps sur la photo et renvoie le JSON demandé.";
+
+  return [$system, $u, 2200, true, $img];
 }
 
 // ── Tuteur de révision : génère un quiz QCM en JSON ───────────────────

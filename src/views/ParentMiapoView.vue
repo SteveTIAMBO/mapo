@@ -270,6 +270,45 @@
 
         <!-- ========== ORIENTATION ========== -->
         <!-- ========== PROFIL 6C ========== -->
+        <!-- ========== EMPLOI DU TEMPS ========== -->
+        <section v-else-if="section === 'edt'" class="sec">
+          <div v-if="veilleMatieres.length" class="card veille-card">
+            <div class="card-head"><Sparkles :size="18" /><h3>{{ t('mia.edtVeilleTitle') }}</h3></div>
+            <p class="muted small">{{ t('mia.edtVeilleSub', { jour: demainLabel }) }}</p>
+            <div class="chips">
+              <component :is="isApprenant ? 'button' : 'span'" v-for="m in veilleMatieres" :key="m" class="chip chip-w" @click="isApprenant && goRevise(m)">{{ m }}</component>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.edtTitle') }}</h3></div>
+            <p class="muted small">{{ t('mia.edtHint') }}</p>
+
+            <div class="edt-add">
+              <select v-model="crJour" class="input"><option value="" disabled>{{ t('mia.edtDay') }}</option><option v-for="j in JOURS" :key="j.key" :value="j.key">{{ j.label }}</option></select>
+              <input v-model="crHeure" type="time" class="input edt-time" />
+              <input v-model="crMatiere" class="input" :placeholder="t('mia.edtSubject')" list="edt-mats" />
+              <datalist id="edt-mats"><option v-for="m in matieresList" :key="m" :value="m" /></datalist>
+              <button class="btn btn-primary btn-sm" :disabled="!crJour || !crMatiere.trim()" @click="ajouterCreneau"><Plus :size="15" /></button>
+            </div>
+
+            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickEdt" /></label>
+            <p v-if="edtError" class="err-txt small">{{ edtError }}</p>
+
+            <div v-if="edtParJour.length" class="edt-week">
+              <div v-for="d in edtParJour" :key="d.key" class="edt-day">
+                <div class="edt-day-h">{{ d.label }}</div>
+                <div v-for="c in d.creneaux" :key="c.id" class="edt-cr">
+                  <span class="edt-cr-h">{{ c.heure || '—' }}</span>
+                  <span class="edt-cr-m">{{ c.matiere }}</span>
+                  <button class="btn btn-ghost btn-xs" @click="store.removeCreneau(activeEnfant.id, c.id)"><X :size="13" /></button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="muted small edt-empty">{{ t('mia.edtEmpty') }}</p>
+          </div>
+        </section>
+
         <section v-else-if="section === 'profil6c'" class="sec">
           <Miapo6C :enfant="activeEnfant" />
         </section>
@@ -434,7 +473,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
-import { analyserBulletin } from '../services/aiVision'
+import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { isMiapoTenant } from '../utils/tenantContext'
@@ -468,6 +507,7 @@ const SECTIONS = computed(() => [
   { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
   { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
   { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
+  { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays },
   { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
   { key: 'orientation', label: t('mia.secOrientation'), icon: Compass },
   { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
@@ -758,6 +798,48 @@ function addAllBulletinNotes() {
   resetBulletin()
 }
 
+// ── Emploi du temps (saisie / scan / import) + révision la veille ──
+const JOURS = computed(() => [
+  { key: 'lundi', label: t('mia.dayMon') }, { key: 'mardi', label: t('mia.dayTue') }, { key: 'mercredi', label: t('mia.dayWed') },
+  { key: 'jeudi', label: t('mia.dayThu') }, { key: 'vendredi', label: t('mia.dayFri') }, { key: 'samedi', label: t('mia.daySat') }, { key: 'dimanche', label: t('mia.daySun') },
+])
+const DOW_TO_KEY = { 0: 'dimanche', 1: 'lundi', 2: 'mardi', 3: 'mercredi', 4: 'jeudi', 5: 'vendredi', 6: 'samedi' }
+const crJour = ref('')
+const crHeure = ref('')
+const crMatiere = ref('')
+const edtScanning = ref(false)
+const edtError = ref('')
+function ajouterCreneau() {
+  if (!activeEnfant.value || !crJour.value || !crMatiere.value.trim()) return
+  store.addCreneau(activeEnfant.value.id, { jour: crJour.value, heure: crHeure.value, matiere: crMatiere.value })
+  crMatiere.value = ''; crHeure.value = ''
+}
+async function onPickEdt(e) {
+  const file = e.target.files?.[0]; if (e.target) e.target.value = ''
+  if (!file || !activeEnfant.value) return
+  edtScanning.value = true; edtError.value = ''
+  try {
+    const dataUrl = await downscaleImage(file, 1400, 0.82)
+    const res = await analyserEdt({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
+    if (res.ok && res.creneaux.length) store.setEdt(activeEnfant.value.id, res.creneaux)
+    else edtError.value = res.reason || t('mia.edtFail')
+  } catch { edtError.value = t('mia.visionBlurry') } finally { edtScanning.value = false }
+}
+const edtParJour = computed(() => {
+  const e = activeEnfant.value
+  const list = (e && Array.isArray(e.edt)) ? e.edt : []
+  return JOURS.value
+    .map((j) => ({ ...j, creneaux: list.filter((c) => c.jour === j.key).sort((a, b) => String(a.heure).localeCompare(String(b.heure))) }))
+    .filter((d) => d.creneaux.length)
+})
+const demainKey = computed(() => DOW_TO_KEY[(new Date().getDay() + 1) % 7])
+const demainLabel = computed(() => (JOURS.value.find((j) => j.key === demainKey.value) || {}).label || '')
+const veilleMatieres = computed(() => {
+  const e = activeEnfant.value
+  const list = (e && Array.isArray(e.edt)) ? e.edt : []
+  return [...new Set(list.filter((c) => c.jour === demainKey.value).map((c) => c.matiere).filter(Boolean))]
+})
+
 function downscaleImage(file, maxDim = 1100, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file)
@@ -998,6 +1080,20 @@ onUnmounted(() => {
 .bull-list { display: flex; flex-direction: column; gap: 8px; }
 .bull-row { display: flex; align-items: center; gap: 8px; }
 .bull-row .bull-mat { flex: 1; }
+
+/* Emploi du temps */
+.veille-card { background: rgba(var(--pr-rgb, 124,58,237), .06); border-color: rgba(var(--pr-rgb, 124,58,237), .18); }
+.edt-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+.edt-add .input { flex: 1; min-width: 120px; }
+.edt-add .edt-time { flex: 0 0 auto; max-width: 120px; }
+.edt-scan { margin-bottom: 4px; }
+.edt-week { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.edt-day-h { font-family: var(--font-display, 'Poppins'), sans-serif; font-weight: 700; font-size: 13.5px; color: var(--pr); margin-bottom: 4px; }
+.edt-cr { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--divider, #eee); }
+.edt-cr:last-child { border-bottom: none; }
+.edt-cr-h { font-size: 12.5px; font-weight: 600; color: var(--tx2, #4b5563); min-width: 46px; }
+.edt-cr-m { flex: 1; font-size: 14px; color: var(--tx); }
+.edt-empty { margin-top: 8px; }
 .vr-head { display: flex; align-items: center; justify-content: space-between; } .vr-mat { font-weight: 700; font-size: 16px; color: var(--tx); }
 .vr-note { font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 20px; }
 .ia-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: #1B8A5A; background: rgba(27,138,90,.10); }

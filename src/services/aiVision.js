@@ -72,6 +72,35 @@ export async function analyserBulletin({ imageDataUrl, niveau = '' }) {
   }
 }
 
+const JOURS_OK = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+function normJour(v) {
+  const s = String(v || '').trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return JOURS_OK.find((j) => j.startsWith(s.slice(0, 3))) || ''
+}
+
+/**
+ * Lit une photo d'emploi du temps → { ok, creneaux:[{jour,heure,matiere}] }.
+ * @param {{imageDataUrl:string, niveau?:string}} opts
+ */
+export async function analyserEdt({ imageDataUrl, niveau = '' }) {
+  try {
+    const json = await postVision('vision_edt', imageDataUrl, niveau)
+    if (json && json.ok && json.text) {
+      const obj = extractJsonObject(json.text)
+      if (obj && Array.isArray(obj.creneaux)) {
+        const creneaux = obj.creneaux
+          .map((c) => ({ jour: normJour(c.jour), heure: String(c.heure || '').trim(), matiere: String(c.matiere || '').trim() }))
+          .filter((c) => c.jour && c.matiere)
+          .slice(0, 40)
+        return { ok: true, creneaux }
+      }
+    }
+    return { ok: false, reason: visionReason(json) }
+  } catch {
+    return { ok: false, reason: 'Service indisponible (réseau).' }
+  }
+}
+
 /**
  * Numérise une photo de registre → { ok, classe, eleves:[{nom,prenom,sexe}] }.
  * @param {{imageDataUrl:string, niveau?:string}} opts
