@@ -566,11 +566,40 @@ export const useTuteurStore = defineStore('tuteur', () => {
     return { ok: true, bilan: localBilan6c(competences, langue), mode: 'simulation' }
   }
 
+  // Propose/extrait les modules d'une formation (nom + établissement + descriptif
+  // optionnel). Sans descriptif : MIAPO propose les modules typiques ; l'apprenant
+  // complète / modifie / valide.
+  async function extraireModules({ formation, ecole = '', texte = '' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ task: 'extract_modules', data: { formation, ecole, texte } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const obj = parseJsonObject(json.text)
+        if (obj && Array.isArray(obj.modules)) {
+          const modules = obj.modules.map((m) => String(m).trim()).filter(Boolean).slice(0, 16)
+          if (modules.length) return { ok: true, modules }
+        }
+      }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démonstration atteinte'
+        : (json && (json.detail || json.error)) || 'Proposition impossible pour le moment.'
+      return { ok: false, reason }
+    } catch { return { ok: false, reason: 'Service indisponible. Réessayez.' } }
+  }
+
   return {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules,
   }
 })
 

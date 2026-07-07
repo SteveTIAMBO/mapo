@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -85,6 +85,7 @@ function buildPrompts($task, $d) {
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
   if ($task === 'vision_bulletin') return buildVisionBulletinPrompts($d);
   if ($task === 'vision_edt') return buildVisionEdtPrompts($d);
+  if ($task === 'extract_modules') return buildExtractModulesPrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'bilan6c') return buildBilan6cPrompts($d);
@@ -491,6 +492,29 @@ function buildVisionEdtPrompts($d) {
   $u .= "Lis l'emploi du temps sur la photo et renvoie le JSON demandé.";
 
   return [$system, $u, 2200, true, $img];
+}
+
+// ── Extraction des MODULES d'une formation → JSON {modules:[...]} ──────
+function buildExtractModulesPrompts($d) {
+  $formation = clean($d['formation'] ?? '', 140);
+  $ecole     = clean($d['ecole'] ?? '', 140);
+  $texte     = clean($d['texte'] ?? '', 4000);
+
+  $system = "Tu aides un apprenant à structurer sa formation. On te donne le NOM de sa formation"
+    . ($ecole !== '' ? ", son établissement" : "")
+    . " et éventuellement un descriptif du programme. "
+    . "Renvoie la liste des MODULES / MATIÈRES / UE de la formation. "
+    . "Si un descriptif est fourni, extrais-en les modules réellement cités. "
+    . "Sinon, propose les modules TYPIQUES de ce type de formation (l'apprenant les ajustera). "
+    . "Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"modules\":[\"...\",\"...\"]}. 8 à 16 modules, noms courts.";
+
+  $u = "Formation : " . ($formation !== '' ? $formation : 'non précisée') . "\n";
+  if ($ecole !== '') $u .= "Établissement : {$ecole}\n";
+  if ($texte !== '') $u .= "Descriptif / programme fourni :\n{$texte}\n";
+  $u .= "Renvoie le JSON des modules.";
+
+  return [$system, $u, 900, true, null];
 }
 
 // ── Tuteur de révision : génère un quiz QCM en JSON ───────────────────

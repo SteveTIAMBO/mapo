@@ -199,14 +199,16 @@
               <p v-if="!isApprenant" class="muted small wl-note">{{ t('mia.whatToWork', { name: activeEnfant.firstName }) }}</p>
             </div>
 
-            <!-- Apprenant : lancer une révision -->
+            <!-- Apprenant : lancer une révision OU ajouter une matière à réviser -->
             <div v-if="isApprenant" class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.privateLessonTitle') }}</h3></div>
               <p class="muted">{{ t('mia.privateLessonHint') }}</p>
               <div class="revise-pick">
                 <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+                <button class="btn btn-outline" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>{{ t('mia.start') }}</span></button>
               </div>
+              <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
             <!-- Parent : désigner une matière à réviser (sans la lancer) -->
             <div v-else class="card">
@@ -445,8 +447,14 @@
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.school') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
             <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholderShort')"></textarea></div>
+            <div class="form-group">
+              <label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label>
+              <textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholderShort')"></textarea>
+              <button type="button" class="btn btn-outline btn-sm propose-btn" :disabled="!form.formation.trim() || proposingModules" @click="proposerModules('form')"><component :is="proposingModules ? Loader2 : Sparkles" :size="14" :class="{ spin: proposingModules }" /> <span>{{ proposingModules ? t('mia.proposing') : t('mia.proposeModules') }}</span></button>
+              <p v-if="proposeError" class="err-txt small">{{ proposeError }}</p>
+            </div>
           </template>
           <template v-if="isNiveauSuperieur(form.niveau)">
             <div class="form-row">
@@ -839,6 +847,20 @@ const veilleMatieres = computed(() => {
   const list = (e && Array.isArray(e.edt)) ? e.edt : []
   return [...new Set(list.filter((c) => c.jour === demainKey.value).map((c) => c.matiere).filter(Boolean))]
 })
+
+// ── Formation (hors-catalogue) : MIAPO propose les modules à partir du nom ──
+const proposingModules = ref(false)
+const proposeError = ref('')
+async function proposerModules(target) {
+  const src = target === 'profil' ? profil.value : form.value
+  if (!src.formation || !src.formation.trim() || proposingModules.value) return
+  proposingModules.value = true; proposeError.value = ''
+  try {
+    const res = await tuteur.extraireModules({ formation: src.formation, ecole: src.ecole || '', texte: src.formationModules || '' })
+    if (res.ok && res.modules.length) src.formationModules = res.modules.join(', ')
+    else proposeError.value = res.reason || t('mia.proposeFail')
+  } catch { proposeError.value = t('mia.proposeFail') } finally { proposingModules.value = false }
+}
 
 function downscaleImage(file, maxDim = 1100, quality = 0.8) {
   return new Promise((resolve, reject) => {
