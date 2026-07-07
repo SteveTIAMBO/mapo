@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -83,6 +83,7 @@ function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
+  if ($task === 'vision_bulletin') return buildVisionBulletinPrompts($d);
   if ($task === 'orientation') return buildOrientationPrompts($d);
   if ($task === 'orientation6c') return buildOrientation6cPrompts($d);
   if ($task === 'bilan6c') return buildBilan6cPrompts($d);
@@ -442,6 +443,30 @@ function buildVisionRegistrePrompts($d) {
 
   // reasoning_effort:none (5e param via image) ; 2600 tokens pour une classe longue.
   return [$system, $u, 2600, true, $img];
+}
+
+// ── Vision : lit un BULLETIN de notes → JSON {matieres:[{matiere,note}]} ───
+function buildVisionBulletinPrompts($d) {
+  $niveau = clean($d['niveau'] ?? '', 40);
+  $img = (string) ($d['image'] ?? '');
+  if ($img !== '' && strpos($img, 'data:') !== 0) {
+    $img = 'data:image/jpeg;base64,' . $img;
+  }
+
+  $system = "Tu lis un BULLETIN de notes scolaire (Afrique francophone) sur une PHOTO. "
+    . "Extrais chaque MATIÈRE avec sa MOYENNE sur 20. "
+    . "Convertis toute note exprimée sur une autre base vers /20 (ex. sur 10 → ×2). "
+    . "Ignore les totaux, rangs, coefficients, appréciations et lignes non-matières. "
+    . "Si une moyenne générale est visible, mets-la dans 'moyenne_generale' (sinon null). "
+    . "N'invente AUCUNE note : ne renvoie que ce qui est lisible. Si l'image n'est pas un bulletin, renvoie matieres=[]. "
+    . "Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"moyenne_generale\":13.5,\"matieres\":[{\"matiere\":\"Mathématiques\",\"note\":12}]}. "
+    . "\"note\" est un nombre entre 0 et 20. Limite à 20 matières.";
+
+  $u = "Niveau / classe de l'élève : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
+  $u .= "Lis le bulletin sur la photo et renvoie le JSON demandé.";
+
+  return [$system, $u, 1800, true, $img];
 }
 
 // ── Tuteur de révision : génère un quiz QCM en JSON ───────────────────

@@ -23,6 +23,55 @@ function normSexe(v) {
   return s === 'F' ? 'F' : (s === 'M' ? 'M' : '')
 }
 
+function clampNote(v) {
+  const n = Number(v)
+  if (!Number.isFinite(n)) return null
+  return Math.max(0, Math.min(20, Math.round(n * 100) / 100))
+}
+
+async function postVision(task, imageDataUrl, niveau) {
+  const user = fbAuth.currentUser
+  const token = user ? await user.getIdToken().catch(() => null) : null
+  const headers = { 'Content-Type': 'application/json' }
+  if (token) headers['Authorization'] = 'Bearer ' + token
+  const res = await fetch(IA_URL, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ task, data: { image: imageDataUrl, niveau } }),
+  })
+  const json = await res.json().catch(() => null)
+  return json
+}
+
+function visionReason(json) {
+  return json && json.error === 'not_configured' ? 'IA pas encore activée sur ce serveur.'
+    : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démonstration atteinte, réessayez plus tard.'
+    : (json && (json.detail || json.error)) || 'Lecture impossible pour le moment.'
+}
+
+/**
+ * Lit une photo de bulletin → { ok, moyenne, matieres:[{matiere,note}] }.
+ * @param {{imageDataUrl:string, niveau?:string}} opts
+ */
+export async function analyserBulletin({ imageDataUrl, niveau = '' }) {
+  try {
+    const json = await postVision('vision_bulletin', imageDataUrl, niveau)
+    if (json && json.ok && json.text) {
+      const obj = extractJsonObject(json.text)
+      if (obj && Array.isArray(obj.matieres)) {
+        const matieres = obj.matieres
+          .map((m) => ({ matiere: String(m.matiere || '').trim(), note: clampNote(m.note) }))
+          .filter((m) => m.matiere && m.note !== null)
+          .slice(0, 20)
+        return { ok: true, moyenne: clampNote(obj.moyenne_generale), matieres }
+      }
+    }
+    return { ok: false, reason: visionReason(json) }
+  } catch {
+    return { ok: false, reason: 'Service indisponible (réseau).' }
+  }
+}
+
 /**
  * Numérise une photo de registre → { ok, classe, eleves:[{nom,prenom,sexe}] }.
  * @param {{imageDataUrl:string, niveau?:string}} opts

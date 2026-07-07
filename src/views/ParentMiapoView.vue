@@ -152,6 +152,34 @@
             </div>
             <div v-else-if="visionState === 'error'" class="err"><p>{{ visionError }}</p><button class="btn btn-outline btn-sm" @click="resetVision">{{ t('mia.retry') }}</button></div>
           </div>
+
+          <!-- Lecture d'un bulletin (multi-matières → notes) -->
+          <div class="card vision-card">
+            <div class="card-head"><Camera :size="18" /><h3>{{ t('mia.readReportCard') }}</h3></div>
+            <div v-if="bulletinState === 'idle'" class="vision-pick">
+              <p class="muted">{{ t('mia.bulletinPickHint') }}</p>
+              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickBulletin" /></label>
+            </div>
+            <div v-else-if="bulletinState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.bulletinLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
+            <div v-else-if="bulletinState === 'done'" class="vision-result">
+              <p v-if="!bulletinRows.length" class="muted">{{ t('mia.bulletinEmpty') }}</p>
+              <template v-else>
+                <p class="reco-lab">{{ t('mia.bulletinReview', { n: bulletinRows.length }) }}<span v-if="bulletinMoyenne !== null"> · {{ t('mia.bulletinAvg', { m: bulletinMoyenne }) }}</span></p>
+                <div class="bull-list">
+                  <div v-for="(r, i) in bulletinRows" :key="i" class="bull-row">
+                    <input v-model="r.matiere" class="input bull-mat" />
+                    <input v-model.number="r.note" type="number" min="0" max="20" step="0.5" class="input note-input" />
+                    <button class="btn btn-ghost btn-xs" @click="bulletinRows.splice(i, 1)"><X :size="14" /></button>
+                  </div>
+                </div>
+              </template>
+              <div class="vr-actions">
+                <button v-if="bulletinRows.length" class="btn btn-primary btn-sm" @click="addAllBulletinNotes"><Plus :size="14" /> <span>{{ t('mia.bulletinAddAll', { n: bulletinRows.length }) }}</span></button>
+                <button class="btn btn-ghost btn-sm" @click="resetBulletin">{{ t('mia.otherCopy') }}</button>
+              </div>
+            </div>
+            <div v-else-if="bulletinState === 'error'" class="err"><p>{{ bulletinError }}</p><button class="btn btn-outline btn-sm" @click="resetBulletin">{{ t('mia.retry') }}</button></div>
+          </div>
         </section>
 
         <!-- ========== TUTEUR ========== -->
@@ -398,6 +426,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { analyserBulletin } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { isMiapoTenant } from '../utils/tenantContext'
@@ -690,6 +719,36 @@ const visionState = ref('idle')
 const visionResult = ref(null)
 const visionError = ref('')
 function resetVision() { visionState.value = 'idle'; visionResult.value = null; visionError.value = '' }
+
+// ── Lecture d'un bulletin (multi-matières → notes) ──
+const bulletinState = ref('idle')   // idle | loading | done | error
+const bulletinRows = ref([])        // [{ matiere, note }]
+const bulletinMoyenne = ref(null)
+const bulletinError = ref('')
+function resetBulletin() { bulletinState.value = 'idle'; bulletinRows.value = []; bulletinMoyenne.value = null; bulletinError.value = '' }
+async function onPickBulletin(e) {
+  const file = e.target.files?.[0]; if (e.target) e.target.value = ''
+  if (!file || !activeEnfant.value) return
+  bulletinState.value = 'loading'; bulletinError.value = ''
+  try {
+    const dataUrl = await downscaleImage(file)
+    const res = await analyserBulletin({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
+    if (res.ok) { bulletinRows.value = res.matieres || []; bulletinMoyenne.value = res.moyenne ?? null; bulletinState.value = 'done' }
+    else { bulletinError.value = res.reason || t('mia.bulletinFail'); bulletinState.value = 'error' }
+  } catch { bulletinError.value = t('mia.visionBlurry'); bulletinState.value = 'error' }
+}
+function addAllBulletinNotes() {
+  const e = activeEnfant.value
+  if (!e) return
+  for (const r of bulletinRows.value) {
+    const note = Number(r.note)
+    if (r.matiere && String(r.matiere).trim() && Number.isFinite(note)) {
+      store.addNote(e.id, String(r.matiere).trim(), Math.max(0, Math.min(20, note)))
+    }
+  }
+  resetBulletin()
+}
+
 function downscaleImage(file, maxDim = 1100, quality = 0.8) {
   return new Promise((resolve, reject) => {
     const img = new Image(); const url = URL.createObjectURL(file)
@@ -927,6 +986,9 @@ onUnmounted(() => {
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; color: var(--pr); } @keyframes spin { to { transform: rotate(360deg); } }
 .vision-result { display: flex; flex-direction: column; gap: 12px; }
+.bull-list { display: flex; flex-direction: column; gap: 8px; }
+.bull-row { display: flex; align-items: center; gap: 8px; }
+.bull-row .bull-mat { flex: 1; }
 .vr-head { display: flex; align-items: center; justify-content: space-between; } .vr-mat { font-weight: 700; font-size: 16px; color: var(--tx); }
 .vr-note { font-weight: 700; font-size: 13px; padding: 3px 10px; border-radius: 20px; }
 .ia-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: #1B8A5A; background: rgba(27,138,90,.10); }
