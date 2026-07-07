@@ -45,6 +45,14 @@
           />
         </div>
 
+        <div v-if="mode === 'signup' && isMiapoMode" class="auth-field">
+          <label class="auth-label">{{ t('login.accountFor') }}</label>
+          <div class="role-seg">
+            <button type="button" :class="{ on: signupRole === 'parent' }" @click="signupRole = 'parent'">{{ t('login.roleParent') }}</button>
+            <button type="button" :class="{ on: signupRole === 'apprenant' }" @click="signupRole = 'apprenant'">{{ t('login.roleLearner') }}</button>
+          </div>
+        </div>
+
         <div class="auth-field">
           <label class="auth-label">{{ mode === 'signup' ? t('login.email') : t('login.emailOrPhone') }}</label>
           <input
@@ -148,6 +156,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 
@@ -155,6 +164,11 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
+const miapoStore = useEnfantsAutonomesStore()
+// MIAPO+ standalone : à l'inscription, on demande si le compte est celui d'un
+// parent (qui suit un enfant) ou de l'apprenant lui-même (étudiant/adulte).
+const isMiapoMode = isMiapoTenant()
+const signupRole = ref('parent') // 'parent' | 'apprenant'
 
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
 // MIAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
@@ -194,7 +208,10 @@ async function handleSignUp() {
   const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value)
   isLoading.value = false
   if (result.success) {
-    router.push('/parent/miapo') // nouveau compte = parent B2C → MIAPO+
+    // MIAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
+    // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
+    if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
+    router.push('/parent/miapo') // nouveau compte B2C → MIAPO+
   } else {
     errorMessage.value = result.error
   }
@@ -249,10 +266,13 @@ onMounted(() => {
   // Deep-link « Créer mon compte » : ?signup=1 ouvre directement le formulaire
   // d'inscription (compte persistant). Vaut sur toutes les instances, MIAPO+ inclus.
   try {
-    if (new URLSearchParams(window.location.search).get('signup')) {
+    const sp = new URLSearchParams(window.location.search)
+    if (sp.get('signup')) {
       mode.value = 'signup'
       showLogin.value = true
     }
+    // ?role=apprenant préselectionne le point de vue « apprenant » (étudiant/adulte).
+    if (sp.get('role') === 'apprenant') signupRole.value = 'apprenant'
   } catch (e) { /* silent */ }
   if (isSchoolTenantMode) return
   try {
@@ -434,6 +454,33 @@ function resetDemo() {
 }
 
 /* ── Input (ARIS-exact) ── */
+.role-seg {
+  display: flex;
+  gap: 6px;
+  background: rgba(var(--pr-rgb), 0.06);
+  border: 1.5px solid rgba(var(--pr-rgb), 0.18);
+  border-radius: 12px;
+  padding: 4px;
+}
+.role-seg button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: #4b5563;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 8px 10px;
+  border-radius: 9px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.role-seg button.on {
+  background: #fff;
+  color: var(--pr);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
 .auth-input {
   display: block;
   width: 100%;
