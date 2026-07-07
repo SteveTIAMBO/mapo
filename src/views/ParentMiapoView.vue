@@ -331,7 +331,7 @@
             </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
-              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
               <div class="form-row">
@@ -356,6 +356,7 @@
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
               <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
+              <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }}</label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
             </div>
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
@@ -401,12 +402,19 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">{{ t('mia.sex') }}</label><select v-model="form.gender" class="input"><option value="M">{{ t('mia.boy') }}</option><option value="F">{{ t('mia.girl') }}</option></select></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
             <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
             <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholderShort')"></textarea></div>
+          </template>
+          <template v-if="isNiveauSuperieur(form.niveau)">
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="form.ecole" class="input" :placeholder="t('mia.uniPlaceholder')" /></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.filiere') }}</label><input v-model="form.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
+            </div>
+            <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
           </template>
           <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
@@ -425,7 +433,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { analyserBulletin } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -505,7 +513,7 @@ const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.v
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', formation: '', formationUrl: '', formationModules: '', photoURL: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '' })
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value
@@ -513,7 +521,7 @@ function syncProfil() {
   profil.value = {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
-    ecole: e.ecole || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
+    ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
   }
 }
 function onPickPhoto(ev) {
@@ -596,7 +604,7 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '', formationUrl: '', formationModules: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' })
 
 const newMatiere = ref('')
 const newNote = ref(null)
@@ -616,7 +624,8 @@ function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeE
 // (notes → faiblesses → quiz → révision) par SES modules ; sinon catalogue scolaire.
 const matieresList = computed(() => {
   const e = activeEnfant.value
-  if (e && e.niveau === NIVEAU_HORS_CATALOGUE && e.formationModules) {
+  // Supérieur et hors-catalogue : les matières = les modules saisis par l'apprenant.
+  if (e && (e.niveau === NIVEAU_HORS_CATALOGUE || isNiveauSuperieur(e.niveau)) && e.formationModules) {
     const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
     if (mods.length) return mods
   }
@@ -694,7 +703,7 @@ const insight = computed(() => {
     : t('mia.insightWeakParent', { subjects: m, name: e.firstName })
 })
 
-function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
+function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
 function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)

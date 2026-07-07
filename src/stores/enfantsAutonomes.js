@@ -32,8 +32,11 @@ export const NIVEAUX_SECONDAIRE = [
   '1ère A', '1ère C', '1ère D',
   'Tle A', 'Tle C', 'Tle D',
 ]
-// Liste plate (primaire puis secondaire) — conservée pour compatibilité.
-export const NIVEAUX = [...NIVEAUX_PRIMAIRE, ...NIVEAUX_SECONDAIRE]
+// Niveaux du supérieur (LMD africain) — pour l'étudiant universitaire.
+export const NIVEAUX_SUPERIEUR = ['Licence 1', 'Licence 2', 'Licence 3', 'Master 1', 'Master 2', 'Doctorat']
+// Liste plate (primaire → secondaire → supérieur) — conservée pour compatibilité.
+export const NIVEAUX = [...NIVEAUX_PRIMAIRE, ...NIVEAUX_SECONDAIRE, ...NIVEAUX_SUPERIEUR]
+export function isNiveauSuperieur(niveau) { return NIVEAUX_SUPERIEUR.includes(niveau) }
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
@@ -132,7 +135,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, photoURL, formation, formationUrl, formationModules }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: 'ea-' + Date.now().toString(36),
       firstName: (firstName || '').trim(),
@@ -142,6 +145,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…) OU « Formation (hors catalogue) »
       pays: pays || 'CM',
       ecole: (ecole || '').trim(),
+      filiere: (filiere || '').trim(),                 // filière/spécialité (étudiant du supérieur)
       formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
       formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
       formationModules: (formationModules || '').trim(), // modules/matières saisis à la main (plan B, séparés par des virgules)
@@ -164,7 +168,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'formation', 'formationUrl', 'formationModules', 'photoURL']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     persist()
