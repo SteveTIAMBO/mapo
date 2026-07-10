@@ -9,6 +9,24 @@ import { getTenant } from './utils/tenantContext'
 import { i18n, setLang } from './i18n'
 import './assets/main.css'
 
+// ── Correctif d'affichage des nombres ───────────────────────────────────────
+// fr-FR (toLocaleString / Intl.NumberFormat) sépare les milliers par une espace
+// FINE INSÉCABLE (U+202F) qui, selon la police/le rendu (et les PDF), s'affiche
+// parfois comme un « / ». On la normalise en espace normale, partout (UI + exports).
+;(function () {
+  const NBSP = /[   ]/g
+  const _num = Number.prototype.toLocaleString
+  Number.prototype.toLocaleString = function (...args) {
+    return _num.apply(this, args).replace(NBSP, ' ')
+  }
+  if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
+    const _fmt = Intl.NumberFormat.prototype.format
+    Intl.NumberFormat.prototype.format = function (n) {
+      return _fmt.call(this, n).replace(NBSP, ' ')
+    }
+  }
+})()
+
 const app = createApp(App)
 const pinia = createPinia()
 
