@@ -361,7 +361,7 @@ async function startQuiz(subjectId) {
   const res = await tuteur.generateQuiz({
     matiere: subj?.name || 'Culture générale',
     niveau: myRecord.value?.className || myClass.value?.level || '',
-    nombre: 5,
+    nombre: 10,
     themes: weak !== null && weak < 10 ? 'notions de base (l’élève a des difficultés)' : '',
   })
   questions.value = res.questions || []
