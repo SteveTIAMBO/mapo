@@ -293,7 +293,7 @@ const UE_POOL_BY_DOMAINE = {
 }
 
 const SPECIALITES = [
-  'Stratégie', 'Marketing', 'Finance', 'Comptabilité-contrôle', 'Droit', 'Économie',
+  'Stratégie', 'Marketing', 'Finance', 'Comptabilité-contrôle', 'Droit des affaires', 'Économie',
   'Systèmes d\'information', 'Langues', 'Entrepreneuriat', 'Ressources humaines', 'Communication',
 ]
 const SALLES_POOL_EDT = ['Amphi A', 'Amphi B', 'Salle 101', 'Salle 102', 'Salle 204', 'Salle 205', 'Salle informatique', 'Salle projet']
@@ -596,13 +596,20 @@ function generateStages() {
   for (const etu of ETUDIANTS) {
     const promo = PROMOTIONS.find((p) => p.id === etu.promotionId)
     if (!promo) continue
-    // Eligible : B3, M1, M2 quasi tous ; B2 ~30% (stage court d'été)
+    // Eligible selon le NIVEAU et l'année (robuste aux identifiants de filière) :
+    // Master toutes années, dernière année de Licence/BTS quasi tous, Licence 2 = stage court.
+    const prog = PROGRAMMES.find((p) => p.id === promo.programmeId)
+    const annee = prog?.annees.find((a) => a.id === promo.anneeId)
+    const rang = annee?.rang || 1
+    const isFinal = rang === (prog?.annees.length || 1)
     let proba = 0
-    if (['b3', 'm1', 'm2'].includes(promo.anneeId)) proba = 0.92
-    else if (promo.anneeId === 'b2') proba = 0.3
+    if (promo.niveau === 'Master') proba = 0.92
+    else if (promo.niveau === 'BTS') proba = isFinal ? 0.9 : 0.4
+    else if (promo.niveau === 'Licence') proba = isFinal ? 0.9 : (rang === 2 ? 0.3 : 0)
     if (!chance(proba)) continue
 
-    const type = promo.anneeId === 'm2' && chance(0.45) ? 'alternance' : 'stage'
+    const altEligible = promo.niveau === 'BTS' || (promo.niveau === 'Master' && isFinal)
+    const type = altEligible && chance(0.4) ? 'alternance' : 'stage'
     const duree = type === 'alternance' ? randInt(40, 48) : randInt(8, 26)
     const today = new Date(2026, 4, 15) // 15 mai 2026
     const offsetWeeksStart = randInt(-12, 4)
