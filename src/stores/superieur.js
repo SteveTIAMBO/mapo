@@ -443,7 +443,7 @@ function generateEtudiants() {
 
       list.push({
         id: `etu-${String(counter).padStart(4, '0')}`,
-        matricule: `UEDF${promo.rang}${String(counter).padStart(4, '0')}`,
+        matricule: `ISE${promo.rang}${String(counter).padStart(4, '0')}`,
         prenom,
         nom,
         nomComplet: `${nom.toUpperCase()} ${prenom}`,
@@ -1055,7 +1055,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     const ectsRequis = Number(data.ectsRequis) || (promo ? promo.rang * 60 : 60)
     const etu = {
       id: nextId('etu', etudiants),
-      matricule: (data.matricule || '').trim() || `UEDF${promo?.rang || 0}${String(Date.now()).slice(-5)}`,
+      matricule: (data.matricule || '').trim() || `ISE${promo?.rang || 0}${String(Date.now()).slice(-5)}`,
       prenom: (data.prenom || '').trim(),
       nom: (data.nom || '').trim(),
       nomComplet: `${(data.nom || '').trim().toUpperCase()} ${(data.prenom || '').trim()}`.trim(),
