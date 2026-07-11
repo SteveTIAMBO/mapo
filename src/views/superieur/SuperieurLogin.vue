@@ -268,19 +268,19 @@ function retour() {
 .sl-bg {
   position: fixed; inset: 0; z-index: 0;
   background:
-    radial-gradient(900px 620px at 14% 8%, #ffeed6 0%, rgba(255,238,214,0) 58%),
-    radial-gradient(820px 540px at 88% 14%, #fff0e6 0%, rgba(255,240,230,0) 58%),
-    radial-gradient(760px 600px at 82% 96%, #e9f1ff 0%, rgba(233,241,255,0) 58%),
-    linear-gradient(160deg, #fffdfa 0%, #f4eee7 100%);
+    radial-gradient(900px 620px at 14% 8%, #e6f0ff 0%, rgba(230,240,255,0) 58%),
+    radial-gradient(820px 540px at 88% 14%, #eef4ff 0%, rgba(238,244,255,0) 58%),
+    radial-gradient(760px 600px at 80% 96%, #eaf7f1 0%, rgba(234,247,241,0) 58%),
+    linear-gradient(160deg, #fbfcfe 0%, #eef2f9 100%);
 }
 .sl-card {
   position: relative; z-index: 1;
-  width: 100%; max-width: 480px;
+  width: 100%; max-width: 440px;
   padding: 36px 32px 28px;
   background: #fff;
-  border: 1px solid rgba(60, 45, 25, 0.08);
-  border-radius: 22px;
-  box-shadow: 0 24px 60px rgba(60, 45, 25, 0.13), 0 4px 14px rgba(60, 45, 25, 0.06);
+  border: 1px solid rgba(20, 32, 64, 0.07);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(20, 32, 64, 0.12), 0 4px 14px rgba(20, 32, 64, 0.06);
 }
 .sl-logo {
   display: flex; align-items: center; gap: 14px;
@@ -312,11 +312,11 @@ function retour() {
 .sl-error {
   margin-bottom: 14px;
   padding: 10px 14px;
-  background: rgba(232, 149, 10, 0.08);
-  border: 1px solid rgba(232, 149, 10, 0.22);
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.22);
   border-radius: 10px;
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px; color: #B07308;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px; color: #B91C1C;
 }
 
 .sl-roles {
@@ -543,7 +543,7 @@ function retour() {
   margin: 2px 0;
   font-family: 'Poppins', sans-serif;
   font-size: 11.5px;
-  color: rgba(60, 45, 25, 0.45);
+  color: #9CA3AF;
 }
 
 @media (max-width: 480px) {
