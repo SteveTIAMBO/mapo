@@ -392,7 +392,9 @@ function buildOrientation6cPrompts($d) {
   $u .= "\nDomaines candidats (à argumenter, SANS rien ajouter d'autre) :" . ($candTxt !== '' ? $candTxt : ' (aucun)') . "\n";
   $u .= "\nProduis les recommandations argumentées au format JSON demandé.";
 
-  return [$system, $u, 1900, true, null];
+  // 2600 tokens : marge suffisante pour 4 recommandations détaillées (le format
+  // JSON complet peut dépasser 1900 et se retrouver tronqué → JSON invalide → échec).
+  return [$system, $u, 2600, true, null];
 }
 
 // ── Lecture d'une copie d'examen (photo) → analyse JSON ───────────────
