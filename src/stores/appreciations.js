@@ -5,8 +5,10 @@ import { auth as fbAuth } from '../firebase'
 /**
  * Store "appreciations" — génération d'appréciations de bulletin assistée par IA.
  *
- * Envoie les données chiffrées de l'élève (prénom, moyennes, rang, mention,
- * matières) au proxy serveur /mapo-ia.php qui interroge le modèle de langage.
+ * Envoie les données de l'élève (moyennes, rang, mention, matières) au proxy
+ * serveur /mapo-ia.php qui interroge le modèle de langage. ANONYMISATION : le
+ * prénom réel est remplacé par un jeton [PRENOM] avant l'envoi (il ne quitte
+ * jamais le navigateur) puis réinjecté dans la réponse renvoyée par l'IA.
  * Si le proxy n'est pas configuré (pas de clé API) ou indisponible, on bascule
  * en SIMULATION : une appréciation cohérente est rédigée localement à partir
  * des mêmes données → la fonctionnalité est toujours démontrable, gratuitement,
@@ -47,16 +49,24 @@ export const useAppreciationsStore = defineStore('appreciations', () => {
       const headers = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = 'Bearer ' + token
 
+      // Anonymisation avant IA : le prénom réel ne quitte jamais le navigateur.
+      // On envoie un jeton neutre, puis on le remplace par le vrai prénom dans
+      // la réponse. Données de mineurs → aucune donnée nominative vers l'IA.
+      const NAME_TOKEN = '[PRENOM]'
+      const realPrenom = data && data.prenom ? String(data.prenom) : ''
+      const safeData = realPrenom ? { ...data, prenom: NAME_TOKEN } : data
+
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ data }),
+        body: JSON.stringify({ data: safeData }),
       })
       const json = await res.json().catch(() => null)
 
       if (json && json.ok && json.text) {
         lastMode.value = 'ia'
-        return { ok: true, text: json.text.trim(), mode: 'ia', reason: '' }
+        const text = realPrenom ? json.text.split(NAME_TOKEN).join(realPrenom) : json.text
+        return { ok: true, text: text.trim(), mode: 'ia', reason: '' }
       }
       // Repli simulation avec raison explicite
       const reason = json && json.error === 'not_configured'
