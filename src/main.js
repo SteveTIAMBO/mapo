@@ -28,7 +28,10 @@ import './assets/main.css'
     const PatchedNF = function (...args) {
       const inst = new OrigNF(...args)
       const orig = inst.format // sur une VRAIE instance, .format renvoie une fonction liée (sans risque)
-      inst.format = (n) => orig(n).replace(NBSP, ' ')
+      // `format` est un getter SANS setter : une simple affectation `inst.format = ...`
+      // lève « Cannot set property format ... only a getter » en mode strict (ESM).
+      // On définit donc une propriété PROPRE sur l'instance, qui masque le getter hérité.
+      Object.defineProperty(inst, 'format', { value: (n) => orig(n).replace(NBSP, ' '), writable: true, configurable: true })
       return inst
     }
     PatchedNF.prototype = OrigNF.prototype
