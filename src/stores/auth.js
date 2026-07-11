@@ -42,7 +42,7 @@ const DEMO_ACCOUNTS = {
 const DEMO_ACCOUNTS_SUP = {
   admin: {
     uid: 'demo-sup-admin', firstName: 'Steve', lastName: 'EDUFREM',
-    displayName: 'Steve · Admin Université EDUFREM',
+    displayName: 'Steve · Admin Institut Supérieur EDUFREM',
     role: 'admin', email: 'admin@demo.ebs',
   },
   relation_internationale: {

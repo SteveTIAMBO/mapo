@@ -22,7 +22,7 @@ import { SOCLE_MODULES } from './permissions'
 // Fiche école démo utilisée en preview (et fallback).
 export const DEMO_SCHOOL_IDENTITY = {
   id: 'demo-sup',
-  nom: 'Université EDUFREM',
+  nom: 'Institut Supérieur EDUFREM',
   sigle: 'UEDF',
   edition: 'superieur',
   type: 'Université — système LMD',
