@@ -20,10 +20,20 @@ import './assets/main.css'
     return _num.apply(this, args).replace(NBSP, ' ')
   }
   if (typeof Intl !== 'undefined' && Intl.NumberFormat) {
-    const _fmt = Intl.NumberFormat.prototype.format
-    Intl.NumberFormat.prototype.format = function (n) {
-      return _fmt.call(this, n).replace(NBSP, ' ')
+    // NE PAS lire Intl.NumberFormat.prototype.format : c'est un getter qui, sur le
+    // prototype (et non une instance), lève « UnwrapNumberFormat called on
+    // incompatible receiver » sur Chrome/V8 récent → plantage au démarrage, écran
+    // blanc. On enveloppe plutôt le CONSTRUCTEUR : chaque instance normalise l'espace.
+    const OrigNF = Intl.NumberFormat
+    const PatchedNF = function (...args) {
+      const inst = new OrigNF(...args)
+      const orig = inst.format // sur une VRAIE instance, .format renvoie une fonction liée (sans risque)
+      inst.format = (n) => orig(n).replace(NBSP, ' ')
+      return inst
     }
+    PatchedNF.prototype = OrigNF.prototype
+    PatchedNF.supportedLocalesOf = (...a) => OrigNF.supportedLocalesOf(...a)
+    Intl.NumberFormat = PatchedNF
   }
 })()
 
