@@ -982,3 +982,10 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
     background: rgba(255,255,255,.96) !important;
   }
 }
+
+/* Badge niveau BTS (édition Supérieur) — même langage que Licence/Master */
+.sd-prog-niveau.n-bts,
+.se-niveau.n-bts,
+.sn-niveau.n-bts,
+.sip-niveau.n-bts,
+.sf-tab-niveau.n-bts { background: rgba(14, 124, 90, 0.12); color: #0E7C5A; }

@@ -56,83 +56,109 @@ function deleteOne(key, list, docId) {
 
 // ── Établissement de démonstration ──
 export const ECOLE = {
-  nom: 'Université EDUFREM',
-  sigle: 'UEDF',
-  type: 'Université — système LMD',
+  nom: 'Institut Supérieur EDUFREM',
+  sigle: 'ISE',
+  type: 'Enseignement supérieur : BTS, Licence, Master',
   anneeAcademique: '2025 — 2026',
 }
 
 // ── Programmes et promotions ──
 export const PROGRAMMES = [
-  // ── Faculté des Sciences Sociales et de Gestion ──
+  // ── Pôle Management & Commerce ──
   {
-    id: 'bachelor-mgt',
-    nom: 'Licence en Sciences de Gestion',
-    niveau: 'Licence',
+    id: 'bts-mco',
+    nom: 'BTS Management Commercial Opérationnel',
+    niveau: 'BTS',
     domaine: 'gestion',
-    faculte: 'Sciences Sociales et de Gestion',
-    dureeAns: 3,
-    ectsTotal: 180,
-    annees: [
-      { id: 'b1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
-      { id: 'b2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
-      { id: 'b3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
-    ],
-  },
-  {
-    id: 'msc-mgt',
-    nom: 'Master en Management et Stratégie',
-    niveau: 'Master',
-    domaine: 'gestion',
-    faculte: 'Sciences Sociales et de Gestion',
+    faculte: 'Management & Commerce',
     dureeAns: 2,
     ectsTotal: 120,
     annees: [
-      { id: 'm1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
-      { id: 'm2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
+      { id: 'btsmco1', nom: 'BTS 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'btsmco2', nom: 'BTS 2', rang: 2, semestres: ['S3', 'S4'] },
     ],
   },
-  // ── Faculté de Droit et Sciences Politiques ──
   {
-    id: 'licence-droit',
-    nom: 'Licence en Droit',
+    id: 'lic-mgt',
+    nom: 'Licence Management & Stratégie',
     niveau: 'Licence',
-    domaine: 'droit',
-    faculte: 'Droit et Sciences Politiques',
+    domaine: 'gestion',
+    faculte: 'Management & Commerce',
     dureeAns: 3,
     ectsTotal: 180,
     annees: [
-      { id: 'ld1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
-      { id: 'ld2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
-      { id: 'ld3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
+      { id: 'lmgt1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'lmgt2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
+      { id: 'lmgt3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
     ],
   },
   {
-    id: 'master-droit',
-    nom: 'Master en Droit des Affaires',
+    id: 'mas-mgt',
+    nom: 'Master Management & Stratégie',
     niveau: 'Master',
-    domaine: 'droit',
-    faculte: 'Droit et Sciences Politiques',
+    domaine: 'gestion',
+    faculte: 'Management & Commerce',
     dureeAns: 2,
     ectsTotal: 120,
     annees: [
-      { id: 'mdr1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
-      { id: 'mdr2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
+      { id: 'mmgt1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
+      { id: 'mmgt2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
     ],
   },
-  // ── École doctorale (3e cycle, recherche) ──
+  // ── Pôle Finance, Comptabilité & Gestion ──
   {
-    id: 'doctorat-gst',
-    nom: 'Doctorat en Sciences de Gestion',
-    niveau: 'Doctorat',
-    domaine: 'doctorat',
-    faculte: 'École doctorale',
+    id: 'bts-cg',
+    nom: 'BTS Comptabilité & Gestion',
+    niveau: 'BTS',
+    domaine: 'gestion',
+    faculte: 'Finance & Comptabilité',
+    dureeAns: 2,
+    ectsTotal: 120,
+    annees: [
+      { id: 'btscg1', nom: 'BTS 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'btscg2', nom: 'BTS 2', rang: 2, semestres: ['S3', 'S4'] },
+    ],
+  },
+  {
+    id: 'lic-fc',
+    nom: 'Licence Finance-Comptabilité',
+    niveau: 'Licence',
+    domaine: 'gestion',
+    faculte: 'Finance & Comptabilité',
     dureeAns: 3,
     ectsTotal: 180,
     annees: [
-      { id: 'd1', nom: 'Doctorat 1', rang: 1, semestres: ['S11', 'S12'] },
-      { id: 'd2', nom: 'Doctorat 2', rang: 2, semestres: ['S13', 'S14'] },
-      { id: 'd3', nom: 'Doctorat 3', rang: 3, semestres: ['S15', 'S16'] },
+      { id: 'lfc1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'lfc2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
+      { id: 'lfc3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
+    ],
+  },
+  {
+    id: 'mas-fc',
+    nom: 'Master Finance & Contrôle de Gestion',
+    niveau: 'Master',
+    domaine: 'gestion',
+    faculte: 'Finance & Comptabilité',
+    dureeAns: 2,
+    ectsTotal: 120,
+    annees: [
+      { id: 'mfc1', nom: 'Master 1', rang: 1, semestres: ['S7', 'S8'] },
+      { id: 'mfc2', nom: 'Master 2', rang: 2, semestres: ['S9', 'S10'] },
+    ],
+  },
+  // ── Pôle Communication & Marketing ──
+  {
+    id: 'lic-com',
+    nom: 'Licence Communication & Marketing Digital',
+    niveau: 'Licence',
+    domaine: 'gestion',
+    faculte: 'Communication & Marketing',
+    dureeAns: 3,
+    ectsTotal: 180,
+    annees: [
+      { id: 'lcom1', nom: 'Licence 1', rang: 1, semestres: ['S1', 'S2'] },
+      { id: 'lcom2', nom: 'Licence 2', rang: 2, semestres: ['S3', 'S4'] },
+      { id: 'lcom3', nom: 'Licence 3', rang: 3, semestres: ['S5', 'S6'] },
     ],
   },
 ]
