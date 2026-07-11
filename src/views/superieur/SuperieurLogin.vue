@@ -304,7 +304,7 @@ function retour() {
   font-size: 12px; color: rgb(84, 96, 88); margin-top: 3px;
 }
 .sl-intro {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 14px; color: #6F767E;
   margin: 0 0 18px;
   line-height: 1.55;
@@ -331,7 +331,7 @@ function retour() {
   cursor: pointer;
   text-align: left;
   transition: all 0.15s ease;
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 .sl-role-btn:hover:not(.is-disabled) {
   border-color: var(--pr);
