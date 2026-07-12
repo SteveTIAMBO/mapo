@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
 
 // Version de demo pour reset quand la structure change
@@ -188,7 +189,7 @@ export const useSubjectsStore = defineStore('subjects', () => {
     const data = JSON.parse(JSON.stringify(subjects.value))
 
     if (authStore.isDemo) {
-      localStorage.setItem('edufrem_subjects', JSON.stringify({
+      localStorage.setItem(demoKey('edufrem_subjects'), JSON.stringify({
         version: DEMO_SUBJECTS_VERSION,
         subjects: data,
       }))
@@ -211,7 +212,7 @@ export const useSubjectsStore = defineStore('subjects', () => {
     const authStore = useAuthStore()
 
     if (authStore.isDemo) {
-      const saved = localStorage.getItem('edufrem_subjects')
+      const saved = localStorage.getItem(demoKey('edufrem_subjects'))
       if (saved) {
         try {
           const parsed = JSON.parse(saved)

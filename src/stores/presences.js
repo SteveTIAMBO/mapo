@@ -8,6 +8,7 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 export const ATTENDANCE_STATUS = [
   { value: 'present', label: 'Présent', color: '#1B8A5A' },
@@ -129,13 +130,13 @@ export const usePresencesStore = defineStore('presences', () => {
   // Sauvegarde locale demo
   function saveDemoPresences() {
     try {
-      localStorage.setItem(DEMO_PRESENCES_KEY, JSON.stringify(presences.value))
+      localStorage.setItem(demoKey(DEMO_PRESENCES_KEY), JSON.stringify(presences.value))
     } catch (e) { /* silent */ }
   }
 
   function loadDemoPresences() {
     try {
-      const stored = localStorage.getItem(DEMO_PRESENCES_KEY)
+      const stored = localStorage.getItem(demoKey(DEMO_PRESENCES_KEY))
       if (stored) return JSON.parse(stored)
     } catch (e) { /* silent */ }
     return null
@@ -144,13 +145,13 @@ export const usePresencesStore = defineStore('presences', () => {
   const loadPresences = async (elevesData = []) => {
     loading.value = true
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_PRESENCES_VERSION_KEY)
+      const savedVersion = localStorage.getItem(demoKey(DEMO_PRESENCES_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_PRESENCES_VERSION)) ? loadDemoPresences() : null
       if (saved && saved.length > 0) {
         presences.value = saved
       } else if (elevesData.length > 0) {
         presences.value = generateDemoPresences(elevesData)
-        localStorage.setItem(DEMO_PRESENCES_VERSION_KEY, String(DEMO_PRESENCES_VERSION))
+        localStorage.setItem(demoKey(DEMO_PRESENCES_VERSION_KEY), String(DEMO_PRESENCES_VERSION))
         saveDemoPresences()
       }
       loading.value = false

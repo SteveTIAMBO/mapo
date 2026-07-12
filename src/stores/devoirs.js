@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { useElevesStore } from './eleves'
 import { useClassesStore } from './classes'
 
@@ -207,8 +208,8 @@ export const useDevoirsStore = defineStore('devoirs', () => {
     const data = { devoirs: devoirs.value, submissions: submissions.value }
 
     if (authStore.isDemo) {
-      localStorage.setItem(DEMO_DEVOIRS_KEY, JSON.stringify(data))
-      localStorage.setItem(DEMO_DEVOIRS_VERSION_KEY, String(DEMO_DEVOIRS_VERSION))
+      localStorage.setItem(demoKey(DEMO_DEVOIRS_KEY), JSON.stringify(data))
+      localStorage.setItem(demoKey(DEMO_DEVOIRS_VERSION_KEY), String(DEMO_DEVOIRS_VERSION))
     } else {
       localStorage.setItem('mapo_devoirs', JSON.stringify(data))
       if (authStore.schoolId) {
@@ -220,7 +221,7 @@ export const useDevoirsStore = defineStore('devoirs', () => {
 
   function loadDemoData() {
     try {
-      const raw = localStorage.getItem(DEMO_DEVOIRS_KEY)
+      const raw = localStorage.getItem(demoKey(DEMO_DEVOIRS_KEY))
       return raw ? JSON.parse(raw) : null
     } catch { return null }
   }
@@ -230,7 +231,7 @@ export const useDevoirsStore = defineStore('devoirs', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVer = localStorage.getItem(DEMO_DEVOIRS_VERSION_KEY)
+      const savedVer = localStorage.getItem(demoKey(DEMO_DEVOIRS_VERSION_KEY))
       if (savedVer === String(DEMO_DEVOIRS_VERSION)) {
         const saved = loadDemoData()
         if (saved) {

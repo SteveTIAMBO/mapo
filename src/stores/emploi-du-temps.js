@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { useClassesStore } from './classes'
 import { usePersonnelStore } from './personnel'
 import { db } from '../firebase'
@@ -719,9 +720,9 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
   function loadData() {
     const authStore = useAuthStore()
     if (authStore.isDemo) {
-      const storedVersion = localStorage.getItem(DEMO_EDT_VERSION_KEY)
+      const storedVersion = localStorage.getItem(demoKey(DEMO_EDT_VERSION_KEY))
       if (storedVersion === String(DEMO_EDT_VERSION)) {
-        const stored = localStorage.getItem(DEMO_EDT_KEY)
+        const stored = localStorage.getItem(demoKey(DEMO_EDT_KEY))
         if (stored) {
           try {
             const data = JSON.parse(stored)
@@ -856,8 +857,8 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     const data = getEdtData()
 
     if (authStore.isDemo) {
-      localStorage.setItem(DEMO_EDT_KEY, JSON.stringify(data))
-      localStorage.setItem(DEMO_EDT_VERSION_KEY, String(DEMO_EDT_VERSION))
+      localStorage.setItem(demoKey(DEMO_EDT_KEY), JSON.stringify(data))
+      localStorage.setItem(demoKey(DEMO_EDT_VERSION_KEY), String(DEMO_EDT_VERSION))
     } else {
       // Mode école : cache localStorage par école + écriture Firestore async
       if (!authStore.schoolId) return

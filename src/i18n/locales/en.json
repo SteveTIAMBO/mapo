@@ -55,8 +55,12 @@
       "enseignant": "Teacher",
       "parent": "Parent",
       "eleve": "Student",
-      "complexe": "Complex"
-    }
+      "complexe": "Complex",
+      "etudiant": "Student"
+    },
+    "forgotPassword": "Forgot password?",
+    "sendLink": "Send link",
+    "backToSignIn": "← Back to sign in"
   },
   "header": {
     "menu": "Menu",
@@ -930,7 +934,12 @@
     "attendanceRate": "Attendance rate",
     "recentHistory": "Recent history",
     "noAttendance": "No attendance recorded.",
-    "attStatus": { "absent": "Absent", "retard": "Late", "excuse": "Excused", "present": "Present" },
+    "attStatus": {
+      "absent": "Absent",
+      "retard": "Late",
+      "excuse": "Excused",
+      "present": "Present"
+    },
     "myspace": "My space",
     "welcome": "Welcome, {name}",
     "accountNotLinked": "Account not linked",
@@ -986,7 +995,15 @@
       "back": "Back",
       "subjectFallback": "revision"
     },
-    "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday", "samedi": "Saturday", "dimanche": "Sunday" }
+    "days": {
+      "lundi": "Monday",
+      "mardi": "Tuesday",
+      "mercredi": "Wednesday",
+      "jeudi": "Thursday",
+      "vendredi": "Friday",
+      "samedi": "Saturday",
+      "dimanche": "Sunday"
+    }
   },
   "parent": {
     "noChildLinked": "No child linked to your account.",
@@ -1018,7 +1035,11 @@
     "modDevoirsSub": "Assignments, submissions, grades",
     "modMessages": "Messages",
     "modMessagesSub": "Exchange with the school",
-    "pay": { "paid": "Paid up", "partial": "Partial", "unpaid": "Unpaid" },
+    "pay": {
+      "paid": "Paid up",
+      "partial": "Partial",
+      "unpaid": "Unpaid"
+    },
     "notesTitle": "Grades & Report Cards",
     "notesSubtitleOne": "View your child's academic results",
     "notesSubtitleMany": "View your children's academic results",
@@ -1187,7 +1208,12 @@
       "statusPaid": "Paid up",
       "statusPartial": "Partial payment",
       "statusUnpaid": "Unpaid",
-      "methods": { "especes": "Cash", "mobile_money": "Mobile Money", "virement": "Bank transfer", "cheque": "Cheque" },
+      "methods": {
+        "especes": "Cash",
+        "mobile_money": "Mobile Money",
+        "virement": "Bank transfer",
+        "cheque": "Cheque"
+      },
       "methodMobileLabel": "Mobile Money / Card",
       "methodMobileSub": "Online, instant",
       "methodTransferLabel": "Bank transfer",
@@ -1443,7 +1469,14 @@
     "revokeAccess": "Revoke student access",
     "authorizeAccount": "Authorize creation of a student account",
     "accessInfo": "By enabling access, your child will be able to view their grades, timetable and schooling from their own account on a smartphone.",
-    "roles": { "admin": "Administrator", "directeur": "Director", "enseignant": "Teacher", "secretaire": "Secretary", "comptable": "Accountant", "parent": "Parent" }
+    "roles": {
+      "admin": "Administrator",
+      "directeur": "Director",
+      "enseignant": "Teacher",
+      "secretaire": "Secretary",
+      "comptable": "Accountant",
+      "parent": "Parent"
+    }
   },
   "rolesv": {
     "title": "Roles & Permissions",
@@ -1523,7 +1556,12 @@
     "thClass": "Class",
     "thAvg": "Average",
     "thDecision": "Decision",
-    "decisions": { "admis": "Promoted", "redoublant": "Repeater", "diplome": "Graduate", "transfere": "Transferred" },
+    "decisions": {
+      "admis": "Promoted",
+      "redoublant": "Repeater",
+      "diplome": "Graduate",
+      "transfere": "Transferred"
+    },
     "previous": "Previous",
     "settingsTitle": "{year} settings",
     "settingsDesc": "Review and adjust the school's information for the new school year. The current year's data is pre-filled.",
@@ -1567,7 +1605,11 @@
     "countOne": "{n} staff member",
     "countMany": "{n} staff members",
     "add": "Add",
-    "cat": { "enseignement": "Teaching", "administration": "Administration", "support": "Support" },
+    "cat": {
+      "enseignement": "Teaching",
+      "administration": "Administration",
+      "support": "Support"
+    },
     "men": "Men",
     "women": "Women",
     "temps": "Temporary",
@@ -2364,7 +2406,15 @@
     "previous": "Previous",
     "next": "Next",
     "generate": "Generate",
-    "days": { "lundi": "Monday", "mardi": "Tuesday", "mercredi": "Wednesday", "jeudi": "Thursday", "vendredi": "Friday", "samedi": "Saturday", "dimanche": "Sunday" },
+    "days": {
+      "lundi": "Monday",
+      "mardi": "Tuesday",
+      "mercredi": "Wednesday",
+      "jeudi": "Thursday",
+      "vendredi": "Friday",
+      "samedi": "Saturday",
+      "dimanche": "Sunday"
+    },
     "schoolDays": "School days",
     "hours": "Hours",
     "startTime": "Start time",
@@ -2405,7 +2455,15 @@
     "conflictsLeft": "Remaining conflicts",
     "reconfigure": "Reconfigure",
     "viewTimetable": "View the timetable",
-    "daysShort": { "lundi": "Mon", "mardi": "Tue", "mercredi": "Wed", "jeudi": "Thu", "vendredi": "Fri", "samedi": "Sat", "dimanche": "Sun" },
+    "daysShort": {
+      "lundi": "Mon",
+      "mardi": "Tue",
+      "mercredi": "Wed",
+      "jeudi": "Thu",
+      "vendredi": "Fri",
+      "samedi": "Sat",
+      "dimanche": "Sun"
+    },
     "myTimetable": "My timetable",
     "timetable": "Timetable",
     "teacherSub": "Your class schedule",
@@ -2715,7 +2773,17 @@
     "mySchools": "My schools",
     "openSchool": "Open school",
     "defaultLang": "Default demo language",
-    "types": { "francophone": "Francophone", "anglophone": "Anglophone", "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." },
-    "editions": { "primaire": "Primary", "secondaire": "Secondary", "superieur": "Higher ed." }
+    "types": {
+      "francophone": "Francophone",
+      "anglophone": "Anglophone",
+      "primaire": "Primary",
+      "secondaire": "Secondary",
+      "superieur": "Higher ed."
+    },
+    "editions": {
+      "primaire": "Primary",
+      "secondaire": "Secondary",
+      "superieur": "Higher ed."
+    }
   }
 }

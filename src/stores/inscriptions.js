@@ -10,6 +10,7 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { useElevesStore } from './eleves'
 import { useFacturationStore } from './facturation'
 
@@ -314,12 +315,12 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
 
   // ── Helpers for demo localStorage ──
   function saveDemoDossiers() {
-    try { localStorage.setItem(DEMO_KEY, JSON.stringify(dossiers.value)) } catch (e) { /* silent */ }
+    try { localStorage.setItem(demoKey(DEMO_KEY), JSON.stringify(dossiers.value)) } catch (e) { /* silent */ }
   }
 
   function loadDemoDossiers() {
     try {
-      const raw = localStorage.getItem(DEMO_KEY)
+      const raw = localStorage.getItem(demoKey(DEMO_KEY))
       return raw ? JSON.parse(raw) : null
     } catch (e) { return null }
   }
@@ -358,7 +359,7 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_VERSION_KEY)
+      const savedVersion = localStorage.getItem(demoKey(DEMO_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_VERSION)) ? loadDemoDossiers() : null
 
       if (saved) {
@@ -366,7 +367,7 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
       } else {
         const elevesStore = useElevesStore()
         dossiers.value = generateDemoDossiers(elevesStore)
-        localStorage.setItem(DEMO_VERSION_KEY, String(DEMO_VERSION))
+        localStorage.setItem(demoKey(DEMO_VERSION_KEY), String(DEMO_VERSION))
         saveDemoDossiers()
       }
       loading.value = false

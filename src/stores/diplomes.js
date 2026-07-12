@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 /**
  * Store « diplomes » — Émission de diplômes VÉRIFIABLES (le « moat » EDUFREM).
@@ -126,10 +127,10 @@ async function verifySignature(d) {
 
 export const useDiplomesStore = defineStore('diplomes', () => {
   const authStore = useAuthStore()
-  const diplomes = ref(loadJSON(KEY, []))
+  const diplomes = ref(loadJSON(demoKey(KEY), []))
 
   function persist() {
-    try { localStorage.setItem(KEY, JSON.stringify(diplomes.value)) } catch { /* quota : silencieux */ }
+    try { localStorage.setItem(demoKey(KEY), JSON.stringify(diplomes.value)) } catch { /* quota : silencieux */ }
   }
 
   const diplomesSorted = computed(() =>

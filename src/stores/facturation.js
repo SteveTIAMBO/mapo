@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { useClassesStore } from './classes'
 import { useElevesStore } from './eleves'
 import { usePersonnelStore } from './personnel'
@@ -308,7 +309,7 @@ export const useFacturationStore = defineStore('facturation', () => {
     }
 
     if (authStore.isDemo) {
-      localStorage.setItem(DEMO_KEY, JSON.stringify(data))
+      localStorage.setItem(demoKey(DEMO_KEY), JSON.stringify(data))
       return
     }
 
@@ -327,9 +328,9 @@ export const useFacturationStore = defineStore('facturation', () => {
     loading.value = true
     try {
       if (authStore.isDemo) {
-        const storedVersion = parseInt(localStorage.getItem(DEMO_VERSION_KEY) || '0')
+        const storedVersion = parseInt(localStorage.getItem(demoKey(DEMO_VERSION_KEY)) || '0')
         if (storedVersion >= DEMO_VERSION) {
-          const stored = localStorage.getItem(DEMO_KEY)
+          const stored = localStorage.getItem(demoKey(DEMO_KEY))
           if (stored) {
             const data = JSON.parse(stored)
             feeStructure.value = data.feeStructure || []
@@ -344,7 +345,7 @@ export const useFacturationStore = defineStore('facturation', () => {
         }
         // Generate demo data
         generateDemoData()
-        localStorage.setItem(DEMO_VERSION_KEY, DEMO_VERSION.toString())
+        localStorage.setItem(demoKey(DEMO_VERSION_KEY), DEMO_VERSION.toString())
         saveAll()
         loading.value = false
         return

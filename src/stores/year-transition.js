@@ -5,6 +5,7 @@ import { useClassesStore, LEVELS } from './classes'
 import { useElevesStore } from './eleves'
 import { useNotesStore } from './notes'
 import { usePersonnelStore } from './personnel'
+import { demoKey } from '../utils/demoScope'
 
 // Map each level to the next one
 const LEVEL_PROGRESSION = {
@@ -256,9 +257,9 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
       }
 
       // Store archive (multiple years can accumulate)
-      const archives = JSON.parse(localStorage.getItem('mapo_year_archives') || '[]')
+      const archives = JSON.parse(localStorage.getItem(demoKey('mapo_year_archives')) || '[]')
       archives.push(archive)
-      localStorage.setItem('mapo_year_archives', JSON.stringify(archives))
+      localStorage.setItem(demoKey('mapo_year_archives'), JSON.stringify(archives))
 
       // 2. Update school settings for new year
       await schoolStore.saveSettings(newYearSettings.value)

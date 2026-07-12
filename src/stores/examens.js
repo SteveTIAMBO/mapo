@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { demoKey } from '../utils/demoScope'
 
 /**
  * Store "examens" — examens nationaux et taux de réussite.
@@ -44,14 +45,14 @@ function hash01(str) {
 }
 
 export const useExamensStore = defineStore('examens', () => {
-  const exams = ref(loadJSON(EXAMS_KEY, []))
+  const exams = ref(loadJSON(demoKey(EXAMS_KEY), []))
   // candidatures : { [examId]: [{ eleveId, eleveName, numeroTable, statut, mention, note }] }
-  const candidatures = ref(loadJSON(CAND_KEY, {}))
+  const candidatures = ref(loadJSON(demoKey(CAND_KEY), {}))
 
   function persist() {
     try {
-      localStorage.setItem(EXAMS_KEY, JSON.stringify(exams.value))
-      localStorage.setItem(CAND_KEY, JSON.stringify(candidatures.value))
+      localStorage.setItem(demoKey(EXAMS_KEY), JSON.stringify(exams.value))
+      localStorage.setItem(demoKey(CAND_KEY), JSON.stringify(candidatures.value))
     } catch { /* silencieux */ }
   }
 

@@ -10,6 +10,7 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 export const STAFF_CATEGORIES = [
   { value: 'enseignement', label: 'Enseignement', color: '#1558B0' },
@@ -199,11 +200,11 @@ export const usePersonnelStore = defineStore('personnel', () => {
 
   // Helpers demo localStorage
   function saveDemoStaff() {
-    try { localStorage.setItem(DEMO_STAFF_KEY, JSON.stringify(staff.value)) } catch (e) { /* silent */ }
+    try { localStorage.setItem(demoKey(DEMO_STAFF_KEY), JSON.stringify(staff.value)) } catch (e) { /* silent */ }
   }
   function loadDemoStaff() {
     try {
-      const raw = localStorage.getItem(DEMO_STAFF_KEY)
+      const raw = localStorage.getItem(demoKey(DEMO_STAFF_KEY))
       return raw ? JSON.parse(raw) : []
     } catch (e) { return [] }
   }
@@ -213,7 +214,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_STAFF_VERSION_KEY)
+      const savedVersion = localStorage.getItem(demoKey(DEMO_STAFF_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_STAFF_VERSION)) ? loadDemoStaff() : []
       const baseData = saved.length > 0 ? saved : [...DEMO_STAFF_DATA]
       // Ensure salary field exists on all demo staff
@@ -222,7 +223,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
         salary: s.salary || DEMO_SALARIES[s.role] || 150000,
       }))
       if (saved.length === 0) {
-        localStorage.setItem(DEMO_STAFF_VERSION_KEY, String(DEMO_STAFF_VERSION))
+        localStorage.setItem(demoKey(DEMO_STAFF_VERSION_KEY), String(DEMO_STAFF_VERSION))
         saveDemoStaff()
       }
       loading.value = false
@@ -374,7 +375,7 @@ export const usePersonnelStore = defineStore('personnel', () => {
     } else {
       // Fallback: lire depuis localStorage
       try {
-        const raw = localStorage.getItem('mapo_demo_edt')
+        const raw = localStorage.getItem(demoKey('mapo_demo_edt'))
         if (raw) {
           const data = JSON.parse(raw)
           assignments = data.teacherAssignments || []

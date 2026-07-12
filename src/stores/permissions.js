@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 /**
  * Système RBAC (Role-Based Access Control) de MAPO
@@ -193,7 +194,7 @@ export const usePermissionsStore = defineStore('permissions', () => {
   const loadRoles = () => {
     if (authStore.isDemo) {
       try {
-        const stored = localStorage.getItem(DEMO_ROLES_KEY)
+        const stored = localStorage.getItem(demoKey(DEMO_ROLES_KEY))
         if (stored) {
           const parsed = JSON.parse(stored)
           // Fusionner avec les défauts pour ne pas perdre les nouveaux rôles
@@ -208,7 +209,7 @@ export const usePermissionsStore = defineStore('permissions', () => {
   const saveRoles = () => {
     if (authStore.isDemo) {
       try {
-        localStorage.setItem(DEMO_ROLES_KEY, JSON.stringify(roles.value))
+        localStorage.setItem(demoKey(DEMO_ROLES_KEY), JSON.stringify(roles.value))
       } catch (e) { /* silent */ }
       return
     }

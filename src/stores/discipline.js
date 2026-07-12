@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 // Types d'incidents
 export const INCIDENT_TYPES = [
@@ -78,7 +79,7 @@ export const useDisciplineStore = defineStore('discipline', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_DISCIPLINE_VERSION_KEY)
+      const savedVersion = localStorage.getItem(demoKey(DEMO_DISCIPLINE_VERSION_KEY))
       const saved = savedVersion === String(DEMO_DISCIPLINE_VERSION) ? loadDemo() : []
       if (saved.length > 0) {
         incidents.value = saved
@@ -182,14 +183,14 @@ export const useDisciplineStore = defineStore('discipline', () => {
   // ── Demo ──
   function saveDemo() {
     try {
-      localStorage.setItem(DEMO_DISCIPLINE_KEY, JSON.stringify(incidents.value))
-      localStorage.setItem(DEMO_DISCIPLINE_VERSION_KEY, String(DEMO_DISCIPLINE_VERSION))
+      localStorage.setItem(demoKey(DEMO_DISCIPLINE_KEY), JSON.stringify(incidents.value))
+      localStorage.setItem(demoKey(DEMO_DISCIPLINE_VERSION_KEY), String(DEMO_DISCIPLINE_VERSION))
     } catch {}
   }
 
   function loadDemo() {
     try {
-      const raw = localStorage.getItem(DEMO_DISCIPLINE_KEY)
+      const raw = localStorage.getItem(demoKey(DEMO_DISCIPLINE_KEY))
       return raw ? JSON.parse(raw) : []
     } catch { return [] }
   }

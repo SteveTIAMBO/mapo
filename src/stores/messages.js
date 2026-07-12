@@ -5,6 +5,7 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 // Types de messages
 export const MESSAGE_TYPES = {
@@ -303,11 +304,11 @@ export const useMessagesStore = defineStore('messages', () => {
 
   // === Helpers demo ===
   function saveDemoMessages() {
-    try { localStorage.setItem(DEMO_MESSAGES_KEY, JSON.stringify(messages.value)) } catch (e) { /* silent */ }
+    try { localStorage.setItem(demoKey(DEMO_MESSAGES_KEY), JSON.stringify(messages.value)) } catch (e) { /* silent */ }
   }
   function loadDemoMessagesFromStorage() {
     try {
-      const raw = localStorage.getItem(DEMO_MESSAGES_KEY)
+      const raw = localStorage.getItem(demoKey(DEMO_MESSAGES_KEY))
       return raw ? JSON.parse(raw) : null
     } catch (e) { return null }
   }
@@ -318,11 +319,11 @@ export const useMessagesStore = defineStore('messages', () => {
     loading.value = true
 
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(DEMO_MESSAGES_VERSION_KEY)
+      const savedVersion = localStorage.getItem(demoKey(DEMO_MESSAGES_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_MESSAGES_VERSION)) ? loadDemoMessagesFromStorage() : null
       messages.value = saved || generateDemoMessages()
       if (!saved) {
-        localStorage.setItem(DEMO_MESSAGES_VERSION_KEY, String(DEMO_MESSAGES_VERSION))
+        localStorage.setItem(demoKey(DEMO_MESSAGES_VERSION_KEY), String(DEMO_MESSAGES_VERSION))
         saveDemoMessages()
       }
       loading.value = false
