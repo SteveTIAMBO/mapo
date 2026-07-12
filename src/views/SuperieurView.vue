@@ -66,28 +66,41 @@
           <div v-else class="sup-logo">{{ (schoolIdentity.sigle || 'M')[0] }}</div>
           <div class="sup-brand-info">
             <div class="sup-brand-title">{{ schoolIdentity.nom || 'MAPO' }}</div>
-            <div class="sup-brand-sub">Année {{ schoolIdentity.anneeAcademique || store.ecole.anneeAcademique }}</div>
+            <div class="sup-brand-sub">Enseignement Supérieur</div>
           </div>
         </div>
-        <button class="sup-side-collapse" type="button" @click="toggleSidebar" title="Replier le menu">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
+      </div>
+
+      <div class="sup-year">
+        <select v-model="selectedYear" class="sup-year-select" aria-label="Année académique">
+          <option v-for="y in academicYears" :key="y" :value="y">Année {{ y }}</option>
+        </select>
       </div>
 
       <nav class="sup-nav">
         <template v-for="(group, gi) in tabsGroupes" :key="gi">
-          <div v-if="group.section" class="sup-nav-section">{{ group.section }}</div>
           <button
-            v-for="t in group.items"
-            :key="t.key"
-            class="sup-nav-item"
-            :class="{ active: activeTab === t.key }"
+            v-if="group.section"
+            class="sup-nav-section-header"
             type="button"
-            @click="choisirTab(t.key)"
+            @click="toggleSection(group.section)"
           >
-            <span class="sup-nav-icon" v-html="t.icon"></span>
-            <span class="sup-nav-label">{{ t.label }}</span>
+            <span>{{ group.section }}</span>
+            <svg class="sup-section-chevron" :class="{ open: isSectionOpen(group.section) }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
+          <div v-show="!group.section || isSectionOpen(group.section)" class="sup-nav-section-items">
+            <button
+              v-for="t in group.items"
+              :key="t.key"
+              class="sup-nav-item"
+              :class="{ active: activeTab === t.key }"
+              type="button"
+              @click="choisirTab(t.key)"
+            >
+              <span class="sup-nav-icon" v-html="t.icon"></span>
+              <span class="sup-nav-label">{{ t.label }}</span>
+            </button>
+          </div>
         </template>
       </nav>
 
@@ -305,6 +318,19 @@ const sidebarOpen = ref(false)
 // État replié desktop (persisté localement, séparé du drawer mobile).
 const SIDEBAR_HIDDEN_KEY = 'mapo_sup_sidebar_hidden'
 const sidebarHidden = ref(loadSidebarHidden())
+
+// ── Accordéons de la barre latérale (comme les éditions Secondaire / Primaire) ──
+const collapsedSections = ref({})
+function toggleSection(name) { collapsedSections.value = { ...collapsedSections.value, [name]: !collapsedSections.value[name] } }
+function isSectionOpen(name) { return !collapsedSections.value[name] }
+
+// ── Sélecteur d'année académique (lecture seule en démo, comme les autres) ──
+const academicYears = computed(() => {
+  const now = new Date()
+  const start = now.getMonth() + 1 >= 9 ? now.getFullYear() : now.getFullYear() - 1
+  return [0, 1, 2, 3].map((i) => `${start - i}-${start - i + 1}`)
+})
+const selectedYear = ref(academicYears.value[0])
 
 function loadSidebarHidden() {
   try { return localStorage.getItem(SIDEBAR_HIDDEN_KEY) === '1' }
@@ -1193,4 +1219,24 @@ watch(
   margin-top: 4px;
 }
 .sup-onboarding-skip:hover { color: var(--pr); }
+
+/* Sélecteur d'année + accordéons (alignés sur les éditions Secondaire/Primaire) */
+.sup-year { padding: 0 14px 10px; }
+.sup-year-select {
+  width: 100%; font-family: inherit; font-size: 12.5px; font-weight: 600;
+  color: var(--text, #23262E); background: var(--input-bg, rgba(20,32,64,0.05));
+  border: 1px solid var(--border, rgba(20,32,64,0.10)); border-radius: 9px;
+  padding: 7px 10px; cursor: pointer;
+}
+.sup-nav-section-header {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  background: none; border: none; cursor: pointer; font-family: inherit;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+  color: var(--muted, #9AA2B1); padding: 12px 16px 6px;
+}
+.sup-nav-section-header:hover { color: var(--pr); }
+.sup-section-chevron { transition: transform 0.18s ease; transform: rotate(0deg); opacity: 0.7; }
+.sup-section-chevron.open { transform: rotate(0deg); }
+.sup-section-chevron:not(.open) { transform: rotate(-90deg); }
+.sup-nav-section-items { display: flex; flex-direction: column; }
 </style>
