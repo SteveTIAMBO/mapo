@@ -214,6 +214,9 @@ import SupEcheanciers from './superieur/SupEcheanciers.vue'
 import SupGestionAcces from './superieur/SupGestionAcces.vue'
 import SupMobiliteEntrante from './superieur/SupMobiliteEntrante.vue'
 import SupParametres from './superieur/SupParametres.vue'
+import SupEspaceEtudiant from './superieur/SupEspaceEtudiant.vue'
+import SupEspaceEnseignant from './superieur/SupEspaceEnseignant.vue'
+import SupEspaceParent from './superieur/SupEspaceParent.vue'
 
 const router = useRouter()
 const editionStore = useEditionStore()
@@ -371,6 +374,9 @@ const panels = {
   gestion_acces: SupGestionAcces,
   mobilite_entrante: SupMobiliteEntrante,
   parametres: SupParametres,
+  espace_etudiant: SupEspaceEtudiant,
+  espace_enseignant: SupEspaceEnseignant,
+  espace_parent: SupEspaceParent,
 }
 
 /**
@@ -380,9 +386,27 @@ const panels = {
  */
 const ALL_TABS = [
   {
+    key: 'espace_etudiant',
+    label: 'Mon espace',
+    roles: ['etudiant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  },
+  {
+    key: 'espace_enseignant',
+    label: 'Mon espace',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  },
+  {
+    key: 'espace_parent',
+    label: 'Mon espace',
+    roles: ['parent'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  },
+  {
     key: 'dashboard',
     label: 'Tableau de bord',
-    roles: ['admin', 'relation_internationale', 'comptable', 'responsable_formation', 'etudiant'],
+    roles: ['admin', 'relation_internationale', 'comptable', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
   },
   {
@@ -400,13 +424,13 @@ const ALL_TABS = [
   {
     key: 'inscriptions',
     label: 'Inscriptions péda.',
-    roles: ['admin', 'relation_internationale', 'responsable_formation', 'etudiant'],
+    roles: ['admin', 'relation_internationale', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
   },
   {
     key: 'edt',
     label: 'Emploi du temps',
-    roles: ['admin', 'responsable_formation', 'etudiant'],
+    roles: ['admin', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
   },
   {
@@ -418,13 +442,13 @@ const ALL_TABS = [
   {
     key: 'notes',
     label: 'Notes & relevés',
-    roles: ['admin', 'responsable_formation', 'etudiant'],
+    roles: ['admin', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
   },
   {
     key: 'stages',
     label: 'Stages',
-    roles: ['admin', 'responsable_formation', 'etudiant'],
+    roles: ['admin', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 12v4M9 14h6"/></svg>',
   },
   {
