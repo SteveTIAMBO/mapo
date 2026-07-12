@@ -3,12 +3,8 @@
     <div class="sd-intro">
       <div>
         <h1 class="sd-h1">Tableau de bord</h1>
-        <p class="sd-sub">
-          <template v-if="isGroupe">Vue consolidée du groupe — {{ store.ecole.anneeAcademique }}</template>
-          <template v-else>Vue d'ensemble de l'établissement — année {{ store.ecole.anneeAcademique }}</template>
-        </p>
+        <p class="sd-sub">Vue d'ensemble de l'établissement — année {{ store.ecole.anneeAcademique }}</p>
       </div>
-      <span v-if="isGroupe" class="sd-group-badge">Direction du groupe · {{ s.parCampus.length }} campus</span>
     </div>
 
     <!-- Indicateurs clés (cartes cliquables) -->
@@ -80,23 +76,6 @@
       </section>
     </div>
 
-    <!-- Répartition par campus — réservée à la direction du groupe -->
-    <section class="sd-card sd-campus-card" v-if="isGroupe && s.parCampus && s.parCampus.length">
-      <h2 class="sd-h2">Effectifs par campus</h2>
-      <p class="sd-campus-sub">Le groupe pilote plusieurs campus, chacun avec sa direction et ses effectifs propres.</p>
-      <div class="sd-campus-grid">
-        <div v-for="c in s.parCampus" :key="c.id" class="sd-campus">
-          <div class="sd-campus-top">
-            <span class="sd-campus-nom">{{ c.ville }}</span>
-            <span v-if="c.siege" class="sd-campus-siege">Siège</span>
-          </div>
-          <div class="sd-campus-eff">{{ c.effectif }}</div>
-          <div class="sd-campus-cap">étudiants inscrits</div>
-          <div class="sd-campus-dir">{{ c.directeur }}</div>
-        </div>
-      </div>
-    </section>
-
     <div v-if="isDemoTenant" class="sd-demo-note">
       Données de démonstration — établissement fictif.
     </div>
@@ -108,7 +87,6 @@ import { computed, inject } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useFinanceStore } from '../../stores/finance'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
-import { useAuthStore } from '../../stores/auth'
 import {
   Users, GraduationCap, Award, TrendingUp, Wallet, Presentation,
   Sparkles, ArrowRight, ChevronRight, AlertTriangle, PiggyBank,
@@ -123,11 +101,6 @@ const s = computed(() => store.stats)
 
 const financeStore = useFinanceStore()
 const fin = computed(() => financeStore.stats || {})
-
-const auth = useAuthStore()
-// Vue « groupe » (directeur multi-campus) : seule la direction du groupe voit
-// la répartition par campus. Un directeur d'un seul établissement ne la voit pas.
-const isGroupe = computed(() => !!auth.userProfile?.estGroupe)
 
 // Navigation vers un onglet (fournie par SuperieurView).
 const goTab = inject('supGoTab', () => {})

@@ -364,6 +364,7 @@ function generateComptesEtudiants(etudiants, tarifs, bourses) {
       id: `cpt-${e.id}`,
       etudiantId: e.id,
       promotionId: e.promotionId,
+      campus: e.campus || null,
       anneeAcademique: tarif.anneeAcademique,
       modeleEcheancierKey: modeleKey,
       modeleEcheancierLabel: modele.label,
@@ -696,6 +697,37 @@ export const useFinanceStore = defineStore('finance', () => {
   const relances = RELANCES
   const allocations = ALLOC_BOURSES
 
+  // ── Périmètre par campus (aligné sur le store superieur) ──────────
+  // Directeur / fondateur ayant « ouvert » un campus → seulement ce campus.
+  // Vue groupe agrégée (campusScope null) → tous les campus.
+  const supStore = useSuperieurStore()
+  const comptesVisibles = computed(() => {
+    const c = supStore.campusScope
+    return c ? comptes.filter((x) => x.campus === c) : comptes
+  })
+  const echeancesVisibles = computed(() => {
+    const c = supStore.campusScope
+    if (!c) return echeances
+    const ids = new Set(comptesVisibles.value.map((x) => x.id))
+    return echeances.filter((e) => ids.has(e.compteId))
+  })
+  // Recouvrement agrégé par campus (pour le dashboard du groupe).
+  const recouvrementParCampus = computed(() => {
+    const map = {}
+    for (const c of comptes) {
+      const k = c.campus || 'autre'
+      if (!map[k]) map[k] = { totalDu: 0, totalPaye: 0 }
+      map[k].totalDu += c.totalDu
+      map[k].totalPaye += c.totalPaye
+    }
+    const out = {}
+    for (const k of Object.keys(map)) {
+      const m = map[k]
+      out[k] = { totalDu: m.totalDu, totalPaye: m.totalPaye, restant: Math.max(0, m.totalDu - m.totalPaye), taux: m.totalDu > 0 ? Math.round((m.totalPaye / m.totalDu) * 100) : 0 }
+    }
+    return out
+  })
+
   // Accès rapide
   function getTarif(id) { return tarifs.find((t) => t.id === id) || null }
   function getCompte(id) { return comptes.find((c) => c.id === id) || null }
@@ -713,6 +745,9 @@ export const useFinanceStore = defineStore('finance', () => {
 
   // ── Dashboard finance ────────────────────────────────────────────
   const stats = computed(() => {
+    // Scopé au campus courant (tout le groupe si vue agrégée).
+    const comptes = comptesVisibles.value
+    const echeances = echeancesVisibles.value
     const totalDu = comptes.reduce((s, c) => s + c.totalDu, 0)
     const totalPaye = comptes.reduce((s, c) => s + c.totalPaye, 0)
     const totalRestant = Math.max(0, totalDu - totalPaye)
@@ -788,7 +823,7 @@ export const useFinanceStore = defineStore('finance', () => {
     const q = f.search.trim().toLowerCase()
     const etudiantsSnap = loadEtudiantsSnapshot()
     const etuMap = Object.fromEntries(etudiantsSnap.map((e) => [e.id, e]))
-    return comptes
+    return comptesVisibles.value
       .map((c) => ({ compte: c, etudiant: etuMap[c.etudiantId] }))
       .filter(({ compte, etudiant }) => {
         if (!etudiant) return false
@@ -810,11 +845,13 @@ export const useFinanceStore = defineStore('finance', () => {
     const q = f.search.trim().toLowerCase()
     const etudiantsSnap = loadEtudiantsSnapshot()
     const etuMap = Object.fromEntries(etudiantsSnap.map((e) => [e.id, e]))
+    const scope = supStore.campusScope
     return [...paiements]
       .sort((a, b) => b.date.localeCompare(a.date))
       .map((p) => ({ paiement: p, etudiant: etuMap[p.etudiantId] }))
       .filter(({ paiement, etudiant }) => {
         if (!etudiant) return false
+        if (scope && etudiant.campus !== scope) return false
         if (f.methode && paiement.methode !== f.methode) return false
         if (f.dateDebut && paiement.date < f.dateDebut) return false
         if (f.dateFin && paiement.date > f.dateFin) return false
@@ -1134,11 +1171,12 @@ export const useFinanceStore = defineStore('finance', () => {
   })
 
   return {
-    // Données
-    tarifs, bourses, comptes, echeances, paiements, financements, relances, allocations,
+    // Données (comptes/échéances scopés au campus courant ; allComptes = brut)
+    tarifs, bourses, comptes: comptesVisibles, echeances: echeancesVisibles, allComptes: comptes,
+    paiements, financements, relances, allocations,
     grilles, grillesAvecCouverture,
     // Stats / computeds
-    stats, encaissementsParMois, caParProgramme,
+    stats, recouvrementParCampus, encaissementsParMois, caParProgramme,
     filteredComptes, comptesFilters, setCompteFilter, resetCompteFilters,
     filteredPaiements, paiementsFilters, setPaiementFilter, resetPaiementFilters,
     relancesAFaire,

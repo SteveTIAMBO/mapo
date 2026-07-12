@@ -105,6 +105,8 @@ export const useSuperieurAuthStore = defineStore('superieurAuth', () => {
   const isLoggedIn = computed(() => !!profile.value)
   const role = computed(() => profile.value?.role || null)
   const isAdmin = computed(() => role.value === 'admin')
+  // Fondateur / direction d'un groupe multi-campus (accès directeur sur tous les campus).
+  const isGroupe = computed(() => !!profile.value?.estGroupe)
 
   function loginAs(roleKey) {
     const r = SUP_ROLES[roleKey]
@@ -124,6 +126,7 @@ export const useSuperieurAuthStore = defineStore('superieurAuth', () => {
     isLoggedIn,
     role,
     isAdmin,
+    isGroupe,
     loginAs,
     logout,
   }

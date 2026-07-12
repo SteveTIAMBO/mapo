@@ -754,11 +754,17 @@ export const useSuperieurStore = defineStore('superieur', () => {
   // (ses étudiants et son personnel). La direction du GROUPE (estGroupe)
   // voit tous les campus (et la répartition par campus sur le dashboard).
   const authStore = useAuthStore()
+  // Campus en cours de consultation pour un fondateur de groupe (drill-in).
+  // null = vue groupe agrégée (tous les campus). Ignoré pour un directeur simple.
+  const activeCampus = ref(null)
   const campusScope = computed(() => {
     const p = authStore.userProfile
-    if (!p || p.estGroupe) return null
+    if (!p) return null
+    if (p.estGroupe) return activeCampus.value // null = agrégé ; sinon le campus « ouvert »
     return p.campus || null
   })
+  function enterCampus(id) { activeCampus.value = id || null }
+  function exitCampus() { activeCampus.value = null }
   const etudiantsVisibles = computed(() => {
     const c = campusScope.value
     return c ? ETUDIANTS.filter((e) => e.campus === c) : ETUDIANTS
@@ -906,15 +912,24 @@ export const useSuperieurStore = defineStore('superieur', () => {
       effectif: etudiants.filter((e) => e.programmeId === p.id).length,
     }))
 
-    // Répartition des étudiants par campus (le groupe est multi-campus)
-    const parCampus = CAMPUS.map((c) => ({
-      id: c.id,
-      nom: c.nom,
-      ville: c.ville,
-      siege: !!c.siege,
-      directeur: c.directeur,
-      effectif: etudiants.filter((e) => e.campus === c.id).length,
-    }))
+    // Répartition par campus — TOUJOURS sur tous les étudiants (vue groupe),
+    // indépendamment du périmètre courant.
+    const parCampus = CAMPUS.map((c) => {
+      const list = ETUDIANTS.filter((e) => e.campus === c.id)
+      const moyenne = list.length
+        ? Math.round((list.reduce((s, e) => s + e.moyenne, 0) / list.length) * 10) / 10
+        : 0
+      return {
+        id: c.id,
+        nom: c.nom,
+        ville: c.ville,
+        siege: !!c.siege,
+        directeur: c.directeur,
+        effectif: list.length,
+        moyenne,
+        enDifficulte: list.filter((e) => e.statut === 'en_difficulte').length,
+      }
+    })
 
     return {
       nbEtudiants,
@@ -1441,6 +1456,9 @@ export const useSuperieurStore = defineStore('superieur', () => {
     ecole,
     campusList: CAMPUS,
     campusScope,
+    activeCampus,
+    enterCampus,
+    exitCampus,
     programmes,
     promotions,
     intervenants: intervenantsVisibles,

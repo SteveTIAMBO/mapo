@@ -77,7 +77,10 @@
         </select>
       </div>
 
-      <nav class="sup-nav">
+      <div v-if="isGroupMode" class="sup-nav sup-nav-groupe" v-show="!sidebarHidden">
+        <div class="sup-groupe-hint">Vue consolidée du groupe.<br />Sélectionnez un campus pour accéder à sa gestion.</div>
+      </div>
+      <nav v-else class="sup-nav">
         <template v-for="(group, gi) in tabsGroupes" :key="gi">
           <button
             v-if="group.section"
@@ -244,7 +247,17 @@
       </div>
 
       <main class="sup-body">
-        <component :is="panels[activeTab]" />
+        <div v-if="isFounderInCampus" class="sup-campus-banner">
+          <span class="sup-campus-banner-txt">
+            Vous consultez le campus <strong>{{ activeCampusNom }}</strong> · accès directeur
+          </span>
+          <button type="button" class="sup-campus-back" @click="retourGroupe">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            Retour à la vue groupe
+          </button>
+        </div>
+        <SupGroupeDashboard v-if="isGroupMode" />
+        <component v-else :is="panels[activeTab]" />
       </main>
     </div>
   </div>
@@ -265,6 +278,7 @@ import { useConnectionStatus } from '../composables/useConnectionStatus'
 import { PanelLeftClose, PanelLeftOpen, Menu, Search, Settings } from 'lucide-vue-next'
 import SuperieurLogin from './superieur/SuperieurLogin.vue'
 import SupDashboard from './superieur/SupDashboard.vue'
+import SupGroupeDashboard from './superieur/SupGroupeDashboard.vue'
 import SupEtudiants from './superieur/SupEtudiants.vue'
 import SupFormation from './superieur/SupFormation.vue'
 import SupInscriptionsPedagogiques from './superieur/SupInscriptionsPedagogiques.vue'
@@ -668,6 +682,19 @@ function choisirTab(key) {
 }
 // Permet aux sous-vues (ex. le dashboard) de naviguer vers un onglet.
 provide('supGoTab', choisirTab)
+
+// ── Mode groupe (fondateur) vs mode campus (directeur / campus ouvert) ──
+// Fondateur sans campus ouvert → dashboard groupe agrégé uniquement.
+// Directeur, ou fondateur ayant « ouvert » un campus → shell complet scindé.
+const isGroupMode = computed(() => authSup.isGroupe && !store.activeCampus)
+const isFounderInCampus = computed(() => authSup.isGroupe && !!store.activeCampus)
+const activeCampusNom = computed(() => {
+  const c = store.campusList.find((x) => x.id === store.activeCampus)
+  return c ? c.ville : ''
+})
+function ouvrirCampus(id) { store.enterCampus(id); activeTab.value = 'dashboard' }
+function retourGroupe() { store.exitCampus() }
+provide('supEnterCampus', ouvrirCampus)
 
 function onLoggedIn() {
   // Si le rôle ne voit pas l'onglet courant, on retombe sur le premier visible
@@ -1299,6 +1326,12 @@ watch(
 }
 
 /* Body */
+.sup-nav-groupe { padding: 8px 12px; }
+.sup-groupe-hint { font-size: 12.5px; line-height: 1.5; color: var(--tx2, #5b6472); background: rgba(var(--pr-rgb), 0.06); border: 1px solid rgba(var(--pr-rgb), 0.14); border-radius: 12px; padding: 12px 14px; }
+.sup-campus-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; background: rgba(var(--pr-rgb), 0.08); border: 1px solid rgba(var(--pr-rgb), 0.2); border-radius: 12px; padding: 11px 16px; margin-bottom: 16px; }
+.sup-campus-banner-txt { font-size: 13.5px; color: var(--tx, #1A1D1F); }
+.sup-campus-back { display: inline-flex; align-items: center; gap: 6px; background: var(--pr); color: #fff; border: none; border-radius: 9px; font-family: inherit; font-weight: 700; font-size: 12.5px; padding: 8px 14px; cursor: pointer; }
+.sup-campus-back:hover { filter: brightness(1.06); }
 .sup-body {
   flex: 1;
   max-width: 1280px;
