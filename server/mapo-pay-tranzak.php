@@ -176,12 +176,18 @@ if ($action === 'check') {
   $d = $resp['data'] ?? [];
   $st = strtoupper($d['status'] ?? ($d['transactionStatus'] ?? ''));
   if ($st === 'SUCCESSFUL') {
+    // Commission Tranzak : selon le payload, le frais peut être au niveau racine,
+    // sous merchant, ou sous payer. On expose aussi le net réellement reçu.
+    $fee = $d['fee'] ?? ($d['merchant']['fee'] ?? ($d['payer']['fee'] ?? null));
+    $net = $d['merchant']['netAmountReceived'] ?? null;
     echo json_encode([
       'ok' => true, 'status' => 'ACCEPTED',
       'amount' => isset($d['amount']) ? (int) $d['amount'] : null,
       'currency' => $d['currencyCode'] ?? null,
       'method' => $d['paymentMethod'] ?? ($d['payer']['paymentMethod'] ?? null),
       'transaction_id_op' => $d['transactionId'] ?? null,
+      'fee' => $fee !== null ? (float) $fee : null,
+      'net' => $net !== null ? (float) $net : null,
     ]);
   } elseif (in_array($st, ['PENDING', 'PAYMENT_IN_PROGRESS', 'PAYER_REDIRECT_REQUIRED'], true)) {
     echo json_encode(['ok' => true, 'status' => 'PENDING']);
