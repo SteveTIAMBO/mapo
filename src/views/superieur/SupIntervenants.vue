@@ -86,7 +86,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="it in store.filteredIntervenants" :key="it.id" class="si-row">
+          <tr v-for="it in store.filteredIntervenants" :key="it.id" class="si-row is-clickable" @click="openDetail(it)">
             <td>
               <div class="si-name-wrap">
                 <div class="si-avatar">{{ initiales(it.prenom, it.nom) }}</div>
@@ -119,7 +119,7 @@
                 <span class="si-bar-label" :class="chargeClass(it)">{{ chargeLabel(it) }}</span>
               </div>
             </td>
-            <td class="si-actions">
+            <td class="si-actions" @click.stop>
               <button type="button" class="si-icon-btn" title="Modifier" @click="openEdit(it)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
@@ -187,14 +187,19 @@
         </div>
       </div>
     </transition>
+
+    <SupIntervenantDetail v-if="detailIntervenant" :intervenant="detailIntervenant" @close="detailIntervenant = null" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import SupIntervenantDetail from './SupIntervenantDetail.vue'
 
 const store = useSuperieurStore()
+const detailIntervenant = ref(null)
+function openDetail(it) { detailIntervenant.value = it }
 const s = computed(() => store.intervenantsStats)
 
 // ── CRUD ──
@@ -518,4 +523,6 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   .si-table { min-width: 760px; }
   .si-form-row { grid-template-columns: 1fr; }
 }
+
+.si-row.is-clickable { cursor: pointer; }
 </style>
