@@ -38,7 +38,7 @@
             </tr>
           </tbody>
         </table>
-        <p v-if="payMsg" class="spa-pay-msg">{{ payMsg }}</p>
+        <p class="spa-pay-hint">Paiement sécurisé par MTN MoMo / Orange Money.</p>
       </section>
 
       <div class="spa-side">
@@ -63,14 +63,58 @@
         </section>
       </div>
     </div>
+
+    <!-- Guichet Mobile Money (Tranzak : MTN MoMo / Orange Money) -->
+    <div v-if="showPay" class="spa-ov" @click.self="!payProcessing && closePay()">
+      <div class="spa-modal">
+        <div class="spa-modal-head">
+          <h3>Paiement mobile money</h3>
+          <button v-if="!payProcessing" class="spa-x" type="button" @click="closePay">✕</button>
+        </div>
+
+        <div v-if="paySuccess" class="spa-pay-done">
+          <div class="spa-check">✓</div>
+          <p class="spa-done-t">Paiement confirmé</p>
+          <small>{{ formatFcfa(payAmount) }} FCFA · réf {{ payTx }}</small>
+          <button class="spa-pay-btn spa-wide" type="button" @click="closePay">Fermer</button>
+        </div>
+
+        <template v-else-if="!payProcessing">
+          <div class="spa-pay-amount"><span>Montant à payer</span><strong>{{ formatFcfa(payAmount) }} FCFA</strong></div>
+          <div class="spa-op-grid">
+            <button v-for="op in OPERATORS" :key="op.key" type="button" class="spa-op" :class="{ on: payOperator === op.key }" @click="payOperator = op.key">
+              <span class="spa-op-dot" :style="{ background: op.color }"></span>{{ op.label }}
+            </button>
+          </div>
+          <label class="spa-lab">Numéro mobile money</label>
+          <input v-model="payPhone" type="tel" class="spa-input" placeholder="Ex : 6XX XXX XXX" />
+          <small class="spa-hint">Démo (bac à sable) : 237674000009 valide le paiement, 237674000000 le refuse.</small>
+          <p v-if="payErr" class="spa-err">{{ payErr }}</p>
+          <div class="spa-modal-actions">
+            <button class="spa-btn-ghost" type="button" @click="closePay">Annuler</button>
+            <button class="spa-pay-btn" type="button" @click="doPay">Payer {{ formatFcfa(payAmount) }} FCFA</button>
+          </div>
+        </template>
+
+        <div v-else class="spa-pay-wait">
+          <div class="spa-spin"></div>
+          <p class="spa-wait-t">Demande envoyée au {{ payPhone }}</p>
+          <small>Validez le paiement sur votre téléphone (code PIN mobile money)…</small>
+          <p v-if="payErr" class="spa-err" style="margin-top:12px;">{{ payErr }}</p>
+          <button class="spa-btn-ghost spa-wide" type="button" @click="closePay">Annuler</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import { useTranzakStore } from '../../stores/tranzak'
 
 const store = useSuperieurStore()
+const tranzak = useTranzakStore()
 const enfant = computed(() =>
   store.etudiants.find((e) => e.niveau === 'Licence' && e.moyenne >= 11) ||
   store.etudiants.find((e) => e.moyenne >= 11) ||
@@ -81,25 +125,88 @@ const releve = computed(() => (enfant ? store.releveEtudiant(enfant.id) : null))
 const initials = (enfant ? (enfant.nomComplet || '') : '').split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase()
 
 const TARIF = { BTS: 450000, Licence: 550000, Master: 750000 }
+const total = TARIF[enfant && enfant.niveau] || 550000
+
+// Échéancier réactif : le paiement d'une tranche met à jour « Reste à payer » en direct.
+const echeances = ref([
+  { date: '05 oct. 2025', montant: Math.round(total * 0.4), paye: true },
+  { date: '10 janv. 2026', montant: Math.round(total * 0.3), paye: true },
+  { date: '10 avr. 2026', montant: total - Math.round(total * 0.4) - Math.round(total * 0.3), paye: false },
+])
 const scolarite = computed(() => {
-  const total = TARIF[enfant && enfant.niveau] || 550000
-  const paye = Math.round(total * 0.66)
+  const paye = echeances.value.filter((t) => t.paye).reduce((s, t) => s + t.montant, 0)
   return { total, paye, reste: Math.max(0, total - paye) }
-}).value
+})
 
-const echeances = computed(() => {
-  const t = scolarite.total
-  return [
-    { date: '05 oct. 2025', montant: Math.round(t * 0.4), paye: true },
-    { date: '10 janv. 2026', montant: Math.round(t * 0.3), paye: scolarite.paye > t * 0.5 },
-    { date: '10 avr. 2026', montant: t - Math.round(t * 0.4) - Math.round(t * 0.3), paye: false },
-  ]
-}).value
+// ── Guichet Mobile Money (Tranzak) ────────────────────────────────────
+const OPERATORS = [
+  { key: 'orange', label: 'Orange Money', color: '#FF6600' },
+  { key: 'mtn', label: 'MTN MoMo', color: '#FFCB05' },
+]
+const showPay = ref(false)
+const payTranche = ref(-1)
+const payAmount = ref(0)
+const payPhone = ref('237674000009')   // démo sandbox : numéro « succès »
+const payOperator = ref('orange')
+const payProcessing = ref(false)
+const paySuccess = ref(false)
+const payErr = ref('')
+const payTx = ref('')
+let payTimer = null
+let payDeadline = 0
 
-const payMsg = ref('')
 function payer(i) {
-  payMsg.value = `Paiement de la tranche ${i + 1} : redirection vers le paiement mobile money / carte (démo). En production, l'encaissement passe par le module Paiements de MAPO.`
+  payTranche.value = i
+  payAmount.value = echeances.value[i].montant
+  payPhone.value = '237674000009'
+  payOperator.value = 'orange'
+  payProcessing.value = false
+  paySuccess.value = false
+  payErr.value = ''
+  payTx.value = ''
+  showPay.value = true
 }
+
+async function doPay() {
+  payErr.value = ''
+  const phone = tranzak.normalizePhone(payPhone.value)
+  if (!phone) { payErr.value = 'Numéro mobile money invalide.'; return }
+  payProcessing.value = true
+  const res = await tranzak.initPayment({
+    amount: payAmount.value,
+    currency: 'XAF',
+    description: `Scolarite ${enfant?.nomComplet || ''}`.trim().slice(0, 110),
+    mobileWalletNumber: phone,
+    metadata: enfant?.matricule || enfant?.id || '',
+    customerName: enfant?.nomComplet || 'Parent',
+  })
+  if (!res.ok) { payErr.value = res.error || 'Impossible de démarrer le paiement.'; payProcessing.value = false; return }
+  payTx.value = res.transaction_id
+  startPayPoll()
+}
+
+function startPayPoll() {
+  stopPayPoll()
+  payDeadline = Date.now() + 90 * 1000
+  payTimer = setInterval(runPayCheck, 3000)
+  runPayCheck()
+}
+function stopPayPoll() { if (payTimer) { clearInterval(payTimer); payTimer = null } }
+async function runPayCheck() {
+  if (!payTx.value) return
+  if (Date.now() > payDeadline) { stopPayPoll(); payErr.value = 'Toujours en attente de votre validation. Réessayez.'; payProcessing.value = false; return }
+  const r = await tranzak.checkPayment(payTx.value)
+  if (r.status === 'ACCEPTED') {
+    stopPayPoll()
+    if (payTranche.value >= 0 && echeances.value[payTranche.value]) echeances.value[payTranche.value].paye = true
+    payProcessing.value = false
+    paySuccess.value = true
+  } else if (r.status === 'REFUSED') {
+    stopPayPoll(); payErr.value = 'Paiement refusé ou annulé. Vous pouvez réessayer.'; payProcessing.value = false
+  }
+}
+function closePay() { stopPayPoll(); showPay.value = false; payProcessing.value = false }
+onUnmounted(() => stopPayPoll())
 
 function formatFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 </script>
@@ -144,5 +251,33 @@ function formatFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 .spa-miapo-h2 { color: #fff; margin-top: 12px; }
 .spa-miapo-txt { font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.92); }
 .spa-miapo-cta { display: inline-block; margin-top: 14px; background: #fff; color: #5B21B6; font-weight: 700; font-size: 13.5px; border-radius: 10px; padding: 9px 18px; text-decoration: none; }
+.spa-pay-hint { margin-top: 12px; font-size: 12.5px; color: var(--muted, #6b7280); }
+/* Guichet mobile money */
+.spa-ov { position: fixed; inset: 0; background: rgba(16,22,40,.45); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+.spa-modal { background: #fff; border-radius: 18px; width: 100%; max-width: 420px; padding: 22px 24px; box-shadow: 0 24px 60px rgba(16,22,40,.28); }
+.spa-modal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.spa-modal-head h3 { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 17px; color: var(--text, #1A1D1F); margin: 0; }
+.spa-x { background: none; border: none; font-size: 16px; color: var(--muted, #9AA2B1); cursor: pointer; padding: 4px 8px; border-radius: 8px; }
+.spa-pay-amount { display: flex; align-items: center; justify-content: space-between; background: var(--input-bg, rgba(20,32,64,.04)); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+.spa-pay-amount span { font-size: 12.5px; color: var(--muted, #6b7280); }
+.spa-pay-amount strong { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 18px; color: var(--text, #1A1D1F); }
+.spa-op-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.spa-op { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid var(--border, rgba(20,32,64,.12)); border-radius: 12px; padding: 11px 14px; font-family: inherit; font-weight: 600; font-size: 13.5px; color: var(--text, #23262E); cursor: pointer; }
+.spa-op.on { border-color: var(--pr); background: rgba(var(--pr-rgb), .06); }
+.spa-op-dot { width: 12px; height: 12px; border-radius: 50%; }
+.spa-lab { display: block; font-size: 12.5px; font-weight: 600; color: var(--muted, #6b7280); margin-bottom: 6px; }
+.spa-input { width: 100%; border: 1.5px solid var(--border, rgba(20,32,64,.12)); border-radius: 12px; padding: 11px 14px; font-family: inherit; font-size: 14px; color: var(--text, #1A1D1F); box-sizing: border-box; }
+.spa-input:focus { outline: none; border-color: var(--pr); }
+.spa-hint { display: block; margin-top: 7px; font-size: 11.5px; color: var(--muted, #9AA2B1); }
+.spa-err { margin: 12px 0 0; font-size: 12.5px; color: #DC2626; font-weight: 600; }
+.spa-modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+.spa-btn-ghost { background: none; border: 1.5px solid var(--border, rgba(20,32,64,.12)); border-radius: 10px; font-family: inherit; font-weight: 600; font-size: 13.5px; color: var(--text, #23262E); padding: 9px 16px; cursor: pointer; }
+.spa-wide { width: 100%; margin-top: 18px; }
+.spa-pay-wait, .spa-pay-done { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 12px 0 4px; }
+.spa-wait-t, .spa-done-t { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; color: var(--text, #1A1D1F); margin: 14px 0 4px; }
+.spa-pay-wait small, .spa-pay-done small { font-size: 12.5px; color: var(--muted, #6b7280); }
+.spa-spin { width: 40px; height: 40px; border-radius: 50%; border: 3px solid rgba(var(--pr-rgb), .2); border-top-color: var(--pr); animation: spa-spin 0.8s linear infinite; }
+@keyframes spa-spin { to { transform: rotate(360deg); } }
+.spa-check { width: 52px; height: 52px; border-radius: 50%; background: rgba(14,124,90,.14); color: #0E7C5A; display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; }
 @media (max-width: 900px) { .spa-kpis { grid-template-columns: repeat(2, 1fr); } .spa-grid { grid-template-columns: 1fr; } }
 </style>

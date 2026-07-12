@@ -209,12 +209,12 @@
       </div>
     </div>
 
-    <!-- Guichet opérateurs SIMULÉ (démo, sans compte CinetPay) -->
-    <div v-if="showSimGuichet" class="modal-overlay" @click.self="!simProcessing && (showSimGuichet = false)">
+    <!-- Guichet Mobile Money (Tranzak : MTN MoMo / Orange Money) -->
+    <div v-if="showSimGuichet" class="modal-overlay" @click.self="!simProcessing && closeSimGuichet()">
       <div class="modal-card" style="max-width: 440px;">
         <div class="modal-header">
           <h3>{{ t('parent.fin.mobileMoneyTitle') }}</h3>
-          <button v-if="!simProcessing" class="btn btn-ghost btn-sm" @click="showSimGuichet = false"><X :size="18" /></button>
+          <button v-if="!simProcessing" class="btn btn-ghost btn-sm" @click="closeSimGuichet"><X :size="18" /></button>
         </div>
         <div class="modal-body">
           <div class="guichet-amount">
@@ -233,17 +233,18 @@
               </button>
             </div>
 
-            <div class="form-group" v-if="simOperator !== 'card'" style="margin-top: 16px;">
+            <div class="form-group" style="margin-top: 16px;">
               <label class="form-label">{{ t('parent.fin.mobileNumber') }}</label>
               <input v-model="simPhone" type="tel" class="input" :placeholder="t('parent.fin.phonePlaceholder')" />
+              <small class="method-sub" style="display:block; margin-top:6px;">{{ t('parent.fin.testNumberHint') }}</small>
             </div>
 
-            <p class="sim-note">{{ t('parent.fin.simNote') }}</p>
+            <p v-if="simError" class="pay-error">{{ simError }}</p>
 
             <div class="compose-actions">
-              <button class="btn btn-outline" @click="showSimGuichet = false">{{ t('parent.cancel') }}</button>
+              <button class="btn btn-outline" @click="closeSimGuichet">{{ t('parent.cancel') }}</button>
               <button class="btn btn-primary" @click="confirmSimPayment">
-                <Check :size="16" />
+                <Smartphone :size="16" />
                 <span>{{ t('parent.fin.pay', { amount: formatMoney(lastPaymentAmount) }) }}</span>
               </button>
             </div>
@@ -251,8 +252,12 @@
 
           <div v-else class="guichet-processing">
             <Loader2 :size="40" class="spin" />
-            <p>{{ t('parent.fin.processing') }}</p>
-            <small>{{ t('parent.fin.confirmOnPhone') }}</small>
+            <p>{{ t('parent.fin.pushSentTo', { phone: simPhone }) }}</p>
+            <small>{{ t('parent.fin.enterPinPrompt') }}</small>
+            <p v-if="simError" class="pay-error" style="margin-top:14px;">{{ simError }}</p>
+            <div class="compose-actions" style="justify-content:center; margin-top:18px;">
+              <button class="btn btn-outline" @click="closeSimGuichet">{{ t('parent.cancel') }}</button>
+            </div>
           </div>
         </div>
       </div>
@@ -337,6 +342,7 @@ import { useFacturationStore } from '../stores/facturation'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 import { useCinetpayStore } from '../stores/cinetpay'
+import { useTranzakStore } from '../stores/tranzak'
 import {
   CreditCard, Download, X, Check, Smartphone, Building2, Banknote, Eye,
   Loader2, ShieldCheck, ExternalLink
@@ -351,6 +357,7 @@ const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const cinetpay = useCinetpayStore()
+const tranzak = useTranzakStore()
 const { t, locale } = useI18n({ useScope: 'global' })
 
 const parentChildren = useParentChildrenStore()
@@ -383,17 +390,21 @@ const onlineError = ref('')
 let pollTimer = null
 let pollDeadline = 0
 
-// Guichet SIMULÉ (démo, sans compte CinetPay)
+// Guichet mobile money (Tranzak : MTN MoMo + Orange Money via push sur le téléphone)
 const showSimGuichet = ref(false)
 const simProcessing = ref(false)
 const simOperator = ref('orange')
 const simPhone = ref('')
+const simError = ref('')            // erreur affichée dans le guichet
+const pushSent = ref(false)         // true = charge créée, on attend la validation
+const simOpLabel = ref('')          // libellé opérateur retenu (pour le reçu)
+// Numéro de test « succès » du sandbox Tranzak (démo). 237674000000 = échec.
+const TRANZAK_TEST_NUMBER = '237674000009'
+let simPollTimer = null
+let simPollDeadline = 0
 const SIM_OPERATORS = computed(() => [
   { key: 'orange', label: 'Orange Money', color: '#FF6600' },
   { key: 'mtn', label: 'MTN MoMo', color: '#FFCB05' },
-  { key: 'moov', label: 'Moov Money', color: '#0066B3' },
-  { key: 'wave', label: 'Wave', color: '#1DC8FF' },
-  { key: 'card', label: t('parent.fin.cardOperator'), color: '#222b45' },
 ])
 
 const currency = computed(() => schoolStore.schoolSettings?.currency || 'XAF')
@@ -470,44 +481,21 @@ async function handlePayment() {
 // ── Paiement en ligne ─────────────────────────────────────────────────
 function roundTo5(n) { return currency.value === 'USD' ? n : n - (n % 5) }
 
-async function startOnlinePayment() {
-  if (paying.value || !selectedChild.value) return
+// Mobile Money → guichet Tranzak : le parent saisit son numéro, MAPO envoie un
+// « push » (MTN MoMo / Orange Money), puis on interroge le statut réel du serveur.
+function startOnlinePayment() {
+  if (!selectedChild.value) return
   payError.value = ''
-  paying.value = true
-  const child = selectedChild.value
-  const amount = roundTo5(Math.round(paymentAmount.value))
-  const res = await cinetpay.initPayment({
-    amount,
-    currency: currency.value,
-    description: `Scolarite ${child.firstName} ${child.lastName}`.slice(0, 110),
-    metadata: child.matricule || child.id,
-    channels: 'ALL',
-    customerName: child.parentLastName || child.lastName || 'Parent',
-    customerSurname: child.parentFirstName || child.firstName || '',
-    customerPhone: child.parentPhone || child.parentPhone2 || '',
-    customerEmail: child.parentEmail || '',
-  })
-  paying.value = false
-  if (!res.ok) { payError.value = res.error || t('parent.fin.payStartError'); return }
-
-  onlineTx.value = res.transaction_id
-  onlineMode.value = res.mode
-  lastPaymentAmount.value = res.amount || amount
+  lastPaymentAmount.value = roundTo5(Math.round(paymentAmount.value))
+  // Démo (sandbox Tranzak) : on pré-remplit le numéro de test « succès ».
+  simPhone.value = TRANZAK_TEST_NUMBER
+  simOperator.value = 'orange'
+  simProcessing.value = false
+  pushSent.value = false
+  simError.value = ''
+  onlineTx.value = ''
   showPaymentModal.value = false
-
-  if (res.mode === 'sim' || !res.payment_url) {
-    // Démo : guichet opérateurs simulé dans l'app.
-    simPhone.value = child.parentPhone || ''
-    simProcessing.value = false
-    simOperator.value = 'orange'
-    showSimGuichet.value = true
-  } else {
-    // Réel : ouvrir le guichet CinetPay puis vérifier l'état côté serveur.
-    try { window.open(res.payment_url, '_blank', 'noopener') } catch { /* popup bloquée */ }
-    onlineError.value = ''
-    showOnlineWait.value = true
-    startPolling()
-  }
+  showSimGuichet.value = true
 }
 
 function startPolling() {
@@ -546,15 +534,76 @@ function cancelOnlineWait() {
   onlineError.value = ''
 }
 
-// Démo : confirmation du guichet simulé.
+// Guichet Tranzak : envoie la charge mobile money puis interroge le statut réel.
 async function confirmSimPayment() {
   if (simProcessing.value) return
+  simError.value = ''
+  const phone = tranzak.normalizePhone(simPhone.value)
+  if (!phone) { simError.value = t('parent.fin.invalidNumber'); return }
+  const child = selectedChild.value
+  simOpLabel.value = SIM_OPERATORS.value.find((o) => o.key === simOperator.value)?.label || 'Mobile Money'
   simProcessing.value = true
-  await new Promise((r) => setTimeout(r, 1600)) // simulation traitement opérateur
-  const opLabel = SIM_OPERATORS.find((o) => o.key === simOperator.value)?.label || 'Mobile Money'
-  finalizeOnlinePayment(opLabel, null, lastPaymentAmount.value)
-  simProcessing.value = false
+  pushSent.value = false
+  const res = await tranzak.initPayment({
+    amount: lastPaymentAmount.value,
+    currency: currency.value,
+    description: `Scolarite ${child?.firstName || ''} ${child?.lastName || ''}`.trim().slice(0, 110),
+    mobileWalletNumber: phone,
+    metadata: child?.matricule || child?.id || '',
+    customerName: child?.parentLastName || child?.lastName || 'Parent',
+    customerSurname: child?.parentFirstName || child?.firstName || '',
+    customerEmail: child?.parentEmail || '',
+  })
+  if (!res.ok) {
+    simError.value = res.error || t('parent.fin.payStartError')
+    simProcessing.value = false
+    return
+  }
+  onlineTx.value = res.transaction_id
+  onlineMode.value = res.mode
+  pushSent.value = true          // demande envoyée → attente de la validation (PIN)
+  startSimPolling()
+}
+
+// Interroge le serveur (→ Tranzak) jusqu'à un statut final (ACCEPTED / REFUSED).
+function startSimPolling() {
+  stopSimPolling()
+  simPollDeadline = Date.now() + 90 * 1000 // 90 s pour valider le PIN
+  simPollTimer = setInterval(runSimCheck, 3000)
+  runSimCheck() // 1er contrôle immédiat (sandbox : souvent déjà validé)
+}
+function stopSimPolling() { if (simPollTimer) { clearInterval(simPollTimer); simPollTimer = null } }
+
+async function runSimCheck() {
+  if (!onlineTx.value) return
+  if (Date.now() > simPollDeadline) {
+    stopSimPolling()
+    simError.value = t('parent.fin.paymentTimeout')
+    simProcessing.value = false
+    pushSent.value = false
+    return
+  }
+  const r = await tranzak.checkPayment(onlineTx.value)
+  if (r.status === 'ACCEPTED') {
+    stopSimPolling()
+    simProcessing.value = false
+    pushSent.value = false
+    finalizeOnlinePayment(simOpLabel.value || 'Mobile Money', r.transaction_id_op || null, r.amount)
+  } else if (r.status === 'REFUSED') {
+    stopSimPolling()
+    simError.value = t('parent.fin.paymentRefused')
+    simProcessing.value = false
+    pushSent.value = false
+  }
+  // PENDING → on continue à interroger.
+}
+
+function closeSimGuichet() {
+  stopSimPolling()
   showSimGuichet.value = false
+  simProcessing.value = false
+  pushSent.value = false
+  simError.value = ''
 }
 
 async function finalizeOnlinePayment(method, operatorId, amount) {
@@ -652,7 +701,7 @@ onMounted(async () => {
   ])
 })
 
-onUnmounted(() => stopPolling())
+onUnmounted(() => { stopPolling(); stopSimPolling() })
 </script>
 
 <style scoped>
