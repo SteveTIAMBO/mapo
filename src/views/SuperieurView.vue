@@ -821,7 +821,8 @@ watch(
 }
 /* ── Repli en rail 68px (icônes visibles), identique au Secondaire ── */
 @media (min-width: 901px) {
-  .sup-sidebar.is-rail { width: 68px; }
+  /* flex-basis explicite : sans ça, flex-shrink:0 + basis auto garde la largeur 240px */
+  .sup-sidebar.is-rail { width: 68px; flex: 0 0 68px; min-width: 0; }
   .sup-sidebar.is-rail .sup-brand-info,
   .sup-sidebar.is-rail .sup-year,
   .sup-sidebar.is-rail .sup-nav-label,
