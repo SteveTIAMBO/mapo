@@ -748,7 +748,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
   }
 
   // Filtres écran Étudiants
-  const etudiantFilters = ref({ promotionId: '', statut: '', search: '' })
+  const etudiantFilters = ref({ promotionId: '', statut: '', campus: '', search: '' })
 
   // Promotion sélectionnée pour l'emploi du temps
   const selectedPromotionId = ref(PROMOTIONS[0].id)
@@ -760,6 +760,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     return etudiants.filter((e) => {
       if (f.promotionId && e.promotionId !== f.promotionId) return false
       if (f.statut && e.statut !== f.statut) return false
+      if (f.campus && e.campus !== f.campus) return false
       if (q && !`${e.nomComplet} ${e.matricule} ${e.programmeNom}`.toLowerCase().includes(q)) return false
       return true
     })
@@ -872,7 +873,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     if (key in etudiantFilters.value) etudiantFilters.value[key] = value
   }
   function resetEtudiantFilters() {
-    etudiantFilters.value = { promotionId: '', statut: '', search: '' }
+    etudiantFilters.value = { promotionId: '', statut: '', campus: '', search: '' }
   }
   function setPromotion(id) {
     if (promotions.some((p) => p.id === id)) selectedPromotionId.value = id
@@ -1373,6 +1374,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
 
   return {
     ecole,
+    campusList: CAMPUS,
     programmes,
     promotions,
     intervenants,

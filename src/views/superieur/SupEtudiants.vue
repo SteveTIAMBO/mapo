@@ -30,6 +30,13 @@
           <option value="en_difficulte">En difficulté</option>
         </select>
       </div>
+      <div class="se-filter">
+        <span class="se-filter-label">Campus</span>
+        <select :value="store.etudiantFilters.campus" @change="store.setEtudiantFilter('campus', $event.target.value)">
+          <option value="">Tous les campus</option>
+          <option v-for="c in store.campusList" :key="c.id" :value="c.id">{{ c.ville }}</option>
+        </select>
+      </div>
       <div class="se-filter se-filter-search">
         <span class="se-filter-label">Recherche</span>
         <input
@@ -66,7 +73,7 @@
             <td class="se-mat">{{ e.matricule }}</td>
             <td>
               <div class="se-name">{{ e.nomComplet }}</div>
-              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.boursier" class="se-bourse">Boursier</span></div>
+              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.campus" class="se-campus-tag">{{ campusVille(e.campus) }}</span><span v-if="e.boursier" class="se-bourse">Boursier</span></div>
             </td>
             <td>
               <span class="se-niveau" :class="`n-${e.niveau.toLowerCase()}`">{{ e.niveau }}</span>
@@ -197,8 +204,12 @@ const store = useSuperieurStore()
 
 const hasFilters = computed(() => {
   const f = store.etudiantFilters
-  return !!(f.promotionId || f.statut || f.search)
+  return !!(f.promotionId || f.statut || f.campus || f.search)
 })
+
+function campusVille(id) {
+  return (store.campusList.find((c) => c.id === id) || {}).ville || ''
+}
 
 function ectsPct(e) {
   return e.ectsRequis ? Math.round((e.ectsValides / e.ectsRequis) * 100) : 0
@@ -645,4 +656,6 @@ function askDelete(e) {
   .se-modal-actions { flex-direction: column; gap: 8px; }
   .se-modal-actions button { width: 100%; }
 }
+
+.se-campus-tag { display: inline-block; margin-left: 8px; font-size: 10.5px; font-weight: 600; color: var(--pr); background: rgba(var(--pr-rgb), 0.10); border-radius: 20px; padding: 1px 8px; }
 </style>
