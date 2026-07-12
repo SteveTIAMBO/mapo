@@ -69,7 +69,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in store.filteredEtudiants" :key="e.id" class="se-row">
+          <tr v-for="e in store.filteredEtudiants" :key="e.id" class="se-row is-clickable" @click="openDetail(e)">
             <td class="se-mat">{{ e.matricule }}</td>
             <td>
               <div class="se-name">{{ e.nomComplet }}</div>
@@ -98,7 +98,7 @@
                 {{ e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit' }}
               </span>
             </td>
-            <td class="se-actions">
+            <td class="se-actions" @click.stop>
               <button type="button" class="se-icon-btn" title="Modifier" @click="openEdit(e)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
@@ -193,14 +193,19 @@
         </div>
       </div>
     </transition>
+
+    <SupEtudiantDetail v-if="detailEtudiant" :etudiant="detailEtudiant" @close="detailEtudiant = null" />
   </div>
 </template>
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
 const store = useSuperieurStore()
+const detailEtudiant = ref(null)
+function openDetail(e) { detailEtudiant.value = e }
 
 const hasFilters = computed(() => {
   const f = store.etudiantFilters
@@ -658,4 +663,7 @@ function askDelete(e) {
 }
 
 .se-campus-tag { display: inline-block; margin-left: 8px; font-size: 10.5px; font-weight: 600; color: var(--pr); background: rgba(var(--pr-rgb), 0.10); border-radius: 20px; padding: 1px 8px; }
+
+.se-row.is-clickable { cursor: pointer; }
+.se-row.is-clickable:hover { background: var(--input-bg, rgba(20,32,64,0.03)); }
 </style>
