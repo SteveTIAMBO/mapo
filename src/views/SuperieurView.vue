@@ -58,7 +58,7 @@
     <!-- ── Sidebar gauche ── -->
     <aside
       class="sup-sidebar"
-      :class="{ 'is-open': sidebarOpen, 'is-hidden-desktop': sidebarHidden }"
+      :class="{ 'is-open': sidebarOpen, 'is-rail': sidebarHidden }"
     >
       <div class="sup-side-top">
         <div class="sup-brand">
@@ -95,6 +95,7 @@
               class="sup-nav-item"
               :class="{ active: activeTab === t.key }"
               type="button"
+              :title="sidebarHidden ? t.label : null"
               @click="choisirTab(t.key)"
             >
               <span class="sup-nav-icon" v-html="t.icon"></span>
@@ -393,7 +394,7 @@ const sidebarHidden = ref(loadSidebarHidden())
 // ── Accordéons de la barre latérale (comme les éditions Secondaire / Primaire) ──
 const collapsedSections = ref({})
 function toggleSection(name) { collapsedSections.value = { ...collapsedSections.value, [name]: !collapsedSections.value[name] } }
-function isSectionOpen(name) { return !collapsedSections.value[name] }
+function isSectionOpen(name) { return sidebarHidden.value ? true : !collapsedSections.value[name] }
 
 // ── Sélecteur d'année académique (lecture seule en démo, comme les autres) ──
 const academicYears = computed(() => {
@@ -818,9 +819,23 @@ watch(
   transition: width 0.2s ease, transform 0.25s ease;
   overflow: hidden;
 }
-.sup-sidebar.is-hidden-desktop {
-  width: 0;
-  border-right: none;
+/* ── Repli en rail 68px (icônes visibles), identique au Secondaire ── */
+@media (min-width: 901px) {
+  .sup-sidebar.is-rail { width: 68px; }
+  .sup-sidebar.is-rail .sup-brand-info,
+  .sup-sidebar.is-rail .sup-year,
+  .sup-sidebar.is-rail .sup-nav-label,
+  .sup-sidebar.is-rail .sup-nav-section-header,
+  .sup-sidebar.is-rail .sup-user-info,
+  .sup-sidebar.is-rail .sup-quit { display: none; }
+  .sup-sidebar.is-rail .sup-side-top { justify-content: center; padding: 18px 0 14px; }
+  .sup-sidebar.is-rail .sup-side-top .sup-brand { flex: 0 0 auto; }
+  .sup-sidebar.is-rail .sup-brand { justify-content: center; }
+  .sup-sidebar.is-rail .sup-nav { padding: 14px 8px; }
+  .sup-sidebar.is-rail .sup-nav-item { justify-content: center; padding: 10px 0; gap: 0; }
+  .sup-sidebar.is-rail .sup-side-bottom { align-items: center; padding: 12px 8px 16px; }
+  .sup-sidebar.is-rail .sup-user { justify-content: center; }
+  .sup-sidebar.is-rail .sup-logout { justify-content: center; font-size: 0; padding-left: 0; padding-right: 0; }
 }
 .sup-side-top {
   padding: 18px 16px 14px;
@@ -1306,7 +1321,7 @@ watch(
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
     transition: transform 0.22s ease;
   }
-  .sup-sidebar.is-hidden-desktop { width: 280px; max-width: 85vw; }
+  .sup-sidebar.is-rail { width: 280px; max-width: 85vw; }
   .sup-sidebar.is-open {
     transform: translateX(0);
   }
