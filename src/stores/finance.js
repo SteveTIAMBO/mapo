@@ -26,7 +26,7 @@ import * as supSync from '../utils/supSync'
 // ── Persistance ────────────────────────────────────────────────────
 // Doit être rebumpé quand le jeu de données superieur change (SUP_VERSION),
 // sinon la finance sert des comptes/tarifs mis en cache sur d'anciens étudiants.
-const FIN_VERSION = '3'
+const FIN_VERSION = '4'
 function loadEntity(key, fallback) {
   try {
     const raw = localStorage.getItem(`fin_${key}_v${FIN_VERSION}`)
