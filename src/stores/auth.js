@@ -60,6 +60,18 @@ const DEMO_ACCOUNTS_SUP = {
     displayName: 'Mariam Sow · Resp. Formation',
     role: 'responsable_formation', email: 'formation@demo.ebs',
   },
+  etudiant: {
+    uid: 'demo-sup-etudiant', firstName: 'Awa', lastName: 'Étudiante',
+    displayName: 'Awa · Étudiante', role: 'etudiant', email: 'etudiant@demo.ise',
+  },
+  enseignant: {
+    uid: 'demo-sup-enseignant', firstName: 'Paul', lastName: 'Enseignant',
+    displayName: 'Paul · Enseignant', role: 'enseignant', email: 'enseignant@demo.ise',
+  },
+  parent: {
+    uid: 'demo-sup-parent', firstName: 'Parent', lastName: 'Démo',
+    displayName: 'Parent · Suivi de mon étudiant', role: 'parent', email: 'parent@demo.ise',
+  },
 }
 
 const DEMO_PASSWORD = 'demo1234'
