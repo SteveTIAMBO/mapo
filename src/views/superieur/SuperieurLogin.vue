@@ -27,7 +27,7 @@
             class="sl-role-btn"
             :class="{ 'is-disabled': !r.enabled }"
             type="button"
-            @click="choisir(r.key)"
+            @click="choisir(r)"
           >
             <span class="sl-role-icon" v-html="r.icon"></span>
             <span class="sl-role-body">
@@ -153,7 +153,23 @@ const authStore = useAuthStore()
 const editionStore = useEditionStore()
 const schoolIdentity = useSchoolIdentityStore()
 
-const roles = Object.values(SUP_ROLES)
+// Profils de démonstration alignés sur les autres éditions (Directeur, Enseignant,
+// Étudiant, Parent, Complexe). Directeur et Complexe ouvrent l'espace complet
+// (rôle interne 'admin', le Complexe montrant la vue groupe multi-campus).
+// Enseignant / Étudiant / Parent : espaces dédiés en cours de construction.
+const DEMO_PROFILES = [
+  { key: 'directeur', label: 'Directeur', description: 'Accès complet à tous les modules', enabled: true, loginRole: 'admin',
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
+  { key: 'enseignant', label: 'Enseignant', description: 'Mes cours, mes étudiants, la saisie des notes', enabled: false, loginRole: 'enseignant',
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
+  { key: 'etudiant', label: 'Étudiant', description: 'Mon parcours, mes notes, mon emploi du temps', enabled: false, loginRole: 'etudiant',
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 4 3 6 3s6-1 6-3v-5"/></svg>' },
+  { key: 'parent', label: 'Parent', description: 'Le suivi de mon étudiant : notes, paiements, emploi du temps', enabled: false, loginRole: 'parent',
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
+  { key: 'complexe', label: 'Complexe', description: 'Vue consolidée du groupe multi-campus', enabled: true, loginRole: 'admin',
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>' },
+]
+const roles = DEMO_PROFILES
 const errorMessage = ref('')
 const busy = ref(false)
 const showPassword = ref(false)
@@ -202,9 +218,13 @@ async function lancerReset() {
 const emit = defineEmits(['logged-in'])
 
 // Démo (preview) : clic = login
-function choisir(roleKey) {
+function choisir(profile) {
   errorMessage.value = ''
-  const r = authSup.loginAs(roleKey)
+  if (!profile.enabled) {
+    errorMessage.value = `L'espace « ${profile.label} » arrive très bientôt.`
+    return
+  }
+  const r = authSup.loginAs(profile.loginRole)
   if (!r.success) {
     errorMessage.value = r.error
     return
