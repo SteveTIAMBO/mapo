@@ -78,34 +78,6 @@
           </div>
         </div>
       </section>
-
-      <!-- Progression académique -->
-      <section class="sd-card">
-        <h2 class="sd-h2">Progression académique</h2>
-        <div class="sd-progress">
-          <div class="sd-progress-ring">
-            <svg viewBox="0 0 120 120" width="132" height="132">
-              <circle cx="60" cy="60" r="50" fill="none" stroke="var(--input-bg)" stroke-width="13" />
-              <circle
-                cx="60" cy="60" r="50" fill="none" stroke="var(--pr)" stroke-width="13"
-                stroke-linecap="round"
-                :stroke-dasharray="circumference"
-                :stroke-dashoffset="circumference * (1 - s.tauxProgressionEcts / 100)"
-                transform="rotate(-90 60 60)"
-              />
-              <text x="60" y="56" text-anchor="middle" class="sd-ring-num">{{ s.tauxProgressionEcts }}%</text>
-              <text x="60" y="74" text-anchor="middle" class="sd-ring-cap">crédits acquis</text>
-            </svg>
-          </div>
-          <div class="sd-progress-text">
-            <p>
-              Les étudiants ont validé en moyenne <strong>{{ s.tauxProgressionEcts }}%</strong>
-              des crédits attendus à ce stade de l'année.
-            </p>
-            <p class="sd-progress-note">Le premier semestre est clôturé ; le second est en cours.</p>
-          </div>
-        </div>
-      </section>
     </div>
 
     <!-- Répartition par campus — réservée à la direction du groupe -->
@@ -125,36 +97,6 @@
       </div>
     </section>
 
-    <!-- Mobilité entrante (résumé) -->
-    <section class="sd-card sd-mob-card" v-if="mobStats">
-      <div class="sd-mob-head">
-        <h2 class="sd-h2">Mobilité entrante</h2>
-        <button type="button" class="sd-more" @click="goTab('mobilite_entrante')">Ouvrir le module</button>
-      </div>
-      <div class="sd-mob-grid">
-        <div class="sd-mob-kpi">
-          <div class="sd-mob-kpi-num">{{ mobStats.total }}</div>
-          <div class="sd-mob-kpi-lab">Dossiers ouverts</div>
-        </div>
-        <div class="sd-mob-kpi">
-          <div class="sd-mob-kpi-num">{{ mobStats.acceptes }}</div>
-          <div class="sd-mob-kpi-lab">Acceptés</div>
-        </div>
-        <div class="sd-mob-kpi">
-          <div class="sd-mob-kpi-num">{{ mobStats.visaObtenu }}</div>
-          <div class="sd-mob-kpi-lab">Visa obtenu</div>
-        </div>
-        <div class="sd-mob-kpi">
-          <div class="sd-mob-kpi-num">{{ mobStats.arrives }}</div>
-          <div class="sd-mob-kpi-lab">Arrivés</div>
-        </div>
-        <div class="sd-mob-kpi" :class="{ 'is-alert': mobStats.enRetard > 0 }">
-          <div class="sd-mob-kpi-num">{{ mobStats.enRetard }}</div>
-          <div class="sd-mob-kpi-lab">En retard (rentrée &lt; 30j)</div>
-        </div>
-      </div>
-    </section>
-
     <div v-if="isDemoTenant" class="sd-demo-note">
       Données de démonstration — établissement fictif.
     </div>
@@ -165,7 +107,6 @@
 import { computed, inject } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useFinanceStore } from '../../stores/finance'
-import { useMobiliteStore } from '../../stores/mobilite'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { useAuthStore } from '../../stores/auth'
 import {
@@ -259,11 +200,6 @@ const actions = [
   { label: 'Relancer les impayés', icon: BellRing, tab: 'finance_echeanciers' },
 ]
 
-// Stats mobilité (le store fait sa propre init au premier appel).
-const mobStore = useMobiliteStore()
-const mobStats = computed(() => mobStore.stats)
-
-const circumference = 2 * Math.PI * 50
 const maxEffectif = computed(() => Math.max(...s.value.parProgramme.map((p) => p.effectif), 1))
 function barWidth(effectif) {
   return Math.round((effectif / maxEffectif.value) * 100)
@@ -468,7 +404,7 @@ function barWidth(effectif) {
 /* Grid + cards */
 .sd-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 .sd-card {

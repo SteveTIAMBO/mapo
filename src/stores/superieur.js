@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed, reactive } from 'vue'
 import * as supSync from '../utils/supSync'
+import { useAuthStore } from './auth'
 
 // ── Persistance localStorage (cache local, source en mode démo) ──
 // Les entités mutables (étudiants, intervenants, UE, stages, inscriptions,
@@ -8,7 +9,7 @@ import * as supSync from '../utils/supSync'
 // générées (mode démo) ou laissées vides (mode école : remplies par le
 // pull Firestore via supSync). Chaque mutation est persistée + poussée
 // vers Firestore en mode école.
-export const SUP_VERSION = '2'
+export const SUP_VERSION = '3'
 function loadEntity(key, fallback) {
   try {
     const raw = localStorage.getItem(`sup_${key}_v${SUP_VERSION}`)
@@ -372,6 +373,7 @@ function generateIntervenants() {
       statut: vacataire ? 'vacataire' : 'permanent',
       specialite: pick(SPECIALITES),
       coutHoraire: vacataire ? randInt(8000, 20000) : null,
+      campus: pick(CAMPUS_POOL),
     })
   }
   return list
@@ -473,7 +475,7 @@ function generateEtudiants() {
 
   for (const promo of PROMOTIONS) {
     // Les promotions avancées sont un peu moins nombreuses (sélection, abandons)
-    const effectif = promo.niveau === 'Doctorat' ? randInt(6, 16) : promo.niveau === 'Master' ? randInt(28, 46) : randInt(38, 64)
+    const effectif = promo.niveau === 'Doctorat' ? randInt(3, 7) : promo.niveau === 'Master' ? randInt(11, 17) : randInt(16, 24)
     // ECTS attendus à ce stade de l'année (semestre 1 validé, semestre 2 en cours)
     const ectsAnnee = 60
     const ectsAcquisAnneesPrecedentes = (promo.rang - 1) * 60
@@ -747,6 +749,25 @@ export const useSuperieurStore = defineStore('superieur', () => {
   const ue = UE
   const etudiants = ETUDIANTS
 
+  // ── Périmètre par campus ──────────────────────────────────────────
+  // Un directeur d'un seul établissement/campus ne voit QUE son campus
+  // (ses étudiants et son personnel). La direction du GROUPE (estGroupe)
+  // voit tous les campus (et la répartition par campus sur le dashboard).
+  const authStore = useAuthStore()
+  const campusScope = computed(() => {
+    const p = authStore.userProfile
+    if (!p || p.estGroupe) return null
+    return p.campus || null
+  })
+  const etudiantsVisibles = computed(() => {
+    const c = campusScope.value
+    return c ? ETUDIANTS.filter((e) => e.campus === c) : ETUDIANTS
+  })
+  const intervenantsVisibles = computed(() => {
+    const c = campusScope.value
+    return c ? INTERVENANTS.filter((i) => i.campus === c) : INTERVENANTS
+  })
+
   // État de chargement : true le temps que le pull Firestore initial soit fait
   // (mode école seulement, sinon false dès le départ).
   const isLoading = ref(false)
@@ -798,7 +819,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
   const filteredEtudiants = computed(() => {
     const f = etudiantFilters.value
     const q = f.search.trim().toLowerCase()
-    return etudiants.filter((e) => {
+    return etudiantsVisibles.value.filter((e) => {
       if (f.promotionId && e.promotionId !== f.promotionId) return false
       if (f.statut && e.statut !== f.statut) return false
       if (f.campus && e.campus !== f.campus) return false
@@ -809,7 +830,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
 
   // ── Intervenants avec charge calculée ──
   const intervenantsAvecCharge = computed(() =>
-    intervenants
+    intervenantsVisibles.value
       .map((it) => {
         const ueAssignees = ue.filter((u) => u.intervenantId === it.id)
         return {
@@ -865,6 +886,9 @@ export const useSuperieurStore = defineStore('superieur', () => {
 
   // ── Statistiques pour le tableau de bord ──
   const stats = computed(() => {
+    // Scopé au campus du directeur (tout le groupe si estGroupe).
+    const etudiants = etudiantsVisibles.value
+    const intervenants = intervenantsVisibles.value
     const nbEtudiants = etudiants.length
     const ectsValides = etudiants.reduce((s, e) => s + e.ectsValides, 0)
     const ectsRequis = etudiants.reduce((s, e) => s + e.ectsRequis, 0)
@@ -1416,11 +1440,12 @@ export const useSuperieurStore = defineStore('superieur', () => {
   return {
     ecole,
     campusList: CAMPUS,
+    campusScope,
     programmes,
     promotions,
-    intervenants,
+    intervenants: intervenantsVisibles,
     ue,
-    etudiants,
+    etudiants: etudiantsVisibles,
     etudiantFilters,
     selectedPromotionId,
     filteredEtudiants,

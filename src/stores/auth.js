@@ -42,8 +42,8 @@ const DEMO_ACCOUNTS = {
 const DEMO_ACCOUNTS_SUP = {
   admin: {
     uid: 'demo-sup-admin', firstName: 'Steve', lastName: 'EDUFREM',
-    displayName: 'Steve · Admin Institut Supérieur EDUFREM',
-    role: 'admin', email: 'admin@demo.ebs',
+    displayName: 'Steve · Directeur Institut Supérieur EDUFREM',
+    role: 'admin', email: 'admin@demo.ebs', campus: 'douala',
   },
   // Directeur de GROUPE (multi-campus) : mêmes droits qu'admin, mais vue
   // consolidée sur les campus (effectifs par campus). Flag estGroupe.
@@ -263,6 +263,7 @@ export const useAuthStore = defineStore('auth', () => {
       displayName: account.displayName || `${account.lastName} ${account.firstName}`,
       role: account.role,
       estGroupe: account.estGroupe || false,
+      campus: account.campus || null,
       edition: 'superieur',
       schoolId: 'demo-sup',
       photoURL: null,
