@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, reactive } from 'vue'
-import { PROGRAMMES, PROMOTIONS, useSuperieurStore } from './superieur'
+import { PROGRAMMES, PROMOTIONS, useSuperieurStore, SUP_VERSION } from './superieur'
 import * as supSync from '../utils/supSync'
 
 /**
@@ -24,7 +24,9 @@ import * as supSync from '../utils/supSync'
  */
 
 // ── Persistance ────────────────────────────────────────────────────
-const FIN_VERSION = '1'
+// Doit être rebumpé quand le jeu de données superieur change (SUP_VERSION),
+// sinon la finance sert des comptes/tarifs mis en cache sur d'anciens étudiants.
+const FIN_VERSION = '2'
 function loadEntity(key, fallback) {
   try {
     const raw = localStorage.getItem(`fin_${key}_v${FIN_VERSION}`)
@@ -160,7 +162,7 @@ export const STATUTS_CONVENTION = {
 // re-synchronisé au prochain appel via syncFromSuperieur().
 function loadEtudiantsSnapshot() {
   try {
-    const raw = localStorage.getItem('sup_etudiants_v1')
+    const raw = localStorage.getItem(`sup_etudiants_v${SUP_VERSION}`)
     if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a }
   } catch (e) { /* silent */ }
   // Repli : lire le store superieur EN MÉMOIRE quand le snapshot localStorage est

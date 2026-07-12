@@ -8,7 +8,7 @@ import * as supSync from '../utils/supSync'
 // générées (mode démo) ou laissées vides (mode école : remplies par le
 // pull Firestore via supSync). Chaque mutation est persistée + poussée
 // vers Firestore en mode école.
-const SUP_VERSION = '1'
+export const SUP_VERSION = '2'
 function loadEntity(key, fallback) {
   try {
     const raw = localStorage.getItem(`sup_${key}_v${SUP_VERSION}`)
@@ -70,7 +70,7 @@ export const CAMPUS = [
   { id: 'maroua', nom: 'Campus de Maroua', ville: 'Maroua', directeur: 'M. Aboubakar BELLO' },
 ]
 // Répartition pondérée des effectifs (Douala, le siège, est le plus gros campus).
-const CAMPUS_POOL = ['douala', 'douala', 'douala', 'douala', 'douala', 'yaounde', 'yaounde', 'yaounde', 'maroua', 'maroua']
+const CAMPUS_POOL = ['douala', 'douala', 'douala', 'douala', 'yaounde', 'yaounde', 'yaounde', 'maroua', 'maroua', 'maroua']
 
 export const PROGRAMMES = [
   // ── Pôle Management & Commerce ──
@@ -215,28 +215,70 @@ const pick = (arr) => arr[Math.floor(rng() * arr.length)]
 const chance = (p) => rng() < p
 
 // ── Pools de données ──
-const PRENOMS = [
-  'Awa', 'Lucas', 'Fatou', 'Emma', 'Mamadou', 'Léa', 'Ibrahim', 'Chloé', 'Aïcha', 'Hugo',
-  'Mariam', 'Jules', 'Khadija', 'Sarah', 'Ousmane', 'Camille', 'Aminata', 'Nathan', 'Inès', 'Yacine',
-  'Clara', 'Moussa', 'Manon', 'Samuel', 'Nadia', 'Théo', 'Rokhaya', 'Adam', 'Maëlys', 'Cheikh',
-  'Bintou', 'Antoine', 'Salimata', 'Paul', 'Grâce', 'Bilal', 'Jeanne', 'Modou', 'Élodie', 'Karim',
+// ── Noms camerounais, par grande région ──
+// L'établissement est multi-campus (Douala siège, Yaoundé, Maroua). On couple les
+// prénoms/noms au campus : Maroua (Grand Nord) = noms peul/foulbé/musulmans en
+// majorité ; Douala/Yaoundé (Sud) = noms béti, bassa, bamiléké, sawa. Avec un
+// brassage réaliste (les étudiants circulent d'une région à l'autre).
+const NORD_PRENOMS = [
+  'Amadou', 'Aliou', 'Ousmane', 'Ibrahim', 'Bouba', 'Hamadou', 'Oumarou', 'Abdoulaye', 'Sadou', 'Moussa',
+  'Aboubakar', 'Yacouba', 'Souaïbou', 'Djibril', 'Adamou', 'Saïdou', 'Issa', 'Nassourou', 'Haman', 'Bello',
+  'Fadimatou', 'Aïssatou', 'Halimatou', 'Aminatou', 'Djamila', 'Habiba', 'Maïmouna', 'Ramatou', 'Zara', 'Hadidja',
+  'Roukayatou', 'Balkissou', 'Mairama', 'Hawaou', 'Rakiatou', 'Djaïli', 'Farida', 'Nafissatou', 'Oumou', 'Asta',
 ]
-const NOMS = [
-  'Diallo', 'Martin', 'Traoré', 'Bernard', 'Ndiaye', 'Dubois', 'Koné', 'Moreau', 'Sow', 'Laurent',
-  'Cissé', 'Lefebvre', 'Bâ', 'Garcia', 'Touré', 'Roux', 'Camara', 'Fontaine', 'Diop', 'Girard',
-  'Sylla', 'Mercier', 'Fall', 'Dupont', 'Keïta', 'Lambert', 'Sarr', 'Faye', 'Gomis', 'Rousseau',
+const NORD_NOMS = [
+  'Bello', 'Bakary', 'Aboubakar', 'Hamadou', 'Oumarou', 'Alhadji', 'Moustapha', 'Abba', 'Mahamat', 'Djibrilla',
+  'Saïdou', 'Sali', 'Yaya', 'Haman', 'Amadou', 'Modibbo', 'Bouba', 'Wakil', 'Nassourou', 'Ousmanou',
 ]
-const VILLES_ENS = ['Paris', 'Lyon', 'Dakar', 'Abidjan', 'Lille', 'Bordeaux', 'Casablanca', 'Yaoundé']
+const SUD_PRENOMS = [
+  'Jean', 'Paul', 'Emmanuel', 'Serge', 'Landry', 'Hervé', 'Rodrigue', 'Aimé', 'Christian', 'Franck',
+  'Cédric', 'Ghislain', 'Boris', 'Armand', 'Achille', 'Brice', 'William', 'Guy', 'Yannick', 'Éric',
+  'Marie', 'Chantal', 'Solange', 'Nadège', 'Estelle', 'Carine', 'Larissa', 'Sandrine', 'Rosine', 'Yolande',
+  'Gaëlle', 'Danielle', 'Flore', 'Mireille', 'Grâce', 'Laure', 'Michelle', 'Prudence', 'Vanessa', 'Sylvie',
+]
+const SUD_NOMS = [
+  'Nkoulou', 'Mballa', 'Owona', 'Atangana', 'Ngono', 'Onana', 'Essomba', 'Ewane', 'Njoya', 'Kamga',
+  'Fotso', 'Kenfack', 'Tagne', 'Nana', 'Djoumessi', 'Tchakounté', 'Ndongo', 'Manga', 'Etoundi', 'Abena',
+  'Zoa', 'Ondoua', 'Mvondo', 'Ateba', 'Mengue', 'Belinga', 'Amougou', 'Fongang', 'Njie', 'Eyenga',
+]
+// Pools fusionnés (usage générique : tuteurs de stage, etc.)
+const PRENOMS = [...NORD_PRENOMS, ...SUD_PRENOMS]
+const NOMS = [...NORD_NOMS, ...SUD_NOMS]
+
+// Villes d'origine par région
+const VILLES_NORD = ['Maroua', 'Garoua', 'Ngaoundéré', 'Kousséri', 'Mokolo', 'Guider', 'Kaélé', 'Yagoua', 'Meiganga']
+const VILLES_SUD = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Dschang', 'Ébolowa', 'Bertoua', 'Kribi', 'Édéa', 'Nkongsamba']
+const VILLES_ENS = [...VILLES_NORD, ...VILLES_SUD]
+
+// Région dominante de chaque campus + tirage couplé prénom/nom/ville
+const REGION_BY_CAMPUS = { maroua: 'nord', douala: 'sud', yaounde: 'sud' }
+function personneCampus(campusId) {
+  const region = REGION_BY_CAMPUS[campusId] || 'sud'
+  const useNord = region === 'nord' ? chance(0.8) : chance(0.15)
+  return { prenom: pick(useNord ? NORD_PRENOMS : SUD_PRENOMS), nom: pick(useNord ? NORD_NOMS : SUD_NOMS) }
+}
+function villeCampus(campusId) {
+  const region = REGION_BY_CAMPUS[campusId] || 'sud'
+  return region === 'nord' ? pick(VILLES_NORD) : pick(VILLES_SUD)
+}
+// Corps enseignant national : représentation du Nord (~35 %) sans exclusivité.
+function personneMix() {
+  const useNord = chance(0.35)
+  return { prenom: pick(useNord ? NORD_PRENOMS : SUD_PRENOMS), nom: pick(useNord ? NORD_NOMS : SUD_NOMS) }
+}
 
 // Entreprises d'accueil de stages / alternance — mix grands comptes France
 // et Afrique francophone (le profil des écoles de management cibles).
+// Entreprises d'accueil — tissu économique camerounais, avec de forts
+// employeurs du Grand Nord (SODECOTON, SEMRY, Maïscam, CICAM) cohérents avec Maroua.
 const ENTREPRISES = [
-  'Total Énergies', 'BNP Paribas', "L'Oréal", 'Capgemini', 'Orange',
-  'Société Générale', 'AXA', 'Decathlon', 'Danone', 'Veolia',
-  'MTN', 'Bolloré Logistics', 'NSIA Banque', 'Ecobank', 'Saham Assurance',
-  'Atos', 'Schneider Electric', 'Engie', 'Accor Hôtels', 'Air Liquide',
+  'SODECOTON', 'SEMRY', 'Maïscam', 'CICAM', 'Cimencam', 'Brasseries du Cameroun',
+  'Guinness Cameroon', 'Chococam', 'MTN Cameroon', 'Orange Cameroun',
+  'Camtel', 'Nexttel', 'Afriland First Bank', 'BICEC', 'Société Générale Cameroun',
+  'Ecobank Cameroun', 'UBA Cameroun', 'CCA Bank', 'Express Union', 'La Régionale',
+  'Total Energies Cameroun', 'Tradex', 'ENEO Cameroon', 'CAMWATER', 'Dovv Supermarché',
 ]
-const VILLES_STAGES = ['Paris', 'Lyon', 'Lille', 'Bordeaux', 'Marseille', 'Casablanca', 'Dakar', 'Abidjan', 'Yaoundé', 'Douala', 'Genève']
+const VILLES_STAGES = ['Maroua', 'Garoua', 'Ngaoundéré', 'Douala', 'Yaoundé', 'Bafoussam', 'Bamenda', 'Bertoua', 'Kribi', 'Ébolowa', 'Yagoua']
 
 // Catalogue d'UE par DOMAINE puis par type (l'université est multi-facultés :
 // Gestion, Droit, et une École doctorale en recherche).
@@ -320,8 +362,7 @@ const fullName = () => `${pick(PRENOMS)} ${pick(NOMS)}`
 function generateIntervenants() {
   const list = []
   for (let i = 0; i < 32; i++) {
-    const prenom = pick(PRENOMS)
-    const nom = pick(NOMS)
+    const { prenom, nom } = personneMix()
     const vacataire = chance(0.45)
     list.push({
       id: `int-${String(i + 1).padStart(3, '0')}`,
@@ -438,8 +479,8 @@ function generateEtudiants() {
     const ectsAcquisAnneesPrecedentes = (promo.rang - 1) * 60
 
     for (let i = 0; i < effectif; i++) {
-      const prenom = pick(PRENOMS)
-      const nom = pick(NOMS)
+      const campus = pick(CAMPUS_POOL)
+      const { prenom, nom } = personneCampus(campus)
       // Profil de réussite de l'étudiant
       const reussite = rand(0, 1)
       // ECTS validés : années précédentes + une partie du semestre 1 de l'année courante
@@ -461,8 +502,8 @@ function generateEtudiants() {
         niveau: promo.niveau,
         promotionId: promo.id,
         anneeNom: promo.anneeNom,
-        villeOrigine: pick(VILLES_ENS),
-        campus: pick(CAMPUS_POOL),
+        villeOrigine: villeCampus(campus),
+        campus,
         ectsValides,
         ectsRequis,
         moyenne: Math.round((8 + reussite * 9) * 10) / 10,
