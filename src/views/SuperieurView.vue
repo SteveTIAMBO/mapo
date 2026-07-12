@@ -251,7 +251,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 import { useSuperieurStore } from '../stores/superieur'
@@ -666,6 +666,8 @@ function choisirTab(key) {
   activeTab.value = key
   sidebarOpen.value = false
 }
+// Permet aux sous-vues (ex. le dashboard) de naviguer vers un onglet.
+provide('supGoTab', choisirTab)
 
 function onLoggedIn() {
   // Si le rôle ne voit pas l'onglet courant, on retombe sur le premier visible

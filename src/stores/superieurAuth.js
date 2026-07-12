@@ -74,6 +74,14 @@ export const SUP_ROLES = {
     enabled: true,
     icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
   },
+  // Directeur de groupe multi-campus : mêmes droits qu'admin + vue consolidée.
+  groupe: {
+    key: 'groupe',
+    label: 'Direction du groupe',
+    description: 'Vue consolidée sur les campus du groupe',
+    enabled: true,
+    icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>',
+  },
 }
 
 export const useSuperieurAuthStore = defineStore('superieurAuth', () => {

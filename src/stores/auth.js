@@ -45,6 +45,13 @@ const DEMO_ACCOUNTS_SUP = {
     displayName: 'Steve · Admin Institut Supérieur EDUFREM',
     role: 'admin', email: 'admin@demo.ebs',
   },
+  // Directeur de GROUPE (multi-campus) : mêmes droits qu'admin, mais vue
+  // consolidée sur les campus (effectifs par campus). Flag estGroupe.
+  groupe: {
+    uid: 'demo-sup-groupe', firstName: 'Rose', lastName: 'Ngo Bell',
+    displayName: 'Rose Ngo Bell · Direction du groupe',
+    role: 'admin', email: 'groupe@demo.ise', estGroupe: true,
+  },
   relation_internationale: {
     uid: 'demo-sup-ri', firstName: 'Awa', lastName: 'Diallo',
     displayName: 'Awa Diallo · Resp. Inscriptions',
@@ -255,6 +262,7 @@ export const useAuthStore = defineStore('auth', () => {
       lastName: account.lastName,
       displayName: account.displayName || `${account.lastName} ${account.firstName}`,
       role: account.role,
+      estGroupe: account.estGroupe || false,
       edition: 'superieur',
       schoolId: 'demo-sup',
       photoURL: null,

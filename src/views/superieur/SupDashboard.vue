@@ -1,50 +1,68 @@
 <template>
   <div class="sd">
     <div class="sd-intro">
-      <h1 class="sd-h1">Tableau de bord</h1>
-      <p class="sd-sub">Vue d'ensemble de l'établissement — année académique {{ store.ecole.anneeAcademique }}</p>
+      <div>
+        <h1 class="sd-h1">Tableau de bord</h1>
+        <p class="sd-sub">
+          <template v-if="isGroupe">Vue consolidée du groupe — {{ store.ecole.anneeAcademique }}</template>
+          <template v-else>Vue d'ensemble de l'établissement — année {{ store.ecole.anneeAcademique }}</template>
+        </p>
+      </div>
+      <span v-if="isGroupe" class="sd-group-badge">Direction du groupe · {{ s.parCampus.length }} campus</span>
     </div>
 
-    <!-- Indicateurs clés -->
+    <!-- Indicateurs clés (cartes cliquables) -->
     <div class="sd-kpis">
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Étudiants inscrits</div>
-        <div class="sd-kpi-value">{{ fmt(s.nbEtudiants) }}</div>
-        <div class="sd-kpi-foot">{{ s.boursiers }} boursiers</div>
-      </div>
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Programmes</div>
-        <div class="sd-kpi-value">{{ s.nbProgrammes }}</div>
-        <div class="sd-kpi-foot">{{ s.nbPromotions }} promotions</div>
-      </div>
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Intervenants</div>
-        <div class="sd-kpi-value">{{ s.nbIntervenants }}</div>
-        <div class="sd-kpi-foot">dont {{ s.vacataires }} vacataires</div>
-      </div>
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Unités d'enseignement</div>
-        <div class="sd-kpi-value">{{ s.nbUE }}</div>
-        <div class="sd-kpi-foot">{{ fmt(s.totalEctsCatalogue) }} crédits au catalogue</div>
-      </div>
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Volume horaire</div>
-        <div class="sd-kpi-value">{{ fmt(s.totalHeures) }}<span class="sd-kpi-unit">h</span></div>
-        <div class="sd-kpi-foot">enseignement annuel</div>
-      </div>
-      <div class="sd-kpi">
-        <div class="sd-kpi-label">Moyenne générale</div>
-        <div class="sd-kpi-value">{{ s.moyenneGenerale }}<span class="sd-kpi-unit">/20</span></div>
-        <div class="sd-kpi-foot" :class="s.enDifficulte > 0 ? 'is-warn' : 'is-ok'">
-          {{ s.enDifficulte }} étudiant(s) en difficulté
+      <button v-for="k in kpis" :key="k.label" type="button" class="sd-kpi" :class="'tone-' + k.tone" @click="goTab(k.tab)">
+        <div class="sd-kpi-ic"><component :is="k.icon" :size="20" /></div>
+        <div class="sd-kpi-body">
+          <div class="sd-kpi-value">{{ k.value }}<span v-if="k.unit" class="sd-kpi-unit">{{ k.unit }}</span></div>
+          <div class="sd-kpi-label">{{ k.label }}</div>
+          <div class="sd-kpi-foot" :class="k.footClass">{{ k.foot }}</div>
+        </div>
+        <ChevronRight class="sd-kpi-arrow" :size="17" />
+      </button>
+    </div>
+
+    <!-- Analyse MIAPO -->
+    <section class="sd-miapo">
+      <div class="sd-miapo-head">
+        <div class="sd-miapo-badge"><Sparkles :size="15" /> MIAPO</div>
+        <div>
+          <h2 class="sd-miapo-title">L'analyse de votre établissement</h2>
+          <p class="sd-miapo-sub">MIAPO lit vos données et met en avant ce qui mérite votre attention.</p>
         </div>
       </div>
-    </div>
+      <div class="sd-miapo-grid">
+        <button v-for="i in miapoInsights" :key="i.label" type="button" class="sd-miapo-item" :class="i.tone" @click="goTab(i.tab)">
+          <div class="sd-miapo-ic"><component :is="i.icon" :size="18" /></div>
+          <div class="sd-miapo-txt">
+            <div class="sd-miapo-val">{{ i.value }}</div>
+            <div class="sd-miapo-lab">{{ i.label }}</div>
+          </div>
+          <ArrowRight :size="15" class="sd-miapo-arrow" />
+        </button>
+      </div>
+    </section>
+
+    <!-- Actions rapides -->
+    <section class="sd-card sd-actions">
+      <h2 class="sd-h2">Actions rapides</h2>
+      <div class="sd-actions-grid">
+        <button v-for="a in actions" :key="a.label" type="button" class="sd-action" @click="goTab(a.tab)">
+          <div class="sd-action-ic"><component :is="a.icon" :size="19" /></div>
+          <span>{{ a.label }}</span>
+        </button>
+      </div>
+    </section>
 
     <div class="sd-grid">
       <!-- Répartition par programme -->
       <section class="sd-card">
-        <h2 class="sd-h2">Effectifs par programme</h2>
+        <div class="sd-card-h">
+          <h2 class="sd-h2">Effectifs par programme</h2>
+          <button type="button" class="sd-more" @click="goTab('etudiants')">Voir les étudiants</button>
+        </div>
         <div class="sd-prog-list">
           <div v-for="p in s.parProgramme" :key="p.id" class="sd-prog">
             <div class="sd-prog-head">
@@ -84,16 +102,14 @@
               Les étudiants ont validé en moyenne <strong>{{ s.tauxProgressionEcts }}%</strong>
               des crédits attendus à ce stade de l'année.
             </p>
-            <p class="sd-progress-note">
-              Le premier semestre est clôturé ; le second est en cours.
-            </p>
+            <p class="sd-progress-note">Le premier semestre est clôturé ; le second est en cours.</p>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- Répartition par campus (le groupe est multi-campus) -->
-    <section class="sd-card sd-campus-card" v-if="s.parCampus && s.parCampus.length">
+    <!-- Répartition par campus — réservée à la direction du groupe -->
+    <section class="sd-card sd-campus-card" v-if="isGroupe && s.parCampus && s.parCampus.length">
       <h2 class="sd-h2">Effectifs par campus</h2>
       <p class="sd-campus-sub">Le groupe pilote plusieurs campus, chacun avec sa direction et ses effectifs propres.</p>
       <div class="sd-campus-grid">
@@ -113,7 +129,7 @@
     <section class="sd-card sd-mob-card" v-if="mobStats">
       <div class="sd-mob-head">
         <h2 class="sd-h2">Mobilité entrante</h2>
-        <span class="sd-mob-link">Onglet « Mobilité entrante » (sidebar)</span>
+        <button type="button" class="sd-more" @click="goTab('mobilite_entrante')">Ouvrir le module</button>
       </div>
       <div class="sd-mob-grid">
         <div class="sd-mob-kpi">
@@ -137,11 +153,6 @@
           <div class="sd-mob-kpi-lab">En retard (rentrée &lt; 30j)</div>
         </div>
       </div>
-      <p class="sd-mob-foot">
-        Étudiants internationaux acceptés par l'école et suivis jusqu'à leur intégration.
-        Les statuts viennent de l'app étudiant MOBI ; les actions d'inscription, facturation et inscription
-        pédagogique sont gérées dans MAPO par les Relations internationales et le Comptable.
-      </p>
     </section>
 
     <div v-if="isDemoTenant" class="sd-demo-note">
@@ -151,10 +162,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, inject } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import { useFinanceStore } from '../../stores/finance'
 import { useMobiliteStore } from '../../stores/mobilite'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+import { useAuthStore } from '../../stores/auth'
+import {
+  Users, GraduationCap, Award, TrendingUp, Wallet, Presentation,
+  Sparkles, ArrowRight, ChevronRight, AlertTriangle, PiggyBank,
+  UserPlus, FileText, CreditCard, ClipboardList, CalendarDays, BellRing,
+} from 'lucide-vue-next'
 
 const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
@@ -162,24 +180,104 @@ const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
 const store = useSuperieurStore()
 const s = computed(() => store.stats)
 
-// Stats mobilité affichées en résumé sur le dashboard.
-// Le store mobilité fait sa propre init au premier appel.
+const financeStore = useFinanceStore()
+const fin = computed(() => financeStore.stats || {})
+
+const auth = useAuthStore()
+// Vue « groupe » (directeur multi-campus) : seule la direction du groupe voit
+// la répartition par campus. Un directeur d'un seul établissement ne la voit pas.
+const isGroupe = computed(() => !!auth.userProfile?.estGroupe)
+
+// Navigation vers un onglet (fournie par SuperieurView).
+const goTab = inject('supGoTab', () => {})
+
+const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
+const fmtFcfa = (n) => `${fmt(Math.round(n || 0))} FCFA`
+
+// ── Cartes KPI cliquables ─────────────────────────────────────────────
+const kpis = computed(() => [
+  {
+    label: 'Étudiants inscrits', tone: 'blue', icon: Users, tab: 'etudiants',
+    value: fmt(s.value.nbEtudiants), foot: `${s.value.boursiers} boursiers`,
+  },
+  {
+    label: 'Programmes', tone: 'violet', icon: GraduationCap, tab: 'formation',
+    value: s.value.nbProgrammes, foot: `${s.value.nbPromotions} promotions`,
+  },
+  {
+    label: 'Moyenne générale', tone: 'gold', icon: Award, tab: 'notes',
+    value: s.value.moyenneGenerale, unit: '/20',
+    foot: `${s.value.enDifficulte} en difficulté`,
+    footClass: s.value.enDifficulte > 0 ? 'is-warn' : 'is-ok',
+  },
+  {
+    label: 'Crédits acquis', tone: 'teal', icon: TrendingUp, tab: 'notes',
+    value: s.value.tauxProgressionEcts, unit: '%', foot: 'progression moyenne',
+  },
+  {
+    label: 'Recouvrement', tone: 'green', icon: Wallet, tab: 'finance_dash',
+    value: fin.value.tauxRecouvrement ?? 0, unit: '%',
+    foot: fin.value.montantEnRetard ? `${fmtFcfa(fin.value.montantEnRetard)} en retard` : 'à jour',
+    footClass: fin.value.montantEnRetard ? 'is-warn' : 'is-ok',
+  },
+  {
+    label: 'Intervenants', tone: 'indigo', icon: Presentation, tab: 'intervenants',
+    value: s.value.nbIntervenants, foot: `dont ${s.value.vacataires} vacataires`,
+  },
+])
+
+// ── Analyse MIAPO (insights calculés) ─────────────────────────────────
+const miapoInsights = computed(() => {
+  const out = []
+  const diff = s.value.enDifficulte
+  out.push({
+    label: diff > 0 ? 'étudiants à accompagner en priorité' : 'aucun étudiant en difficulté',
+    value: diff > 0 ? `${diff}` : 'OK',
+    icon: AlertTriangle, tab: 'etudiants', tone: diff > 0 ? 'warn' : 'ok',
+  })
+  const tr = fin.value.tauxRecouvrement ?? 0
+  out.push({
+    label: fin.value.nbEnRetard ? `comptes en retard · ${fmtFcfa(fin.value.montantEnRetard)}` : 'recouvrement à jour',
+    value: `${tr}%`,
+    icon: PiggyBank, tab: 'finance_echeanciers', tone: tr < 80 ? 'warn' : 'ok',
+  })
+  out.push({
+    label: 'crédits validés à ce stade de l\'année',
+    value: `${s.value.tauxProgressionEcts}%`,
+    icon: TrendingUp, tab: 'notes', tone: 'info',
+  })
+  return out
+})
+
+// ── Actions rapides ───────────────────────────────────────────────────
+const actions = [
+  { label: 'Inscrire un étudiant', icon: UserPlus, tab: 'etudiants' },
+  { label: 'Saisir des notes', icon: FileText, tab: 'notes' },
+  { label: 'Encaisser un paiement', icon: CreditCard, tab: 'finance_paiements' },
+  { label: 'Inscriptions pédagogiques', icon: ClipboardList, tab: 'inscriptions' },
+  { label: 'Emploi du temps', icon: CalendarDays, tab: 'edt' },
+  { label: 'Relancer les impayés', icon: BellRing, tab: 'finance_echeanciers' },
+]
+
+// Stats mobilité (le store fait sa propre init au premier appel).
 const mobStore = useMobiliteStore()
 const mobStats = computed(() => mobStore.stats)
 
 const circumference = 2 * Math.PI * 50
-
 const maxEffectif = computed(() => Math.max(...s.value.parProgramme.map((p) => p.effectif), 1))
 function barWidth(effectif) {
   return Math.round((effectif / maxEffectif.value) * 100)
 }
-
-const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 </script>
 
 <style scoped>
 .sd-intro {
   margin-bottom: 18px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 .sd-h1 {
   font-family: 'Poppins', sans-serif;
@@ -193,54 +291,181 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   color: var(--tx2);
   margin: 4px 0 0;
 }
+.sd-group-badge {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--pr);
+  background: rgba(var(--pr-rgb), 0.1);
+  border: 1px solid rgba(var(--pr-rgb), 0.2);
+  border-radius: 100px;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
 
-/* KPIs */
+/* KPIs cliquables */
 .sd-kpis {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 14px;
   margin-bottom: 18px;
 }
 .sd-kpi {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow);
-  padding: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
 }
-.sd-kpi-label {
-  font-family: 'Poppins', sans-serif;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--tx3);
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.sd-kpi:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(20, 32, 64, 0.1);
+  border-color: var(--accent);
 }
+.sd-kpi-ic {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+.sd-kpi-body { flex: 1; min-width: 0; }
 .sd-kpi-value {
   font-family: 'Poppins', sans-serif;
-  font-size: 27px;
+  font-size: 25px;
   font-weight: 800;
   color: var(--tx);
-  margin: 6px 0 4px;
   line-height: 1;
 }
-.sd-kpi-unit {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--tx2);
+.sd-kpi-unit { font-size: 15px; font-weight: 700; color: var(--tx2); margin-left: 2px; }
+.sd-kpi-label {
+  font-family: 'Poppins', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx);
+  margin: 5px 0 2px;
 }
-.sd-kpi-foot {
-  font-size: 12px;
-  color: var(--tx2);
+.sd-kpi-foot { font-size: 12px; color: var(--tx3); }
+.sd-kpi-foot.is-ok { color: var(--success); }
+.sd-kpi-foot.is-warn { color: var(--warn); }
+.sd-kpi-arrow { color: var(--tx3); flex-shrink: 0; opacity: 0; transition: opacity 0.12s ease; }
+.sd-kpi:hover .sd-kpi-arrow { opacity: 1; }
+
+/* Accent par carte */
+.tone-blue { --accent: #2563EB; --accent-bg: rgba(37, 99, 235, 0.1); }
+.tone-violet { --accent: #7C3AED; --accent-bg: rgba(124, 58, 237, 0.1); }
+.tone-gold { --accent: #B7791F; --accent-bg: rgba(183, 121, 31, 0.12); }
+.tone-teal { --accent: #0D9488; --accent-bg: rgba(13, 148, 136, 0.1); }
+.tone-green { --accent: #128A5B; --accent-bg: rgba(18, 138, 91, 0.1); }
+.tone-indigo { --accent: #4F46E5; --accent-bg: rgba(79, 70, 229, 0.1); }
+
+/* Analyse MIAPO */
+.sd-miapo {
+  background: linear-gradient(135deg, #4F46E5, #7C3AED);
+  border-radius: var(--card-radius);
+  padding: 20px 22px;
+  margin-bottom: 18px;
+  color: #fff;
 }
-.sd-kpi-foot.is-ok {
-  color: var(--success);
+.sd-miapo-head { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; }
+.sd-miapo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  padding: 5px 13px;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 12.5px;
+  flex-shrink: 0;
 }
-.sd-kpi-foot.is-warn {
-  color: var(--warn);
+.sd-miapo-title { font-family: 'Poppins', sans-serif; font-size: 17px; font-weight: 700; margin: 0; }
+.sd-miapo-sub { font-size: 13px; margin: 2px 0 0; color: rgba(255, 255, 255, 0.85); }
+.sd-miapo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.sd-miapo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 14px 16px;
+  cursor: pointer;
+  color: #fff;
+  font-family: inherit;
+  transition: background 0.12s ease;
+}
+.sd-miapo-item:hover { background: rgba(255, 255, 255, 0.2); }
+.sd-miapo-ic {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.16);
+}
+.sd-miapo-item.warn .sd-miapo-ic { background: rgba(255, 209, 102, 0.28); color: #FFE08A; }
+.sd-miapo-txt { flex: 1; min-width: 0; }
+.sd-miapo-val { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 800; line-height: 1; }
+.sd-miapo-lab { font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 3px; line-height: 1.35; }
+.sd-miapo-arrow { flex-shrink: 0; opacity: 0.7; }
+
+/* Actions rapides */
+.sd-actions { margin-bottom: 18px; }
+.sd-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+.sd-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  text-align: center;
+  background: var(--input-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 16px 10px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tx);
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.sd-action:hover { transform: translateY(-2px); border-color: var(--pr); background: rgba(var(--pr-rgb), 0.05); }
+.sd-action-ic {
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--pr);
+  background: rgba(var(--pr-rgb), 0.1);
 }
 
-/* Grid */
+/* Grid + cards */
 .sd-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -253,55 +478,18 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   box-shadow: var(--card-shadow);
   padding: 18px 20px;
 }
-/* Mobilité entrante (résumé) */
-.sd-mob-card { margin-top: 16px; }
-.sd-mob-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
-.sd-mob-link {
+.sd-card-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.sd-more {
+  border: none;
+  background: none;
+  cursor: pointer;
   font-family: 'Poppins', sans-serif;
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
-  color: var(--tx3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  color: var(--pr);
+  padding: 0;
 }
-.sd-mob-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-  margin-bottom: 14px;
-}
-.sd-mob-kpi {
-  background: rgba(var(--pr-rgb), 0.04);
-  border: 1px solid rgba(var(--pr-rgb), 0.12);
-  border-radius: 10px;
-  padding: 12px 14px;
-  text-align: center;
-}
-.sd-mob-kpi.is-alert {
-  background: rgba(178, 59, 59, 0.05);
-  border-color: rgba(178, 59, 59, 0.28);
-}
-.sd-mob-kpi-num {
-  font-family: 'Poppins', sans-serif;
-  font-size: 22px;
-  font-weight: 800;
-  color: var(--tx);
-}
-.sd-mob-kpi-lab {
-  font-size: 11px;
-  color: var(--tx2);
-  margin-top: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  font-weight: 600;
-}
-.sd-mob-foot {
-  font-size: 12.5px;
-  color: var(--tx2);
-  margin: 0;
-  line-height: 1.5;
-  font-style: italic;
-}
+.sd-more:hover { text-decoration: underline; }
 
 .sd-h2 {
   font-family: 'Poppins', sans-serif;
@@ -312,18 +500,8 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 }
 
 /* Programmes */
-.sd-prog-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.sd-prog-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 7px;
-}
+.sd-prog-list { display: flex; flex-direction: column; gap: 16px; }
+.sd-prog-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
 .sd-prog-niveau {
   display: inline-block;
   padding: 2px 8px;
@@ -333,118 +511,58 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   font-weight: 700;
   margin-right: 8px;
 }
-.sd-prog-niveau.n-licence {
-  background: var(--pr-light);
-  color: var(--pr);
-}
-.sd-prog-niveau.n-master {
-  background: var(--gold-light);
-  color: var(--gold);
-}
-.sd-prog-niveau.n-doctorat {
-  background: rgba(124, 58, 237, 0.12);
-  color: #6D28D9;
-}
-.sd-prog-nom {
-  font-family: 'Poppins', sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--tx);
-}
-.sd-prog-eff {
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--tx);
-}
-.sd-prog-track {
-  height: 8px;
-  background: var(--input-bg);
-  border-radius: 100px;
-  overflow: hidden;
-}
-.sd-prog-fill {
-  height: 100%;
-  background: var(--pr);
-  border-radius: 100px;
-}
+.sd-prog-niveau.n-licence { background: var(--pr-light); color: var(--pr); }
+.sd-prog-niveau.n-master { background: var(--gold-light); color: var(--gold); }
+.sd-prog-niveau.n-bts { background: rgba(13, 148, 136, 0.12); color: #0D9488; }
+.sd-prog-niveau.n-doctorat { background: rgba(124, 58, 237, 0.12); color: #6D28D9; }
+.sd-prog-nom { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: var(--tx); }
+.sd-prog-eff { font-family: 'Poppins', sans-serif; font-size: 16px; font-weight: 800; color: var(--tx); }
+.sd-prog-track { height: 8px; background: var(--input-bg); border-radius: 100px; overflow: hidden; }
+.sd-prog-fill { height: 100%; background: var(--pr); border-radius: 100px; }
 
 /* Progression */
-.sd-progress {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.sd-progress-ring {
-  flex-shrink: 0;
-}
-.sd-ring-num {
-  font-family: 'Poppins', sans-serif;
-  font-size: 21px;
-  font-weight: 800;
-  fill: var(--tx);
-}
-.sd-ring-cap {
-  font-family: 'Poppins', sans-serif;
-  font-size: 9px;
-  font-weight: 600;
-  fill: var(--tx3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.sd-progress-text p {
-  font-size: 14px;
-  color: var(--tx2);
-  line-height: 1.55;
-  margin: 0 0 8px;
-}
-.sd-progress-text strong {
-  color: var(--tx);
-  font-weight: 700;
-}
-.sd-progress-note {
-  font-size: 13px !important;
-  color: var(--tx3) !important;
-}
+.sd-progress { display: flex; align-items: center; gap: 20px; }
+.sd-progress-ring { flex-shrink: 0; }
+.sd-ring-num { font-family: 'Poppins', sans-serif; font-size: 21px; font-weight: 800; fill: var(--tx); }
+.sd-ring-cap { font-family: 'Poppins', sans-serif; font-size: 9px; font-weight: 600; fill: var(--tx3); text-transform: uppercase; letter-spacing: 0.04em; }
+.sd-progress-text p { font-size: 14px; color: var(--tx2); line-height: 1.55; margin: 0 0 8px; }
+.sd-progress-text strong { color: var(--tx); font-weight: 700; }
+.sd-progress-note { font-size: 13px !important; color: var(--tx3) !important; }
 
-.sd-demo-note {
-  margin-top: 18px;
-  text-align: center;
-  font-size: 12px;
-  color: var(--tx3);
-}
+/* Mobilité */
+.sd-mob-card { margin-top: 16px; }
+.sd-mob-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sd-mob-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.sd-mob-kpi { background: rgba(var(--pr-rgb), 0.04); border: 1px solid rgba(var(--pr-rgb), 0.12); border-radius: 10px; padding: 12px 14px; text-align: center; }
+.sd-mob-kpi.is-alert { background: rgba(178, 59, 59, 0.05); border-color: rgba(178, 59, 59, 0.28); }
+.sd-mob-kpi-num { font-family: 'Poppins', sans-serif; font-size: 22px; font-weight: 800; color: var(--tx); }
+.sd-mob-kpi-lab { font-size: 11px; color: var(--tx2); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+
+/* Campus */
+.sd-campus-card { margin-top: 18px; }
+.sd-campus-sub { font-size: 13.5px; color: var(--tx2); margin: 2px 0 16px; }
+.sd-campus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.sd-campus { border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 18px; background: var(--input-bg); }
+.sd-campus-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sd-campus-nom { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; color: var(--tx); }
+.sd-campus-siege { font-size: 10.5px; font-weight: 700; color: var(--pr); background: rgba(var(--pr-rgb), 0.12); border-radius: 20px; padding: 2px 9px; }
+.sd-campus-eff { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 30px; color: var(--tx); line-height: 1.05; }
+.sd-campus-cap { font-size: 12px; color: var(--tx2); }
+.sd-campus-dir { margin-top: 10px; font-size: 12.5px; color: var(--tx2); border-top: 1px solid var(--card-border); padding-top: 8px; }
+
+.sd-demo-note { margin-top: 18px; text-align: center; font-size: 12px; color: var(--tx3); }
 
 @media (max-width: 1100px) {
-  .sd-kpis {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .sd-grid {
-    grid-template-columns: 1fr;
-  }
+  .sd-kpis { grid-template-columns: repeat(2, 1fr); }
+  .sd-miapo-grid { grid-template-columns: 1fr; }
+  .sd-actions-grid { grid-template-columns: repeat(3, 1fr); }
+  .sd-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
-  .sd-kpis {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .sd-progress {
-    flex-direction: column;
-    text-align: center;
-  }
+  .sd-kpis { grid-template-columns: 1fr; }
+  .sd-actions-grid { grid-template-columns: repeat(2, 1fr); }
+  .sd-progress { flex-direction: column; text-align: center; }
   .sd-h1 { font-size: 22px; }
   .sd-card { padding: 14px 14px; }
-  .sd-section { padding: 12px 14px; }
 }
-
-/* Effectifs par campus (groupe multi-campus) */
-.sd-campus-card { margin-top: 18px; }
-.sd-campus-sub { font-size: 13.5px; color: var(--muted); margin: 2px 0 16px; }
-.sd-campus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
-.sd-campus { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--input-bg); }
-.sd-campus-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.sd-campus-nom { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; color: var(--text); }
-.sd-campus-siege { font-size: 10.5px; font-weight: 700; color: var(--pr); background: rgba(var(--pr-rgb), 0.12); border-radius: 20px; padding: 2px 9px; }
-.sd-campus-eff { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 30px; color: var(--text); line-height: 1.05; }
-.sd-campus-cap { font-size: 12px; color: var(--muted); }
-.sd-campus-dir { margin-top: 10px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 8px; }
-
 </style>
