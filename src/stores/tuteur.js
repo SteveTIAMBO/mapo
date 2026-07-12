@@ -4,6 +4,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { isMiapoTenant } from '../utils/tenantContext'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
+import { useUsageStore, COUT_ACTION } from './usage'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -95,6 +96,8 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
+    // Jauge d'usage IA (freemium) : on décompte le quiz. Non bloquant en démo.
+    try { useUsageStore().consume(COUT_ACTION.quiz) } catch (e) { /* jauge indisponible : silencieux */ }
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
     // Uniquement pour une révision générique (pas de thème imposé).
     if (!themes) {

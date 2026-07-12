@@ -66,12 +66,15 @@
         <a class="see-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">Ouvrir MIAPO+</a>
       </section>
     </div>
+
+    <UsageGauge />
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
+import UsageGauge from '../../components/UsageGauge.vue'
 
 const store = useSuperieurStore()
 // Étudiant de démonstration : un profil crédible (bon dossier) pour la démo.
