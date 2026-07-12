@@ -8,12 +8,12 @@
       <div class="sid-head">
         <div class="sid-avatar">{{ initials }}</div>
         <div class="sid-head-info">
-          <div class="sid-name">{{ it.nomComplet }}</div>
+          <div class="sid-name">{{ nomAffiche }}</div>
           <div class="sid-meta">
             <span class="sid-statut" :class="it.statut === 'vacataire' ? 'is-vac' : 'is-perm'">{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</span>
             <span class="sid-spec">{{ it.specialite }}</span>
-            <span v-if="it.statut === 'vacataire' && it.tarifHoraire" class="sid-dot">·</span>
-            <span v-if="it.statut === 'vacataire' && it.tarifHoraire">{{ formatFcfa(it.tarifHoraire) }} FCFA/h</span>
+            <span v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-dot">·</span>
+            <span v-if="it.statut === 'vacataire' && it.coutHoraire">{{ formatFcfa(it.coutHoraire) }} FCFA/h</span>
           </div>
           <div class="sid-tags">
             <span class="sid-tag" :class="chargeClass">{{ chargeLabel }}</span>
@@ -62,7 +62,7 @@
           <div class="sid-ident">
             <div class="sid-ident-row"><span>Statut</span><strong>{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
             <div class="sid-ident-row"><span>Spécialité</span><strong>{{ it.specialite }}</strong></div>
-            <div v-if="it.statut === 'vacataire' && it.tarifHoraire" class="sid-ident-row"><span>Tarif horaire</span><strong>{{ formatFcfa(it.tarifHoraire) }} FCFA/h</strong></div>
+            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>Tarif horaire</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
             <div class="sid-ident-row"><span>Nombre d'étudiants suivis</span><strong>{{ nbEtudiants }}</strong></div>
           </div>
         </div>
@@ -70,7 +70,7 @@
         <!-- Coordonnées -->
         <div v-show="tab === 'coord'" class="sid-pane">
           <div class="sid-ident">
-            <div class="sid-ident-row"><span>Nom complet</span><strong>{{ it.nomComplet }}</strong></div>
+            <div class="sid-ident-row"><span>Nom complet</span><strong>{{ nomAffiche }}</strong></div>
             <div class="sid-ident-row"><span>Identifiant</span><strong>{{ it.id }}</strong></div>
             <div class="sid-ident-row"><span>Email</span><strong>{{ email }}</strong></div>
             <div class="sid-ident-row"><span>Spécialité</span><strong>{{ it.specialite }}</strong></div>
@@ -106,7 +106,8 @@ const nbEtudiants = computed(() => {
   return store.etudiants.filter((e) => promoIds.has(e.promotionId)).length
 }).value
 
-const initials = (it.nomComplet || '')
+const nomAffiche = it.nomComplet || `${it.prenom || ''} ${it.nom || ''}`.trim()
+const initials = (nomAffiche || '')
   .split(' ')
   .map((w) => w[0])
   .slice(0, 2)
@@ -115,7 +116,7 @@ const initials = (it.nomComplet || '')
 
 const chargeLabel = it.volumeHoraire >= 320 ? 'Surcharge' : it.volumeHoraire >= 120 ? 'Charge normale' : 'Charge légère'
 const chargeClass = it.volumeHoraire >= 320 ? 'is-warn' : 'is-ok'
-const email = (it.nomComplet || 'intervenant').toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '') + '@ise.demo'
+const email = (nomAffiche || 'intervenant').toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '') + '@ise.demo'
 
 function formatFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 </script>
