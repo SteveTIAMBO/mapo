@@ -63,6 +63,15 @@ export const ECOLE = {
 }
 
 // ── Programmes et promotions ──
+// ── Campus (le groupe est multi-campus, comme Pigier : Douala siège, Yaoundé, Maroua) ──
+export const CAMPUS = [
+  { id: 'douala', nom: 'Campus de Douala', ville: 'Douala', siege: true, directeur: 'Dr Fabrice NDONKO' },
+  { id: 'yaounde', nom: 'Campus de Yaoundé', ville: 'Yaoundé', directeur: 'Mme Chantal OWONA' },
+  { id: 'maroua', nom: 'Campus de Maroua', ville: 'Maroua', directeur: 'M. Aboubakar BELLO' },
+]
+// Répartition pondérée des effectifs (Douala, le siège, est le plus gros campus).
+const CAMPUS_POOL = ['douala', 'douala', 'douala', 'douala', 'douala', 'yaounde', 'yaounde', 'yaounde', 'maroua', 'maroua']
+
 export const PROGRAMMES = [
   // ── Pôle Management & Commerce ──
   {
@@ -453,6 +462,7 @@ function generateEtudiants() {
         promotionId: promo.id,
         anneeNom: promo.anneeNom,
         villeOrigine: pick(VILLES_ENS),
+        campus: pick(CAMPUS_POOL),
         ectsValides,
         ectsRequis,
         moyenne: Math.round((8 + reussite * 9) * 10) / 10,
@@ -830,6 +840,16 @@ export const useSuperieurStore = defineStore('superieur', () => {
       effectif: etudiants.filter((e) => e.programmeId === p.id).length,
     }))
 
+    // Répartition des étudiants par campus (le groupe est multi-campus)
+    const parCampus = CAMPUS.map((c) => ({
+      id: c.id,
+      nom: c.nom,
+      ville: c.ville,
+      siege: !!c.siege,
+      directeur: c.directeur,
+      effectif: etudiants.filter((e) => e.campus === c.id).length,
+    }))
+
     return {
       nbEtudiants,
       nbProgrammes: programmes.length,
@@ -844,6 +864,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
       tauxProgressionEcts: ectsRequis ? Math.round((ectsValides / ectsRequis) * 100) : 0,
       moyenneGenerale: Math.round((etudiants.reduce((s, e) => s + e.moyenne, 0) / nbEtudiants) * 10) / 10,
       parProgramme,
+      parCampus,
     }
   })
 

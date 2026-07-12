@@ -92,6 +92,23 @@
       </section>
     </div>
 
+    <!-- Répartition par campus (le groupe est multi-campus) -->
+    <section class="sd-card sd-campus-card" v-if="s.parCampus && s.parCampus.length">
+      <h2 class="sd-h2">Effectifs par campus</h2>
+      <p class="sd-campus-sub">Le groupe pilote plusieurs campus, chacun avec sa direction et ses effectifs propres.</p>
+      <div class="sd-campus-grid">
+        <div v-for="c in s.parCampus" :key="c.id" class="sd-campus">
+          <div class="sd-campus-top">
+            <span class="sd-campus-nom">{{ c.ville }}</span>
+            <span v-if="c.siege" class="sd-campus-siege">Siège</span>
+          </div>
+          <div class="sd-campus-eff">{{ c.effectif }}</div>
+          <div class="sd-campus-cap">étudiants inscrits</div>
+          <div class="sd-campus-dir">{{ c.directeur }}</div>
+        </div>
+      </div>
+    </section>
+
     <!-- Mobilité entrante (résumé) -->
     <section class="sd-card sd-mob-card" v-if="mobStats">
       <div class="sd-mob-head">
@@ -417,4 +434,17 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
   .sd-card { padding: 14px 14px; }
   .sd-section { padding: 12px 14px; }
 }
+
+/* Effectifs par campus (groupe multi-campus) */
+.sd-campus-card { margin-top: 18px; }
+.sd-campus-sub { font-size: 13.5px; color: var(--muted); margin: 2px 0 16px; }
+.sd-campus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+.sd-campus { border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; background: var(--input-bg); }
+.sd-campus-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.sd-campus-nom { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 15px; color: var(--text); }
+.sd-campus-siege { font-size: 10.5px; font-weight: 700; color: var(--pr); background: rgba(var(--pr-rgb), 0.12); border-radius: 20px; padding: 2px 9px; }
+.sd-campus-eff { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 30px; color: var(--text); line-height: 1.05; }
+.sd-campus-cap { font-size: 12px; color: var(--muted); }
+.sd-campus-dir { margin-top: 10px; font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--border); padding-top: 8px; }
+
 </style>
