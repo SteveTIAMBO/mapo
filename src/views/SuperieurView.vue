@@ -128,15 +128,44 @@
     <!-- ── Zone principale ── -->
     <div class="sup-main">
       <header class="sup-topbar">
-        <button class="sup-burger" type="button" @click="toggleSidebar" :title="sidebarHidden ? 'Afficher le menu' : 'Replier le menu'">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-        </button>
-        <div class="sup-topbar-titre">
-          <span class="sup-topbar-edition">Espace Enseignement Supérieur</span>
-          <span class="sup-topbar-sep">·</span>
-          <span class="sup-topbar-page">{{ activeTabLabel }}</span>
+        <div class="sup-hdr-left">
+          <button
+            class="sup-collapse-toggle"
+            type="button"
+            @click="toggleSidebar"
+            :title="isMobile ? 'Menu' : (sidebarHidden ? 'Afficher le menu' : 'Replier le menu')"
+          >
+            <Menu v-if="isMobile" :size="22" />
+            <PanelLeftClose v-else-if="!sidebarHidden" :size="18" />
+            <PanelLeftOpen v-else :size="18" />
+          </button>
+          <p class="sup-hdr-greeting">{{ greeting }}, {{ userFirstName }}</p>
         </div>
+
         <div class="sup-topbar-right">
+          <!-- Nom de l'établissement -->
+          <button v-if="schoolIdentity.nom" class="sup-hdr-school" type="button" @click="choisirTab('parametres')" title="Paramètres de l'établissement">
+            <img v-if="schoolIdentity.logoUrl" :src="schoolIdentity.logoUrl" :alt="schoolIdentity.sigle" class="sup-hdr-school-logo" />
+            <span class="sup-hdr-school-name">{{ schoolIdentity.nom }}</span>
+          </button>
+
+          <!-- Statut de connexion -->
+          <div class="sup-conn" :class="connClass" :title="connTitle">
+            <span class="sup-conn-dot"></span>
+            <span v-if="connText" class="sup-conn-text">{{ connText }}</span>
+          </div>
+
+          <!-- Sélecteur de langue -->
+          <div class="sup-hdr-lang">
+            <button type="button" :class="{ on: locale === 'fr' }" @click="setLang('fr')">FR</button>
+            <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
+          </div>
+
+          <!-- Recherche (Ctrl+K) -->
+          <button class="sup-hdr-icon sup-hdr-search" type="button" title="Rechercher" @click="openSupSearch">
+            <Search :size="20" />
+            <span class="sup-hdr-search-hint">Ctrl+K</span>
+          </button>
           <!-- Cloche notifications (visible pour admin, RI, comptable) -->
           <div v-if="canSeeNotifications" class="sup-notif-wrap" v-click-outside="closeNotifMenu">
             <button
@@ -174,9 +203,44 @@
               </ul>
             </div>
           </div>
-          <span v-if="isDemoTenant" class="sup-demo-badge">Démonstration</span>
+          <!-- Avatar utilisateur -->
+          <button class="sup-hdr-avatar" type="button" @click="choisirTab('parametres')" :title="userDisplayName || 'Profil'">
+            <img v-if="userPhotoURL" :src="userPhotoURL" :alt="userDisplayName" class="sup-hdr-avatar-img" />
+            <span v-else>{{ initiales(userDisplayName) }}</span>
+          </button>
+
+          <!-- Réglages -->
+          <button v-if="canSeeParametres" class="sup-hdr-icon" type="button" title="Paramètres" @click="choisirTab('parametres')">
+            <Settings :size="20" />
+          </button>
         </div>
       </header>
+
+      <!-- Recherche supérieur (Ctrl+K) : étudiants + intervenants -->
+      <div v-if="supSearchOpen" class="sup-search-overlay" @click.self="supSearchOpen = false">
+        <div class="sup-search-box">
+          <div class="sup-search-field">
+            <Search :size="18" />
+            <input
+              ref="supSearchInput"
+              v-model="supSearchQuery"
+              class="sup-search-input"
+              type="text"
+              placeholder="Rechercher un étudiant, un intervenant…"
+              @keydown.esc="supSearchOpen = false"
+            />
+            <kbd class="sup-search-esc">Échap</kbd>
+          </div>
+          <ul v-if="supResults.length" class="sup-search-results">
+            <li v-for="r in supResults" :key="r.type + r.id" class="sup-search-result" @click="ouvrirResultat(r)">
+              <span class="sup-search-rt" :class="r.type">{{ r.type === 'etudiant' ? 'Étudiant' : 'Intervenant' }}</span>
+              <span class="sup-search-rn">{{ r.nom }}</span>
+              <span v-if="r.sub" class="sup-search-rs">{{ r.sub }}</span>
+            </li>
+          </ul>
+          <p v-else-if="supSearchQuery" class="sup-search-empty">Aucun résultat</p>
+        </div>
+      </div>
 
       <main class="sup-body">
         <component :is="panels[activeTab]" />
@@ -186,7 +250,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 import { useSuperieurStore } from '../stores/superieur'
@@ -194,6 +258,10 @@ import { useSuperieurAuthStore, SUP_ROLES } from '../stores/superieurAuth'
 import { useAuthStore } from '../stores/auth'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 import { useMobiliteStore } from '../stores/mobilite'
+import { useI18n } from 'vue-i18n'
+import { setLang } from '../i18n'
+import { useConnectionStatus } from '../composables/useConnectionStatus'
+import { PanelLeftClose, PanelLeftOpen, Menu, Search, Settings } from 'lucide-vue-next'
 import SuperieurLogin from './superieur/SuperieurLogin.vue'
 import SupDashboard from './superieur/SupDashboard.vue'
 import SupEtudiants from './superieur/SupEtudiants.vue'
@@ -614,6 +682,95 @@ function quitterEdition() {
   router.push('/bienvenue')
 }
 
+// ─────────────────────────────────────────────────────────────────
+// En-tête uniformisé — aligné sur l'en-tête du Secondaire (AppHeader)
+// ─────────────────────────────────────────────────────────────────
+const { locale } = useI18n({ useScope: 'global' })
+
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return 'Bonjour'
+  if (h < 18) return 'Bon après-midi'
+  return 'Bonsoir'
+})
+const userFirstName = computed(() => {
+  const p = authStore.userProfile
+  const fn = (p && p.firstName ? p.firstName : '').trim()
+  if (fn) return fn
+  const dn = (userDisplayName.value || '').trim()
+  if (dn) return dn.split(' ')[0]
+  return roleLabel.value || ''
+})
+
+// Viewport (drawer mobile ≤ 900px, comme toggleSidebar)
+const isMobile = ref(false)
+function checkMobileHdr() { isMobile.value = typeof window !== 'undefined' && window.innerWidth <= 900 }
+
+// Statut de connexion (même esprit que l'en-tête Secondaire)
+const { isOnline, pendingSyncCount, syncStatus } = useConnectionStatus()
+const isSyncing = computed(() => syncStatus.value === 'syncing')
+const connClass = computed(() => (isSyncing.value ? 'syncing' : isOnline.value ? 'online' : 'offline'))
+const connText = computed(() => {
+  if (isSyncing.value) return 'Sync…'
+  if (!isOnline.value) return 'Hors ligne'
+  if (pendingSyncCount.value > 0) return 'En attente'
+  return ''
+})
+const connTitle = computed(() => {
+  if (!isOnline.value) return 'Hors ligne — vos modifications seront synchronisées à la reconnexion'
+  if (pendingSyncCount.value > 0) return `${pendingSyncCount.value} modification(s) en attente`
+  return 'En ligne — synchronisé'
+})
+
+const canSeeParametres = computed(() => tabsVisibles.value.some((tb) => tb.key === 'parametres'))
+
+// Recherche supérieur (Ctrl+K) — sur les étudiants et les intervenants
+const supSearchOpen = ref(false)
+const supSearchQuery = ref('')
+const supSearchInput = ref(null)
+function openSupSearch() {
+  supSearchOpen.value = true
+  supSearchQuery.value = ''
+  nextTick(() => { try { supSearchInput.value && supSearchInput.value.focus() } catch (e) { /* silent */ } })
+}
+const supResults = computed(() => {
+  const q = supSearchQuery.value.trim().toLowerCase()
+  if (!q) return []
+  const out = []
+  for (const e of store.etudiants || []) {
+    if (`${e.nomComplet || ''} ${e.matricule || ''} ${e.programmeNom || ''}`.toLowerCase().includes(q)) {
+      out.push({ type: 'etudiant', id: e.id, nom: e.nomComplet, sub: e.matricule })
+      if (out.length >= 8) break
+    }
+  }
+  for (const i of store.intervenants || []) {
+    if (out.length >= 12) break
+    if (`${i.nomComplet || ''} ${i.specialite || ''}`.toLowerCase().includes(q)) {
+      out.push({ type: 'intervenant', id: i.id, nom: i.nomComplet, sub: i.specialite })
+    }
+  }
+  return out
+})
+function ouvrirResultat(r) {
+  supSearchOpen.value = false
+  choisirTab(r.type === 'etudiant' ? 'etudiants' : 'intervenants')
+}
+function onHdrKeydown(e) {
+  if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
+    e.preventDefault()
+    openSupSearch()
+  }
+}
+onMounted(() => {
+  checkMobileHdr()
+  window.addEventListener('resize', checkMobileHdr)
+  window.addEventListener('keydown', onHdrKeydown)
+})
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobileHdr)
+  window.removeEventListener('keydown', onHdrKeydown)
+})
+
 // Si le rôle change, recadre sur un onglet visible
 watch(
   () => authSup.role,
@@ -943,9 +1100,66 @@ watch(
 .sup-topbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   flex-shrink: 0;
 }
+
+/* ── En-tête uniformisé (aligné sur AppHeader du Secondaire) ── */
+.sup-hdr-left { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+.sup-collapse-toggle {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border: none; background: transparent;
+  border-radius: 8px; color: var(--tx3, #9aa2b1); cursor: pointer;
+  transition: all 0.15s ease; flex-shrink: 0;
+}
+.sup-collapse-toggle:hover { background: rgba(0,0,0,.04); color: var(--tx, #1a1d1f); }
+.sup-hdr-greeting {
+  font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 600;
+  color: var(--tx, #1a1d1f); margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sup-hdr-school {
+  display: flex; align-items: center; gap: 8px; background: transparent; border: none;
+  cursor: pointer; padding: 6px 10px; border-radius: 10px; transition: background 0.15s ease; margin-right: 4px;
+}
+.sup-hdr-school:hover { background: rgba(0,0,0,.04); }
+.sup-hdr-school-logo { width: 28px; height: 28px; border-radius: 6px; object-fit: contain; flex-shrink: 0; }
+.sup-hdr-school-name {
+  font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: var(--tx, #1a1d1f);
+  max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sup-conn { display: flex; align-items: center; gap: 6px; padding: 0 8px; height: 36px; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: help; }
+.sup-conn-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; flex-shrink: 0; }
+.sup-conn.offline { background: rgba(239,68,68,.1); color: #dc2626; }
+.sup-conn.offline .sup-conn-dot { background: #ef4444; }
+.sup-conn.syncing { background: rgba(59,130,246,.1); color: #2563eb; }
+.sup-conn.syncing .sup-conn-dot { background: #3b82f6; }
+.sup-conn-text { white-space: nowrap; }
+.sup-hdr-lang { display: inline-flex; gap: 1px; padding: 2px; background: rgba(0,0,0,.05); border-radius: 100px; margin-right: 2px; }
+.sup-hdr-lang button { border: none; background: transparent; color: var(--tx3, #9aa2b1); font-family: inherit; font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 100px; cursor: pointer; transition: background .15s ease, color .15s ease; }
+.sup-hdr-lang button.on { background: var(--pr); color: #fff; }
+.sup-hdr-icon { position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: none; background: transparent; border-radius: 10px; color: var(--tx2, #6f767e); cursor: pointer; transition: all 0.15s ease; }
+.sup-hdr-icon:hover { background: rgba(0,0,0,.04); color: var(--tx, #1a1d1f); }
+.sup-hdr-search-hint { position: absolute; top: 50%; right: -2px; transform: translateY(-50%); font-size: 9px; color: var(--tx3, #9aa2b1); pointer-events: none; opacity: 0; transition: opacity 0.15s ease; }
+.sup-hdr-search:hover .sup-hdr-search-hint { opacity: 1; }
+.sup-hdr-avatar { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: var(--pr); color: #fff; border: none; font-weight: 600; font-size: 12px; font-family: 'Poppins', sans-serif; cursor: pointer; transition: box-shadow 0.15s ease; flex-shrink: 0; overflow: hidden; }
+.sup-hdr-avatar:hover { box-shadow: 0 0 0 3px rgba(var(--pr-rgb),.15); }
+.sup-hdr-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* Recherche supérieur (modale Ctrl+K) */
+.sup-search-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(15,23,42,.35); display: flex; align-items: flex-start; justify-content: center; padding-top: 12vh; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.sup-search-box { width: 100%; max-width: 560px; background: #fff; border-radius: 16px; box-shadow: 0 24px 60px rgba(20,32,64,.22); overflow: hidden; }
+.sup-search-field { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid rgba(20,32,64,.08); color: #6f767e; }
+.sup-search-input { flex: 1; border: none; outline: none; font-family: 'Poppins', sans-serif; font-size: 15px; color: #1a1d1f; background: transparent; }
+.sup-search-esc { font-size: 10px; color: #9aa2b1; border: 1px solid rgba(20,32,64,.14); border-radius: 6px; padding: 2px 6px; }
+.sup-search-results { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow-y: auto; }
+.sup-search-result { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+.sup-search-result:hover { background: rgba(var(--pr-rgb),.06); }
+.sup-search-rt { font-size: 10.5px; font-weight: 700; padding: 2px 8px; border-radius: 100px; flex-shrink: 0; }
+.sup-search-rt.etudiant { background: rgba(var(--pr-rgb),.12); color: var(--pr); }
+.sup-search-rt.intervenant { background: rgba(184,137,42,.14); color: #B8892A; }
+.sup-search-rn { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 600; color: #1a1d1f; }
+.sup-search-rs { font-size: 12.5px; color: #6f767e; margin-left: auto; }
+.sup-search-empty { padding: 22px; text-align: center; color: #9aa2b1; font-size: 13.5px; }
 .sup-demo-badge {
   padding: 4px 10px;
   background: rgba(184, 137, 42, 0.12);
