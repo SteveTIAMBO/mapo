@@ -106,6 +106,11 @@ export async function analyserEdt({ imageDataUrl, niveau = '' }) {
  * @param {{imageDataUrl:string, niveau?:string}} opts
  */
 export async function analyserRegistre({ imageDataUrl, niveau = '' }) {
+  // Consentement : un registre contient des noms d'élèves (données de mineurs).
+  if (typeof window !== 'undefined' && typeof window.confirm === 'function' &&
+      !window.confirm("Ce registre contient des noms d'élèves. Il sera transmis à l'IA uniquement pour l'import, sans être conservé. Confirmez-vous l'envoi ?")) {
+    return { ok: false, reason: 'Import annulé.' }
+  }
   try {
     const user = fbAuth.currentUser
     const token = user ? await user.getIdToken().catch(() => null) : null

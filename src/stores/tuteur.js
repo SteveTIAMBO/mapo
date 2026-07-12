@@ -328,6 +328,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @returns {Promise<{ok, analyse?:{matiere,note,points_faibles,conseil}, mode, reason?}>}
    */
   async function analyserCopie({ imageDataUrl, niveau = '' }) {
+    // Consentement avant envoi de l'image à l'IA (données personnelles). Rien n'est conservé.
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function' &&
+        !window.confirm("La photo de la copie va être analysée par l'IA pour repérer les points à revoir. L'image n'est pas conservée après l'analyse. Confirmez-vous l'envoi ?")) {
+      return { ok: false, mode: 'annule', reason: 'Analyse annulée.' }
+    }
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
