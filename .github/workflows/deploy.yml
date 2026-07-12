@@ -27,6 +27,18 @@ jobs:
       - name: Build (Vite → /tmp/mapo-build)
         run: npm run build
 
+      # Test de fumée AVANT déploiement : un navigateur headless charge l'app
+      # compilée et vérifie que #app se monte (pas d'écran blanc) et qu'aucune
+      # erreur JS bloquante ne survient. Un crash de bootstrap (ex. le bug
+      # Intl.NumberFormat) échoue ici → le déploiement est bloqué.
+      - name: Test de fumée (anti écran blanc)
+        run: |
+          npm i -D playwright@1.47.2 --legacy-peer-deps
+          npx playwright install chromium
+          ( cd /tmp/mapo-build && python3 -m http.server 4173 >/dev/null 2>&1 & )
+          sleep 5
+          node scripts/smoke.mjs
+
       # On assemble le paquet à déployer : la SPA construite + les proxies PHP.
       # ⚠️ On N'INCLUT PAS les fichiers *-config.php ni mapo-sa-key.json :
       # ils contiennent les clés API et vivent UNIQUEMENT sur le serveur.
