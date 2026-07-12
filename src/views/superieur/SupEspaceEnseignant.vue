@@ -95,11 +95,11 @@ const rosterPromo = computed(() => {
   return p ? `${p.programmeNom} · ${p.anneeNom}` : ''
 })
 
-const nbEtudiants = computed(() => {
-  const promoIds = new Set(mesUe.value.map((u) => u.promotionId))
+const nbEtudiants = (() => {
+  const promoIds = new Set(mesUe.map((u) => u.promotionId))
   return store.etudiants.filter((e) => promoIds.has(e.promotionId)).length
-}).value
-const aSaisir = mesUe.value.length
+})()
+const aSaisir = mesUe.length
 
 const notes = ref({})
 const saved = ref(false)
