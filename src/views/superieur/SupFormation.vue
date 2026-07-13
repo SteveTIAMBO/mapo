@@ -2,12 +2,12 @@
   <div class="sf">
     <div class="sf-intro">
       <div>
-        <h1 class="sf-h1">Offre de formation</h1>
-        <p class="sf-sub">Unités d'enseignement, crédits et cours électifs par programme</p>
+        <h1 class="sf-h1">{{ t('sup.formation.title') }}</h1>
+        <p class="sf-sub">{{ t('sup.formation.subtitle') }}</p>
       </div>
       <button class="sf-btn-primary" type="button" @click="openProgCreate">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Ajouter une formation
+        {{ t('sup.formation.addFormation') }}
       </button>
     </div>
 
@@ -32,19 +32,18 @@
         <div>
           <div class="sf-prog-nom">{{ activeProgramme.nom }}</div>
           <div class="sf-prog-meta">
-            {{ activeProgramme.dureeAns }} ans · {{ activeProgramme.annees.length }} années ·
-            {{ activeProgramme.ectsTotal }} crédits au total
+            {{ t('sup.formation.bannerMeta', { ans: activeProgramme.dureeAns, annees: activeProgramme.annees.length, ects: activeProgramme.ectsTotal }) }}
           </div>
         </div>
         <div class="sf-prog-right">
           <div class="sf-prog-legend">
-            <span v-for="t in legend" :key="t.key" class="sf-legend-item">
-              <span class="sf-legend-dot" :class="`t-${t.key}`"></span>{{ t.label }}
+            <span v-for="key in legend" :key="key" class="sf-legend-item">
+              <span class="sf-legend-dot" :class="`t-${key}`"></span>{{ typeLabel(key) }}
             </span>
           </div>
           <button v-if="store.isCustomProgramme(activeProgramme.id)" type="button" class="sf-del-prog" @click="askDeleteProgramme">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-            Supprimer la formation
+            {{ t('sup.formation.deleteFormation') }}
           </button>
         </div>
       </div>
@@ -52,24 +51,24 @@
       <!-- Responsable de la formation -->
       <div class="sf-resp-card">
         <div class="sf-resp-left">
-          <div class="sf-resp-label">Responsable de la formation</div>
+          <div class="sf-resp-label">{{ t('sup.formation.respTitle') }}</div>
           <div v-if="activeProgramme.responsable" class="sf-resp-body">
             <div class="sf-resp-avatar">{{ initiales(activeProgramme.responsable) }}</div>
             <div>
               <div class="sf-resp-nom">{{ activeProgramme.responsable.nomComplet }}</div>
               <div class="sf-resp-meta">
                 <span class="sf-resp-pill" :class="`st-${activeProgramme.responsable.statut}`">
-                  {{ activeProgramme.responsable.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}
+                  {{ statutLabel(activeProgramme.responsable.statut) }}
                 </span>
                 <span class="sf-resp-spec">{{ activeProgramme.responsable.specialite }}</span>
               </div>
             </div>
           </div>
-          <div v-else class="sf-resp-empty">Aucun responsable désigné.</div>
+          <div v-else class="sf-resp-empty">{{ t('sup.formation.respEmpty') }}</div>
         </div>
         <button class="sf-resp-btn" type="button" @click="openRespModal">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11h-6M19 8v6"/></svg>
-          {{ activeProgramme.responsable ? 'Changer le responsable' : 'Désigner un responsable' }}
+          {{ activeProgramme.responsable ? t('sup.formation.respChange') : t('sup.formation.respAssign') }}
         </button>
       </div>
 
@@ -88,7 +87,7 @@
             @click="setSem(annee, sem.semestre)"
           >
             {{ sem.semestre }}
-            <span class="sf-sem-tab-meta">{{ sem.ue.length }} UE · {{ sem.totalEcts }} cr.</span>
+            <span class="sf-sem-tab-meta">{{ t('sup.formation.semTabMeta', { n: sem.ue.length, ects: sem.totalEcts }) }}</span>
           </button>
         </div>
 
@@ -101,26 +100,26 @@
         >
           <div class="sf-sem-head">
             <span class="sf-sem-totals">
-              {{ sem.ue.length }} UE
+              {{ t('sup.formation.semUeCount', { n: sem.ue.length }) }}
               <span class="sf-sem-dot">•</span>
-              <strong>{{ sem.totalEcts }} crédits</strong>
+              <strong>{{ t('sup.formation.semCreditsCount', { n: sem.totalEcts }) }}</strong>
               <span class="sf-sem-dot">•</span>
-              {{ sem.totalHeures }} h
+              {{ t('sup.formation.semHoursCount', { n: sem.totalHeures }) }}
             </span>
-            <button class="sf-add-btn" type="button" @click="openCreate(annee, sem)" title="Ajouter une UE">
+            <button class="sf-add-btn" type="button" @click="openCreate(annee, sem)" :title="t('sup.formation.addUeTitle')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              Nouvelle UE
+              {{ t('sup.formation.newUe') }}
             </button>
           </div>
           <table class="sf-ue-table">
             <thead>
               <tr>
-                <th>Code</th>
-                <th>Unité d'enseignement</th>
-                <th>Type</th>
-                <th>Intervenant</th>
-                <th class="num">Heures</th>
-                <th class="num">crédits</th>
+                <th>{{ t('sup.formation.thCode') }}</th>
+                <th>{{ t('sup.formation.thUnit') }}</th>
+                <th>{{ t('sup.formation.thType') }}</th>
+                <th>{{ t('sup.formation.thInstructor') }}</th>
+                <th class="num">{{ t('sup.formation.thHours') }}</th>
+                <th class="num">{{ t('sup.formation.thCredits') }}</th>
                 <th class="sf-actions-head"></th>
               </tr>
             </thead>
@@ -129,7 +128,7 @@
                 <td class="sf-code">{{ u.code }}</td>
                 <td>
                   <span class="sf-ue-nom">{{ u.intitule }}</span>
-                  <span v-if="u.electif" class="sf-electif-tag">Électif</span>
+                  <span v-if="u.electif" class="sf-electif-tag">{{ t('sup.formation.types.electif') }}</span>
                 </td>
                 <td>
                   <span class="sf-type" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
@@ -138,16 +137,16 @@
                 <td class="num">{{ u.volumeHoraire }}</td>
                 <td class="num sf-ects">{{ u.ects }}</td>
                 <td class="sf-actions">
-                  <button type="button" class="sf-icon-btn" title="Modifier" @click="openEdit(u, annee, sem)">
+                  <button type="button" class="sf-icon-btn" :title="t('sup.formation.edit')" @click="openEdit(u, annee, sem)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
                   </button>
-                  <button type="button" class="sf-icon-btn is-danger" title="Supprimer" @click="askDelete(u)">
+                  <button type="button" class="sf-icon-btn is-danger" :title="t('sup.formation.delete')" @click="askDelete(u)">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                   </button>
                 </td>
               </tr>
               <tr v-if="!sem.ue.length">
-                <td colspan="7" class="sf-sem-empty">Aucune UE dans ce semestre. Cliquez sur « Nouvelle UE » pour en ajouter une.</td>
+                <td colspan="7" class="sf-sem-empty">{{ t('sup.formation.semEmpty') }}</td>
               </tr>
             </tbody>
           </table>
@@ -155,14 +154,14 @@
       </div>
     </div>
 
-    <div v-if="isDemoTenant" class="sf-demo-note">Données de démonstration — maquette pédagogique fictive.</div>
+    <div v-if="isDemoTenant" class="sf-demo-note">{{ t('sup.formation.demoNote') }}</div>
 
     <!-- Modale Choisir / Changer le responsable -->
     <transition name="sf-fade">
       <div v-if="respModalOpen" class="sf-modal-overlay" @click.self="closeRespModal">
         <div class="sf-modal sf-resp-modal">
           <div class="sf-modal-head">
-            <h2 class="sf-modal-title">Responsable de la formation</h2>
+            <h2 class="sf-modal-title">{{ t('sup.formation.respTitle') }}</h2>
             <button class="sf-modal-close" type="button" @click="closeRespModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -175,7 +174,7 @@
               v-model="respSearch"
               type="text"
               class="sf-input"
-              placeholder="Rechercher un intervenant…"
+              :placeholder="t('sup.formation.respSearchPlaceholder')"
             />
             <ul class="sf-resp-list">
               <li
@@ -189,13 +188,13 @@
                 <div class="sf-resp-item-info">
                   <div class="sf-resp-item-nom">{{ i.nomComplet }}</div>
                   <div class="sf-resp-item-meta">
-                    {{ i.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }} · {{ i.specialite }}
+                    {{ statutLabel(i.statut) }} · {{ i.specialite }}
                   </div>
                 </div>
                 <svg v-if="i.id === activeProgramme?.responsable?.id" class="sf-resp-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               </li>
               <li v-if="intervenantsFiltresPourResp.length === 0" class="sf-resp-empty-item">
-                Aucun intervenant ne correspond à la recherche.
+                {{ t('sup.formation.respNoMatch') }}
               </li>
             </ul>
           </div>
@@ -208,58 +207,58 @@
       <div v-if="modalOpen" class="sf-modal-overlay" @click.self="closeModal">
         <div class="sf-modal">
           <div class="sf-modal-head">
-            <h2 class="sf-modal-title">{{ editing ? "Modifier l'UE" : 'Nouvelle UE' }}</h2>
+            <h2 class="sf-modal-title">{{ editing ? t('sup.formation.editUe') : t('sup.formation.newUe') }}</h2>
             <button class="sf-modal-close" type="button" @click="closeModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <form class="sf-form" @submit.prevent="submit">
             <div class="sf-form-context">
-              <strong>{{ form.programmeNom }}</strong> · {{ form.anneeNom }} · Semestre {{ form.semestre }}
+              <strong>{{ form.programmeNom }}</strong> · {{ form.anneeNom }} · {{ t('sup.formation.semesterWord') }} {{ form.semestre }}
             </div>
             <div class="sf-field">
-              <label class="sf-form-label">Intitulé</label>
+              <label class="sf-form-label">{{ t('sup.formation.fieldTitle') }}</label>
               <input v-model="form.intitule" type="text" class="sf-input" required />
             </div>
             <div class="sf-form-row">
               <div class="sf-field">
-                <label class="sf-form-label">Code (auto si vide)</label>
-                <input v-model="form.code" type="text" class="sf-input" placeholder="ex. FND-070" />
+                <label class="sf-form-label">{{ t('sup.formation.fieldCode') }}</label>
+                <input v-model="form.code" type="text" class="sf-input" :placeholder="t('sup.formation.codePlaceholder')" />
               </div>
               <div class="sf-field">
-                <label class="sf-form-label">Type</label>
+                <label class="sf-form-label">{{ t('sup.formation.fieldType') }}</label>
                 <select v-model="form.type" class="sf-input">
-                  <option value="fondamentale">Fondamentale</option>
-                  <option value="methodologique">Méthodologique</option>
-                  <option value="professionnelle">Professionnelle</option>
-                  <option value="electif">Électif</option>
+                  <option value="fondamentale">{{ t('sup.formation.types.fondamentale') }}</option>
+                  <option value="methodologique">{{ t('sup.formation.types.methodologique') }}</option>
+                  <option value="professionnelle">{{ t('sup.formation.types.professionnelle') }}</option>
+                  <option value="electif">{{ t('sup.formation.types.electif') }}</option>
                 </select>
               </div>
             </div>
             <div class="sf-form-row">
               <div class="sf-field">
-                <label class="sf-form-label">Crédits</label>
+                <label class="sf-form-label">{{ t('sup.formation.fieldCredits') }}</label>
                 <input v-model.number="form.ects" type="number" min="1" max="12" class="sf-input" required />
               </div>
               <div class="sf-field">
-                <label class="sf-form-label">Volume horaire</label>
+                <label class="sf-form-label">{{ t('sup.formation.fieldHours') }}</label>
                 <input v-model.number="form.volumeHoraire" type="number" min="1" max="120" class="sf-input" required />
               </div>
             </div>
             <div class="sf-field">
-              <label class="sf-form-label">Intervenant</label>
+              <label class="sf-form-label">{{ t('sup.formation.fieldInstructor') }}</label>
               <select v-model="form.intervenantId" class="sf-input">
-                <option value="">— À attribuer plus tard —</option>
+                <option value="">{{ t('sup.formation.assignLater') }}</option>
                 <option v-for="i in intervenantsTries" :key="i.id" :value="i.id">
-                  {{ i.nomComplet }} ({{ i.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}{{ i.specialite ? ', ' + i.specialite : '' }})
+                  {{ i.nomComplet }} ({{ statutLabel(i.statut) }}{{ i.specialite ? ', ' + i.specialite : '' }})
                 </option>
               </select>
             </div>
             <p v-if="formError" class="sf-form-error">{{ formError }}</p>
             <div class="sf-modal-actions">
-              <button type="button" class="sf-btn-ghost" @click="closeModal">Annuler</button>
+              <button type="button" class="sf-btn-ghost" @click="closeModal">{{ t('sup.formation.cancel') }}</button>
               <button type="submit" class="sf-btn-primary">
-                {{ editing ? 'Enregistrer' : "Créer l'UE" }}
+                {{ editing ? t('sup.formation.save') : t('sup.formation.createUe') }}
               </button>
             </div>
           </form>
@@ -272,19 +271,19 @@
       <div v-if="progModalOpen" class="sf-modal-overlay" @click.self="closeProgModal">
         <div class="sf-modal">
           <div class="sf-modal-head">
-            <h2 class="sf-modal-title">Nouvelle formation</h2>
+            <h2 class="sf-modal-title">{{ t('sup.formation.newFormation') }}</h2>
             <button class="sf-modal-close" type="button" @click="closeProgModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <form class="sf-form" @submit.prevent="submitProg">
             <div class="sf-field">
-              <label class="sf-form-label">Intitulé de la formation</label>
-              <input v-model="progForm.nom" type="text" class="sf-input" placeholder="Ex : Licence Marketing Digital" required />
+              <label class="sf-form-label">{{ t('sup.formation.fieldFormationName') }}</label>
+              <input v-model="progForm.nom" type="text" class="sf-input" :placeholder="t('sup.formation.formationNamePlaceholder')" required />
             </div>
             <div class="sf-form-row" style="grid-template-columns: 1fr 130px;">
               <div class="sf-field">
-                <label class="sf-form-label">Niveau</label>
+                <label class="sf-form-label">{{ t('sup.formation.fieldLevel') }}</label>
                 <select v-model="progForm.niveau" class="sf-input" @change="onNiveauChange">
                   <option value="BTS">BTS</option>
                   <option value="Licence">Licence</option>
@@ -293,21 +292,42 @@
                 </select>
               </div>
               <div class="sf-field">
-                <label class="sf-form-label">Durée (années)</label>
+                <label class="sf-form-label">{{ t('sup.formation.fieldDuration') }}</label>
                 <input v-model.number="progForm.dureeAns" type="number" min="1" max="5" class="sf-input" required />
               </div>
             </div>
             <div class="sf-field">
-              <label class="sf-form-label">Faculté / pôle</label>
-              <input v-model="progForm.faculte" type="text" class="sf-input" placeholder="Ex : Management & Commerce" />
+              <label class="sf-form-label">{{ t('sup.formation.fieldFaculty') }}</label>
+              <input v-model="progForm.faculte" type="text" class="sf-input" :placeholder="t('sup.formation.facultyPlaceholder')" />
             </div>
-            <p class="sf-form-hint">La formation est créée avec ses années et semestres (S1, S2…). Les unités d'enseignement s'ajoutent ensuite dans chaque semestre.</p>
+            <p class="sf-form-hint">{{ t('sup.formation.formationHint') }}</p>
             <p v-if="progError" class="sf-form-error">{{ progError }}</p>
             <div class="sf-modal-actions">
-              <button type="button" class="sf-btn-ghost" @click="closeProgModal">Annuler</button>
-              <button type="submit" class="sf-btn-primary">Créer la formation</button>
+              <button type="button" class="sf-btn-ghost" @click="closeProgModal">{{ t('sup.formation.cancel') }}</button>
+              <button type="submit" class="sf-btn-primary">{{ t('sup.formation.createFormation') }}</button>
             </div>
           </form>
+        </div>
+      </div>
+    </transition>
+
+    <!-- Modale de confirmation (suppression) -->
+    <transition name="sf-fade">
+      <div v-if="confirmState.open" class="sf-modal-overlay" @click.self="closeConfirm">
+        <div class="sf-modal sf-confirm-modal">
+          <div class="sf-modal-head">
+            <h2 class="sf-modal-title">{{ confirmState.title }}</h2>
+            <button class="sf-modal-close" type="button" @click="closeConfirm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="sf-form">
+            <p class="sf-confirm-message">{{ confirmState.message }}</p>
+            <div class="sf-modal-actions">
+              <button type="button" class="sf-btn-ghost" @click="closeConfirm">{{ t('sup.formation.cancel') }}</button>
+              <button type="button" class="sf-btn-danger" @click="doConfirm">{{ confirmState.confirmLabel }}</button>
+            </div>
+          </div>
         </div>
       </div>
     </transition>
@@ -319,10 +339,31 @@ import { ref, computed, reactive } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { UE_TYPES } from '../../stores/superieur'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const store = useSuperieurStore()
 const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
+
+// ── Modale de confirmation (suppression) ──
+const confirmState = reactive({ open: false, title: '', message: '', confirmLabel: '', onConfirm: null })
+function openConfirm({ title, message, confirmLabel, onConfirm }) {
+  confirmState.title = title
+  confirmState.message = message
+  confirmState.confirmLabel = confirmLabel
+  confirmState.onConfirm = onConfirm
+  confirmState.open = true
+}
+function closeConfirm() {
+  confirmState.open = false
+  confirmState.onConfirm = null
+}
+function doConfirm() {
+  const fn = confirmState.onConfirm
+  if (typeof fn === 'function') fn()
+  closeConfirm()
+}
 
 const activeProgrammeId = ref(store.programmes[0].id)
 const activeProgramme = computed(() =>
@@ -349,7 +390,7 @@ function openProgCreate() {
 }
 function closeProgModal() { progModalOpen.value = false }
 function submitProg() {
-  if (!progForm.nom.trim()) { progError.value = "L'intitulé de la formation est obligatoire."; return }
+  if (!progForm.nom.trim()) { progError.value = t('sup.formation.errFormationName'); return }
   const id = store.addProgramme({ ...progForm })
   progModalOpen.value = false
   if (id) activeProgrammeId.value = id
@@ -357,10 +398,15 @@ function submitProg() {
 function askDeleteProgramme() {
   const p = activeProgramme.value
   if (!p) return
-  if (window.confirm(`Supprimer la formation « ${p.nom} » ? Ses unités d'enseignement seront également supprimées.`)) {
-    store.deleteProgramme(p.id)
-    activeProgrammeId.value = store.programmes[0]?.id || store.offreParProgramme[0]?.id
-  }
+  openConfirm({
+    title: t('sup.formation.deleteFormation'),
+    message: t('sup.formation.deleteFormationMessage', { name: p.nom }),
+    confirmLabel: t('sup.formation.delete'),
+    onConfirm: () => {
+      store.deleteProgramme(p.id)
+      activeProgrammeId.value = store.programmes[0]?.id || store.offreParProgramme[0]?.id
+    },
+  })
 }
 
 const intervenantsTries = computed(() =>
@@ -422,27 +468,32 @@ function openEdit(u, annee, sem) {
 }
 function closeModal() { modalOpen.value = false; editing.value = null }
 function submit() {
-  if (!form.intitule.trim()) { formError.value = "L'intitulé est obligatoire."; return }
-  if (!form.ects || form.ects < 1) { formError.value = 'Les crédits sont obligatoires.'; return }
+  if (!form.intitule.trim()) { formError.value = t('sup.formation.errTitle'); return }
+  if (!form.ects || form.ects < 1) { formError.value = t('sup.formation.errCredits'); return }
   const payload = { ...form }
   if (editing.value) store.updateUe(editing.value.id, payload)
   else store.addUe(payload)
   closeModal()
 }
 function askDelete(u) {
-  if (window.confirm(`Supprimer l'UE "${u.intitule}" ? Cette action retire l'UE des inscriptions et des notes.`)) {
-    store.deleteUe(u.id)
-  }
+  openConfirm({
+    title: t('sup.formation.deleteUeTitle'),
+    message: t('sup.formation.deleteUeMessage', { name: u.intitule }),
+    confirmLabel: t('sup.formation.delete'),
+    onConfirm: () => store.deleteUe(u.id),
+  })
 }
 
 const legend = [
-  UE_TYPES.fondamentale,
-  UE_TYPES.methodologique,
-  UE_TYPES.professionnelle,
-  UE_TYPES.electif,
+  UE_TYPES.fondamentale.key,
+  UE_TYPES.methodologique.key,
+  UE_TYPES.professionnelle.key,
+  UE_TYPES.electif.key,
 ]
 
-const typeLabel = (t) => UE_TYPES[t]?.label || t
+const typeLabel = (type) => t('sup.formation.types.' + type)
+const statutLabel = (statut) =>
+  statut === 'vacataire' ? t('sup.formation.vacataire') : t('sup.formation.permanent')
 </script>
 
 <style scoped>
@@ -863,6 +914,23 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 }
 .sf-fade-enter-active, .sf-fade-leave-active { transition: opacity 0.2s ease; }
 .sf-fade-enter-from, .sf-fade-leave-to { opacity: 0; }
+
+/* Bouton d'action danger (confirmation de suppression) */
+.sf-btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  white-space: nowrap;
+  height: 40px; padding: 0 16px;
+  background: var(--danger, #D93025); color: #fff;
+  border: none; border-radius: 9px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.sf-btn-danger:hover { background: #B3271D; }
+.sf-confirm-modal { max-width: 440px; }
+.sf-confirm-message {
+  font-size: 14px; color: var(--tx); line-height: 1.55; margin: 0;
+}
 
 /* Carte Responsable de formation */
 .sf-resp-card {

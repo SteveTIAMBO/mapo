@@ -2,8 +2,8 @@
   <div class="gd">
     <div class="gd-intro">
       <div>
-        <h1 class="gd-h1">Direction du groupe</h1>
-        <p class="gd-sub">Vue consolidée · {{ campusData.length }} campus · année {{ ecole.anneeAcademique }}</p>
+        <h1 class="gd-h1">{{ t('sup.groupe.title') }}</h1>
+        <p class="gd-sub">{{ t('sup.groupe.subtitle', { n: campusData.length, year: ecole.anneeAcademique }) }}</p>
       </div>
       <span class="gd-who">{{ profileName }}</span>
     </div>
@@ -21,40 +21,43 @@
 
     <!-- Campus (drill-in) -->
     <div class="gd-campus-head">
-      <h2 class="gd-h2">Vos campus</h2>
-      <p class="gd-hint">Cliquez sur un campus pour accéder à sa gestion complète — vous y disposez d'un accès directeur.</p>
+      <h2 class="gd-h2">{{ t('sup.groupe.campusHeading') }}</h2>
+      <p class="gd-hint">{{ t('sup.groupe.campusHint') }}</p>
     </div>
     <div class="gd-grid">
       <button v-for="c in campusData" :key="c.id" type="button" class="gd-campus" @click="enter(c.id)">
         <div class="gd-campus-top">
           <div>
-            <div class="gd-campus-ville">{{ c.ville }}<span v-if="c.siege" class="gd-siege">Siège</span></div>
+            <div class="gd-campus-ville">{{ c.ville }}<span v-if="c.siege" class="gd-siege">{{ t('sup.groupe.siege') }}</span></div>
             <div class="gd-campus-dir">{{ c.directeur }}</div>
           </div>
           <div class="gd-campus-arrow"><ArrowRight :size="18" /></div>
         </div>
         <div class="gd-campus-kpis">
-          <div class="gd-cs"><strong>{{ fmt(c.effectif) }}</strong><span>étudiants</span></div>
-          <div class="gd-cs"><strong>{{ c.moyenne }}</strong><span>moyenne /20</span></div>
-          <div class="gd-cs"><strong>{{ c.recouvrement }}%</strong><span>recouvrement</span></div>
-          <div class="gd-cs" :class="{ 'is-warn': c.enDifficulte > 0 }"><strong>{{ c.enDifficulte }}</strong><span>en difficulté</span></div>
+          <div class="gd-cs"><strong>{{ fmt(c.effectif) }}</strong><span>{{ t('sup.groupe.csEtudiants') }}</span></div>
+          <div class="gd-cs"><strong>{{ c.moyenne }}</strong><span>{{ t('sup.groupe.csMoyenne') }}</span></div>
+          <div class="gd-cs"><strong>{{ c.recouvrement }}%</strong><span>{{ t('sup.groupe.csRecouvrement') }}</span></div>
+          <div class="gd-cs" :class="{ 'is-warn': c.enDifficulte > 0 }"><strong>{{ c.enDifficulte }}</strong><span>{{ t('sup.groupe.csEnDifficulte') }}</span></div>
         </div>
-        <div class="gd-campus-cta">Ouvrir la gestion du campus <ArrowRight :size="14" /></div>
+        <div class="gd-campus-cta">{{ t('sup.groupe.openCampus') }} <ArrowRight :size="14" /></div>
       </button>
     </div>
 
-    <div v-if="isDemoTenant" class="gd-demo">Données de démonstration — établissement fictif.</div>
+    <div v-if="isDemoTenant" class="gd-demo">{{ t('sup.groupe.demoNote') }}</div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue'
 import { inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useFinanceStore } from '../../stores/finance'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { Users, Building2, Award, Wallet, Presentation, ArrowRight } from 'lucide-vue-next'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const store = useSuperieurStore()
 const fin = useFinanceStore()
@@ -69,7 +72,7 @@ const ecole = store.ecole
 const s = computed(() => store.stats)               // agrégé (campusScope null en vue groupe)
 const finStats = computed(() => fin.stats || {})
 const recParCampus = computed(() => fin.recouvrementParCampus || {})
-const profileName = computed(() => authSup.profile?.displayName || 'Direction du groupe')
+const profileName = computed(() => authSup.profile?.displayName || t('sup.groupe.title'))
 
 const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 
@@ -81,11 +84,11 @@ const campusData = computed(() =>
 )
 
 const kpis = computed(() => [
-  { label: 'Étudiants (groupe)', tone: 'blue', icon: Users, value: fmt(s.value.nbEtudiants) },
-  { label: 'Campus', tone: 'violet', icon: Building2, value: campusData.value.length },
-  { label: 'Moyenne groupe', tone: 'gold', icon: Award, value: s.value.moyenneGenerale, unit: '/20' },
-  { label: 'Recouvrement', tone: 'green', icon: Wallet, value: (finStats.value.tauxRecouvrement ?? 0), unit: '%' },
-  { label: 'Intervenants', tone: 'indigo', icon: Presentation, value: fmt(s.value.nbIntervenants) },
+  { label: t('sup.groupe.kpiEtudiants'), tone: 'blue', icon: Users, value: fmt(s.value.nbEtudiants) },
+  { label: t('sup.groupe.kpiCampus'), tone: 'violet', icon: Building2, value: campusData.value.length },
+  { label: t('sup.groupe.kpiMoyenne'), tone: 'gold', icon: Award, value: s.value.moyenneGenerale, unit: '/20' },
+  { label: t('sup.groupe.kpiRecouvrement'), tone: 'green', icon: Wallet, value: (finStats.value.tauxRecouvrement ?? 0), unit: '%' },
+  { label: t('sup.groupe.kpiIntervenants'), tone: 'indigo', icon: Presentation, value: fmt(s.value.nbIntervenants) },
 ])
 </script>
 

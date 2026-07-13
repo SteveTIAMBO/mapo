@@ -5,42 +5,42 @@
   <!-- Connecté via lien magique → écran "définissez votre mot de passe" -->
   <div v-else-if="authStore.needsPassword" class="sup-onboarding">
     <div class="sup-onboarding-card">
-      <h2 class="sup-onboarding-h2">Bienvenue {{ authStore.userFirstName || '' }}</h2>
+      <h2 class="sup-onboarding-h2">{{ t('sup.shell.onboarding.welcome', { name: authStore.userFirstName || '' }) }}</h2>
       <p class="sup-onboarding-sub">
-        Vous êtes connecté à <strong>{{ schoolIdentity.nom || 'votre établissement' }}</strong>.
-        Pour les prochaines connexions, définissez un mot de passe.
+        {{ t('sup.shell.onboarding.connectedTo') }} <strong>{{ schoolIdentity.nom || t('sup.shell.onboarding.yourSchoolFallback') }}</strong>.
+        {{ t('sup.shell.onboarding.setPasswordHint') }}
       </p>
       <form class="sup-onboarding-form" @submit.prevent="submitInitialPassword">
         <label class="sup-onboarding-field">
-          <span>Nouveau mot de passe</span>
+          <span>{{ t('sup.shell.onboarding.newPassword') }}</span>
           <input
             v-model="onboardingPassword"
             :type="showOnbPwd ? 'text' : 'password'"
             required minlength="6"
             autocomplete="new-password"
-            placeholder="6 caractères minimum"
+            :placeholder="t('sup.shell.onboarding.newPasswordPh')"
           />
         </label>
         <label class="sup-onboarding-field">
-          <span>Confirmer le mot de passe</span>
+          <span>{{ t('sup.shell.onboarding.confirmPassword') }}</span>
           <input
             v-model="onboardingConfirm"
             :type="showOnbPwd ? 'text' : 'password'"
             required minlength="6"
             autocomplete="new-password"
-            placeholder="Retapez le même mot de passe"
+            :placeholder="t('sup.shell.onboarding.confirmPasswordPh')"
           />
         </label>
         <label class="sup-onboarding-check">
           <input type="checkbox" v-model="showOnbPwd" />
-          <span>Afficher les mots de passe</span>
+          <span>{{ t('sup.shell.onboarding.showPasswords') }}</span>
         </label>
         <p v-if="onboardingError" class="sup-onboarding-err">{{ onboardingError }}</p>
         <button type="submit" class="sup-onboarding-btn" :disabled="onboardingBusy">
-          {{ onboardingBusy ? 'Enregistrement…' : 'Enregistrer et continuer' }}
+          {{ onboardingBusy ? t('sup.shell.onboarding.saving') : t('sup.shell.onboarding.saveAndContinue') }}
         </button>
         <button type="button" class="sup-onboarding-skip" @click="skipInitialPassword">
-          Plus tard (je me reconnecterai via un nouveau lien email)
+          {{ t('sup.shell.onboarding.later') }}
         </button>
       </form>
     </div>
@@ -66,19 +66,19 @@
           <div v-else class="sup-logo">{{ (schoolIdentity.sigle || 'M')[0] }}</div>
           <div class="sup-brand-info">
             <div class="sup-brand-title">{{ schoolIdentity.nom || 'MAPO' }}</div>
-            <div class="sup-brand-sub">Enseignement Supérieur</div>
+            <div class="sup-brand-sub">{{ t('sup.shell.brandSubtitle') }}</div>
           </div>
         </div>
       </div>
 
       <div class="sup-year">
-        <select v-model="selectedYear" class="sup-year-select" aria-label="Année académique">
-          <option v-for="y in academicYears" :key="y" :value="y">Année {{ y }}</option>
+        <select v-model="selectedYear" class="sup-year-select" :aria-label="t('sup.shell.academicYear')">
+          <option v-for="y in academicYears" :key="y" :value="y">{{ t('sup.shell.yearOption', { year: y }) }}</option>
         </select>
       </div>
 
       <div v-if="isGroupMode" class="sup-nav sup-nav-groupe" v-show="!sidebarHidden">
-        <div class="sup-groupe-hint">Vue consolidée du groupe.<br />Sélectionnez un campus pour accéder à sa gestion.</div>
+        <div class="sup-groupe-hint">{{ t('sup.shell.groupHintLine1') }}<br />{{ t('sup.shell.groupHintLine2') }}</div>
       </div>
       <nav v-else class="sup-nav">
         <template v-for="(group, gi) in tabsGroupes" :key="gi">
@@ -88,7 +88,7 @@
             type="button"
             @click="toggleSection(group.section)"
           >
-            <span>{{ group.section }}</span>
+            <span>{{ sectionLabel(group.section) }}</span>
             <svg class="sup-section-chevron" :class="{ open: isSectionOpen(group.section) }" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div v-show="!group.section || isSectionOpen(group.section)" class="sup-nav-section-items">
@@ -98,11 +98,11 @@
               class="sup-nav-item"
               :class="{ active: activeTab === t.key }"
               type="button"
-              :title="sidebarHidden ? t.label : null"
+              :title="sidebarHidden ? navLabel(t) : null"
               @click="choisirTab(t.key)"
             >
               <span class="sup-nav-icon" v-html="t.icon"></span>
-              <span class="sup-nav-label">{{ t.label }}</span>
+              <span class="sup-nav-label">{{ navLabel(t) }}</span>
             </button>
           </div>
         </template>
@@ -115,16 +115,16 @@
           </div>
           <div v-else class="sup-user-avatar">{{ initiales(userDisplayName) }}</div>
           <div class="sup-user-info">
-            <div class="sup-user-name">{{ userDisplayName || 'Utilisateur' }}</div>
+            <div class="sup-user-name">{{ userDisplayName || t('sidebar.user') }}</div>
             <div class="sup-user-role">{{ roleLabel }}</div>
           </div>
         </div>
         <button class="sup-logout" type="button" @click="seDeconnecter">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-          Se déconnecter
+          {{ t('sidebar.logout') }}
         </button>
         <button v-if="isDemoTenant" class="sup-quit" type="button" @click="quitterEdition">
-          Changer d'édition
+          {{ t('sup.shell.changeEdition') }}
         </button>
       </div>
     </aside>
@@ -137,7 +137,7 @@
             class="sup-collapse-toggle"
             type="button"
             @click="toggleSidebar"
-            :title="isMobile ? 'Menu' : (sidebarHidden ? 'Afficher le menu' : 'Replier le menu')"
+            :title="isMobile ? t('header.menu') : (sidebarHidden ? t('sup.shell.showMenu') : t('sup.shell.collapseMenu'))"
           >
             <Menu v-if="isMobile" :size="22" />
             <PanelLeftClose v-else-if="!sidebarHidden" :size="18" />
@@ -148,7 +148,7 @@
 
         <div class="sup-topbar-right">
           <!-- Nom de l'établissement -->
-          <button v-if="schoolIdentity.nom" class="sup-hdr-school" type="button" @click="choisirTab('parametres')" title="Paramètres de l'établissement">
+          <button v-if="schoolIdentity.nom" class="sup-hdr-school" type="button" @click="choisirTab('parametres')" :title="t('sup.shell.schoolSettingsTitle')">
             <img v-if="schoolIdentity.logoUrl" :src="schoolIdentity.logoUrl" :alt="schoolIdentity.sigle" class="sup-hdr-school-logo" />
             <span class="sup-hdr-school-name">{{ schoolIdentity.nom }}</span>
           </button>
@@ -166,7 +166,7 @@
           </div>
 
           <!-- Recherche (Ctrl+K) -->
-          <button class="sup-hdr-icon sup-hdr-search" type="button" title="Rechercher" @click="openSupSearch">
+          <button class="sup-hdr-icon sup-hdr-search" type="button" :title="t('sup.shell.searchTitle')" @click="openSupSearch">
             <Search :size="20" />
             <span class="sup-hdr-search-hint">Ctrl+K</span>
           </button>
@@ -176,7 +176,7 @@
               type="button"
               class="sup-notif-btn"
               :class="{ 'has-unread': notifCount > 0 }"
-              :title="notifCount > 0 ? `${notifCount} notification(s) à traiter` : 'Aucune notification'"
+              :title="notifCount > 0 ? t('sup.shell.notif.tooltipCount', { n: notifCount }) : t('sup.shell.notif.tooltipNone')"
               @click="toggleNotifMenu"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -187,11 +187,11 @@
             </button>
             <div v-if="notifMenuOpen" class="sup-notif-menu">
               <header class="sup-notif-head">
-                <span class="sup-notif-title">Notifications</span>
-                <span v-if="notifCount > 0" class="sup-notif-count">{{ notifCount }} à traiter</span>
+                <span class="sup-notif-title">{{ t('header.notifications') }}</span>
+                <span v-if="notifCount > 0" class="sup-notif-count">{{ t('sup.shell.notif.toProcess', { n: notifCount }) }}</span>
               </header>
               <div v-if="notifCount === 0" class="sup-notif-empty">
-                Vous êtes à jour. Aucune notification.
+                {{ t('sup.shell.notif.empty') }}
               </div>
               <ul v-else class="sup-notif-list">
                 <li v-for="n in notifications" :key="n.id" class="sup-notif-item" @click="openNotif(n)">
@@ -208,13 +208,13 @@
             </div>
           </div>
           <!-- Avatar utilisateur -->
-          <button class="sup-hdr-avatar" type="button" @click="choisirTab('parametres')" :title="userDisplayName || 'Profil'">
+          <button class="sup-hdr-avatar" type="button" @click="choisirTab('parametres')" :title="userDisplayName || t('sidebar.profile')">
             <img v-if="userPhotoURL" :src="userPhotoURL" :alt="userDisplayName" class="sup-hdr-avatar-img" />
             <span v-else>{{ initiales(userDisplayName) }}</span>
           </button>
 
           <!-- Réglages -->
-          <button v-if="canSeeParametres" class="sup-hdr-icon" type="button" title="Paramètres" @click="choisirTab('parametres')">
+          <button v-if="canSeeParametres" class="sup-hdr-icon" type="button" :title="t('header.settings')" @click="choisirTab('parametres')">
             <Settings :size="20" />
           </button>
         </div>
@@ -230,30 +230,28 @@
               v-model="supSearchQuery"
               class="sup-search-input"
               type="text"
-              placeholder="Rechercher un étudiant, un intervenant…"
+              :placeholder="t('sup.shell.search.placeholder')"
               @keydown.esc="supSearchOpen = false"
             />
-            <kbd class="sup-search-esc">Échap</kbd>
+            <kbd class="sup-search-esc">{{ t('sup.shell.search.esc') }}</kbd>
           </div>
           <ul v-if="supResults.length" class="sup-search-results">
             <li v-for="r in supResults" :key="r.type + r.id" class="sup-search-result" @click="ouvrirResultat(r)">
-              <span class="sup-search-rt" :class="r.type">{{ r.type === 'etudiant' ? 'Étudiant' : 'Intervenant' }}</span>
+              <span class="sup-search-rt" :class="r.type">{{ r.type === 'etudiant' ? t('sup.shell.search.typeStudent') : t('sup.shell.search.typeInstructor') }}</span>
               <span class="sup-search-rn">{{ r.nom }}</span>
               <span v-if="r.sub" class="sup-search-rs">{{ r.sub }}</span>
             </li>
           </ul>
-          <p v-else-if="supSearchQuery" class="sup-search-empty">Aucun résultat</p>
+          <p v-else-if="supSearchQuery" class="sup-search-empty">{{ t('sup.shell.search.noResults') }}</p>
         </div>
       </div>
 
       <main class="sup-body">
         <div v-if="isFounderInCampus" class="sup-campus-banner">
-          <span class="sup-campus-banner-txt">
-            Vous consultez le campus <strong>{{ activeCampusNom }}</strong> · accès directeur
-          </span>
+          <span class="sup-campus-banner-txt">{{ t('sup.shell.campusBanner', { campus: activeCampusNom }) }}</span>
           <button type="button" class="sup-campus-back" @click="retourGroupe">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            Retour à la vue groupe
+            {{ t('sup.shell.backToGroup') }}
           </button>
         </div>
         <SupGroupeDashboard v-if="isGroupMode" />
@@ -333,18 +331,18 @@ const onboardingError = ref('')
 async function submitInitialPassword() {
   onboardingError.value = ''
   if (onboardingPassword.value.length < 6) {
-    onboardingError.value = 'Le mot de passe doit faire au moins 6 caractères.'
+    onboardingError.value = t('sup.shell.onboarding.errTooShort')
     return
   }
   if (onboardingPassword.value !== onboardingConfirm.value) {
-    onboardingError.value = 'Les deux mots de passe ne correspondent pas.'
+    onboardingError.value = t('sup.shell.onboarding.errMismatch')
     return
   }
   onboardingBusy.value = true
   try {
     const r = await authStore.setInitialPassword(onboardingPassword.value)
     if (!r.success) {
-      onboardingError.value = r.error || "Le mot de passe n'a pas pu être enregistré."
+      onboardingError.value = r.error || t('sup.shell.onboarding.errSaveFailed')
       return
     }
     onboardingPassword.value = ''
@@ -726,13 +724,49 @@ function quitterEdition() {
 // ─────────────────────────────────────────────────────────────────
 // En-tête uniformisé — aligné sur l'en-tête du Secondaire (AppHeader)
 // ─────────────────────────────────────────────────────────────────
-const { locale } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
+
+// Libellés i18n de la navigation (modules spécifiques au Supérieur → sup.shell.nav.*).
+// On conserve tab.label comme repli si une clé venait à manquer.
+const NAV_KEYS = {
+  espace_etudiant: 'monEspace',
+  espace_enseignant: 'monEspace',
+  espace_parent: 'monEspace',
+  dashboard: 'dashboard',
+  etudiants: 'etudiants',
+  formation: 'formation',
+  inscriptions: 'inscriptions',
+  edt: 'edt',
+  intervenants: 'intervenants',
+  notes: 'notes',
+  stages: 'stages',
+  salles: 'salles',
+  finance_dash: 'financeDash',
+  finance_tarifs: 'financeTarifs',
+  finance_echeanciers: 'financeEcheanciers',
+  finance_comptes: 'financeComptes',
+  finance_paiements: 'financePaiements',
+  finance_bourses: 'financeBourses',
+  finance_financements: 'financeFinancements',
+  gestion_acces: 'gestionAcces',
+  mobilite_entrante: 'mobiliteEntrante',
+  parametres: 'parametres',
+}
+function navLabel(tab) {
+  const k = NAV_KEYS[tab.key]
+  return k ? t(`sup.shell.nav.${k}`) : tab.label
+}
+const SECTION_KEYS = { Finance: 'finance', 'Mobilité': 'mobilite', Configuration: 'configuration' }
+function sectionLabel(section) {
+  const k = SECTION_KEYS[section]
+  return k ? t(`sup.shell.sections.${k}`) : section
+}
 
 const greeting = computed(() => {
   const h = new Date().getHours()
-  if (h < 12) return 'Bonjour'
-  if (h < 18) return 'Bon après-midi'
-  return 'Bonsoir'
+  if (h < 12) return t('header.greetingMorning')
+  if (h < 18) return t('header.greetingAfternoon')
+  return t('header.greetingEvening')
 })
 const userFirstName = computed(() => {
   const p = authStore.userProfile
@@ -752,15 +786,15 @@ const { isOnline, pendingSyncCount, syncStatus } = useConnectionStatus()
 const isSyncing = computed(() => syncStatus.value === 'syncing')
 const connClass = computed(() => (isSyncing.value ? 'syncing' : isOnline.value ? 'online' : 'offline'))
 const connText = computed(() => {
-  if (isSyncing.value) return 'Sync…'
-  if (!isOnline.value) return 'Hors ligne'
-  if (pendingSyncCount.value > 0) return 'En attente'
+  if (isSyncing.value) return t('sup.shell.conn.syncShort')
+  if (!isOnline.value) return t('header.offline')
+  if (pendingSyncCount.value > 0) return t('header.pending')
   return ''
 })
 const connTitle = computed(() => {
-  if (!isOnline.value) return 'Hors ligne — vos modifications seront synchronisées à la reconnexion'
-  if (pendingSyncCount.value > 0) return `${pendingSyncCount.value} modification(s) en attente`
-  return 'En ligne — synchronisé'
+  if (!isOnline.value) return t('sup.shell.conn.offlineTitle')
+  if (pendingSyncCount.value > 0) return t('sup.shell.conn.pendingTitle', { n: pendingSyncCount.value })
+  return t('sup.shell.conn.onlineTitle')
 })
 
 const canSeeParametres = computed(() => tabsVisibles.value.some((tb) => tb.key === 'parametres'))

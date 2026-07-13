@@ -2,8 +2,8 @@
   <div class="sd">
     <div class="sd-intro">
       <div>
-        <h1 class="sd-h1">Tableau de bord</h1>
-        <p class="sd-sub">Vue d'ensemble de l'établissement — année {{ store.ecole.anneeAcademique }}</p>
+        <h1 class="sd-h1">{{ t('sup.dash.title') }}</h1>
+        <p class="sd-sub">{{ t('sup.dash.subtitle', { year: store.ecole.anneeAcademique }) }}</p>
       </div>
     </div>
 
@@ -25,8 +25,8 @@
       <div class="sd-miapo-head">
         <div class="sd-miapo-badge"><Sparkles :size="15" /> MIAPO</div>
         <div>
-          <h2 class="sd-miapo-title">L'analyse de votre établissement</h2>
-          <p class="sd-miapo-sub">MIAPO lit vos données et met en avant ce qui mérite votre attention.</p>
+          <h2 class="sd-miapo-title">{{ t('sup.dash.miapoTitle') }}</h2>
+          <p class="sd-miapo-sub">{{ t('sup.dash.miapoSub') }}</p>
         </div>
       </div>
       <div class="sd-miapo-grid">
@@ -43,7 +43,7 @@
 
     <!-- Actions rapides -->
     <section class="sd-card sd-actions">
-      <h2 class="sd-h2">Actions rapides</h2>
+      <h2 class="sd-h2">{{ t('sup.dash.quickActions') }}</h2>
       <div class="sd-actions-grid">
         <button v-for="a in actions" :key="a.label" type="button" class="sd-action" @click="goTab(a.tab)">
           <div class="sd-action-ic"><component :is="a.icon" :size="19" /></div>
@@ -56,8 +56,8 @@
       <!-- Répartition par programme -->
       <section class="sd-card">
         <div class="sd-card-h">
-          <h2 class="sd-h2">Effectifs par programme</h2>
-          <button type="button" class="sd-more" @click="goTab('etudiants')">Voir les étudiants</button>
+          <h2 class="sd-h2">{{ t('sup.dash.headcountByProgram') }}</h2>
+          <button type="button" class="sd-more" @click="goTab('etudiants')">{{ t('sup.dash.seeStudents') }}</button>
         </div>
         <div class="sd-prog-list">
           <div v-for="p in s.parProgramme" :key="p.id" class="sd-prog">
@@ -77,13 +77,14 @@
     </div>
 
     <div v-if="isDemoTenant" class="sd-demo-note">
-      Données de démonstration — établissement fictif.
+      {{ t('sup.dash.demoNote') }}
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useFinanceStore } from '../../stores/finance'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
@@ -92,6 +93,8 @@ import {
   Sparkles, ArrowRight, ChevronRight, AlertTriangle, PiggyBank,
   UserPlus, FileText, CreditCard, ClipboardList, CalendarDays, BellRing,
 } from 'lucide-vue-next'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
@@ -111,32 +114,32 @@ const fmtFcfa = (n) => `${fmt(Math.round(n || 0))} FCFA`
 // ── Cartes KPI cliquables ─────────────────────────────────────────────
 const kpis = computed(() => [
   {
-    label: 'Étudiants inscrits', tone: 'blue', icon: Users, tab: 'etudiants',
-    value: fmt(s.value.nbEtudiants), foot: `${s.value.boursiers} boursiers`,
+    label: t('sup.dash.kpiEtudiants'), tone: 'blue', icon: Users, tab: 'etudiants',
+    value: fmt(s.value.nbEtudiants), foot: t('sup.dash.kpiBoursiers', { n: s.value.boursiers }),
   },
   {
-    label: 'Programmes', tone: 'violet', icon: GraduationCap, tab: 'formation',
-    value: s.value.nbProgrammes, foot: `${s.value.nbPromotions} promotions`,
+    label: t('sup.dash.kpiProgrammes'), tone: 'violet', icon: GraduationCap, tab: 'formation',
+    value: s.value.nbProgrammes, foot: t('sup.dash.kpiPromotions', { n: s.value.nbPromotions }),
   },
   {
-    label: 'Moyenne générale', tone: 'gold', icon: Award, tab: 'notes',
+    label: t('sup.dash.kpiMoyenne'), tone: 'gold', icon: Award, tab: 'notes',
     value: s.value.moyenneGenerale, unit: '/20',
-    foot: `${s.value.enDifficulte} en difficulté`,
+    foot: t('sup.dash.kpiEnDifficulte', { n: s.value.enDifficulte }),
     footClass: s.value.enDifficulte > 0 ? 'is-warn' : 'is-ok',
   },
   {
-    label: 'Crédits acquis', tone: 'teal', icon: TrendingUp, tab: 'notes',
-    value: s.value.tauxProgressionEcts, unit: '%', foot: 'progression moyenne',
+    label: t('sup.dash.kpiCredits'), tone: 'teal', icon: TrendingUp, tab: 'notes',
+    value: s.value.tauxProgressionEcts, unit: '%', foot: t('sup.dash.kpiProgressionMoyenne'),
   },
   {
-    label: 'Recouvrement', tone: 'green', icon: Wallet, tab: 'finance_dash',
+    label: t('sup.dash.kpiRecouvrement'), tone: 'green', icon: Wallet, tab: 'finance_dash',
     value: fin.value.tauxRecouvrement ?? 0, unit: '%',
-    foot: fin.value.montantEnRetard ? `${fmtFcfa(fin.value.montantEnRetard)} en retard` : 'à jour',
+    foot: fin.value.montantEnRetard ? t('sup.dash.kpiEnRetard', { m: fmtFcfa(fin.value.montantEnRetard) }) : t('sup.dash.kpiAJour'),
     footClass: fin.value.montantEnRetard ? 'is-warn' : 'is-ok',
   },
   {
-    label: 'Intervenants', tone: 'indigo', icon: Presentation, tab: 'intervenants',
-    value: s.value.nbIntervenants, foot: `dont ${s.value.vacataires} vacataires`,
+    label: t('sup.dash.kpiIntervenants'), tone: 'indigo', icon: Presentation, tab: 'intervenants',
+    value: s.value.nbIntervenants, foot: t('sup.dash.kpiVacataires', { n: s.value.vacataires }),
   },
 ])
 
@@ -145,18 +148,18 @@ const miapoInsights = computed(() => {
   const out = []
   const diff = s.value.enDifficulte
   out.push({
-    label: diff > 0 ? 'étudiants à accompagner en priorité' : 'aucun étudiant en difficulté',
-    value: diff > 0 ? `${diff}` : 'OK',
+    label: diff > 0 ? t('sup.dash.miapoDiffLabel') : t('sup.dash.miapoNoDiffLabel'),
+    value: diff > 0 ? `${diff}` : t('sup.dash.miapoOk'),
     icon: AlertTriangle, tab: 'etudiants', tone: diff > 0 ? 'warn' : 'ok',
   })
   const tr = fin.value.tauxRecouvrement ?? 0
   out.push({
-    label: fin.value.nbEnRetard ? `comptes en retard · ${fmtFcfa(fin.value.montantEnRetard)}` : 'recouvrement à jour',
+    label: fin.value.nbEnRetard ? t('sup.dash.miapoRetardLabel', { m: fmtFcfa(fin.value.montantEnRetard) }) : t('sup.dash.miapoRecouvrementOk'),
     value: `${tr}%`,
     icon: PiggyBank, tab: 'finance_echeanciers', tone: tr < 80 ? 'warn' : 'ok',
   })
   out.push({
-    label: 'crédits validés à ce stade de l\'année',
+    label: t('sup.dash.miapoCreditsLabel'),
     value: `${s.value.tauxProgressionEcts}%`,
     icon: TrendingUp, tab: 'notes', tone: 'info',
   })
@@ -164,14 +167,14 @@ const miapoInsights = computed(() => {
 })
 
 // ── Actions rapides ───────────────────────────────────────────────────
-const actions = [
-  { label: 'Inscrire un étudiant', icon: UserPlus, tab: 'etudiants' },
-  { label: 'Saisir des notes', icon: FileText, tab: 'notes' },
-  { label: 'Encaisser un paiement', icon: CreditCard, tab: 'finance_paiements' },
-  { label: 'Inscriptions pédagogiques', icon: ClipboardList, tab: 'inscriptions' },
-  { label: 'Emploi du temps', icon: CalendarDays, tab: 'edt' },
-  { label: 'Relancer les impayés', icon: BellRing, tab: 'finance_echeanciers' },
-]
+const actions = computed(() => [
+  { label: t('sup.dash.actionInscrire'), icon: UserPlus, tab: 'etudiants' },
+  { label: t('sup.dash.actionNotes'), icon: FileText, tab: 'notes' },
+  { label: t('sup.dash.actionPaiement'), icon: CreditCard, tab: 'finance_paiements' },
+  { label: t('sup.dash.actionInscriptions'), icon: ClipboardList, tab: 'inscriptions' },
+  { label: t('sup.dash.actionEdt'), icon: CalendarDays, tab: 'edt' },
+  { label: t('sup.dash.actionRelance'), icon: BellRing, tab: 'finance_echeanciers' },
+])
 
 const maxEffectif = computed(() => Math.max(...s.value.parProgramme.map((p) => p.effectif), 1))
 function barWidth(effectif) {

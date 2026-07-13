@@ -1,7 +1,7 @@
 <template>
   <div class="sid-overlay" @click.self="$emit('close')">
     <div class="sid-modal">
-      <button class="sid-close" type="button" @click="$emit('close')" aria-label="Fermer">
+      <button class="sid-close" type="button" @click="$emit('close')" :aria-label="t('sup.intervenantDetail.close')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
 
@@ -10,7 +10,7 @@
         <div class="sid-head-info">
           <div class="sid-name">{{ nomAffiche }}</div>
           <div class="sid-meta">
-            <span class="sid-statut" :class="it.statut === 'vacataire' ? 'is-vac' : 'is-perm'">{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</span>
+            <span class="sid-statut" :class="it.statut === 'vacataire' ? 'is-vac' : 'is-perm'">{{ it.statut === 'vacataire' ? t('sup.intervenantDetail.vacataire') : t('sup.intervenantDetail.permanent') }}</span>
             <span class="sid-spec">{{ it.specialite }}</span>
             <span v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-dot">·</span>
             <span v-if="it.statut === 'vacataire' && it.coutHoraire">{{ formatFcfa(it.coutHoraire) }} FCFA/h</span>
@@ -21,12 +21,12 @@
         </div>
         <div class="sid-head-kpi">
           <div class="sid-kpi-num">{{ ueList.length }}</div>
-          <div class="sid-kpi-lab">UE assurées</div>
+          <div class="sid-kpi-lab">{{ t('sup.intervenantDetail.ueAssured') }}</div>
         </div>
       </div>
 
       <div class="sid-tabs">
-        <button v-for="t in tabs" :key="t.key" type="button" :class="{ active: tab === t.key }" @click="tab = t.key">{{ t.label }}</button>
+        <button v-for="tb in tabs" :key="tb.key" type="button" :class="{ active: tab === tb.key }" @click="tab = tb.key">{{ tb.label }}</button>
       </div>
 
       <div class="sid-body">
@@ -34,7 +34,7 @@
         <div v-show="tab === 'ue'" class="sid-pane">
           <table v-if="ueList.length" class="sid-table">
             <thead>
-              <tr><th>Code</th><th>Intitulé</th><th>Semestre</th><th class="num">Crédits</th><th class="num">Heures</th></tr>
+              <tr><th>{{ t('sup.intervenantDetail.thCode') }}</th><th>{{ t('sup.intervenantDetail.thTitle') }}</th><th>{{ t('sup.intervenantDetail.thSemester') }}</th><th class="num">{{ t('sup.intervenantDetail.thCredits') }}</th><th class="num">{{ t('sup.intervenantDetail.thHours') }}</th></tr>
             </thead>
             <tbody>
               <tr v-for="u in ueList" :key="u.id">
@@ -46,38 +46,38 @@
               </tr>
             </tbody>
             <tfoot>
-              <tr><td colspan="3">Total</td><td class="num">{{ totalEcts }}</td><td class="num">{{ it.volumeHoraire }} h</td></tr>
+              <tr><td colspan="3">{{ t('sup.intervenantDetail.total') }}</td><td class="num">{{ totalEcts }}</td><td class="num">{{ it.volumeHoraire }} h</td></tr>
             </tfoot>
           </table>
-          <p v-else class="sid-empty">Aucune UE assignée actuellement.</p>
+          <p v-else class="sid-empty">{{ t('sup.intervenantDetail.noUE') }}</p>
         </div>
 
         <!-- Profil / charge -->
         <div v-show="tab === 'profil'" class="sid-pane">
           <div class="sid-cards">
-            <div class="sid-card"><div class="sid-card-num">{{ it.volumeHoraire }}<span> h</span></div><div class="sid-card-lab">Volume horaire annuel</div></div>
-            <div class="sid-card"><div class="sid-card-num">{{ ueList.length }}</div><div class="sid-card-lab">Unités d'enseignement</div></div>
-            <div class="sid-card"><div class="sid-card-num sid-charge" :class="chargeClass">{{ chargeLabel }}</div><div class="sid-card-lab">Charge</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ it.volumeHoraire }}<span> h</span></div><div class="sid-card-lab">{{ t('sup.intervenantDetail.annualHours') }}</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ ueList.length }}</div><div class="sid-card-lab">{{ t('sup.intervenantDetail.teachingUnits') }}</div></div>
+            <div class="sid-card"><div class="sid-card-num sid-charge" :class="chargeClass">{{ chargeLabel }}</div><div class="sid-card-lab">{{ t('sup.intervenantDetail.charge') }}</div></div>
           </div>
           <div class="sid-ident">
-            <div class="sid-ident-row"><span>Statut</span><strong>{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
-            <div class="sid-ident-row"><span>Spécialité</span><strong>{{ it.specialite }}</strong></div>
-            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>Tarif horaire</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
-            <div class="sid-ident-row"><span>Nombre d'étudiants suivis</span><strong>{{ nbEtudiants }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.statut') }}</span><strong>{{ it.statut === 'vacataire' ? t('sup.intervenantDetail.vacataire') : t('sup.intervenantDetail.permanent') }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.specialite') }}</span><strong>{{ it.specialite }}</strong></div>
+            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>{{ t('sup.intervenantDetail.hourlyRate') }}</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.studentsFollowed') }}</span><strong>{{ nbEtudiants }}</strong></div>
           </div>
         </div>
 
         <!-- Identité & contact -->
         <div v-show="tab === 'coord'" class="sid-pane">
           <div class="sid-ident">
-            <div class="sid-ident-row"><span>Nom complet</span><strong>{{ nomAffiche }}</strong></div>
-            <div class="sid-ident-row"><span>Sexe</span><strong>{{ it.sexe === 'F' ? 'Féminin' : 'Masculin' }}</strong></div>
-            <div class="sid-ident-row"><span>Statut</span><strong>{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
-            <div class="sid-ident-row"><span>Spécialité</span><strong>{{ it.specialite }}</strong></div>
-            <div class="sid-ident-row"><span>Téléphone</span><strong>{{ it.telephone || '—' }}</strong></div>
-            <div class="sid-ident-row"><span>E-mail</span><strong>{{ it.email || email }}</strong></div>
-            <div class="sid-ident-row"><span>Adresse</span><strong>{{ it.adresse || '—' }}</strong></div>
-            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>Tarif horaire</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.fullName') }}</span><strong>{{ nomAffiche }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.sex') }}</span><strong>{{ it.sexe === 'F' ? t('sup.intervenantDetail.female') : t('sup.intervenantDetail.male') }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.statut') }}</span><strong>{{ it.statut === 'vacataire' ? t('sup.intervenantDetail.vacataire') : t('sup.intervenantDetail.permanent') }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.specialite') }}</span><strong>{{ it.specialite }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.phone') }}</span><strong>{{ it.telephone || '—' }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.email') }}</span><strong>{{ it.email || email }}</strong></div>
+            <div class="sid-ident-row"><span>{{ t('sup.intervenantDetail.address') }}</span><strong>{{ it.adresse || '—' }}</strong></div>
+            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>{{ t('sup.intervenantDetail.hourlyRate') }}</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
           </div>
         </div>
       </div>
@@ -87,7 +87,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({ intervenant: { type: Object, required: true } })
 defineEmits(['close'])
@@ -96,11 +99,11 @@ const store = useSuperieurStore()
 const it = computed(() => props.intervenant).value
 
 const tab = ref('ue')
-const tabs = [
-  { key: 'ue', label: 'Enseignements' },
-  { key: 'profil', label: 'Profil & charge' },
-  { key: 'coord', label: 'Identité & contact' },
-]
+const tabs = computed(() => [
+  { key: 'ue', label: t('sup.intervenantDetail.tabTeaching') },
+  { key: 'profil', label: t('sup.intervenantDetail.tabProfile') },
+  { key: 'coord', label: t('sup.intervenantDetail.tabContact') },
+])
 
 const ueList = computed(() => store.ue.filter((u) => u.intervenantId === it.id)).value
 const totalEcts = ueList.reduce((s, u) => s + (u.ects || 0), 0)
@@ -117,7 +120,7 @@ const initials = (nomAffiche || '')
   .join('')
   .toUpperCase()
 
-const chargeLabel = it.volumeHoraire >= 320 ? 'Surcharge' : it.volumeHoraire >= 120 ? 'Charge normale' : 'Charge légère'
+const chargeLabel = computed(() => it.volumeHoraire >= 320 ? t('sup.intervenantDetail.chargeOverload') : it.volumeHoraire >= 120 ? t('sup.intervenantDetail.chargeNormal') : t('sup.intervenantDetail.chargeLight'))
 const chargeClass = it.volumeHoraire >= 320 ? 'is-warn' : 'is-ok'
 const email = (nomAffiche || 'intervenant').toLowerCase().replace(/[^a-z]+/g, '.').replace(/^\.|\.$/g, '') + '@ise.demo'
 

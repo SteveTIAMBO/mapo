@@ -2,72 +2,72 @@
   <div class="si">
     <div class="si-intro">
       <div>
-        <h1 class="si-h1">Intervenants &amp; vacataires</h1>
+        <h1 class="si-h1">{{ t('sup.intervenants.title') }}</h1>
         <p class="si-sub">
-          Annuaire et plans de charge de l'équipe pédagogique — permanents et vacataires.
+          {{ t('sup.intervenants.subtitle') }}
         </p>
       </div>
       <button class="si-btn-primary" type="button" @click="openCreate">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Ajouter un intervenant
+        {{ t('sup.intervenants.add') }}
       </button>
     </div>
 
     <!-- KPIs -->
     <div class="si-kpis">
       <div class="si-kpi">
-        <div class="si-kpi-label">Intervenants actifs</div>
+        <div class="si-kpi-label">{{ t('sup.intervenants.kpiActive') }}</div>
         <div class="si-kpi-value">{{ s.total }}</div>
-        <div class="si-kpi-foot">{{ s.total - s.vacataires }} permanents</div>
+        <div class="si-kpi-foot">{{ t('sup.intervenants.kpiActiveFoot', { n: s.total - s.vacataires }) }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">Vacataires</div>
+        <div class="si-kpi-label">{{ t('sup.intervenants.kpiVacataires') }}</div>
         <div class="si-kpi-value">{{ s.vacataires }}</div>
-        <div class="si-kpi-foot">{{ Math.round((s.vacataires / Math.max(s.total, 1)) * 100) }}% de l'équipe</div>
+        <div class="si-kpi-foot">{{ t('sup.intervenants.kpiVacatairesFoot', { n: Math.round((s.vacataires / Math.max(s.total, 1)) * 100) }) }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">Volume horaire annuel</div>
+        <div class="si-kpi-label">{{ t('sup.intervenants.kpiVolume') }}</div>
         <div class="si-kpi-value">{{ fmt(s.heuresTotal) }}<span class="si-kpi-unit">h</span></div>
-        <div class="si-kpi-foot">enseignement réparti</div>
+        <div class="si-kpi-foot">{{ t('sup.intervenants.kpiVolumeFoot') }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">Charge moyenne</div>
+        <div class="si-kpi-label">{{ t('sup.intervenants.kpiAvg') }}</div>
         <div class="si-kpi-value">{{ s.moyenneHeures }}<span class="si-kpi-unit">h</span></div>
-        <div class="si-kpi-foot">par intervenant</div>
+        <div class="si-kpi-foot">{{ t('sup.intervenants.kpiAvgFoot') }}</div>
       </div>
     </div>
 
     <!-- Filtres -->
     <div class="si-filters">
       <div class="si-filter">
-        <span class="si-filter-label">Statut</span>
+        <span class="si-filter-label">{{ t('sup.intervenants.statut') }}</span>
         <select :value="store.intervenantsFilters.statut" @change="store.setIntervenantFilter('statut', $event.target.value)">
-          <option value="">Tous les statuts</option>
-          <option value="permanent">Permanent</option>
-          <option value="vacataire">Vacataire</option>
+          <option value="">{{ t('sup.intervenants.allStatuses') }}</option>
+          <option value="permanent">{{ t('sup.intervenants.permanent') }}</option>
+          <option value="vacataire">{{ t('sup.intervenants.vacataire') }}</option>
         </select>
       </div>
       <div class="si-filter">
-        <span class="si-filter-label">Spécialité</span>
+        <span class="si-filter-label">{{ t('sup.intervenants.specialite') }}</span>
         <select :value="store.intervenantsFilters.specialite" @change="store.setIntervenantFilter('specialite', $event.target.value)">
-          <option value="">Toutes spécialités</option>
+          <option value="">{{ t('sup.intervenants.allSpecialities') }}</option>
           <option v-for="sp in store.intervenantsSpecialites" :key="sp" :value="sp">{{ sp }}</option>
         </select>
       </div>
       <div class="si-filter si-filter-search">
-        <span class="si-filter-label">Recherche</span>
+        <span class="si-filter-label">{{ t('sup.intervenants.search') }}</span>
         <input
           type="text"
           :value="store.intervenantsFilters.search"
           @input="store.setIntervenantFilter('search', $event.target.value)"
-          placeholder="Nom ou spécialité…"
+          :placeholder="t('sup.intervenants.searchPlaceholder')"
         />
       </div>
       <button v-if="hasFilters" class="si-reset" type="button" @click="store.resetIntervenantFilters()">
-        Réinitialiser
+        {{ t('sup.intervenants.reset') }}
       </button>
       <span class="si-count">
-        {{ store.filteredIntervenants.length }} intervenant{{ store.filteredIntervenants.length > 1 ? 's' : '' }}
+        {{ countLabel }}
       </span>
     </div>
 
@@ -76,12 +76,12 @@
       <table class="si-table">
         <thead>
           <tr>
-            <th>Intervenant</th>
-            <th>Statut</th>
-            <th>Spécialité</th>
-            <th class="num">UE assurées</th>
-            <th class="num">Volume horaire</th>
-            <th>Charge</th>
+            <th>{{ t('sup.intervenants.colIntervenant') }}</th>
+            <th>{{ t('sup.intervenants.statut') }}</th>
+            <th>{{ t('sup.intervenants.specialite') }}</th>
+            <th class="num">{{ t('sup.intervenants.colUE') }}</th>
+            <th class="num">{{ t('sup.intervenants.colVolume') }}</th>
+            <th>{{ t('sup.intervenants.colCharge') }}</th>
             <th class="si-actions-head"></th>
           </tr>
         </thead>
@@ -98,7 +98,7 @@
             </td>
             <td>
               <span class="si-pill" :class="`st-${it.statut}`">
-                {{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}
+                {{ it.statut === 'vacataire' ? t('sup.intervenants.vacataire') : t('sup.intervenants.permanent') }}
               </span>
               <span v-if="it.statut === 'vacataire' && it.coutHoraire" class="si-cout">
                 {{ it.coutHoraire }} FCFA/h
@@ -120,16 +120,16 @@
               </div>
             </td>
             <td class="si-actions" @click.stop>
-              <button type="button" class="si-icon-btn" title="Modifier" @click="openEdit(it)">
+              <button type="button" class="si-icon-btn" :title="t('sup.intervenants.edit')" @click="openEdit(it)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
-              <button type="button" class="si-icon-btn is-danger" title="Supprimer" @click="askDelete(it)">
+              <button type="button" class="si-icon-btn is-danger" :title="t('sup.intervenants.delete')" @click="askDelete(it)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               </button>
             </td>
           </tr>
           <tr v-if="store.filteredIntervenants.length === 0">
-            <td colspan="7" class="si-empty">Aucun intervenant ne correspond aux filtres.</td>
+            <td colspan="7" class="si-empty">{{ t('sup.intervenants.empty') }}</td>
           </tr>
         </tbody>
       </table>
@@ -140,7 +140,7 @@
       <div v-if="modalOpen" class="si-modal-overlay" @click.self="closeModal">
         <div class="si-modal">
           <div class="si-modal-head">
-            <h2 class="si-modal-title">{{ editing ? "Modifier l'intervenant" : 'Nouvel intervenant' }}</h2>
+            <h2 class="si-modal-title">{{ editing ? t('sup.intervenants.editTitle') : t('sup.intervenants.newTitle') }}</h2>
             <button class="si-modal-close" type="button" @click="closeModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -148,24 +148,24 @@
           <form class="si-form" @submit.prevent="submit">
             <div class="si-form-row">
               <div class="si-field">
-                <label class="si-form-label">Prénom</label>
+                <label class="si-form-label">{{ t('sup.intervenants.firstName') }}</label>
                 <input v-model="form.prenom" type="text" class="si-input" required />
               </div>
               <div class="si-field">
-                <label class="si-form-label">Nom</label>
+                <label class="si-form-label">{{ t('sup.intervenants.lastName') }}</label>
                 <input v-model="form.nom" type="text" class="si-input" required />
               </div>
             </div>
             <div class="si-form-row">
               <div class="si-field">
-                <label class="si-form-label">Statut</label>
+                <label class="si-form-label">{{ t('sup.intervenants.statut') }}</label>
                 <select v-model="form.statut" class="si-input">
-                  <option value="permanent">Permanent</option>
-                  <option value="vacataire">Vacataire</option>
+                  <option value="permanent">{{ t('sup.intervenants.permanent') }}</option>
+                  <option value="vacataire">{{ t('sup.intervenants.vacataire') }}</option>
                 </select>
               </div>
               <div class="si-field">
-                <label class="si-form-label">Spécialité</label>
+                <label class="si-form-label">{{ t('sup.intervenants.specialite') }}</label>
                 <input v-model="form.specialite" type="text" class="si-input" list="si-specs" />
                 <datalist id="si-specs">
                   <option v-for="sp in store.intervenantsSpecialites" :key="sp" :value="sp" />
@@ -173,14 +173,14 @@
               </div>
             </div>
             <div v-if="form.statut === 'vacataire'" class="si-field">
-              <label class="si-form-label">Coût horaire (FCFA)</label>
+              <label class="si-form-label">{{ t('sup.intervenants.hourlyCost') }}</label>
               <input v-model.number="form.coutHoraire" type="number" min="0" step="1" class="si-input" />
             </div>
             <p v-if="formError" class="si-form-error">{{ formError }}</p>
             <div class="si-modal-actions">
-              <button type="button" class="si-btn-ghost" @click="closeModal">Annuler</button>
+              <button type="button" class="si-btn-ghost" @click="closeModal">{{ t('sup.intervenants.cancel') }}</button>
               <button type="submit" class="si-btn-primary">
-                {{ editing ? 'Enregistrer' : "Créer l'intervenant" }}
+                {{ editing ? t('sup.intervenants.save') : t('sup.intervenants.create') }}
               </button>
             </div>
           </form>
@@ -194,13 +194,19 @@
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import SupIntervenantDetail from './SupIntervenantDetail.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const detailIntervenant = ref(null)
 function openDetail(it) { detailIntervenant.value = it }
 const s = computed(() => store.intervenantsStats)
+const countLabel = computed(() => {
+  const n = store.filteredIntervenants.length
+  return n > 1 ? t('sup.intervenants.countMany', { n }) : t('sup.intervenants.countOne', { n })
+})
 
 // ── CRUD ──
 const modalOpen = ref(false)
@@ -225,7 +231,7 @@ function openEdit(it) {
 function closeModal() { modalOpen.value = false; editing.value = null }
 function submit() {
   if (!form.prenom.trim() || !form.nom.trim()) {
-    formError.value = 'Le prénom et le nom sont obligatoires.'
+    formError.value = t('sup.intervenants.errorRequired')
     return
   }
   const payload = { ...form }
@@ -235,7 +241,7 @@ function submit() {
   closeModal()
 }
 function askDelete(it) {
-  if (window.confirm(`Supprimer ${it.nomComplet} ? Les UE qu'il assure resteront à attribuer.`)) {
+  if (window.confirm(t('sup.intervenants.confirmDelete', { name: it.nomComplet }))) {
     store.deleteIntervenant(it.id)
   }
 }
@@ -258,10 +264,10 @@ function chargeClass(it) {
   return 'is-low'
 }
 function chargeLabel(it) {
-  if (it.volumeHoraire >= SEUIL_SURCHARGE) return 'Surcharge'
-  if (it.volumeHoraire >= SEUIL_PLEIN) return 'Temps plein'
-  if (it.volumeHoraire >= 60) return 'Mi-charge'
-  return 'Légère'
+  if (it.volumeHoraire >= SEUIL_SURCHARGE) return t('sup.intervenants.chargeOverload')
+  if (it.volumeHoraire >= SEUIL_PLEIN) return t('sup.intervenants.chargeFull')
+  if (it.volumeHoraire >= 60) return t('sup.intervenants.chargeHalf')
+  return t('sup.intervenants.chargeLight')
 }
 function initiales(p, n) {
   return ((p?.[0] || '') + (n?.[0] || '')).toUpperCase()

@@ -2,48 +2,48 @@
   <div class="se">
     <div class="se-intro">
       <div>
-        <h1 class="se-h1">Étudiants</h1>
-        <p class="se-sub">{{ store.etudiants.length }} étudiants inscrits — tous programmes confondus</p>
+        <h1 class="se-h1">{{ t('sup.etudiants.title') }}</h1>
+        <p class="se-sub">{{ t('sup.etudiants.subtitle', { n: store.etudiants.length }) }}</p>
       </div>
       <button class="se-btn-primary" type="button" @click="openCreate">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Ajouter un étudiant
+        {{ t('sup.etudiants.add') }}
       </button>
     </div>
 
     <!-- Filtres -->
     <div class="se-filters">
       <div class="se-filter">
-        <span class="se-filter-label">Promotion</span>
+        <span class="se-filter-label">{{ t('sup.etudiants.promotion') }}</span>
         <select :value="store.etudiantFilters.promotionId" @change="store.setEtudiantFilter('promotionId', $event.target.value)">
-          <option value="">Toutes les promotions</option>
+          <option value="">{{ t('sup.etudiants.allPromotions') }}</option>
           <option v-for="p in store.promotions" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
         </select>
       </div>
       <div class="se-filter">
-        <span class="se-filter-label">Statut</span>
+        <span class="se-filter-label">{{ t('sup.etudiants.statut') }}</span>
         <select :value="store.etudiantFilters.statut" @change="store.setEtudiantFilter('statut', $event.target.value)">
-          <option value="">Tous les statuts</option>
-          <option value="inscrit">Inscrit</option>
-          <option value="en_difficulte">En difficulté</option>
+          <option value="">{{ t('sup.etudiants.allStatuses') }}</option>
+          <option value="inscrit">{{ t('sup.etudiants.inscrit') }}</option>
+          <option value="en_difficulte">{{ t('sup.etudiants.enDifficulte') }}</option>
         </select>
       </div>
       <div class="se-filter se-filter-search">
-        <span class="se-filter-label">Recherche</span>
+        <span class="se-filter-label">{{ t('sup.etudiants.search') }}</span>
         <input
           type="text"
           :value="store.etudiantFilters.search"
           @input="store.setEtudiantFilter('search', $event.target.value)"
-          placeholder="Nom, matricule, programme…"
+          :placeholder="t('sup.etudiants.searchPlaceholder')"
         />
       </div>
       <button v-if="hasFilters" class="se-reset" type="button" @click="store.resetEtudiantFilters()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        Réinitialiser
+        {{ t('sup.etudiants.reset') }}
       </button>
-      <span class="se-count">{{ store.filteredEtudiants.length }} étudiant{{ store.filteredEtudiants.length > 1 ? 's' : '' }}</span>
+      <span class="se-count">{{ store.filteredEtudiants.length > 1 ? t('sup.etudiants.countPlural', { n: store.filteredEtudiants.length }) : t('sup.etudiants.count', { n: store.filteredEtudiants.length }) }}</span>
     </div>
 
     <!-- Table -->
@@ -51,10 +51,10 @@
       <table class="se-table">
         <thead>
           <tr>
-            <th>Matricule</th>
-            <th>Étudiant</th>
-            <th>Programme</th>
-            <th>Statut</th>
+            <th>{{ t('sup.etudiants.matricule') }}</th>
+            <th>{{ t('sup.etudiants.colEtudiant') }}</th>
+            <th>{{ t('sup.etudiants.colProgramme') }}</th>
+            <th>{{ t('sup.etudiants.statut') }}</th>
             <th class="se-actions-head"></th>
           </tr>
         </thead>
@@ -63,7 +63,7 @@
             <td class="se-mat">{{ e.matricule }}</td>
             <td>
               <div class="se-name">{{ e.nomComplet }}</div>
-              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.boursier" class="se-bourse">Boursier</span></div>
+              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.boursier" class="se-bourse">{{ t('sup.etudiants.boursier') }}</span></div>
             </td>
             <td>
               <span class="se-niveau" :class="`n-${e.niveau.toLowerCase()}`">{{ e.niveau }}</span>
@@ -71,20 +71,20 @@
             </td>
             <td>
               <span class="se-statut" :class="e.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">
-                {{ e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit' }}
+                {{ e.statut === 'en_difficulte' ? t('sup.etudiants.enDifficulte') : t('sup.etudiants.inscrit') }}
               </span>
             </td>
             <td class="se-actions" @click.stop>
-              <button type="button" class="se-icon-btn" title="Modifier" @click="openEdit(e)">
+              <button type="button" class="se-icon-btn" :title="t('sup.etudiants.edit')" @click="openEdit(e)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
-              <button type="button" class="se-icon-btn is-danger" title="Supprimer" @click="askDelete(e)">
+              <button type="button" class="se-icon-btn is-danger" :title="t('sup.etudiants.delete')" @click="askDelete(e)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               </button>
             </td>
           </tr>
           <tr v-if="store.filteredEtudiants.length === 0">
-            <td colspan="5" class="se-empty">Aucun étudiant ne correspond aux filtres.</td>
+            <td colspan="5" class="se-empty">{{ t('sup.etudiants.empty') }}</td>
           </tr>
         </tbody>
       </table>
@@ -93,7 +93,7 @@
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="se-pagination">
       <span class="se-page-info">
-        {{ pageStart + 1 }}–{{ pageEnd }} sur {{ store.filteredEtudiants.length }}
+        {{ t('sup.etudiants.pageInfo', { from: pageStart + 1, to: pageEnd, total: store.filteredEtudiants.length }) }}
       </span>
       <div class="se-page-ctrl">
         <label class="se-page-size">
@@ -102,11 +102,11 @@
             <option :value="50">50</option>
             <option :value="100">100</option>
           </select>
-          par page
+          {{ t('sup.etudiants.perPage') }}
         </label>
-        <button type="button" class="se-page-btn" :disabled="page === 1" @click="page--">Précédent</button>
-        <span class="se-page-num">Page {{ page }} / {{ totalPages }}</span>
-        <button type="button" class="se-page-btn" :disabled="page === totalPages" @click="page++">Suivant</button>
+        <button type="button" class="se-page-btn" :disabled="page === 1" @click="page--">{{ t('sup.etudiants.prev') }}</button>
+        <span class="se-page-num">{{ t('sup.etudiants.pageNum', { page, total: totalPages }) }}</span>
+        <button type="button" class="se-page-btn" :disabled="page === totalPages" @click="page++">{{ t('sup.etudiants.next') }}</button>
       </div>
     </div>
 
@@ -115,7 +115,7 @@
       <div v-if="modalOpen" class="se-modal-overlay" @click.self="closeModal">
         <div class="se-modal">
           <div class="se-modal-head">
-            <h2 class="se-modal-title">{{ editing ? "Modifier l'étudiant" : 'Nouvel étudiant' }}</h2>
+            <h2 class="se-modal-title">{{ editing ? t('sup.etudiants.editTitle') : t('sup.etudiants.newTitle') }}</h2>
             <button class="se-modal-close" type="button" @click="closeModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -123,28 +123,28 @@
           <form class="se-form" @submit.prevent="submit">
             <div class="se-form-row">
               <div class="se-field">
-                <label class="se-form-label">Prénom</label>
+                <label class="se-form-label">{{ t('sup.etudiants.firstName') }}</label>
                 <input v-model="form.prenom" type="text" class="se-input" required />
               </div>
               <div class="se-field">
-                <label class="se-form-label">Nom</label>
+                <label class="se-form-label">{{ t('sup.etudiants.lastName') }}</label>
                 <input v-model="form.nom" type="text" class="se-input" required />
               </div>
             </div>
             <div class="se-form-row">
               <div class="se-field">
-                <label class="se-form-label">Matricule</label>
-                <input v-model="form.matricule" type="text" class="se-input" placeholder="Auto si vide" />
+                <label class="se-form-label">{{ t('sup.etudiants.matricule') }}</label>
+                <input v-model="form.matricule" type="text" class="se-input" :placeholder="t('sup.etudiants.matriculePlaceholder')" />
               </div>
               <div class="se-field">
-                <label class="se-form-label">Ville d'origine</label>
+                <label class="se-form-label">{{ t('sup.etudiants.villeOrigine') }}</label>
                 <input v-model="form.villeOrigine" type="text" class="se-input" />
               </div>
             </div>
             <div class="se-field">
-              <label class="se-form-label">Promotion</label>
+              <label class="se-form-label">{{ t('sup.etudiants.promotion') }}</label>
               <select v-model="form.promotionId" class="se-input" required>
-                <option value="">— Choisir —</option>
+                <option value="">{{ t('sup.etudiants.choose') }}</option>
                 <option v-for="p in store.promotions" :key="p.id" :value="p.id">
                   {{ p.programmeNom }} — {{ p.anneeNom }}
                 </option>
@@ -152,37 +152,37 @@
             </div>
             <div class="se-form-row">
               <div class="se-field">
-                <label class="se-form-label">crédits validés</label>
+                <label class="se-form-label">{{ t('sup.etudiants.ectsValides') }}</label>
                 <input v-model.number="form.ectsValides" type="number" min="0" class="se-input" />
               </div>
               <div class="se-field">
-                <label class="se-form-label">crédits requis</label>
+                <label class="se-form-label">{{ t('sup.etudiants.ectsRequis') }}</label>
                 <input v-model.number="form.ectsRequis" type="number" min="0" class="se-input" />
               </div>
               <div class="se-field">
-                <label class="se-form-label">Moyenne /20</label>
+                <label class="se-form-label">{{ t('sup.etudiants.moyenne') }}</label>
                 <input v-model.number="form.moyenne" type="number" min="0" max="20" step="0.1" class="se-input" />
               </div>
             </div>
             <div class="se-form-row">
               <div class="se-field">
-                <label class="se-form-label">Statut</label>
+                <label class="se-form-label">{{ t('sup.etudiants.statut') }}</label>
                 <select v-model="form.statut" class="se-input">
-                  <option value="inscrit">Inscrit</option>
-                  <option value="en_difficulte">En difficulté</option>
+                  <option value="inscrit">{{ t('sup.etudiants.inscrit') }}</option>
+                  <option value="en_difficulte">{{ t('sup.etudiants.enDifficulte') }}</option>
                 </select>
               </div>
               <div class="se-field se-field-check">
                 <label class="se-check">
-                  <input v-model="form.boursier" type="checkbox" /> Boursier
+                  <input v-model="form.boursier" type="checkbox" /> {{ t('sup.etudiants.boursier') }}
                 </label>
               </div>
             </div>
             <p v-if="formError" class="se-form-error">{{ formError }}</p>
             <div class="se-modal-actions">
-              <button type="button" class="se-btn-ghost" @click="closeModal">Annuler</button>
+              <button type="button" class="se-btn-ghost" @click="closeModal">{{ t('sup.etudiants.cancel') }}</button>
               <button type="submit" class="se-btn-primary">
-                {{ editing ? 'Enregistrer' : "Créer l'étudiant" }}
+                {{ editing ? t('sup.etudiants.save') : t('sup.etudiants.create') }}
               </button>
             </div>
           </form>
@@ -196,9 +196,11 @@
 
 <script setup>
 import { computed, ref, reactive, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const detailEtudiant = ref(null)
 function openDetail(e) { detailEtudiant.value = e }
@@ -261,11 +263,11 @@ function closeModal() {
 }
 function submit() {
   if (!form.prenom.trim() || !form.nom.trim()) {
-    formError.value = 'Le prénom et le nom sont obligatoires.'
+    formError.value = t('sup.etudiants.errNames')
     return
   }
   if (!form.promotionId) {
-    formError.value = 'La promotion est obligatoire.'
+    formError.value = t('sup.etudiants.errPromotion')
     return
   }
   if (editing.value) {
@@ -276,7 +278,7 @@ function submit() {
   closeModal()
 }
 function askDelete(e) {
-  if (window.confirm(`Supprimer ${e.nomComplet} ? Cette action retire aussi son inscription pédagogique, ses notes et ses stages.`)) {
+  if (window.confirm(t('sup.etudiants.confirmDelete', { name: e.nomComplet }))) {
     store.deleteEtudiant(e.id)
   }
 }

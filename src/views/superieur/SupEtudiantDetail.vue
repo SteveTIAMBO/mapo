@@ -1,7 +1,7 @@
 <template>
   <div class="sed-overlay" @click.self="$emit('close')">
     <div class="sed-modal">
-      <button class="sed-close" type="button" @click="$emit('close')" aria-label="Fermer">
+      <button class="sed-close" type="button" @click="$emit('close')" :aria-label="t('sup.etudiantDetail.close')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
 
@@ -15,68 +15,68 @@
             <span class="sed-badge" :class="`n-${(e.niveau||'').toLowerCase()}`">{{ e.niveau }}</span>
             <span class="sed-prog">{{ e.programmeNom }}</span>
             <span v-if="campusVille" class="sed-dot">·</span>
-            <span v-if="campusVille">Campus de {{ campusVille }}</span>
+            <span v-if="campusVille">{{ t('sup.etudiantDetail.campusOf', { ville: campusVille }) }}</span>
           </div>
           <div class="sed-tags">
-            <span class="sed-tag" :class="e.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">{{ e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit' }}</span>
-            <span v-if="e.boursier" class="sed-tag is-bourse">Boursier</span>
+            <span class="sed-tag" :class="e.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">{{ e.statut === 'en_difficulte' ? t('sup.etudiantDetail.enDifficulte') : t('sup.etudiantDetail.inscrit') }}</span>
+            <span v-if="e.boursier" class="sed-tag is-bourse">{{ t('sup.etudiantDetail.boursier') }}</span>
           </div>
         </div>
       </div>
 
       <!-- Onglets (administratif uniquement) -->
       <div class="sed-tabs">
-        <button v-for="t in tabs" :key="t.key" type="button" :class="{ active: tab === t.key }" @click="tab = t.key">{{ t.label }}</button>
+        <button v-for="tb in tabs" :key="tb.key" type="button" :class="{ active: tab === tb.key }" @click="tab = tb.key">{{ t(tb.labelKey) }}</button>
       </div>
 
       <div class="sed-body">
         <!-- Identité civile -->
         <div v-show="tab === 'identite'" class="sed-pane">
           <div class="sed-rows">
-            <div class="sed-row"><span>Nom</span><strong>{{ e.nom }}</strong></div>
-            <div class="sed-row"><span>Prénom</span><strong>{{ e.prenom }}</strong></div>
-            <div class="sed-row"><span>Sexe</span><strong>{{ e.sexe === 'F' ? 'Féminin' : 'Masculin' }}</strong></div>
-            <div class="sed-row"><span>Date de naissance</span><strong>{{ e.dateNaissance || '—' }}</strong></div>
-            <div class="sed-row"><span>Lieu de naissance</span><strong>{{ e.lieuNaissance || '—' }}</strong></div>
-            <div class="sed-row"><span>Nationalité</span><strong>{{ e.nationalite || '—' }}</strong></div>
-            <div class="sed-row"><span>Pièce d'identité (CNI)</span><strong>{{ e.cni || '—' }}</strong></div>
-            <div class="sed-row"><span>Matricule</span><strong>{{ e.matricule }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.nom') }}</span><strong>{{ e.nom }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.prenom') }}</span><strong>{{ e.prenom }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.sexe') }}</span><strong>{{ e.sexe === 'F' ? t('sup.etudiantDetail.feminin') : t('sup.etudiantDetail.masculin') }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.dateNaissance') }}</span><strong>{{ e.dateNaissance || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.lieuNaissance') }}</span><strong>{{ e.lieuNaissance || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.nationalite') }}</span><strong>{{ e.nationalite || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.cni') }}</span><strong>{{ e.cni || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.matricule') }}</span><strong>{{ e.matricule }}</strong></div>
           </div>
         </div>
 
         <!-- Contact & adresse -->
         <div v-show="tab === 'contact'" class="sed-pane">
           <div class="sed-rows">
-            <div class="sed-row"><span>Adresse</span><strong>{{ e.adresse || '—' }}</strong></div>
-            <div class="sed-row"><span>Ville d'origine</span><strong>{{ e.villeOrigine || '—' }}</strong></div>
-            <div class="sed-row"><span>Téléphone</span><strong>{{ e.telephone || '—' }}</strong></div>
-            <div class="sed-row"><span>E-mail</span><strong>{{ e.email || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.adresse') }}</span><strong>{{ e.adresse || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.villeOrigine') }}</span><strong>{{ e.villeOrigine || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.telephone') }}</span><strong>{{ e.telephone || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.email') }}</span><strong>{{ e.email || '—' }}</strong></div>
           </div>
         </div>
 
         <!-- Parents / tuteur -->
         <div v-show="tab === 'parents'" class="sed-pane">
           <div v-if="e.parent" class="sed-rows">
-            <div class="sed-row"><span>Nom du parent / tuteur</span><strong>{{ e.parent.nom }}</strong></div>
-            <div class="sed-row"><span>Lien</span><strong>{{ e.parent.lien }}</strong></div>
-            <div class="sed-row"><span>Téléphone</span><strong>{{ e.parent.telephone }}</strong></div>
-            <div class="sed-row"><span>Profession</span><strong>{{ e.parent.profession }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.parentNom') }}</span><strong>{{ e.parent.nom }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.lien') }}</span><strong>{{ e.parent.lien }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.telephone') }}</span><strong>{{ e.parent.telephone }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.profession') }}</span><strong>{{ e.parent.profession }}</strong></div>
           </div>
-          <p v-else class="sed-empty">Aucun parent / tuteur enregistré.</p>
+          <p v-else class="sed-empty">{{ t('sup.etudiantDetail.noParent') }}</p>
         </div>
 
         <!-- Inscription & bourse -->
         <div v-show="tab === 'inscription'" class="sed-pane">
           <div class="sed-rows">
-            <div class="sed-row"><span>Filière</span><strong>{{ e.programmeNom }}</strong></div>
-            <div class="sed-row"><span>Niveau</span><strong>{{ e.niveau }}</strong></div>
-            <div class="sed-row"><span>Promotion</span><strong>{{ e.anneeNom }}</strong></div>
-            <div class="sed-row"><span>Campus</span><strong>{{ campusVille ? 'Campus de ' + campusVille : '—' }}</strong></div>
-            <div class="sed-row"><span>Date d'inscription</span><strong>{{ e.dateInscription || '—' }}</strong></div>
-            <div class="sed-row"><span>Statut</span><strong>{{ e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit' }}</strong></div>
-            <div class="sed-row"><span>Bourse</span><strong>{{ e.boursier ? (e.bourseLibelle || 'Boursier') : 'Non boursier' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.filiere') }}</span><strong>{{ e.programmeNom }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.niveau') }}</span><strong>{{ e.niveau }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.promotion') }}</span><strong>{{ e.anneeNom }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.campus') }}</span><strong>{{ campusVille ? t('sup.etudiantDetail.campusOf', { ville: campusVille }) : '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.dateInscription') }}</span><strong>{{ e.dateInscription || '—' }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.statut') }}</span><strong>{{ e.statut === 'en_difficulte' ? t('sup.etudiantDetail.enDifficulte') : t('sup.etudiantDetail.inscrit') }}</strong></div>
+            <div class="sed-row"><span>{{ t('sup.etudiantDetail.bourse') }}</span><strong>{{ e.boursier ? (e.bourseLibelle || t('sup.etudiantDetail.boursier')) : t('sup.etudiantDetail.nonBoursier') }}</strong></div>
           </div>
-          <p class="sed-note">Le suivi pédagogique (notes, crédits, relevés) est disponible dans le module « Notes &amp; relevés » ; les stages dans le module « Stages ».</p>
+          <p class="sed-note">{{ t('sup.etudiantDetail.note') }}</p>
         </div>
       </div>
     </div>
@@ -85,7 +85,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { CAMPUS } from '../../stores/superieur'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({ etudiant: { type: Object, required: true } })
 defineEmits(['close'])
@@ -94,10 +97,10 @@ const e = computed(() => props.etudiant).value
 
 const tab = ref('identite')
 const tabs = [
-  { key: 'identite', label: 'Identité civile' },
-  { key: 'contact', label: 'Contact & adresse' },
-  { key: 'parents', label: 'Parents / tuteur' },
-  { key: 'inscription', label: 'Inscription & bourse' },
+  { key: 'identite', labelKey: 'sup.etudiantDetail.tabIdentite' },
+  { key: 'contact', labelKey: 'sup.etudiantDetail.tabContact' },
+  { key: 'parents', labelKey: 'sup.etudiantDetail.tabParents' },
+  { key: 'inscription', labelKey: 'sup.etudiantDetail.tabInscription' },
 ]
 
 const campusVille = computed(() => (CAMPUS.find((c) => c.id === e.campus) || {}).ville || '').value
