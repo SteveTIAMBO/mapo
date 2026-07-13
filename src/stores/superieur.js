@@ -246,6 +246,10 @@ const SUD_NOMS = [
 const PRENOMS = [...NORD_PRENOMS, ...SUD_PRENOMS]
 const NOMS = [...NORD_NOMS, ...SUD_NOMS]
 
+// Dans chaque pool de prénoms, la 1re moitié est masculine, la 2de féminine.
+const FEMALE_PRENOMS = new Set([...NORD_PRENOMS.slice(20), ...SUD_PRENOMS.slice(20)])
+function sexeFromPrenom(prenom) { return FEMALE_PRENOMS.has(prenom) ? 'F' : 'M' }
+
 // Villes d'origine par région
 const VILLES_NORD = ['Maroua', 'Garoua', 'Ngaoundéré', 'Kousséri', 'Mokolo', 'Guider', 'Kaélé', 'Yagoua', 'Meiganga']
 const VILLES_SUD = ['Yaoundé', 'Douala', 'Bafoussam', 'Bamenda', 'Dschang', 'Ébolowa', 'Bertoua', 'Kribi', 'Édéa', 'Nkongsamba']
@@ -299,7 +303,7 @@ function adminEtudiant(counter, campus, prenom, nom, niveau, boursier) {
   const estPere = h(11) % 2 === 0
   const parentPrenom = estPere ? PARENT_PRENOMS_M[h(12) % PARENT_PRENOMS_M.length] : PARENT_PRENOMS_F[h(13) % PARENT_PRENOMS_F.length]
   return {
-    sexe: h(1) % 2 ? 'F' : 'M',
+    sexe: sexeFromPrenom(prenom),
     dateNaissance,
     lieuNaissance: villes[h(5) % villes.length],
     nationalite: 'Camerounaise',
@@ -418,7 +422,7 @@ function adminIntervenant(idx, campus, prenom, nom) {
   const villeCampusNom = CAMPUS.find((x) => x.id === campus)?.ville || ''
   const emailBase = `${(prenom || '').toLowerCase().replace(/[^a-z]/g, '')}.${(nom || '').toLowerCase().replace(/[^a-z]/g, '')}`
   return {
-    sexe: h(1) % 2 ? 'F' : 'M',
+    sexe: sexeFromPrenom(prenom),
     telephone: telCM(c, 20),
     email: `${emailBase}@ise.edufrem.cm`,
     adresse: `${quartiers[h(6) % quartiers.length]}, ${villeCampusNom}`,
