@@ -824,6 +824,9 @@ const SALLES = reactive(loadEntity('salles', IS_SCHOOL_MODE ? [] : generateSalle
 export const useSuperieurStore = defineStore('superieur', () => {
   const ecole = ECOLE
   const programmes = PROGRAMMES
+  // Formations ajoutées par l'école via l'UI (en plus du catalogue de base).
+  const customProgrammes = reactive(loadEntity('custom_programmes', []))
+  const tousProgrammes = () => [...programmes, ...customProgrammes]
   const promotions = PROMOTIONS
   const intervenants = INTERVENANTS
   const ue = UE
@@ -945,7 +948,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
 
   // ── Offre de formation : UE groupées par programme → semestre ──
   const offreParProgramme = computed(() =>
-    programmes.map((prog) => {
+    [...programmes, ...customProgrammes].map((prog) => {
       const annees = prog.annees.map((annee) => {
         const semestres = annee.semestres.map((sem) => {
           const items = ue.filter((u) => u.anneeId === annee.id && u.semestre === sem)
@@ -1013,7 +1016,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
 
     return {
       nbEtudiants,
-      nbProgrammes: programmes.length,
+      nbProgrammes: programmes.length + customProgrammes.length,
       nbPromotions: promotions.length,
       nbIntervenants: intervenantsAvecCharge.value.length,
       vacataires,
@@ -1365,10 +1368,37 @@ export const useSuperieurStore = defineStore('superieur', () => {
   }
 
   // ── CRUD unités d'enseignement ────────────────────────────────
+  // Crée une nouvelle formation (squelette : années + semestres vides).
+  // Les UE se rajoutent ensuite via addUe.
+  function addProgramme(data) {
+    const niveau = data.niveau || 'Licence'
+    const dureeAns = Math.max(1, Math.min(5, Number(data.dureeAns) || (niveau === 'BTS' || niveau === 'Master' ? 2 : niveau === 'Doctorat' ? 3 : 3)))
+    const slug = (data.nom || 'programme').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 22)
+    const base = `${slug || 'prog'}-${Date.now().toString(36).slice(-4)}`
+    const annees = []
+    for (let r = 1; r <= dureeAns; r++) {
+      annees.push({ id: `${base}-a${r}`, nom: `${niveau} ${r}`, rang: r, semestres: [`S${2 * r - 1}`, `S${2 * r}`] })
+    }
+    const prog = {
+      id: base,
+      nom: (data.nom || 'Nouveau programme').trim(),
+      niveau,
+      domaine: data.domaine || 'gestion',
+      faculte: (data.faculte || '').trim(),
+      dureeAns,
+      ectsTotal: dureeAns * 120,
+      annees,
+      custom: true,
+    }
+    customProgrammes.push(prog)
+    saveEntity('custom_programmes', customProgrammes)
+    return prog.id
+  }
+
   function addUe(data) {
     const intervenant = intervenants.find((i) => i.id === data.intervenantId) || null
-    const annee = programmes.flatMap((p) => p.annees).find((a) => a.id === data.anneeId)
-    const programme = programmes.find((p) => p.annees.some((a) => a.id === data.anneeId))
+    const annee = tousProgrammes().flatMap((p) => p.annees).find((a) => a.id === data.anneeId)
+    const programme = tousProgrammes().find((p) => p.annees.some((a) => a.id === data.anneeId))
     const idNum = nextId('ue', ue)
     const num = idNum.replace('ue-', '')
     const codePrefix = ({ fondamentale: 'FND', methodologique: 'MET', professionnelle: 'PRO', electif: 'ELE' })[data.type] || 'UE'
@@ -1596,7 +1626,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     // CRUD
     addEtudiant, updateEtudiant, deleteEtudiant,
     addIntervenant, updateIntervenant, deleteIntervenant,
-    addUe, updateUe, deleteUe,
+    addProgramme, addUe, updateUe, deleteUe,
     addStage, updateStage, deleteStage,
     addSalle, updateSalle, deleteSalle,
     // Responsables de formation

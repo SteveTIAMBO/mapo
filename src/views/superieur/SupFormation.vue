@@ -1,8 +1,14 @@
 <template>
   <div class="sf">
     <div class="sf-intro">
-      <h1 class="sf-h1">Offre de formation</h1>
-      <p class="sf-sub">Unités d'enseignement, crédits et cours électifs par programme</p>
+      <div>
+        <h1 class="sf-h1">Offre de formation</h1>
+        <p class="sf-sub">Unités d'enseignement, crédits et cours électifs par programme</p>
+      </div>
+      <button class="sf-btn-primary" type="button" @click="openProgCreate">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Ajouter une formation
+      </button>
     </div>
 
     <!-- Sélecteur de programme -->
@@ -64,59 +70,81 @@
       <!-- Années -->
       <div v-for="annee in activeProgramme.annees" :key="annee.id" class="sf-annee">
         <div class="sf-annee-title">{{ annee.nom }}</div>
-        <div class="sf-semestres">
-          <div v-for="sem in annee.semestres" :key="sem.semestre" class="sf-semestre">
-            <div class="sf-sem-head">
-              <span class="sf-sem-name">{{ sem.semestre }}</span>
-              <span class="sf-sem-totals">
-                {{ sem.ue.length }} UE
-                <span class="sf-sem-dot">•</span>
-                <strong>{{ sem.totalEcts }} crédits</strong>
-                <span class="sf-sem-dot">•</span>
-                {{ sem.totalHeures }} h
-              </span>
-              <button class="sf-add-btn" type="button" @click="openCreate(annee, sem)" title="Ajouter une UE">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                Nouvelle UE
-              </button>
-            </div>
-            <table class="sf-ue-table">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Unité d'enseignement</th>
-                  <th>Type</th>
-                  <th>Intervenant</th>
-                  <th class="num">Heures</th>
-                  <th class="num">crédits</th>
-                  <th class="sf-actions-head"></th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr v-for="u in sem.ue" :key="u.id" :class="{ 'is-electif': u.electif }">
-                  <td class="sf-code">{{ u.code }}</td>
-                  <td>
-                    <span class="sf-ue-nom">{{ u.intitule }}</span>
-                    <span v-if="u.electif" class="sf-electif-tag">Électif</span>
-                  </td>
-                  <td>
-                    <span class="sf-type" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
-                  </td>
-                  <td class="sf-int">{{ u.intervenantNom }}</td>
-                  <td class="num">{{ u.volumeHoraire }}</td>
-                  <td class="num sf-ects">{{ u.ects }}</td>
-                  <td class="sf-actions">
-                    <button type="button" class="sf-icon-btn" title="Modifier" @click="openEdit(u, annee, sem)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-                    </button>
-                    <button type="button" class="sf-icon-btn is-danger" title="Supprimer" @click="askDelete(u)">
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+
+        <!-- Onglets semestres -->
+        <div class="sf-sem-tabs">
+          <button
+            v-for="sem in annee.semestres"
+            :key="sem.semestre"
+            type="button"
+            class="sf-sem-tab"
+            :class="{ active: semActif(annee) === sem.semestre }"
+            @click="setSem(annee, sem.semestre)"
+          >
+            {{ sem.semestre }}
+            <span class="sf-sem-tab-meta">{{ sem.ue.length }} UE · {{ sem.totalEcts }} cr.</span>
+          </button>
+        </div>
+
+        <!-- Semestre actif (pleine largeur) -->
+        <div
+          v-for="sem in annee.semestres"
+          v-show="semActif(annee) === sem.semestre"
+          :key="sem.semestre"
+          class="sf-semestre"
+        >
+          <div class="sf-sem-head">
+            <span class="sf-sem-totals">
+              {{ sem.ue.length }} UE
+              <span class="sf-sem-dot">•</span>
+              <strong>{{ sem.totalEcts }} crédits</strong>
+              <span class="sf-sem-dot">•</span>
+              {{ sem.totalHeures }} h
+            </span>
+            <button class="sf-add-btn" type="button" @click="openCreate(annee, sem)" title="Ajouter une UE">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              Nouvelle UE
+            </button>
           </div>
+          <table class="sf-ue-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Unité d'enseignement</th>
+                <th>Type</th>
+                <th>Intervenant</th>
+                <th class="num">Heures</th>
+                <th class="num">crédits</th>
+                <th class="sf-actions-head"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="u in sem.ue" :key="u.id" :class="{ 'is-electif': u.electif }">
+                <td class="sf-code">{{ u.code }}</td>
+                <td>
+                  <span class="sf-ue-nom">{{ u.intitule }}</span>
+                  <span v-if="u.electif" class="sf-electif-tag">Électif</span>
+                </td>
+                <td>
+                  <span class="sf-type" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
+                </td>
+                <td class="sf-int">{{ u.intervenantNom }}</td>
+                <td class="num">{{ u.volumeHoraire }}</td>
+                <td class="num sf-ects">{{ u.ects }}</td>
+                <td class="sf-actions">
+                  <button type="button" class="sf-icon-btn" title="Modifier" @click="openEdit(u, annee, sem)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+                  </button>
+                  <button type="button" class="sf-icon-btn is-danger" title="Supprimer" @click="askDelete(u)">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                  </button>
+                </td>
+              </tr>
+              <tr v-if="!sem.ue.length">
+                <td colspan="7" class="sf-sem-empty">Aucune UE dans ce semestre. Cliquez sur « Nouvelle UE » pour en ajouter une.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -232,6 +260,51 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modale nouvelle formation -->
+    <transition name="sf-fade">
+      <div v-if="progModalOpen" class="sf-modal-overlay" @click.self="closeProgModal">
+        <div class="sf-modal">
+          <div class="sf-modal-head">
+            <h2 class="sf-modal-title">Nouvelle formation</h2>
+            <button class="sf-modal-close" type="button" @click="closeProgModal">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <form class="sf-form" @submit.prevent="submitProg">
+            <div class="sf-field">
+              <label class="sf-form-label">Intitulé de la formation</label>
+              <input v-model="progForm.nom" type="text" class="sf-input" placeholder="Ex : Licence Marketing Digital" required />
+            </div>
+            <div class="sf-form-row">
+              <div class="sf-field">
+                <label class="sf-form-label">Niveau</label>
+                <select v-model="progForm.niveau" class="sf-input" @change="onNiveauChange">
+                  <option value="BTS">BTS</option>
+                  <option value="Licence">Licence</option>
+                  <option value="Master">Master</option>
+                  <option value="Doctorat">Doctorat</option>
+                </select>
+              </div>
+              <div class="sf-field">
+                <label class="sf-form-label">Durée (années)</label>
+                <input v-model.number="progForm.dureeAns" type="number" min="1" max="5" class="sf-input" required />
+              </div>
+            </div>
+            <div class="sf-field">
+              <label class="sf-form-label">Faculté / pôle</label>
+              <input v-model="progForm.faculte" type="text" class="sf-input" placeholder="Ex : Management & Commerce" />
+            </div>
+            <p class="sf-form-hint">La formation est créée avec ses années et semestres (S1, S2…). Les unités d'enseignement s'ajoutent ensuite dans chaque semestre.</p>
+            <p v-if="progError" class="sf-form-error">{{ progError }}</p>
+            <div class="sf-modal-actions">
+              <button type="button" class="sf-btn-ghost" @click="closeProgModal">Annuler</button>
+              <button type="submit" class="sf-btn-primary">Créer la formation</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -249,6 +322,32 @@ const activeProgrammeId = ref(store.programmes[0].id)
 const activeProgramme = computed(() =>
   store.offreParProgramme.find((p) => p.id === activeProgrammeId.value)
 )
+
+// ── Onglets semestres (par année) ──
+const activeSem = reactive({})
+function semActif(annee) {
+  return activeSem[annee.id] || annee.semestres[0]?.semestre
+}
+function setSem(annee, s) { activeSem[annee.id] = s }
+
+// ── Nouvelle formation ──
+const progModalOpen = ref(false)
+const progError = ref('')
+const progForm = reactive({ nom: '', niveau: 'Licence', dureeAns: 3, faculte: '' })
+function dureeParNiveau(n) { return n === 'BTS' || n === 'Master' ? 2 : 3 }
+function onNiveauChange() { progForm.dureeAns = dureeParNiveau(progForm.niveau) }
+function openProgCreate() {
+  Object.assign(progForm, { nom: '', niveau: 'Licence', dureeAns: 3, faculte: '' })
+  progError.value = ''
+  progModalOpen.value = true
+}
+function closeProgModal() { progModalOpen.value = false }
+function submitProg() {
+  if (!progForm.nom.trim()) { progError.value = "L'intitulé de la formation est obligatoire."; return }
+  const id = store.addProgramme({ ...progForm })
+  progModalOpen.value = false
+  if (id) activeProgrammeId.value = id
+}
 
 const intervenantsTries = computed(() =>
   [...store.intervenants].sort((a, b) => a.nomComplet.localeCompare(b.nomComplet))
@@ -335,6 +434,11 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 <style scoped>
 .sf-intro {
   margin-bottom: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 .sf-h1 {
   font-family: 'Poppins', sans-serif;
@@ -485,6 +589,19 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   margin-bottom: 10px;
   padding-left: 2px;
 }
+/* Onglets semestres */
+.sf-sem-tabs { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.sf-sem-tab {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--card); border: 1px solid var(--card-border);
+  border-radius: 12px; padding: 9px 16px; cursor: pointer;
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--tx2);
+  transition: all 0.12s ease;
+}
+.sf-sem-tab:hover { border-color: var(--pr); }
+.sf-sem-tab.active { background: var(--pr); border-color: var(--pr); color: #fff; }
+.sf-sem-tab-meta { font-family: inherit; font-weight: 600; font-size: 11.5px; opacity: 0.85; }
+.sf-sem-empty { text-align: center; color: var(--tx2, #6b7280); font-size: 13px; padding: 22px 12px; }
 .sf-semestres {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -664,9 +781,10 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 .sf-modal {
   width: 100%; max-width: 540px;
   max-height: 92vh; overflow-y: auto;
-  background: var(--card); border-radius: 18px;
+  background: #fff; border-radius: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
+.sf-form-hint { font-size: 12.5px; color: var(--tx2, #6b7280); line-height: 1.5; margin: 4px 0 0; }
 .sf-modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px 14px;
