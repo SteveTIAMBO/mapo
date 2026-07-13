@@ -190,6 +190,27 @@
       </div>
     </transition>
 
+    <!-- Modale de confirmation (suppression) -->
+    <transition name="se-fade">
+      <div v-if="confirmState.open" class="se-modal-overlay" @click.self="closeConfirm">
+        <div class="se-modal se-confirm-modal">
+          <div class="se-modal-head">
+            <h2 class="se-modal-title">{{ confirmState.title }}</h2>
+            <button class="se-modal-close" type="button" @click="closeConfirm">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="se-form">
+            <p class="se-confirm-message">{{ confirmState.message }}</p>
+            <div class="se-modal-actions">
+              <button type="button" class="se-btn-ghost" @click="closeConfirm">{{ t('sup.etudiants.cancel') }}</button>
+              <button type="button" class="se-btn-danger" @click="doConfirm">{{ confirmState.confirmLabel }}</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <SupEtudiantDetail v-if="detailEtudiant" :etudiant="detailEtudiant" @close="detailEtudiant = null" />
   </div>
 </template>
@@ -277,10 +298,31 @@ function submit() {
   }
   closeModal()
 }
+// ── Modale de confirmation (suppression) ──
+const confirmState = reactive({ open: false, title: '', message: '', confirmLabel: '', onConfirm: null })
+function openConfirm({ title, message, confirmLabel, onConfirm }) {
+  confirmState.title = title
+  confirmState.message = message
+  confirmState.confirmLabel = confirmLabel
+  confirmState.onConfirm = onConfirm
+  confirmState.open = true
+}
+function closeConfirm() {
+  confirmState.open = false
+  confirmState.onConfirm = null
+}
+function doConfirm() {
+  const fn = confirmState.onConfirm
+  closeConfirm()
+  if (fn) fn()
+}
 function askDelete(e) {
-  if (window.confirm(t('sup.etudiants.confirmDelete', { name: e.nomComplet }))) {
-    store.deleteEtudiant(e.id)
-  }
+  openConfirm({
+    title: t('sup.etudiants.deleteTitle'),
+    message: t('sup.etudiants.confirmDelete', { name: e.nomComplet }),
+    confirmLabel: t('sup.etudiants.delete'),
+    onConfirm: () => store.deleteEtudiant(e.id),
+  })
 }
 </script>
 
@@ -650,6 +692,22 @@ function askDelete(e) {
 }
 .se-fade-enter-active, .se-fade-leave-active { transition: opacity 0.2s ease; }
 .se-fade-enter-from, .se-fade-leave-to { opacity: 0; }
+
+/* Bouton d'action danger (confirmation de suppression) */
+.se-btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 40px; padding: 0 16px;
+  background: var(--danger, #D93025); color: #fff;
+  border: none; border-radius: 9px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.se-btn-danger:hover { background: #B3271D; }
+.se-confirm-modal { max-width: 440px; }
+.se-confirm-message {
+  font-size: 14px; color: var(--tx); line-height: 1.55; margin: 0;
+}
 
 @media (max-width: 820px) {
   .se-table-wrap {

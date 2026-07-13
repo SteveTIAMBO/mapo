@@ -1578,7 +1578,8 @@
       "create": "Create student",
       "errNames": "First name and last name are required.",
       "errPromotion": "The cohort is required.",
-      "confirmDelete": "Delete {name}? This also removes their course registration, grades and internships."
+      "confirmDelete": "Delete {name}? This also removes their course registration, grades and internships.",
+      "deleteTitle": "Delete student"
     },
     "etudiantDetail": {
       "close": "Close",
@@ -1661,7 +1662,8 @@
       "save": "Save",
       "create": "Create lecturer",
       "errorRequired": "First name and last name are required.",
-      "confirmDelete": "Delete {name}? The teaching units they cover will need reassigning."
+      "confirmDelete": "Delete {name}? The teaching units they cover will need reassigning.",
+      "deleteTitle": "Delete lecturer"
     },
     "intervenantDetail": {
       "close": "Close",

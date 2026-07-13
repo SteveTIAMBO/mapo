@@ -1578,7 +1578,8 @@
       "create": "Créer l'étudiant",
       "errNames": "Le prénom et le nom sont obligatoires.",
       "errPromotion": "La promotion est obligatoire.",
-      "confirmDelete": "Supprimer {name} ? Cette action retire aussi son inscription pédagogique, ses notes et ses stages."
+      "confirmDelete": "Supprimer {name} ? Cette action retire aussi son inscription pédagogique, ses notes et ses stages.",
+      "deleteTitle": "Supprimer l'étudiant"
     },
     "etudiantDetail": {
       "close": "Fermer",
@@ -1661,7 +1662,8 @@
       "save": "Enregistrer",
       "create": "Créer l'intervenant",
       "errorRequired": "Le prénom et le nom sont obligatoires.",
-      "confirmDelete": "Supprimer {name} ? Les UE qu'il assure resteront à attribuer."
+      "confirmDelete": "Supprimer {name} ? Les UE qu'il assure resteront à attribuer.",
+      "deleteTitle": "Supprimer l'intervenant"
     },
     "intervenantDetail": {
       "close": "Fermer",
