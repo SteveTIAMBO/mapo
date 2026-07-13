@@ -268,6 +268,56 @@ function personneMix() {
   return { prenom: pick(useNord ? NORD_PRENOMS : SUD_PRENOMS), nom: pick(useNord ? NORD_NOMS : SUD_NOMS) }
 }
 
+// ── Données ADMINISTRATIVES de l'étudiant (état civil, contact, parents) ──
+// Générées de façon DÉTERMINISTE à partir du compteur (hash), SANS toucher au
+// rng partagé → n'altère pas la génération des autres entités (finance alignée).
+const PROFESSIONS = ['Commerçant(e)', 'Enseignant(e)', 'Fonctionnaire', 'Infirmier(ère)', 'Agriculteur(trice)', 'Ingénieur(e)', 'Comptable', 'Chauffeur', 'Couturier(ère)', 'Médecin', 'Cadre bancaire', 'Entrepreneur(e)', 'Militaire', 'Restauratrice', 'Artisan']
+const QUARTIERS = {
+  douala: ['Akwa', 'Bonapriso', 'Bonamoussadi', 'Deïdo', 'New-Bell', 'Bonabéri', 'Makepè', 'Logbessou'],
+  yaounde: ['Bastos', 'Mvog-Mbi', 'Nlongkak', 'Essos', 'Mvan', 'Biyem-Assi', 'Nsam', 'Mimboman'],
+  maroua: ['Domayo', 'Djarengol', 'Pitoaré', 'Founangué', 'Kakataré', 'Hardé', 'Doualaré'],
+}
+const PARENT_PRENOMS_M = ['Emmanuel', 'Jean', 'Paul', 'Ibrahim', 'Abdou', 'Étienne', 'Joseph', 'Alassane', 'Marc', 'Samuel']
+const PARENT_PRENOMS_F = ['Marie', 'Rose', 'Aïssatou', 'Brigitte', 'Fadimatou', 'Jeanne', 'Christine', 'Habiba', 'Céline', 'Odette']
+const BOURSE_LIBELLES = ["Bourse d'excellence", 'Bourse sociale échelon 1', 'Bourse sociale échelon 2', 'Bourse EDUFREM continuité', 'Bourse de diversité']
+function hashN(counter, salt) { return Math.abs(((counter * 2654435761) ^ (salt * 40503)) >>> 0) }
+function telCM(counter, salt) {
+  let n = ''
+  for (let i = 0; i < 8; i++) n += hashN(counter, salt + i) % 10
+  return `6${n.slice(0, 2)} ${n.slice(2, 5)} ${n.slice(5, 8)}`
+}
+function adminEtudiant(counter, campus, prenom, nom, niveau, boursier) {
+  const h = (s) => hashN(counter, s)
+  const age = niveau === 'BTS' ? 18 : niveau === 'Licence' ? 20 : niveau === 'Master' ? 23 : 27
+  const annee = 2007 - (age - 18) - (h(2) % 3)
+  const dateNaissance = `${String((h(4) % 27) + 1).padStart(2, '0')}/${String((h(3) % 12) + 1).padStart(2, '0')}/${annee}`
+  const region = REGION_BY_CAMPUS[campus] || 'sud'
+  const villes = region === 'nord' ? VILLES_NORD : VILLES_SUD
+  const quartiers = QUARTIERS[campus] || QUARTIERS.douala
+  const villeCampusNom = CAMPUS.find((c) => c.id === campus)?.ville || ''
+  const emailBase = `${(prenom || '').toLowerCase().replace(/[^a-z]/g, '')}.${(nom || '').toLowerCase().replace(/[^a-z]/g, '')}`
+  const estPere = h(11) % 2 === 0
+  const parentPrenom = estPere ? PARENT_PRENOMS_M[h(12) % PARENT_PRENOMS_M.length] : PARENT_PRENOMS_F[h(13) % PARENT_PRENOMS_F.length]
+  return {
+    sexe: h(1) % 2 ? 'F' : 'M',
+    dateNaissance,
+    lieuNaissance: villes[h(5) % villes.length],
+    nationalite: 'Camerounaise',
+    cni: `1${100000000 + (h(10) % 900000000)}`,
+    adresse: `${quartiers[h(6) % quartiers.length]}, ${villeCampusNom}`,
+    telephone: telCM(counter, 20),
+    email: `${emailBase}@etu.edufrem.cm`,
+    dateInscription: `${String((h(19) % 20) + 1).padStart(2, '0')}/09/2025`,
+    parent: {
+      nom: `${nom} ${parentPrenom}`,
+      lien: estPere ? 'Père' : 'Mère',
+      telephone: telCM(counter, 40),
+      profession: PROFESSIONS[h(17) % PROFESSIONS.length],
+    },
+    bourseLibelle: boursier ? BOURSE_LIBELLES[h(18) % BOURSE_LIBELLES.length] : null,
+  }
+}
+
 // Entreprises d'accueil de stages / alternance — mix grands comptes France
 // et Afrique francophone (le profil des écoles de management cibles).
 // Entreprises d'accueil — tissu économique camerounais, avec de forts
@@ -493,6 +543,11 @@ function generateEtudiants() {
       let statut = 'inscrit'
       if (ectsSemestre1 < 24) statut = 'en_difficulte'
 
+      // Ordre des appels rng conservé : villeCampus (pick) puis chance.
+      const villeOrigine = villeCampus(campus)
+      const boursier = chance(0.34)
+      const admin = adminEtudiant(counter, campus, prenom, nom, promo.niveau, boursier)
+
       list.push({
         id: `etu-${String(counter).padStart(4, '0')}`,
         matricule: `ISE${promo.rang}${String(counter).padStart(4, '0')}`,
@@ -504,13 +559,14 @@ function generateEtudiants() {
         niveau: promo.niveau,
         promotionId: promo.id,
         anneeNom: promo.anneeNom,
-        villeOrigine: villeCampus(campus),
+        villeOrigine,
         campus,
         ectsValides,
         ectsRequis,
         moyenne: Math.round((8 + reussite * 9) * 10) / 10,
         statut,
-        boursier: chance(0.34),
+        boursier,
+        ...admin,
       })
       counter++
     }

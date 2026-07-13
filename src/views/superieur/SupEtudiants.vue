@@ -30,13 +30,6 @@
           <option value="en_difficulte">En difficulté</option>
         </select>
       </div>
-      <div class="se-filter">
-        <span class="se-filter-label">Campus</span>
-        <select :value="store.etudiantFilters.campus" @change="store.setEtudiantFilter('campus', $event.target.value)">
-          <option value="">Tous les campus</option>
-          <option v-for="c in store.campusList" :key="c.id" :value="c.id">{{ c.ville }}</option>
-        </select>
-      </div>
       <div class="se-filter se-filter-search">
         <span class="se-filter-label">Recherche</span>
         <input
@@ -61,37 +54,20 @@
             <th>Matricule</th>
             <th>Étudiant</th>
             <th>Programme</th>
-            <th>Promotion</th>
-            <th class="num">Progression crédits</th>
-            <th class="num">Moyenne</th>
             <th>Statut</th>
             <th class="se-actions-head"></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="e in store.filteredEtudiants" :key="e.id" class="se-row is-clickable" @click="openDetail(e)">
+          <tr v-for="e in pagedEtudiants" :key="e.id" class="se-row is-clickable" @click="openDetail(e)">
             <td class="se-mat">{{ e.matricule }}</td>
             <td>
               <div class="se-name">{{ e.nomComplet }}</div>
-              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.campus" class="se-campus-tag">{{ campusVille(e.campus) }}</span><span v-if="e.boursier" class="se-bourse">Boursier</span></div>
+              <div class="se-origin">{{ e.villeOrigine }}<span v-if="e.boursier" class="se-bourse">Boursier</span></div>
             </td>
             <td>
               <span class="se-niveau" :class="`n-${e.niveau.toLowerCase()}`">{{ e.niveau }}</span>
               {{ e.programmeNom }}
-            </td>
-            <td>{{ e.anneeNom }}</td>
-            <td class="num">
-              <div class="se-ects">
-                <div class="se-ects-bar">
-                  <div class="se-ects-fill" :style="{ width: ectsPct(e) + '%' }"></div>
-                </div>
-                <span class="se-ects-label">{{ e.ectsValides }}/{{ e.ectsRequis }}</span>
-              </div>
-            </td>
-            <td class="num">
-              <span class="se-moy" :class="e.moyenne < 10 ? 'is-bad' : e.moyenne >= 14 ? 'is-good' : ''">
-                {{ e.moyenne.toFixed(1) }}
-              </span>
             </td>
             <td>
               <span class="se-statut" :class="e.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">
@@ -108,10 +84,30 @@
             </td>
           </tr>
           <tr v-if="store.filteredEtudiants.length === 0">
-            <td colspan="8" class="se-empty">Aucun étudiant ne correspond aux filtres.</td>
+            <td colspan="5" class="se-empty">Aucun étudiant ne correspond aux filtres.</td>
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="se-pagination">
+      <span class="se-page-info">
+        {{ pageStart + 1 }}–{{ pageEnd }} sur {{ store.filteredEtudiants.length }}
+      </span>
+      <div class="se-page-ctrl">
+        <label class="se-page-size">
+          <select :value="pageSize" @change="setPageSize($event.target.value)">
+            <option :value="25">25</option>
+            <option :value="50">50</option>
+            <option :value="100">100</option>
+          </select>
+          par page
+        </label>
+        <button type="button" class="se-page-btn" :disabled="page === 1" @click="page--">Précédent</button>
+        <span class="se-page-num">Page {{ page }} / {{ totalPages }}</span>
+        <button type="button" class="se-page-btn" :disabled="page === totalPages" @click="page++">Suivant</button>
+      </div>
     </div>
 
     <!-- Modale création / édition -->
@@ -199,7 +195,7 @@
 </template>
 
 <script setup>
-import { computed, ref, reactive } from 'vue'
+import { computed, ref, reactive, watch } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
@@ -209,16 +205,19 @@ function openDetail(e) { detailEtudiant.value = e }
 
 const hasFilters = computed(() => {
   const f = store.etudiantFilters
-  return !!(f.promotionId || f.statut || f.campus || f.search)
+  return !!(f.promotionId || f.statut || f.search)
 })
 
-function campusVille(id) {
-  return (store.campusList.find((c) => c.id === id) || {}).ville || ''
-}
-
-function ectsPct(e) {
-  return e.ectsRequis ? Math.round((e.ectsValides / e.ectsRequis) * 100) : 0
-}
+// ── Pagination (50 par défaut) ──
+const page = ref(1)
+const pageSize = ref(50)
+const totalPages = computed(() => Math.max(1, Math.ceil(store.filteredEtudiants.length / pageSize.value)))
+const pageStart = computed(() => (page.value - 1) * pageSize.value)
+const pageEnd = computed(() => Math.min(pageStart.value + pageSize.value, store.filteredEtudiants.length))
+const pagedEtudiants = computed(() => store.filteredEtudiants.slice(pageStart.value, pageEnd.value))
+function setPageSize(v) { pageSize.value = Number(v); page.value = 1 }
+// Revenir en page 1 quand la liste filtrée change ou qu'on dépasse le total.
+watch(() => store.filteredEtudiants.length, () => { if (page.value > totalPages.value) page.value = 1 })
 
 // ── CRUD ──
 const modalOpen = ref(false)
@@ -588,9 +587,19 @@ function askDelete(e) {
 .se-modal {
   width: 100%; max-width: 600px;
   max-height: 92vh; overflow-y: auto;
-  background: var(--card); border-radius: 18px;
+  background: #fff; border-radius: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
+/* Pagination */
+.se-pagination { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; }
+.se-page-info { font-size: 13px; color: var(--tx2); }
+.se-page-ctrl { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.se-page-size { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--tx2); }
+.se-page-size select { border: 1px solid var(--card-border); border-radius: 8px; padding: 5px 8px; font-family: inherit; font-size: 12.5px; background: #fff; color: var(--tx); }
+.se-page-btn { border: 1px solid var(--card-border); background: #fff; border-radius: 8px; font-family: inherit; font-weight: 600; font-size: 12.5px; color: var(--tx); padding: 7px 14px; cursor: pointer; }
+.se-page-btn:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
+.se-page-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.se-page-num { font-size: 12.5px; font-weight: 600; color: var(--tx); }
 .se-modal-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 20px 24px 14px;
