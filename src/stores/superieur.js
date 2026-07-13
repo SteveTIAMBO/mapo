@@ -1464,6 +1464,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     intervenants: intervenantsVisibles,
     ue,
     etudiants: etudiantsVisibles,
+    etudiantsAll: etudiants, // tous les étudiants, non scopés (pour la finance, l'agrégat groupe…)
     etudiantFilters,
     selectedPromotionId,
     filteredEtudiants,

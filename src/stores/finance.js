@@ -26,7 +26,7 @@ import * as supSync from '../utils/supSync'
 // ── Persistance ────────────────────────────────────────────────────
 // Doit être rebumpé quand le jeu de données superieur change (SUP_VERSION),
 // sinon la finance sert des comptes/tarifs mis en cache sur d'anciens étudiants.
-const FIN_VERSION = '4'
+const FIN_VERSION = '5'
 function loadEntity(key, fallback) {
   try {
     const raw = localStorage.getItem(`fin_${key}_v${FIN_VERSION}`)
@@ -168,7 +168,9 @@ function loadEtudiantsSnapshot() {
   // Repli : lire le store superieur EN MÉMOIRE quand le snapshot localStorage est
   // absent (démo fraîche : loadEntity ne persiste pas le fallback généré) ou vidé
   // (quota saturé). Évite une finance à 0 alors que les étudiants existent.
-  try { return useSuperieurStore().etudiants || [] } catch (e) { return [] }
+  // IMPORTANT : tous les étudiants (non scopés). La finance construit ses comptes
+  // pour tout le monde ; le périmètre par campus s'applique à la LECTURE (comptesVisibles).
+  try { const st = useSuperieurStore(); return st.etudiantsAll || st.etudiants || [] } catch (e) { return [] }
 }
 
 // ── Génération des grilles tarifaires ──────────────────────────────
