@@ -399,7 +399,13 @@ const vClickOutside = {
   },
 }
 
-const activeTab = ref('dashboard')
+// Onglet + campus actifs persistés : au rechargement, on revient là où on était.
+const ACTIVE_TAB_KEY = 'mapo_sup_active_tab'
+const ACTIVE_CAMPUS_KEY = 'mapo_sup_active_campus'
+function loadActiveTab() {
+  try { return localStorage.getItem(ACTIVE_TAB_KEY) || 'dashboard' } catch { return 'dashboard' }
+}
+const activeTab = ref(loadActiveTab())
 const sidebarOpen = ref(false)
 // État replié desktop (persisté localement, séparé du drawer mobile).
 const SIDEBAR_HIDDEN_KEY = 'mapo_sup_sidebar_hidden'
@@ -697,6 +703,11 @@ function retourGroupe() { store.exitCampus() }
 provide('supEnterCampus', ouvrirCampus)
 
 function onLoggedIn() {
+  // Connexion FRAÎCHE (clic sur un profil) : on repart proprement du dashboard,
+  // en vue groupe pour un fondateur. (Le rechargement, lui, restaure l'onglet.)
+  store.exitCampus()
+  try { localStorage.removeItem(ACTIVE_CAMPUS_KEY) } catch { /* ignore */ }
+  activeTab.value = 'dashboard'
   // Si le rôle ne voit pas l'onglet courant, on retombe sur le premier visible
   if (!tabsVisibles.value.some((t) => t.key === activeTab.value)) {
     activeTab.value = tabsVisibles.value[0]?.key || 'dashboard'
@@ -810,6 +821,25 @@ watch(
     }
   }
 )
+
+// ── Persistance onglet + campus actifs (revenir au même endroit au reload) ──
+watch(activeTab, (v) => { try { localStorage.setItem(ACTIVE_TAB_KEY, v) } catch { /* ignore */ } })
+watch(
+  () => store.activeCampus,
+  (v) => { try { v ? localStorage.setItem(ACTIVE_CAMPUS_KEY, v) : localStorage.removeItem(ACTIVE_CAMPUS_KEY) } catch { /* ignore */ } }
+)
+onMounted(() => {
+  // Au rechargement : un fondateur rouvre le campus qu'il consultait ;
+  // puis on valide que l'onglet restauré est bien visible pour ce rôle.
+  if (authSup.isGroupe) {
+    let saved = null
+    try { saved = localStorage.getItem(ACTIVE_CAMPUS_KEY) } catch { /* ignore */ }
+    if (saved && store.campusList.some((c) => c.id === saved)) store.enterCampus(saved)
+  }
+  if (!tabsVisibles.value.some((t) => t.key === activeTab.value)) {
+    activeTab.value = tabsVisibles.value[0]?.key || 'dashboard'
+  }
+})
 
 // Sync Firestore initial dès qu'on est authentifié (mode école seulement,
 // no-op en mode démo). Évite de bloquer le rendu : on déclenche en
