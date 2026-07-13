@@ -1395,6 +1395,20 @@ export const useSuperieurStore = defineStore('superieur', () => {
     return prog.id
   }
 
+  // Supprime une formation ajoutée via l'UI (+ ses UE). Le catalogue de base
+  // n'est pas supprimable (formations « socle » avec étudiants).
+  function deleteProgramme(id) {
+    const idx = customProgrammes.findIndex((p) => p.id === id)
+    if (idx === -1) return false
+    const anneeIds = new Set((customProgrammes[idx].annees || []).map((a) => a.id))
+    for (let i = ue.length - 1; i >= 0; i--) { if (anneeIds.has(ue[i].anneeId)) ue.splice(i, 1) }
+    customProgrammes.splice(idx, 1)
+    saveEntity('custom_programmes', customProgrammes)
+    saveEntity('ue', ue)
+    return true
+  }
+  function isCustomProgramme(id) { return customProgrammes.some((p) => p.id === id) }
+
   function addUe(data) {
     const intervenant = intervenants.find((i) => i.id === data.intervenantId) || null
     const annee = tousProgrammes().flatMap((p) => p.annees).find((a) => a.id === data.anneeId)
@@ -1626,7 +1640,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     // CRUD
     addEtudiant, updateEtudiant, deleteEtudiant,
     addIntervenant, updateIntervenant, deleteIntervenant,
-    addProgramme, addUe, updateUe, deleteUe,
+    addProgramme, deleteProgramme, isCustomProgramme, addUe, updateUe, deleteUe,
     addStage, updateStage, deleteStage,
     addSalle, updateSalle, deleteSalle,
     // Responsables de formation

@@ -36,10 +36,16 @@
             {{ activeProgramme.ectsTotal }} crédits au total
           </div>
         </div>
-        <div class="sf-prog-legend">
-          <span v-for="t in legend" :key="t.key" class="sf-legend-item">
-            <span class="sf-legend-dot" :class="`t-${t.key}`"></span>{{ t.label }}
-          </span>
+        <div class="sf-prog-right">
+          <div class="sf-prog-legend">
+            <span v-for="t in legend" :key="t.key" class="sf-legend-item">
+              <span class="sf-legend-dot" :class="`t-${t.key}`"></span>{{ t.label }}
+            </span>
+          </div>
+          <button v-if="store.isCustomProgramme(activeProgramme.id)" type="button" class="sf-del-prog" @click="askDeleteProgramme">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+            Supprimer la formation
+          </button>
         </div>
       </div>
 
@@ -276,7 +282,7 @@
               <label class="sf-form-label">Intitulé de la formation</label>
               <input v-model="progForm.nom" type="text" class="sf-input" placeholder="Ex : Licence Marketing Digital" required />
             </div>
-            <div class="sf-form-row">
+            <div class="sf-form-row" style="grid-template-columns: 1fr 130px;">
               <div class="sf-field">
                 <label class="sf-form-label">Niveau</label>
                 <select v-model="progForm.niveau" class="sf-input" @change="onNiveauChange">
@@ -347,6 +353,14 @@ function submitProg() {
   const id = store.addProgramme({ ...progForm })
   progModalOpen.value = false
   if (id) activeProgrammeId.value = id
+}
+function askDeleteProgramme() {
+  const p = activeProgramme.value
+  if (!p) return
+  if (window.confirm(`Supprimer la formation « ${p.nom} » ? Ses unités d'enseignement seront également supprimées.`)) {
+    store.deleteProgramme(p.id)
+    activeProgrammeId.value = store.programmes[0]?.id || store.offreParProgramme[0]?.id
+  }
 }
 
 const intervenantsTries = computed(() =>
@@ -751,6 +765,8 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 .sf-icon-btn:hover { background: var(--pr-light); color: var(--pr); }
 .sf-icon-btn.is-danger:hover { background: rgba(217, 48, 37, 0.1); color: var(--danger); }
 .sf-btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  white-space: nowrap;
   height: 40px; padding: 0 16px;
   background: var(--pr); color: #fff;
   border: none; border-radius: 9px;
@@ -812,7 +828,15 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 .sf-field + .sf-field, .sf-field + .sf-form-row, .sf-form-row + .sf-field, .sf-form-row + .sf-form-row {
   margin-top: 12px;
 }
-.sf-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sf-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.sf-prog-right { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.sf-del-prog {
+  display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+  background: none; border: 1px solid rgba(217, 48, 37, 0.35); color: var(--danger, #D93025);
+  border-radius: 9px; font-family: inherit; font-weight: 600; font-size: 12.5px;
+  padding: 7px 13px; cursor: pointer; transition: background 0.15s ease;
+}
+.sf-del-prog:hover { background: rgba(217, 48, 37, 0.08); }
 .sf-form-label {
   display: block;
   font-family: 'Poppins', sans-serif;
