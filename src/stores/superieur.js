@@ -410,20 +410,40 @@ const CRENEAUX = [
 const fullName = () => `${pick(PRENOMS)} ${pick(NOMS)}`
 
 // ── Génération des intervenants ──
+// Coordonnées administratives d'un intervenant (déterministes, hash de l'index).
+function adminIntervenant(idx, campus, prenom, nom) {
+  const c = idx + 5000 // décalage pour ne pas coïncider avec les étudiants
+  const h = (s) => hashN(c, s)
+  const quartiers = QUARTIERS[campus] || QUARTIERS.douala
+  const villeCampusNom = CAMPUS.find((x) => x.id === campus)?.ville || ''
+  const emailBase = `${(prenom || '').toLowerCase().replace(/[^a-z]/g, '')}.${(nom || '').toLowerCase().replace(/[^a-z]/g, '')}`
+  return {
+    sexe: h(1) % 2 ? 'F' : 'M',
+    telephone: telCM(c, 20),
+    email: `${emailBase}@ise.edufrem.cm`,
+    adresse: `${quartiers[h(6) % quartiers.length]}, ${villeCampusNom}`,
+  }
+}
 function generateIntervenants() {
   const list = []
   for (let i = 0; i < 32; i++) {
     const { prenom, nom } = personneMix()
     const vacataire = chance(0.45)
+    // Ordre des appels rng conservé : specialite (pick) → coutHoraire → campus (pick).
+    const specialite = pick(SPECIALITES)
+    const coutHoraire = vacataire ? randInt(8000, 20000) : null
+    const campus = pick(CAMPUS_POOL)
+    const admin = adminIntervenant(i, campus, prenom, nom)
     list.push({
       id: `int-${String(i + 1).padStart(3, '0')}`,
       prenom,
       nom,
       nomComplet: `${prenom} ${nom}`,
       statut: vacataire ? 'vacataire' : 'permanent',
-      specialite: pick(SPECIALITES),
-      coutHoraire: vacataire ? randInt(8000, 20000) : null,
-      campus: pick(CAMPUS_POOL),
+      specialite,
+      coutHoraire,
+      campus,
+      ...admin,
     })
   }
   return list

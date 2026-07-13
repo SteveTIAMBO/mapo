@@ -463,7 +463,7 @@ const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 .si-modal {
   width: 100%; max-width: 540px;
   max-height: 92vh; overflow-y: auto;
-  background: var(--card); border-radius: 18px;
+  background: #fff; border-radius: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
 .si-modal-head {

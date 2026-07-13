@@ -67,15 +67,18 @@
           </div>
         </div>
 
-        <!-- Coordonnées -->
+        <!-- Identité & contact -->
         <div v-show="tab === 'coord'" class="sid-pane">
           <div class="sid-ident">
             <div class="sid-ident-row"><span>Nom complet</span><strong>{{ nomAffiche }}</strong></div>
-            <div class="sid-ident-row"><span>Identifiant</span><strong>{{ it.id }}</strong></div>
-            <div class="sid-ident-row"><span>Email</span><strong>{{ email }}</strong></div>
+            <div class="sid-ident-row"><span>Sexe</span><strong>{{ it.sexe === 'F' ? 'Féminin' : 'Masculin' }}</strong></div>
+            <div class="sid-ident-row"><span>Statut</span><strong>{{ it.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
             <div class="sid-ident-row"><span>Spécialité</span><strong>{{ it.specialite }}</strong></div>
+            <div class="sid-ident-row"><span>Téléphone</span><strong>{{ it.telephone || '—' }}</strong></div>
+            <div class="sid-ident-row"><span>E-mail</span><strong>{{ it.email || email }}</strong></div>
+            <div class="sid-ident-row"><span>Adresse</span><strong>{{ it.adresse || '—' }}</strong></div>
+            <div v-if="it.statut === 'vacataire' && it.coutHoraire" class="sid-ident-row"><span>Tarif horaire</span><strong>{{ formatFcfa(it.coutHoraire) }} FCFA/h</strong></div>
           </div>
-          <p class="sid-note">Les coordonnées réelles sont renseignées à l'inscription de l'intervenant dans l'établissement.</p>
         </div>
       </div>
     </div>
@@ -96,7 +99,7 @@ const tab = ref('ue')
 const tabs = [
   { key: 'ue', label: 'Enseignements' },
   { key: 'profil', label: 'Profil & charge' },
-  { key: 'coord', label: 'Coordonnées' },
+  { key: 'coord', label: 'Identité & contact' },
 ]
 
 const ueList = computed(() => store.ue.filter((u) => u.intervenantId === it.id)).value
