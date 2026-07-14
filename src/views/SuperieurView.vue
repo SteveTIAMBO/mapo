@@ -610,15 +610,9 @@ const ALL_TABS = [
   },
   // ── Configuration (admin uniquement) ───────────────────────────
   {
-    key: 'gestion_acces',
-    label: 'Gestion des accès',
-    section: 'Configuration',
-    roles: ['admin'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3"/><path d="M19 8l-3 3 3 3"/></svg>',
-  },
-  {
     key: 'roles',
     label: 'Rôles & Accès',
+    section: 'Configuration',
     roles: ['admin'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
   },
@@ -648,23 +642,23 @@ function getTabModule(tabKey) {
 // Modules toujours actifs (l'école ne peut pas les désactiver dans l'UI).
 // Gestion des accès est core pour tout admin école : sinon il ne peut pas
 // inviter son personnel.
-const CORE_MODULES = new Set(['dashboard', 'parametres', 'gestion_acces', 'roles'])
+const CORE_MODULES = new Set(['dashboard', 'parametres', 'roles'])
 
-// Rôles du personnel gérés par la matrice « Rôles & Accès » (superieurPermissions).
-// Pour ces rôles, la visibilité des onglets suit la matrice éditable par le
-// directeur. Les autres rôles (etudiant/enseignant/parent/groupe) et les onglets
-// hors matrice (espaces perso) gardent la liste statique `t.roles`.
-const MATRIX_ROLES = new Set(['admin', 'relation_internationale', 'responsable_formation', 'comptable'])
-
+// Visibilité des onglets : si le rôle courant figure dans la matrice « Rôles &
+// Accès » (rôles du personnel, y compris rôles personnalisés créés par le
+// directeur), la visibilité suit la matrice éditable. Les autres rôles
+// (etudiant/enseignant/parent/groupe) et les onglets hors matrice (espaces
+// perso) gardent la liste statique `t.roles`.
 const tabsVisibles = computed(() => {
   const r = authSup.role
   if (!r) return []
+  const isMatrixRole = !!supPerms.roles[r]
   return ALL_TABS.filter((t) => {
     const mod = getTabModule(t.key)
     // 1. Activation du module par l'école (inchangé).
     if (!CORE_MODULES.has(mod) && !schoolIdentity.isModuleActif(mod)) return false
     // 2. Autorisation par rôle.
-    if (MATRIX_ROLES.has(r)) {
+    if (isMatrixRole) {
       const mm = supPerms.moduleForTab(t.key)
       if (!mm) return t.roles.includes(r) // onglets hors matrice (espaces perso)
       return supPerms.hasAccess(mm)

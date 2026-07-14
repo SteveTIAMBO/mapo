@@ -27,11 +27,8 @@ export const MIAPO_MODULES = [
     label: 'Préparation de cours',
     desc: 'Assistant pédagogique enseignant : cours, devoirs et examens générés avec corrigé.',
   },
-  {
-    key: 'tuteur',
-    label: 'Tuteur MIAPO+ (élèves & parents)',
-    desc: 'Quiz adaptatifs, parcours de révision et suivi de progression dans les espaces étudiant et parent.',
-  },
+  // NB : MIAPO+ (tuteur élève/parent) est un produit B2C à part (app MIAPO+) —
+  // l'école ne contrôle pas son IA, donc il n'apparaît pas ici.
 ]
 
 const STORAGE_KEY = 'sup_miapo_modules'

@@ -30,6 +30,7 @@
             <th v-for="(role, key) in roles" :key="key" class="sr-role-col">
               <span class="sr-role-name">{{ role.label }}</span>
               <span class="sr-role-desc">{{ role.description }}</span>
+              <button v-if="isAdmin && role.custom" type="button" class="sr-role-del" @click="deleteTarget = key">Supprimer</button>
             </th>
           </tr>
         </thead>
@@ -56,6 +57,23 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Créer un rôle personnalisé -->
+    <div v-if="isAdmin" class="sr-card sr-create">
+      <div class="sr-create-head">
+        <strong>Créer un rôle</strong>
+        <p>Ajoutez un rôle (ex. « Professeur principal », « Personnel administratif », « Enseignant ») puis réglez ses accès dans la matrice ci-dessus.</p>
+      </div>
+      <div class="sr-create-form">
+        <input v-model="newRole.label" type="text" class="sr-input" placeholder="Nom du rôle" @keyup.enter="createRole" />
+        <input v-model="newRole.description" type="text" class="sr-input sr-input-grow" placeholder="Description (facultatif)" @keyup.enter="createRole" />
+        <select v-model="newRole.baseKey" class="sr-input sr-input-select">
+          <option value="">Partir de zéro (aucun accès)</option>
+          <option v-for="(role, key) in roles" :key="key" :value="key">Copier depuis : {{ role.label }}</option>
+        </select>
+        <button type="button" class="sr-btn-primary" :disabled="!newRole.label.trim()" @click="createRole">Créer le rôle</button>
+      </div>
     </div>
 
     <!-- Réinitialisation par rôle -->
@@ -92,6 +110,20 @@
       </div>
     </transition>
 
+    <!-- Confirmation de suppression d'un rôle personnalisé -->
+    <transition name="sr-fade">
+      <div v-if="deleteTarget" class="sr-overlay" @click.self="deleteTarget = null">
+        <div class="sr-modal">
+          <h2 class="sr-modal-title">Supprimer « {{ roles[deleteTarget]?.label }} » ?</h2>
+          <p class="sr-modal-txt">Ce rôle personnalisé et ses accès seront supprimés. Action immédiate.</p>
+          <div class="sr-modal-actions">
+            <button type="button" class="sr-btn-ghost" @click="deleteTarget = null">Annuler</button>
+            <button type="button" class="sr-btn-primary" @click="confirmDelete">Supprimer</button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
     <div v-if="savedHint" class="sr-toast">Modifications enregistrées.</div>
   </div>
 </template>
@@ -114,7 +146,9 @@ const roles = computed(() => perms.roles)
 const isAdmin = computed(() => authSup.role === 'admin')
 
 const resetTarget = ref(null)
+const deleteTarget = ref(null)
 const savedHint = ref(false)
+const newRole = ref({ label: '', description: '', baseKey: '' })
 
 function levelOf(v) { return SUP_PERMISSION_LEVELS.find((l) => l.value === v) }
 function permLabel(v) { return levelOf(v)?.label || 'Aucun' }
@@ -145,6 +179,20 @@ function confirmReset() {
   if (resetTarget.value) {
     perms.resetRole(resetTarget.value)
     resetTarget.value = null
+    flashSaved()
+  }
+}
+function createRole() {
+  const key = perms.addRole({ ...newRole.value })
+  if (key) {
+    newRole.value = { label: '', description: '', baseKey: '' }
+    flashSaved()
+  }
+}
+function confirmDelete() {
+  if (deleteTarget.value) {
+    perms.removeRole(deleteTarget.value)
+    deleteTarget.value = null
     flashSaved()
   }
 }
@@ -207,6 +255,17 @@ onMounted(() => perms.loadRoles())
 }
 .sr-reset-btn:hover:not(:disabled) { background: #F4F4F0; color: #1A1D1F; }
 .sr-reset-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.sr-create { display: flex; flex-direction: column; gap: 12px; }
+.sr-create-head strong { font-family: 'Poppins', sans-serif; font-size: 14px; color: #1A1D1F; }
+.sr-create-head p { font-size: 12px; color: #6F767E; margin: 2px 0 0; }
+.sr-create-form { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.sr-input { padding: 9px 12px; border: 1.5px solid #DCDCD8; border-radius: 9px; font-size: 13.5px; color: #1A1D1F; font-family: inherit; min-width: 170px; }
+.sr-input::placeholder { color: #9AA0A6; }
+.sr-input:focus { outline: none; border-color: var(--pr, #1558B0); box-shadow: 0 0 0 3px rgba(21, 88, 176, 0.14); }
+.sr-input-grow { flex: 1; min-width: 200px; }
+.sr-input-select { background: #fff; cursor: pointer; }
+.sr-role-del { display: block; margin: 6px auto 0; background: none; border: none; color: #B23B3B; font-size: 11px; font-weight: 600; cursor: pointer; text-decoration: underline; }
 
 .sr-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(12, 45, 90, 0.55); backdrop-filter: blur(3px); display: flex; align-items: center; justify-content: center; padding: 18px; }
 .sr-modal { width: 100%; max-width: 420px; background: #fff; border-radius: 16px; padding: 22px 24px; box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3); }

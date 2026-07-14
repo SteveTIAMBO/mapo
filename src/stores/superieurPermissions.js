@@ -38,7 +38,6 @@ export const SUP_APP_MODULES = [
   { key: 'salles', label: 'Salles', description: 'Salles et occupation' },
   { key: 'finance', label: 'Finance', description: 'Grilles, comptes, paiements, bourses, échéanciers' },
   { key: 'mobilite_entrante', label: 'Mobilité entrante', description: 'Étudiants en mobilité internationale' },
-  { key: 'gestion_acces', label: 'Gestion des accès', description: 'Invitations du personnel' },
   { key: 'parametres', label: 'Paramètres', description: 'Établissement, profil, MIAPO' },
   { key: 'roles', label: 'Rôles & Accès', description: 'Cette page — permissions par rôle' },
 ]
@@ -58,6 +57,22 @@ function fromAllowed(keys) {
   return p
 }
 const clone = (o) => JSON.parse(JSON.stringify(o))
+function allNone() {
+  const p = {}
+  for (const m of SUP_APP_MODULES) p[m.key] = 'none'
+  return p
+}
+function slugRole(label, existing) {
+  let base = String(label || '')
+    .toLowerCase()
+    .normalize('NFD').replace(new RegExp('[\\u0300-\\u036f]', 'g'), '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '') || 'role'
+  if (!existing.has(base)) return base
+  let i = 2
+  while (existing.has(`${base}_${i}`)) i++
+  return `${base}_${i}`
+}
 
 export const SUP_DEFAULT_ROLES = {
   admin: {
@@ -101,9 +116,19 @@ export const useSuperieurPermissionsStore = defineStore('superieurPermissions', 
       if (!raw) return
       const parsed = JSON.parse(raw)
       const merged = clone(SUP_DEFAULT_ROLES)
-      for (const k of Object.keys(merged)) {
-        if (parsed[k] && parsed[k].permissions) {
-          merged[k].permissions = { ...merged[k].permissions, ...parsed[k].permissions }
+      for (const k of Object.keys(parsed)) {
+        if (merged[k]) {
+          // rôle par défaut : on ne fusionne que les permissions
+          if (parsed[k].permissions) merged[k].permissions = { ...merged[k].permissions, ...parsed[k].permissions }
+        } else if (parsed[k] && parsed[k].custom) {
+          // rôle personnalisé créé par le directeur : on le restaure entièrement
+          merged[k] = {
+            label: parsed[k].label || k,
+            description: parsed[k].description || 'Rôle personnalisé',
+            editable: true,
+            custom: true,
+            permissions: { ...allNone(), ...(parsed[k].permissions || {}) },
+          }
         }
       }
       merged.admin.permissions = allFull() // le directeur reste toujours complet
@@ -133,6 +158,28 @@ export const useSuperieurPermissionsStore = defineStore('superieurPermissions', 
       persist()
     }
   }
+  // Crée un rôle personnalisé (nom + éventuel modèle « copier depuis »).
+  function addRole({ label, description, baseKey } = {}) {
+    const lbl = String(label || '').trim()
+    if (!lbl) return null
+    const key = slugRole(lbl, new Set(Object.keys(roles.value)))
+    const base = baseKey && roles.value[baseKey] ? { ...roles.value[baseKey].permissions } : allNone()
+    roles.value = {
+      ...roles.value,
+      [key]: { label: lbl, description: String(description || '').trim() || 'Rôle personnalisé', editable: true, custom: true, permissions: base },
+    }
+    persist()
+    return key
+  }
+  // Supprime un rôle personnalisé (les rôles par défaut ne sont pas supprimables).
+  function removeRole(key) {
+    if (roles.value[key] && roles.value[key].custom) {
+      const copy = { ...roles.value }
+      delete copy[key]
+      roles.value = copy
+      persist()
+    }
+  }
 
   // Mappe un onglet de SuperieurView vers un module de la matrice
   // (null = hors matrice : espaces perso, à traiter par la liste statique).
@@ -149,6 +196,7 @@ export const useSuperieurPermissionsStore = defineStore('superieurPermissions', 
     roles,
     getPermission, hasAccess, canWrite,
     updatePermission, resetRole, loadRoles,
+    addRole, removeRole,
     moduleForTab,
   }
 })
