@@ -255,8 +255,30 @@ function generateDossiers(realStudents) {
       dateSoumission: dateSoumission(),
       motifRefus,
       anneeInscription,
+      source: 'ecole',
+      verification: { statut: 'coherent' },
     })
     counter++
+  }
+
+  // ── MIAPO — vérification des pièces (démo) ──
+  // Marque 2 dossiers de Douala comme pré-inscriptions déposées EN LIGNE (famille),
+  // et plante 2 incohérences déterministes acte↔fiche (MIAPO signale, ne bloque pas).
+  const dSoumis = list.filter((d) => d.campus === 'douala' && d.statut === 'soumis')
+  const dComplet = list.filter((d) => d.campus === 'douala' && d.statut === 'complet')
+  if (dSoumis[0]) dSoumis[0].source = 'famille'
+  if (dSoumis[1]) dSoumis[1].source = 'famille'
+  if (dSoumis[0]) {
+    dSoumis[0].verification = {
+      statut: 'incoherence',
+      details: [{ champ: 'Date de naissance', acte: '14/03/2005', fiche: '14/05/2005' }],
+    }
+  }
+  if (dComplet[0]) {
+    dComplet[0].verification = {
+      statut: 'incoherence',
+      details: [{ champ: 'Orthographe du nom', acte: 'ONANA', fiche: 'ONANNA' }],
+    }
   }
   return list
 }
@@ -264,9 +286,9 @@ function generateDossiers(realStudents) {
 // ── Store ──
 export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions', () => {
   const superieur = useSuperieurStore()
-  const dossiers = ref(loadEntity('inscriptions_admin2', IS_SCHOOL_MODE ? [] : generateDossiers(superieur.etudiantsAll || superieur.etudiants || [])))
+  const dossiers = ref(loadEntity('inscriptions_admin3', IS_SCHOOL_MODE ? [] : generateDossiers(superieur.etudiantsAll || superieur.etudiants || [])))
 
-  function persist() { saveEntity('inscriptions_admin2', dossiers.value) }
+  function persist() { saveEntity('inscriptions_admin3', dossiers.value) }
 
   // ── Configuration école (persistée, clé dédiée `inscriptions_config`) ──
   // La direction choisit QUELLES pièces sont exigées (ajout / retrait, chacune
@@ -352,6 +374,10 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     dossiersVisibles.value.filter(
       (d) => (d.statut === DOSSIER_STATUS.SOUMIS || d.statut === DOSSIER_STATUS.INCOMPLET) && requiredMissing(d).length > 0
     )
+  )
+  // Dossiers où MIAPO a repéré une incohérence acte↔fiche (à vérifier, non bloquant).
+  const dossiersIncoherents = computed(() =>
+    dossiersVisibles.value.filter((d) => d.verification && d.verification.statut === 'incoherence')
   )
   function piecesManquantesLabels(dossier) { return requiredMissing(dossier).map((doc) => doc.label) }
   // Validation par lot (pré-validation MIAPO confirmée par la scolarité).
@@ -523,6 +549,7 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     // Analyse MIAPO
     dossiersConformes,
     dossiersIncomplets,
+    dossiersIncoherents,
     piecesManquantesLabels,
     // Helpers
     getDossier,

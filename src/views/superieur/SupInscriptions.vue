@@ -69,6 +69,10 @@
       </div>
       <div v-else class="si-miapo-clear">{{ t('sup.inscriptions.miapoClear') }}</div>
 
+      <div v-if="store.dossiersIncoherents.length" class="si-miapo-alert">
+        MIAPO a relevé {{ store.dossiersIncoherents.length }} dossier{{ store.dossiersIncoherents.length > 1 ? 's' : '' }} avec une incohérence acte ↔ fiche à vérifier.
+      </div>
+
       <div class="si-miapo-note">{{ t('sup.inscriptions.miapoNote') }}</div>
     </div>
 
@@ -157,6 +161,7 @@
               <div class="si-modal-meta">
                 <span class="si-type" :class="`ty-${detail.type}`">{{ typeLabel(detail.type) }}</span>
                 <span class="si-pill" :class="`is-${detail.statut}`">{{ statutLabel(detail.statut) }}</span>
+                <span v-if="detail.source === 'famille'" class="si-src">Pré-inscription en ligne</span>
               </div>
             </div>
             <button class="si-modal-close" type="button" @click="closeDetail" :aria-label="t('sup.inscriptions.close')">
@@ -200,6 +205,21 @@
                 <button v-if="doc.fourni" type="button" class="si-doc-view" @click="openDocViewer(doc)">Consulter</button>
               </li>
             </ul>
+
+            <!-- Vérification MIAPO des pièces (OCR acte ↔ fiche) -->
+            <div v-if="detail.verification" class="si-verif" :class="detail.verification.statut === 'incoherence' ? 'is-warn' : 'is-ok'">
+              <div class="si-verif-head">
+                <span class="si-verif-badge">MIAPO</span>
+                <span v-if="detail.verification.statut === 'coherent'">Vérification des pièces : le nom et la date de naissance lus sur l'acte concordent avec la fiche d'inscription.</span>
+                <span v-else>Incohérence à vérifier entre l'acte de naissance et la fiche d'inscription :</span>
+              </div>
+              <ul v-if="detail.verification.statut === 'incoherence'" class="si-verif-list">
+                <li v-for="(v, i) in detail.verification.details" :key="i">
+                  <strong>{{ v.champ }}</strong> — acte : {{ v.acte }} · fiche : {{ v.fiche }}
+                </li>
+              </ul>
+              <div v-if="detail.verification.statut === 'incoherence'" class="si-verif-note">MIAPO ne bloque pas : la scolarité vérifie la pièce et tranche.</div>
+            </div>
 
             <p v-if="missingRequired.length && !store.canValider(detail)" class="si-hint">
               {{ t('sup.inscriptions.validateHint', { liste: missingRequired.map((d) => t('sup.inscriptions.docs.' + d.key)).join(', ') }) }}
@@ -888,6 +908,16 @@ async function copyMessage() {
   cursor: pointer; transition: background 0.15s ease;
 }
 .si-doc-view:hover { background: rgba(var(--pr-rgb), 0.18); }
+.si-verif { margin-top: 14px; border-radius: 10px; padding: 12px 14px; font-size: 13px; }
+.si-verif.is-ok { background: rgba(14, 124, 90, 0.07); border: 1px solid rgba(14, 124, 90, 0.18); color: #0E7C5A; }
+.si-verif.is-warn { background: rgba(217, 119, 6, 0.08); border: 1px solid rgba(217, 119, 6, 0.22); color: #B45309; }
+.si-verif-head { display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+.si-verif-badge { flex-shrink: 0; background: #6D28D9; color: #fff; border-radius: 100px; padding: 1px 8px; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 10px; letter-spacing: 0.04em; margin-top: 1px; }
+.si-verif-list { margin: 8px 0 0; padding-left: 18px; }
+.si-verif-list li { margin-bottom: 3px; }
+.si-verif-note { margin-top: 8px; font-style: italic; opacity: 0.9; }
+.si-src { background: rgba(37, 99, 235, 0.12); color: #2563EB; border-radius: 100px; padding: 2px 10px; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 10.5px; }
+.si-miapo-alert { margin-top: 12px; background: rgba(255, 255, 255, 0.16); border-radius: 10px; padding: 9px 13px; font-size: 12.5px; font-weight: 600; }
 
 .si-hint {
   margin: 4px 0 0; padding: 9px 12px;
