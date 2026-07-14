@@ -27,7 +27,7 @@
       </div>
       <div class="si-kpi">
         <div class="si-kpi-label">{{ t('sup.inscriptions.kpiToValidate') }}</div>
-        <div class="si-kpi-value">{{ store.stats.complet }}</div>
+        <div class="si-kpi-value">{{ store.dossiersConformes.length }}</div>
         <div class="si-kpi-foot is-gold">{{ t('sup.inscriptions.kpiToValidateFoot') }}</div>
       </div>
       <div class="si-kpi">
@@ -37,9 +37,9 @@
       </div>
       <div class="si-kpi">
         <div class="si-kpi-label">{{ t('sup.inscriptions.kpiIncompleteRefused') }}</div>
-        <div class="si-kpi-value">{{ store.stats.incomplet + store.stats.refuse }}</div>
-        <div class="si-kpi-foot" :class="(store.stats.incomplet + store.stats.refuse) > 0 ? 'is-warn' : 'is-ok'">
-          {{ t('sup.inscriptions.kpiIncompleteRefusedFoot', { n: store.stats.incomplet, m: store.stats.refuse }) }}
+        <div class="si-kpi-value">{{ store.dossiersIncomplets.length + store.stats.refuse }}</div>
+        <div class="si-kpi-foot" :class="(store.dossiersIncomplets.length + store.stats.refuse) > 0 ? 'is-warn' : 'is-ok'">
+          {{ t('sup.inscriptions.kpiIncompleteRefusedFoot', { n: store.dossiersIncomplets.length, m: store.stats.refuse }) }}
         </div>
       </div>
     </div>

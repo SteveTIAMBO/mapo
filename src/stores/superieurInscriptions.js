@@ -377,10 +377,13 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
       (d) => d.statut !== DOSSIER_STATUS.VALIDE && d.statut !== DOSSIER_STATUS.REFUSE && requiredMissing(d).length === 0
     )
   )
-  // Incomplets = en attente avec au moins une pièce obligatoire manquante.
+  // Incomplets = en attente (ni validé ni refusé) avec au moins une pièce
+  // obligatoire manquante. Symétrique de `dossiersConformes` : ensemble, les deux
+  // partitionnent tous les dossiers « à traiter » (robuste si la direction ajoute
+  // une pièce obligatoire → un dossier « complet » sans cette pièce bascule ici).
   const dossiersIncomplets = computed(() =>
     dossiersVisibles.value.filter(
-      (d) => (d.statut === DOSSIER_STATUS.SOUMIS || d.statut === DOSSIER_STATUS.INCOMPLET) && requiredMissing(d).length > 0
+      (d) => d.statut !== DOSSIER_STATUS.VALIDE && d.statut !== DOSSIER_STATUS.REFUSE && requiredMissing(d).length > 0
     )
   )
   // Dossiers où MIAPO a repéré une incohérence acte↔fiche (à vérifier, non bloquant).
