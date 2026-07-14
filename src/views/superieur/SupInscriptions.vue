@@ -69,8 +69,17 @@
       </div>
       <div v-else class="si-miapo-clear">{{ t('sup.inscriptions.miapoClear') }}</div>
 
-      <div v-if="store.dossiersIncoherents.length && store.config.miapo.verification" class="si-miapo-alert">
-        MIAPO a relevé {{ store.dossiersIncoherents.length }} dossier{{ store.dossiersIncoherents.length > 1 ? 's' : '' }} avec une incohérence acte ↔ fiche à vérifier.
+      <div v-if="store.dossiersIncoherents.length && store.config.miapo.verification" class="si-miapo-list si-miapo-list-warn">
+        <div class="si-miapo-list-label">MIAPO — incohérences acte ↔ fiche à vérifier ({{ store.dossiersIncoherents.length }})</div>
+        <div v-for="d in store.dossiersIncoherents" :key="d.id" class="si-miapo-item">
+          <div class="si-miapo-item-main">
+            <span class="si-miapo-item-name">{{ d.candidat.nomComplet }}</span>
+            <span v-if="d.verification && d.verification.details && d.verification.details.length" class="si-miapo-item-miss">
+              {{ d.verification.details[0].champ }} — acte : {{ d.verification.details[0].acte }} · fiche : {{ d.verification.details[0].fiche }}
+            </span>
+          </div>
+          <button type="button" class="si-miapo-msg" @click="openDetail(d)">Ouvrir le dossier</button>
+        </div>
       </div>
 
       <div class="si-miapo-note">{{ t('sup.inscriptions.miapoNote') }}</div>
@@ -606,6 +615,7 @@ async function copyMessage() {
 }
 .si-miapo-cta:hover { opacity: 0.9; }
 .si-miapo-list { margin-top: 14px; background: rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 10px 14px; }
+.si-miapo-list-warn { background: rgba(255, 209, 102, 0.18); }
 .si-miapo-list-label { font-size: 12px; font-weight: 700; opacity: 0.95; margin-bottom: 4px; }
 .si-miapo-item {
   display: flex; align-items: center; gap: 12px;
