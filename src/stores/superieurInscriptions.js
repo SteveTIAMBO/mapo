@@ -268,6 +268,41 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
 
   function persist() { saveEntity('inscriptions_admin2', dossiers.value) }
 
+  // ── Configuration école (persistée, clé dédiée `inscriptions_config`) ──
+  // La direction choisit QUELLES pièces sont exigées (ajout / retrait, chacune
+  // obligatoire ou optionnelle) et si la scolarité peut valider un dossier même
+  // incomplet. MIAPO continue de signaler les pièces manquantes dans tous les cas.
+  function defaultConfig() {
+    return {
+      documents: REQUIRED_DOCUMENTS.map((d) => ({ ...d })),
+      validerSansPieces: false,
+    }
+  }
+  const config = ref(loadEntity('inscriptions_config', defaultConfig()))
+  // En mode école, loadEntity renvoie {} tant que rien n'est en base → on réamorce
+  // depuis les pièces par défaut pour ne jamais partir d'une configuration vide.
+  if (!config.value || !Array.isArray(config.value.documents) || config.value.documents.length === 0) {
+    config.value = defaultConfig()
+  }
+  if (typeof config.value.validerSansPieces !== 'boolean') {
+    config.value.validerSansPieces = false
+  }
+  function persistConfig() { saveEntity('inscriptions_config', config.value) }
+
+  // Génère une clé (slug) unique à partir d'un libellé de pièce.
+  function slugifyDocKey(label) {
+    const base = String(label || '')
+      .toLowerCase()
+      .normalize('NFD').replace(new RegExp('[\u0300-\u036f]', 'g'), '') // retire les accents
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '') || 'document'
+    const existing = new Set(config.value.documents.map((d) => d.key))
+    if (!existing.has(base)) return base
+    let i = 2
+    while (existing.has(`${base}_${i}`)) i++
+    return `${base}_${i}`
+  }
+
   // ── Périmètre par campus (repris de superieur.campusScope) ──
   // Un directeur de campus ne voit que son campus ; la direction de groupe
   // (ou la démo) voit tous les dossiers.
@@ -338,11 +373,26 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
 
   // ── Helpers ──
   function getDossier(id) { return dossiers.value.find((d) => d.id === id) || null }
+  // Pièces obligatoires manquantes — on se base sur la CONFIG école (pas la liste
+  // statique). Pour chaque pièce marquée obligatoire dans la config, on cherche la
+  // pièce correspondante du dossier par clé : « manquante » si absente ou non
+  // fournie. On renvoie les OBJETS de config (avec `.label`) → les appelants
+  // peuvent afficher le libellé (y compris pour les pièces ajoutées par l'école).
   function requiredMissing(dossier) {
     if (!dossier) return []
-    return (dossier.documents || []).filter((doc) => doc.required && !doc.fourni)
+    const docs = dossier.documents || []
+    return config.value.documents
+      .filter((cd) => cd.required)
+      .filter((cd) => {
+        const found = docs.find((doc) => doc.key === cd.key)
+        return !found || !found.fourni
+      })
   }
-  function canValider(dossier) { return requiredMissing(dossier).length === 0 }
+  // Validable si l'école autorise la validation sans pièces, OU si aucune pièce
+  // obligatoire ne manque. (MIAPO signale toujours les manques par ailleurs.)
+  function canValider(dossier) {
+    return config.value.validerSansPieces || requiredMissing(dossier).length === 0
+  }
   // Recherche le dossier d'un étudiant (onglet « Documents » de la fiche).
   // Rapprochement par nom complet ou matricule (les identités de démo des
   // candidats et des étudiants sont générées indépendamment → correspondance
@@ -400,6 +450,30 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     return true
   }
 
+  // ── Actions de configuration (chacune persistée) ──
+  // Ajoute un type de pièce (clé slug unique dérivée du libellé). Ignore un
+  // libellé vide. `required` défaut = true (une pièce non précisée est exigée).
+  function addDocumentType({ label, required } = {}) {
+    const lbl = String(label || '').trim()
+    if (!lbl) return null
+    const key = slugifyDocKey(lbl)
+    config.value.documents.push({ key, label: lbl, required: required !== false })
+    persistConfig()
+    return key
+  }
+  function removeDocumentType(key) {
+    config.value.documents = config.value.documents.filter((d) => d.key !== key)
+    persistConfig()
+  }
+  function setDocumentRequired(key, bool) {
+    const d = config.value.documents.find((x) => x.key === key)
+    if (d) { d.required = !!bool; persistConfig() }
+  }
+  function setValiderSansPieces(bool) {
+    config.value.validerSansPieces = !!bool
+    persistConfig()
+  }
+
   return {
     // État
     dossiers,
@@ -426,5 +500,11 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     demanderDocuments,
     refuserDossier,
     marquerComplet,
+    // Configuration école (pièces exigées + option de validation)
+    config,
+    addDocumentType,
+    removeDocumentType,
+    setDocumentRequired,
+    setValiderSansPieces,
   }
 })

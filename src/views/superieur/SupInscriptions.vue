@@ -6,6 +6,10 @@
         <h1 class="si-h1">{{ t('sup.inscriptions.title') }}</h1>
         <p class="si-sub">{{ t('sup.inscriptions.subtitle') }}</p>
       </div>
+      <button type="button" class="si-settings-btn" @click="openSettings">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Paramètres</span>
+      </button>
     </div>
 
     <!-- KPIs -->
@@ -190,8 +194,11 @@
               </li>
             </ul>
 
-            <p v-if="missingRequired.length" class="si-hint">
+            <p v-if="missingRequired.length && !store.canValider(detail)" class="si-hint">
               {{ t('sup.inscriptions.validateHint', { liste: missingRequired.map((d) => t('sup.inscriptions.docs.' + d.key)).join(', ') }) }}
+            </p>
+            <p v-else-if="missingRequired.length" class="si-hint si-hint-allow">
+              Des pièces obligatoires manquent, mais la validation est autorisée (option activée).
             </p>
           </div>
 
@@ -203,8 +210,8 @@
             <button
               type="button"
               class="si-btn-primary"
-              :disabled="missingRequired.length > 0"
-              :title="missingRequired.length > 0 ? t('sup.inscriptions.disabledTitle') : null"
+              :disabled="!store.canValider(detail)"
+              :title="!store.canValider(detail) ? t('sup.inscriptions.disabledTitle') : null"
               @click="onValider(detail)"
             >
               {{ t('sup.inscriptions.validateEnrolment') }}
@@ -260,6 +267,59 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modale Paramètres (configuration école) — chaînes FR en dur -->
+    <transition name="si-fade">
+      <div v-if="settingsOpen" class="si-modal-overlay si-confirm-overlay" @click.self="closeSettings">
+        <div class="si-modal">
+          <div class="si-modal-head">
+            <div>
+              <h2 class="si-modal-title">Paramètres des inscriptions</h2>
+              <div class="si-modal-meta">
+                <span class="si-settings-sub">Configuration propre à votre établissement</span>
+              </div>
+            </div>
+            <button class="si-modal-close" type="button" @click="closeSettings" aria-label="Fermer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="si-modal-body">
+            <!-- Pièces à fournir -->
+            <div class="si-section-label">Pièces à fournir</div>
+            <ul class="si-cfg-list">
+              <li v-for="doc in store.config.documents" :key="doc.key" class="si-cfg-doc">
+                <span class="si-cfg-label">{{ doc.label }}</span>
+                <label class="si-cfg-check">
+                  <input type="checkbox" :checked="doc.required" @change="store.setDocumentRequired(doc.key, $event.target.checked)" />
+                  <span>Obligatoire</span>
+                </label>
+                <button type="button" class="si-cfg-remove" @click="store.removeDocumentType(doc.key)">Retirer</button>
+              </li>
+              <li v-if="store.config.documents.length === 0" class="si-cfg-empty">Aucune pièce configurée.</li>
+            </ul>
+            <div class="si-cfg-add">
+              <input type="text" v-model="newDocLabel" class="si-cfg-input" placeholder="Nom du document" @keyup.enter="addDoc" />
+              <label class="si-cfg-check">
+                <input type="checkbox" v-model="newDocRequired" />
+                <span>Obligatoire</span>
+              </label>
+              <button type="button" class="si-btn-neutral" @click="addDoc">Ajouter</button>
+            </div>
+
+            <!-- Validation -->
+            <div class="si-section-label si-cfg-section2">Validation</div>
+            <label class="si-cfg-toggle">
+              <input type="checkbox" :checked="store.config.validerSansPieces" @change="store.setValiderSansPieces($event.target.checked)" />
+              <span>Autoriser la validation même si des pièces obligatoires manquent</span>
+            </label>
+            <p class="si-cfg-help">Défini à l'onboarding par la direction, modifiable ici. Si activé, la scolarité peut valider un dossier incomplet ; MIAPO continue de signaler les pièces manquantes.</p>
+          </div>
+          <div class="si-modal-actions">
+            <button type="button" class="si-btn-ghost" @click="closeSettings">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -308,7 +368,38 @@ const missingRequired = computed(() => (detail.value ? store.requiredMissing(det
 function openDetail(d) { detail.value = d }
 function closeDetail() { detail.value = null }
 
+// ── Paramètres école (pièces exigées + option de validation) — FR en dur ──
+const settingsOpen = ref(false)
+function openSettings() { settingsOpen.value = true }
+function closeSettings() { settingsOpen.value = false }
+const newDocLabel = ref('')
+const newDocRequired = ref(true)
+function addDoc() {
+  const label = newDocLabel.value.trim()
+  if (!label) return
+  store.addDocumentType({ label, required: newDocRequired.value })
+  newDocLabel.value = ''
+  newDocRequired.value = true
+}
+
 function onValider(d) {
+  const missing = store.requiredMissing(d)
+  if (missing.length > 0) {
+    // Le bouton n'est actif ici que si l'option « valider sans pièces » est ON.
+    // MIAPO propose, l'école décide → confirmation explicite en modale in-app.
+    const liste = missing.map((doc) => doc.label).join(', ')
+    openConfirm({
+      title: 'Valider malgré des pièces manquantes ?',
+      message: `Des pièces obligatoires manquent (${liste}). L'option « valider un dossier incomplet » est activée : vous pouvez valider quand même. MIAPO continuera de signaler ces pièces.`,
+      confirmLabel: 'Valider quand même',
+      withMotif: false,
+      onConfirm: () => {
+        store.validerDossier(d.id)
+        closeDetail()
+      },
+    })
+    return
+  }
   store.validerDossier(d.id)
   closeDetail()
 }
@@ -416,7 +507,16 @@ async function copyMessage() {
 </script>
 
 <style scoped>
-.si-intro { margin-bottom: 18px; }
+.si-intro { margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.si-settings-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 38px; padding: 0 14px; flex-shrink: 0;
+  background: var(--card); border: 1.5px solid var(--input-border);
+  border-radius: 9px;
+  font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600;
+  color: var(--tx2); cursor: pointer; transition: all 0.15s ease;
+}
+.si-settings-btn:hover { border-color: var(--pr); color: var(--pr); }
 .si-h1 {
   font-family: 'Poppins', sans-serif;
   font-size: 24px;
@@ -765,6 +865,11 @@ async function copyMessage() {
   border-radius: 8px;
   font-size: 12.5px; color: var(--warn); line-height: 1.5;
 }
+.si-hint.si-hint-allow {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.2);
+  color: #2563EB;
+}
 
 /* Actions */
 .si-modal-actions {
@@ -825,6 +930,50 @@ async function copyMessage() {
   border-radius: 9px; outline: none; resize: vertical;
 }
 .si-textarea:focus { border-color: var(--pr); }
+
+/* Paramètres (configuration école) */
+.si-settings-sub { font-size: 12.5px; color: var(--tx2); }
+.si-cfg-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.si-cfg-doc {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--divider); border-radius: 10px;
+}
+.si-cfg-label { flex: 1; min-width: 0; font-size: 13.5px; color: var(--tx); font-weight: 600; }
+.si-cfg-check {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--tx2); cursor: pointer; white-space: nowrap;
+}
+.si-cfg-check input { width: 16px; height: 16px; accent-color: var(--pr); cursor: pointer; }
+.si-cfg-remove {
+  background: transparent; border: 1.5px solid var(--input-border);
+  border-radius: 8px; padding: 5px 11px;
+  font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600;
+  color: var(--tx2); cursor: pointer; transition: all 0.15s ease; flex-shrink: 0;
+}
+.si-cfg-remove:hover { border-color: var(--danger); color: var(--danger); }
+.si-cfg-empty { padding: 10px 12px; font-size: 13px; color: var(--tx3); }
+.si-cfg-add {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 12px; margin-bottom: 6px;
+  background: var(--input-bg); border: 1px dashed var(--input-border); border-radius: 10px;
+}
+.si-cfg-input {
+  flex: 1; min-width: 180px; height: 38px; box-sizing: border-box; padding: 0 12px;
+  font-family: 'Outfit', sans-serif; font-size: 14px; color: var(--tx);
+  background: #fff; border: 1.5px solid var(--input-border);
+  border-radius: 9px; outline: none; transition: border-color 0.15s ease;
+}
+.si-cfg-input:focus { border-color: var(--pr); }
+.si-cfg-section2 { margin-top: 18px; }
+.si-cfg-toggle {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--divider); border-radius: 10px;
+  font-size: 13.5px; color: var(--tx); cursor: pointer;
+}
+.si-cfg-toggle input { width: 18px; height: 18px; accent-color: var(--pr); cursor: pointer; flex-shrink: 0; }
+.si-cfg-help { margin: 8px 2px 0; font-size: 12.5px; color: var(--tx2); line-height: 1.5; }
 
 .si-fade-enter-active, .si-fade-leave-active { transition: opacity 0.2s ease; }
 .si-fade-enter-from, .si-fade-leave-to { opacity: 0; }
