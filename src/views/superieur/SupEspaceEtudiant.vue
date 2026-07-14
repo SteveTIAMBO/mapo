@@ -53,8 +53,8 @@
         <p v-else class="see-empty">Relevé bientôt disponible.</p>
       </section>
 
-      <!-- MIAPO+ -->
-      <section class="see-card see-miapo">
+      <!-- MIAPO+ (masqué si tuteur MIAPO+ désactivé dans Paramètres → MIAPO) -->
+      <section v-if="miapoGlobal.isEnabled('tuteur')" class="see-card see-miapo">
         <div class="see-miapo-badge">MIAPO+</div>
         <h2 class="see-h2 see-miapo-h2">Ton tuteur intelligent</h2>
         <p class="see-miapo-txt">Révise tes UE avec MIAPO+ : quiz adaptatifs, parcours de révision personnalisé et suivi de ta progression, disponible 24h/24.</p>
@@ -74,9 +74,11 @@
 <script setup>
 import { computed } from 'vue'
 import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
+import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 import UsageGauge from '../../components/UsageGauge.vue'
 
 const store = useSuperieurStore()
+const miapoGlobal = useSuperieurMiapoStore()
 // Étudiant de démonstration : un profil crédible (bon dossier) pour la démo.
 const moi = computed(() =>
   store.etudiants.find((e) => e.moyenne >= 13 && e.ectsValides > 30 && e.niveau !== 'BTS') ||

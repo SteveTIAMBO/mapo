@@ -137,6 +137,34 @@
       </div>
     </section>
 
+    <!-- Onglet "MIAPO" : admin — active/désactive l'IA par module -->
+    <section v-else-if="activeTab === 'miapo'" class="sp-card">
+      <h2 class="sp-h2">MIAPO — activation par module</h2>
+      <p class="sp-help">
+        Activez MIAPO uniquement là où vous en avez besoin. Désactiver un module coupe l'IA
+        (et sa consommation de crédits) pour ce module : les fonctions concernées disparaissent de l'interface.
+      </p>
+      <p v-if="!canSeeActivity" class="sp-help">Seul un administrateur peut modifier ces réglages.</p>
+      <div v-else class="sp-miapo-list">
+        <div v-for="m in miapoModules" :key="m.key" class="sp-miapo-item">
+          <div class="sp-miapo-txt">
+            <span class="sp-miapo-label">{{ m.label }}</span>
+            <span class="sp-miapo-desc">{{ m.desc }}</span>
+          </div>
+          <button
+            type="button"
+            class="sp-switch"
+            :class="{ on: miapoStore.isEnabled(m.key) }"
+            role="switch"
+            :aria-checked="miapoStore.isEnabled(m.key)"
+            @click="miapoStore.setModule(m.key, !miapoStore.isEnabled(m.key))"
+          >
+            <span class="sp-switch-knob"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- Onglet "Établissement" : ce qui existait avant -->
     <template v-else-if="activeTab === 'etablissement'">
 
@@ -248,11 +276,14 @@ import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { useAuthStore } from '../../stores/auth'
 import { useSupActivityStore, ACTIVITY_TYPES } from '../../stores/supActivity'
+import { useSuperieurMiapoStore, MIAPO_MODULES } from '../../stores/superieurMiapo'
 
 const schoolIdentity = useSchoolIdentityStore()
 const authSup = useSuperieurAuthStore()
 const authStore = useAuthStore()
 const activityStore = useSupActivityStore()
+const miapoStore = useSuperieurMiapoStore()
+const miapoModules = MIAPO_MODULES
 
 // ── Onglets internes ─────────────────────────────────────────────
 const canSeeActivity = computed(() => authSup.role === 'admin')
@@ -261,7 +292,10 @@ const tabs = computed(() => {
     { key: 'profil', label: 'Mon profil' },
     { key: 'etablissement', label: 'Établissement' },
   ]
-  if (canSeeActivity.value) list.push({ key: 'activite', label: 'Activité école' })
+  if (canSeeActivity.value) {
+    list.push({ key: 'miapo', label: 'MIAPO' })
+    list.push({ key: 'activite', label: 'Activité école' })
+  }
   return list
 })
 const activeTab = ref('profil')
@@ -715,6 +749,38 @@ watch(() => schoolIdentity.school, (s) => {
   color: var(--pr);
   border-bottom-color: var(--pr);
 }
+
+/* Onglet MIAPO — interrupteurs par module */
+.sp-miapo-list { display: flex; flex-direction: column; gap: 12px; }
+.sp-miapo-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  padding: 14px 16px;
+  background: #FAFAF7;
+  border: 1px solid #ECECE8;
+  border-radius: 12px;
+}
+.sp-miapo-txt { display: flex; flex-direction: column; gap: 3px; }
+.sp-miapo-label { font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; color: #1A1D1F; }
+.sp-miapo-desc { font-size: 12.5px; color: #6F767E; line-height: 1.45; max-width: 620px; }
+.sp-switch {
+  flex-shrink: 0;
+  width: 46px; height: 27px;
+  border-radius: 100px;
+  background: #CFCFCB;
+  border: none; padding: 0;
+  position: relative; cursor: pointer;
+  transition: background 0.18s ease;
+}
+.sp-switch.on { background: var(--pr); }
+.sp-switch-knob {
+  position: absolute; top: 3px; left: 3px;
+  width: 21px; height: 21px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  transition: transform 0.18s ease;
+}
+.sp-switch.on .sp-switch-knob { transform: translateX(19px); }
 
 /* Journal d'activité */
 .sp-activity-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }

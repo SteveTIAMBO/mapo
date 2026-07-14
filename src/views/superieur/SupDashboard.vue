@@ -20,8 +20,8 @@
       </button>
     </div>
 
-    <!-- Analyse MIAPO -->
-    <section class="sd-miapo">
+    <!-- Analyse MIAPO (masquée si désactivée dans Paramètres → MIAPO) -->
+    <section v-if="miapoGlobal.isEnabled('dashboard')" class="sd-miapo">
       <div class="sd-miapo-head">
         <div class="sd-miapo-badge"><Sparkles :size="15" /> MIAPO</div>
         <div>
@@ -86,6 +86,7 @@
 import { computed, inject } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 import { useFinanceStore } from '../../stores/finance'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import {
@@ -100,6 +101,7 @@ const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
 
 const store = useSuperieurStore()
+const miapoGlobal = useSuperieurMiapoStore()
 const s = computed(() => store.stats)
 
 const financeStore = useFinanceStore()

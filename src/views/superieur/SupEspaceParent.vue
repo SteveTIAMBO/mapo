@@ -54,8 +54,8 @@
           <p v-else class="spa-empty">Relevé bientôt disponible.</p>
         </section>
 
-        <!-- MIAPO+ pour la famille -->
-        <section class="spa-card spa-miapo">
+        <!-- MIAPO+ pour la famille (masqué si tuteur MIAPO+ désactivé dans Paramètres → MIAPO) -->
+        <section v-if="miapoGlobal.isEnabled('tuteur')" class="spa-card spa-miapo">
           <div class="spa-miapo-badge">MIAPO+</div>
           <h2 class="spa-h2 spa-miapo-h2">Aidez {{ enfant.prenom }} à progresser</h2>
           <p class="spa-miapo-txt">MIAPO+, le tuteur intelligent : révisions, quiz et suivi de progression à la maison, 24h/24. Offert 1 mois aux familles de l'établissement.</p>
@@ -111,9 +111,11 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 import { useTranzakStore } from '../../stores/tranzak'
 
 const store = useSuperieurStore()
+const miapoGlobal = useSuperieurMiapoStore()
 const tranzak = useTranzakStore()
 const enfant = computed(() =>
   store.etudiants.find((e) => e.niveau === 'Licence' && e.moyenne >= 11) ||

@@ -56,8 +56,8 @@
           <p v-if="!mesUe.length" class="sen-empty">Aucune UE assignée.</p>
         </section>
 
-        <!-- Assistant IA -->
-        <section class="sen-card sen-ia">
+        <!-- Assistant IA (masqué si MIAPO désactivé pour la préparation de cours) -->
+        <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-card sen-ia">
           <div class="sen-ia-badge">MIAPO</div>
           <h2 class="sen-h2 sen-ia-h2">Assistant pédagogique</h2>
           <p class="sen-ia-txt">Prépare tes cours, devoirs et examens avec l'IA : sujet + corrigé générés en quelques secondes, adaptés à ton UE et au niveau.</p>
@@ -72,8 +72,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 
 const store = useSuperieurStore()
+const miapoGlobal = useSuperieurMiapoStore()
 const moi = computed(() =>
   store.intervenantsAvecCharge.find((i) => i.statut === 'permanent' && i.nbUE >= 2) ||
   store.intervenantsAvecCharge[0] || {}
