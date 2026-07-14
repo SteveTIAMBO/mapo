@@ -143,6 +143,43 @@ export const useSuperieurEdtStore = defineStore('superieurEdt', () => {
     persistEdits()
   }
 
+  /**
+   * Déplace une séance de la case source vers la case cible (mode édition).
+   * - La cible est supposée LIBRE (la vue bloque le dépôt si elle est occupée).
+   * - `session` = données de la séance à déplacer, résolues côté vue : une séance
+   *   de DÉMONSTRATION n'est pas connue de ce store, la vue nous la transmet donc.
+   * - `fromHasDemo` : une séance démo occupe la case source → on pose une pierre
+   *   tombale pour la masquer une fois la séance déplacée.
+   * `from`/`to` = { jour, debut, fin }. Clé (promotion, semestre) comme le reste.
+   */
+  function moveSession(promotionId, semestre, from, to, session, fromHasDemo) {
+    const k = keyOf(promotionId, semestre)
+    if (!edits[k]) edits[k] = []
+    const list = edits[k]
+
+    // 1. Écrire la séance sur la case cible (remplace une éventuelle pierre tombale).
+    const record = {
+      jour: to.jour,
+      debut: to.debut,
+      fin: to.fin || session.fin || '',
+      ueCode: (session.ueCode || '').trim(),
+      ueIntitule: (session.ueIntitule || '').trim(),
+      intervenantNom: (session.intervenantNom || '').trim(),
+      salle: (session.salle || '').trim(),
+      type: session.type || 'fondamentale',
+    }
+    const ti = list.findIndex((e) => e.jour === record.jour && e.debut === record.debut)
+    if (ti === -1) list.push(record)
+    else list[ti] = record
+
+    // 2. Vider la case source (pierre tombale si une séance démo s'y trouvait).
+    const si = list.findIndex((e) => e.jour === from.jour && e.debut === from.debut)
+    if (si !== -1) list.splice(si, 1)
+    if (fromHasDemo) list.push({ jour: from.jour, debut: from.debut, deleted: true })
+
+    persistEdits()
+  }
+
   return {
     config,
     saveConfig,
@@ -151,6 +188,7 @@ export const useSuperieurEdtStore = defineStore('superieurEdt', () => {
     getEdits,
     setSession,
     deleteSession,
+    moveSession,
     DEFAULT_CRENEAUX,
     DEFAULT_JOURS,
     JOURS_SEMAINE,

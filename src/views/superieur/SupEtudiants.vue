@@ -5,10 +5,16 @@
         <h1 class="se-h1">{{ t('sup.etudiants.title') }}</h1>
         <p class="se-sub">{{ t('sup.etudiants.subtitle', { n: store.etudiants.length }) }}</p>
       </div>
-      <button class="se-btn-primary" type="button" @click="openCreate">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        {{ t('sup.etudiants.add') }}
-      </button>
+      <div class="se-intro-actions">
+        <button class="se-btn-ghost" type="button" :disabled="store.filteredEtudiants.length === 0" @click="exportEtudiants">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Exporter
+        </button>
+        <button class="se-btn-primary" type="button" @click="openCreate">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+          {{ t('sup.etudiants.add') }}
+        </button>
+      </div>
     </div>
 
     <!-- Filtres -->
@@ -218,13 +224,48 @@
 <script setup>
 import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
+import { exportToExcel } from '../../utils/exportExcel'
 import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const detailEtudiant = ref(null)
 function openDetail(e) { detailEtudiant.value = e }
+
+// ── Export XLSX de la liste filtrée (respecte les filtres/recherche en cours) ──
+const campusLabel = (id) => CAMPUS.find((c) => c.id === id)?.ville || id || ''
+function exportEtudiants() {
+  const list = store.filteredEtudiants
+  if (!list.length) return
+  const columns = [
+    { key: 'matricule', label: 'Matricule', width: 14 },
+    { key: 'nomComplet', label: 'Nom complet', width: 26 },
+    { key: 'niveau', label: 'Niveau', width: 12 },
+    { key: 'programme', label: 'Programme', width: 30 },
+    { key: 'promotion', label: 'Promotion', width: 16 },
+    { key: 'campus', label: 'Campus', width: 14 },
+    { key: 'villeOrigine', label: "Ville d'origine", width: 16 },
+    { key: 'boursier', label: 'Boursier', width: 10 },
+    { key: 'moyenne', label: 'Moyenne /20', width: 12 },
+    { key: 'ects', label: 'ECTS', width: 14 },
+    { key: 'statut', label: 'Statut', width: 14 },
+  ]
+  const data = list.map((e) => ({
+    matricule: e.matricule || '',
+    nomComplet: e.nomComplet || '',
+    niveau: e.niveau || '',
+    programme: e.programmeNom || '',
+    promotion: e.anneeNom || '',
+    campus: campusLabel(e.campus),
+    villeOrigine: e.villeOrigine || '',
+    boursier: e.boursier ? 'Oui' : 'Non',
+    moyenne: (e.moyenne ?? null) === null ? '' : e.moyenne,
+    ects: `${e.ectsValides ?? 0} / ${e.ectsRequis ?? 0}`,
+    statut: e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit',
+  }))
+  exportToExcel(data, columns, 'etudiants_superieur', 'Étudiants')
+}
 
 const hasFilters = computed(() => {
   const f = store.etudiantFilters
@@ -602,6 +643,9 @@ function askDelete(e) {
   color: var(--tx2); cursor: pointer; transition: all 0.15s ease;
 }
 .se-btn-ghost:hover { border-color: var(--pr); color: var(--pr); }
+.se-btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.se-btn-ghost:disabled:hover { border-color: var(--input-border); color: var(--tx2); }
+.se-intro-actions { display: flex; gap: 10px; flex-wrap: wrap; }
 .se-actions-head { width: 80px; }
 .se-actions {
   white-space: nowrap;

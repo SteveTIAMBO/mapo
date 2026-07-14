@@ -6,6 +6,10 @@
         <p class="st-sub">Planning hebdomadaire par formation, niveau et semestre</p>
       </div>
       <div class="st-intro-actions">
+        <button class="st-btn-ghost" type="button" :disabled="sessionCount === 0" @click="exportEdt">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+          Exporter
+        </button>
         <button class="st-btn-ghost" type="button" @click="openConfig">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Paramètres
@@ -67,8 +71,16 @@
     <!-- Bandeau mode édition -->
     <div v-if="editMode" class="st-editing-banner">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      Mode édition — cliquez une case pour ajouter, modifier ou supprimer une séance.
+      Mode édition — cliquez une case pour ajouter, modifier ou supprimer une séance ; glissez-déposez une séance pour la déplacer.
     </div>
+
+    <!-- Indice discret (déplacement impossible) -->
+    <transition name="st-fade">
+      <div v-if="moveHint" class="st-move-hint">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        {{ moveHint }}
+      </div>
+    </transition>
 
     <!-- Grille -->
     <div class="st-grid-wrap" :class="{ 'is-editing': editMode }">
@@ -90,8 +102,18 @@
               v-for="jour in jours"
               :key="jour"
               class="st-cell"
-              :class="{ 'is-clickable': editMode }"
-              @click="editMode && onCellClick(jour, cr)"
+              :class="{
+                'is-clickable': editMode,
+                'is-drag-source': dragSource && dragSource.jour === jour && dragSource.debut === cr.debut,
+                'is-drop-target': dragTarget && dragTarget.jour === jour && dragTarget.debut === cr.debut,
+              }"
+              :draggable="editMode && !!getSession(jour, cr.debut)"
+              @click="editMode && !dragSource && onCellClick(jour, cr)"
+              @dragstart="onDragStart($event, jour, cr)"
+              @dragover.prevent="onDragOver(jour, cr)"
+              @dragleave="onDragLeave"
+              @drop.prevent="onDrop(jour, cr)"
+              @dragend="onDragEnd"
             >
               <div
                 v-if="getSession(jour, cr.debut)"
@@ -280,6 +302,7 @@ import { computed, reactive, ref, watch } from 'vue'
 import { useSuperieurStore, UE_TYPES } from '../../stores/superieur'
 import { useSuperieurEdtStore } from '../../stores/superieurEdt'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+import { exportToExcel } from '../../utils/exportExcel'
 
 const store = useSuperieurStore()
 const edtStore = useSuperieurEdtStore()
@@ -339,6 +362,8 @@ watch(
     activeSemestre.value = promo.semestreCourant
     editorOpen.value = false
     confirmDeleteOpen.value = false
+    dragSource.value = null
+    dragTarget.value = null
   }
 )
 
@@ -371,11 +396,128 @@ function getSession(jour, debut) {
 }
 const sessionCount = computed(() => Object.keys(grid.value).length)
 
+// ── Export XLSX de l'emploi du temps affiché (promotion + semestre actifs) ──
+function slugify(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/\p{Diacritic}/gu, '') // retire les accents
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase()
+}
+function finForDebut(debut) {
+  return creneaux.value.find((c) => c.debut === debut)?.fin || ''
+}
+function exportEdt() {
+  const rows = Object.values(grid.value)
+  if (!rows.length) return
+  const dayIndex = (j) => {
+    const i = jours.value.indexOf(j)
+    return i === -1 ? JOURS_SEMAINE.indexOf(j) : i
+  }
+  const sorted = [...rows].sort((a, b) => {
+    const d = dayIndex(a.jour) - dayIndex(b.jour)
+    if (d !== 0) return d
+    return String(a.debut).localeCompare(String(b.debut))
+  })
+  const columns = [
+    { key: 'jour', label: 'Jour', width: 12 },
+    { key: 'creneau', label: 'Créneau', width: 16 },
+    { key: 'ueCode', label: 'Code UE', width: 12 },
+    { key: 'ueIntitule', label: 'Intitulé', width: 34 },
+    { key: 'intervenant', label: 'Intervenant', width: 24 },
+    { key: 'salle', label: 'Salle', width: 12 },
+    { key: 'type', label: 'Type', width: 16 },
+  ]
+  const data = sorted.map((s) => ({
+    jour: s.jour || '',
+    creneau: `${s.debut || ''}–${s.fin || finForDebut(s.debut)}`,
+    ueCode: s.ueCode || '',
+    ueIntitule: s.ueIntitule || '',
+    intervenant: s.intervenantNom || '',
+    salle: s.salle || '',
+    type: UE_TYPES[s.type]?.label || s.type || '',
+  }))
+  const promo = store.selectedPromotion
+  const filename = `emploi_du_temps_${slugify(promo.programmeNom)}_${slugify(promo.anneeNom)}_${slugify(activeSemestre.value)}`
+  exportToExcel(data, columns, filename, 'Emploi du temps')
+}
+
 // ── Mode édition ──
 const editMode = ref(false)
 function toggleEdit() {
   editMode.value = !editMode.value
-  if (!editMode.value) editorOpen.value = false
+  if (!editMode.value) {
+    editorOpen.value = false
+    dragSource.value = null
+    dragTarget.value = null
+  }
+}
+
+// ── Glisser-déposer des séances (mode édition uniquement) ──
+const dragSource = ref(null)  // { jour, debut, fin }
+const dragTarget = ref(null)  // { jour, debut }
+const moveHint = ref('')
+let moveHintTimer = null
+function flashMoveHint(msg) {
+  moveHint.value = msg
+  if (moveHintTimer) clearTimeout(moveHintTimer)
+  moveHintTimer = setTimeout(() => { moveHint.value = '' }, 2600)
+}
+function onDragStart(event, jour, cr) {
+  // Seule une case remplie, en mode édition, est déplaçable.
+  if (!editMode.value || !getSession(jour, cr.debut)) {
+    event.preventDefault()
+    return
+  }
+  dragSource.value = { jour, debut: cr.debut, fin: cr.fin }
+  if (event.dataTransfer) {
+    event.dataTransfer.effectAllowed = 'move'
+    try { event.dataTransfer.setData('text/plain', `${jour}__${cr.debut}`) } catch (e) { /* silent */ }
+  }
+}
+function onDragOver(jour, cr) {
+  if (!dragSource.value) return
+  if (dragSource.value.jour === jour && dragSource.value.debut === cr.debut) {
+    dragTarget.value = null
+    return
+  }
+  dragTarget.value = { jour, debut: cr.debut }
+}
+function onDragLeave() {
+  dragTarget.value = null
+}
+function onDragEnd() {
+  dragSource.value = null
+  dragTarget.value = null
+}
+function onDrop(jour, cr) {
+  const src = dragSource.value
+  dragSource.value = null
+  dragTarget.value = null
+  if (!src) return
+  if (src.jour === jour && src.debut === cr.debut) return
+  // Cible occupée → on bloque avec un indice discret (comportement le plus simple et correct).
+  if (getSession(jour, cr.debut)) {
+    flashMoveHint('Case déjà occupée — déposez la séance sur une case libre.')
+    return
+  }
+  const session = getSession(src.jour, src.debut)
+  if (!session) return
+  edtStore.moveSession(
+    store.selectedPromotion.id,
+    activeSemestre.value,
+    { jour: src.jour, debut: src.debut, fin: src.fin },
+    { jour, debut: cr.debut, fin: cr.fin },
+    {
+      ueCode: session.ueCode,
+      ueIntitule: session.ueIntitule,
+      intervenantNom: session.intervenantNom,
+      salle: session.salle,
+      type: session.type,
+      fin: session.fin,
+    },
+    hasDemoAt(src.jour, src.debut)
+  )
 }
 
 // ── Éditeur de séance ──
@@ -782,6 +924,38 @@ function resetConfigDefaults() {
   opacity: 0.7;
 }
 
+/* Glisser-déposer (mode édition uniquement) */
+.st-grid-wrap.is-editing .st-cell[draggable="true"] { cursor: grab; }
+.st-grid-wrap.is-editing .st-cell[draggable="true"]:active { cursor: grabbing; }
+.st-cell.is-drag-source .st-session {
+  opacity: 0.4;
+  outline: 2px dashed var(--tx3);
+  outline-offset: -2px;
+}
+.st-cell.is-drop-target .st-empty-cell,
+.st-cell.is-drop-target .st-session {
+  opacity: 1;
+  outline: 2px solid var(--pr);
+  outline-offset: -2px;
+  background: rgba(var(--pr-rgb), 0.12) !important;
+}
+
+/* Indice discret : déplacement bloqué (case occupée) */
+.st-move-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 9px 14px;
+  background: rgba(217, 48, 37, 0.08);
+  border: 1px solid rgba(217, 48, 37, 0.2);
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--danger);
+}
+
 .st-empty-hint {
   margin: 14px 0 0;
   text-align: center;
@@ -831,6 +1005,8 @@ function resetConfigDefaults() {
   transition: all 0.15s ease;
 }
 .st-btn-ghost:hover { border-color: var(--pr); color: var(--pr); }
+.st-btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
+.st-btn-ghost:disabled:hover { border-color: var(--input-border); color: var(--tx2); }
 .st-btn-danger {
   height: 40px;
   padding: 0 16px;
@@ -846,13 +1022,17 @@ function resetConfigDefaults() {
 }
 .st-btn-danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
 
-/* Modale (fond blanc opaque) */
+/* Modale : voile flouté derrière + PANNEAU 100 % OPAQUE (aucune transparence ;
+   Steve n'aime pas les popups translucides). Cette modale utilise une convention
+   propre (.st-modal / .st-modal-overlay) que les règles globales de main.css ne
+   couvrent PAS → on impose l'opacité ici, à la source. */
 .st-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  background: rgba(12, 45, 90, 0.5);
-  backdrop-filter: blur(3px);
+  background: rgba(20, 24, 40, 0.42);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -864,7 +1044,9 @@ function resetConfigDefaults() {
   max-width: 560px;
   max-height: 92vh;
   overflow-y: auto;
-  background: #fff;
+  background: #fff !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
   border-radius: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
 }
