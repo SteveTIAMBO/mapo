@@ -3,38 +3,33 @@
     <!-- En-tête -->
     <div class="si-intro">
       <div>
-        <h1 class="si-h1">Inscriptions</h1>
-        <p class="si-sub">
-          Inscription et réinscription administratives : l'acte qui fait entrer (ou reconduit)
-          l'étudiant dans l'établissement — le fait générateur qui le fait compter dans les
-          effectifs et déclenche sa facturation. À distinguer des inscriptions pédagogiques
-          (choix des UE).
-        </p>
+        <h1 class="si-h1">{{ t('sup.inscriptions.title') }}</h1>
+        <p class="si-sub">{{ t('sup.inscriptions.subtitle') }}</p>
       </div>
     </div>
 
     <!-- KPIs -->
     <div class="si-kpis">
       <div class="si-kpi">
-        <div class="si-kpi-label">Dossiers</div>
+        <div class="si-kpi-label">{{ t('sup.inscriptions.kpiTotal') }}</div>
         <div class="si-kpi-value">{{ store.stats.total }}</div>
-        <div class="si-kpi-foot">candidats au total</div>
+        <div class="si-kpi-foot">{{ t('sup.inscriptions.kpiTotalFoot') }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">À valider</div>
+        <div class="si-kpi-label">{{ t('sup.inscriptions.kpiToValidate') }}</div>
         <div class="si-kpi-value">{{ store.stats.complet }}</div>
-        <div class="si-kpi-foot is-gold">dossiers complets</div>
+        <div class="si-kpi-foot is-gold">{{ t('sup.inscriptions.kpiToValidateFoot') }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">Validées</div>
+        <div class="si-kpi-label">{{ t('sup.inscriptions.kpiValidated') }}</div>
         <div class="si-kpi-value">{{ store.stats.valide }}</div>
-        <div class="si-kpi-foot is-ok">étudiants inscrits</div>
+        <div class="si-kpi-foot is-ok">{{ t('sup.inscriptions.kpiValidatedFoot') }}</div>
       </div>
       <div class="si-kpi">
-        <div class="si-kpi-label">Incomplètes / Refusées</div>
+        <div class="si-kpi-label">{{ t('sup.inscriptions.kpiIncompleteRefused') }}</div>
         <div class="si-kpi-value">{{ store.stats.incomplet + store.stats.refuse }}</div>
         <div class="si-kpi-foot" :class="(store.stats.incomplet + store.stats.refuse) > 0 ? 'is-warn' : 'is-ok'">
-          {{ store.stats.incomplet }} incomplète(s) · {{ store.stats.refuse }} refusée(s)
+          {{ t('sup.inscriptions.kpiIncompleteRefusedFoot', { n: store.stats.incomplet, m: store.stats.refuse }) }}
         </div>
       </div>
     </div>
@@ -44,61 +39,61 @@
       <div class="si-miapo-head">
         <span class="si-miapo-badge">MIAPO</span>
         <div class="si-miapo-head-txt">
-          <div class="si-miapo-title">MIAPO — Analyse des dossiers</div>
+          <div class="si-miapo-title">{{ t('sup.inscriptions.miapoTitle') }}</div>
           <div class="si-miapo-sub">{{ miapoSummary }}</div>
         </div>
         <button v-if="store.dossiersConformes.length" type="button" class="si-miapo-cta" @click="askPrevalider">
-          Pré-valider {{ store.dossiersConformes.length }} dossier{{ store.dossiersConformes.length > 1 ? 's' : '' }} conforme{{ store.dossiersConformes.length > 1 ? 's' : '' }}
+          {{ t('sup.inscriptions.' + (store.dossiersConformes.length > 1 ? 'miapoCtaMany' : 'miapoCtaOne'), { n: store.dossiersConformes.length }) }}
         </button>
       </div>
 
       <div v-if="store.dossiersIncomplets.length" class="si-miapo-list">
-        <div class="si-miapo-list-label">À compléter — MIAPO signale la pièce manquante et prépare le message au parent :</div>
+        <div class="si-miapo-list-label">{{ t('sup.inscriptions.miapoListLabel') }}</div>
         <div v-for="d in store.dossiersIncomplets" :key="d.id" class="si-miapo-item">
           <div class="si-miapo-item-main">
             <span class="si-miapo-item-name">{{ d.candidat.nomComplet }}</span>
-            <span class="si-miapo-item-miss">il manque : {{ store.piecesManquantesLabels(d).join(', ') }}</span>
+            <span class="si-miapo-item-miss">{{ t('sup.inscriptions.miapoItemMissing', { liste: store.requiredMissing(d).map((doc) => t('sup.inscriptions.docs.' + doc.key)).join(', ') }) }}</span>
           </div>
-          <button type="button" class="si-miapo-msg" @click="openMessageParent(d)">Préparer le message parent</button>
+          <button type="button" class="si-miapo-msg" @click="openMessageParent(d)">{{ t('sup.inscriptions.draftParentMessage') }}</button>
         </div>
       </div>
-      <div v-else class="si-miapo-clear">Aucune pièce obligatoire manquante à signaler pour le moment.</div>
+      <div v-else class="si-miapo-clear">{{ t('sup.inscriptions.miapoClear') }}</div>
 
-      <div class="si-miapo-note">MIAPO propose, la scolarité valide. En cas de doute (lecture d'une pièce), MIAPO ne bloque pas : il laisse passer en signalant son doute.</div>
+      <div class="si-miapo-note">{{ t('sup.inscriptions.miapoNote') }}</div>
     </div>
 
     <!-- Filtres -->
     <div class="si-filters">
       <div class="si-filter">
-        <span class="si-filter-label">Promotion visée</span>
+        <span class="si-filter-label">{{ t('sup.inscriptions.filterPromotion') }}</span>
         <select :value="store.dossierFilters.promotionId" @change="store.setDossierFilter('promotionId', $event.target.value)">
-          <option value="">Toutes les promotions</option>
+          <option value="">{{ t('sup.inscriptions.allPromotions') }}</option>
           <option v-for="p in promotions" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
         </select>
       </div>
       <div class="si-filter">
-        <span class="si-filter-label">Statut</span>
+        <span class="si-filter-label">{{ t('sup.inscriptions.filterStatus') }}</span>
         <select :value="store.dossierFilters.statut" @change="store.setDossierFilter('statut', $event.target.value)">
-          <option value="">Tous les statuts</option>
-          <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ s.label }}</option>
+          <option value="">{{ t('sup.inscriptions.allStatuses') }}</option>
+          <option v-for="s in statusOptions" :key="s.value" :value="s.value">{{ statutLabel(s.value) }}</option>
         </select>
       </div>
       <div class="si-filter si-filter-search">
-        <span class="si-filter-label">Recherche</span>
+        <span class="si-filter-label">{{ t('sup.inscriptions.filterSearch') }}</span>
         <input
           type="text"
           :value="store.dossierFilters.search"
           @input="store.setDossierFilter('search', $event.target.value)"
-          placeholder="Nom du candidat, filière…"
+          :placeholder="t('sup.inscriptions.searchPlaceholder')"
         />
       </div>
       <button v-if="hasFilters" class="si-reset" type="button" @click="store.resetDossierFilters()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
-        Réinitialiser
+        {{ t('sup.inscriptions.reset') }}
       </button>
-      <span class="si-count">{{ store.dossiersList.length }} dossier{{ store.dossiersList.length > 1 ? 's' : '' }}</span>
+      <span class="si-count">{{ t('sup.inscriptions.' + (store.dossiersList.length > 1 ? 'countMany' : 'countOne'), { n: store.dossiersList.length }) }}</span>
     </div>
 
     <!-- Table -->
@@ -106,10 +101,10 @@
       <table class="si-table">
         <thead>
           <tr>
-            <th>Candidat</th>
-            <th>Promotion visée</th>
-            <th>Documents</th>
-            <th>Statut</th>
+            <th>{{ t('sup.inscriptions.thCandidate') }}</th>
+            <th>{{ t('sup.inscriptions.thPromotion') }}</th>
+            <th>{{ t('sup.inscriptions.thDocuments') }}</th>
+            <th>{{ t('sup.inscriptions.thStatus') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -129,14 +124,14 @@
               <span class="si-docs" :class="{ 'is-miss': requiredMissingCount(d) > 0 }">
                 {{ fournisCount(d) }}/{{ d.documents.length }}
               </span>
-              <span v-if="requiredMissingCount(d) > 0" class="si-docs-miss">{{ requiredMissingCount(d) }} oblig. manquant(s)</span>
+              <span v-if="requiredMissingCount(d) > 0" class="si-docs-miss">{{ t('sup.inscriptions.docsMissing', { n: requiredMissingCount(d) }) }}</span>
             </td>
             <td>
               <span class="si-pill" :class="`is-${d.statut}`">{{ statutLabel(d.statut) }}</span>
             </td>
           </tr>
           <tr v-if="store.dossiersList.length === 0">
-            <td colspan="4" class="si-empty">Aucun dossier d'inscription ne correspond à ces critères.</td>
+            <td colspan="4" class="si-empty">{{ t('sup.inscriptions.emptyState') }}</td>
           </tr>
         </tbody>
       </table>
@@ -154,32 +149,32 @@
                 <span class="si-pill" :class="`is-${detail.statut}`">{{ statutLabel(detail.statut) }}</span>
               </div>
             </div>
-            <button class="si-modal-close" type="button" @click="closeDetail" aria-label="Fermer">
+            <button class="si-modal-close" type="button" @click="closeDetail" :aria-label="t('sup.inscriptions.close')">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
 
           <div class="si-modal-body">
             <!-- Identité + inscription visée -->
-            <div class="si-section-label">Candidat</div>
+            <div class="si-section-label">{{ t('sup.inscriptions.sectionApplicant') }}</div>
             <div class="si-rows">
-              <div class="si-row"><span>Nom complet</span><strong>{{ detail.candidat.nomComplet }}</strong></div>
-              <div class="si-row"><span>Sexe</span><strong>{{ detail.candidat.sexe === 'F' ? 'Féminin' : 'Masculin' }}</strong></div>
-              <div class="si-row"><span>Téléphone</span><strong>{{ detail.candidat.telephone }}</strong></div>
-              <div class="si-row"><span>Filière visée</span><strong>{{ detail.programmeNom }} — {{ detail.anneeNom }}</strong></div>
-              <div class="si-row"><span>Campus</span><strong>{{ campusVille(detail.campus) }}</strong></div>
-              <div class="si-row"><span>Type de dossier</span><strong>{{ typeLabel(detail.type) }}</strong></div>
-              <div class="si-row"><span>Date de soumission</span><strong>{{ fmtDate(detail.dateSoumission) }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldFullName') }}</span><strong>{{ detail.candidat.nomComplet }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldSex') }}</span><strong>{{ detail.candidat.sexe === 'F' ? t('sup.inscriptions.feminin') : t('sup.inscriptions.masculin') }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldPhone') }}</span><strong>{{ detail.candidat.telephone }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldProgram') }}</span><strong>{{ detail.programmeNom }} — {{ detail.anneeNom }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldCampus') }}</span><strong>{{ campusVille(detail.campus) }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldType') }}</span><strong>{{ typeLabel(detail.type) }}</strong></div>
+              <div class="si-row"><span>{{ t('sup.inscriptions.fieldSubmitted') }}</span><strong>{{ fmtDate(detail.dateSoumission) }}</strong></div>
               <div v-if="detail.statut === 'valide' && detail.anneeInscription" class="si-row">
-                <span>Inscrit pour l'année</span><strong>{{ detail.anneeInscription }}</strong>
+                <span>{{ t('sup.inscriptions.fieldEnrolledYear') }}</span><strong>{{ detail.anneeInscription }}</strong>
               </div>
               <div v-if="detail.statut === 'refuse' && detail.motifRefus" class="si-row is-refus">
-                <span>Motif du refus</span><strong>{{ detail.motifRefus }}</strong>
+                <span>{{ t('sup.inscriptions.fieldRefusalReason') }}</span><strong>{{ detail.motifRefus }}</strong>
               </div>
             </div>
 
             <!-- Checklist des pièces -->
-            <div class="si-section-label">Pièces du dossier</div>
+            <div class="si-section-label">{{ t('sup.inscriptions.sectionDocuments') }}</div>
             <ul class="si-docs-list">
               <li v-for="doc in detail.documents" :key="doc.key" class="si-doc" :class="{ 'is-ok': doc.fourni, 'is-missing': !doc.fourni }">
                 <span class="si-doc-icon">
@@ -187,32 +182,32 @@
                   <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </span>
                 <span class="si-doc-label">
-                  {{ doc.label }}
-                  <span v-if="doc.required" class="si-doc-req">obligatoire</span>
-                  <span v-else class="si-doc-opt">optionnel</span>
+                  {{ t('sup.inscriptions.docs.' + doc.key) }}
+                  <span v-if="doc.required" class="si-doc-req">{{ t('sup.inscriptions.docRequired') }}</span>
+                  <span v-else class="si-doc-opt">{{ t('sup.inscriptions.docOptional') }}</span>
                 </span>
-                <span class="si-doc-state">{{ doc.fourni ? 'Fourni' : 'Manquant' }}</span>
+                <span class="si-doc-state">{{ doc.fourni ? t('sup.inscriptions.docProvided') : t('sup.inscriptions.docMissing') }}</span>
               </li>
             </ul>
 
             <p v-if="missingRequired.length" class="si-hint">
-              Impossible de valider : pièce(s) obligatoire(s) manquante(s) — {{ missingRequired.map((d) => d.label).join(', ') }}.
+              {{ t('sup.inscriptions.validateHint', { liste: missingRequired.map((d) => t('sup.inscriptions.docs.' + d.key)).join(', ') }) }}
             </p>
           </div>
 
           <!-- Actions -->
           <div class="si-modal-actions">
-            <button type="button" class="si-btn-ghost" @click="closeDetail">Fermer</button>
-            <button type="button" class="si-btn-neutral" @click="onDemander(detail)">Demander des documents</button>
-            <button type="button" class="si-btn-danger" @click="askRefuser(detail)">Refuser</button>
+            <button type="button" class="si-btn-ghost" @click="closeDetail">{{ t('sup.inscriptions.close') }}</button>
+            <button type="button" class="si-btn-neutral" @click="onDemander(detail)">{{ t('sup.inscriptions.requestDocuments') }}</button>
+            <button type="button" class="si-btn-danger" @click="askRefuser(detail)">{{ t('sup.inscriptions.refuse') }}</button>
             <button
               type="button"
               class="si-btn-primary"
               :disabled="missingRequired.length > 0"
-              :title="missingRequired.length > 0 ? 'Pièces obligatoires manquantes' : null"
+              :title="missingRequired.length > 0 ? t('sup.inscriptions.disabledTitle') : null"
               @click="onValider(detail)"
             >
-              Valider l'inscription
+              {{ t('sup.inscriptions.validateEnrolment') }}
             </button>
           </div>
         </div>
@@ -225,19 +220,19 @@
         <div class="si-modal si-confirm-modal">
           <div class="si-modal-head">
             <h2 class="si-modal-title">{{ confirmState.title }}</h2>
-            <button class="si-modal-close" type="button" @click="closeConfirm" aria-label="Fermer">
+            <button class="si-modal-close" type="button" @click="closeConfirm" :aria-label="t('sup.inscriptions.close')">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <div class="si-modal-body">
             <p class="si-confirm-message">{{ confirmState.message }}</p>
             <div v-if="confirmState.withMotif" class="si-field">
-              <label class="si-form-label">Motif communiqué au candidat</label>
-              <textarea v-model="confirmMotif" class="si-textarea" rows="3" placeholder="Ex. : frais de scolarité non soldés, pièces non conformes…"></textarea>
+              <label class="si-form-label">{{ t('sup.inscriptions.refusalReasonLabel') }}</label>
+              <textarea v-model="confirmMotif" class="si-textarea" rows="3" :placeholder="t('sup.inscriptions.refusalReasonPlaceholder')"></textarea>
             </div>
           </div>
           <div class="si-modal-actions">
-            <button type="button" class="si-btn-ghost" @click="closeConfirm">Annuler</button>
+            <button type="button" class="si-btn-ghost" @click="closeConfirm">{{ t('sup.inscriptions.cancel') }}</button>
             <button type="button" class="si-btn-danger" @click="doConfirm">{{ confirmState.confirmLabel }}</button>
           </div>
         </div>
@@ -249,18 +244,18 @@
       <div v-if="msgModal.open" class="si-modal-overlay si-confirm-overlay" @click.self="closeMessage">
         <div class="si-modal si-confirm-modal">
           <div class="si-modal-head">
-            <h2 class="si-modal-title">Message au parent — {{ msgModal.candidat }}</h2>
-            <button class="si-modal-close" type="button" @click="closeMessage" aria-label="Fermer">
+            <h2 class="si-modal-title">{{ t('sup.inscriptions.messageTitle', { name: msgModal.candidat }) }}</h2>
+            <button class="si-modal-close" type="button" @click="closeMessage" :aria-label="t('sup.inscriptions.close')">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <div class="si-modal-body">
-            <p class="si-msg-help">Brouillon préparé par MIAPO (WhatsApp / SMS). Relisez et ajustez avant l'envoi.</p>
+            <p class="si-msg-help">{{ t('sup.inscriptions.messageHelp') }}</p>
             <textarea v-model="msgModal.texte" class="si-textarea" rows="6"></textarea>
           </div>
           <div class="si-modal-actions">
-            <button type="button" class="si-btn-ghost" @click="closeMessage">Fermer</button>
-            <button type="button" class="si-btn-primary" @click="copyMessage">{{ copied ? 'Copié ✓' : 'Copier le message' }}</button>
+            <button type="button" class="si-btn-ghost" @click="closeMessage">{{ t('sup.inscriptions.close') }}</button>
+            <button type="button" class="si-btn-primary" @click="copyMessage">{{ copied ? t('sup.inscriptions.copied') : t('sup.inscriptions.copyMessage') }}</button>
           </div>
         </div>
       </div>
@@ -270,14 +265,16 @@
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { CAMPUS } from '../../stores/superieur'
 import {
   useSuperieurInscriptionsStore,
   DOSSIER_STATUS_OPTIONS,
-  DOSSIER_TYPES,
 } from '../../stores/superieurInscriptions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const superieur = useSuperieurStore()
 const store = useSuperieurInscriptionsStore()
@@ -291,9 +288,9 @@ const hasFilters = computed(() => {
   return !!(f.promotionId || f.statut || f.search)
 })
 
-// ── Libellés ──
-const statutLabel = (v) => (DOSSIER_STATUS_OPTIONS.find((o) => o.value === v) || {}).label || v
-const typeLabel = (v) => (DOSSIER_TYPES.find((o) => o.value === v) || {}).label || v
+// ── Libellés (mappés via i18n, sans muter le store) ──
+const statutLabel = (v) => t('sup.inscriptions.status.' + v)
+const typeLabel = (v) => t('sup.inscriptions.type.' + v)
 const campusVille = (id) => (CAMPUS.find((c) => c.id === id) || {}).ville || '—'
 function fmtDate(iso) {
   if (!iso) return '—'
@@ -343,9 +340,9 @@ function doConfirm() {
 }
 function askRefuser(d) {
   openConfirm({
-    title: 'Refuser le dossier',
-    message: `Confirmez-vous le refus du dossier de ${d.candidat.nomComplet} ? Le candidat en sera informé.`,
-    confirmLabel: 'Refuser le dossier',
+    title: t('sup.inscriptions.refuseTitle'),
+    message: t('sup.inscriptions.refuseMessage', { name: d.candidat.nomComplet }),
+    confirmLabel: t('sup.inscriptions.refuseConfirm'),
     withMotif: true,
     onConfirm: () => {
       store.refuserDossier(d.id, confirmMotif.value)
@@ -356,15 +353,22 @@ function askRefuser(d) {
 
 // ── Analyse MIAPO ──
 const ecoleNom = computed(() =>
-  schoolIdentity.schoolName || schoolIdentity.name || schoolIdentity.nom || 'votre établissement'
+  schoolIdentity.schoolName || schoolIdentity.name || schoolIdentity.nom || t('sup.inscriptions.defaultSchool')
 )
 const miapoSummary = computed(() => {
   const n = store.stats.total
   const x = store.dossiersConformes.length
   const y = store.dossiersIncomplets.length
   const z = store.stats.refuse
-  const pl = (k) => (k > 1 ? 's' : '')
-  return `MIAPO a passé en revue ${n} dossier${pl(n)} : ${x} conforme${pl(x)} prêt${pl(x)} à valider, ${y} incomplet${pl(y)}, ${z} refusé${pl(z)}.`
+  // Pluriel FR sans « | » : deux clés (One/Many) choisies dans le code par comptage.
+  const w = (base, k) => t(`sup.inscriptions.${base}${k > 1 ? 'Many' : 'One'}`)
+  return t('sup.inscriptions.miapoSummary', {
+    n, x, y, z,
+    dossier: w('sumDossier', n),
+    conforme: w('sumConforme', x),
+    incomplet: w('sumIncomplet', y),
+    refuse: w('sumRefuse', z),
+  })
 })
 function askPrevalider() {
   const list = store.dossiersConformes
@@ -372,9 +376,9 @@ function askPrevalider() {
   const ids = list.map((d) => d.id)
   const noms = list.map((d) => d.candidat.nomComplet).join(', ')
   openConfirm({
-    title: 'Pré-validation MIAPO',
-    message: `MIAPO a identifié ${list.length} dossier(s) conforme(s) — toutes les pièces obligatoires sont fournies : ${noms}. Confirmez-vous leur validation ? Ces étudiants seront comptés comme inscrits.`,
-    confirmLabel: `Valider ${list.length} dossier${list.length > 1 ? 's' : ''}`,
+    title: t('sup.inscriptions.prevalidateTitle'),
+    message: t('sup.inscriptions.prevalidateMessage', { n: list.length, noms }),
+    confirmLabel: t(`sup.inscriptions.${list.length > 1 ? 'validateBatchMany' : 'validateBatchOne'}`, { n: list.length }),
     withMotif: false,
     onConfirm: () => { store.validerDossiers(ids) },
   })
@@ -384,10 +388,16 @@ function askPrevalider() {
 const msgModal = reactive({ open: false, candidat: '', texte: '' })
 const copied = ref(false)
 function draftMessage(d) {
-  const manquantes = store.piecesManquantesLabels(d)
-  const liste = manquantes.join(', ')
-  const pieceMot = manquantes.length > 1 ? 'ces pièces' : 'cette pièce'
-  return `Bonjour, pour finaliser l'inscription de ${d.candidat.nomComplet} en ${d.programmeNom} (${d.anneeNom}), il manque : ${liste}. Merci de nous transmettre ${pieceMot} (photo nette ou PDF) dès que possible. Cordialement, ${ecoleNom.value}.`
+  const manquantes = store.requiredMissing(d)
+  const liste = manquantes.map((doc) => t('sup.inscriptions.docs.' + doc.key)).join(', ')
+  const pieceMot = t(`sup.inscriptions.${manquantes.length > 1 ? 'pieceMany' : 'pieceOne'}`)
+  return t('sup.inscriptions.msgTemplate', {
+    name: d.candidat.nomComplet,
+    filiere: `${d.programmeNom} (${d.anneeNom})`,
+    liste,
+    pieceMot,
+    ecole: ecoleNom.value,
+  })
 }
 function openMessageParent(d) {
   msgModal.candidat = d.candidat.nomComplet

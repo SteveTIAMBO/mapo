@@ -83,8 +83,8 @@
         <div v-show="tab === 'documents'" class="sed-pane">
           <div v-if="dossier">
             <div class="sed-doc-status">
-              <span>Statut du dossier</span>
-              <span class="sed-doc-pill" :class="`is-${dossier.statut}`">{{ dossierStatutLabel }}</span>
+              <span>{{ t('sup.inscriptions.fileStatus') }}</span>
+              <span class="sed-doc-pill" :class="`is-${dossier.statut}`">{{ t('sup.inscriptions.status.' + dossier.statut) }}</span>
             </div>
             <ul class="sed-doc-list">
               <li v-for="doc in dossier.documents" :key="doc.key" class="sed-doc" :class="doc.fourni ? 'is-ok' : 'is-missing'">
@@ -93,14 +93,14 @@
                   <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </span>
                 <span class="sed-doc-lbl">
-                  {{ doc.label }}
-                  <span v-if="doc.required" class="sed-doc-req">obligatoire</span>
+                  {{ t('sup.inscriptions.docs.' + doc.key) }}
+                  <span v-if="doc.required" class="sed-doc-req">{{ t('sup.inscriptions.docRequired') }}</span>
                 </span>
-                <span class="sed-doc-st">{{ doc.fourni ? 'Fourni' : 'Manquant' }}</span>
+                <span class="sed-doc-st">{{ doc.fourni ? t('sup.inscriptions.docProvided') : t('sup.inscriptions.docMissing') }}</span>
               </li>
             </ul>
           </div>
-          <p v-else class="sed-empty">Dossier d'inscription non disponible en démonstration.</p>
+          <p v-else class="sed-empty">{{ t('sup.inscriptions.fileUnavailable') }}</p>
         </div>
       </div>
     </div>
@@ -111,7 +111,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CAMPUS } from '../../stores/superieur'
-import { useSuperieurInscriptionsStore, DOSSIER_STATUS_OPTIONS } from '../../stores/superieurInscriptions'
+import { useSuperieurInscriptionsStore } from '../../stores/superieurInscriptions'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -126,8 +126,7 @@ const tabs = [
   { key: 'contact', labelKey: 'sup.etudiantDetail.tabContact' },
   { key: 'parents', labelKey: 'sup.etudiantDetail.tabParents' },
   { key: 'inscription', labelKey: 'sup.etudiantDetail.tabInscription' },
-  // Onglet « Documents » (FR en dur : pas de clé i18n dédiée pour ce socle).
-  { key: 'documents', label: 'Documents' },
+  { key: 'documents', labelKey: 'sup.inscriptions.tabDocuments' },
 ]
 
 // Dossier d'inscription administrative de l'étudiant (rapprochement par nom
@@ -135,9 +134,6 @@ const tabs = [
 // étudiants sont générées séparément → le repli « non disponible » est fréquent.
 const inscriptionsStore = useSuperieurInscriptionsStore()
 const dossier = inscriptionsStore.findDossierForEtudiant({ nomComplet: e.nomComplet, matricule: e.matricule })
-const dossierStatutLabel = dossier
-  ? ((DOSSIER_STATUS_OPTIONS.find((o) => o.value === dossier.statut) || {}).label || dossier.statut)
-  : ''
 
 const campusVille = computed(() => (CAMPUS.find((c) => c.id === e.campus) || {}).ville || '').value
 
