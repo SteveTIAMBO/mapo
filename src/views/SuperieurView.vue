@@ -269,6 +269,7 @@ import { useSuperieurStore } from '../stores/superieur'
 import { useSuperieurAuthStore, SUP_ROLES } from '../stores/superieurAuth'
 import { useAuthStore } from '../stores/auth'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
+import { useSuperieurPermissionsStore } from '../stores/superieurPermissions'
 import { useMobiliteStore } from '../stores/mobilite'
 import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
@@ -296,6 +297,7 @@ import SupEcheanciers from './superieur/SupEcheanciers.vue'
 import SupGestionAcces from './superieur/SupGestionAcces.vue'
 import SupMobiliteEntrante from './superieur/SupMobiliteEntrante.vue'
 import SupParametres from './superieur/SupParametres.vue'
+import SupRoles from './superieur/SupRoles.vue'
 import SupEspaceEtudiant from './superieur/SupEspaceEtudiant.vue'
 import SupEspaceEnseignant from './superieur/SupEspaceEnseignant.vue'
 import SupEspaceParent from './superieur/SupEspaceParent.vue'
@@ -306,6 +308,7 @@ const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
 const authStore = useAuthStore()
 const schoolIdentity = useSchoolIdentityStore()
+const supPerms = useSuperieurPermissionsStore()
 const mobilite = useMobiliteStore()
 
 // Nom complet affiché dans la sidebar : on essaie displayName, sinon
@@ -466,6 +469,7 @@ const panels = {
   gestion_acces: SupGestionAcces,
   mobilite_entrante: SupMobiliteEntrante,
   parametres: SupParametres,
+  roles: SupRoles,
   espace_etudiant: SupEspaceEtudiant,
   espace_enseignant: SupEspaceEnseignant,
   espace_parent: SupEspaceParent,
@@ -613,6 +617,12 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3-3"/><path d="M19 8l-3 3 3 3"/></svg>',
   },
   {
+    key: 'roles',
+    label: 'Rôles & Accès',
+    roles: ['admin'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+  },
+  {
     key: 'parametres',
     label: 'Paramètres',
     roles: ['admin'],
@@ -638,16 +648,28 @@ function getTabModule(tabKey) {
 // Modules toujours actifs (l'école ne peut pas les désactiver dans l'UI).
 // Gestion des accès est core pour tout admin école : sinon il ne peut pas
 // inviter son personnel.
-const CORE_MODULES = new Set(['dashboard', 'parametres', 'gestion_acces'])
+const CORE_MODULES = new Set(['dashboard', 'parametres', 'gestion_acces', 'roles'])
+
+// Rôles du personnel gérés par la matrice « Rôles & Accès » (superieurPermissions).
+// Pour ces rôles, la visibilité des onglets suit la matrice éditable par le
+// directeur. Les autres rôles (etudiant/enseignant/parent/groupe) et les onglets
+// hors matrice (espaces perso) gardent la liste statique `t.roles`.
+const MATRIX_ROLES = new Set(['admin', 'relation_internationale', 'responsable_formation', 'comptable'])
 
 const tabsVisibles = computed(() => {
   const r = authSup.role
   if (!r) return []
   return ALL_TABS.filter((t) => {
-    if (!t.roles.includes(r)) return false
     const mod = getTabModule(t.key)
-    if (CORE_MODULES.has(mod)) return true
-    return schoolIdentity.isModuleActif(mod)
+    // 1. Activation du module par l'école (inchangé).
+    if (!CORE_MODULES.has(mod) && !schoolIdentity.isModuleActif(mod)) return false
+    // 2. Autorisation par rôle.
+    if (MATRIX_ROLES.has(r)) {
+      const mm = supPerms.moduleForTab(t.key)
+      if (!mm) return t.roles.includes(r) // onglets hors matrice (espaces perso)
+      return supPerms.hasAccess(mm)
+    }
+    return t.roles.includes(r)
   })
 })
 
