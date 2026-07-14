@@ -6,10 +6,16 @@
         <h1 class="si-h1">{{ t('sup.inscriptions.title') }}</h1>
         <p class="si-sub">{{ t('sup.inscriptions.subtitle') }}</p>
       </div>
-      <button type="button" class="si-settings-btn" @click="openSettings">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        <span>Paramètres</span>
-      </button>
+      <div class="si-head-actions">
+        <button type="button" class="si-settings-btn" @click="openPreinscription">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          <span>Lien de pré-inscription</span>
+        </button>
+        <button type="button" class="si-settings-btn" @click="openSettings">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Paramètres</span>
+        </button>
+      </div>
     </div>
 
     <!-- KPIs -->
@@ -191,6 +197,7 @@
                   <span v-else class="si-doc-opt">{{ t('sup.inscriptions.docOptional') }}</span>
                 </span>
                 <span class="si-doc-state">{{ doc.fourni ? t('sup.inscriptions.docProvided') : t('sup.inscriptions.docMissing') }}</span>
+                <button v-if="doc.fourni" type="button" class="si-doc-view" @click="openDocViewer(doc)">Consulter</button>
               </li>
             </ul>
 
@@ -320,6 +327,13 @@
         </div>
       </div>
     </transition>
+    <!-- Aperçu d'un document (consultation) -->
+    <SupDocViewer
+      :doc="docViewer && docViewer.doc"
+      :candidat="docViewer && docViewer.candidat"
+      :context="(docViewer && docViewer.context) || {}"
+      @close="docViewer = null"
+    />
   </div>
 </template>
 
@@ -333,6 +347,7 @@ import {
   DOSSIER_STATUS_OPTIONS,
 } from '../../stores/superieurInscriptions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+import SupDocViewer from './SupDocViewer.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -368,10 +383,17 @@ const missingRequired = computed(() => (detail.value ? store.requiredMissing(det
 function openDetail(d) { detail.value = d }
 function closeDetail() { detail.value = null }
 
+// Aperçu / consultation d'un document du dossier
+const docViewer = ref(null)
+function openDocViewer(doc) {
+  docViewer.value = { doc, candidat: detail.value && detail.value.candidat, context: detail.value }
+}
+
 // ── Paramètres école (pièces exigées + option de validation) — FR en dur ──
 const settingsOpen = ref(false)
 function openSettings() { settingsOpen.value = true }
 function closeSettings() { settingsOpen.value = false }
+function openPreinscription() { window.open('/preinscription', '_blank') }
 const newDocLabel = ref('')
 const newDocRequired = ref(true)
 function addDoc() {
@@ -508,6 +530,7 @@ async function copyMessage() {
 
 <style scoped>
 .si-intro { margin-bottom: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.si-head-actions { display: flex; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
 .si-settings-btn {
   display: inline-flex; align-items: center; gap: 7px;
   height: 38px; padding: 0 14px; flex-shrink: 0;
@@ -857,6 +880,14 @@ async function copyMessage() {
 .si-doc-state { font-size: 12px; font-weight: 700; }
 .si-doc.is-ok .si-doc-state { color: var(--success); }
 .si-doc.is-missing .si-doc-state { color: var(--warn); }
+.si-doc-view {
+  margin-left: 10px; flex-shrink: 0;
+  background: var(--pr-light); color: var(--pr); border: none;
+  border-radius: 7px; padding: 4px 10px;
+  font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11.5px;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.si-doc-view:hover { background: rgba(var(--pr-rgb), 0.18); }
 
 .si-hint {
   margin: 4px 0 0; padding: 9px 12px;

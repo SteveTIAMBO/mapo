@@ -97,6 +97,7 @@
                   <span v-if="doc.required" class="sed-doc-req">{{ t('sup.inscriptions.docRequired') }}</span>
                 </span>
                 <span class="sed-doc-st">{{ doc.fourni ? t('sup.inscriptions.docProvided') : t('sup.inscriptions.docMissing') }}</span>
+                <button v-if="doc.fourni" type="button" class="sed-doc-view" @click="openDocViewer(doc)">Consulter</button>
               </li>
             </ul>
           </div>
@@ -105,6 +106,7 @@
       </div>
     </div>
   </div>
+  <SupDocViewer :doc="docViewer" :candidat="e" :context="{ programmeNom: e.programmeNom, anneeNom: e.anneeNom }" @close="docViewer = null" />
 </template>
 
 <script setup>
@@ -112,6 +114,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CAMPUS } from '../../stores/superieur'
 import { useSuperieurInscriptionsStore } from '../../stores/superieurInscriptions'
+import SupDocViewer from './SupDocViewer.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -134,6 +137,10 @@ const tabs = [
 // étudiants sont générées séparément → le repli « non disponible » est fréquent.
 const inscriptionsStore = useSuperieurInscriptionsStore()
 const dossier = inscriptionsStore.findDossierForEtudiant({ nomComplet: e.nomComplet, matricule: e.matricule })
+
+// Aperçu / consultation d'un document du dossier
+const docViewer = ref(null)
+function openDocViewer(doc) { docViewer.value = doc }
 
 const campusVille = computed(() => (CAMPUS.find((c) => c.id === e.campus) || {}).ville || '').value
 
@@ -238,4 +245,12 @@ const initials = (e.nomComplet || '')
 .sed-doc-st { font-size: 12px; font-weight: 700; }
 .sed-doc.is-ok .sed-doc-st { color: #0E7C5A; }
 .sed-doc.is-missing .sed-doc-st { color: #B45309; }
+.sed-doc-view {
+  margin-left: 10px; flex-shrink: 0;
+  background: rgba(var(--pr-rgb, 21, 88, 176), 0.1); color: var(--pr, #1558B0); border: none;
+  border-radius: 7px; padding: 4px 10px;
+  font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 11.5px;
+  cursor: pointer; transition: background 0.15s ease;
+}
+.sed-doc-view:hover { background: rgba(var(--pr-rgb, 21, 88, 176), 0.18); }
 </style>

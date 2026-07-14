@@ -474,6 +474,41 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     persistConfig()
   }
 
+  // Pré-inscription déposée par une FAMILLE (formulaire public) → nouveau dossier « soumis ».
+  function addPreinscription(data = {}) {
+    const src = (config.value.documents && config.value.documents.length) ? config.value.documents : REQUIRED_DOCUMENTS
+    const attached = data.documents || {}
+    const documents = src.map((d) => ({ key: d.key, label: d.label, required: d.required, fourni: !!attached[d.key] }))
+    const prenom = (data.prenom || '').trim()
+    const nom = (data.nom || '').trim()
+    const dossier = {
+      id: `sid-pre-${Date.now().toString(36)}`,
+      candidat: {
+        prenom,
+        nom,
+        nomComplet: `${nom.toUpperCase()} ${prenom}`.trim(),
+        sexe: data.sexe === 'F' ? 'F' : 'M',
+        telephone: (data.telephone || '').trim(),
+      },
+      matricule: null,
+      type: data.type === 'reinscription' ? 'reinscription' : 'inscription',
+      promotionId: data.promotionId || null,
+      programmeNom: data.programmeNom || '',
+      niveau: data.niveau || '',
+      anneeNom: data.anneeNom || '',
+      campus: 'douala',
+      statut: DOSSIER_STATUS.SOUMIS,
+      documents,
+      dateSoumission: new Date().toISOString().slice(0, 10),
+      motifRefus: null,
+      anneeInscription: null,
+      source: 'famille',
+    }
+    dossiers.value = [dossier, ...dossiers.value]
+    persist()
+    return dossier.id
+  }
+
   return {
     // État
     dossiers,
@@ -502,6 +537,7 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     marquerComplet,
     // Configuration école (pièces exigées + option de validation)
     config,
+    addPreinscription,
     addDocumentType,
     removeDocumentType,
     setDocumentRequired,

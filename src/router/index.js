@@ -85,6 +85,12 @@ const routes = [
     meta: { requiresAuth: false, title: 'Vérifier un diplôme' }
   },
   {
+    path: '/preinscription',
+    name: 'Preinscription',
+    component: () => import('../views/superieur/SupPreinscription.vue'),
+    meta: { requiresAuth: false, title: 'Pré-inscription' }
+  },
+  {
     path: '/complexe',
     name: 'ComplexeAdmin',
     component: () => import('../views/ComplexeAdminView.vue'),
