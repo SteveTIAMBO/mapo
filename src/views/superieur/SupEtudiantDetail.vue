@@ -26,7 +26,7 @@
 
       <!-- Onglets (administratif uniquement) -->
       <div class="sed-tabs">
-        <button v-for="tb in tabs" :key="tb.key" type="button" :class="{ active: tab === tb.key }" @click="tab = tb.key">{{ t(tb.labelKey) }}</button>
+        <button v-for="tb in tabs" :key="tb.key" type="button" :class="{ active: tab === tb.key }" @click="tab = tb.key">{{ tb.label || t(tb.labelKey) }}</button>
       </div>
 
       <div class="sed-body">
@@ -78,6 +78,30 @@
           </div>
           <p class="sed-note">{{ t('sup.etudiantDetail.note') }}</p>
         </div>
+
+        <!-- Documents d'admission (dossier d'inscription administrative) -->
+        <div v-show="tab === 'documents'" class="sed-pane">
+          <div v-if="dossier">
+            <div class="sed-doc-status">
+              <span>Statut du dossier</span>
+              <span class="sed-doc-pill" :class="`is-${dossier.statut}`">{{ dossierStatutLabel }}</span>
+            </div>
+            <ul class="sed-doc-list">
+              <li v-for="doc in dossier.documents" :key="doc.key" class="sed-doc" :class="doc.fourni ? 'is-ok' : 'is-missing'">
+                <span class="sed-doc-ic">
+                  <svg v-if="doc.fourni" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </span>
+                <span class="sed-doc-lbl">
+                  {{ doc.label }}
+                  <span v-if="doc.required" class="sed-doc-req">obligatoire</span>
+                </span>
+                <span class="sed-doc-st">{{ doc.fourni ? 'Fourni' : 'Manquant' }}</span>
+              </li>
+            </ul>
+          </div>
+          <p v-else class="sed-empty">Dossier d'inscription non disponible en démonstration.</p>
+        </div>
       </div>
     </div>
   </div>
@@ -87,6 +111,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { CAMPUS } from '../../stores/superieur'
+import { useSuperieurInscriptionsStore, DOSSIER_STATUS_OPTIONS } from '../../stores/superieurInscriptions'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -101,7 +126,18 @@ const tabs = [
   { key: 'contact', labelKey: 'sup.etudiantDetail.tabContact' },
   { key: 'parents', labelKey: 'sup.etudiantDetail.tabParents' },
   { key: 'inscription', labelKey: 'sup.etudiantDetail.tabInscription' },
+  // Onglet « Documents » (FR en dur : pas de clé i18n dédiée pour ce socle).
+  { key: 'documents', label: 'Documents' },
 ]
+
+// Dossier d'inscription administrative de l'étudiant (rapprochement par nom
+// complet / matricule). En démonstration, les identités des candidats et des
+// étudiants sont générées séparément → le repli « non disponible » est fréquent.
+const inscriptionsStore = useSuperieurInscriptionsStore()
+const dossier = inscriptionsStore.findDossierForEtudiant({ nomComplet: e.nomComplet, matricule: e.matricule })
+const dossierStatutLabel = dossier
+  ? ((DOSSIER_STATUS_OPTIONS.find((o) => o.value === dossier.statut) || {}).label || dossier.statut)
+  : ''
 
 const campusVille = computed(() => (CAMPUS.find((c) => c.id === e.campus) || {}).ville || '').value
 
@@ -167,4 +203,43 @@ const initials = (e.nomComplet || '')
 .sed-row strong { color: var(--text, #1A1D1F); text-align: right; font-weight: 600; }
 .sed-note { font-size: 12.5px; color: var(--muted, #6b7280); margin-top: 16px; line-height: 1.5; }
 .sed-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 20px 0; text-align: center; }
+
+/* Onglet Documents (dossier d'inscription administrative) */
+.sed-doc-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 4px 2px 14px; border-bottom: 1px solid var(--border, rgba(20,32,64,.06));
+  font-size: 13.5px; color: var(--muted, #6b7280);
+}
+.sed-doc-pill {
+  font-family: 'Poppins', sans-serif; font-size: 11px; font-weight: 700;
+  border-radius: 20px; padding: 3px 10px;
+}
+.sed-doc-pill.is-brouillon { background: rgba(20,32,64,.08); color: #6b7280; }
+.sed-doc-pill.is-soumis { background: rgba(37,99,235,.12); color: #2563EB; }
+.sed-doc-pill.is-complet { background: rgba(184,137,42,.15); color: #B07308; }
+.sed-doc-pill.is-incomplet { background: rgba(217,119,6,.14); color: #B45309; }
+.sed-doc-pill.is-valide { background: rgba(14,124,90,.12); color: #0E7C5A; }
+.sed-doc-pill.is-refuse { background: rgba(217,48,37,.1); color: #D93025; }
+.sed-doc-list { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.sed-doc {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border: 1px solid var(--border, rgba(20,32,64,.08)); border-radius: 10px;
+}
+.sed-doc.is-ok { background: rgba(14,124,90,.05); }
+.sed-doc.is-missing { background: rgba(217,119,6,.06); }
+.sed-doc-ic {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.sed-doc.is-ok .sed-doc-ic { background: rgba(14,124,90,.15); color: #0E7C5A; }
+.sed-doc.is-missing .sed-doc-ic { background: rgba(217,119,6,.18); color: #B45309; }
+.sed-doc-lbl { flex: 1; min-width: 0; font-size: 13.5px; color: var(--text, #1A1D1F); }
+.sed-doc-req {
+  display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 20px;
+  font-family: 'Poppins', sans-serif; font-size: 9.5px; font-weight: 700;
+  background: rgba(217,48,37,.1); color: #D93025;
+}
+.sed-doc-st { font-size: 12px; font-weight: 700; }
+.sed-doc.is-ok .sed-doc-st { color: #0E7C5A; }
+.sed-doc.is-missing .sed-doc-st { color: #B45309; }
 </style>

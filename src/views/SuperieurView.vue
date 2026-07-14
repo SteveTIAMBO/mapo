@@ -279,6 +279,7 @@ import SupDashboard from './superieur/SupDashboard.vue'
 import SupGroupeDashboard from './superieur/SupGroupeDashboard.vue'
 import SupEtudiants from './superieur/SupEtudiants.vue'
 import SupFormation from './superieur/SupFormation.vue'
+import SupInscriptions from './superieur/SupInscriptions.vue'
 import SupInscriptionsPedagogiques from './superieur/SupInscriptionsPedagogiques.vue'
 import SupEmploiDuTemps from './superieur/SupEmploiDuTemps.vue'
 import SupIntervenants from './superieur/SupIntervenants.vue'
@@ -445,7 +446,11 @@ const panels = {
   dashboard: SupDashboard,
   etudiants: SupEtudiants,
   formation: SupFormation,
-  inscriptions: SupInscriptionsPedagogiques,
+  // Onglet « Inscriptions » du menu = inscriptions ADMINISTRATIVES (fait générateur).
+  inscriptions: SupInscriptions,
+  // Inscriptions PÉDAGOGIQUES (choix des UE) : conservées et montables (clé
+  // `inscriptions_peda`) mais retirées du menu latéral pour l'instant.
+  inscriptions_peda: SupInscriptionsPedagogiques,
   edt: SupEmploiDuTemps,
   intervenants: SupIntervenants,
   notes: SupNotes,
@@ -509,8 +514,11 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
   },
   {
+    // Onglet « Inscriptions » = inscriptions administratives (SupInscriptions).
+    // Le libellé affiché vient de i18n (sup.shell.nav.inscriptions) ; ce `label`
+    // n'est qu'un repli si la clé i18n venait à manquer.
     key: 'inscriptions',
-    label: 'Inscriptions péda.',
+    label: 'Inscriptions',
     roles: ['admin', 'relation_internationale', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
   },
