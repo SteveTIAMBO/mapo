@@ -45,14 +45,14 @@
     </div>
 
     <!-- Analyse MIAPO -->
-    <div class="si-miapo">
+    <div v-if="store.config.miapo.analyse" class="si-miapo">
       <div class="si-miapo-head">
         <span class="si-miapo-badge">MIAPO</span>
         <div class="si-miapo-head-txt">
           <div class="si-miapo-title">{{ t('sup.inscriptions.miapoTitle') }}</div>
           <div class="si-miapo-sub">{{ miapoSummary }}</div>
         </div>
-        <button v-if="store.dossiersConformes.length" type="button" class="si-miapo-cta" @click="askPrevalider">
+        <button v-if="store.dossiersConformes.length && store.config.miapo.prevalidation" type="button" class="si-miapo-cta" @click="askPrevalider">
           {{ t('sup.inscriptions.' + (store.dossiersConformes.length > 1 ? 'miapoCtaMany' : 'miapoCtaOne'), { n: store.dossiersConformes.length }) }}
         </button>
       </div>
@@ -64,12 +64,12 @@
             <span class="si-miapo-item-name">{{ d.candidat.nomComplet }}</span>
             <span class="si-miapo-item-miss">{{ t('sup.inscriptions.miapoItemMissing', { liste: store.requiredMissing(d).map((doc) => t('sup.inscriptions.docs.' + doc.key)).join(', ') }) }}</span>
           </div>
-          <button type="button" class="si-miapo-msg" @click="openMessageParent(d)">{{ t('sup.inscriptions.draftParentMessage') }}</button>
+          <button v-if="store.config.miapo.messageParent" type="button" class="si-miapo-msg" @click="openMessageParent(d)">{{ t('sup.inscriptions.draftParentMessage') }}</button>
         </div>
       </div>
       <div v-else class="si-miapo-clear">{{ t('sup.inscriptions.miapoClear') }}</div>
 
-      <div v-if="store.dossiersIncoherents.length" class="si-miapo-alert">
+      <div v-if="store.dossiersIncoherents.length && store.config.miapo.verification" class="si-miapo-alert">
         MIAPO a relevé {{ store.dossiersIncoherents.length }} dossier{{ store.dossiersIncoherents.length > 1 ? 's' : '' }} avec une incohérence acte ↔ fiche à vérifier.
       </div>
 
@@ -207,7 +207,7 @@
             </ul>
 
             <!-- Vérification MIAPO des pièces (OCR acte ↔ fiche) -->
-            <div v-if="detail.verification" class="si-verif" :class="detail.verification.statut === 'incoherence' ? 'is-warn' : 'is-ok'">
+            <div v-if="detail.verification && store.config.miapo.verification" class="si-verif" :class="detail.verification.statut === 'incoherence' ? 'is-warn' : 'is-ok'">
               <div class="si-verif-head">
                 <span class="si-verif-badge">MIAPO</span>
                 <span v-if="detail.verification.statut === 'coherent'">Vérification des pièces : le nom et la date de naissance lus sur l'acte concordent avec la fiche d'inscription.</span>
@@ -340,6 +340,25 @@
               <span>Autoriser la validation même si des pièces obligatoires manquent</span>
             </label>
             <p class="si-cfg-help">Défini à l'onboarding par la direction, modifiable ici. Si activé, la scolarité peut valider un dossier incomplet ; MIAPO continue de signaler les pièces manquantes.</p>
+
+            <div class="si-section-label si-cfg-section2">MIAPO — fonctionnalités</div>
+            <p class="si-cfg-help" style="margin: 0 2px 8px;">Activez uniquement ce dont vous avez besoin — la lecture des pièces par l'IA consomme des crédits.</p>
+            <label class="si-cfg-toggle">
+              <input type="checkbox" :checked="store.config.miapo.analyse" @change="store.setMiapoFeature('analyse', $event.target.checked)" />
+              <span>Analyse des dossiers (revue + signalement des pièces manquantes)</span>
+            </label>
+            <label class="si-cfg-toggle">
+              <input type="checkbox" :checked="store.config.miapo.prevalidation" @change="store.setMiapoFeature('prevalidation', $event.target.checked)" />
+              <span>Pré-validation des dossiers conformes</span>
+            </label>
+            <label class="si-cfg-toggle">
+              <input type="checkbox" :checked="store.config.miapo.messageParent" @change="store.setMiapoFeature('messageParent', $event.target.checked)" />
+              <span>Brouillon de message au parent (pièces manquantes)</span>
+            </label>
+            <label class="si-cfg-toggle">
+              <input type="checkbox" :checked="store.config.miapo.verification" @change="store.setMiapoFeature('verification', $event.target.checked)" />
+              <span>Vérification des pièces par IA (lecture des documents + incohérences) — consomme des crédits</span>
+            </label>
           </div>
           <div class="si-modal-actions">
             <button type="button" class="si-btn-ghost" @click="closeSettings">Fermer</button>

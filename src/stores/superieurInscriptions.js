@@ -298,6 +298,9 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     return {
       documents: REQUIRED_DOCUMENTS.map((d) => ({ ...d })),
       validerSansPieces: false,
+      // Fonctionnalités MIAPO activables/désactivables par la direction
+      // (maîtrise des crédits IA : on n'active que ce qu'on utilise).
+      miapo: { analyse: true, prevalidation: true, messageParent: true, verification: true },
     }
   }
   const config = ref(loadEntity('inscriptions_config', defaultConfig()))
@@ -309,6 +312,11 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
   if (typeof config.value.validerSansPieces !== 'boolean') {
     config.value.validerSansPieces = false
   }
+  // Complète les fonctionnalités MIAPO manquantes avec les valeurs par défaut (activées).
+  config.value.miapo = Object.assign(
+    { analyse: true, prevalidation: true, messageParent: true, verification: true },
+    config.value.miapo || {}
+  )
   function persistConfig() { saveEntity('inscriptions_config', config.value) }
 
   // Génère une clé (slug) unique à partir d'un libellé de pièce.
@@ -499,6 +507,12 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     config.value.validerSansPieces = !!bool
     persistConfig()
   }
+  function setMiapoFeature(key, bool) {
+    if (config.value.miapo && key in config.value.miapo) {
+      config.value.miapo[key] = !!bool
+      persistConfig()
+    }
+  }
 
   // Pré-inscription déposée par une FAMILLE (formulaire public) → nouveau dossier « soumis ».
   function addPreinscription(data = {}) {
@@ -569,5 +583,6 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     removeDocumentType,
     setDocumentRequired,
     setValiderSansPieces,
+    setMiapoFeature,
   }
 })
