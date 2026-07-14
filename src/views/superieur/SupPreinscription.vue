@@ -70,17 +70,20 @@
           <div class="spi-docs">
             <div class="spi-docs-head">Pièces à joindre</div>
             <p class="spi-docs-hint">Cochez les pièces que vous fournissez. Vous pourrez transmettre les manquantes plus tard.</p>
-            <label v-for="d in documents" :key="d.key" class="spi-doc" :class="{ on: !!attached[d.key] }">
-              <input type="checkbox" :checked="!!attached[d.key]" @change="toggleDoc(d.key)" />
+            <div v-for="d in documents" :key="d.key" class="spi-doc" :class="{ on: !!attached[d.key] }">
+              <span class="spi-doc-state-ic">
+                <svg v-if="attached[d.key]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+              </span>
               <span class="spi-doc-lbl">
                 {{ d.label }}
                 <span v-if="d.required" class="spi-doc-req">obligatoire</span>
               </span>
-              <span class="spi-doc-attach">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
-                {{ attached[d.key] ? 'Jointe' : 'Joindre' }}
-              </span>
-            </label>
+              <img v-if="scans[d.key] && scans[d.key].dataUrl" :src="scans[d.key].dataUrl" class="spi-doc-thumb" alt="" />
+              <button type="button" class="spi-doc-btn" @click="scanDoc = d">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M6 12h12"/></svg>
+                {{ attached[d.key] ? 'Modifier' : 'Scanner / Importer' }}
+              </button>
+            </div>
           </div>
 
           <p v-if="error" class="spi-error">{{ error }}</p>
@@ -108,6 +111,8 @@
 
       <div class="spi-foot">Propulsé par EDUFREM</div>
     </div>
+
+    <SupDocScan :doc="scanDoc" @close="scanDoc = null" @attached="onAttached" />
   </div>
 </template>
 
@@ -115,6 +120,7 @@
 import { ref, reactive, computed } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useSuperieurInscriptionsStore } from '../../stores/superieurInscriptions'
+import SupDocScan from './SupDocScan.vue'
 
 const superieur = useSuperieurStore()
 const store = useSuperieurInscriptionsStore()
@@ -124,7 +130,9 @@ const documents = computed(() => store.config.documents || [])
 
 const form = reactive({ type: 'inscription', prenom: '', nom: '', sexe: 'M', telephone: '', promotionId: '' })
 const attached = reactive({})
-function toggleDoc(key) { attached[key] = !attached[key] }
+const scans = reactive({})
+const scanDoc = ref(null)
+function onAttached(p) { attached[p.key] = true; scans[p.key] = p; scanDoc.value = null }
 
 const error = ref('')
 const submitted = ref(false)
@@ -156,6 +164,7 @@ function submit() {
 function reset() {
   Object.assign(form, { type: 'inscription', prenom: '', nom: '', sexe: 'M', telephone: '', promotionId: '' })
   Object.keys(attached).forEach((k) => { delete attached[k] })
+  Object.keys(scans).forEach((k) => { delete scans[k] })
   error.value = ''
   submitted.value = false
 }
@@ -216,6 +225,11 @@ function reset() {
   margin-bottom: 7px; cursor: pointer; transition: all 0.12s ease;
 }
 .spi-doc.on { border-color: #0E7C5A; background: rgba(14, 124, 90, 0.05); }
+.spi-doc-state-ic { width: 20px; height: 20px; flex-shrink: 0; border-radius: 6px; border: 1.5px solid #cdd6e5; display: flex; align-items: center; justify-content: center; color: #fff; }
+.spi-doc.on .spi-doc-state-ic { background: #0E7C5A; border-color: #0E7C5A; }
+.spi-doc-thumb { width: 34px; height: 34px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e7f0; flex-shrink: 0; }
+.spi-doc-btn { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; background: rgba(21, 88, 176, 0.08); color: #1558B0; border: none; border-radius: 8px; padding: 7px 12px; font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px; cursor: pointer; }
+.spi-doc-btn:hover { background: rgba(21, 88, 176, 0.16); }
 .spi-doc input { width: 17px; height: 17px; flex-shrink: 0; accent-color: #0E7C5A; }
 .spi-doc-lbl { flex: 1; min-width: 0; font-size: 13.5px; color: #14203f; }
 .spi-doc-req {
