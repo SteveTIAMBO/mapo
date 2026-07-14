@@ -103,9 +103,6 @@ const NOMS = [
   'Kamga', 'Fotso', 'Kenfack', 'Tagne', 'Bello', 'Oumarou', 'Hamadou', 'Moustapha',
 ]
 
-// Répartition pondérée des candidats par campus (Douala, siège = le plus gros).
-const CAMPUS_POOL = ['douala', 'douala', 'douala', 'yaounde', 'yaounde', 'maroua']
-
 // Motifs de refus réalistes (communiqués au candidat).
 const MOTIFS_REFUS = [
   "Frais de scolarité de l'année précédente non soldés",
@@ -168,22 +165,63 @@ function typePourPromo(promo) {
   return rng() < pReins ? 'reinscription' : 'inscription'
 }
 
-// ── Génération déterministe de ~16 dossiers ──
-function generateDossiers() {
-  // Mix réaliste : 5 soumis (pièces manquantes), 3 complets (à valider),
-  // 6 validés (déjà inscrits), 2 refusés (avec motif).
+// Dérive un « candidat » (dossier validé) à partir d'un vrai étudiant inscrit,
+// pour que l'onglet « Documents » de sa fiche retrouve son dossier.
+function studentToCandidat(e) {
+  const parts = String(e.nomComplet || '').split(' ')
+  return {
+    prenom: e.prenom || parts.slice(1).join(' '),
+    nom: e.nom || parts[0] || '',
+    nomComplet: e.nomComplet,
+    sexe: e.sexe || (rng() < 0.5 ? 'M' : 'F'),
+    telephone: e.telephone || telCM(),
+  }
+}
+
+// ── Génération déterministe des dossiers ──
+// La DÉMO = campus de Douala uniquement : on y met un jeu complet et réaliste
+// (soumis avec pièces manquantes, complets prêts à valider, validés, un refusé).
+// Yaoundé/Maroua ne portent que quelques dossiers, visibles seulement par la
+// direction de groupe (vue Complexe / fondateur). Les dossiers VALIDÉS de Douala
+// sont rattachés à de VRAIS étudiants inscrits → l'onglet « Documents » de leur
+// fiche affiche leur dossier.
+function generateDossiers(realStudents) {
+  const douala = (realStudents || []).filter((e) => e && e.campus === 'douala')
+  let sIdx = 0
+  const nextDoualaStudent = () => (douala.length ? douala[sIdx++ % douala.length] : null)
+
   const plan = [
     ...Array(5).fill('soumis'),
     ...Array(3).fill('complet'),
-    ...Array(6).fill('valide'),
-    ...Array(2).fill('refuse'),
-  ]
+    ...Array(5).fill('valide'),
+    'refuse',
+  ].map((statut) => ({ statut, campus: 'douala' }))
+  // Quelques dossiers hors Douala (vue Complexe / fondateur uniquement).
+  plan.push(
+    { statut: 'valide', campus: 'yaounde' },
+    { statut: 'complet', campus: 'yaounde' },
+    { statut: 'valide', campus: 'maroua' },
+    { statut: 'soumis', campus: 'maroua' },
+  )
+
   const list = []
   let counter = 1
-  for (const statut of plan) {
-    const promo = pick(PROMOTIONS)
-    const campus = pick(CAMPUS_POOL)
-    const candidat = makeCandidat()
+  for (const { statut, campus } of plan) {
+    let candidat = null
+    let matricule = null
+    let promo = null
+
+    // Dossier validé de Douala → rattaché à un vrai étudiant inscrit.
+    if (statut === 'valide' && campus === 'douala') {
+      const stu = nextDoualaStudent()
+      if (stu) {
+        candidat = studentToCandidat(stu)
+        matricule = stu.matricule || null
+        promo = PROMOTIONS.find((p) => p.id === stu.promotionId) || null
+      }
+    }
+    if (!promo) promo = pick(PROMOTIONS)
+    if (!candidat) candidat = makeCandidat()
     const type = typePourPromo(promo)
 
     let documents
@@ -205,6 +243,7 @@ function generateDossiers() {
     list.push({
       id: `sid-${String(counter).padStart(4, '0')}`,
       candidat,
+      matricule,
       type,
       promotionId: promo.id,
       programmeNom: promo.programmeNom,
@@ -225,9 +264,9 @@ function generateDossiers() {
 // ── Store ──
 export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions', () => {
   const superieur = useSuperieurStore()
-  const dossiers = ref(loadEntity('inscriptions_admin', IS_SCHOOL_MODE ? [] : generateDossiers()))
+  const dossiers = ref(loadEntity('inscriptions_admin2', IS_SCHOOL_MODE ? [] : generateDossiers(superieur.etudiantsAll || superieur.etudiants || [])))
 
-  function persist() { saveEntity('inscriptions_admin', dossiers.value) }
+  function persist() { saveEntity('inscriptions_admin2', dossiers.value) }
 
   // ── Périmètre par campus (repris de superieur.campusScope) ──
   // Un directeur de campus ne voit que son campus ; la direction de groupe
@@ -264,6 +303,38 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
       incomplet: arr.filter((d) => d.statut === 'incomplet').length,
     }
   })
+
+  // ── Analyse MIAPO (périmètre campus) ──
+  // Conformes = ni validés ni refusés, et toutes les pièces obligatoires
+  // présentes → MIAPO peut PROPOSER de les valider (la scolarité confirme).
+  const dossiersConformes = computed(() =>
+    dossiersVisibles.value.filter(
+      (d) => d.statut !== DOSSIER_STATUS.VALIDE && d.statut !== DOSSIER_STATUS.REFUSE && requiredMissing(d).length === 0
+    )
+  )
+  // Incomplets = en attente avec au moins une pièce obligatoire manquante.
+  const dossiersIncomplets = computed(() =>
+    dossiersVisibles.value.filter(
+      (d) => (d.statut === DOSSIER_STATUS.SOUMIS || d.statut === DOSSIER_STATUS.INCOMPLET) && requiredMissing(d).length > 0
+    )
+  )
+  function piecesManquantesLabels(dossier) { return requiredMissing(dossier).map((doc) => doc.label) }
+  // Validation par lot (pré-validation MIAPO confirmée par la scolarité).
+  function validerDossiers(ids) {
+    if (!Array.isArray(ids)) return 0
+    let n = 0
+    for (const id of ids) {
+      const d = getDossier(id)
+      if (d) {
+        d.statut = DOSSIER_STATUS.VALIDE
+        d.anneeInscription = ANNEE_ACADEMIQUE
+        d.motifRefus = null
+        n++
+      }
+    }
+    if (n) persist()
+    return n
+  }
 
   // ── Helpers ──
   function getDossier(id) { return dossiers.value.find((d) => d.id === id) || null }
@@ -340,6 +411,10 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     dossiersVisibles,
     dossiersList,
     stats,
+    // Analyse MIAPO
+    dossiersConformes,
+    dossiersIncomplets,
+    piecesManquantesLabels,
     // Helpers
     getDossier,
     requiredMissing,
@@ -347,6 +422,7 @@ export const useSuperieurInscriptionsStore = defineStore('superieurInscriptions'
     findDossierForEtudiant,
     // Actions
     validerDossier,
+    validerDossiers,
     demanderDocuments,
     refuserDossier,
     marquerComplet,

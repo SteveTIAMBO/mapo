@@ -171,7 +171,6 @@ const actions = computed(() => [
   { label: t('sup.dash.actionInscrire'), icon: UserPlus, tab: 'etudiants' },
   { label: t('sup.dash.actionNotes'), icon: FileText, tab: 'notes' },
   { label: t('sup.dash.actionPaiement'), icon: CreditCard, tab: 'finance_paiements' },
-  { label: t('sup.dash.actionInscriptions'), icon: ClipboardList, tab: 'inscriptions' },
   { label: t('sup.dash.actionEdt'), icon: CalendarDays, tab: 'edt' },
   { label: t('sup.dash.actionRelance'), icon: BellRing, tab: 'finance_echeanciers' },
 ])

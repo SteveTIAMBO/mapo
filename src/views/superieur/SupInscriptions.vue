@@ -39,6 +39,34 @@
       </div>
     </div>
 
+    <!-- Analyse MIAPO -->
+    <div class="si-miapo">
+      <div class="si-miapo-head">
+        <span class="si-miapo-badge">MIAPO</span>
+        <div class="si-miapo-head-txt">
+          <div class="si-miapo-title">MIAPO — Analyse des dossiers</div>
+          <div class="si-miapo-sub">{{ miapoSummary }}</div>
+        </div>
+        <button v-if="store.dossiersConformes.length" type="button" class="si-miapo-cta" @click="askPrevalider">
+          Pré-valider {{ store.dossiersConformes.length }} dossier{{ store.dossiersConformes.length > 1 ? 's' : '' }} conforme{{ store.dossiersConformes.length > 1 ? 's' : '' }}
+        </button>
+      </div>
+
+      <div v-if="store.dossiersIncomplets.length" class="si-miapo-list">
+        <div class="si-miapo-list-label">À compléter — MIAPO signale la pièce manquante et prépare le message au parent :</div>
+        <div v-for="d in store.dossiersIncomplets" :key="d.id" class="si-miapo-item">
+          <div class="si-miapo-item-main">
+            <span class="si-miapo-item-name">{{ d.candidat.nomComplet }}</span>
+            <span class="si-miapo-item-miss">il manque : {{ store.piecesManquantesLabels(d).join(', ') }}</span>
+          </div>
+          <button type="button" class="si-miapo-msg" @click="openMessageParent(d)">Préparer le message parent</button>
+        </div>
+      </div>
+      <div v-else class="si-miapo-clear">Aucune pièce obligatoire manquante à signaler pour le moment.</div>
+
+      <div class="si-miapo-note">MIAPO propose, la scolarité valide. En cas de doute (lecture d'une pièce), MIAPO ne bloque pas : il laisse passer en signalant son doute.</div>
+    </div>
+
     <!-- Filtres -->
     <div class="si-filters">
       <div class="si-filter">
@@ -215,6 +243,28 @@
         </div>
       </div>
     </transition>
+
+    <!-- Modale brouillon de message parent (MIAPO) -->
+    <transition name="si-fade">
+      <div v-if="msgModal.open" class="si-modal-overlay si-confirm-overlay" @click.self="closeMessage">
+        <div class="si-modal si-confirm-modal">
+          <div class="si-modal-head">
+            <h2 class="si-modal-title">Message au parent — {{ msgModal.candidat }}</h2>
+            <button class="si-modal-close" type="button" @click="closeMessage" aria-label="Fermer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+            </button>
+          </div>
+          <div class="si-modal-body">
+            <p class="si-msg-help">Brouillon préparé par MIAPO (WhatsApp / SMS). Relisez et ajustez avant l'envoi.</p>
+            <textarea v-model="msgModal.texte" class="si-textarea" rows="6"></textarea>
+          </div>
+          <div class="si-modal-actions">
+            <button type="button" class="si-btn-ghost" @click="closeMessage">Fermer</button>
+            <button type="button" class="si-btn-primary" @click="copyMessage">{{ copied ? 'Copié ✓' : 'Copier le message' }}</button>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
 
@@ -227,9 +277,11 @@ import {
   DOSSIER_STATUS_OPTIONS,
   DOSSIER_TYPES,
 } from '../../stores/superieurInscriptions'
+import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 
 const superieur = useSuperieurStore()
 const store = useSuperieurInscriptionsStore()
+const schoolIdentity = useSchoolIdentityStore()
 
 const promotions = computed(() => superieur.promotions)
 const statusOptions = DOSSIER_STATUS_OPTIONS
@@ -301,6 +353,56 @@ function askRefuser(d) {
     },
   })
 }
+
+// ── Analyse MIAPO ──
+const ecoleNom = computed(() =>
+  schoolIdentity.schoolName || schoolIdentity.name || schoolIdentity.nom || 'votre établissement'
+)
+const miapoSummary = computed(() => {
+  const n = store.stats.total
+  const x = store.dossiersConformes.length
+  const y = store.dossiersIncomplets.length
+  const z = store.stats.refuse
+  const pl = (k) => (k > 1 ? 's' : '')
+  return `MIAPO a passé en revue ${n} dossier${pl(n)} : ${x} conforme${pl(x)} prêt${pl(x)} à valider, ${y} incomplet${pl(y)}, ${z} refusé${pl(z)}.`
+})
+function askPrevalider() {
+  const list = store.dossiersConformes
+  if (!list.length) return
+  const ids = list.map((d) => d.id)
+  const noms = list.map((d) => d.candidat.nomComplet).join(', ')
+  openConfirm({
+    title: 'Pré-validation MIAPO',
+    message: `MIAPO a identifié ${list.length} dossier(s) conforme(s) — toutes les pièces obligatoires sont fournies : ${noms}. Confirmez-vous leur validation ? Ces étudiants seront comptés comme inscrits.`,
+    confirmLabel: `Valider ${list.length} dossier${list.length > 1 ? 's' : ''}`,
+    withMotif: false,
+    onConfirm: () => { store.validerDossiers(ids) },
+  })
+}
+
+// ── Brouillon de message parent (MIAPO) ──
+const msgModal = reactive({ open: false, candidat: '', texte: '' })
+const copied = ref(false)
+function draftMessage(d) {
+  const manquantes = store.piecesManquantesLabels(d)
+  const liste = manquantes.join(', ')
+  const pieceMot = manquantes.length > 1 ? 'ces pièces' : 'cette pièce'
+  return `Bonjour, pour finaliser l'inscription de ${d.candidat.nomComplet} en ${d.programmeNom} (${d.anneeNom}), il manque : ${liste}. Merci de nous transmettre ${pieceMot} (photo nette ou PDF) dès que possible. Cordialement, ${ecoleNom.value}.`
+}
+function openMessageParent(d) {
+  msgModal.candidat = d.candidat.nomComplet
+  msgModal.texte = draftMessage(d)
+  copied.value = false
+  msgModal.open = true
+}
+function closeMessage() { msgModal.open = false }
+async function copyMessage() {
+  try {
+    await navigator.clipboard.writeText(msgModal.texte)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1800)
+  } catch (e) { copied.value = false }
+}
 </script>
 
 <style scoped>
@@ -319,6 +421,53 @@ function askRefuser(d) {
   max-width: 760px;
   line-height: 1.55;
 }
+
+/* Bandeau MIAPO */
+.si-miapo {
+  background: linear-gradient(135deg, #6D28D9 0%, #7C3AED 55%, #8B5CF6 100%);
+  border-radius: var(--card-radius, 16px);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+  color: #fff;
+  box-shadow: 0 12px 32px rgba(109, 40, 217, 0.25);
+}
+.si-miapo-head { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.si-miapo-badge {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 100px; padding: 4px 12px;
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 12px; letter-spacing: 0.05em;
+  flex-shrink: 0;
+}
+.si-miapo-head-txt { flex: 1; min-width: 200px; }
+.si-miapo-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 16px; }
+.si-miapo-sub { font-size: 13px; opacity: 0.92; margin-top: 2px; }
+.si-miapo-cta {
+  margin-left: auto; background: #fff; color: #6D28D9;
+  border: none; border-radius: 10px; padding: 9px 16px;
+  font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px;
+  cursor: pointer; white-space: nowrap; transition: opacity 0.15s ease;
+}
+.si-miapo-cta:hover { opacity: 0.9; }
+.si-miapo-list { margin-top: 14px; background: rgba(255, 255, 255, 0.12); border-radius: 12px; padding: 10px 14px; }
+.si-miapo-list-label { font-size: 12px; font-weight: 700; opacity: 0.95; margin-bottom: 4px; }
+.si-miapo-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 8px 0; border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+.si-miapo-item:first-of-type { border-top: none; }
+.si-miapo-item-main { flex: 1; min-width: 0; }
+.si-miapo-item-name { font-weight: 700; font-size: 13.5px; }
+.si-miapo-item-miss { display: block; font-size: 12.5px; opacity: 0.9; }
+.si-miapo-msg {
+  background: rgba(255, 255, 255, 0.2); color: #fff; border: none;
+  border-radius: 8px; padding: 6px 12px;
+  font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 12px;
+  cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s ease;
+}
+.si-miapo-msg:hover { background: rgba(255, 255, 255, 0.32); }
+.si-miapo-clear { margin-top: 12px; font-size: 13px; opacity: 0.9; }
+.si-miapo-note { margin-top: 12px; font-size: 12px; opacity: 0.82; font-style: italic; }
+.si-msg-help { font-size: 13px; color: var(--tx2); margin: 0 0 10px; line-height: 1.5; }
 
 /* KPIs */
 .si-kpis {
