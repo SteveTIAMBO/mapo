@@ -94,14 +94,14 @@ const MERES = ['Marie Chantal', 'Solange Épse Owona', 'Estelle Carine', 'Hélè
 const derived = computed(() => {
   const h = hashStr((props.candidat && props.candidat.nomComplet) || (props.candidat && props.candidat.nom) || 'x')
   const year = 2003 + (h % 4)
-  const month = 1 + ((h >> 3) % 12)
-  const day = 1 + ((h >> 7) % 28)
+  const month = 1 + ((h >>>3) % 12)
+  const day = 1 + ((h >>>7) % 28)
   const pad = (n) => String(n).padStart(2, '0')
   return {
     dateNaissance: `${pad(day)}/${pad(month)}/${year}`,
     lieu: CITIES[h % CITIES.length],
-    pere: PERES[(h >> 5) % PERES.length],
-    mere: MERES[(h >> 9) % MERES.length],
+    pere: PERES[(h >>>5) % PERES.length],
+    mere: MERES[(h >>>9) % MERES.length],
     cni: `1${String(100000000 + (h % 899999999))}`.slice(0, 10),
     acteNo: `${1000 + (h % 8999)}/${year}`,
   }
