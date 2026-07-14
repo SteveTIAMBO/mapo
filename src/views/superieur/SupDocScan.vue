@@ -31,8 +31,12 @@
           <!-- Mode caméra -->
           <template v-else-if="mode === 'scan'">
             <div v-if="camError" class="sds-cam-err">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M23 7l-7 5 7 5V7z"/><path d="M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13"/><path d="M1 1l22 22"/></svg>
               <div>{{ camError }}</div>
-              <button type="button" class="sds-linkbtn" @click="setMode('import')">Importer un fichier à la place</button>
+              <div class="sds-cam-err-actions">
+                <button type="button" class="sds-linkbtn" @click="startCamera">Réessayer</button>
+                <button type="button" class="sds-linkbtn" @click="setMode('import')">Importer un fichier</button>
+              </div>
             </div>
             <div v-else class="sds-cam-wrap">
               <video ref="video" autoplay playsinline muted class="sds-video"></video>
@@ -192,6 +196,7 @@ onUnmounted(stopCamera)
 .sds-cam-frame { position: absolute; inset: 12px; border: 2px dashed rgba(255, 255, 255, 0.7); border-radius: 8px; pointer-events: none; }
 .sds-cam-hint { text-align: center; font-size: 12px; color: #6b7280; margin-top: 8px; }
 .sds-cam-err { text-align: center; color: #B45309; font-size: 13.5px; padding: 20px 8px; }
+.sds-cam-err-actions { display: flex; gap: 16px; justify-content: center; margin-top: 6px; flex-wrap: wrap; }
 .sds-linkbtn { display: inline-block; margin-top: 10px; background: none; border: none; color: #1558B0; font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 13px; }
 .sds-drop { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 30px 16px; border: 2px dashed #cdd6e5; border-radius: 12px; color: #5b6472; cursor: pointer; text-align: center; }
 .sds-drop input { display: none; }

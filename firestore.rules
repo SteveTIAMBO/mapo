@@ -127,6 +127,26 @@ service cloud.firestore {
       );
     }
 
+    // ── Vitrines des écoles (site public one-page) ───────────────────
+    // Produit « Vitrine écoles » (dossier 09_APPLICATIONS/VITRINE_ECOLES).
+    // Lecture PUBLIQUE : le site vitrine est ouvert à tous (parents, moteurs).
+    // Écriture réservée à la direction de l'école (directeur/admin) ou à un
+    // super admin EDUFREM. schoolId = même slug que le sous-domaine MAPO de
+    // l'école, donc isAdmin(schoolId) autorise le directeur sur SA vitrine.
+    // Circuit de validation : le directeur (directeur/admin de SON école) rédige
+    // en 'brouillon' puis 'en_attente' ; il ne peut PAS s'auto-valider. Seul un
+    // super admin EDUFREM peut passer une fiche à 'valide' (mise en ligne).
+    // Lecture publique uniquement si 'valide' ; sinon réservée à la direction/EDUFREM.
+    match /vitrines/{schoolId} {
+      allow read: if isSuperAdmin() || isAdmin(schoolId)
+        || (resource != null && resource.data.get('statut', '') == 'valide');
+      allow create: if (isAdmin(schoolId) || isSuperAdmin())
+        && request.resource.data.get('statut', 'brouillon') in ['brouillon', 'en_attente'];
+      allow update: if isSuperAdmin()
+        || (isAdmin(schoolId) && request.resource.data.get('statut', 'brouillon') in ['brouillon', 'en_attente']);
+      allow delete: if isSuperAdmin();
+    }
+
     // ── Profils utilisateurs ─────────────────────────────────────────
     // Lecture : soi-même, ou les administrateurs de la même école.
     // Création : à la première connexion, validée par une invitation.
