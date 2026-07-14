@@ -881,15 +881,18 @@ async function copyMessage() {
 }
 .si-section-label + .si-rows { margin-bottom: 6px; }
 .si-rows { display: flex; flex-direction: column; margin-bottom: 14px; }
-.si-row {
+/* Lignes de champs du MODAL détail uniquement (scopé à .si-rows) — NE PAS
+   appliquer au <tr class="si-row"> du tableau, sinon le flex casse l'alignement
+   des colonnes du corps avec l'en-tête (resté en table-row). */
+.si-rows .si-row {
   display: flex; justify-content: space-between; gap: 16px;
   padding: 10px 2px;
   border-bottom: 1px solid var(--divider);
   font-size: 13.5px;
 }
-.si-row span { color: var(--tx2); }
-.si-row strong { color: var(--tx); text-align: right; font-weight: 600; }
-.si-row.is-refus strong { color: var(--danger); }
+.si-rows .si-row span { color: var(--tx2); }
+.si-rows .si-row strong { color: var(--tx); text-align: right; font-weight: 600; }
+.si-rows .si-row.is-refus strong { color: var(--danger); }
 
 /* Checklist */
 .si-docs-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
