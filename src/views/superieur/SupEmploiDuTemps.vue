@@ -349,7 +349,7 @@ import { useSuperieurStore, UE_TYPES, SALLES_POOL_EDT } from '../../stores/super
 import { useSuperieurEdtStore } from '../../stores/superieurEdt'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { exportToExcel } from '../../utils/exportExcel'
-import { exportToPdf } from '../../utils/exportPdf'
+import { exportTimetablePdf } from '../../utils/exportPdf'
 
 const store = useSuperieurStore()
 const edtStore = useSuperieurEdtStore()
@@ -512,9 +512,16 @@ function exportEdt() {
   exportToExcel(data, columns, filename, 'Emploi du temps')
 }
 function exportEdtPdf() {
-  const { data, columns, filename, title } = buildEdtExport()
+  const { data, filename, title } = buildEdtExport()
   if (!data.length) return
-  exportToPdf(data, columns, filename, { title })
+  // PDF au format GRILLE (comme à l'écran), pas une liste de séances.
+  exportTimetablePdf({
+    jours: jours.value,
+    creneaux: creneaux.value,
+    sessionAt: (j, debut) => getSession(j, debut),
+    title,
+    filename,
+  })
 }
 
 // ── Mode édition ──
@@ -755,8 +762,10 @@ function buildProposal() {
 
   // 2. Créneaux disponibles = jours × créneaux configurés (ordre de la config).
   const slots = []
-  for (const jour of jours.value) {
-    for (const cr of creneaux.value) {
+  // Ordre créneau-major (même horaire sur tous les jours d'abord) → étale les
+  // séances sur TOUTE la semaine au lieu de saturer les premiers jours.
+  for (const cr of creneaux.value) {
+    for (const jour of jours.value) {
       slots.push({ jour, debut: cr.debut, fin: cr.fin })
     }
   }
