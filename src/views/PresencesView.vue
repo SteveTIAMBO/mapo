@@ -6,10 +6,16 @@
         <h1>{{ t('presence.title') }}</h1>
         <p>{{ t('presence.subtitle') }}</p>
       </div>
-      <button v-if="!authStore.isTeacher && displayedEntries.length > 0" class="btn btn-outline" @click="exportPresences">
-        <Download :size="16" />
-        <span>{{ t('presence.export') }}</span>
-      </button>
+      <div v-if="!authStore.isTeacher && displayedEntries.length > 0" style="display:flex;gap:8px;">
+        <button class="btn btn-outline" @click="exportPresences">
+          <Download :size="16" />
+          <span>Excel</span>
+        </button>
+        <button class="btn btn-outline" @click="exportPresencesPdf">
+          <Download :size="16" />
+          <span>PDF</span>
+        </button>
+      </div>
     </div>
 
     <!-- Stat bar — cliquable pour filtrer -->
@@ -318,6 +324,7 @@ import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { Pencil, Check, CalendarCheck, X, Phone, Download, RotateCcw } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 import { useNotificationsStore, buildMessage } from '../stores/notifications'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 
@@ -488,7 +495,7 @@ const toggleFilter = (status) => {
   activeFilter.value = activeFilter.value === status ? null : status
 }
 
-const exportPresences = () => {
+const buildPresencesExport = () => {
   const columns = [
     { key: 'eleveName', label: t('presence.exportCols.student'), width: 20 },
     { key: 'className', label: t('presence.exportCols.class'), width: 15 },
@@ -505,7 +512,17 @@ const exportPresences = () => {
     note: entry.note || '-',
   }))
 
-  exportToExcel(exportData, columns, 'presences', t('presence.exportSheet'))
+  return { data: exportData, columns }
+}
+
+const exportPresences = () => {
+  const { data, columns } = buildPresencesExport()
+  exportToExcel(data, columns, 'presences', t('presence.exportSheet'))
+}
+
+const exportPresencesPdf = () => {
+  const { data, columns } = buildPresencesExport()
+  exportToPdf(data, columns, 'presences', { title: t('presence.exportSheet') })
 }
 
 // Commencer l'appel

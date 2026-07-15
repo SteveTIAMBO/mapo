@@ -8,7 +8,11 @@
       <div class="se-intro-actions">
         <button class="se-btn-ghost" type="button" :disabled="store.filteredEtudiants.length === 0" @click="exportEtudiants">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-          Exporter
+          Excel
+        </button>
+        <button class="se-btn-ghost" type="button" :disabled="store.filteredEtudiants.length === 0" @click="exportEtudiantsPdf">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          PDF
         </button>
         <button class="se-btn-primary" type="button" @click="openCreate">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
@@ -226,6 +230,7 @@ import { computed, ref, reactive, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
 import { exportToExcel } from '../../utils/exportExcel'
+import { exportToPdf } from '../../utils/exportPdf'
 import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -235,9 +240,8 @@ function openDetail(e) { detailEtudiant.value = e }
 
 // ── Export XLSX de la liste filtrée (respecte les filtres/recherche en cours) ──
 const campusLabel = (id) => CAMPUS.find((c) => c.id === id)?.ville || id || ''
-function exportEtudiants() {
+function buildEtudiantsExport() {
   const list = store.filteredEtudiants
-  if (!list.length) return
   const columns = [
     { key: 'matricule', label: 'Matricule', width: 14 },
     { key: 'nomComplet', label: 'Nom complet', width: 26 },
@@ -264,7 +268,17 @@ function exportEtudiants() {
     ects: `${e.ectsValides ?? 0} / ${e.ectsRequis ?? 0}`,
     statut: e.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit',
   }))
+  return { data, columns }
+}
+function exportEtudiants() {
+  const { data, columns } = buildEtudiantsExport()
+  if (!data.length) return
   exportToExcel(data, columns, 'etudiants_superieur', 'Étudiants')
+}
+function exportEtudiantsPdf() {
+  const { data, columns } = buildEtudiantsExport()
+  if (!data.length) return
+  exportToPdf(data, columns, 'etudiants_superieur', { title: 'Étudiants — Enseignement Supérieur' })
 }
 
 const hasFilters = computed(() => {

@@ -9,7 +9,11 @@
       <div class="header-actions">
         <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportPayments">
           <Download :size="16" />
-          <span>{{ t('fact.export') }}</span>
+          <span>Excel</span>
+        </button>
+        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportPaymentsPdf">
+          <Download :size="16" />
+          <span>PDF</span>
         </button>
         <button v-if="factStore.setupDone" class="btn btn-outline" @click="activeTab = 'grille'">
           <Settings :size="16" />
@@ -1214,6 +1218,7 @@ import {
   DollarSign, BarChart3, Sparkles, Send, AlertTriangle
 } from 'lucide-vue-next'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 import { useNotificationsStore } from '../stores/notifications'
 
 const CHARGE_CATEGORIES = [
@@ -1675,7 +1680,7 @@ function openPaymentModal(eleve = null) {
   showPaymentModal.value = true
 }
 
-function exportPayments() {
+function buildPaymentsExport() {
   const columns = [
     { key: 'eleveName', label: 'Élève', width: 20 },
     { key: 'className', label: 'Classe', width: 15 },
@@ -1694,7 +1699,17 @@ function exportPayments() {
     status: row.statusLabel || '-',
   }))
 
-  exportToExcel(exportData, columns, 'paiements', 'Paiements')
+  return { data: exportData, columns }
+}
+
+function exportPayments() {
+  const { data, columns } = buildPaymentsExport()
+  exportToExcel(data, columns, 'paiements', 'Paiements')
+}
+
+function exportPaymentsPdf() {
+  const { data, columns } = buildPaymentsExport()
+  exportToPdf(data, columns, 'paiements', { title: 'Paiements' })
 }
 
 function submitPayment() {

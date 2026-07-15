@@ -61,7 +61,11 @@
         <div style="display: flex; gap: 8px;">
           <button v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="exportNotes">
             <Download :size="16" />
-            <span>{{ t('notes.export') }}</span>
+            <span>Excel</span>
+          </button>
+          <button v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="exportNotesPdf">
+            <Download :size="16" />
+            <span>PDF</span>
           </button>
           <button v-if="isDirecteur" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="openNotesSettings()">
             <Settings :size="16" />
@@ -817,6 +821,7 @@ import {
 } from 'lucide-vue-next'
 import { useInscriptionsStore, DOCUMENT_FORMATS } from '../stores/inscriptions'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 import { useAppreciationsStore } from '../stores/appreciations'
 import { useEditionStore } from '../stores/edition'
 import { noteToPalier } from '../data/primaire'
@@ -936,8 +941,8 @@ async function saveNotesSettings() {
   showNotesSettings.value = false
 }
 
-function exportNotes() {
-  if (!selectedClass.value || !selectedPeriod.value) return
+function buildNotesExport() {
+  if (!selectedClass.value || !selectedPeriod.value) return null
 
   // Build headers: Nom, Prénom, then one per subject
   const columns = [
@@ -971,7 +976,20 @@ function exportNotes() {
 
   const periodLabel = selectedPeriod.value
   const fileName = `notes_${selectedClassName.value}_${periodLabel}`
-  exportToExcel(exportData, columns, fileName, 'Notes')
+  const title = `Notes — ${selectedClassName.value} (${periodLabel})`
+  return { data: exportData, columns, fileName, title }
+}
+
+function exportNotes() {
+  const e = buildNotesExport()
+  if (!e) return
+  exportToExcel(e.data, e.columns, e.fileName, 'Notes')
+}
+
+function exportNotesPdf() {
+  const e = buildNotesExport()
+  if (!e) return
+  exportToPdf(e.data, e.columns, e.fileName, { title: e.title })
 }
 
 // ── Computed ──

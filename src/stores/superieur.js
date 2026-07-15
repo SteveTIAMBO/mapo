@@ -402,7 +402,7 @@ const SPECIALITES = [
   'Stratégie', 'Marketing', 'Finance', 'Comptabilité-contrôle', 'Droit des affaires', 'Économie',
   'Systèmes d\'information', 'Langues', 'Entrepreneuriat', 'Ressources humaines', 'Communication',
 ]
-const SALLES_POOL_EDT = ['Amphi A', 'Amphi B', 'Salle 101', 'Salle 102', 'Salle 204', 'Salle 205', 'Salle informatique', 'Salle projet']
+export const SALLES_POOL_EDT = ['Amphi A', 'Amphi B', 'Salle 101', 'Salle 102', 'Salle 204', 'Salle 205', 'Salle informatique', 'Salle projet']
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']
 const CRENEAUX = [
   { debut: '08:00', fin: '10:00' },

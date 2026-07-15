@@ -6,18 +6,33 @@
         <p class="st-sub">Planning hebdomadaire par formation, niveau et semestre</p>
       </div>
       <div class="st-intro-actions">
-        <button class="st-btn-ghost" type="button" :disabled="sessionCount === 0" @click="exportEdt">
+        <button class="st-btn-ghost" type="button" :disabled="sessionCount === 0 || proposalMode" @click="exportEdt">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-          Exporter
+          Excel
         </button>
-        <button class="st-btn-ghost" type="button" @click="openConfig">
+        <button class="st-btn-ghost" type="button" :disabled="sessionCount === 0 || proposalMode" @click="exportEdtPdf">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+          PDF
+        </button>
+        <button class="st-btn-ghost" type="button" :disabled="proposalMode" @click="openConfig">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Paramètres
+        </button>
+        <button
+          class="st-btn-miapo"
+          type="button"
+          :disabled="proposalMode"
+          title="MIAPO propose un emploi du temps pour cette promotion et ce semestre"
+          @click="recommanderEdt"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></svg>
+          Recommander (MIAPO)
         </button>
         <button
           class="st-btn-primary"
           :class="{ 'is-on': editMode }"
           type="button"
+          :disabled="proposalMode"
           @click="toggleEdit"
         >
           <svg v-if="!editMode" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
@@ -31,13 +46,13 @@
     <div class="st-bar">
       <div class="st-filter">
         <span class="st-filter-label">Formation</span>
-        <select :value="selectedCycle" @change="onCycleChange($event.target.value)">
+        <select :value="selectedCycle" :disabled="proposalMode" @change="onCycleChange($event.target.value)">
           <option v-for="c in cycles" :key="c" :value="c">{{ c }}</option>
         </select>
       </div>
       <div class="st-filter">
         <span class="st-filter-label">Niveau / Promotion</span>
-        <select :value="store.selectedPromotionId" @change="onPromoChange($event.target.value)">
+        <select :value="store.selectedPromotionId" :disabled="proposalMode" @change="onPromoChange($event.target.value)">
           <option v-for="p in promotionsForCycle" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
@@ -62,6 +77,7 @@
         type="button"
         class="st-tab"
         :class="{ 'is-active': sem === activeSemestre }"
+        :disabled="proposalMode"
         @click="activeSemestre = sem"
       >
         Semestre {{ sem }}
@@ -81,6 +97,35 @@
         {{ moveHint }}
       </div>
     </transition>
+
+    <!-- Message court (succès / info) -->
+    <transition name="st-fade">
+      <div v-if="toast" class="st-toast" :class="`is-${toast.type}`">
+        <svg v-if="toast.type === 'success'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        {{ toast.msg }}
+      </div>
+    </transition>
+
+    <!-- Proposition MIAPO : « MIAPO propose, la scolarité valide » -->
+    <div v-if="proposalMode && proposal" class="st-proposal-banner">
+      <div class="st-proposal-main">
+        <span class="st-proposal-ico">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></svg>
+        </span>
+        <div>
+          <div class="st-proposal-title">MIAPO propose cet emploi du temps</div>
+          <div class="st-proposal-sub">
+            {{ proposal.n }} séance{{ proposal.n > 1 ? 's' : '' }} placée{{ proposal.n > 1 ? 's' : '' }}<template v-if="proposal.k > 0">, {{ proposal.k }} UE non placée{{ proposal.k > 1 ? 's' : '' }}</template>.
+            <span class="st-proposal-tag">MIAPO propose, la scolarité valide.</span>
+          </div>
+        </div>
+      </div>
+      <div class="st-proposal-actions">
+        <button type="button" class="st-btn-ghost" @click="cancelProposal">Annuler</button>
+        <button type="button" class="st-btn-miapo" @click="validateProposal">Valider</button>
+      </div>
+    </div>
 
     <!-- Grille -->
     <div class="st-grid-wrap" :class="{ 'is-editing': editMode }">
@@ -118,8 +163,9 @@
               <div
                 v-if="getSession(jour, cr.debut)"
                 class="st-session"
-                :class="`t-${getSession(jour, cr.debut).type}`"
+                :class="[`t-${getSession(jour, cr.debut).type}`, { 'is-proposal': proposalMode }]"
               >
+                <span v-if="proposalMode" class="st-proposal-badge">MIAPO</span>
                 <div class="st-session-code">{{ getSession(jour, cr.debut).ueCode }}</div>
                 <div class="st-session-nom">{{ getSession(jour, cr.debut).ueIntitule }}</div>
                 <div class="st-session-meta">
@@ -299,10 +345,11 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
-import { useSuperieurStore, UE_TYPES } from '../../stores/superieur'
+import { useSuperieurStore, UE_TYPES, SALLES_POOL_EDT } from '../../stores/superieur'
 import { useSuperieurEdtStore } from '../../stores/superieurEdt'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { exportToExcel } from '../../utils/exportExcel'
+import { exportToPdf } from '../../utils/exportPdf'
 
 const store = useSuperieurStore()
 const edtStore = useSuperieurEdtStore()
@@ -364,6 +411,8 @@ watch(
     confirmDeleteOpen.value = false
     dragSource.value = null
     dragTarget.value = null
+    proposalMode.value = false
+    proposal.value = null
   }
 )
 
@@ -391,10 +440,26 @@ const grid = computed(() => {
   }
   return map
 })
+
+// ── Proposition MIAPO (aperçu avant validation) ──
+// Pendant l'aperçu, la grille affiche la proposition (et non la fusion démo+éditions).
+const proposalMode = ref(false)
+const proposal = ref(null) // { promotionId, semestre, sessions, n, k }
+const proposalGrid = computed(() => {
+  const map = {}
+  if (proposal.value) {
+    for (const s of proposal.value.sessions) map[`${s.jour}__${s.debut}`] = s
+  }
+  return map
+})
+
 function getSession(jour, debut) {
-  return grid.value[`${jour}__${debut}`] || null
+  const src = proposalMode.value ? proposalGrid.value : grid.value
+  return src[`${jour}__${debut}`] || null
 }
-const sessionCount = computed(() => Object.keys(grid.value).length)
+const sessionCount = computed(() =>
+  Object.keys(proposalMode.value ? proposalGrid.value : grid.value).length
+)
 
 // ── Export XLSX de l'emploi du temps affiché (promotion + semestre actifs) ──
 function slugify(s) {
@@ -407,9 +472,8 @@ function slugify(s) {
 function finForDebut(debut) {
   return creneaux.value.find((c) => c.debut === debut)?.fin || ''
 }
-function exportEdt() {
+function buildEdtExport() {
   const rows = Object.values(grid.value)
-  if (!rows.length) return
   const dayIndex = (j) => {
     const i = jours.value.indexOf(j)
     return i === -1 ? JOURS_SEMAINE.indexOf(j) : i
@@ -439,7 +503,18 @@ function exportEdt() {
   }))
   const promo = store.selectedPromotion
   const filename = `emploi_du_temps_${slugify(promo.programmeNom)}_${slugify(promo.anneeNom)}_${slugify(activeSemestre.value)}`
+  const title = `Emploi du temps — ${promo.programmeNom} ${promo.anneeNom} · ${activeSemestre.value}`
+  return { data, columns, filename, title }
+}
+function exportEdt() {
+  const { data, columns, filename } = buildEdtExport()
+  if (!data.length) return
   exportToExcel(data, columns, filename, 'Emploi du temps')
+}
+function exportEdtPdf() {
+  const { data, columns, filename, title } = buildEdtExport()
+  if (!data.length) return
+  exportToPdf(data, columns, filename, { title })
 }
 
 // ── Mode édition ──
@@ -651,9 +726,163 @@ function resetConfigDefaults() {
   cfgForm.jours = [...edtStore.DEFAULT_JOURS]
   cfgError.value = ''
 }
+
+// ── Message court (succès / info) ──
+const toast = ref(null) // { msg, type: 'success' | 'info' }
+let toastTimer = null
+function showToast(msg, type = 'success') {
+  toast.value = { msg, type }
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value = null }, 3000)
+}
+
+// ── Recommandation MIAPO : proposition d'emploi du temps ──
+// Générateur HEURISTIQUE et DÉTERMINISTE (aucun appel réseau ni IA). À partir des
+// UE de la promotion + du semestre actif, on place des séances sur les créneaux
+// configurés en évitant de sur-réserver un intervenant et en variant les salles.
+// Même clic → même résultat (tris et parcours stables, sans aléatoire).
+function buildProposal() {
+  const promo = store.selectedPromotion
+  const sem = activeSemestre.value
+
+  // 1. UE de la promotion pour ce semestre.
+  const ues = store.ue.filter((u) => u.promotionId === promo.id && u.semestre === sem)
+  // Ordre déterministe : volume horaire décroissant, puis code (départage stable).
+  const sorted = [...ues].sort(
+    (a, b) => (b.volumeHoraire || 0) - (a.volumeHoraire || 0) ||
+      String(a.code || '').localeCompare(String(b.code || ''))
+  )
+
+  // 2. Créneaux disponibles = jours × créneaux configurés (ordre de la config).
+  const slots = []
+  for (const jour of jours.value) {
+    for (const cr of creneaux.value) {
+      slots.push({ jour, debut: cr.debut, fin: cr.fin })
+    }
+  }
+  const totalSlots = slots.length
+
+  // 3. Nombre de séances/semaine par UE selon le volume horaire (1 à 3),
+  //    plafonné pour que le total ne dépasse jamais les créneaux disponibles.
+  const demandes = sorted.map((u) => ({
+    ue: u,
+    veut: Math.max(1, Math.min(3, Math.round((u.volumeHoraire || 0) / 24))),
+    place: 0,
+    bloque: false,
+  }))
+  let totalVeut = demandes.reduce((s, d) => s + d.veut, 0)
+  while (totalVeut > totalSlots) {
+    // On réduit d'abord les UE les plus gourmandes (veut > 1), puis les autres.
+    let idx = demandes.findIndex((d) => d.veut > 1)
+    if (idx === -1) idx = demandes.findIndex((d) => d.veut > 0)
+    if (idx === -1) break
+    demandes[idx].veut -= 1
+    totalVeut -= 1
+  }
+
+  // 4. Placement glouton, passe par passe (round-robin) pour équilibrer la semaine.
+  const occupied = new Set()   // 'jour__debut' déjà pris dans la proposition
+  const profBusy = new Set()   // 'intervenantId__jour__debut' (anti double-réservation prof)
+  const salleBusy = new Set()  // 'salle__jour__debut'
+  const sessions = []
+  let roomCursor = 0
+  const maxVeut = demandes.reduce((m, d) => Math.max(m, d.veut), 0)
+
+  for (let pass = 0; pass < maxVeut; pass++) {
+    for (const d of demandes) {
+      if (d.bloque || d.place >= d.veut) continue
+      const u = d.ue
+      let placed = false
+      for (const slot of slots) {
+        const cellKey = `${slot.jour}__${slot.debut}`
+        if (occupied.has(cellKey)) continue
+        // Éviter que l'intervenant soit déjà placé sur ce même créneau.
+        const profKey = u.intervenantId ? `${u.intervenantId}__${cellKey}` : null
+        if (profKey && profBusy.has(profKey)) continue
+        // Salle : curseur rotatif (variété) puis 1re salle libre sur ce créneau.
+        let salle = ''
+        for (let r = 0; r < SALLES_POOL_EDT.length; r++) {
+          const cand = SALLES_POOL_EDT[(roomCursor + r) % SALLES_POOL_EDT.length]
+          if (!salleBusy.has(`${cand}__${cellKey}`)) { salle = cand; break }
+        }
+        occupied.add(cellKey)
+        if (profKey) profBusy.add(profKey)
+        if (salle) salleBusy.add(`${salle}__${cellKey}`)
+        roomCursor = (roomCursor + 1) % SALLES_POOL_EDT.length
+        sessions.push({
+          jour: slot.jour,
+          debut: slot.debut,
+          fin: slot.fin,
+          ueCode: u.code || '',
+          ueIntitule: u.intitule || '',
+          intervenantNom: u.intervenantNom || '',
+          salle,
+          type: u.type || 'fondamentale',
+        })
+        d.place += 1
+        placed = true
+        break
+      }
+      // Aucune case compatible restante : inutile de réessayer aux passes suivantes.
+      if (!placed) d.bloque = true
+    }
+  }
+
+  // UE non entièrement placées (au moins une séance visée n'a pas trouvé de case).
+  const k = demandes.filter((d) => d.place < d.veut).length
+  return { sessions, k, ueCount: ues.length }
+}
+
+function recommanderEdt() {
+  // Sortir des modes d'édition avant d'entrer dans l'aperçu.
+  editMode.value = false
+  editorOpen.value = false
+  confirmDeleteOpen.value = false
+  dragSource.value = null
+  dragTarget.value = null
+
+  const built = buildProposal()
+  if (built.ueCount === 0) {
+    showToast("Aucune UE définie pour ce semestre : MIAPO n'a pas de cours à planifier.", 'info')
+    return
+  }
+  if (!built.sessions.length) {
+    showToast("MIAPO n'a pas pu placer de séance — vérifiez les créneaux dans les paramètres.", 'info')
+    return
+  }
+  proposal.value = {
+    promotionId: store.selectedPromotion.id,
+    semestre: activeSemestre.value,
+    sessions: built.sessions,
+    n: built.sessions.length,
+    k: built.k,
+  }
+  proposalMode.value = true
+}
+
+function validateProposal() {
+  const p = proposal.value
+  if (!p) return
+  // Séances de démonstration présentes sous ce semestre (seul le semestre courant en porte).
+  const demoCells = activeSemestre.value === store.selectedPromotion.semestreCourant
+    ? store.emploiDuTemps.map((s) => ({ jour: s.jour, debut: s.debut }))
+    : []
+  edtStore.applyProposal(p.promotionId, p.semestre, p.sessions, demoCells)
+  proposalMode.value = false
+  proposal.value = null
+  showToast("Emploi du temps enregistré. Vous pouvez l'ajuster à tout moment.", 'success')
+}
+
+function cancelProposal() {
+  proposalMode.value = false
+  proposal.value = null
+}
 </script>
 
 <style scoped>
+/* Accent MIAPO (violet) — cohérent avec la couleur MIAPO de l'app (#7C3AED). */
+.st { --miapo: #7C3AED; --miapo-rgb: 124, 58, 237; }
+
 .st-intro {
   margin-bottom: 16px;
   display: flex;
@@ -784,6 +1013,15 @@ function resetConfigDefaults() {
   background: var(--pr);
   border-color: var(--pr);
   color: #fff;
+}
+.st-tab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.st-tab:disabled:hover { color: var(--tx2); border-color: var(--card-border); }
+.st-filter select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 /* Bandeau mode édition */
@@ -1021,6 +1259,119 @@ function resetConfigDefaults() {
   transition: all 0.15s ease;
 }
 .st-btn-danger:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+/* Bouton MIAPO (recommandation d'emploi du temps) */
+.st-btn-miapo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 16px;
+  background: var(--miapo);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+}
+.st-btn-miapo:hover { background: #6D28D9; }
+.st-btn-miapo:disabled { opacity: 0.5; cursor: not-allowed; }
+.st-btn-miapo:disabled:hover { background: var(--miapo); }
+
+/* Bandeau de proposition MIAPO (aperçu avant validation) */
+.st-proposal-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: rgba(var(--miapo-rgb), 0.07);
+  border: 1px solid rgba(var(--miapo-rgb), 0.22);
+  border-radius: 12px;
+}
+.st-proposal-main {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.st-proposal-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 9px;
+  background: rgba(var(--miapo-rgb), 0.14);
+  color: var(--miapo);
+}
+.st-proposal-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tx);
+}
+.st-proposal-sub {
+  font-size: 12.5px;
+  color: var(--tx2);
+  margin-top: 1px;
+}
+.st-proposal-tag {
+  color: var(--miapo);
+  font-weight: 600;
+}
+.st-proposal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Séance proposée (aperçu) : accent violet discret + badge MIAPO */
+.st-session.is-proposal {
+  outline: 1.5px dashed rgba(var(--miapo-rgb), 0.55);
+  outline-offset: -1.5px;
+}
+.st-proposal-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  padding: 1px 6px;
+  border-radius: 100px;
+  background: var(--miapo);
+  color: #fff;
+  font-family: 'Poppins', sans-serif;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* Message court (succès / info) */
+.st-toast {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.st-toast.is-success {
+  background: rgba(27, 138, 90, 0.1);
+  border: 1px solid rgba(27, 138, 90, 0.22);
+  color: var(--success);
+}
+.st-toast.is-info {
+  background: rgba(var(--miapo-rgb), 0.08);
+  border: 1px solid rgba(var(--miapo-rgb), 0.22);
+  color: var(--miapo);
+}
 
 /* Modale : voile flouté derrière + PANNEAU 100 % OPAQUE (aucune transparence ;
    Steve n'aime pas les popups translucides). Cette modale utilise une convention

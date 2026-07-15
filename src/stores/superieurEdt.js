@@ -180,6 +180,46 @@ export const useSuperieurEdtStore = defineStore('superieurEdt', () => {
     persistEdits()
   }
 
+  /**
+   * Applique une proposition d'emploi du temps (MIAPO) pour une (promotion, semestre).
+   * La grille AFFICHÉE devient EXACTEMENT la proposition :
+   *  - `sessions` = séances proposées ({ jour, debut, fin, ueCode, ueIntitule,
+   *    intervenantNom, salle, type }) → écrites comme éditions ;
+   *  - `demoCells` = cases { jour, debut } occupées par une séance de DÉMONSTRATION
+   *    sous ce semestre (transmises par la vue, ce store ne connaît pas la démo) :
+   *    celles qui ne sont PAS reprises par la proposition reçoivent une « pierre
+   *    tombale » pour être masquées.
+   * On REMPLACE toute édition existante de ce semestre : la proposition fait table rase.
+   */
+  function applyProposal(promotionId, semestre, sessions, demoCells = []) {
+    const k = keyOf(promotionId, semestre)
+    const list = []
+    const couvertes = new Set()
+    for (const s of sessions || []) {
+      if (!s || !s.jour || !s.debut) continue
+      list.push({
+        jour: s.jour,
+        debut: s.debut,
+        fin: s.fin || '',
+        ueCode: (s.ueCode || '').trim(),
+        ueIntitule: (s.ueIntitule || '').trim(),
+        intervenantNom: (s.intervenantNom || '').trim(),
+        salle: (s.salle || '').trim(),
+        type: s.type || 'fondamentale',
+      })
+      couvertes.add(`${s.jour}__${s.debut}`)
+    }
+    // Masquer les séances de démonstration non reprises par la proposition.
+    for (const c of demoCells || []) {
+      if (!c || !c.jour || !c.debut) continue
+      if (!couvertes.has(`${c.jour}__${c.debut}`)) {
+        list.push({ jour: c.jour, debut: c.debut, deleted: true })
+      }
+    }
+    edits[k] = list
+    persistEdits()
+  }
+
   return {
     config,
     saveConfig,
@@ -189,6 +229,7 @@ export const useSuperieurEdtStore = defineStore('superieurEdt', () => {
     setSession,
     deleteSession,
     moveSession,
+    applyProposal,
     DEFAULT_CRENEAUX,
     DEFAULT_JOURS,
     JOURS_SEMAINE,
