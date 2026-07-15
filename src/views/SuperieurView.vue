@@ -287,13 +287,8 @@ import SupIntervenants from './superieur/SupIntervenants.vue'
 import SupNotes from './superieur/SupNotes.vue'
 import SupStages from './superieur/SupStages.vue'
 import SupSalles from './superieur/SupSalles.vue'
-import SupFinanceDashboard from './superieur/SupFinanceDashboard.vue'
-import SupGrillesTarifaires from './superieur/SupGrillesTarifaires.vue'
-import SupComptesEtudiants from './superieur/SupComptesEtudiants.vue'
-import SupPaiements from './superieur/SupPaiements.vue'
-import SupBourses from './superieur/SupBourses.vue'
-import SupFinancements from './superieur/SupFinancements.vue'
-import SupEcheanciers from './superieur/SupEcheanciers.vue'
+// Finance : un seul module « Comptabilité » qui regroupe les 7 vues en onglets
+import SupComptabilite from './superieur/SupComptabilite.vue'
 import SupGestionAcces from './superieur/SupGestionAcces.vue'
 import SupMobiliteEntrante from './superieur/SupMobiliteEntrante.vue'
 import SupParametres from './superieur/SupParametres.vue'
@@ -459,13 +454,7 @@ const panels = {
   notes: SupNotes,
   stages: SupStages,
   salles: SupSalles,
-  finance_dash: SupFinanceDashboard,
-  finance_tarifs: SupGrillesTarifaires,
-  finance_comptes: SupComptesEtudiants,
-  finance_paiements: SupPaiements,
-  finance_bourses: SupBourses,
-  finance_financements: SupFinancements,
-  finance_echeanciers: SupEcheanciers,
+  finance: SupComptabilite,
   gestion_acces: SupGestionAcces,
   mobilite_entrante: SupMobiliteEntrante,
   parametres: SupParametres,
@@ -557,48 +546,15 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 21V8a1 1 0 0 1 1-1h6V3h4v4h6a1 1 0 0 1 1 1v13"/><path d="M9 21v-6h6v6"/></svg>',
   },
   // ── Finance ─────────────────────────────────────────────────────
+  // Un seul module « Comptabilité » (comme le Secondaire /facturation) :
+  // pilotage, grilles, échéanciers, comptes, paiements, bourses, financements
+  // sont désormais des ONGLETS internes (SupComptabilite.vue).
   {
-    key: 'finance_dash',
-    label: 'Pilotage finance',
+    key: 'finance',
+    label: 'Comptabilité',
     section: 'Finance',
     roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
-  },
-  {
-    key: 'finance_tarifs',
-    label: 'Grilles tarifaires',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
-  },
-  {
-    key: 'finance_echeanciers',
-    label: 'Échéanciers',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1.2"/><circle cx="12" cy="15" r="1.2"/><circle cx="16" cy="15" r="1.2"/></svg>',
-  },
-  {
-    key: 'finance_comptes',
-    label: 'Comptes étudiants',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',
-  },
-  {
-    key: 'finance_paiements',
-    label: 'Paiements & relances',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>',
-  },
-  {
-    key: 'finance_bourses',
-    label: 'Bourses',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>',
-  },
-  {
-    key: 'finance_financements',
-    label: 'Financements tiers',
-    roles: ['admin', 'comptable'],
-    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>',
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="13" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="13" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="13" y1="18" x2="16" y2="18"/></svg>',
   },
   // ── Mobilité ────────────────────────────────────────────────────
   {
@@ -633,7 +589,7 @@ const ALL_TABS = [
  * mobilite_entrante, parametres.
  */
 function getTabModule(tabKey) {
-  if (tabKey.startsWith('finance_')) return 'finance'
+  if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
   if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'stages', 'salles'].includes(tabKey)) {
     return 'formation'
   }
