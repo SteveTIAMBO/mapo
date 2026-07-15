@@ -95,6 +95,12 @@
             {{ e.matricule }} · {{ e.nomComplet }} — {{ e.anneeNom }}
           </option>
         </select>
+        <ExportMenu
+          class="sn-export"
+          :excel="exportReleve"
+          :pdf="exportRelevePdf"
+          :disabled="!releve || !(releve.lignes && releve.lignes.length)"
+        />
       </div>
 
       <div v-if="!releve" class="sn-empty">Sélectionnez un étudiant pour afficher son relevé du semestre.</div>
@@ -143,13 +149,13 @@
               <td><span class="sn-tag" :class="`t-${l.type}`">{{ typeLabel(l.type) }}</span></td>
               <td class="num">{{ l.ects }}</td>
               <td class="num">
-                <strong :class="l.note < 10 ? 'is-bad' : l.note >= 14 ? 'is-ok' : ''">
-                  {{ l.note !== undefined ? l.note.toFixed(2) : '—' }}
+                <strong :class="l.note == null ? 'sn-note-wait' : l.note < 10 ? 'is-bad' : l.note >= 14 ? 'is-ok' : ''">
+                  {{ l.note != null ? l.note.toFixed(2) : '—' }}
                 </strong>
               </td>
               <td>
-                <span class="sn-val-pill" :class="l.validee ? 'is-ok' : 'is-bad'">
-                  {{ l.validee ? 'Validée' : 'Non validée' }}
+                <span class="sn-val-pill" :class="l.note == null ? 'is-wait' : l.validee ? 'is-ok' : 'is-bad'">
+                  {{ l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée' }}
                 </span>
               </td>
             </tr>
@@ -183,13 +189,20 @@
           <span>Moyenne <strong>{{ moyenneUE.toFixed(2) }}/20</strong></span>
           <span class="sn-dot">•</span>
           <span><strong>{{ nbValideesUE }}</strong> UE validée{{ nbValideesUE > 1 ? 's' : '' }} ({{ pctValideUE }}%)</span>
+          <template v-if="nbEnAttenteUE > 0">
+            <span class="sn-dot">•</span>
+            <span><strong>{{ nbEnAttenteUE }}</strong> en attente</span>
+          </template>
+          <span class="sn-legend">Note UE = CC 40 % + Examen 60 %</span>
         </div>
         <table class="sn-table">
           <thead>
             <tr>
               <th>Matricule</th>
               <th>Étudiant</th>
-              <th class="num">Note /20</th>
+              <th class="num">CC /20</th>
+              <th class="num">Examen /20</th>
+              <th class="num">Note UE /20</th>
               <th>Validation</th>
             </tr>
           </thead>
@@ -198,13 +211,31 @@
               <td class="sn-mat">{{ n.etudiant.matricule }}</td>
               <td>{{ n.etudiant.nomComplet }}</td>
               <td class="num">
-                <strong :class="n.note < 10 ? 'is-bad' : n.note >= 14 ? 'is-ok' : ''">
-                  {{ n.note.toFixed(2) }}
+                <input
+                  type="number" min="0" max="20" step="0.25"
+                  class="sn-note-input"
+                  :value="n.cc ?? ''"
+                  placeholder="—"
+                  @change="store.setSupNote(n.etudiant.id, selectedUEId, 'cc', $event.target.value)"
+                />
+              </td>
+              <td class="num">
+                <input
+                  type="number" min="0" max="20" step="0.25"
+                  class="sn-note-input"
+                  :value="n.examen ?? ''"
+                  placeholder="—"
+                  @change="store.setSupNote(n.etudiant.id, selectedUEId, 'examen', $event.target.value)"
+                />
+              </td>
+              <td class="num">
+                <strong :class="n.note == null ? 'sn-note-wait' : n.note < 10 ? 'is-bad' : n.note >= 14 ? 'is-ok' : ''">
+                  {{ n.note != null ? n.note.toFixed(2) : '—' }}
                 </strong>
               </td>
               <td>
-                <span class="sn-val-pill" :class="n.note >= 10 ? 'is-ok' : 'is-bad'">
-                  {{ n.note >= 10 ? 'Validée' : 'Non validée' }}
+                <span class="sn-val-pill" :class="n.note == null ? 'is-wait' : n.note >= 10 ? 'is-ok' : 'is-bad'">
+                  {{ n.note == null ? 'En attente' : n.note >= 10 ? 'Validée' : 'Non validée' }}
                 </span>
               </td>
             </tr>
@@ -219,6 +250,9 @@
 import { ref, computed } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { UE_TYPES } from '../../stores/superieur'
+import ExportMenu from '../../components/ExportMenu.vue'
+import { exportToExcel } from '../../utils/exportExcel'
+import { exportToPdf } from '../../utils/exportPdf'
 
 const store = useSuperieurStore()
 const tabs = [
@@ -236,10 +270,13 @@ const releve = computed(() =>
 const selectedUEId = ref('')
 const ueSelectionnee = computed(() => selectedUEId.value ? store.getUe(selectedUEId.value) : null)
 const notesUE = computed(() => selectedUEId.value ? store.notesPourUE(selectedUEId.value) : [])
+// Moyenne UE calculée uniquement sur les notes saisies (les « en attente » = null exclues)
+const notesUENotees = computed(() => notesUE.value.filter((n) => n.note != null))
 const moyenneUE = computed(() =>
-  notesUE.value.length ? notesUE.value.reduce((s, n) => s + n.note, 0) / notesUE.value.length : 0
+  notesUENotees.value.length ? notesUENotees.value.reduce((s, n) => s + n.note, 0) / notesUENotees.value.length : 0
 )
-const nbValideesUE = computed(() => notesUE.value.filter((n) => n.note >= 10).length)
+const nbValideesUE = computed(() => notesUE.value.filter((n) => n.note != null && n.note >= 10).length)
+const nbEnAttenteUE = computed(() => notesUE.value.filter((n) => n.note == null).length)
 const pctValideUE = computed(() =>
   notesUE.value.length ? Math.round((nbValideesUE.value / notesUE.value.length) * 100) : 0
 )
@@ -272,6 +309,44 @@ const globalStats = computed(() => {
     ectsTotal,
   }
 })
+
+// ── Export du relevé individuel (Excel / PDF) ──
+const releveColumns = [
+  { key: 'ue', label: 'UE', width: 48 },
+  { key: 'credits', label: 'Crédits', width: 10 },
+  { key: 'note', label: 'Note /20', width: 12 },
+  { key: 'validation', label: 'Validation', width: 16 },
+]
+function releveRows() {
+  const r = releve.value
+  if (!r) return []
+  return r.lignes.map((l) => ({
+    ue: `${l.ueCode} — ${l.ueIntitule}`.trim(),
+    credits: l.ects,
+    note: l.note != null ? l.note.toFixed(2) : '—',
+    validation: l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée',
+  }))
+}
+function releveFilename() {
+  const r = releve.value
+  return `releve_${r.etudiant.matricule}_${r.semestre}`.replace(/[^\w-]+/g, '')
+}
+function releveTitle() {
+  const r = releve.value
+  const e = r.etudiant
+  const meta = [`Semestre ${r.semestre}`, `Moyenne ${r.moyenne.toFixed(2)}/20`]
+  if (r.mention) meta.push(`Mention ${r.mention}`)
+  meta.push(r.admis ? 'Admis' : 'Ajourné')
+  return `Relevé — ${e.nomComplet} (${e.matricule}) · ${meta.join(' · ')}`
+}
+function exportReleve() {
+  if (!releve.value) return
+  exportToExcel(releveRows(), releveColumns, releveFilename(), 'Relevé')
+}
+function exportRelevePdf() {
+  if (!releve.value) return
+  exportToPdf(releveRows(), releveColumns, releveFilename(), { title: releveTitle() })
+}
 
 const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 const typeLabel = (t) => UE_TYPES[t]?.label || t
@@ -450,6 +525,26 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 }
 .sn-val-pill.is-ok { background: rgba(27, 138, 90, 0.1); color: var(--success); }
 .sn-val-pill.is-bad { background: rgba(217, 48, 37, 0.07); color: var(--danger); }
+.sn-val-pill.is-wait { background: var(--input-bg); color: var(--tx3); }
+
+/* Saisie par UE : champs CC / Examen (fond opaque, pas de classe « -card ») */
+.sn-note-input {
+  width: 74px; padding: 6px 8px;
+  font-family: 'Outfit', sans-serif; font-size: 14px; font-weight: 600;
+  color: var(--tx); text-align: right;
+  background: var(--input-bg); border: 1.5px solid var(--input-border);
+  border-radius: 8px; outline: none;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 0.15s ease;
+}
+.sn-note-input:focus { border-color: var(--pr); }
+.sn-note-wait { color: var(--tx3); font-weight: 600; }
+.sn-legend {
+  margin-left: auto;
+  font-family: 'Poppins', sans-serif;
+  font-size: 12px; font-weight: 600; color: var(--tx3);
+}
+.sn-export { margin-left: auto; }
 
 .sn-tag {
   display: inline-block; padding: 2px 8px; border-radius: 100px;

@@ -697,7 +697,38 @@ function generateInscriptions() {
 }
 const INSCRIPTIONS = reactive(loadEntity('inscriptions', IS_SCHOOL_MODE ? {} : generateInscriptions()))
 
+// ── Pondération de la note d'UE (LMD) ──
+// La note finale d'une UE combine le contrôle continu (CC) et l'examen.
+const CC_WEIGHT = 0.4
+const EXAM_WEIGHT = 0.6
+
+/**
+ * Calcule la note finale d'une UE à partir du CC et de l'examen.
+ * - les deux renseignés → moyenne pondérée (CC 40 % + Examen 60 %)
+ * - un seul renseigné → cette valeur
+ * - aucun → null (UE « en attente », PAS zéro)
+ */
+function computeUeNote(cc, examen) {
+  const hasCc = cc != null && !Number.isNaN(cc)
+  const hasEx = examen != null && !Number.isNaN(examen)
+  if (hasCc && hasEx) return Math.round((cc * CC_WEIGHT + examen * EXAM_WEIGHT) * 100) / 100
+  if (hasCc) return cc
+  if (hasEx) return examen
+  return null
+}
+
+/**
+ * Lit la valeur numérique d'une note d'UE en tolérant les deux formes de
+ * stockage (rétro-compatibilité) :
+ * - nouvelle forme objet { cc, examen, note }
+ * - ancienne forme nombre simple (données démo/localStorage héritées)
+ * Renvoie un nombre, ou null (« en attente »).
+ */
+function ueNoteValue(v) { if (v == null) return null; if (typeof v === 'number') return v; return v.note ?? null }
+
 // ── Génération des notes (par étudiant × UE de son semestre en cours) ──
+// Chaque note est un objet { cc, examen, note } : CC et examen plausibles,
+// « note » = résultat pondéré (CC 40 % + Examen 60 %).
 function generateNotes() {
   const map = {}
   for (const etu of ETUDIANTS) {
@@ -707,13 +738,12 @@ function generateNotes() {
     // Profil de réussite déduit de la moyenne déjà attribuée à l'étudiant
     const baseProfil = (etu.moyenne - 8) / 9 // 0 à 1
     for (const ueId of insc.ueChoisies) {
-      // Variance par UE
-      const noise = (rng() - 0.5) * 5 // ± 2.5 points
-      let note = 8 + baseProfil * 9 + noise
-      note = Math.max(0, Math.min(20, note))
-      // Arrondi au quart de point
-      note = Math.round(note * 4) / 4
-      map[etu.id][ueId] = note
+      // Niveau visé pour l'UE (± 2,5 points de variance)
+      const target = Math.max(0, Math.min(20, 8 + baseProfil * 9 + (rng() - 0.5) * 5))
+      // CC et examen plausibles autour du niveau visé (arrondis au quart de point)
+      const cc = Math.round(Math.max(0, Math.min(20, target + (rng() - 0.5) * 3)) * 4) / 4
+      const examen = Math.round(Math.max(0, Math.min(20, target + (rng() - 0.5) * 3)) * 4) / 4
+      map[etu.id][ueId] = { cc, examen, note: computeUeNote(cc, examen) }
     }
   }
   return map
@@ -1122,8 +1152,12 @@ export const useSuperieurStore = defineStore('superieur', () => {
   function notesPourUE(ueId) {
     const items = []
     for (const e of etudiants) {
-      const n = NOTES[e.id] && NOTES[e.id][ueId]
-      if (n !== undefined) items.push({ etudiant: e, note: n })
+      const raw = NOTES[e.id] && NOTES[e.id][ueId]
+      if (raw !== undefined) {
+        // Expose CC et examen pour la saisie (null si forme héritée nombre simple)
+        const obj = (raw && typeof raw === 'object') ? raw : {}
+        items.push({ etudiant: e, cc: obj.cc ?? null, examen: obj.examen ?? null, note: ueNoteValue(raw) })
+      }
     }
     return items.sort((a, b) => a.etudiant.nomComplet.localeCompare(b.etudiant.nomComplet))
   }
@@ -1134,8 +1168,8 @@ export const useSuperieurStore = defineStore('superieur', () => {
     if (!insc) return null
     const lignes = insc.ueChoisies.map((ueId) => {
       const u = getUe(ueId)
-      const note = NOTES[etudiantId]?.[ueId]
-      const validee = note !== undefined && note >= 10
+      const note = ueNoteValue(NOTES[etudiantId]?.[ueId]) // nombre | null (« en attente »)
+      const validee = note !== null && note >= 10
       return {
         ueId,
         ueCode: u?.code || ueId,
@@ -1148,9 +1182,14 @@ export const useSuperieurStore = defineStore('superieur', () => {
     })
     const totalEcts = lignes.reduce((s, l) => s + l.ects, 0)
     const ectsValides = lignes.filter((l) => l.validee).reduce((s, l) => s + l.ects, 0)
-    const totalPoints = lignes.reduce((s, l) => s + (l.note ?? 0) * l.ects, 0)
-    const moyenne = totalEcts ? Math.round((totalPoints / totalEcts) * 100) / 100 : 0
+    // Moyenne calculée UNIQUEMENT sur les UE notées : les UE « en attente »
+    // (note null) ne comptent NI au numérateur NI au dénominateur (pas des zéros).
+    const notees = lignes.filter((l) => l.note !== null)
+    const ectsNotes = notees.reduce((s, l) => s + l.ects, 0)
+    const totalPoints = notees.reduce((s, l) => s + l.note * l.ects, 0)
+    const moyenne = ectsNotes ? Math.round((totalPoints / ectsNotes) * 100) / 100 : 0
     const admis = moyenne >= 10
+    // TODO: compensation jury
     let mention = ''
     if (admis) {
       if (moyenne >= 16) mention = 'Très Bien'
@@ -1159,6 +1198,35 @@ export const useSuperieurStore = defineStore('superieur', () => {
       else mention = 'Passable'
     }
     return { etudiant: e, semestre: insc.semestre, lignes, totalEcts, ectsValides, moyenne, mention, admis }
+  }
+  /**
+   * Saisit une note d'UE (contrôle continu ou examen) pour un étudiant et
+   * recalcule la note finale de l'UE (CC 40 % + Examen 60 %). Persiste en
+   * localStorage (clé sup_notes) + Firestore (mode école).
+   * @param {string} etudiantId
+   * @param {string} ueId
+   * @param {'cc'|'examen'} field
+   * @param {number|string|null} value - vide/invalide → null (« en attente »)
+   */
+  function setSupNote(etudiantId, ueId, field, value) {
+    if (!etudiantId || !ueId) return
+    if (field !== 'cc' && field !== 'examen') return
+    // Coercition : nombre borné à [0, 20], sinon null (UE en attente)
+    let v = null
+    if (value !== '' && value !== null && value !== undefined) {
+      const n = Number(value)
+      if (!Number.isNaN(n)) v = Math.max(0, Math.min(20, n))
+    }
+    if (!NOTES[etudiantId]) NOTES[etudiantId] = {}
+    const prev = NOTES[etudiantId][ueId]
+    // Normalise l'ancienne forme (nombre simple) vers la forme objet
+    const base = (prev && typeof prev === 'object')
+      ? { cc: prev.cc ?? null, examen: prev.examen ?? null }
+      : { cc: null, examen: null }
+    base[field] = v
+    NOTES[etudiantId][ueId] = { cc: base.cc, examen: base.examen, note: computeUeNote(base.cc, base.examen) }
+    saveEntity('notes', NOTES)
+    supSync.pushDoc('sup_notes', etudiantId, NOTES[etudiantId])
   }
   const juryParPromotion = computed(() => {
     return promotions.map((p) => {
@@ -1621,6 +1689,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     ueAvecNotes,
     notesPourUE,
     releveEtudiant,
+    setSupNote,
     juryParPromotion,
     // Stages
     stages,
