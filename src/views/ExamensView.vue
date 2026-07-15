@@ -64,8 +64,7 @@
           <p class="ex-sub">{{ niveauLabel(selectedExam.niveau) }} — {{ typeDesc(selectedExam.type) }}</p>
         </div>
         <div class="ex-detail-actions">
-          <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporter">{{ t('examens.export') }}</button>
-          <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporterPdf">PDF</button>
+          <ExportMenu v-if="candidats.length" :excel="exporter" :pdf="exporterPdf" />
           <button v-if="detailStats.admis" class="btn btn-primary btn-sm" type="button" :disabled="emitting" @click="emettreDiplomesAdmis">{{ emitting ? t('examens.emitting') : t('examens.emitDiplomas', { n: detailStats.admis }) }}</button>
           <button class="btn btn-outline btn-sm" type="button" @click="inscrire">{{ t('examens.registerLevel', { niveau: niveauLabel(selectedExam.niveau) }) }}</button>
         </div>
@@ -161,6 +160,7 @@ import { useExamensStore, EXAM_TYPES, RESULT_STATUS, MENTIONS } from '../stores/
 import { useElevesStore } from '../stores/eleves'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 import { useDiplomesStore } from '../stores/diplomes'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'

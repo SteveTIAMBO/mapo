@@ -59,14 +59,7 @@
           <p>{{ t('notes.subtitle') }}</p>
         </div>
         <div style="display: flex; gap: 8px;">
-          <button v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="exportNotes">
-            <Download :size="16" />
-            <span>Excel</span>
-          </button>
-          <button v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="exportNotesPdf">
-            <Download :size="16" />
-            <span>PDF</span>
-          </button>
+          <ExportMenu v-if="!authStore.isTeacher && selectedClass && classEleves.length > 0" :excel="exportNotes" :pdf="exportNotesPdf" />
           <button v-if="isDirecteur" class="btn btn-outline btn-sm" style="display:inline-flex;align-items:center;gap:6px;" @click="openNotesSettings()">
             <Settings :size="16" />
             <span>{{ t('notes.moduleSettings') }}</span>
@@ -817,11 +810,12 @@ import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import {
-  FileText, AlertCircle, Pencil, BarChart3, Save, Printer, X, Loader2, CheckCircle, ShieldCheck, Lock, Unlock, Settings, CircleCheck, Send, Upload, Image, ChevronLeft, ChevronRight, Download, Sparkles, RotateCcw
+  FileText, AlertCircle, Pencil, BarChart3, Save, Printer, X, Loader2, CheckCircle, ShieldCheck, Lock, Unlock, Settings, CircleCheck, Send, Upload, Image, ChevronLeft, ChevronRight, Sparkles, RotateCcw
 } from 'lucide-vue-next'
 import { useInscriptionsStore, DOCUMENT_FORMATS } from '../stores/inscriptions'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 import { useAppreciationsStore } from '../stores/appreciations'
 import { useEditionStore } from '../stores/edition'
 import { noteToPalier } from '../data/primaire'

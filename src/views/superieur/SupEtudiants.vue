@@ -6,14 +6,7 @@
         <p class="se-sub">{{ t('sup.etudiants.subtitle', { n: store.etudiants.length }) }}</p>
       </div>
       <div class="se-intro-actions">
-        <button class="se-btn-ghost" type="button" :disabled="store.filteredEtudiants.length === 0" @click="exportEtudiants">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-          Excel
-        </button>
-        <button class="se-btn-ghost" type="button" :disabled="store.filteredEtudiants.length === 0" @click="exportEtudiantsPdf">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
-          PDF
-        </button>
+        <ExportMenu :excel="exportEtudiants" :pdf="exportEtudiantsPdf" :disabled="store.filteredEtudiants.length === 0" />
         <button class="se-btn-primary" type="button" @click="openCreate">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
           {{ t('sup.etudiants.add') }}
@@ -231,6 +224,7 @@ import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
 import { exportToExcel } from '../../utils/exportExcel'
 import { exportToPdf } from '../../utils/exportPdf'
+import ExportMenu from '../../components/ExportMenu.vue'
 import SupEtudiantDetail from './SupEtudiantDetail.vue'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -659,7 +653,7 @@ function askDelete(e) {
 .se-btn-ghost:hover { border-color: var(--pr); color: var(--pr); }
 .se-btn-ghost:disabled { opacity: 0.5; cursor: not-allowed; }
 .se-btn-ghost:disabled:hover { border-color: var(--input-border); color: var(--tx2); }
-.se-intro-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.se-intro-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-left: auto; }
 .se-actions-head { width: 80px; }
 .se-actions {
   white-space: nowrap;

@@ -217,8 +217,7 @@
           <p class="ap-sub2">Bilan destiné à l'assemblée générale et à l'autorité de tutelle · {{ d.annee }}</p>
         </div>
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button class="btn btn-outline btn-sm" type="button" @click="exportRapport">Exporter (Excel)</button>
-          <button class="btn btn-outline btn-sm" type="button" @click="exportRapportPdf">Exporter (PDF)</button>
+          <ExportMenu :excel="exportRapport" :pdf="exportRapportPdf" />
         </div>
       </div>
 
@@ -357,6 +356,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useApeeStore } from '../stores/apee'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 
 const store = useApeeStore()
 

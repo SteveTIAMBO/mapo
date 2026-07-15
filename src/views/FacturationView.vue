@@ -7,14 +7,7 @@
         <p>{{ t('fact.subtitle') }}</p>
       </div>
       <div class="header-actions">
-        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportPayments">
-          <Download :size="16" />
-          <span>Excel</span>
-        </button>
-        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportPaymentsPdf">
-          <Download :size="16" />
-          <span>PDF</span>
-        </button>
+        <ExportMenu v-if="!authStore.isTeacher && filteredEleves.length > 0" :excel="exportPayments" :pdf="exportPaymentsPdf" />
         <button v-if="factStore.setupDone" class="btn btn-outline" @click="activeTab = 'grille'">
           <Settings :size="16" />
           <span>{{ t('fact.feeGrid') }}</span>
@@ -1213,12 +1206,13 @@ import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'
 import {
   Plus, Search, X, Pencil, Trash2, CheckCircle2, Settings,
-  Users, Receipt, TableProperties, Banknote, Printer, Download,
+  Users, Receipt, TableProperties, Banknote, Printer,
   ChevronLeft, ChevronRight, Briefcase, BookOpen, Calendar,
   DollarSign, BarChart3, Sparkles, Send, AlertTriangle
 } from 'lucide-vue-next'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 import { useNotificationsStore } from '../stores/notifications'
 
 const CHARGE_CATEGORIES = [

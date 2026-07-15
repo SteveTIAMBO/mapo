@@ -7,14 +7,7 @@
         <p>{{ headerCount }}</p>
       </div>
       <div style="display: flex; gap: 8px;">
-        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportStudents">
-          <Download :size="16" />
-          <span>{{ t('eleves.export') }}</span>
-        </button>
-        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportStudentsPdf">
-          <Download :size="16" />
-          <span>PDF</span>
-        </button>
+        <ExportMenu v-if="!authStore.isTeacher && filteredEleves.length > 0" :excel="exportStudents" :pdf="exportStudentsPdf" />
         <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="router.push('/inscriptions')">
           <Plus :size="16" />
           <span>{{ t('eleves.enroll') }}</span>
@@ -404,13 +397,14 @@ import { useSchoolStore } from '../stores/school'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { Search, Plus, Pencil, Trash2, X, UserPlus, Download, Eye } from 'lucide-vue-next'
+import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()

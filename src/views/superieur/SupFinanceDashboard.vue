@@ -119,12 +119,7 @@
           <span class="sf-card-tag">{{ retardsList.length }}</span>
         </div>
         <div class="sf-card-actions" v-if="canEdit">
-          <button class="sf-btn-secondary" type="button" @click="exporterRetards">
-            Exporter (XLSX)
-          </button>
-          <button class="sf-btn-secondary" type="button" @click="exporterRetardsPdf">
-            Exporter (PDF)
-          </button>
+          <ExportMenu :excel="exporterRetards" :pdf="exporterRetardsPdf" />
         </div>
       </div>
       <div class="sf-alert-list">
@@ -216,6 +211,7 @@ import { useFinanceStore, fmtMontant, fmtDate, METHODES_PAIEMENT } from '../../s
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { exportToExcel } from '../../utils/exportExcel'
 import { exportToPdf } from '../../utils/exportPdf'
+import ExportMenu from '../../components/ExportMenu.vue'
 
 const store = useFinanceStore()
 const auth = useSuperieurAuthStore()

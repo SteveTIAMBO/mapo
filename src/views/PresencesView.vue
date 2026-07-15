@@ -7,14 +7,7 @@
         <p>{{ t('presence.subtitle') }}</p>
       </div>
       <div v-if="!authStore.isTeacher && displayedEntries.length > 0" style="display:flex;gap:8px;">
-        <button class="btn btn-outline" @click="exportPresences">
-          <Download :size="16" />
-          <span>Excel</span>
-        </button>
-        <button class="btn btn-outline" @click="exportPresencesPdf">
-          <Download :size="16" />
-          <span>PDF</span>
-        </button>
+        <ExportMenu :excel="exportPresences" :pdf="exportPresencesPdf" />
       </div>
     </div>
 
@@ -321,10 +314,11 @@ import { useElevesStore } from '../stores/eleves'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
-import { Pencil, Check, CalendarCheck, X, Phone, Download, RotateCcw } from 'lucide-vue-next'
+import { Pencil, Check, CalendarCheck, X, Phone, RotateCcw } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
+import ExportMenu from '../components/ExportMenu.vue'
 import { useNotificationsStore, buildMessage } from '../stores/notifications'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 
