@@ -87,6 +87,22 @@
           <p v-if="!mesUe.length" class="sen-empty">Aucune UE assignée.</p>
         </section>
 
+        <!-- Mes fiches de paie -->
+        <section class="sen-card">
+          <h2 class="sen-h2">Mes fiches de paie</h2>
+          <div class="sen-paie-head">
+            <span>Net à payer / mois</span>
+            <strong>{{ fmtFcfa(paie.net) }} FCFA</strong>
+          </div>
+          <div v-for="m in moisDispo" :key="m.year + '-' + m.monthIndex" class="sen-paie-row">
+            <span class="sen-paie-mois">{{ m.label }}</span>
+            <button type="button" class="sen-paie-btn" @click="telechargerPaie(m)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Télécharger
+            </button>
+          </div>
+        </section>
+
         <!-- Assistant IA (masqué si MIAPO désactivé pour la préparation de cours) -->
         <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-card sen-ia">
           <div class="sen-ia-badge">MIAPO</div>
@@ -102,8 +118,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
+import { generateFichePaie, fichePaieDetail, moisLabel } from '../../utils/pdfFichePaie'
 
 const store = useSuperieurStore()
 const miapoGlobal = useSuperieurMiapoStore()
@@ -116,6 +133,20 @@ const prenom = moi.prenom || (moi.nomComplet || '').split(' ').slice(-1)[0] || '
 const initials = ((moi.prenom || '') + ' ' + (moi.nom || '')).trim().split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'PR'
 
 const mesUe = computed(() => store.ue.filter((u) => u.intervenantId === moi.id)).value
+
+// ── Fiches de paie de l'intervenant connecté (moi) ──
+const paie = computed(() => fichePaieDetail(moi))
+const nowPaie = new Date()
+const moisDispo = computed(() => {
+  const arr = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(nowPaie.getFullYear(), nowPaie.getMonth() - i, 1)
+    arr.push({ year: d.getFullYear(), monthIndex: d.getMonth(), label: `${moisLabel(d.getMonth())} ${d.getFullYear()}` })
+  }
+  return arr
+})
+function telechargerPaie(m) { generateFichePaie(moi, m.year, m.monthIndex, ECOLE) }
+function fmtFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 
 const ueSelId = ref(mesUe[0] ? mesUe[0].id : '')
 const ueSel = computed(() => mesUe.find((u) => u.id === ueSelId.value))
@@ -196,6 +227,13 @@ function iaClick() { iaMsg.value = "L'assistant MIAPO génère cours, devoirs et
 .sen-fade-enter-active, .sen-fade-leave-active { transition: opacity .3s ease; }
 .sen-fade-enter-from, .sen-fade-leave-to { opacity: 0; }
 .sen-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 16px 0; text-align: center; }
+.sen-paie-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 0 12px; border-bottom: 1px solid var(--border, rgba(20,32,64,.06)); margin-bottom: 6px; }
+.sen-paie-head span { font-size: 12.5px; color: var(--muted, #6b7280); }
+.sen-paie-head strong { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 15px; color: var(--text, #1A1D1F); }
+.sen-paie-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border, rgba(20,32,64,.05)); }
+.sen-paie-mois { font-size: 13px; font-weight: 600; color: var(--text, #23262E); }
+.sen-paie-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--pr-rgb), .10); color: var(--pr); border: none; border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 700; padding: 6px 10px; cursor: pointer; transition: background .15s ease; }
+.sen-paie-btn:hover { background: rgba(var(--pr-rgb), .18); }
 .sen-ue { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border, rgba(20,32,64,.05)); }
 .sen-ue-code { font-weight: 700; color: var(--pr); font-size: 13px; }
 .sen-ue-int { font-size: 12.5px; color: var(--muted, #5b6472); }

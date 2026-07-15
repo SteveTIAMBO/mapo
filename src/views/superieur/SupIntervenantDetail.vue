@@ -67,6 +67,32 @@
           </div>
         </div>
 
+        <!-- Rémunération / fiches de paie -->
+        <div v-show="tab === 'paie'" class="sid-pane">
+          <div class="sid-cards">
+            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.brut) }}<span> FCFA</span></div><div class="sid-card-lab">Rémunération brute / mois</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.net) }}<span> FCFA</span></div><div class="sid-card-lab">Net à payer / mois</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.annuel) }}<span> FCFA</span></div><div class="sid-card-lab">Brut annuel</div></div>
+          </div>
+          <div class="sid-ident">
+            <div class="sid-ident-row"><span>Statut</span><strong>{{ paie.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
+            <div v-if="paie.statut === 'vacataire'" class="sid-ident-row"><span>Taux horaire</span><strong>{{ formatFcfa(paie.tauxHoraire) }} FCFA/h</strong></div>
+            <div class="sid-ident-row"><span>Volume horaire</span><strong>{{ paie.volume }} h</strong></div>
+            <div class="sid-ident-row"><span>Cotisation CNPS (part salariale, 4,2 %)</span><strong>- {{ formatFcfa(paie.cnps) }} FCFA</strong></div>
+          </div>
+          <div class="sid-paie-list">
+            <div class="sid-paie-title">Fiches de paie</div>
+            <div v-for="m in moisDispo" :key="m.year + '-' + m.monthIndex" class="sid-paie-row">
+              <span class="sid-paie-mois">{{ m.label }}</span>
+              <span class="sid-paie-net">{{ formatFcfa(paie.net) }} FCFA</span>
+              <button type="button" class="sid-paie-btn" @click="telechargerPaie(m)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Télécharger
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- Identité & contact -->
         <div v-show="tab === 'coord'" class="sid-pane">
           <div class="sid-ident">
@@ -88,7 +114,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSuperieurStore } from '../../stores/superieur'
+import { useSuperieurStore, ECOLE } from '../../stores/superieur'
+import { generateFichePaie, fichePaieDetail, moisLabel } from '../../utils/pdfFichePaie'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -102,8 +129,22 @@ const tab = ref('ue')
 const tabs = computed(() => [
   { key: 'ue', label: t('sup.intervenantDetail.tabTeaching') },
   { key: 'profil', label: t('sup.intervenantDetail.tabProfile') },
+  { key: 'paie', label: 'Rémunération' },
   { key: 'coord', label: t('sup.intervenantDetail.tabContact') },
 ])
+
+// ── Rémunération / fiches de paie ──
+const paie = computed(() => fichePaieDetail(it))
+const now = new Date()
+const moisDispo = computed(() => {
+  const arr = []
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    arr.push({ year: d.getFullYear(), monthIndex: d.getMonth(), label: `${moisLabel(d.getMonth())} ${d.getFullYear()}` })
+  }
+  return arr
+})
+function telechargerPaie(m) { generateFichePaie(it, m.year, m.monthIndex, ECOLE) }
 
 const ueList = computed(() => store.ue.filter((u) => u.intervenantId === it.id)).value
 const totalEcts = ueList.reduce((s, u) => s + (u.ects || 0), 0)
@@ -170,4 +211,11 @@ function formatFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 .sid-ident-row strong { color: var(--text, #1A1D1F); text-align: right; }
 .sid-note { font-size: 12.5px; color: var(--muted, #6b7280); margin-top: 14px; line-height: 1.5; }
 .sid-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 20px 0; text-align: center; }
+.sid-paie-list { margin-top: 20px; }
+.sid-paie-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: var(--text, #1A1D1F); margin-bottom: 8px; }
+.sid-paie-row { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--border, rgba(20,32,64,.06)); }
+.sid-paie-mois { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--text, #23262E); }
+.sid-paie-net { font-size: 13px; color: var(--muted, #6b7280); font-variant-numeric: tabular-nums; }
+.sid-paie-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--pr-rgb), .10); color: var(--pr); border: none; border-radius: 9px; font-family: inherit; font-size: 12.5px; font-weight: 700; padding: 7px 12px; cursor: pointer; transition: background .15s ease; }
+.sid-paie-btn:hover { background: rgba(var(--pr-rgb), .18); }
 </style>
