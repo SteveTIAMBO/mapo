@@ -216,7 +216,10 @@
           <h2 class="ap-h2">Rapport de synthèse</h2>
           <p class="ap-sub2">Bilan destiné à l'assemblée générale et à l'autorité de tutelle · {{ d.annee }}</p>
         </div>
-        <button class="btn btn-outline btn-sm" type="button" @click="exportRapport">Exporter (Excel)</button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" type="button" @click="exportRapport">Exporter (Excel)</button>
+          <button class="btn btn-outline btn-sm" type="button" @click="exportRapportPdf">Exporter (PDF)</button>
+        </div>
       </div>
 
       <div class="ap-report">
@@ -353,6 +356,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useApeeStore } from '../stores/apee'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 
 const store = useApeeStore()
 
@@ -422,8 +426,8 @@ function addProjet() {
 }
 
 // ── Rapport ──
-function exportRapport() {
-  const cols = [
+function buildRapportExport() {
+  const columns = [
     { key: 'intitule', label: 'Projet', width: 34 },
     { key: 'categorie', label: 'Catégorie', width: 24 },
     { key: 'budget', label: 'Budget (FCFA)', width: 16 },
@@ -431,7 +435,7 @@ function exportRapport() {
     { key: 'reste', label: 'Reste (FCFA)', width: 16 },
     { key: 'statut', label: 'Statut', width: 14 },
   ]
-  const rows = d.value.projets.map(p => ({
+  const data = d.value.projets.map(p => ({
     intitule: p.intitule,
     categorie: p.categorie,
     budget: p.budget,
@@ -439,7 +443,16 @@ function exportRapport() {
     reste: (p.budget || 0) - (p.depense || 0),
     statut: p.statut,
   }))
-  exportToExcel(rows, cols, `Rapport_APEE_${d.value.annee}`, 'Projets APEE')
+  return { data, columns }
+}
+function exportRapport() {
+  const { data, columns } = buildRapportExport()
+  exportToExcel(data, columns, `Rapport_APEE_${d.value.annee}`, 'Projets APEE')
+}
+function exportRapportPdf() {
+  const { data, columns } = buildRapportExport()
+  if (!data.length) return
+  exportToPdf(data, columns, `Rapport_APEE_${d.value.annee}`, { title: `Rapport APEE — ${d.value.annee}` })
 }
 </script>
 

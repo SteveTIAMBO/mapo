@@ -122,6 +122,9 @@
           <button class="sf-btn-secondary" type="button" @click="exporterRetards">
             Exporter (XLSX)
           </button>
+          <button class="sf-btn-secondary" type="button" @click="exporterRetardsPdf">
+            Exporter (PDF)
+          </button>
         </div>
       </div>
       <div class="sf-alert-list">
@@ -212,6 +215,7 @@ import { computed, ref } from 'vue'
 import { useFinanceStore, fmtMontant, fmtDate, METHODES_PAIEMENT } from '../../stores/finance'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { exportToExcel } from '../../utils/exportExcel'
+import { exportToPdf } from '../../utils/exportPdf'
 
 const store = useFinanceStore()
 const auth = useSuperieurAuthStore()
@@ -225,8 +229,18 @@ const circumference = 2 * Math.PI * 50
 // Top 10 retards d'échéance (les plus anciens en premier)
 const retardsList = computed(() => store.relancesAFaire.slice(0, 10))
 
-function exporterRetards() {
-  const rows = store.relancesAFaire.map((item) => ({
+function buildRetardsExport() {
+  const columns = [
+    { key: 'etudiant', label: 'Étudiant', width: 28 },
+    { key: 'programme', label: 'Programme', width: 24 },
+    { key: 'dateEcheance', label: 'Date échéance', width: 14 },
+    { key: 'joursRetard', label: 'Jours retard', width: 12 },
+    { key: 'montantDu', label: 'Montant dû', width: 12 },
+    { key: 'montantPaye', label: 'Déjà payé', width: 12 },
+    { key: 'montantRestant', label: 'Reste dû', width: 12 },
+    { key: 'relanceProchaine', label: 'Prochaine relance', width: 16 },
+  ]
+  const data = store.relancesAFaire.map((item) => ({
     etudiant: item.etudiant?.nomComplet || '—',
     programme: item.etudiant?.programmeNom || '',
     dateEcheance: item.echeance.dateEcheance,
@@ -236,21 +250,16 @@ function exporterRetards() {
     montantRestant: item.echeance.montantDu - item.echeance.montantPaye,
     relanceProchaine: 'N' + item.prochainNiveau,
   }))
-  exportToExcel(
-    rows,
-    [
-      { key: 'etudiant', label: 'Étudiant', width: 28 },
-      { key: 'programme', label: 'Programme', width: 24 },
-      { key: 'dateEcheance', label: 'Date échéance', width: 14 },
-      { key: 'joursRetard', label: 'Jours retard', width: 12 },
-      { key: 'montantDu', label: 'Montant dû', width: 12 },
-      { key: 'montantPaye', label: 'Déjà payé', width: 12 },
-      { key: 'montantRestant', label: 'Reste dû', width: 12 },
-      { key: 'relanceProchaine', label: 'Prochaine relance', width: 16 },
-    ],
-    'retards_echeances',
-    'Retards'
-  )
+  return { data, columns }
+}
+function exporterRetards() {
+  const { data, columns } = buildRetardsExport()
+  exportToExcel(data, columns, 'retards_echeances', 'Retards')
+}
+function exporterRetardsPdf() {
+  const { data, columns } = buildRetardsExport()
+  if (!data.length) return
+  exportToPdf(data, columns, 'retards_echeances', { title: "Étudiants en retard d'échéance" })
 }
 
 // ── Enregistrement paiement rapide ───────────────────────────────

@@ -11,6 +11,10 @@
           <Download :size="16" />
           <span>{{ t('eleves.export') }}</span>
         </button>
+        <button v-if="!authStore.isTeacher && filteredEleves.length > 0" class="btn btn-outline" @click="exportStudentsPdf">
+          <Download :size="16" />
+          <span>PDF</span>
+        </button>
         <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="router.push('/inscriptions')">
           <Plus :size="16" />
           <span>{{ t('eleves.enroll') }}</span>
@@ -406,6 +410,7 @@ import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -537,7 +542,7 @@ const getStatusBadge = (s) => {
   return 'badge-danger'
 }
 
-const exportStudents = () => {
+const buildStudentsExport = () => {
   const columns = [
     { key: 'matricule', label: t('eleves.exportCols.matricule'), width: 15 },
     { key: 'firstName', label: t('eleves.exportCols.firstName'), width: 18 },
@@ -570,7 +575,18 @@ const exportStudents = () => {
     parentPhone: e.parentPhone || '-',
   }))
 
-  exportToExcel(exportData, columns, 'eleves', t('eleves.exportSheet'))
+  return { data: exportData, columns }
+}
+
+const exportStudents = () => {
+  const { data, columns } = buildStudentsExport()
+  exportToExcel(data, columns, 'eleves', t('eleves.exportSheet'))
+}
+
+const exportStudentsPdf = () => {
+  const { data, columns } = buildStudentsExport()
+  if (!data.length) return
+  exportToPdf(data, columns, 'eleves', { title: 'Liste des élèves' })
 }
 
 const resetForm = () => {

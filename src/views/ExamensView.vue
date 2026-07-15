@@ -65,6 +65,7 @@
         </div>
         <div class="ex-detail-actions">
           <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporter">{{ t('examens.export') }}</button>
+          <button v-if="candidats.length" class="btn btn-outline btn-sm" type="button" @click="exporterPdf">PDF</button>
           <button v-if="detailStats.admis" class="btn btn-primary btn-sm" type="button" :disabled="emitting" @click="emettreDiplomesAdmis">{{ emitting ? t('examens.emitting') : t('examens.emitDiplomas', { n: detailStats.admis }) }}</button>
           <button class="btn btn-outline btn-sm" type="button" @click="inscrire">{{ t('examens.registerLevel', { niveau: niveauLabel(selectedExam.niveau) }) }}</button>
         </div>
@@ -159,6 +160,7 @@ import { useI18n } from 'vue-i18n'
 import { useExamensStore, EXAM_TYPES, RESULT_STATUS, MENTIONS } from '../stores/examens'
 import { useElevesStore } from '../stores/eleves'
 import { exportToExcel } from '../utils/exportExcel'
+import { exportToPdf } from '../utils/exportPdf'
 import { useDiplomesStore } from '../stores/diplomes'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
@@ -248,15 +250,31 @@ function onStatut(c, val) {
   if (val !== 'admis') patch.mention = ''
   store.updateCandidat(selectedExam.value.id, c.eleveId, patch)
 }
-function exporter() {
-  const rows = candidats.value.map(c => ({
-    [t('examens.exportCols.candidate')]: c.eleveName,
-    [t('examens.exportCols.class')]: c.className,
-    [t('examens.exportCols.tableNo')]: c.numeroTable,
-    [t('examens.exportCols.result')]: statusLabel(c.statut),
-    [t('examens.exportCols.mention')]: c.mention || '',
+function buildCandidatsExport() {
+  const columns = [
+    { key: 'candidate', label: t('examens.exportCols.candidate'), width: 26 },
+    { key: 'className', label: t('examens.exportCols.class'), width: 16 },
+    { key: 'tableNo', label: t('examens.exportCols.tableNo'), width: 12 },
+    { key: 'result', label: t('examens.exportCols.result'), width: 16 },
+    { key: 'mention', label: t('examens.exportCols.mention'), width: 16 },
+  ]
+  const data = candidats.value.map(c => ({
+    candidate: c.eleveName,
+    className: c.className,
+    tableNo: c.numeroTable,
+    result: statusLabel(c.statut),
+    mention: c.mention || '',
   }))
-  exportToExcel(rows, `${selectedExam.value.label}_${selectedExam.value.annee}`)
+  return { data, columns }
+}
+function exporter() {
+  const { data, columns } = buildCandidatsExport()
+  exportToExcel(data, columns, `${selectedExam.value.label}_${selectedExam.value.annee}`, 'Résultats')
+}
+function exporterPdf() {
+  const { data, columns } = buildCandidatsExport()
+  if (!data.length) return
+  exportToPdf(data, columns, `${selectedExam.value.label}_${selectedExam.value.annee}`, { title: `Résultats — ${selectedExam.value.label} ${selectedExam.value.annee}` })
 }
 
 // ── Émettre les diplômes vérifiables des candidats ADMIS (intégration Diplômes) ──
