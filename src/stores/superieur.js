@@ -1257,6 +1257,34 @@ export const useSuperieurStore = defineStore('superieur', () => {
     saveEntity('releve_signatures', RELEVE_SIGNATURES)
     supSync.pushDoc('sup_releve_signatures', key, record)
   }
+  /**
+   * Signature GROUPÉE d'une promotion : signe en une fois tous les relevés
+   * fournis pour un même semestre (« Signer toute la promo »). Les relevés
+   * déjà signés sont ignorés. Persistance identique à signReleve : un seul
+   * saveEntity local + un pushDoc Firestore par relevé nouvellement signé.
+   * @param {string[]} etudiantIds
+   * @param {string} semestre
+   * @param {string} dirName
+   */
+  function signReleves(etudiantIds, semestre, dirName) {
+    if (!Array.isArray(etudiantIds) || !etudiantIds.length || !semestre) return
+    const name = dirName || 'Le Directeur'
+    const signedAt = new Date().toISOString()
+    const pushes = []
+    for (const id of etudiantIds) {
+      if (!id) continue
+      const key = releveSignKey(id, semestre)
+      if (RELEVE_SIGNATURES[key]?.signed) continue // déjà signé → on saute
+      const record = { signed: true, signedBy: name, signedAt }
+      RELEVE_SIGNATURES[key] = record
+      pushes.push({ key, record })
+    }
+    if (!pushes.length) return
+    saveEntity('releve_signatures', RELEVE_SIGNATURES)
+    for (const { key, record } of pushes) {
+      supSync.pushDoc('sup_releve_signatures', key, record)
+    }
+  }
   function unsignReleve(etudiantId, semestre) {
     if (!etudiantId || !semestre) return
     const key = releveSignKey(etudiantId, semestre)
@@ -1739,6 +1767,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     // Signature du relevé par le directeur
     releveSignKey,
     signReleve,
+    signReleves,
     unsignReleve,
     isReleveSigned,
     getReleveSignature,
