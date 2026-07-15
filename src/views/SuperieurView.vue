@@ -297,6 +297,9 @@ import SupRoles from './superieur/SupRoles.vue'
 import SupEspaceEtudiant from './superieur/SupEspaceEtudiant.vue'
 import SupEspaceEnseignant from './superieur/SupEspaceEnseignant.vue'
 import SupEspaceParent from './superieur/SupEspaceParent.vue'
+import SupImport from './superieur/SupImport.vue'
+import SupTransitionAnnee from './superieur/SupTransitionAnnee.vue'
+import SupRapports from './superieur/SupRapports.vue'
 
 const router = useRouter()
 const editionStore = useEditionStore()
@@ -464,6 +467,9 @@ const panels = {
   espace_etudiant: SupEspaceEtudiant,
   espace_enseignant: SupEspaceEnseignant,
   espace_parent: SupEspaceParent,
+  import: SupImport,
+  transition_annee: SupTransitionAnnee,
+  rapports: SupRapports,
 }
 
 /**
@@ -575,6 +581,28 @@ const ALL_TABS = [
     roles: ['admin', 'relation_internationale', 'comptable', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
   },
+  // ── Gestion ─────────────────────────────────────────────────────
+  {
+    key: 'import',
+    label: 'Import groupé',
+    section: 'Gestion',
+    roles: ['admin'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  },
+  {
+    key: 'transition_annee',
+    label: "Passage d'année",
+    roles: ['admin'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><line x1="22" y1="10" x2="22" y2="15"/></svg>',
+  },
+  // ── Pilotage & IA ───────────────────────────────────────────────
+  {
+    key: 'rapports',
+    label: 'Rapports',
+    section: 'Pilotage & IA',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  },
   // ── Configuration (admin uniquement) ───────────────────────────
   {
     key: 'roles',
@@ -601,7 +629,7 @@ const ALL_TABS = [
  */
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
-  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles'].includes(tabKey)) {
+  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports'].includes(tabKey)) {
     return 'formation'
   }
   return tabKey
