@@ -291,18 +291,34 @@ const view = ref('promos') // 'promos' | 'promo' | 'releve'
 const currentPromoId = ref('')
 const currentIndex = ref(0)
 
-// Cartes de promotion (source = jury par promotion) + progression de signature
+// Cartes de promotion — scopées au campus actif via store.etudiants (etudiantsVisibles),
+// PAS via juryParPromotion (qui agrège tous les campus) → cartes et détail cohérents.
+// On ne montre que les promotions ayant des étudiants dans le périmètre courant.
 const promoCards = computed(() =>
-  store.juryParPromotion.map((j) => {
-    const students = store.etudiants.filter((e) => e.promotionId === j.promotion.id)
-    const sem = j.promotion.semestreCourant
-    const signed = students.reduce((n, s) => n + (store.isReleveSigned(s.id, sem) ? 1 : 0), 0)
-    return { ...j, nbSignes: signed }
-  })
+  store.promotions
+    .map((p) => {
+      const students = store.etudiants.filter((e) => e.promotionId === p.id)
+      if (!students.length) return null
+      const releves = students.map((s) => store.releveEtudiant(s.id)).filter(Boolean)
+      const admis = releves.filter((r) => r.admis).length
+      const moyenne = releves.length
+        ? releves.reduce((s2, r) => s2 + r.moyenne, 0) / releves.length
+        : 0
+      const sem = p.semestreCourant
+      const signed = students.reduce((n, s) => n + (store.isReleveSigned(s.id, sem) ? 1 : 0), 0)
+      return {
+        promotion: p,
+        nbEtudiants: students.length,
+        moyennePromo: Math.round(moyenne * 100) / 100,
+        tauxReussite: students.length ? Math.round((admis / students.length) * 100) : 0,
+        nbSignes: signed,
+      }
+    })
+    .filter(Boolean)
 )
 
 const currentPromo = computed(() =>
-  store.juryParPromotion.find((j) => j.promotion.id === currentPromoId.value) || null
+  promoCards.value.find((j) => j.promotion.id === currentPromoId.value) || null
 )
 const promoSem = computed(() => currentPromo.value?.promotion.semestreCourant || '')
 
@@ -401,26 +417,22 @@ function formatSignDate(iso) {
     : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-// ── KPIs globaux (synthèse des jurys) ──
+// ── KPIs globaux (scopés au campus actif, cohérents avec les cartes) ──
 const globalStats = computed(() => {
-  const jurys = store.juryParPromotion
-  const nbReleves = jurys.reduce((s, j) => s + j.nbEtudiants, 0)
-  const admis = jurys.reduce((s, j) => s + j.nbAdmis, 0)
-  const ajournes = jurys.reduce((s, j) => s + j.nbAjournes, 0)
-  const moyenne = jurys.length
-    ? (jurys.reduce((s, j) => s + j.moyennePromo * j.nbEtudiants, 0) / Math.max(nbReleves, 1))
-    : 0
+  const students = store.etudiants
+  const releves = students.map((s) => store.releveEtudiant(s.id)).filter(Boolean)
+  const nbReleves = releves.length
+  const admis = releves.filter((r) => r.admis).length
+  const moyenne = nbReleves ? releves.reduce((s, r) => s + r.moyenne, 0) / nbReleves : 0
   let nbSignes = 0
-  for (const j of jurys) {
-    const sem = j.promotion.semestreCourant
-    for (const e of store.etudiants.filter((x) => x.promotionId === j.promotion.id)) {
-      if (store.isReleveSigned(e.id, sem)) nbSignes++
-    }
+  for (const s of students) {
+    const r = store.releveEtudiant(s.id)
+    if (r && store.isReleveSigned(s.id, r.semestre)) nbSignes++
   }
   return {
     nbReleves,
     admis,
-    ajournes,
+    ajournes: nbReleves - admis,
     tauxReussite: nbReleves ? Math.round((admis / nbReleves) * 100) : 0,
     moyenne: Math.round(moyenne * 100) / 100,
     nbSignes,
