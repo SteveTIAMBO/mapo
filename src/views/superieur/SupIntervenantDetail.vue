@@ -70,21 +70,48 @@
         <!-- Rémunération / fiches de paie -->
         <div v-show="tab === 'paie'" class="sid-pane">
           <div class="sid-cards">
-            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.brut) }}<span> FCFA</span></div><div class="sid-card-lab">Rémunération brute / mois</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.brut) }}<span> FCFA</span></div><div class="sid-card-lab">Salaire brut / mois</div></div>
             <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.net) }}<span> FCFA</span></div><div class="sid-card-lab">Net à payer / mois</div></div>
-            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.annuel) }}<span> FCFA</span></div><div class="sid-card-lab">Brut annuel</div></div>
+            <div class="sid-card"><div class="sid-card-num">{{ formatFcfa(paie.brutAnnuel) }}<span> FCFA</span></div><div class="sid-card-lab">Brut annuel</div></div>
           </div>
+
+          <div class="sid-paie-meta">
+            {{ paie.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }} · Volume {{ paie.volume }} h<template v-if="paie.statut === 'vacataire' && paie.tauxHoraire"> · {{ formatFcfa(paie.tauxHoraire) }} FCFA/h</template>
+          </div>
+
+          <!-- Gains -->
+          <div class="sid-paie-title">Gains</div>
           <div class="sid-ident">
-            <div class="sid-ident-row"><span>Statut</span><strong>{{ paie.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</strong></div>
-            <div v-if="paie.statut === 'vacataire'" class="sid-ident-row"><span>Taux horaire</span><strong>{{ formatFcfa(paie.tauxHoraire) }} FCFA/h</strong></div>
-            <div class="sid-ident-row"><span>Volume horaire</span><strong>{{ paie.volume }} h</strong></div>
-            <div class="sid-ident-row"><span>Cotisation CNPS (part salariale, 4,2 %)</span><strong>- {{ formatFcfa(paie.cnps) }} FCFA</strong></div>
+            <div class="sid-ident-row"><span>Salaire de base</span><strong>{{ formatFcfa(paie.base) }} FCFA</strong></div>
+            <div v-if="paie.indemniteTransport" class="sid-ident-row"><span>Indemnité de transport</span><strong>{{ formatFcfa(paie.indemniteTransport) }} FCFA</strong></div>
+            <div v-if="paie.primeTechnicite" class="sid-ident-row"><span>Prime de technicité (8 %)</span><strong>{{ formatFcfa(paie.primeTechnicite) }} FCFA</strong></div>
+            <div class="sid-ident-row is-total"><span>Salaire brut</span><strong>{{ formatFcfa(paie.brut) }} FCFA</strong></div>
           </div>
+
+          <!-- Retenues -->
+          <div class="sid-paie-title">Retenues</div>
+          <div class="sid-ident">
+            <div class="sid-ident-row is-neg"><span>CNPS (part salariale, 4,2 %)</span><strong>- {{ formatFcfa(paie.cnpsSalarie) }} FCFA</strong></div>
+            <div class="sid-ident-row is-neg"><span>IRPP (barème simplifié)</span><strong>- {{ formatFcfa(paie.irpp) }} FCFA</strong></div>
+            <div class="sid-ident-row is-neg"><span>CAC (10 % de l'IRPP)</span><strong>- {{ formatFcfa(paie.cac) }} FCFA</strong></div>
+            <div class="sid-ident-row is-total is-neg"><span>Total des retenues</span><strong>- {{ formatFcfa(paie.totalRetenues) }} FCFA</strong></div>
+          </div>
+
+          <!-- Net à payer -->
+          <div class="sid-net">
+            <span>Net à payer</span>
+            <strong>{{ formatFcfa(paie.net) }} FCFA</strong>
+          </div>
+
+          <p class="sid-emp-note">
+            Charges patronales CNPS (employeur, ~11,2 %) : {{ formatFcfa(paie.cnpsEmployeur) }} FCFA — à titre indicatif, non déduites du net. Bulletin indicatif (démonstration).
+          </p>
+
           <div class="sid-paie-list">
             <div class="sid-paie-title">Fiches de paie</div>
             <div v-for="m in moisDispo" :key="m.year + '-' + m.monthIndex" class="sid-paie-row">
               <span class="sid-paie-mois">{{ m.label }}</span>
-              <span class="sid-paie-net">{{ formatFcfa(paie.net) }} FCFA</span>
+              <span class="sid-paie-net">Net {{ formatFcfa(paie.net) }} FCFA</span>
               <button type="button" class="sid-paie-btn" @click="telechargerPaie(m)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Télécharger
@@ -209,10 +236,18 @@ function formatFcfa(n) { return (n ?? 0).toLocaleString('fr-FR') }
 .sid-ident-row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 2px; border-bottom: 1px solid var(--border, rgba(20,32,64,.06)); font-size: 13.5px; }
 .sid-ident-row span { color: var(--muted, #6b7280); }
 .sid-ident-row strong { color: var(--text, #1A1D1F); text-align: right; }
+.sid-ident-row.is-total { border-top: 1.5px solid var(--border, rgba(20,32,64,.14)); border-bottom: none; }
+.sid-ident-row.is-total span, .sid-ident-row.is-total strong { color: var(--text, #1A1D1F); font-weight: 800; }
+.sid-ident-row.is-neg strong { color: #B23B3B; }
+.sid-paie-meta { font-size: 12.5px; color: var(--muted, #6b7280); margin: -6px 0 16px; }
+.sid-net { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 14px 18px; border-radius: 12px; background: rgba(var(--pr-rgb), .08); }
+.sid-net span { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--text, #1A1D1F); }
+.sid-net strong { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 19px; color: var(--pr); }
+.sid-emp-note { font-size: 12px; color: var(--muted, #6b7280); margin: 12px 0 0; line-height: 1.5; }
 .sid-note { font-size: 12.5px; color: var(--muted, #6b7280); margin-top: 14px; line-height: 1.5; }
 .sid-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 20px 0; text-align: center; }
-.sid-paie-list { margin-top: 20px; }
-.sid-paie-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: var(--text, #1A1D1F); margin-bottom: 8px; }
+.sid-paie-list { margin-top: 12px; }
+.sid-paie-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: var(--text, #1A1D1F); margin: 18px 0 8px; }
 .sid-paie-row { display: flex; align-items: center; gap: 12px; padding: 10px 2px; border-bottom: 1px solid var(--border, rgba(20,32,64,.06)); }
 .sid-paie-mois { flex: 1; font-size: 13.5px; font-weight: 600; color: var(--text, #23262E); }
 .sid-paie-net { font-size: 13px; color: var(--muted, #6b7280); font-variant-numeric: tabular-nums; }
