@@ -49,7 +49,7 @@
             </span>
           </div>
           <div class="sn-tile-name">{{ j.promotion.programmeNom }}</div>
-          <div class="sn-tile-annee">{{ j.promotion.anneeNom }} · Semestre {{ j.promotion.semestreCourant }}</div>
+          <div class="sn-tile-annee">{{ j.promotion.anneeNom }} · Semestre 2 en cours</div>
           <div class="sn-tile-stats">
             <div class="sn-tile-stat">
               <span class="sn-tile-num">{{ j.nbEtudiants }}</span>
@@ -96,7 +96,16 @@
         </div>
       </div>
 
-      <table class="sn-table">
+      <div class="sn-sem-toggle">
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">Semestre 1</button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">Semestre 2 <span class="sn-sem-tag">en cours</span></button>
+      </div>
+
+      <div v-if="semestreView === 1" class="sn-sem-placeholder">
+        <div class="sn-sem-ph-title">Semestre 1</div>
+        <p>Les relevés du <strong>Semestre 1</strong> seront disponibles prochainement. Les relevés en ligne concernent le <strong>Semestre 2</strong> (en cours).</p>
+      </div>
+      <table v-else class="sn-table">
         <thead>
           <tr>
             <th>Matricule</th>
@@ -150,12 +159,22 @@
         </div>
       </div>
 
-      <div v-if="releve">
+      <div class="sn-sem-toggle">
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">Semestre 1</button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">Semestre 2 <span class="sn-sem-tag">en cours</span></button>
+      </div>
+
+      <div v-if="semestreView === 1" class="sn-sem-placeholder">
+        <div class="sn-sem-ph-title">Semestre 1</div>
+        <p>Le relevé du <strong>Semestre 1</strong> sera disponible prochainement. Le relevé affiché concerne le <strong>Semestre 2</strong> (en cours).</p>
+      </div>
+
+      <div v-else-if="releve">
         <div class="sn-releve-head">
           <div>
             <div class="sn-releve-title">{{ releve.etudiant.nomComplet }}</div>
             <div class="sn-releve-sub">
-              {{ releve.etudiant.programmeNom }} · {{ releve.etudiant.anneeNom }} · Semestre {{ releve.semestre }}
+              {{ releve.etudiant.programmeNom }} · {{ releve.etudiant.anneeNom }} · Semestre 2
             </div>
           </div>
           <div class="sn-releve-result">
@@ -290,6 +309,9 @@ const dirName = () => authSup.profile?.displayName || 'Le Directeur'
 const view = ref('promos') // 'promos' | 'promo' | 'releve'
 const currentPromoId = ref('')
 const currentIndex = ref(0)
+// Semestre affiché : 2 = semestre en cours (données réelles), 1 = à venir (placeholder).
+// Toutes les promos sont au 2e semestre de leur année → affichage uniforme « Semestre 1/2 ».
+const semestreView = ref(2)
 
 // Cartes de promotion — scopées au campus actif via store.etudiants (etudiantsVisibles),
 // PAS via juryParPromotion (qui agrège tous les campus) → cartes et détail cohérents.
@@ -608,6 +630,35 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 }
 .sn-bulk-btn:hover:not(:disabled) { opacity: 0.9; }
 .sn-bulk-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Sélecteur de semestre (Semestre 1 / Semestre 2) */
+.sn-sem-toggle {
+  display: inline-flex; gap: 4px; margin-bottom: 14px;
+  padding: 4px; background: var(--input-bg); border-radius: 11px;
+}
+.sn-sem-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border: none; border-radius: 8px;
+  background: transparent;
+  font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; color: var(--tx2);
+  cursor: pointer; transition: background 0.15s ease, color 0.15s ease;
+}
+.sn-sem-btn:hover { color: var(--pr); }
+.sn-sem-btn.active { background: #fff; color: var(--pr); box-shadow: 0 1px 3px rgba(16,24,40,0.1); }
+.sn-sem-tag {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+  padding: 1px 6px; border-radius: 100px; background: rgba(27,138,90,0.12); color: var(--success);
+}
+.sn-sem-placeholder {
+  padding: 28px 20px; text-align: center;
+  background: var(--input-bg); border-radius: 12px;
+  color: var(--tx2); font-size: 13.5px; line-height: 1.55;
+}
+.sn-sem-placeholder p { margin: 6px 0 0; }
+.sn-sem-placeholder strong { color: var(--tx); font-weight: 700; }
+.sn-sem-ph-title {
+  font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 800; color: var(--tx3);
+}
 
 /* Tables */
 .sn-table { width: 100%; border-collapse: collapse; }
