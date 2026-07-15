@@ -16,7 +16,7 @@
     </div>
 
     <div class="sen-grid">
-      <!-- Saisie des notes -->
+      <!-- Saisie des notes (réelle : chaque note est persistée via le store) -->
       <section class="sen-card sen-card-wide">
         <div class="sen-card-head">
           <h2 class="sen-h2">Saisie des notes</h2>
@@ -24,21 +24,52 @@
             <option v-for="u in mesUe" :key="u.id" :value="u.id">{{ u.code }} · {{ u.intitule }}</option>
           </select>
         </div>
-        <p class="sen-note" v-if="ueSel">{{ ueSel.intitule }} · {{ rosterPromo }} · {{ roster.length }} étudiants</p>
-        <table v-if="roster.length" class="sen-table">
-          <thead><tr><th>Matricule</th><th>Étudiant</th><th class="num">Note /20</th></tr></thead>
+        <p class="sen-note" v-if="ueSel">
+          {{ ueSel.intitule }} · {{ rosterPromo }} · {{ notesUE.length }} étudiants
+          <span class="sen-legend">Note UE = CC 40 % + Examen 60 %</span>
+        </p>
+        <table v-if="notesUE.length" class="sen-table">
+          <thead>
+            <tr>
+              <th>Matricule</th>
+              <th>Étudiant</th>
+              <th class="num">CC /20</th>
+              <th class="num">Examen /20</th>
+              <th class="num">Note UE</th>
+              <th>Validation</th>
+            </tr>
+          </thead>
           <tbody>
-            <tr v-for="r in roster" :key="r.id">
-              <td class="sen-mat">{{ r.matricule }}</td>
-              <td>{{ r.nomComplet }}</td>
-              <td class="num"><input class="sen-note-input" type="number" min="0" max="20" step="0.25" v-model="notes[r.id]" placeholder="—" /></td>
+            <tr v-for="n in notesUE" :key="n.etudiant.id">
+              <td class="sen-mat">{{ n.etudiant.matricule }}</td>
+              <td>{{ n.etudiant.nomComplet }}</td>
+              <td class="num">
+                <input class="sen-note-input" type="number" min="0" max="20" step="0.25"
+                  :value="n.cc ?? ''" placeholder="—"
+                  @change="saveNote(n.etudiant.id, 'cc', $event.target.value)" />
+              </td>
+              <td class="num">
+                <input class="sen-note-input" type="number" min="0" max="20" step="0.25"
+                  :value="n.examen ?? ''" placeholder="—"
+                  @change="saveNote(n.etudiant.id, 'examen', $event.target.value)" />
+              </td>
+              <td class="num">
+                <strong :class="n.note == null ? 'sen-wait' : n.note < 10 ? 'sen-bad' : 'sen-ok'">
+                  {{ n.note != null ? n.note.toFixed(2) : '—' }}
+                </strong>
+              </td>
+              <td>
+                <span class="sen-val" :class="n.note == null ? 'is-wait' : n.note >= 10 ? 'is-ok' : 'is-bad'">
+                  {{ n.note == null ? 'En attente' : n.note >= 10 ? 'Validée' : 'Non validée' }}
+                </span>
+              </td>
             </tr>
           </tbody>
         </table>
         <p v-else class="sen-empty">Sélectionnez une UE pour saisir les notes.</p>
         <div class="sen-actions">
-          <button class="sen-btn" type="button" @click="enregistrer">{{ saved ? 'Notes enregistrées' : 'Enregistrer les notes' }}</button>
-          <span v-if="saved" class="sen-saved">Brouillon enregistré · à soumettre à la scolarité</span>
+          <span class="sen-saved-auto">Les notes sont enregistrées automatiquement. Le directeur valide et signe le relevé.</span>
+          <transition name="sen-fade"><span v-if="saved" class="sen-saved">✓ Enregistré</span></transition>
         </div>
       </section>
 
@@ -88,10 +119,8 @@ const mesUe = computed(() => store.ue.filter((u) => u.intervenantId === moi.id))
 
 const ueSelId = ref(mesUe[0] ? mesUe[0].id : '')
 const ueSel = computed(() => mesUe.find((u) => u.id === ueSelId.value))
-const roster = computed(() => {
-  if (!ueSel.value) return []
-  return store.etudiants.filter((e) => e.promotionId === ueSel.value.promotionId).slice(0, 25)
-})
+// Étudiants inscrits à l'UE + leurs notes CC/Examen (forme objet du store)
+const notesUE = computed(() => (ueSelId.value ? store.notesPourUE(ueSelId.value) : []))
 const rosterPromo = computed(() => {
   const p = store.promotions.find((pr) => pr.id === (ueSel.value && ueSel.value.promotionId))
   return p ? `${p.programmeNom} · ${p.anneeNom}` : ''
@@ -101,11 +130,25 @@ const nbEtudiants = (() => {
   const promoIds = new Set(mesUe.map((u) => u.promotionId))
   return store.etudiants.filter((e) => promoIds.has(e.promotionId)).length
 })()
-const aSaisir = mesUe.length
+// « Notes à saisir » = nombre de notes d'UE encore en attente sur toutes mes UE
+const aSaisir = computed(() => {
+  let n = 0
+  for (const u of mesUe) {
+    for (const row of store.notesPourUE(u.id)) if (row.note == null) n++
+  }
+  return n
+})
 
-const notes = ref({})
+// Saisie RÉELLE : chaque note (CC / Examen) est persistée via le store (setSupNote).
+// La note d'UE (CC 40 % + Examen 60 %) et la validation se recalculent en direct.
 const saved = ref(false)
-function enregistrer() { saved.value = true; setTimeout(() => { saved.value = false }, 4000) }
+let savedTimer = null
+function saveNote(etudiantId, field, value) {
+  store.setSupNote(etudiantId, ueSelId.value, field, value)
+  saved.value = true
+  clearTimeout(savedTimer)
+  savedTimer = setTimeout(() => { saved.value = false }, 2000)
+}
 
 const iaMsg = ref('')
 function iaClick() { iaMsg.value = "L'assistant MIAPO génère cours, devoirs et examens avec corrigé. Fonction pleinement disponible dans l'espace enseignant connecté." }
@@ -140,7 +183,18 @@ function iaClick() { iaMsg.value = "L'assistant MIAPO génère cours, devoirs et
 .sen-note-input:focus { outline: none; border-color: var(--pr); }
 .sen-actions { display: flex; align-items: center; gap: 12px; margin-top: 16px; }
 .sen-btn { background: var(--pr); color: #fff; border: none; border-radius: 10px; font-family: inherit; font-weight: 700; font-size: 13.5px; padding: 9px 18px; cursor: pointer; }
-.sen-saved { font-size: 12.5px; color: #0E7C5A; }
+.sen-saved { font-size: 12.5px; font-weight: 700; color: #0E7C5A; }
+.sen-saved-auto { font-size: 12.5px; color: var(--muted, #6b7280); }
+.sen-legend { margin-left: 8px; font-size: 11.5px; font-weight: 600; color: var(--muted, #9AA2B1); }
+.sen-ok { color: #0E7C5A; }
+.sen-bad { color: #D93025; }
+.sen-wait { color: var(--muted, #9AA2B1); font-weight: 600; }
+.sen-val { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; }
+.sen-val.is-ok { background: rgba(14,124,90,.1); color: #0E7C5A; }
+.sen-val.is-bad { background: rgba(217,48,37,.08); color: #D93025; }
+.sen-val.is-wait { background: var(--input-bg, rgba(20,32,64,.05)); color: #9AA2B1; }
+.sen-fade-enter-active, .sen-fade-leave-active { transition: opacity .3s ease; }
+.sen-fade-enter-from, .sen-fade-leave-to { opacity: 0; }
 .sen-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 16px 0; text-align: center; }
 .sen-ue { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border, rgba(20,32,64,.05)); }
 .sen-ue-code { font-weight: 700; color: var(--pr); font-size: 13px; }
