@@ -8,6 +8,23 @@
       </p>
     </div>
 
+    <!-- Analyse MIAPO : incohérences financières + relances -->
+    <section class="syn-miapo">
+      <div class="syn-miapo-head">
+        <span class="syn-miapo-badge">MIAPO</span>
+        <h2 class="syn-miapo-title">Analyse financière</h2>
+      </div>
+      <div class="syn-miapo-list">
+        <div v-for="(ins, i) in miapoInsights" :key="i" class="syn-miapo-row" :class="'is-' + ins.type">
+          <span class="syn-miapo-ico" v-html="insIcon(ins.type)"></span>
+          <div class="syn-miapo-txt">
+            <div class="syn-miapo-t">{{ ins.titre }}</div>
+            <div class="syn-miapo-d">{{ ins.detail }}</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <section class="syn-panel">
       <!-- Revenus -->
       <div class="syn-section">
@@ -122,6 +139,38 @@ const chargesAnn = computed(() => chargesAnnuel(supCharges))
 const depensesAnnuelles = computed(() => salaires.value.masseAnnuelle + chargesAnn.value)
 const resultatActuel = computed(() => revenus.value.encaisse - depensesAnnuelles.value)
 const resultatPrevisionnel = computed(() => revenus.value.attendu - depensesAnnuelles.value)
+
+// ── Analyse MIAPO : incohérences financières + relances ──
+const comptesEnRetard = computed(() => (financeStore.comptes || []).filter((c) => c.statut === 'en_retard'))
+const montantRetard = computed(() => comptesEnRetard.value.reduce((s, c) => s + (c.totalRestant || 0), 0))
+const ratioMasse = computed(() => (revenus.value.attendu ? Math.round((salaires.value.masseAnnuelle / revenus.value.attendu) * 100) : 0))
+
+const miapoInsights = computed(() => {
+  const arr = []
+  if (comptesEnRetard.value.length) {
+    arr.push({ type: 'relance', titre: `${comptesEnRetard.value.length} comptes en retard de paiement`, detail: `${fmtMontant(montantRetard.value)} à recouvrer. MIAPO peut préparer les relances (J+15 puis J+30) depuis l'onglet Paiements.` })
+  }
+  if (revenus.value.taux < 85) {
+    arr.push({ type: 'warn', titre: `Recouvrement à ${revenus.value.taux}%`, detail: `Sous le seuil de 85 % : risque de tension de trésorerie. Prioriser les relances des plus gros restes dus.` })
+  }
+  if (ratioMasse.value > 55) {
+    arr.push({ type: 'warn', titre: `Masse salariale = ${ratioMasse.value}% du CA attendu`, detail: `Ratio élevé (> 55 %). Surveiller l'équilibre entre charges de personnel et revenus de scolarité.` })
+  }
+  if (resultatPrevisionnel.value < 0) {
+    arr.push({ type: 'danger', titre: `Résultat prévisionnel négatif`, detail: `Les dépenses annuelles dépassent le CA attendu de ${fmtMontant(Math.abs(resultatPrevisionnel.value))}. Revoir la grille tarifaire ou réduire les charges.` })
+  }
+  if (!arr.length) {
+    arr.push({ type: 'ok', titre: `Situation financière saine`, detail: `Recouvrement satisfaisant et résultat positif. Aucune alerte financière détectée par MIAPO.` })
+  }
+  return arr
+})
+
+function insIcon(type) {
+  if (type === 'relance') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>'
+  if (type === 'danger') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+  if (type === 'ok') return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+  return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+}
 </script>
 
 <style scoped>
@@ -129,6 +178,22 @@ const resultatPrevisionnel = computed(() => revenus.value.attendu - depensesAnnu
 .syn-intro { padding: 4px 0; }
 .syn-h1 { font-family: 'Poppins', sans-serif; font-size: 24px; font-weight: 800; color: #1A1D1F; margin: 0 0 4px; }
 .syn-sub { font-size: 13.5px; color: #6F767E; margin: 0; max-width: 760px; line-height: 1.5; }
+
+/* Analyse MIAPO */
+.syn-miapo { background: linear-gradient(150deg, #4F46E5, #7C3AED); border-radius: 14px; padding: 18px 22px; }
+.syn-miapo-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.syn-miapo-badge { background: rgba(255,255,255,.2); border-radius: 20px; padding: 3px 12px; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 12px; color: #fff; }
+.syn-miapo-title { font-family: 'Poppins', sans-serif; font-size: 15px; font-weight: 700; color: #fff; margin: 0; }
+.syn-miapo-list { display: flex; flex-direction: column; gap: 10px; }
+.syn-miapo-row { display: flex; align-items: flex-start; gap: 12px; background: rgba(255,255,255,.12); border-radius: 12px; padding: 12px 14px; }
+.syn-miapo-ico { flex-shrink: 0; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,.18); color: #fff; }
+.syn-miapo-row.is-danger .syn-miapo-ico { background: rgba(255,150,150,.28); }
+.syn-miapo-row.is-warn .syn-miapo-ico { background: rgba(255,214,120,.30); }
+.syn-miapo-row.is-relance .syn-miapo-ico { background: rgba(255,255,255,.28); }
+.syn-miapo-row.is-ok .syn-miapo-ico { background: rgba(160,255,200,.28); }
+.syn-miapo-txt { min-width: 0; }
+.syn-miapo-t { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: #fff; }
+.syn-miapo-d { font-size: 12.5px; color: rgba(255,255,255,.9); line-height: 1.45; margin-top: 2px; }
 
 .syn-panel { background: #fff; border: 1px solid #ECECE8; border-radius: 14px; padding: 8px 22px 22px; }
 .syn-section { padding: 18px 0; border-bottom: 1px solid #F2F1ED; }
