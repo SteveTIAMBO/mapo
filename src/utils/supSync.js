@@ -35,6 +35,7 @@ const COLL_MAP = {
   'sup_stages': 'stages',
   'sup_salles': 'salles',
   'sup_prog_responsables': 'programme_responsables',
+  'sup_releve_signatures': 'releve_signatures',
   // finance.js
   'fin_tarifs': 'finance_tarifs',
   'fin_bourses': 'finance_bourses',

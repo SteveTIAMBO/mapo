@@ -750,6 +750,11 @@ function generateNotes() {
 }
 const NOTES = reactive(loadEntity('notes', IS_SCHOOL_MODE ? {} : generateNotes()))
 
+// Signatures du directeur sur les relevés de notes (miroir de `dirSignatures`
+// du Secondaire). Clé = `${etudiantId}_${semestre}` → { signed, signedBy, signedAt }.
+// Vide par défaut (aucune signature démo pré-remplie).
+const RELEVE_SIGNATURES = reactive(loadEntity('releve_signatures', {}))
+
 // ── Génération des stages et alternances ──
 // Cibles : Bachelor 3, Master 1, Master 2 prioritairement.
 const STAGE_STATUTS = ['en_cours', 'a_pourvoir', 'soutenance_prevue', 'valide']
@@ -916,6 +921,9 @@ export const useSuperieurStore = defineStore('superieur', () => {
       const newNotes = loadEntity('notes', {})
       for (const k of Object.keys(NOTES)) delete NOTES[k]
       Object.assign(NOTES, newNotes)
+      const newSigs = loadEntity('releve_signatures', {})
+      for (const k of Object.keys(RELEVE_SIGNATURES)) delete RELEVE_SIGNATURES[k]
+      Object.assign(RELEVE_SIGNATURES, newSigs)
       STAGES.splice(0, STAGES.length, ...loadEntity('stages', []))
       const newResp = loadEntity('prog_responsables', {})
       for (const k of Object.keys(PROGRAMME_RESPONSABLES)) delete PROGRAMME_RESPONSABLES[k]
@@ -1228,6 +1236,44 @@ export const useSuperieurStore = defineStore('superieur', () => {
     saveEntity('notes', NOTES)
     supSync.pushDoc('sup_notes', etudiantId, NOTES[etudiantId])
   }
+
+  // ── Signature du relevé de notes par le directeur ──────────────
+  // Miroir du mécanisme Secondaire (notes.js `dirSignatures`) : le directeur ne
+  // SAISIT pas les notes — il relit et SIGNE le relevé. Sa signature figure à
+  // l'écran ET sur le PDF. Persisté en localStorage (clé sup_releve_signatures)
+  // + poussé vers Firestore en mode école, exactement comme setSupNote.
+  function releveSignKey(etudiantId, semestre) {
+    return `${etudiantId}_${semestre}`
+  }
+  function signReleve(etudiantId, semestre, dirName) {
+    if (!etudiantId || !semestre) return
+    const key = releveSignKey(etudiantId, semestre)
+    const record = {
+      signed: true,
+      signedBy: dirName || 'Le Directeur',
+      signedAt: new Date().toISOString(),
+    }
+    RELEVE_SIGNATURES[key] = record
+    saveEntity('releve_signatures', RELEVE_SIGNATURES)
+    supSync.pushDoc('sup_releve_signatures', key, record)
+  }
+  function unsignReleve(etudiantId, semestre) {
+    if (!etudiantId || !semestre) return
+    const key = releveSignKey(etudiantId, semestre)
+    delete RELEVE_SIGNATURES[key]
+    saveEntity('releve_signatures', RELEVE_SIGNATURES)
+    // Pierre tombale : on remet signed:false côté Firestore (merge).
+    supSync.pushDoc('sup_releve_signatures', key, { signed: false })
+  }
+  function isReleveSigned(etudiantId, semestre) {
+    if (!etudiantId || !semestre) return false
+    return !!RELEVE_SIGNATURES[releveSignKey(etudiantId, semestre)]?.signed
+  }
+  function getReleveSignature(etudiantId, semestre) {
+    if (!etudiantId || !semestre) return { signed: false }
+    return RELEVE_SIGNATURES[releveSignKey(etudiantId, semestre)] || { signed: false }
+  }
+
   const juryParPromotion = computed(() => {
     return promotions.map((p) => {
       const etudiantsPromo = etudiants.filter((e) => e.promotionId === p.id)
@@ -1690,6 +1736,12 @@ export const useSuperieurStore = defineStore('superieur', () => {
     notesPourUE,
     releveEtudiant,
     setSupNote,
+    // Signature du relevé par le directeur
+    releveSignKey,
+    signReleve,
+    unsignReleve,
+    isReleveSigned,
+    getReleveSignature,
     juryParPromotion,
     // Stages
     stages,

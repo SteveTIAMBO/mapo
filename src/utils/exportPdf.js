@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { makeSignatureDataUrl } from './signatureImage'
 
 // Ouvre le PDF dans un nouvel onglet (aperçu) plutôt que de le télécharger
 // directement. L'utilisateur voit le document et peut le télécharger depuis la
@@ -103,6 +104,134 @@ export function exportTimetablePdf(p) {
     margin: { left: 30, right: 30 },
     tableWidth: 'auto',
   })
+
+  previewPdf(doc, filename)
+}
+
+/**
+ * Exporte un RELEVÉ DE NOTES semestriel (Supérieur / LMD) avec la signature du
+ * directeur en pied de page. Aperçu navigateur avant tout téléchargement.
+ * @param {Object} p
+ * @param {string} p.etudiant - nom complet de l'étudiant
+ * @param {string} p.promotion - libellé programme/année
+ * @param {string} p.semestre
+ * @param {number} p.moyenne
+ * @param {string} p.mention
+ * @param {string} p.decision - « Admis » / « Ajourné »
+ * @param {Array<{ueCode, ueIntitule, ects, note, validation}>} p.lignes - note null = « — »
+ * @param {{signed:boolean, signedBy?:string, signedAt?:string}} p.signature
+ * @param {string} p.filename - sans extension
+ * @param {string} p.title
+ */
+export function exportRelevePdf(p) {
+  const {
+    etudiant = '', promotion = '', semestre = '',
+    moyenne = 0, mention = '', decision = '',
+    lignes = [], signature = { signed: false },
+    filename = 'releve', title = 'Relevé de notes semestriel',
+  } = p || {}
+
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
+  const pageW = doc.internal.pageSize.getWidth()
+  const pageH = doc.internal.pageSize.getHeight()
+  const margin = 40
+
+  // ── Titre ──
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(15)
+  doc.setTextColor(20, 30, 60)
+  doc.text(String(title), margin, 46)
+
+  // ── Métadonnées (étudiant · promotion · semestre) ──
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(10)
+  doc.setTextColor(90, 90, 90)
+  const meta = [etudiant, promotion, semestre ? `Semestre ${semestre}` : '']
+    .filter(Boolean).join('   ·   ')
+  doc.text(meta, margin, 64)
+
+  // ── Tableau des UE ──
+  autoTable(doc, {
+    startY: 80,
+    head: [['UE', 'Crédits', 'Note /20', 'Validation']],
+    body: lignes.map((l) => [
+      [l.ueCode, l.ueIntitule].filter(Boolean).join(' — '),
+      l.ects === null || l.ects === undefined ? '' : String(l.ects),
+      l.note === null || l.note === undefined ? '—' : Number(l.note).toFixed(2),
+      l.validation || '',
+    ]),
+    styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
+    headStyles: { fillColor: [21, 88, 176], textColor: 255, fontStyle: 'bold' },
+    alternateRowStyles: { fillColor: [245, 247, 251] },
+    columnStyles: {
+      1: { halign: 'right', cellWidth: 62 },
+      2: { halign: 'right', cellWidth: 72 },
+      3: { cellWidth: 96 },
+    },
+    margin: { left: margin, right: margin },
+  })
+
+  // ── Synthèse (Moyenne · Mention · Décision) ──
+  let y = (doc.lastAutoTable?.finalY || 80) + 22
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(11)
+  doc.setTextColor(30, 30, 30)
+  const summary = [
+    `Moyenne : ${Number(moyenne || 0).toFixed(2)}/20`,
+    mention ? `Mention : ${mention}` : '',
+    decision ? `Décision : ${decision}` : '',
+  ].filter(Boolean).join('        ')
+  doc.text(summary, margin, y)
+
+  // ── Signature du Directeur (bas-droite) ──
+  const sigW = 70
+  const sigH = 26
+  const sigX = pageW - margin - 150
+  let sy = Math.max(y + 44, pageH - 132)
+
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.setTextColor(30, 30, 30)
+  doc.text('Le Directeur', sigX, sy)
+  sy += 10
+
+  if (signature && signature.signed) {
+    try {
+      const img = makeSignatureDataUrl(signature.signedBy)
+      if (img) doc.addImage(img, 'PNG', sigX, sy, sigW, sigH)
+    } catch (e) { /* silent */ }
+    sy += sigH + 12
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(9)
+    doc.setTextColor(30, 30, 30)
+    doc.text(String(signature.signedBy || 'Le Directeur'), sigX, sy)
+    if (signature.signedAt) {
+      const d = new Date(signature.signedAt)
+      const ds = isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR')
+      if (ds) {
+        sy += 12
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(8)
+        doc.setTextColor(110, 110, 110)
+        doc.text(`Signé le ${ds}`, sigX, sy)
+      }
+    }
+  } else {
+    // Ligne de signature vierge.
+    sy += 34
+    doc.setDrawColor(150, 150, 150)
+    doc.setLineWidth(0.6)
+    doc.line(sigX, sy, sigX + 150, sy)
+  }
+
+  // ── Pied de page ──
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(150, 150, 150)
+  doc.text(
+    `Généré par MAPO — ${new Date().toLocaleDateString('fr-FR')}`,
+    pageW / 2, pageH - 16, { align: 'center' }
+  )
 
   previewPdf(doc, filename)
 }

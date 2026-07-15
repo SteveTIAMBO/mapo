@@ -161,6 +161,42 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Signature du directeur sur le relevé -->
+        <div class="st-sign">
+          <div class="st-sign-head">Le Directeur</div>
+
+          <!-- Signé -->
+          <div v-if="releveSigned" class="st-sign-done">
+            <img :src="releveSignatureImg" alt="Signature du directeur" class="st-sign-img" />
+            <div class="st-sign-badge">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+              <span>Validé et signé</span>
+            </div>
+            <div class="st-sign-name">{{ releveSignature.signedBy }}</div>
+            <div class="st-sign-date">Signé le {{ formatSignDate(releveSignature.signedAt) }}</div>
+            <button v-if="canSignReleve" type="button" class="st-sign-undo" @click="cancelSignReleve">
+              Annuler la signature
+            </button>
+          </div>
+
+          <!-- À signer (directeur / admin) -->
+          <div v-else-if="canSignReleve" class="st-sign-todo">
+            <button
+              type="button"
+              class="st-sign-btn"
+              :disabled="pendingUE > 0"
+              :title="pendingUE > 0 ? `Relevé incomplet — ${pendingUE} UE en attente de note` : ''"
+              @click="openSignModal"
+            >Valider et signer le relevé</button>
+            <span v-if="pendingUE > 0" class="st-sign-hint">
+              Relevé incomplet — {{ pendingUE }} UE en attente de note
+            </span>
+          </div>
+
+          <!-- Non signé, lecture seule -->
+          <div v-else class="st-sign-line" aria-hidden="true"></div>
+        </div>
       </div>
     </section>
 
@@ -183,6 +219,9 @@
         Sélectionnez une UE pour saisir / consulter les notes de ses étudiants.
       </div>
       <div v-else>
+        <p v-if="!canEditNotes" class="sn-readonly-hint">
+          Lecture seule — la saisie des notes est faite par l'enseignant de l'UE.
+        </p>
         <div class="sn-saisie-summary">
           <span><strong>{{ notesUE.length }}</strong> étudiant{{ notesUE.length > 1 ? 's' : '' }} inscrit{{ notesUE.length > 1 ? 's' : '' }}</span>
           <span class="sn-dot">•</span>
@@ -216,7 +255,8 @@
                   class="sn-note-input"
                   :value="n.cc ?? ''"
                   placeholder="—"
-                  @change="store.setSupNote(n.etudiant.id, selectedUEId, 'cc', $event.target.value)"
+                  :disabled="!canEditNotes"
+                  @change="canEditNotes && store.setSupNote(n.etudiant.id, selectedUEId, 'cc', $event.target.value)"
                 />
               </td>
               <td class="num">
@@ -225,7 +265,8 @@
                   class="sn-note-input"
                   :value="n.examen ?? ''"
                   placeholder="—"
-                  @change="store.setSupNote(n.etudiant.id, selectedUEId, 'examen', $event.target.value)"
+                  :disabled="!canEditNotes"
+                  @change="canEditNotes && store.setSupNote(n.etudiant.id, selectedUEId, 'examen', $event.target.value)"
                 />
               </td>
               <td class="num">
@@ -243,6 +284,23 @@
         </table>
       </div>
     </section>
+
+    <!-- Modale de confirmation de signature (fond opaque) -->
+    <div v-if="showSignModal" class="st-modal-overlay" @click.self="showSignModal = false">
+      <div class="st-modal">
+        <h3 class="st-modal-title">Signer le relevé</h3>
+        <p class="st-modal-text">
+          Vous vous apprêtez à signer le relevé de
+          <strong>{{ releve ? releve.etudiant.nomComplet : '' }}</strong>
+          (Semestre {{ releve ? releve.semestre : '' }}).
+          Votre signature figurera sur le relevé.
+        </p>
+        <div class="st-modal-actions">
+          <button type="button" class="st-modal-btn st-modal-cancel" @click="showSignModal = false">Annuler</button>
+          <button type="button" class="st-modal-btn st-modal-confirm" @click="confirmSignReleve">Valider et signer</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -250,11 +308,18 @@
 import { ref, computed } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 import { UE_TYPES } from '../../stores/superieur'
+import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import ExportMenu from '../../components/ExportMenu.vue'
 import { exportToExcel } from '../../utils/exportExcel'
-import { exportToPdf } from '../../utils/exportPdf'
+import { exportRelevePdf as exportRelevePdfUtil } from '../../utils/exportPdf'
+import { makeSignatureDataUrl } from '../../utils/signatureImage'
 
 const store = useSuperieurStore()
+const authSup = useSuperieurAuthStore()
+// Le directeur / l'admin ne SAISIT PAS les notes (grille en lecture seule) :
+// seule l'enseignante de l'UE saisit. Le directeur / l'admin RELIT et SIGNE le relevé.
+const canEditNotes = computed(() => authSup.role === 'enseignant')
+const canSignReleve = computed(() => authSup.isAdmin)
 const tabs = [
   { key: 'jury', label: 'Délibérations' },
   { key: 'releve', label: 'Relevé étudiant' },
@@ -266,6 +331,45 @@ const selectedEtudiantId = ref('')
 const releve = computed(() =>
   selectedEtudiantId.value ? store.releveEtudiant(selectedEtudiantId.value) : null
 )
+
+// ── Signature du relevé par le directeur ──
+const releveSigned = computed(() =>
+  !!(releve.value && store.isReleveSigned(selectedEtudiantId.value, releve.value.semestre))
+)
+const releveSignature = computed(() =>
+  releve.value
+    ? store.getReleveSignature(selectedEtudiantId.value, releve.value.semestre)
+    : { signed: false }
+)
+const releveSignatureImg = computed(() =>
+  releveSigned.value ? makeSignatureDataUrl(releveSignature.value.signedBy) : ''
+)
+// UE encore « en attente » de note : bloque la signature tant que > 0.
+const pendingUE = computed(() =>
+  releve.value ? releve.value.lignes.filter((l) => l.note == null).length : 0
+)
+const showSignModal = ref(false)
+function openSignModal() {
+  if (!canSignReleve.value || pendingUE.value > 0) return
+  showSignModal.value = true
+}
+function confirmSignReleve() {
+  if (!releve.value) return
+  const dirName = authSup.profile?.displayName || 'Le Directeur'
+  store.signReleve(selectedEtudiantId.value, releve.value.semestre, dirName)
+  showSignModal.value = false
+}
+function cancelSignReleve() {
+  if (!releve.value) return
+  store.unsignReleve(selectedEtudiantId.value, releve.value.semestre)
+}
+function formatSignDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return isNaN(d.getTime())
+    ? ''
+    : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+}
 
 const selectedUEId = ref('')
 const ueSelectionnee = computed(() => selectedUEId.value ? store.getUe(selectedUEId.value) : null)
@@ -344,8 +448,26 @@ function exportReleve() {
   exportToExcel(releveRows(), releveColumns, releveFilename(), 'Relevé')
 }
 function exportRelevePdf() {
-  if (!releve.value) return
-  exportToPdf(releveRows(), releveColumns, releveFilename(), { title: releveTitle() })
+  const r = releve.value
+  if (!r) return
+  exportRelevePdfUtil({
+    etudiant: r.etudiant.nomComplet,
+    promotion: `${r.etudiant.programmeNom} — ${r.etudiant.anneeNom}`,
+    semestre: r.semestre,
+    moyenne: r.moyenne,
+    mention: r.mention,
+    decision: r.admis ? 'Admis' : 'Ajourné',
+    lignes: r.lignes.map((l) => ({
+      ueCode: l.ueCode,
+      ueIntitule: l.ueIntitule,
+      ects: l.ects,
+      note: l.note,
+      validation: l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée',
+    })),
+    signature: store.getReleveSignature(selectedEtudiantId.value, r.semestre),
+    filename: releveFilename(),
+    title: 'Relevé de notes semestriel',
+  })
 }
 
 const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
@@ -577,4 +699,90 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
   .sn-releve-result { text-align: left; }
   .sn-result-line, .sn-result-decision { justify-content: flex-start; }
 }
+
+/* Lecture seule (directeur) : bandeau au-dessus de la grille de saisie */
+.sn-readonly-hint {
+  margin: 0 0 12px;
+  padding: 9px 12px;
+  background: var(--input-bg); border-radius: 9px;
+  font-size: 13px; color: var(--tx2);
+}
+
+/* Signature du directeur sur le relevé (fond opaque, aucune classe « -card ») */
+.st-sign {
+  margin-top: 18px;
+  padding: 16px 18px;
+  background: var(--input-bg); border-radius: 12px;
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  text-align: right;
+}
+.st-sign-head {
+  font-family: 'Poppins', sans-serif;
+  font-size: 11.5px; font-weight: 700; color: var(--tx3);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.st-sign-done { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.st-sign-img { width: 170px; height: auto; margin-bottom: 2px; }
+.st-sign-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 100px;
+  background: rgba(27, 138, 90, 0.12); color: var(--success);
+  font-family: 'Poppins', sans-serif; font-size: 11.5px; font-weight: 700;
+}
+.st-sign-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 14px; font-weight: 700; color: var(--tx);
+}
+.st-sign-date { font-size: 12px; color: var(--tx2); }
+.st-sign-undo {
+  margin-top: 4px;
+  background: none; border: none; padding: 2px 0;
+  font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600;
+  color: var(--danger); cursor: pointer; text-decoration: underline;
+}
+.st-sign-todo { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.st-sign-btn {
+  padding: 10px 18px;
+  background: var(--pr); border: none; border-radius: 10px;
+  font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 700; color: #fff;
+  cursor: pointer; transition: opacity 0.15s ease;
+}
+.st-sign-btn:hover:not(:disabled) { opacity: 0.9; }
+.st-sign-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.st-sign-hint { font-size: 12.5px; color: var(--warn); }
+.st-sign-line {
+  width: 200px; height: 0; margin-top: 26px;
+  border-bottom: 1.5px solid var(--tx3);
+}
+
+/* Modale de confirmation (fond OPAQUE #fff, aucune classe « -card ») */
+.st-modal-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; background: rgba(16, 24, 40, 0.45);
+}
+.st-modal {
+  width: 100%; max-width: 440px;
+  padding: 22px 24px;
+  background: #fff !important;
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(16, 24, 40, 0.28);
+}
+.st-modal-title {
+  margin: 0 0 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px; font-weight: 800; color: var(--tx);
+}
+.st-modal-text { margin: 0 0 18px; font-size: 14px; line-height: 1.55; color: var(--tx2); }
+.st-modal-text strong { color: var(--tx); font-weight: 700; }
+.st-modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.st-modal-btn {
+  padding: 9px 16px; border-radius: 9px;
+  font-family: 'Poppins', sans-serif; font-size: 13.5px; font-weight: 700;
+  cursor: pointer; border: 1.5px solid transparent;
+}
+.st-modal-cancel { background: #fff; border-color: var(--divider); color: var(--tx2); }
+.st-modal-cancel:hover { background: rgba(0, 0, 0, 0.04); }
+.st-modal-confirm { background: var(--pr); color: #fff; }
+.st-modal-confirm:hover { opacity: 0.9; }
 </style>
