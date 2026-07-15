@@ -1011,6 +1011,20 @@ export const useSuperieurStore = defineStore('superieur', () => {
     EMPLOI_DU_TEMPS.filter((s) => s.promotionId === selectedPromotionId.value)
   )
 
+  // Séances de l'emploi du temps d'un intervenant (repérage par nom, les séances
+  // ne portant pas d'intervenantId), toutes promotions confondues. Lecture seule,
+  // utilisé par l'espace enseignant (« Mes séances »). Enrichit chaque séance du
+  // libellé de sa promotion pour l'affichage.
+  function edtPourIntervenant(nomComplet) {
+    if (!nomComplet) return []
+    return EMPLOI_DU_TEMPS
+      .filter((s) => s.intervenantNom === nomComplet)
+      .map((s) => {
+        const promo = PROMOTIONS.find((p) => p.id === s.promotionId)
+        return { ...s, promotionNom: promo ? `${promo.programmeNom} · ${promo.anneeNom}` : '' }
+      })
+  }
+
   // ── Statistiques pour le tableau de bord ──
   const stats = computed(() => {
     // Scopé au campus du directeur (tout le groupe si estGroupe).
@@ -1738,6 +1752,7 @@ export const useSuperieurStore = defineStore('superieur', () => {
     offreParProgramme,
     selectedPromotion,
     emploiDuTemps,
+    edtPourIntervenant,
     stats,
     setEtudiantFilter,
     resetEtudiantFilters,

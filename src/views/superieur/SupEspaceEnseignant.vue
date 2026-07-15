@@ -15,101 +15,38 @@
       <div class="sen-kpi"><div class="sen-kpi-lab">Notes à saisir</div><div class="sen-kpi-val" :class="{ 'is-warn': aSaisir > 0 }">{{ aSaisir }}</div></div>
     </div>
 
+    <!-- Accès rapide aux rubriques -->
+    <div class="sen-quick">
+      <button v-for="q in quickLinks" :key="q.key" type="button" class="sen-quick-item" @click="goTab(q.key)">
+        <span class="sen-quick-ico" v-html="q.icon"></span>
+        <span class="sen-quick-lab">{{ q.label }}</span>
+      </button>
+    </div>
+
     <div class="sen-grid">
-      <!-- Saisie des notes (réelle : chaque note est persistée via le store) -->
+      <!-- Mes enseignements -->
       <section class="sen-card sen-card-wide">
         <div class="sen-card-head">
-          <h2 class="sen-h2">Saisie des notes</h2>
-          <select v-model="ueSelId" class="sen-select">
-            <option v-for="u in mesUe" :key="u.id" :value="u.id">{{ u.code }} · {{ u.intitule }}</option>
-          </select>
+          <h2 class="sen-h2">Mes enseignements</h2>
+          <button type="button" class="sen-link" @click="goTab('ens_ue')">Tout voir →</button>
         </div>
-        <p class="sen-note" v-if="ueSel">
-          {{ ueSel.intitule }} · {{ rosterPromo }} · {{ notesUE.length }} étudiants
-          <span class="sen-legend">Note UE = CC 40 % + Examen 60 %</span>
-        </p>
-        <table v-if="notesUE.length" class="sen-table">
-          <thead>
-            <tr>
-              <th>Matricule</th>
-              <th>Étudiant</th>
-              <th class="num">CC /20</th>
-              <th class="num">Examen /20</th>
-              <th class="num">Note UE</th>
-              <th>Validation</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="n in notesUE" :key="n.etudiant.id">
-              <td class="sen-mat">{{ n.etudiant.matricule }}</td>
-              <td>{{ n.etudiant.nomComplet }}</td>
-              <td class="num">
-                <input class="sen-note-input" type="number" min="0" max="20" step="0.25"
-                  :value="n.cc ?? ''" placeholder="—"
-                  @change="saveNote(n.etudiant.id, 'cc', $event.target.value)" />
-              </td>
-              <td class="num">
-                <input class="sen-note-input" type="number" min="0" max="20" step="0.25"
-                  :value="n.examen ?? ''" placeholder="—"
-                  @change="saveNote(n.etudiant.id, 'examen', $event.target.value)" />
-              </td>
-              <td class="num">
-                <strong :class="n.note == null ? 'sen-wait' : n.note < 10 ? 'sen-bad' : 'sen-ok'">
-                  {{ n.note != null ? n.note.toFixed(2) : '—' }}
-                </strong>
-              </td>
-              <td>
-                <span class="sen-val" :class="n.note == null ? 'is-wait' : n.note >= 10 ? 'is-ok' : 'is-bad'">
-                  {{ n.note == null ? 'En attente' : n.note >= 10 ? 'Validée' : 'Non validée' }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-        <p v-else class="sen-empty">Sélectionnez une UE pour saisir les notes.</p>
-        <div class="sen-actions">
-          <span class="sen-saved-auto">Les notes sont enregistrées automatiquement. Le directeur valide et signe le relevé.</span>
-          <transition name="sen-fade"><span v-if="saved" class="sen-saved">✓ Enregistré</span></transition>
+        <div v-for="u in mesUe" :key="u.id" class="sen-ue">
+          <div>
+            <div class="sen-ue-code">{{ u.code }} · {{ u.intitule }}</div>
+            <div class="sen-ue-int">{{ u.semestre }} · {{ u.ects }} crédits</div>
+          </div>
+          <div class="sen-ue-h">{{ u.volumeHoraire }} h</div>
         </div>
+        <p v-if="!mesUe.length" class="sen-empty">Aucune UE assignée.</p>
       </section>
 
       <div class="sen-side">
-        <!-- Mes enseignements -->
-        <section class="sen-card">
-          <h2 class="sen-h2">Mes enseignements</h2>
-          <div v-for="u in mesUe" :key="u.id" class="sen-ue">
-            <div>
-              <div class="sen-ue-code">{{ u.code }}</div>
-              <div class="sen-ue-int">{{ u.intitule }}</div>
-            </div>
-            <div class="sen-ue-h">{{ u.volumeHoraire }} h</div>
-          </div>
-          <p v-if="!mesUe.length" class="sen-empty">Aucune UE assignée.</p>
-        </section>
-
-        <!-- Mes fiches de paie -->
-        <section class="sen-card">
-          <h2 class="sen-h2">Mes fiches de paie</h2>
-          <div class="sen-paie-head">
-            <span>Net à payer / mois</span>
-            <strong>{{ fmtFcfa(paie.net) }} FCFA</strong>
-          </div>
-          <div v-for="m in moisDispo" :key="m.year + '-' + m.monthIndex" class="sen-paie-row">
-            <span class="sen-paie-mois">{{ m.label }}</span>
-            <button type="button" class="sen-paie-btn" @click="telechargerPaie(m)">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Télécharger
-            </button>
-          </div>
-        </section>
-
         <!-- Assistant IA (masqué si MIAPO désactivé pour la préparation de cours) -->
         <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-card sen-ia">
           <div class="sen-ia-badge">MIAPO</div>
           <h2 class="sen-h2 sen-ia-h2">Assistant pédagogique</h2>
           <p class="sen-ia-txt">Prépare tes cours, devoirs et examens avec l'IA : sujet + corrigé générés en quelques secondes, adaptés à ton UE et au niveau.</p>
-          <button class="sen-ia-cta" type="button" @click="iaClick">Préparer un support de cours</button>
-          <p v-if="iaMsg" class="sen-ia-msg">{{ iaMsg }}</p>
+          <button class="sen-ia-cta" type="button" @click="goTab('ens_devoirs')">Préparer un support</button>
         </section>
       </div>
     </div>
@@ -117,17 +54,28 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, inject } from 'vue'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 import { generateFichePaie, fichePaieDetail, moisLabel } from '../../utils/pdfFichePaie'
 
 const store = useSuperieurStore()
 const miapoGlobal = useSuperieurMiapoStore()
+const goTab = inject('supGoTab', () => {})
 const moi = computed(() =>
   store.intervenantsAvecCharge.find((i) => i.statut === 'permanent' && i.nbUE >= 2) ||
   store.intervenantsAvecCharge[0] || {}
 ).value
+
+const quickLinks = [
+  { key: 'ens_ue', label: 'Mes UE', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
+  { key: 'ens_notes', label: 'Saisie des notes', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>' },
+  { key: 'ens_cours', label: 'Cours & ressources', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
+  { key: 'ens_devoirs', label: 'Devoirs & examens', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
+  { key: 'ens_edt', label: 'Emploi du temps', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' },
+  { key: 'ens_messagerie', label: 'Messagerie', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+  { key: 'ens_paie', label: 'Mes fiches de paie', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>' },
+]
 
 const prenom = moi.prenom || (moi.nomComplet || '').split(' ').slice(-1)[0] || 'Professeur'
 const initials = ((moi.prenom || '') + ' ' + (moi.nom || '')).trim().split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'PR'
@@ -192,6 +140,12 @@ function iaClick() { iaMsg.value = "L'assistant MIAPO génère cours, devoirs et
 .sen-hello { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; color: var(--text, #1A1D1F); }
 .sen-sub { font-size: 14px; color: var(--muted, #5b6472); margin-top: 2px; }
 .sen-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.sen-quick { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.sen-quick-item { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; background: #fff; border: 1px solid var(--border, rgba(20,32,64,.08)); border-radius: 14px; padding: 16px; cursor: pointer; transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease; font-family: inherit; text-align: left; }
+.sen-quick-item:hover { border-color: var(--pr); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(20,32,64,.10); }
+.sen-quick-ico { width: 40px; height: 40px; border-radius: 11px; display: flex; align-items: center; justify-content: center; background: rgba(var(--pr-rgb), .10); color: var(--pr); }
+.sen-quick-lab { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--text, #1A1D1F); }
+.sen-link { background: none; border: none; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--pr); cursor: pointer; }
 .sen-kpi { background: #fff; border: 1px solid var(--border, rgba(20,32,64,.08)); border-radius: 14px; padding: 16px 18px; }
 .sen-kpi-lab { font-size: 11.5px; text-transform: uppercase; letter-spacing: .4px; color: var(--muted, #9AA2B1); }
 .sen-kpi-val { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 26px; color: var(--text, #1A1D1F); margin-top: 4px; }

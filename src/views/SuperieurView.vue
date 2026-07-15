@@ -290,6 +290,14 @@ import SupSalles from './superieur/SupSalles.vue'
 // Finance : un seul module « Comptabilité » qui regroupe les 7 vues en onglets
 import SupComptabilite from './superieur/SupComptabilite.vue'
 import SupDiplomes from './superieur/SupDiplomes.vue'
+// Espace enseignant : menu complet (comme le prof du Secondaire)
+import SupEnsMesUe from './superieur/SupEnsMesUe.vue'
+import SupEnsNotes from './superieur/SupEnsNotes.vue'
+import SupEnsCours from './superieur/SupEnsCours.vue'
+import SupEnsDevoirs from './superieur/SupEnsDevoirs.vue'
+import SupEnsEdt from './superieur/SupEnsEdt.vue'
+import SupEnsMessagerie from './superieur/SupEnsMessagerie.vue'
+import SupEnsPaie from './superieur/SupEnsPaie.vue'
 import SupGestionAcces from './superieur/SupGestionAcces.vue'
 import SupMobiliteEntrante from './superieur/SupMobiliteEntrante.vue'
 import SupParametres from './superieur/SupParametres.vue'
@@ -466,6 +474,13 @@ const panels = {
   roles: SupRoles,
   espace_etudiant: SupEspaceEtudiant,
   espace_enseignant: SupEspaceEnseignant,
+  ens_ue: SupEnsMesUe,
+  ens_notes: SupEnsNotes,
+  ens_cours: SupEnsCours,
+  ens_devoirs: SupEnsDevoirs,
+  ens_edt: SupEnsEdt,
+  ens_messagerie: SupEnsMessagerie,
+  ens_paie: SupEnsPaie,
   espace_parent: SupEspaceParent,
   import: SupImport,
   transition_annee: SupTransitionAnnee,
@@ -489,6 +504,48 @@ const ALL_TABS = [
     label: 'Mon espace',
     roles: ['enseignant'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>',
+  },
+  {
+    key: 'ens_ue',
+    label: 'Mes UE',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  },
+  {
+    key: 'ens_notes',
+    label: 'Saisie des notes',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  },
+  {
+    key: 'ens_cours',
+    label: 'Cours & ressources',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+  },
+  {
+    key: 'ens_devoirs',
+    label: 'Devoirs & examens',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  },
+  {
+    key: 'ens_edt',
+    label: 'Emploi du temps',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
+  },
+  {
+    key: 'ens_messagerie',
+    label: 'Messagerie',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  },
+  {
+    key: 'ens_paie',
+    label: 'Mes fiches de paie',
+    roles: ['enseignant'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
   },
   {
     key: 'espace_parent',
@@ -629,7 +686,8 @@ const ALL_TABS = [
  */
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
-  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports'].includes(tabKey)) {
+  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports',
+    'ens_ue', 'ens_notes', 'ens_cours', 'ens_devoirs', 'ens_edt', 'ens_messagerie', 'ens_paie'].includes(tabKey)) {
     return 'formation'
   }
   return tabKey
