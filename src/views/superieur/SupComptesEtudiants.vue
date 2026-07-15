@@ -64,23 +64,21 @@
         </select>
       </div>
 
-      <!-- Tableau -->
+      <!-- Tableau (colonnes réduites pour tenir sur une ligne) -->
       <div class="sc-table-wrap">
         <table class="sc-table">
           <thead>
             <tr>
               <th>Étudiant</th>
               <th>Promotion</th>
-              <th>Échéancier</th>
-              <th class="num">Dû</th>
-              <th class="num">Payé</th>
-              <th class="num">Reste</th>
+              <th class="num">Total dû</th>
+              <th class="num">Reste à payer</th>
               <th>Statut</th>
             </tr>
           </thead>
           <tbody>
             <tr
-              v-for="item in store.filteredComptes"
+              v-for="item in pagedComptes"
               :key="item.compte.id"
               @click="openDetail(item)"
               class="sc-row"
@@ -101,19 +99,27 @@
                 <div class="sc-promo">{{ item.etudiant.programmeNom }}</div>
                 <div class="sc-promo-annee">{{ item.etudiant.anneeNom }}</div>
               </td>
-              <td>{{ item.compte.modeleEcheancierLabel }}</td>
               <td class="num">{{ fmtMontant(item.compte.totalDu) }}</td>
-              <td class="num">{{ fmtMontant(item.compte.totalPaye) }}</td>
-              <td class="num">
-                <strong>{{ fmtMontant(item.compte.totalRestant) }}</strong>
-              </td>
+              <td class="num"><strong>{{ fmtMontant(item.compte.totalRestant) }}</strong></td>
               <td><span class="sc-statut" :class="`st-${item.compte.statut}`">{{ labelStatut(item.compte.statut) }}</span></td>
             </tr>
             <tr v-if="store.filteredComptes.length === 0">
-              <td colspan="7" class="sc-empty">Aucun compte ne correspond à vos filtres.</td>
+              <td colspan="5" class="sc-empty">Aucun compte ne correspond à vos filtres.</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Pagination (50 étudiants max par page) -->
+      <div v-if="totalPages > 1" class="sc-pagination">
+        <span class="sc-page-info">
+          {{ pageStart + 1 }}–{{ pageEnd }} sur {{ store.filteredComptes.length }} comptes
+        </span>
+        <div class="sc-page-ctrl">
+          <button type="button" class="sc-page-btn" :disabled="page === 1" @click="page--">Précédent</button>
+          <span class="sc-page-num">Page {{ page }} / {{ totalPages }}</span>
+          <button type="button" class="sc-page-btn" :disabled="page === totalPages" @click="page++">Suivant</button>
+        </div>
       </div>
     </section>
 
@@ -278,7 +284,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import {
   useFinanceStore,
   fmtMontant, fmtDate,
@@ -296,6 +302,20 @@ const filtresState = computed(() => store.comptesFilters)
 function updateFiltre(k, v) { store.setCompteFilter(k, v) }
 
 const nbRetard = computed(() => store.comptes.filter((c) => c.statut === 'en_retard').length)
+
+// Pagination : 50 comptes max par page
+const PAGE_SIZE = 50
+const page = ref(1)
+const totalPages = computed(() => Math.max(1, Math.ceil(store.filteredComptes.length / PAGE_SIZE)))
+const pageStart = computed(() => (page.value - 1) * PAGE_SIZE)
+const pageEnd = computed(() => Math.min(pageStart.value + PAGE_SIZE, store.filteredComptes.length))
+const pagedComptes = computed(() => store.filteredComptes.slice(pageStart.value, pageEnd.value))
+// Retour page 1 quand les filtres changent, et borne la page si la liste rétrécit
+watch(
+  () => [filtresState.value.search, filtresState.value.statut, filtresState.value.promotionId, filtresState.value.boursier],
+  () => { page.value = 1 }
+)
+watch(totalPages, (n) => { if (page.value > n) page.value = n })
 
 const detail = ref(null)
 function openDetail(item) {
@@ -420,6 +440,14 @@ function typeLabel(k) { return TYPES_FINANCEMENT[k]?.label || k }
 .sc-row { cursor: pointer; transition: background 0.12s ease; }
 .sc-row:hover { background: rgba(var(--pr-rgb), 0.04); }
 .sc-empty { text-align: center; color: #9A9FA5; padding: 30px 10px; font-style: italic; }
+
+.sc-pagination { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 14px; padding-top: 12px; border-top: 1px solid #F2F1ED; }
+.sc-page-info { font-size: 12.5px; color: #6F767E; }
+.sc-page-ctrl { display: flex; align-items: center; gap: 8px; }
+.sc-page-btn { padding: 7px 14px; background: #fff; border: 1px solid #DCDCD8; border-radius: 9px; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 600; color: #1A1D1F; cursor: pointer; transition: border-color .15s ease, color .15s ease; }
+.sc-page-btn:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
+.sc-page-btn:disabled { opacity: .45; cursor: not-allowed; }
+.sc-page-num { font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700; color: #6F767E; min-width: 90px; text-align: center; }
 
 .sc-etudiant { display: flex; align-items: center; gap: 10px; }
 .sc-etu-avatar {
