@@ -28,6 +28,16 @@ export const DIPLOME_TYPES = [
   { key: 'attestation', label: 'Attestation de réussite', desc: 'Attestation de fin de cycle' },
 ]
 
+// Diplômes de l'enseignement SUPÉRIEUR (LMD). Séparés de DIPLOME_TYPES pour
+// ne pas polluer le sélecteur du Secondaire ; getType() cherche dans les deux.
+export const SUP_DIPLOME_TYPES = [
+  { key: 'bts', label: 'BTS', desc: 'Brevet de Technicien Supérieur' },
+  { key: 'dut', label: 'DUT', desc: 'Diplôme Universitaire de Technologie' },
+  { key: 'licence', label: 'Licence', desc: 'Licence (Bac+3, LMD)' },
+  { key: 'master', label: 'Master', desc: 'Master (Bac+5, LMD)' },
+  { key: 'doctorat', label: 'Doctorat', desc: 'Doctorat (LMD)' },
+]
+
 export const MENTIONS = ['Passable', 'Assez bien', 'Bien', 'Très bien', 'Excellent']
 
 const KEY = 'mapo_demo_diplomes'
@@ -137,7 +147,7 @@ export const useDiplomesStore = defineStore('diplomes', () => {
     [...diplomes.value].sort((a, b) => (b.emisLe || '').localeCompare(a.emisLe || ''))
   )
 
-  function getType(key) { return DIPLOME_TYPES.find((t) => t.key === key) }
+  function getType(key) { return DIPLOME_TYPES.find((t) => t.key === key) || SUP_DIPLOME_TYPES.find((t) => t.key === key) }
   function getByCode(code) {
     const c = normCode(code)
     return diplomes.value.find((d) => normCode(d.code) === c) || null

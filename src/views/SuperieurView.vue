@@ -289,6 +289,7 @@ import SupStages from './superieur/SupStages.vue'
 import SupSalles from './superieur/SupSalles.vue'
 // Finance : un seul module « Comptabilité » qui regroupe les 7 vues en onglets
 import SupComptabilite from './superieur/SupComptabilite.vue'
+import SupDiplomes from './superieur/SupDiplomes.vue'
 import SupGestionAcces from './superieur/SupGestionAcces.vue'
 import SupMobiliteEntrante from './superieur/SupMobiliteEntrante.vue'
 import SupParametres from './superieur/SupParametres.vue'
@@ -452,6 +453,7 @@ const panels = {
   edt: SupEmploiDuTemps,
   intervenants: SupIntervenants,
   notes: SupNotes,
+  diplomes: SupDiplomes,
   stages: SupStages,
   salles: SupSalles,
   finance: SupComptabilite,
@@ -534,6 +536,12 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>',
   },
   {
+    key: 'diplomes',
+    label: 'Diplômes',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><line x1="22" y1="10" x2="22" y2="15"/></svg>',
+  },
+  {
     key: 'stages',
     label: 'Stages',
     roles: ['admin', 'responsable_formation'],
@@ -590,7 +598,7 @@ const ALL_TABS = [
  */
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
-  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'stages', 'salles'].includes(tabKey)) {
+  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles'].includes(tabKey)) {
     return 'formation'
   }
   return tabKey
