@@ -102,6 +102,20 @@
           </tfoot>
         </table>
       </div>
+
+      <!-- Liste mobile : cartes (tableau masqué sur petit écran) -->
+      <ul class="sal-mlist">
+        <li v-for="row in data.rows" :key="row.intervenant.id" class="sal-mrow">
+          <div class="sal-mrow-main">
+            <div class="sal-mrow-name">{{ row.intervenant.nomComplet }}</div>
+            <div class="sal-mrow-sub">{{ row.intervenant.specialite || '—' }} · {{ fmtMontant(row.mensuel) }}/mois</div>
+          </div>
+          <button class="sal-btn" :class="{ 'is-done': paidIds.has(row.intervenant.id) }" type="button" @click="togglePaid(row.intervenant.id)">
+            {{ paidIds.has(row.intervenant.id) ? 'Payé' : 'Payer' }}
+          </button>
+        </li>
+        <li v-if="data.rows.length === 0" class="sal-mempty">Aucun intervenant.</li>
+      </ul>
     </section>
   </div>
 </template>
@@ -207,5 +221,20 @@ const verseCeMois = computed(() =>
   .sal-kpi { padding: 12px 14px; }
   .sal-kpi-value { font-size: 18px; }
   .sal-table th, .sal-table td { padding: 10px 10px; font-size: 12.5px; }
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sal-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sal-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+.sal-mrow:last-child { border-bottom: none; }
+.sal-mrow-main { flex: 1; min-width: 0; }
+.sal-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sal-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sal-mrow .sal-btn { flex-shrink: 0; }
+.sal-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sal-table-wrap { display: none; }
+  .sal-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .sal-intro { flex-direction: column; align-items: stretch; gap: 12px; }
 }
 </style>

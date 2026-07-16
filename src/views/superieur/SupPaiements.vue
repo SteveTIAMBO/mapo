@@ -97,6 +97,18 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Liste mobile : cartes (tableau masqué sur petit écran) -->
+      <ul class="sp-mlist">
+        <li v-for="item in store.filteredPaiements" :key="item.paiement.id" class="sp-mrow">
+          <div class="sp-mrow-main">
+            <div class="sp-mrow-name">{{ item.etudiant?.nomComplet || '—' }}</div>
+            <div class="sp-mrow-sub">{{ methodeLabel(item.paiement.methode) }} · {{ fmtDate(item.paiement.date) }}</div>
+          </div>
+          <div class="sp-mrow-amount">{{ fmtMontant(item.paiement.montant) }}</div>
+        </li>
+        <li v-if="store.filteredPaiements.length === 0" class="sp-mempty">Aucun paiement ne correspond.</li>
+      </ul>
     </section>
 
     <!-- Relances -->
@@ -688,5 +700,19 @@ const historiqueRelances = computed(() => {
   }
   .sp-grid2 { grid-template-columns: 1fr; }
   .sp-btn-lg { width: 100%; justify-content: center; }
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sp-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sp-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+.sp-mrow:last-child { border-bottom: none; }
+.sp-mrow-main { flex: 1; min-width: 0; }
+.sp-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sp-mrow-amount { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 14px; color: var(--tx); flex-shrink: 0; }
+.sp-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sp-table-wrap { display: none; }
+  .sp-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
 }
 </style>
