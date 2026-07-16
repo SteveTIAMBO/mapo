@@ -121,7 +121,7 @@
         <p class="auth-demo-title">{{ t('login.chooseDemo') }}</p>
         <div class="auth-demo-accounts">
           <button
-            v-for="d in demoAccounts"
+            v-for="d in visibleDemoAccounts"
             :key="d.role"
             type="button"
             class="auth-demo-chip"
@@ -151,7 +151,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -224,6 +224,14 @@ const demoAccounts = [
   { role: 'eleve', label: 'Élève', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 4 3 6 3s6-1 6-3v-5"/></svg>' },
   { role: 'complexe', label: 'Complexe', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>' },
 ]
+
+// Démo Supérieur : on ne propose que les profils déjà travaillés (Directeur,
+// Enseignant). Parent, Étudiant et Complexe restent proposés en Secondaire/Primaire.
+const visibleDemoAccounts = computed(() =>
+  editionStore.isSuperieur
+    ? demoAccounts.filter((d) => d.role === 'directeur' || d.role === 'enseignant')
+    : demoAccounts
+)
 
 async function handleRealLogin() {
   isLoading.value = true
