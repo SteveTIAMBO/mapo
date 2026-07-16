@@ -150,15 +150,12 @@ const emit = defineEmits(['logged-in'])
 // seul le formulaire compte en ligne est proposé.
 const isSchoolTenantMode = isSchoolTenant()
 
-// Profils de démonstration — MÊME structure et MÊME ordre que les éditions
-// primaire / secondaire (chips qui se répartissent sur 3 lignes). L'apprenant
-// devient « Étudiant ». Directeur et Complexe ouvrent l'espace admin complet.
+// Profils de démonstration. Pour le Supérieur, on ne propose que les profils
+// déjà travaillés : Directeur (espace admin complet) et Enseignant. Parent,
+// Étudiant et Complexe seront ajoutés quand ces espaces seront prêts.
 const demoAccounts = [
   { role: 'directeur', loginRole: 'admin', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' },
   { role: 'enseignant', loginRole: 'enseignant', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
-  { role: 'parent', loginRole: 'parent', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
-  { role: 'etudiant', loginRole: 'etudiant', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 2 4 3 6 3s6-1 6-3v-5"/></svg>' },
-  { role: 'complexe', loginRole: 'groupe', icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M2 22h20"/><path d="M10 6h4M10 10h4M10 14h4"/></svg>' },
 ]
 
 const errorMessage = ref('')
