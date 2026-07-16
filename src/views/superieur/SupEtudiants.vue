@@ -93,6 +93,27 @@
       </table>
     </div>
 
+    <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+    <ul class="se-mlist">
+      <li v-for="e in pagedEtudiants" :key="e.id" class="se-mrow" @click="openDetail(e)">
+        <div class="se-mrow-main">
+          <div class="se-mrow-name">{{ e.nomComplet }}</div>
+          <div class="se-mrow-sub">
+            <span class="se-niveau" :class="`n-${e.niveau.toLowerCase()}`">{{ e.niveau }}</span>
+            {{ e.programmeNom }}
+          </div>
+          <div class="se-mrow-meta">{{ e.matricule }}<span v-if="e.villeOrigine"> · {{ e.villeOrigine }}</span></div>
+        </div>
+        <div class="se-mrow-right">
+          <span class="se-statut" :class="e.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">
+            {{ e.statut === 'en_difficulte' ? t('sup.etudiants.enDifficulte') : t('sup.etudiants.inscrit') }}
+          </span>
+          <svg class="se-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </li>
+      <li v-if="store.filteredEtudiants.length === 0" class="se-mempty">{{ t('sup.etudiants.empty') }}</li>
+    </ul>
+
     <!-- Pagination -->
     <div v-if="totalPages > 1" class="se-pagination">
       <span class="se-page-info">
@@ -787,4 +808,27 @@ function askDelete(e) {
 
 .se-row.is-clickable { cursor: pointer; }
 .se-row.is-clickable:hover { background: var(--input-bg, rgba(20,32,64,0.03)); }
+
+/* ── Liste mobile (remplace le tableau sur petit écran, ergonomie « actions rapides ») ── */
+.se-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.se-mrow {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08));
+  cursor: pointer; background: var(--card);
+}
+.se-mrow:last-child { border-bottom: none; }
+.se-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.se-mrow-main { flex: 1; min-width: 0; }
+.se-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.se-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.se-mrow-meta { font-size: 11.5px; color: var(--tx3, #9aa2b1); margin-top: 2px; }
+.se-mrow-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.se-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.se-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+
+@media (max-width: 560px) {
+  /* Mobile : pas de tableau → liste tappable qui ouvre la fiche */
+  .se-table-wrap, .se-pagination { display: none; }
+  .se-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>
