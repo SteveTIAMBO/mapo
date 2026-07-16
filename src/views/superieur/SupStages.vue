@@ -152,6 +152,22 @@
       </table>
     </div>
 
+    <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+    <ul class="sg-mlist">
+      <li v-for="st in store.filteredStages" :key="st.id" class="sg-mrow" @click="openEdit(st)">
+        <div class="sg-mrow-main">
+          <div class="sg-mrow-name">{{ st.etudiantNom }}</div>
+          <div class="sg-mrow-sub">{{ st.entreprise }} · {{ st.ville }}</div>
+          <div class="sg-mrow-meta">
+            <span class="sg-pill" :class="`tp-${st.type}`">{{ st.type === 'alternance' ? 'Alternance' : 'Stage' }}</span>
+            <span class="sg-statut" :class="`st-${st.statut}`">{{ statutLabel(st.statut) }}</span>
+          </div>
+        </div>
+        <svg class="sg-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </li>
+      <li v-if="store.filteredStages.length === 0" class="sg-mempty">Aucune convention ne correspond aux filtres.</li>
+    </ul>
+
     <!-- Modale création / édition -->
     <transition name="sg-fade">
       <div v-if="modalOpen" class="sg-modal-overlay" @click.self="closeModal">
@@ -563,5 +579,23 @@ function formatDate(iso) {
 @media (max-width: 1100px) {
   .sg-table-wrap { overflow-x: auto; }
   .sg-table { min-width: 980px; }
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sg-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sg-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sg-mrow:last-child { border-bottom: none; }
+.sg-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sg-mrow-main { flex: 1; min-width: 0; }
+.sg-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sg-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sg-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sg-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sg-table-wrap { display: none; }
+  .sg-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .sg-intro { flex-direction: column; align-items: stretch; gap: 12px; }
+  .sg-btn-primary { width: 100%; justify-content: center; }
 }
 </style>

@@ -203,6 +203,21 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+      <ul class="sm-mlist">
+        <li v-for="d in store.filteredDossiers" :key="d.id" class="sm-mrow" @click="openDetail(d)">
+          <div class="sm-mrow-main">
+            <div class="sm-mrow-name">{{ d.nomComplet }}</div>
+            <div class="sm-mrow-sub">{{ d.villeOrigine }}, {{ d.paysOrigine }} → {{ d.programmeNom }}</div>
+            <div class="sm-mrow-meta">
+              <span class="sm-statut" :class="`tone-${statutsMobi[d.statutMobi].tone}`">{{ statutsMobi[d.statutMobi].label }}</span>
+            </div>
+          </div>
+          <svg class="sm-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+        <li v-if="store.filteredDossiers.length === 0" class="sm-mempty">Aucun dossier ne correspond.</li>
+      </ul>
     </section>
 
     <!-- Pop-up confirmation envoi certificat -->
@@ -972,4 +987,20 @@ async function confirmerPaiementEcole(p) {
   line-height: 1.55;
 }
 .sm-confirm-btns { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sm-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sm-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sm-mrow:last-child { border-bottom: none; }
+.sm-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sm-mrow-main { flex: 1; min-width: 0; }
+.sm-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sm-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sm-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sm-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sm-table-wrap { display: none; }
+  .sm-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>

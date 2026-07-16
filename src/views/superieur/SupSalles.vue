@@ -133,6 +133,21 @@
       </table>
     </div>
 
+    <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+    <ul class="sl-mlist">
+      <li v-for="sa in store.filteredSalles" :key="sa.id" class="sl-mrow" @click="openEdit(sa)">
+        <div class="sl-mrow-main">
+          <div class="sl-mrow-name">{{ sa.nom }}</div>
+          <div class="sl-mrow-sub">{{ typeLabel(sa.type) }} · {{ sa.capacite }} places · Bât. {{ sa.batiment }}</div>
+          <div class="sl-mrow-meta">
+            <span class="sl-statut" :class="`st-${sa.statut}`">{{ sa.statut === 'maintenance' ? 'Maintenance' : 'Active' }}</span>
+          </div>
+        </div>
+        <svg class="sl-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </li>
+      <li v-if="store.filteredSalles.length === 0" class="sl-mempty">Aucune salle ne correspond aux filtres.</li>
+    </ul>
+
     <!-- Modale création / édition -->
     <transition name="sl-fade">
       <div v-if="modalOpen" class="sl-modal-overlay" @click.self="closeModal">
@@ -504,5 +519,23 @@ function askDelete(sa) {
   .sl-table { min-width: 820px; }
   .sl-form-row, .sl-form .sl-form-row:nth-child(2) { grid-template-columns: 1fr; }
   .sl-equips-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sl-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sl-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sl-mrow:last-child { border-bottom: none; }
+.sl-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sl-mrow-main { flex: 1; min-width: 0; }
+.sl-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sl-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sl-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sl-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sl-table-wrap { display: none; }
+  .sl-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .sl-intro { flex-direction: column; align-items: stretch; gap: 12px; }
+  .sl-btn-primary { width: 100%; justify-content: center; }
 }
 </style>
