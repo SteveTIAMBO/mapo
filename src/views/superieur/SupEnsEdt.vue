@@ -14,7 +14,7 @@
           <thead>
             <tr>
               <th class="edt-corner"></th>
-              <th v-for="j in jours" :key="j">{{ j }}</th>
+              <th v-for="j in jours" :key="j">{{ j }}<span class="edt-th-date">{{ dateForDayName(j) }}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -45,7 +45,7 @@
       <div v-if="creneaux.length" class="edt-mday">
         <div class="edt-mday-nav">
           <button type="button" class="edt-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
-          <div class="edt-mday-title">{{ jours[mobileDay] }}</div>
+          <div class="edt-mday-title">{{ jours[mobileDay] }} <span class="edt-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
           <button type="button" class="edt-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
         </div>
         <ul class="edt-mday-list">
@@ -90,6 +90,15 @@ function jourAujourdhuiIndex() {
 const mobileDay = ref(jourAujourdhuiIndex())
 function mobileDayPrev() { if (mobileDay.value > 0) mobileDay.value-- }
 function mobileDayNext() { if (mobileDay.value < jours.length - 1) mobileDay.value++ }
+// Date du jour (nom → date de ce jour dans la semaine courante), ex. « 16 juil. »
+function dateForDayName(name) {
+  const noms = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const target = noms.indexOf(name)
+  if (target < 0) return ''
+  const now = new Date()
+  const d = new Date(now); d.setDate(now.getDate() + (target - now.getDay()))
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
 
 // Créneaux = horaires distincts de mes séances, triés par heure de début.
 const creneaux = computed(() => {
@@ -139,6 +148,8 @@ function cellAt(jour, debut) { return grid[`${jour}__${debut}`] || null }
 
 /* ── Vue mobile : EDT enseignant un jour à la fois ── */
 .edt-mday { display: none; }
+.edt-th-date { display: block; font-weight: 400; font-size: 11px; color: var(--tx3, #9aa2b1); margin-top: 2px; }
+.edt-mday-date { font-weight: 600; font-size: 13px; color: var(--tx2, #6f767e); }
 @media (max-width: 560px) {
   .edt-grid-wrap { display: none; }
   .edt-mday { display: block; }

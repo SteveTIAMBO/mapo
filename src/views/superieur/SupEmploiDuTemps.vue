@@ -126,7 +126,7 @@
         <thead>
           <tr>
             <th class="st-corner"></th>
-            <th v-for="jour in jours" :key="jour">{{ jour }}</th>
+            <th v-for="jour in jours" :key="jour">{{ jour }}<span class="st-th-date">{{ dateForDayName(jour) }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -182,7 +182,7 @@
     <div class="st-mday">
       <div class="st-mday-nav">
         <button type="button" class="st-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
-        <div class="st-mday-title">{{ jours[mobileDay] }}</div>
+        <div class="st-mday-title">{{ jours[mobileDay] }} <span class="st-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
         <button type="button" class="st-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
       </div>
       <ul class="st-mday-list">
@@ -556,6 +556,15 @@ function jourAujourdhuiIndex() {
 const mobileDay = ref(jourAujourdhuiIndex())
 function mobileDayPrev() { if (mobileDay.value > 0) mobileDay.value-- }
 function mobileDayNext() { if (mobileDay.value < jours.value.length - 1) mobileDay.value++ }
+// Date du jour (nom → date de ce jour dans la semaine courante), ex. « 16 juil. »
+function dateForDayName(name) {
+  const noms = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const target = noms.indexOf(name)
+  if (target < 0) return ''
+  const now = new Date()
+  const d = new Date(now); d.setDate(now.getDate() + (target - now.getDay()))
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+}
 function toggleEdit() {
   editMode.value = !editMode.value
   if (!editMode.value) {
@@ -1601,6 +1610,8 @@ function cancelProposal() {
 
 /* ── Vue mobile : emploi du temps un jour à la fois ── */
 .st-mday { display: none; }
+.st-th-date { display: block; font-weight: 400; font-size: 11px; color: var(--tx3, #9aa2b1); margin-top: 2px; }
+.st-mday-date { font-weight: 600; font-size: 13px; color: var(--tx2, #6f767e); }
 @media (max-width: 560px) {
   .st-grid-wrap { display: none; }
   .st-mday { display: block; }
