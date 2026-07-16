@@ -1030,6 +1030,10 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
   .sup-body [class*="-tabs"] > * { flex-shrink: 0; white-space: nowrap; }
   /* Garde-fous anti-débordement */
   .sup-body img, .sup-body pre, .sup-body canvas { max-width: 100%; }
+  /* Champs de formulaire (listes déroulantes, recherche…) : ne débordent jamais du conteneur */
+  .sup-body select, .sup-body input, .sup-body textarea { max-width: 100%; box-sizing: border-box; }
+  /* Recommandations MIAPO : masquées sur mobile (version allégée) */
+  .sup-body .sd-miapo { display: none !important; }
 }
 
 @media (max-width: 400px) {

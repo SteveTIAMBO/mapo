@@ -160,6 +160,25 @@
       </table>
     </div>
 
+    <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+    <ul class="si-mlist">
+      <li v-for="d in store.dossiersList" :key="d.id" class="si-mrow" @click="openDetail(d)">
+        <div class="si-mrow-main">
+          <div class="si-mrow-name">{{ d.candidat.nomComplet }}</div>
+          <div class="si-mrow-sub">
+            <span class="si-niveau" :class="`n-${(d.niveau || '').toLowerCase()}`">{{ d.niveau }}</span>
+            {{ d.programmeNom }}
+          </div>
+          <div class="si-mrow-meta">
+            <span class="si-pill" :class="`is-${d.statut}`">{{ statutLabel(d.statut) }}</span>
+            <span class="si-mrow-docs" :class="{ 'is-miss': requiredMissingCount(d) > 0 }">{{ fournisCount(d) }}/{{ d.documents.length }} doc.</span>
+          </div>
+        </div>
+        <svg class="si-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </li>
+      <li v-if="store.dossiersList.length === 0" class="si-mempty">{{ t('sup.inscriptions.emptyState') }}</li>
+    </ul>
+
     <!-- Modale détail dossier -->
     <transition name="si-fade">
       <div v-if="detail" class="si-modal-overlay" @click.self="closeDetail">
@@ -1069,5 +1088,23 @@ async function copyMessage() {
   .si-modal { max-width: 100%; max-height: 92vh; border-radius: 14px 14px 0 0; }
   .si-modal-actions { flex-direction: column-reverse; gap: 8px; }
   .si-modal-actions button { width: 100%; }
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.si-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.si-mrow { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.si-mrow:last-child { border-bottom: none; }
+.si-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.si-mrow-main { flex: 1; min-width: 0; }
+.si-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.si-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.si-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.si-mrow-docs { font-size: 11.5px; color: var(--tx3, #9aa2b1); }
+.si-mrow-docs.is-miss { color: var(--warn, #e8950a); }
+.si-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.si-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .si-table-wrap { display: none; }
+  .si-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
 }
 </style>
