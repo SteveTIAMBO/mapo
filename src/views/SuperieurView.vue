@@ -1546,11 +1546,23 @@ watch(
     white-space: nowrap;
   }
   .sup-demo-badge { display: none; }
+  /* Topbar : dégager la place, éviter le chevauchement hamburger / nom d'école */
+  .sup-hdr-greeting { display: none; }
+  .sup-conn-text { display: none; }
+  .sup-hdr-search-hint { display: none; }
+  .sup-hdr-school-name { max-width: 130px; }
 }
 
 @media (max-width: 400px) {
   .sup-topbar { padding: 8px 10px; gap: 6px; }
   .sup-body { padding: 12px 10px 28px; }
+  /* Très étroit (type Galaxy Z Fold, ~344px) : ne garder que l'essentiel */
+  .sup-topbar-right { gap: 2px; }
+  .sup-hdr-lang { display: none; }
+  .sup-hdr-search { display: none; }
+  .sup-conn { padding: 0 2px; }
+  .sup-hdr-school { padding: 4px 6px; margin-right: 0; }
+  .sup-hdr-school-name { max-width: 92px; }
 }
 
 /* Onboarding magic link : définir un mot de passe initial */
