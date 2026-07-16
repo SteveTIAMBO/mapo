@@ -178,6 +178,31 @@
       </table>
     </div>
 
+    <!-- Vue mobile : un jour à la fois (le tableau est masqué sur petit écran) -->
+    <div class="st-mday">
+      <div class="st-mday-nav">
+        <button type="button" class="st-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
+        <div class="st-mday-title">{{ jours[mobileDay] }}</div>
+        <button type="button" class="st-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
+      </div>
+      <ul class="st-mday-list">
+        <li
+          v-for="cr in creneaux"
+          :key="cr.debut + '-' + cr.fin"
+          class="st-mday-slot"
+          :class="{ 'is-clickable': editMode }"
+          @click="editMode && onCellClick(jours[mobileDay], cr)"
+        >
+          <div class="st-mday-time">{{ cr.debut }}<br />{{ cr.fin }}</div>
+          <div v-if="getSession(jours[mobileDay], cr.debut)" class="st-mday-session">
+            <div class="st-mday-code">{{ getSession(jours[mobileDay], cr.debut).ueCode }} · {{ getSession(jours[mobileDay], cr.debut).ueIntitule }}</div>
+            <div class="st-mday-meta">{{ getSession(jours[mobileDay], cr.debut).intervenantNom }} · {{ getSession(jours[mobileDay], cr.debut).salle }}</div>
+          </div>
+          <div v-else class="st-mday-empty">{{ editMode ? '+ Ajouter' : '—' }}</div>
+        </li>
+      </ul>
+    </div>
+
     <p v-if="sessionCount === 0" class="st-empty-hint">
       Aucune séance pour ce semestre.
       <template v-if="editMode">Cliquez une case pour ajouter un cours.</template>
@@ -520,6 +545,11 @@ function exportEdtPdf() {
 
 // ── Mode édition ──
 const editMode = ref(false)
+
+// Vue mobile : un jour à la fois (navigation par jour, évite le tableau large)
+const mobileDay = ref(0)
+function mobileDayPrev() { if (mobileDay.value > 0) mobileDay.value-- }
+function mobileDayNext() { if (mobileDay.value < jours.value.length - 1) mobileDay.value++ }
 function toggleEdit() {
   editMode.value = !editMode.value
   if (!editMode.value) {
@@ -1561,5 +1591,25 @@ function cancelProposal() {
 @media (max-width: 680px) {
   .st-legend { margin-left: 0; width: 100%; }
   .st-form-row { grid-template-columns: 1fr; }
+}
+
+/* ── Vue mobile : emploi du temps un jour à la fois ── */
+.st-mday { display: none; }
+@media (max-width: 560px) {
+  .st-grid-wrap { display: none; }
+  .st-mday { display: block; }
+  .st-mday-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .st-mday-arrow { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--hair, rgba(20,32,64,.12)); background: var(--card); color: var(--pr); font-size: 22px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+  .st-mday-arrow:disabled { opacity: .35; cursor: default; }
+  .st-mday-title { flex: 1; text-align: center; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; color: var(--tx); }
+  .st-mday-list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .st-mday-slot { display: flex; align-items: stretch; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+  .st-mday-slot:last-child { border-bottom: none; }
+  .st-mday-slot.is-clickable { cursor: pointer; }
+  .st-mday-time { flex-shrink: 0; width: 46px; align-self: center; text-align: center; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; color: var(--tx2, #6f767e); line-height: 1.35; }
+  .st-mday-session { flex: 1; min-width: 0; }
+  .st-mday-code { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--tx); }
+  .st-mday-meta { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 2px; }
+  .st-mday-empty { flex: 1; align-self: center; color: var(--tx3, #9aa2b1); font-size: 13px; }
 }
 </style>
