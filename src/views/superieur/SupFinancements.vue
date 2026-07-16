@@ -105,6 +105,19 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Liste mobile : cartes tappables (tableau masqué sur petit écran) -->
+      <ul class="sn-mlist">
+        <li v-for="item in filteredFinancements" :key="item.f.id" class="sn-mrow" @click="openEdit(item.f)">
+          <div class="sn-mrow-main">
+            <div class="sn-mrow-name">{{ item.etudiantNom }}</div>
+            <div class="sn-mrow-sub">{{ typeLabel(item.f.type) }} · {{ fmtMontant(item.f.montant) }}</div>
+            <div class="sn-mrow-meta"><span class="sn-statut" :class="`st-${item.f.statut}`">{{ statutLabel(item.f.statut) }}</span></div>
+          </div>
+          <svg class="sn-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+        <li v-if="filteredFinancements.length === 0" class="sn-mempty">Aucun financement.</li>
+      </ul>
     </section>
 
     <!-- Modale -->
@@ -490,5 +503,23 @@ function statutLabel(s) { return STATUTS_CONVENTION[s]?.label || s }
 .sn-modal-foot {
   display: flex; gap: 8px; justify-content: flex-end;
   padding: 14px 22px; border-top: 1px solid #ECECE8;
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sn-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sn-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sn-mrow:last-child { border-bottom: none; }
+.sn-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sn-mrow-main { flex: 1; min-width: 0; }
+.sn-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sn-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sn-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sn-table-wrap { display: none; }
+  .sn-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .sn-intro { flex-direction: column; align-items: stretch; gap: 12px; }
+  .sn-btn-primary { width: 100%; justify-content: center; }
 }
 </style>

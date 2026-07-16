@@ -71,6 +71,19 @@
           </tbody>
         </table>
       </div>
+
+      <!-- Liste mobile : cartes tappables (tableau masqué sur petit écran) -->
+      <ul class="sb-mlist">
+        <li v-for="b in store.bourses" :key="b.id" class="sb-mrow" @click="openEdit(b)">
+          <div class="sb-mrow-main">
+            <div class="sb-mrow-name">{{ b.libelle }}</div>
+            <div class="sb-mrow-sub">{{ b.mode === 'pourcentage' ? `${b.valeur} %` : fmtMontant(b.valeur) }} · {{ nbBeneficiaires(b.id) }} bénéf.</div>
+            <div class="sb-mrow-meta"><span class="sb-type" :class="`tp-${b.type}`">{{ typeLabel(b.type) }}</span></div>
+          </div>
+          <svg class="sb-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+        <li v-if="store.bourses.length === 0" class="sb-mempty">Aucune bourse.</li>
+      </ul>
     </section>
 
     <!-- Modale -->
@@ -303,5 +316,23 @@ const tauxBoursiers = computed(() => {
 .sb-modal-foot {
   display: flex; gap: 8px; justify-content: flex-end;
   padding: 14px 22px; border-top: 1px solid #ECECE8;
+}
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.sb-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sb-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sb-mrow:last-child { border-bottom: none; }
+.sb-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sb-mrow-main { flex: 1; min-width: 0; }
+.sb-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sb-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sb-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sb-table-wrap { display: none; }
+  .sb-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .sb-intro { flex-direction: column; align-items: stretch; gap: 12px; }
+  .sb-btn-primary { width: 100%; justify-content: center; }
 }
 </style>
