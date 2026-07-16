@@ -274,8 +274,8 @@
       <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[2].key }" type="button" @click="choisirTab(bbar.items[2].key)">
         <span v-html="bbar.items[2].icon"></span><span>{{ bbar.items[2].label }}</span>
       </button>
-      <button class="sup-bbar-item" type="button" @click="openMenu">
-        <span v-html="BBAR_ICONS.menu"></span><span>Menu</span>
+      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[3].key }" type="button" @click="choisirTab(bbar.items[3].key)">
+        <span v-html="bbar.items[3].icon"></span><span>{{ bbar.items[3].label }}</span>
       </button>
     </nav>
   </div>
@@ -793,37 +793,41 @@ const BBAR_ICONS = {
   chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
   menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+  chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
 }
 const bbar = computed(() => {
   const r = authSup.role
   if (r === 'comptable') return {
     items: [
-      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
-      { key: 'finance', label: 'Finance', icon: BBAR_ICONS.wallet },
       { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
+      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+      { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
+      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
     ],
-    center: { key: 'finance', label: 'Encaisser', icon: BBAR_ICONS.plus },
+    center: { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
   }
   if (r === 'enseignant') return {
     items: [
       { key: 'espace_enseignant', label: 'Accueil', icon: BBAR_ICONS.home },
       { key: 'ens_ue', label: 'Mes UE', icon: BBAR_ICONS.book },
+      { key: 'ens_edt', label: 'EDT', icon: BBAR_ICONS.calendar },
       { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
     ],
-    center: { key: 'ens_notes', label: 'Saisir', icon: BBAR_ICONS.plus },
+    center: { key: 'ens_notes', label: 'Notes', icon: BBAR_ICONS.plus },
   }
-  // Directeur (admin) et par défaut
+  // Directeur (admin) et par défaut : Dashboard = bouton principal (centre)
   return {
     items: [
-      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
+      { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
       { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
-      { key: 'finance', label: 'Finance', icon: BBAR_ICONS.wallet },
+      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+      { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
     ],
-    center: { key: 'inscriptions', label: 'Inscrire', icon: BBAR_ICONS.plus },
+    center: { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
   }
 })
 function bbarCenter() { choisirTab(bbar.value.center.key) }
-function openMenu() { sidebarOpen.value = true }
 
 // ── Mode groupe (fondateur) vs mode campus (directeur / campus ouvert) ──
 // Fondateur sans campus ouvert → dashboard groupe agrégé uniquement.
