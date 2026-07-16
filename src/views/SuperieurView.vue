@@ -323,6 +323,7 @@ import SupEspaceParent from './superieur/SupEspaceParent.vue'
 import SupImport from './superieur/SupImport.vue'
 import SupTransitionAnnee from './superieur/SupTransitionAnnee.vue'
 import SupRapports from './superieur/SupRapports.vue'
+import SupMessagerie from './superieur/SupMessagerie.vue'
 
 const router = useRouter()
 const editionStore = useEditionStore()
@@ -500,6 +501,7 @@ const panels = {
   import: SupImport,
   transition_annee: SupTransitionAnnee,
   rapports: SupRapports,
+  messagerie: SupMessagerie,
 }
 
 /**
@@ -667,6 +669,14 @@ const ALL_TABS = [
     roles: ['admin'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><line x1="22" y1="10" x2="22" y2="15"/></svg>',
   },
+  // ── Communication ───────────────────────────────────────────────
+  {
+    key: 'messagerie',
+    label: 'Messagerie',
+    section: 'Communication',
+    roles: ['admin', 'comptable', 'responsable_formation', 'relation_internationale'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  },
   // ── Pilotage & IA ───────────────────────────────────────────────
   {
     key: 'rapports',
@@ -798,7 +808,7 @@ const bbar = computed(() => {
     { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
     { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
     { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    { key: 'messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
     { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
   ]
   if (r === 'enseignant') return [
@@ -813,7 +823,7 @@ const bbar = computed(() => {
     { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
     { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
     { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    { key: 'messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
     { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
   ]
 })
