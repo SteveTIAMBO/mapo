@@ -171,7 +171,7 @@ const initials = (e.nomComplet || '')
   color: #5b6472; cursor: pointer;
 }
 .sed-close:hover { background: rgba(20, 32, 64, 0.12); }
-.sed-head { display: flex; align-items: center; gap: 16px; padding: 26px 28px 18px; }
+.sed-head { display: flex; align-items: center; gap: 16px; padding: 26px 56px 18px 28px; }
 .sed-avatar {
   width: 60px; height: 60px; border-radius: 16px; flex-shrink: 0;
   background: var(--pr); color: #fff;

@@ -795,8 +795,10 @@ function askDelete(e) {
 @media (max-width: 700px) {
   .se-h1 { font-size: 22px; }
   .se-intro { flex-direction: column; align-items: stretch; gap: 12px; }
-  .se-filters { flex-direction: column; gap: 8px; }
-  .se-filters .se-input, .se-filters .se-select { width: 100%; min-width: 0; }
+  .se-filters { flex-direction: column; gap: 8px; align-items: stretch; }
+  .se-filter { width: 100%; }
+  .se-filter-search { min-width: 0; }
+  .se-filter select, .se-filter input { width: 100%; min-width: 0; box-sizing: border-box; }
   .se-table th, .se-table td { padding: 10px 10px; font-size: 12.5px; }
   .se-modal-overlay { padding: 0; align-items: flex-end; }
   .se-modal { max-width: 100%; max-height: 92vh; border-radius: 14px 14px 0 0; }
