@@ -258,6 +258,26 @@
         <component v-else :is="panels[activeTab]" />
       </main>
     </div>
+
+    <!-- Barre d'actions basse (mobile) : nav rapide + bouton central selon le profil -->
+    <nav class="sup-bbar" aria-label="Actions rapides">
+      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[0].key }" type="button" @click="choisirTab(bbar.items[0].key)">
+        <span v-html="bbar.items[0].icon"></span><span>{{ bbar.items[0].label }}</span>
+      </button>
+      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[1].key }" type="button" @click="choisirTab(bbar.items[1].key)">
+        <span v-html="bbar.items[1].icon"></span><span>{{ bbar.items[1].label }}</span>
+      </button>
+      <button class="sup-bbar-center" type="button" @click="bbarCenter">
+        <span class="sup-bbar-center-btn" v-html="bbar.center.icon"></span>
+        <span>{{ bbar.center.label }}</span>
+      </button>
+      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[2].key }" type="button" @click="choisirTab(bbar.items[2].key)">
+        <span v-html="bbar.items[2].icon"></span><span>{{ bbar.items[2].label }}</span>
+      </button>
+      <button class="sup-bbar-item" type="button" @click="openMenu">
+        <span v-html="BBAR_ICONS.menu"></span><span>Menu</span>
+      </button>
+    </nav>
   </div>
 </template>
 
@@ -763,6 +783,47 @@ function choisirTab(key) {
 }
 // Permet aux sous-vues (ex. le dashboard) de naviguer vers un onglet.
 provide('supGoTab', choisirTab)
+
+// ── Barre d'actions basse (mobile) : navigation rapide + bouton central selon le profil ──
+const BBAR_ICONS = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5"/><path d="M5 10v10h14V10"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>',
+  wallet: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/><path d="M21 12h-6a2 2 0 0 0 0 4h6z"/></svg>',
+  book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  menu: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
+}
+const bbar = computed(() => {
+  const r = authSup.role
+  if (r === 'comptable') return {
+    items: [
+      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
+      { key: 'finance', label: 'Finance', icon: BBAR_ICONS.wallet },
+      { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
+    ],
+    center: { key: 'finance', label: 'Encaisser', icon: BBAR_ICONS.plus },
+  }
+  if (r === 'enseignant') return {
+    items: [
+      { key: 'espace_enseignant', label: 'Accueil', icon: BBAR_ICONS.home },
+      { key: 'ens_ue', label: 'Mes UE', icon: BBAR_ICONS.book },
+      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    ],
+    center: { key: 'ens_notes', label: 'Saisir', icon: BBAR_ICONS.plus },
+  }
+  // Directeur (admin) et par défaut
+  return {
+    items: [
+      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
+      { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
+      { key: 'finance', label: 'Finance', icon: BBAR_ICONS.wallet },
+    ],
+    center: { key: 'inscriptions', label: 'Inscrire', icon: BBAR_ICONS.plus },
+  }
+})
+function bbarCenter() { choisirTab(bbar.value.center.key) }
+function openMenu() { sidebarOpen.value = true }
 
 // ── Mode groupe (fondateur) vs mode campus (directeur / campus ouvert) ──
 // Fondateur sans campus ouvert → dashboard groupe agrégé uniquement.
@@ -1563,6 +1624,39 @@ watch(
   .sup-conn { padding: 0 2px; }
   .sup-hdr-school { padding: 4px 6px; margin-right: 0; }
   .sup-hdr-school-name { max-width: 92px; }
+}
+
+/* ── Barre d'actions basse (mobile only) : nav + bouton central ── */
+.sup-bbar { display: none; }
+@media (max-width: 560px) {
+  .sup-bbar {
+    display: flex; align-items: flex-end; justify-content: space-around;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 12;
+    padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
+    background: var(--glass, rgba(255,255,255,.92));
+    -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+    border-top: 1px solid var(--divider, rgba(20,32,64,.10));
+  }
+  .sup-bbar-item {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    background: none; border: none; cursor: pointer; padding: 5px 0; min-width: 0;
+    color: var(--tx3, #9aa2b1); font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 600;
+  }
+  .sup-bbar-item.active { color: var(--pr); }
+  .sup-bbar-center {
+    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    background: none; border: none; cursor: pointer; padding: 0 6px;
+    color: var(--pr); font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
+  }
+  .sup-bbar-center-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 50px; height: 50px; border-radius: 50%; margin-top: -20px;
+    background: var(--pr); color: #fff; box-shadow: 0 6px 16px rgba(var(--pr-rgb), .42);
+  }
+  .sup-bbar svg { width: 22px; height: 22px; display: block; }
+  .sup-bbar-center-btn svg { width: 26px; height: 26px; }
+  /* Le contenu ne passe pas sous la barre */
+  .sup-body { padding-bottom: 80px !important; }
 }
 
 /* Onboarding magic link : définir un mot de passe initial */
