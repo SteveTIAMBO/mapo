@@ -804,27 +804,28 @@ const BBAR_ICONS = {
 }
 const bbar = computed(() => {
   const r = authSup.role
+  const b = (k) => t('sup.shell.bbar.' + k)
   if (r === 'comptable') return [
-    { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
-    { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
-    { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-    { key: 'messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
-    { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
+    { key: 'dashboard', label: b('home'), icon: BBAR_ICONS.home },
+    { key: 'etudiants', label: b('students'), icon: BBAR_ICONS.users },
+    { key: 'finance', label: b('finance'), icon: BBAR_ICONS.wallet },
+    { key: 'messagerie', label: b('messages'), icon: BBAR_ICONS.chat },
+    { key: 'rapports', label: b('reports'), icon: BBAR_ICONS.chart },
   ]
   if (r === 'enseignant') return [
-    { key: 'espace_enseignant', label: 'Accueil', icon: BBAR_ICONS.home },
-    { key: 'ens_ue', label: 'Mes UE', icon: BBAR_ICONS.book },
-    { key: 'ens_edt', label: 'EDT', icon: BBAR_ICONS.calendar },
-    { key: 'ens_notes', label: 'Notes', icon: BBAR_ICONS.edit },
-    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    { key: 'espace_enseignant', label: b('home'), icon: BBAR_ICONS.home },
+    { key: 'ens_ue', label: b('myUe'), icon: BBAR_ICONS.book },
+    { key: 'ens_edt', label: b('edt'), icon: BBAR_ICONS.calendar },
+    { key: 'ens_notes', label: b('notes'), icon: BBAR_ICONS.edit },
+    { key: 'ens_messagerie', label: b('messages'), icon: BBAR_ICONS.chat },
   ]
   // Directeur (admin) et par défaut : 5 accès de même niveau
   return [
-    { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
-    { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
-    { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-    { key: 'messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
-    { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
+    { key: 'dashboard', label: b('home'), icon: BBAR_ICONS.home },
+    { key: 'etudiants', label: b('students'), icon: BBAR_ICONS.users },
+    { key: 'finance', label: b('finance'), icon: BBAR_ICONS.wallet },
+    { key: 'messagerie', label: b('messages'), icon: BBAR_ICONS.chat },
+    { key: 'rapports', label: b('reports'), icon: BBAR_ICONS.chart },
   ]
 })
 

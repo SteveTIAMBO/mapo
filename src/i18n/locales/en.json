@@ -1481,6 +1481,18 @@
         "errTooShort": "The password must be at least 6 characters.",
         "errMismatch": "The two passwords don't match.",
         "errSaveFailed": "The password could not be saved."
+      },
+      "bbar": {
+        "home": "Home",
+        "students": "Students",
+        "finance": "Finance",
+        "messages": "Messages",
+        "reports": "Reports",
+        "myUe": "My units",
+        "edt": "Schedule",
+        "notes": "Grades",
+        "messaging": "Messaging",
+        "communication": "Communication"
       }
     },
     "dash": {

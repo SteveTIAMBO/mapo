@@ -1481,6 +1481,18 @@
         "errTooShort": "Le mot de passe doit faire au moins 6 caractères.",
         "errMismatch": "Les deux mots de passe ne correspondent pas.",
         "errSaveFailed": "Le mot de passe n'a pas pu être enregistré."
+      },
+      "bbar": {
+        "home": "Accueil",
+        "students": "Étudiants",
+        "finance": "Compta",
+        "messages": "Messages",
+        "reports": "Rapports",
+        "myUe": "Mes UE",
+        "edt": "EDT",
+        "notes": "Notes",
+        "messaging": "Messagerie",
+        "communication": "Communication"
       }
     },
     "dash": {
