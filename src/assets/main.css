@@ -989,3 +989,56 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
 .sn-niveau.n-bts,
 .sip-niveau.n-bts,
 .sf-tab-niveau.n-bts { background: rgba(14, 124, 90, 0.12); color: #0E7C5A; }
+
+/* ════════════════════════════════════════════════════════════════════════
+   RESPONSIVE MOBILE — Édition Supérieur (portée .sup-body → n'affecte QUE le
+   Supérieur, pas le Secondaire). Les vues SupXxx.vue ont chacune leurs styles
+   scoped et n'utilisent pas les helpers globaux .data-table/.table-wrapper.
+   On corrige ICI, d'un seul endroit, les 3 débordements horizontaux récurrents
+   sur petit écran (~344-390px, type Galaxy Z Fold) : tableaux larges, grilles
+   de KPI/cartes, et barres d'onglets. La convention de nommage est régulière
+   (préfixe de vue + suffixe : -table-wrap / -kpis / -tiles / -cards / -tabs). */
+@media (max-width: 560px) {
+  /* Tableaux : le conteneur défile horizontalement (colonnes préservées,
+     lisibles) au lieu de déborder/rogner la page. Couvre les wrappers nommés
+     et, en repli (navigateurs récents), tout parent direct de <table>. */
+  .sup-body [class*="-table-wrap"] {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  .sup-body *:has(> table) {
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Grilles de KPI / tuiles / cartes / stats : 2 colonnes maxi */
+  .sup-body [class*="-kpis"],
+  .sup-body [class*="-tiles"],
+  .sup-body [class*="-cards"],
+  .sup-body [class*="-stats"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  /* Barres d'onglets : défilement horizontal propre, pas de retour à la ligne */
+  .sup-body [class*="-tabs"] {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .sup-body [class*="-tabs"]::-webkit-scrollbar { display: none; }
+  .sup-body [class*="-tabs"] > * { flex-shrink: 0; white-space: nowrap; }
+  /* Garde-fous anti-débordement */
+  .sup-body img, .sup-body pre, .sup-body canvas { max-width: 100%; }
+}
+
+@media (max-width: 400px) {
+  /* Très étroit : toutes les grilles passent à 1 colonne */
+  .sup-body [class*="-kpis"],
+  .sup-body [class*="-tiles"],
+  .sup-body [class*="-cards"],
+  .sup-body [class*="-stats"],
+  .sup-body [class*="-grid"] {
+    grid-template-columns: 1fr !important;
+  }
+}
