@@ -1452,7 +1452,8 @@
         "importGroupe": "Bulk import",
         "passageAnnee": "Year rollover",
         "rapports": "Reports",
-        "rolesAcces": "Roles & access"
+        "rolesAcces": "Roles & access",
+        "assiduite": "Attendance"
       },
       "sections": {
         "finance": "Finance",
@@ -2107,11 +2108,30 @@
       "footNote": "Criteria: average below the line and/or ECTS credit shortfall. Students with no signal don't appear here. Local data — identity stays within the institution.",
       "factorAvg": "Average {avg}/20",
       "factorCredits": "{n} ECTS credits behind",
+      "factorAbs": "{pct}% absences ({n})",
       "insightNone": "No dropout signal for now. Keep monitoring results and course-unit engagement regularly.",
-      "insightHighOne": "{n} student to track, {high} at high risk (weak results + credit shortfall). A quick meeting and targeted support can prevent dropping out.",
-      "insightHighMany": "{n} students to track, {high} at high risk (weak results + credit shortfall). A quick meeting and targeted support can prevent dropping out.",
+      "insightHighOne": "{n} student to track, {high} at high risk (absences, weak results or credit shortfall). A quick meeting and targeted support can prevent dropping out.",
+      "insightHighMany": "{n} students to track, {high} at high risk (absences, weak results or credit shortfall). A quick meeting and targeted support can prevent dropping out.",
       "insightWatchOne": "{n} student to watch: results or credit signals. An individual meeting now helps reverse the trend.",
       "insightWatchMany": "{n} students to watch: results or credit signals. An individual meeting now helps reverse the trend."
+    },
+    "assiduite": {
+      "title": "Attendance",
+      "subtitle": "Session attendance tracking per student — high absenteeism is the first sign of dropping out.",
+      "allPromotions": "All cohorts",
+      "avgPresence": "Average attendance",
+      "lowAssiduity": "Attendance concern",
+      "studentsTracked": "Students tracked",
+      "rate": "{n}% attendance",
+      "absences": "{n} absence | {n} absences",
+      "retards": "{n} late | {n} late",
+      "sessions": "{n} sessions",
+      "recordPresent": "Present",
+      "recordAbsent": "Absent",
+      "recorded": "✓ Saved",
+      "lowBadge": "Low attendance",
+      "empty": "No student to display.",
+      "footNote": "Attendance feeds dropout monitoring (MIAPO). Local demo data."
     }
   },
   "mal": {

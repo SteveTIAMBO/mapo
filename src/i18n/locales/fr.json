@@ -1452,7 +1452,8 @@
         "importGroupe": "Import groupé",
         "passageAnnee": "Passage d'année",
         "rapports": "Rapports",
-        "rolesAcces": "Rôles & Accès"
+        "rolesAcces": "Rôles & Accès",
+        "assiduite": "Assiduité"
       },
       "sections": {
         "finance": "Finance",
@@ -2107,11 +2108,30 @@
       "footNote": "Critères : moyenne sous la barre et/ou retard de crédits ECTS. Les étudiants sans signal n'apparaissent pas ici. Données locales — l'identité reste dans l'établissement.",
       "factorAvg": "Moyenne {avg}/20",
       "factorCredits": "{n} crédits ECTS de retard",
+      "factorAbs": "{pct}% d'absences ({n})",
       "insightNone": "Aucun signe de décrochage pour le moment. Poursuis le suivi régulier des résultats et de l'assiduité aux UE.",
-      "insightHighOne": "{n} étudiant à suivre, dont {high} à risque élevé (résultats faibles + retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
-      "insightHighMany": "{n} étudiants à suivre, dont {high} à risque élevé (résultats faibles + retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
+      "insightHighOne": "{n} étudiant à suivre, dont {high} à risque élevé (absences, résultats faibles ou retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
+      "insightHighMany": "{n} étudiants à suivre, dont {high} à risque élevé (absences, résultats faibles ou retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
       "insightWatchOne": "{n} étudiant à surveiller : signaux de résultats ou de crédits. Un entretien individuel maintenant aide à inverser la tendance.",
       "insightWatchMany": "{n} étudiants à surveiller : signaux de résultats ou de crédits. Un entretien individuel maintenant aide à inverser la tendance."
+    },
+    "assiduite": {
+      "title": "Assiduité",
+      "subtitle": "Suivi de la présence aux séances par étudiant — un absentéisme élevé est le premier signal de décrochage.",
+      "allPromotions": "Toutes les promotions",
+      "avgPresence": "Présence moyenne",
+      "lowAssiduity": "Assiduité préoccupante",
+      "studentsTracked": "Étudiants suivis",
+      "rate": "{n}% de présence",
+      "absences": "{n} absence | {n} absences",
+      "retards": "{n} retard | {n} retards",
+      "sessions": "{n} séances",
+      "recordPresent": "Présent",
+      "recordAbsent": "Absence",
+      "recorded": "✓ Enregistré",
+      "lowBadge": "Assiduité faible",
+      "empty": "Aucun étudiant à afficher.",
+      "footNote": "L'assiduité alimente le suivi du décrochage (MIAPO). Données locales de démonstration."
     }
   },
   "mal": {

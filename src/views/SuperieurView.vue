@@ -301,6 +301,7 @@ import SupEmploiDuTemps from './superieur/SupEmploiDuTemps.vue'
 import SupIntervenants from './superieur/SupIntervenants.vue'
 import SupNotes from './superieur/SupNotes.vue'
 import SupStages from './superieur/SupStages.vue'
+import SupAssiduite from './superieur/SupAssiduite.vue'
 import SupSalles from './superieur/SupSalles.vue'
 // Finance : un seul module « Comptabilité » qui regroupe les 7 vues en onglets
 import SupComptabilite from './superieur/SupComptabilite.vue'
@@ -483,6 +484,7 @@ const panels = {
   notes: SupNotes,
   diplomes: SupDiplomes,
   stages: SupStages,
+  assiduite: SupAssiduite,
   salles: SupSalles,
   finance: SupComptabilite,
   gestion_acces: SupGestionAcces,
@@ -633,6 +635,12 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M12 12v4M9 14h6"/></svg>',
   },
   {
+    key: 'assiduite',
+    label: 'Assiduité',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  },
+  {
     key: 'salles',
     label: 'Salles',
     roles: ['admin'],
@@ -719,7 +727,7 @@ const ALL_TABS = [
  */
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
-  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports', 'decrochage',
+  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'assiduite', 'salles', 'import', 'transition_annee', 'rapports', 'decrochage',
     'ens_ue', 'ens_notes', 'ens_cours', 'ens_devoirs', 'ens_edt', 'ens_messagerie', 'ens_paie'].includes(tabKey)) {
     return 'formation'
   }
@@ -898,6 +906,7 @@ const NAV_KEYS = {
   notes: 'notes',
   diplomes: 'diplomes',
   stages: 'stages',
+  assiduite: 'assiduite',
   salles: 'salles',
   finance: 'comptabilite',
   finance_dash: 'financeDash',
