@@ -882,6 +882,13 @@ const NAV_KEYS = {
   espace_etudiant: 'monEspace',
   espace_enseignant: 'monEspace',
   espace_parent: 'monEspace',
+  ens_ue: 'mesUe',
+  ens_notes: 'saisieNotes',
+  ens_cours: 'coursRessources',
+  ens_devoirs: 'devoirsExamens',
+  ens_edt: 'edt',
+  ens_messagerie: 'messagerie',
+  ens_paie: 'fichesPaie',
   dashboard: 'dashboard',
   etudiants: 'etudiants',
   formation: 'formation',
@@ -889,8 +896,10 @@ const NAV_KEYS = {
   edt: 'edt',
   intervenants: 'intervenants',
   notes: 'notes',
+  diplomes: 'diplomes',
   stages: 'stages',
   salles: 'salles',
+  finance: 'comptabilite',
   finance_dash: 'financeDash',
   finance_tarifs: 'financeTarifs',
   finance_echeanciers: 'financeEcheanciers',
@@ -900,14 +909,19 @@ const NAV_KEYS = {
   finance_financements: 'financeFinancements',
   gestion_acces: 'gestionAcces',
   mobilite_entrante: 'mobiliteEntrante',
+  import: 'importGroupe',
+  transition_annee: 'passageAnnee',
+  messagerie: 'messagerie',
+  rapports: 'rapports',
   decrochage: 'decrochage',
+  roles: 'rolesAcces',
   parametres: 'parametres',
 }
 function navLabel(tab) {
   const k = NAV_KEYS[tab.key]
   return k ? t(`sup.shell.nav.${k}`) : tab.label
 }
-const SECTION_KEYS = { Finance: 'finance', 'Mobilité': 'mobilite', 'Pilotage & IA': 'pilotage', Configuration: 'configuration' }
+const SECTION_KEYS = { 'Scolarité': 'scolarite', 'Évaluation': 'evaluation', 'Vie scolaire': 'vieScolaire', Finance: 'finance', 'Mobilité': 'mobilite', Gestion: 'gestion', Communication: 'communication', 'Pilotage & IA': 'pilotage', Configuration: 'configuration' }
 function sectionLabel(section) {
   const k = SECTION_KEYS[section]
   return k ? t(`sup.shell.sections.${k}`) : section

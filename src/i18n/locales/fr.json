@@ -1440,13 +1440,30 @@
         "gestionAcces": "Gestion des accès",
         "mobiliteEntrante": "Mobilité entrante",
         "parametres": "Paramètres",
-        "decrochage": "Décrochage"
+        "decrochage": "Décrochage",
+        "mesUe": "Mes UE",
+        "saisieNotes": "Saisie des notes",
+        "coursRessources": "Cours & ressources",
+        "devoirsExamens": "Devoirs & examens",
+        "fichesPaie": "Mes fiches de paie",
+        "messagerie": "Messagerie",
+        "diplomes": "Diplômes",
+        "comptabilite": "Comptabilité",
+        "importGroupe": "Import groupé",
+        "passageAnnee": "Passage d'année",
+        "rapports": "Rapports",
+        "rolesAcces": "Rôles & Accès"
       },
       "sections": {
         "finance": "Finance",
         "mobilite": "Mobilité",
         "configuration": "Configuration",
-        "pilotage": "Pilotage & IA"
+        "pilotage": "Pilotage & IA",
+        "scolarite": "Scolarité",
+        "evaluation": "Évaluation",
+        "vieScolaire": "Vie scolaire",
+        "gestion": "Gestion",
+        "communication": "Communication"
       },
       "conn": {
         "syncShort": "Sync…",

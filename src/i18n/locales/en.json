@@ -1440,13 +1440,30 @@
         "gestionAcces": "Access management",
         "mobiliteEntrante": "Incoming mobility",
         "parametres": "Settings",
-        "decrochage": "Dropout risk"
+        "decrochage": "Dropout risk",
+        "mesUe": "My units",
+        "saisieNotes": "Grade entry",
+        "coursRessources": "Courses & resources",
+        "devoirsExamens": "Assignments & exams",
+        "fichesPaie": "My payslips",
+        "messagerie": "Messages",
+        "diplomes": "Diplomas",
+        "comptabilite": "Accounting",
+        "importGroupe": "Bulk import",
+        "passageAnnee": "Year rollover",
+        "rapports": "Reports",
+        "rolesAcces": "Roles & access"
       },
       "sections": {
         "finance": "Finance",
         "mobilite": "Mobility",
         "configuration": "Configuration",
-        "pilotage": "Analytics & AI"
+        "pilotage": "Analytics & AI",
+        "scolarite": "Student records",
+        "evaluation": "Assessment",
+        "vieScolaire": "Student life",
+        "gestion": "Management",
+        "communication": "Communication"
       },
       "conn": {
         "syncShort": "Sync…",
