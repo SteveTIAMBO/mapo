@@ -1439,12 +1439,14 @@
         "financeFinancements": "Financements tiers",
         "gestionAcces": "Gestion des accès",
         "mobiliteEntrante": "Mobilité entrante",
-        "parametres": "Paramètres"
+        "parametres": "Paramètres",
+        "decrochage": "Décrochage"
       },
       "sections": {
         "finance": "Finance",
         "mobilite": "Mobilité",
-        "configuration": "Configuration"
+        "configuration": "Configuration",
+        "pilotage": "Pilotage & IA"
       },
       "conn": {
         "syncShort": "Sync…",
@@ -2072,6 +2074,27 @@
       "seed1m2": "Bonjour, je vous transmets mes créneaux d'ici demain.",
       "seed2Subject": "Liste des inscrits",
       "seed2m1": "La liste mise à jour des inscrits à votre UE est disponible."
+    },
+    "decrochage": {
+      "title": "Suivi du décrochage",
+      "subtitle": "Les étudiants à risque de décrochage, repérés tôt par les résultats et l'avancée en crédits — pour agir avant qu'il ne soit trop tard.",
+      "allPromotions": "Toutes les promotions",
+      "miapoFlags": "MIAPO te signale",
+      "studentsToTrack": "Étudiants à suivre",
+      "highRisk": "Risque élevé",
+      "toWatch": "À surveiller",
+      "atRiskStudents": "Étudiants à risque ({n})",
+      "noSignal": "Aucun signe de décrochage détecté pour l'instant. Le suivi s'alimente automatiquement à partir des notes et de l'avancée en crédits ECTS.",
+      "contact": "Contacter",
+      "contactTitle": "Contacter l'étudiant / la famille",
+      "footNote": "Critères : moyenne sous la barre et/ou retard de crédits ECTS. Les étudiants sans signal n'apparaissent pas ici. Données locales — l'identité reste dans l'établissement.",
+      "factorAvg": "Moyenne {avg}/20",
+      "factorCredits": "{n} crédits ECTS de retard",
+      "insightNone": "Aucun signe de décrochage pour le moment. Poursuis le suivi régulier des résultats et de l'assiduité aux UE.",
+      "insightHighOne": "{n} étudiant à suivre, dont {high} à risque élevé (résultats faibles + retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
+      "insightHighMany": "{n} étudiants à suivre, dont {high} à risque élevé (résultats faibles + retard de crédits). Un point rapide et un appui ciblé peuvent éviter l'abandon.",
+      "insightWatchOne": "{n} étudiant à surveiller : signaux de résultats ou de crédits. Un entretien individuel maintenant aide à inverser la tendance.",
+      "insightWatchMany": "{n} étudiants à surveiller : signaux de résultats ou de crédits. Un entretien individuel maintenant aide à inverser la tendance."
     }
   },
   "mal": {

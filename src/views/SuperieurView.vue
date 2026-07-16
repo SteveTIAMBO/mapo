@@ -323,6 +323,7 @@ import SupEspaceParent from './superieur/SupEspaceParent.vue'
 import SupImport from './superieur/SupImport.vue'
 import SupTransitionAnnee from './superieur/SupTransitionAnnee.vue'
 import SupRapports from './superieur/SupRapports.vue'
+import SupDecrochage from './superieur/SupDecrochage.vue'
 import SupMessagerie from './superieur/SupMessagerie.vue'
 
 const router = useRouter()
@@ -501,6 +502,7 @@ const panels = {
   import: SupImport,
   transition_annee: SupTransitionAnnee,
   rapports: SupRapports,
+  decrochage: SupDecrochage,
   messagerie: SupMessagerie,
 }
 
@@ -685,6 +687,12 @@ const ALL_TABS = [
     roles: ['admin', 'responsable_formation'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
   },
+  {
+    key: 'decrochage',
+    label: 'Décrochage',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  },
   // ── Configuration (admin uniquement) ───────────────────────────
   {
     key: 'roles',
@@ -711,7 +719,7 @@ const ALL_TABS = [
  */
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
-  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports',
+  if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'salles', 'import', 'transition_annee', 'rapports', 'decrochage',
     'ens_ue', 'ens_notes', 'ens_cours', 'ens_devoirs', 'ens_edt', 'ens_messagerie', 'ens_paie'].includes(tabKey)) {
     return 'formation'
   }
@@ -892,13 +900,14 @@ const NAV_KEYS = {
   finance_financements: 'financeFinancements',
   gestion_acces: 'gestionAcces',
   mobilite_entrante: 'mobiliteEntrante',
+  decrochage: 'decrochage',
   parametres: 'parametres',
 }
 function navLabel(tab) {
   const k = NAV_KEYS[tab.key]
   return k ? t(`sup.shell.nav.${k}`) : tab.label
 }
-const SECTION_KEYS = { Finance: 'finance', 'Mobilité': 'mobilite', Configuration: 'configuration' }
+const SECTION_KEYS = { Finance: 'finance', 'Mobilité': 'mobilite', 'Pilotage & IA': 'pilotage', Configuration: 'configuration' }
 function sectionLabel(section) {
   const k = SECTION_KEYS[section]
   return k ? t(`sup.shell.sections.${k}`) : section

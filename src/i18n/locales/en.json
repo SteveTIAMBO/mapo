@@ -1439,12 +1439,14 @@
         "financeFinancements": "Third-party funding",
         "gestionAcces": "Access management",
         "mobiliteEntrante": "Incoming mobility",
-        "parametres": "Settings"
+        "parametres": "Settings",
+        "decrochage": "Dropout risk"
       },
       "sections": {
         "finance": "Finance",
         "mobilite": "Mobility",
-        "configuration": "Configuration"
+        "configuration": "Configuration",
+        "pilotage": "Analytics & AI"
       },
       "conn": {
         "syncShort": "Sync…",
@@ -2072,6 +2074,27 @@
       "seed1m2": "Hello, I'll send you my time slots by tomorrow.",
       "seed2Subject": "Enrolment list",
       "seed2m1": "The updated list of students enrolled in your unit is available."
+    },
+    "decrochage": {
+      "title": "Dropout monitoring",
+      "subtitle": "Students at risk of dropping out, spotted early from results and credit progress — so you can act before it's too late.",
+      "allPromotions": "All cohorts",
+      "miapoFlags": "MIAPO flags",
+      "studentsToTrack": "Students to track",
+      "highRisk": "High risk",
+      "toWatch": "To watch",
+      "atRiskStudents": "At-risk students ({n})",
+      "noSignal": "No dropout signal detected yet. Monitoring updates automatically from grades and ECTS credit progress.",
+      "contact": "Contact",
+      "contactTitle": "Contact the student / family",
+      "footNote": "Criteria: average below the line and/or ECTS credit shortfall. Students with no signal don't appear here. Local data — identity stays within the institution.",
+      "factorAvg": "Average {avg}/20",
+      "factorCredits": "{n} ECTS credits behind",
+      "insightNone": "No dropout signal for now. Keep monitoring results and course-unit engagement regularly.",
+      "insightHighOne": "{n} student to track, {high} at high risk (weak results + credit shortfall). A quick meeting and targeted support can prevent dropping out.",
+      "insightHighMany": "{n} students to track, {high} at high risk (weak results + credit shortfall). A quick meeting and targeted support can prevent dropping out.",
+      "insightWatchOne": "{n} student to watch: results or credit signals. An individual meeting now helps reverse the trend.",
+      "insightWatchMany": "{n} students to watch: results or credit signals. An individual meeting now helps reverse the trend."
     }
   },
   "mal": {
