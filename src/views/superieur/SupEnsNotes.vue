@@ -2,33 +2,33 @@
   <div class="snote">
     <div class="snote-head">
       <div>
-        <h1 class="snote-h1">Saisie des notes</h1>
-        <p class="snote-sub">Contrôle continu et examen par unité d'enseignement.</p>
+        <h1 class="snote-h1">{{ t('sup.ensNotes.title') }}</h1>
+        <p class="snote-sub">{{ t('sup.ensNotes.subtitle') }}</p>
       </div>
     </div>
 
     <section class="snote-panel">
       <div class="snote-bar">
-        <label class="snote-lab">Unité d'enseignement</label>
+        <label class="snote-lab">{{ t('sup.ensNotes.ueLabel') }}</label>
         <select v-model="ueSelId" class="snote-select">
           <option v-for="u in mesUe" :key="u.id" :value="u.id">{{ u.code }} · {{ u.intitule }}</option>
         </select>
       </div>
 
       <p class="snote-note" v-if="ueSel">
-        {{ ueSel.intitule }} · {{ rosterPromo }} · {{ notesUE.length }} étudiants
-        <span class="snote-legend">Note UE = CC 40 % + Examen 60 %</span>
+        {{ ueSel.intitule }} · {{ rosterPromo }} · {{ notesUE.length }} {{ t('sup.ensNotes.students') }}
+        <span class="snote-legend">{{ t('sup.ensNotes.legend') }}</span>
       </p>
 
       <table v-if="notesUE.length" class="snote-table">
         <thead>
           <tr>
-            <th>Matricule</th>
-            <th>Étudiant</th>
-            <th class="num">CC /20</th>
-            <th class="num">Examen /20</th>
-            <th class="num">Note UE</th>
-            <th>Validation</th>
+            <th>{{ t('sup.ensNotes.thMat') }}</th>
+            <th>{{ t('sup.ensNotes.thStudent') }}</th>
+            <th class="num">{{ t('sup.ensNotes.thCc') }}</th>
+            <th class="num">{{ t('sup.ensNotes.thExam') }}</th>
+            <th class="num">{{ t('sup.ensNotes.thNote') }}</th>
+            <th>{{ t('sup.ensNotes.thValid') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -52,13 +52,13 @@
             </td>
             <td>
               <span class="snote-val" :class="n.note == null ? 'is-wait' : n.note >= 10 ? 'is-ok' : 'is-bad'">
-                {{ n.note == null ? 'En attente' : n.note >= 10 ? 'Validée' : 'Non validée' }}
+                {{ n.note == null ? t('sup.ensNotes.waiting') : n.note >= 10 ? t('sup.ensNotes.validated') : t('sup.ensNotes.notValidated') }}
               </span>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="snote-empty">Sélectionnez une UE pour saisir les notes.</p>
+      <p v-else class="snote-empty">{{ t('sup.ensNotes.selectUe') }}</p>
 
       <!-- Liste mobile : cartes de saisie (tableau masqué sur petit écran) -->
       <ul v-if="notesUE.length" class="snote-mlist">
@@ -70,13 +70,13 @@
             </span>
           </div>
           <div class="snote-mrow-fields">
-            <label class="snote-mfield">CC /20
+            <label class="snote-mfield">{{ t('sup.ensNotes.ccField') }}
               <input class="snote-input" type="number" min="0" max="20" step="0.25" :value="n.cc ?? ''" placeholder="—" @change="saveNote(n.etudiant.id, 'cc', $event.target.value)" />
             </label>
-            <label class="snote-mfield">Examen /20
+            <label class="snote-mfield">{{ t('sup.ensNotes.examField') }}
               <input class="snote-input" type="number" min="0" max="20" step="0.25" :value="n.examen ?? ''" placeholder="—" @change="saveNote(n.etudiant.id, 'examen', $event.target.value)" />
             </label>
-            <div class="snote-mfield">Note UE
+            <div class="snote-mfield">{{ t('sup.ensNotes.noteField') }}
               <strong :class="n.note == null ? 'snote-wait' : n.note < 10 ? 'snote-bad' : 'snote-ok'">{{ n.note != null ? n.note.toFixed(2) : '—' }}</strong>
             </div>
           </div>
@@ -84,8 +84,8 @@
       </ul>
 
       <div class="snote-actions">
-        <span class="snote-auto">Les notes sont enregistrées automatiquement. Le directeur valide et signe le relevé.</span>
-        <transition name="snote-fade"><span v-if="saved" class="snote-saved">✓ Enregistré</span></transition>
+        <span class="snote-auto">{{ t('sup.ensNotes.autoSave') }}</span>
+        <transition name="snote-fade"><span v-if="saved" class="snote-saved">{{ t('sup.ensNotes.saved') }}</span></transition>
       </div>
     </section>
   </div>
@@ -93,8 +93,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 
 // Intervenant courant — MÊME résolution que dans tout l'espace enseignant.

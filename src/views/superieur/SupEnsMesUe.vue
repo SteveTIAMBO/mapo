@@ -2,11 +2,11 @@
   <div class="mue">
     <div class="mue-head">
       <div>
-        <h1 class="mue-h1">Mes UE &amp; mes groupes</h1>
-        <p class="mue-sub">Les unités d'enseignement dont vous avez la charge ce semestre.</p>
+        <h1 class="mue-h1">{{ t('sup.ensMesUe.title') }}</h1>
+        <p class="mue-sub">{{ t('sup.ensMesUe.subtitle') }}</p>
       </div>
       <div class="mue-badges">
-        <span class="mue-badge">{{ mesUe.length }} UE</span>
+        <span class="mue-badge">{{ mesUe.length }} {{ t('sup.ensMesUe.ueLabel') }}</span>
         <span class="mue-badge">{{ volumeTotal }} h</span>
       </div>
     </div>
@@ -15,13 +15,13 @@
       <table v-if="rows.length" class="mue-table">
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Intitulé</th>
-            <th>Promotion</th>
-            <th class="num">Sem.</th>
-            <th class="num">Crédits</th>
-            <th class="num">Volume</th>
-            <th class="num">Inscrits</th>
+            <th>{{ t('sup.ensMesUe.thCode') }}</th>
+            <th>{{ t('sup.ensMesUe.thIntitule') }}</th>
+            <th>{{ t('sup.ensMesUe.thPromotion') }}</th>
+            <th class="num">{{ t('sup.ensMesUe.thSem') }}</th>
+            <th class="num">{{ t('sup.ensMesUe.thCredits') }}</th>
+            <th class="num">{{ t('sup.ensMesUe.thVolume') }}</th>
+            <th class="num">{{ t('sup.ensMesUe.thInscrits') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -37,22 +37,22 @@
             <td class="num">
               <button type="button" class="mue-btn" @click="saisirNotes(r.id)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
-                Saisir les notes
+                {{ t('sup.ensMesUe.saisirNotes') }}
               </button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="mue-empty">Aucune UE ne vous est assignée pour le moment.</p>
+      <p v-else class="mue-empty">{{ t('sup.ensMesUe.empty') }}</p>
 
       <!-- Liste mobile : cartes UE (tableau masqué sur petit écran) -->
       <ul v-if="rows.length" class="mue-mlist">
         <li v-for="r in rows" :key="r.id" class="mue-mrow" @click="saisirNotes(r.id)">
           <div class="mue-mrow-main">
             <div class="mue-mrow-name"><span class="mue-code">{{ r.code }}</span> {{ r.intitule }}</div>
-            <div class="mue-mrow-sub">{{ r.promotion }} · S{{ r.semestre }} · {{ r.ects }} crédits · {{ r.inscrits }} inscrits</div>
+            <div class="mue-mrow-sub">{{ r.promotion }} · S{{ r.semestre }} · {{ r.ects }} {{ t('sup.ensMesUe.creditsShort') }} · {{ r.inscrits }} {{ t('sup.ensMesUe.inscritsShort') }}</div>
           </div>
-          <span class="mue-mrow-cta">Notes ›</span>
+          <span class="mue-mrow-cta">{{ t('sup.ensMesUe.notesCta') }}</span>
         </li>
       </ul>
     </section>
@@ -61,8 +61,10 @@
 
 <script setup>
 import { computed, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const goTab = inject('supGoTab', () => {})
 

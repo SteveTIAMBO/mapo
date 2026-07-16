@@ -2,10 +2,10 @@
   <div class="edt">
     <div class="edt-head">
       <div>
-        <h1 class="edt-h1">Emploi du temps</h1>
-        <p class="edt-sub">Vos séances de la semaine, toutes promotions confondues.</p>
+        <h1 class="edt-h1">{{ t('sup.ensEdt.title') }}</h1>
+        <p class="edt-sub">{{ t('sup.ensEdt.subtitle') }}</p>
       </div>
-      <span class="edt-badge">{{ sessions.length }} séance{{ sessions.length > 1 ? 's' : '' }}</span>
+      <span class="edt-badge">{{ t('sup.ensEdt.sessions', sessions.length, { n: sessions.length }) }}</span>
     </div>
 
     <section class="edt-panel">
@@ -14,7 +14,7 @@
           <thead>
             <tr>
               <th class="edt-corner"></th>
-              <th v-for="j in jours" :key="j">{{ j }}<span class="edt-th-date">{{ dateForDayName(j) }}</span></th>
+              <th v-for="j in jours" :key="j">{{ dayLabel(j) }}<span class="edt-th-date">{{ dateForDayName(j) }}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -39,14 +39,14 @@
           </tbody>
         </table>
       </div>
-      <p v-else class="edt-empty">Aucune séance planifiée pour vous ce semestre.</p>
+      <p v-else class="edt-empty">{{ t('sup.ensEdt.empty') }}</p>
 
       <!-- Vue mobile : un jour à la fois (tableau masqué sur petit écran) -->
       <div v-if="creneaux.length" class="edt-mday">
         <div class="edt-mday-nav">
-          <button type="button" class="edt-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
-          <div class="edt-mday-title">{{ jours[mobileDay] }} <span class="edt-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
-          <button type="button" class="edt-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
+          <button type="button" class="edt-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" :aria-label="t('sup.ensEdt.prevDay')">‹</button>
+          <div class="edt-mday-title">{{ dayLabel(jours[mobileDay]) }} <span class="edt-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
+          <button type="button" class="edt-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" :aria-label="t('sup.ensEdt.nextDay')">›</button>
         </div>
         <ul class="edt-mday-list">
           <li v-for="cr in creneaux" :key="cr.debut + '-' + cr.fin" class="edt-mday-slot">
@@ -65,9 +65,16 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
+
+// Libellé du jour (affichage) — la logique garde le nom FR pour matcher le store.
+const DAY_KEY = { Lundi: 'mon', Mardi: 'tue', Mercredi: 'wed', Jeudi: 'thu', Vendredi: 'fri' }
+function dayLabel(name) { return t('sup.days.' + (DAY_KEY[name] || 'mon')) }
+const dateLocale = () => (locale.value === 'en' ? 'en-GB' : 'fr-FR')
 
 // Intervenant courant — MÊME résolution que dans tout l'espace enseignant.
 const moi = computed(() =>
@@ -97,7 +104,7 @@ function dateForDayName(name) {
   if (target < 0) return ''
   const now = new Date()
   const d = new Date(now); d.setDate(now.getDate() + (target - now.getDay()))
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  return d.toLocaleDateString(dateLocale(), { day: '2-digit', month: 'short' })
 }
 
 // Créneaux = horaires distincts de mes séances, triés par heure de début.

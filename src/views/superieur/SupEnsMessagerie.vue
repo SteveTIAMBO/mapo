@@ -1,16 +1,16 @@
 <template>
   <div class="em">
     <div class="em-intro">
-      <h1 class="em-h1">Messagerie</h1>
-      <p class="em-sub">Échangez avec la direction, la scolarité et vos étudiants.</p>
+      <h1 class="em-h1">{{ t('sup.ensMessagerie.title') }}</h1>
+      <p class="em-sub">{{ t('sup.ensMessagerie.subtitle') }}</p>
     </div>
 
     <div class="em-grid">
       <!-- Liste des conversations -->
       <section class="em-panel em-list">
         <div class="em-list-head">
-          <h2 class="em-h2">Conversations</h2>
-          <button type="button" class="em-new" @click="composing = true">+ Nouveau</button>
+          <h2 class="em-h2">{{ t('sup.ensMessagerie.conversations') }}</h2>
+          <button type="button" class="em-new" @click="composing = true">{{ t('sup.ensMessagerie.new') }}</button>
         </div>
         <div
           v-for="c in conversations"
@@ -25,26 +25,26 @@
             <div class="em-conv-prev">{{ c.sujet }}</div>
           </div>
         </div>
-        <p v-if="!conversations.length" class="em-empty">Aucune conversation.</p>
+        <p v-if="!conversations.length" class="em-empty">{{ t('sup.ensMessagerie.noConv') }}</p>
       </section>
 
       <!-- Fil / composition -->
       <section class="em-panel em-thread">
         <template v-if="composing">
-          <h2 class="em-h2">Nouveau message</h2>
-          <label class="em-field"><span>Destinataire</span>
+          <h2 class="em-h2">{{ t('sup.ensMessagerie.newMessage') }}</h2>
+          <label class="em-field"><span>{{ t('sup.ensMessagerie.recipient') }}</span>
             <select v-model="draft.dest">
-              <option>Direction</option>
-              <option>Scolarité</option>
-              <option>Responsable de formation</option>
-              <option v-for="p in promos" :key="p.id" :value="'Étudiants — ' + p.label">Étudiants — {{ p.label }}</option>
+              <option>{{ t('sup.ensMessagerie.direction') }}</option>
+              <option>{{ t('sup.ensMessagerie.scolarite') }}</option>
+              <option>{{ t('sup.ensMessagerie.respFormation') }}</option>
+              <option v-for="p in promos" :key="p.id" :value="t('sup.ensMessagerie.studentsPrefix') + p.label">{{ t('sup.ensMessagerie.studentsPrefix') }}{{ p.label }}</option>
             </select>
           </label>
-          <label class="em-field"><span>Sujet</span><input v-model="draft.sujet" type="text" placeholder="Objet du message" /></label>
-          <label class="em-field"><span>Message</span><textarea v-model="draft.corps" rows="5" placeholder="Votre message…"></textarea></label>
+          <label class="em-field"><span>{{ t('sup.ensMessagerie.subject') }}</span><input v-model="draft.sujet" type="text" :placeholder="t('sup.ensMessagerie.subjectPlaceholder')" /></label>
+          <label class="em-field"><span>{{ t('sup.ensMessagerie.message') }}</span><textarea v-model="draft.corps" rows="5" :placeholder="t('sup.ensMessagerie.messagePlaceholder')"></textarea></label>
           <div class="em-actions">
-            <button type="button" class="em-btn-sec" @click="composing = false">Annuler</button>
-            <button type="button" class="em-btn-pri" :disabled="!draft.dest || !draft.corps.trim()" @click="envoyerNouveau">Envoyer</button>
+            <button type="button" class="em-btn-sec" @click="composing = false">{{ t('sup.ensMessagerie.cancel') }}</button>
+            <button type="button" class="em-btn-pri" :disabled="!draft.dest || !draft.corps.trim()" @click="envoyerNouveau">{{ t('sup.ensMessagerie.send') }}</button>
           </div>
         </template>
 
@@ -56,16 +56,16 @@
           <div class="em-messages">
             <div v-for="(m, i) in selected.messages" :key="i" class="em-msg" :class="m.moi ? 'is-moi' : 'is-eux'">
               <div class="em-msg-corps">{{ m.corps }}</div>
-              <div class="em-msg-meta">{{ m.moi ? 'Moi' : selected.dest }} · {{ fmtDate(m.date) }}</div>
+              <div class="em-msg-meta">{{ m.moi ? t('sup.ensMessagerie.me') : selected.dest }} · {{ fmtDate(m.date) }}</div>
             </div>
           </div>
           <div class="em-reply">
-            <input v-model="reply" type="text" placeholder="Répondre…" @keyup.enter="repondre" />
-            <button type="button" class="em-btn-pri" :disabled="!reply.trim()" @click="repondre">Envoyer</button>
+            <input v-model="reply" type="text" :placeholder="t('sup.ensMessagerie.reply')" @keyup.enter="repondre" />
+            <button type="button" class="em-btn-pri" :disabled="!reply.trim()" @click="repondre">{{ t('sup.ensMessagerie.send') }}</button>
           </div>
         </template>
 
-        <p v-else class="em-empty">Sélectionnez une conversation ou composez un nouveau message.</p>
+        <p v-else class="em-empty">{{ t('sup.ensMessagerie.selectConv') }}</p>
       </section>
     </div>
   </div>
@@ -73,8 +73,10 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const KEY = 'sup_messages'
 
@@ -83,12 +85,12 @@ const promos = computed(() => store.promotions.map((p) => ({ id: p.id, label: `$
 function seed() {
   const now = Date.now()
   return [
-    { id: 'm1', dest: 'Direction', sujet: 'Planning des examens', messages: [
-      { corps: 'Bonjour, pouvez-vous confirmer les dates des examens du semestre ?', moi: false, date: new Date(now - 2 * 864e5).toISOString() },
-      { corps: 'Bonjour, je vous transmets mes créneaux d\'ici demain.', moi: true, date: new Date(now - 1 * 864e5).toISOString() },
+    { id: 'm1', dest: t('sup.ensMessagerie.direction'), sujet: t('sup.ensMessagerie.seed1Subject'), messages: [
+      { corps: t('sup.ensMessagerie.seed1m1'), moi: false, date: new Date(now - 2 * 864e5).toISOString() },
+      { corps: t('sup.ensMessagerie.seed1m2'), moi: true, date: new Date(now - 1 * 864e5).toISOString() },
     ] },
-    { id: 'm2', dest: 'Scolarité', sujet: 'Liste des inscrits', messages: [
-      { corps: 'La liste mise à jour des inscrits à votre UE est disponible.', moi: false, date: new Date(now - 3 * 864e5).toISOString() },
+    { id: 'm2', dest: t('sup.ensMessagerie.scolarite'), sujet: t('sup.ensMessagerie.seed2Subject'), messages: [
+      { corps: t('sup.ensMessagerie.seed2m1'), moi: false, date: new Date(now - 3 * 864e5).toISOString() },
     ] },
   ]
 }
@@ -100,16 +102,16 @@ watch(conversations, (v) => { try { localStorage.setItem(KEY, JSON.stringify(v))
 const selectedId = ref(conversations.value[0]?.id || '')
 const selected = computed(() => conversations.value.find((c) => c.id === selectedId.value) || null)
 const composing = ref(false)
-const draft = ref({ dest: 'Direction', sujet: '', corps: '' })
+const draft = ref({ dest: t('sup.ensMessagerie.direction'), sujet: '', corps: '' })
 const reply = ref('')
 
 function envoyerNouveau() {
   if (!draft.value.dest || !draft.value.corps.trim()) return
-  const c = { id: 'm' + Date.now(), dest: draft.value.dest, sujet: draft.value.sujet || '(sans objet)', messages: [{ corps: draft.value.corps.trim(), moi: true, date: new Date().toISOString() }] }
+  const c = { id: 'm' + Date.now(), dest: draft.value.dest, sujet: draft.value.sujet || t('sup.ensMessagerie.noSubject'), messages: [{ corps: draft.value.corps.trim(), moi: true, date: new Date().toISOString() }] }
   conversations.value = [c, ...conversations.value]
   selectedId.value = c.id
   composing.value = false
-  draft.value = { dest: 'Direction', sujet: '', corps: '' }
+  draft.value = { dest: t('sup.ensMessagerie.direction'), sujet: '', corps: '' }
 }
 function repondre() {
   if (!selected.value || !reply.value.trim()) return
@@ -119,7 +121,7 @@ function repondre() {
 }
 
 function initiales(n) { return (n || '?').split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() || '').join('') }
-function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) }
+function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? '' : d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' }) }
 function lastDate(c) { const m = c.messages[c.messages.length - 1]; return m ? fmtDate(m.date) : '' }
 </script>
 

@@ -3,16 +3,16 @@
     <div class="sen-hero">
       <div class="sen-avatar">{{ initials }}</div>
       <div class="sen-hero-info">
-        <div class="sen-hello">Bonjour {{ prenom }}</div>
-        <div class="sen-sub">{{ moi.specialite }} · {{ moi.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }}</div>
+        <div class="sen-hello">{{ t('sup.espaceEnseignant.hello', { name: prenom }) }}</div>
+        <div class="sen-sub">{{ moi.specialite }} · {{ moi.statut === 'vacataire' ? t('sup.espaceEnseignant.vacataire') : t('sup.espaceEnseignant.permanent') }}</div>
       </div>
     </div>
 
     <div class="sen-kpis">
-      <div class="sen-kpi"><div class="sen-kpi-lab">Mes UE</div><div class="sen-kpi-val">{{ mesUe.length }}</div></div>
-      <div class="sen-kpi"><div class="sen-kpi-lab">Volume horaire</div><div class="sen-kpi-val">{{ moi.volumeHoraire }}<span> h</span></div></div>
-      <div class="sen-kpi"><div class="sen-kpi-lab">Mes étudiants</div><div class="sen-kpi-val">{{ nbEtudiants }}</div></div>
-      <div class="sen-kpi"><div class="sen-kpi-lab">Notes à saisir</div><div class="sen-kpi-val" :class="{ 'is-warn': aSaisir > 0 }">{{ aSaisir }}</div></div>
+      <div class="sen-kpi"><div class="sen-kpi-lab">{{ t('sup.espaceEnseignant.kpiUe') }}</div><div class="sen-kpi-val">{{ mesUe.length }}</div></div>
+      <div class="sen-kpi"><div class="sen-kpi-lab">{{ t('sup.espaceEnseignant.kpiVolume') }}</div><div class="sen-kpi-val">{{ moi.volumeHoraire }}<span> h</span></div></div>
+      <div class="sen-kpi"><div class="sen-kpi-lab">{{ t('sup.espaceEnseignant.kpiStudents') }}</div><div class="sen-kpi-val">{{ nbEtudiants }}</div></div>
+      <div class="sen-kpi"><div class="sen-kpi-lab">{{ t('sup.espaceEnseignant.kpiNotes') }}</div><div class="sen-kpi-val" :class="{ 'is-warn': aSaisir > 0 }">{{ aSaisir }}</div></div>
     </div>
 
     <!-- Accès rapide aux rubriques -->
@@ -27,26 +27,26 @@
       <!-- Mes enseignements -->
       <section class="sen-card sen-card-wide">
         <div class="sen-card-head">
-          <h2 class="sen-h2">Mes enseignements</h2>
-          <button type="button" class="sen-link" @click="goTab('ens_ue')">Tout voir →</button>
+          <h2 class="sen-h2">{{ t('sup.espaceEnseignant.teaching') }}</h2>
+          <button type="button" class="sen-link" @click="goTab('ens_ue')">{{ t('sup.espaceEnseignant.seeAll') }}</button>
         </div>
         <div v-for="u in mesUe" :key="u.id" class="sen-ue">
           <div>
             <div class="sen-ue-code">{{ u.code }} · {{ u.intitule }}</div>
-            <div class="sen-ue-int">{{ u.semestre }} · {{ u.ects }} crédits</div>
+            <div class="sen-ue-int">{{ u.semestre }} · {{ t('sup.espaceEnseignant.credits', { n: u.ects }) }}</div>
           </div>
           <div class="sen-ue-h">{{ u.volumeHoraire }} h</div>
         </div>
-        <p v-if="!mesUe.length" class="sen-empty">Aucune UE assignée.</p>
+        <p v-if="!mesUe.length" class="sen-empty">{{ t('sup.espaceEnseignant.noUe') }}</p>
       </section>
 
       <div class="sen-side">
         <!-- Assistant IA (masqué si MIAPO désactivé pour la préparation de cours) -->
         <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-card sen-ia">
           <div class="sen-ia-badge">MIAPO</div>
-          <h2 class="sen-h2 sen-ia-h2">Assistant pédagogique</h2>
-          <p class="sen-ia-txt">Prépare tes cours, devoirs et examens avec l'IA : sujet + corrigé générés en quelques secondes, adaptés à ton UE et au niveau.</p>
-          <button class="sen-ia-cta" type="button" @click="goTab('ens_devoirs')">Préparer un support</button>
+          <h2 class="sen-h2 sen-ia-h2">{{ t('sup.espaceEnseignant.iaTitle') }}</h2>
+          <p class="sen-ia-txt">{{ t('sup.espaceEnseignant.iaText') }}</p>
+          <button class="sen-ia-cta" type="button" @click="goTab('ens_devoirs')">{{ t('sup.espaceEnseignant.iaCta') }}</button>
         </section>
       </div>
     </div>
@@ -55,10 +55,12 @@
 
 <script setup>
 import { ref, computed, inject } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
 import { generateFichePaie, fichePaieDetail, moisLabel } from '../../utils/pdfFichePaie'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const miapoGlobal = useSuperieurMiapoStore()
 const goTab = inject('supGoTab', () => {})
@@ -67,17 +69,17 @@ const moi = computed(() =>
   store.intervenantsAvecCharge[0] || {}
 ).value
 
-const quickLinks = [
-  { key: 'ens_ue', label: 'Mes UE', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
-  { key: 'ens_notes', label: 'Saisie des notes', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>' },
-  { key: 'ens_cours', label: 'Cours & ressources', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
-  { key: 'ens_devoirs', label: 'Devoirs & examens', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
-  { key: 'ens_edt', label: 'Emploi du temps', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' },
-  { key: 'ens_messagerie', label: 'Messagerie', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
-  { key: 'ens_paie', label: 'Mes fiches de paie', icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>' },
-]
+const quickLinks = computed(() => [
+  { key: 'ens_ue', label: t('sup.espaceEnseignant.qlUe'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' },
+  { key: 'ens_notes', label: t('sup.espaceEnseignant.qlNotes'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>' },
+  { key: 'ens_cours', label: t('sup.espaceEnseignant.qlCours'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
+  { key: 'ens_devoirs', label: t('sup.espaceEnseignant.qlDevoirs'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>' },
+  { key: 'ens_edt', label: t('sup.espaceEnseignant.qlEdt'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>' },
+  { key: 'ens_messagerie', label: t('sup.espaceEnseignant.qlMessagerie'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>' },
+  { key: 'ens_paie', label: t('sup.espaceEnseignant.qlPaie'), icon: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>' },
+])
 
-const prenom = moi.prenom || (moi.nomComplet || '').split(' ').slice(-1)[0] || 'Professeur'
+const prenom = moi.prenom || (moi.nomComplet || '').split(' ').slice(-1)[0] || t('sup.espaceEnseignant.profFallback')
 const initials = ((moi.prenom || '') + ' ' + (moi.nom || '')).trim().split(' ').map((w) => w[0]).slice(0, 2).join('').toUpperCase() || 'PR'
 
 const mesUe = computed(() => store.ue.filter((u) => u.intervenantId === moi.id)).value

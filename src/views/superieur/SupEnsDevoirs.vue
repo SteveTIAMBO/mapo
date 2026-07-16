@@ -2,88 +2,88 @@
   <div class="dvr">
     <div class="dvr-head">
       <div>
-        <h1 class="dvr-h1">Devoirs &amp; examens</h1>
-        <p class="dvr-sub">Créez et suivez les évaluations de vos unités d'enseignement.</p>
+        <h1 class="dvr-h1">{{ t('sup.ensDevoirs.title') }}</h1>
+        <p class="dvr-sub">{{ t('sup.ensDevoirs.subtitle') }}</p>
       </div>
     </div>
 
     <!-- Créer -->
     <section class="dvr-panel">
-      <h2 class="dvr-h2">Nouvelle évaluation</h2>
+      <h2 class="dvr-h2">{{ t('sup.ensDevoirs.newEval') }}</h2>
       <div class="dvr-row">
         <div class="dvr-fg">
-          <label>Type</label>
+          <label>{{ t('sup.ensDevoirs.type') }}</label>
           <select v-model="form.type" class="dvr-input">
-            <option value="devoir">Devoir</option>
-            <option value="examen">Examen</option>
+            <option value="devoir">{{ t('sup.ensDevoirs.typeDevoir') }}</option>
+            <option value="examen">{{ t('sup.ensDevoirs.typeExamen') }}</option>
           </select>
         </div>
         <div class="dvr-fg dvr-grow">
-          <label>Unité d'enseignement</label>
+          <label>{{ t('sup.ensDevoirs.ue') }}</label>
           <select v-model="form.ueId" class="dvr-input">
-            <option value="">— Choisir une UE —</option>
+            <option value="">{{ t('sup.ensDevoirs.chooseUe') }}</option>
             <option v-for="u in mesUe" :key="u.id" :value="u.id">{{ u.code }} · {{ u.intitule }}</option>
           </select>
         </div>
         <div class="dvr-fg">
-          <label>Date</label>
+          <label>{{ t('sup.ensDevoirs.date') }}</label>
           <input v-model="form.date" class="dvr-input" type="date" />
         </div>
       </div>
       <div class="dvr-fg">
-        <label>Titre</label>
-        <input v-model="form.titre" class="dvr-input" type="text" placeholder="Ex. Devoir surveillé n°2" />
+        <label>{{ t('sup.ensDevoirs.titleField') }}</label>
+        <input v-model="form.titre" class="dvr-input" type="text" :placeholder="t('sup.ensDevoirs.titlePlaceholder')" />
       </div>
       <div class="dvr-fg">
         <div class="dvr-consigne-lab">
-          <label>Consignes</label>
+          <label>{{ t('sup.ensDevoirs.instructions') }}</label>
           <button class="dvr-miapo" type="button" @click="genererMiapo">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></svg>
-            Générer avec MIAPO
+            {{ t('sup.ensDevoirs.genMiapo') }}
           </button>
         </div>
-        <textarea v-model="form.consignes" class="dvr-input" rows="5" placeholder="Énoncé, barème, durée conseillée…"></textarea>
+        <textarea v-model="form.consignes" class="dvr-input" rows="5" :placeholder="t('sup.ensDevoirs.instrPlaceholder')"></textarea>
       </div>
       <div class="dvr-actions">
         <button class="dvr-btn" type="button" :disabled="!canCreate" @click="creer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-          Créer l'évaluation
+          {{ t('sup.ensDevoirs.createBtn') }}
         </button>
-        <transition name="dvr-fade"><span v-if="justCreated" class="dvr-ok">✓ Enregistré</span></transition>
+        <transition name="dvr-fade"><span v-if="justCreated" class="dvr-ok">{{ t('sup.ensDevoirs.saved') }}</span></transition>
       </div>
     </section>
 
     <!-- Liste -->
     <section class="dvr-panel">
       <div class="dvr-panel-head">
-        <h2 class="dvr-h2">Évaluations programmées</h2>
+        <h2 class="dvr-h2">{{ t('sup.ensDevoirs.scheduled') }}</h2>
         <span class="dvr-count">{{ items.length }}</span>
       </div>
       <table v-if="items.length" class="dvr-table">
         <thead>
           <tr>
-            <th>Type</th>
-            <th>Titre</th>
-            <th>UE</th>
-            <th>Date</th>
+            <th>{{ t('sup.ensDevoirs.thType') }}</th>
+            <th>{{ t('sup.ensDevoirs.thTitle') }}</th>
+            <th>{{ t('sup.ensDevoirs.thUe') }}</th>
+            <th>{{ t('sup.ensDevoirs.thDate') }}</th>
             <th></th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="it in items" :key="it.id">
-            <td><span class="dvr-badge" :class="'t-' + it.type">{{ it.type === 'examen' ? 'Examen' : 'Devoir' }}</span></td>
+            <td><span class="dvr-badge" :class="'t-' + it.type">{{ it.type === 'examen' ? t('sup.ensDevoirs.typeExamen') : t('sup.ensDevoirs.typeDevoir') }}</span></td>
             <td class="dvr-title">{{ it.titre }}</td>
             <td class="dvr-ue">{{ it.ueCode || '—' }}</td>
             <td>{{ fmtDate(it.date) }}</td>
             <td class="dvr-right">
-              <button class="dvr-del" type="button" title="Supprimer" @click="supprimer(it.id)">
+              <button class="dvr-del" type="button" :title="t('sup.ensDevoirs.delete')" @click="supprimer(it.id)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               </button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="dvr-empty">Aucune évaluation programmée pour l'instant.</p>
+      <p v-else class="dvr-empty">{{ t('sup.ensDevoirs.empty') }}</p>
 
       <!-- Liste mobile : cartes (tableau masqué sur petit écran) -->
       <ul v-if="items.length" class="dvr-mlist">
@@ -91,11 +91,11 @@
           <div class="dvr-mrow-main">
             <div class="dvr-mrow-name">{{ it.titre }}</div>
             <div class="dvr-mrow-sub">
-              <span class="dvr-badge" :class="'t-' + it.type">{{ it.type === 'examen' ? 'Examen' : 'Devoir' }}</span>
+              <span class="dvr-badge" :class="'t-' + it.type">{{ it.type === 'examen' ? t('sup.ensDevoirs.typeExamen') : t('sup.ensDevoirs.typeDevoir') }}</span>
               {{ it.ueCode || '—' }} · {{ fmtDate(it.date) }}
             </div>
           </div>
-          <button class="dvr-del" type="button" title="Supprimer" @click="supprimer(it.id)">
+          <button class="dvr-del" type="button" :title="t('sup.ensDevoirs.delete')" @click="supprimer(it.id)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
           </button>
         </li>
@@ -106,8 +106,10 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 
 // Intervenant courant — MÊME résolution que dans tout l'espace enseignant.
@@ -134,7 +136,7 @@ const canCreate = computed(() => form.titre.trim() && form.ueId)
 
 function fmtDate(iso) {
   if (!iso) return '—'
-  try { return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) } catch (e) { return iso }
+  try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) } catch (e) { return iso }
 }
 
 // « Générer avec MIAPO » — suggestion LOCALE (aucun appel réseau). Pré-remplit
@@ -142,21 +144,22 @@ function fmtDate(iso) {
 // l'enseignant peut ensuite ajuster.
 function genererMiapo() {
   const ue = mesUe.find((u) => u.id === form.ueId)
-  const intitule = ue ? ue.intitule : "l'unité d'enseignement"
+  const intitule = ue ? ue.intitule : t('sup.ensDevoirs.miFallbackUe')
   const estExamen = form.type === 'examen'
-  const duree = estExamen ? '2 heures' : '1 heure'
+  const typeLabel = estExamen ? t('sup.ensDevoirs.typeExamen') : t('sup.ensDevoirs.typeDevoir')
+  const duree = estExamen ? t('sup.ensDevoirs.miDurExam') : t('sup.ensDevoirs.miDurDevoir')
   const lignes = [
-    `${estExamen ? 'Examen' : 'Devoir'} — ${intitule}`,
-    `Durée conseillée : ${duree}. Documents non autorisés.`,
+    `${typeLabel} — ${intitule}`,
+    t('sup.ensDevoirs.miLine2', { d: duree }),
     '',
-    'Exercice 1 (8 pts) — Questions de cours : définir les notions clés et illustrer par un exemple.',
-    'Exercice 2 (7 pts) — Étude de cas : analyser la situation proposée et justifier votre raisonnement.',
-    'Exercice 3 (5 pts) — Application chiffrée : résoudre et commenter les résultats obtenus.',
+    t('sup.ensDevoirs.miEx1'),
+    t('sup.ensDevoirs.miEx2'),
+    t('sup.ensDevoirs.miEx3'),
     '',
-    'Barème sur 20. Le soin de la rédaction et la clarté du raisonnement sont valorisés.',
+    t('sup.ensDevoirs.miFooter'),
   ]
   if (!form.titre.trim()) {
-    form.titre = `${estExamen ? 'Examen' : 'Devoir'} — ${ue ? ue.code : ''}`.trim()
+    form.titre = `${typeLabel} — ${ue ? ue.code : ''}`.trim()
   }
   form.consignes = lignes.join('\n')
 }
