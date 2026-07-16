@@ -44,6 +44,17 @@
         </tbody>
       </table>
       <p v-else class="mue-empty">Aucune UE ne vous est assignée pour le moment.</p>
+
+      <!-- Liste mobile : cartes UE (tableau masqué sur petit écran) -->
+      <ul v-if="rows.length" class="mue-mlist">
+        <li v-for="r in rows" :key="r.id" class="mue-mrow" @click="saisirNotes(r.id)">
+          <div class="mue-mrow-main">
+            <div class="mue-mrow-name"><span class="mue-code">{{ r.code }}</span> {{ r.intitule }}</div>
+            <div class="mue-mrow-sub">{{ r.promotion }} · S{{ r.semestre }} · {{ r.ects }} crédits · {{ r.inscrits }} inscrits</div>
+          </div>
+          <span class="mue-mrow-cta">Notes ›</span>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
@@ -106,4 +117,18 @@ function saisirNotes(ueId) {
 .mue-btn:hover { background: rgba(var(--pr-rgb), .18); }
 .mue-empty { color: var(--muted, #6b7280); font-size: 14px; padding: 26px 0; text-align: center; }
 @media (max-width: 900px) { .mue-h1 { font-size: 20px; } }
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.mue-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.mue-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.mue-mrow:last-child { border-bottom: none; }
+.mue-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.mue-mrow-main { flex: 1; min-width: 0; }
+.mue-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mue-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mue-mrow-cta { flex-shrink: 0; font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 700; color: var(--pr); }
+@media (max-width: 560px) {
+  .mue-table { display: none; }
+  .mue-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>

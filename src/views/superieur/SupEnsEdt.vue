@@ -40,12 +40,31 @@
         </table>
       </div>
       <p v-else class="edt-empty">Aucune séance planifiée pour vous ce semestre.</p>
+
+      <!-- Vue mobile : un jour à la fois (tableau masqué sur petit écran) -->
+      <div v-if="creneaux.length" class="edt-mday">
+        <div class="edt-mday-nav">
+          <button type="button" class="edt-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
+          <div class="edt-mday-title">{{ jours[mobileDay] }}</div>
+          <button type="button" class="edt-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
+        </div>
+        <ul class="edt-mday-list">
+          <li v-for="cr in creneaux" :key="cr.debut + '-' + cr.fin" class="edt-mday-slot">
+            <div class="edt-mday-time">{{ cr.debut }}<br />{{ cr.fin }}</div>
+            <div v-if="cellAt(jours[mobileDay], cr.debut)" class="edt-mday-session">
+              <div class="edt-mday-code">{{ cellAt(jours[mobileDay], cr.debut).ueCode }} · {{ cellAt(jours[mobileDay], cr.debut).ueIntitule }}</div>
+              <div class="edt-mday-meta">{{ cellAt(jours[mobileDay], cr.debut).promotionNom }} · {{ cellAt(jours[mobileDay], cr.debut).salle }}</div>
+            </div>
+            <div v-else class="edt-mday-empty">—</div>
+          </li>
+        </ul>
+      </div>
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useSuperieurStore } from '../../stores/superieur'
 
 const store = useSuperieurStore()
@@ -61,6 +80,16 @@ const sessions = computed(() => store.edtPourIntervenant(moi.nomComplet)).value
 
 const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']
 const jours = JOURS
+
+// Vue mobile : un jour à la fois, ouvre sur aujourd'hui
+function jourAujourdhuiIndex() {
+  const noms = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const i = jours.indexOf(noms[new Date().getDay()])
+  return i >= 0 ? i : 0
+}
+const mobileDay = ref(jourAujourdhuiIndex())
+function mobileDayPrev() { if (mobileDay.value > 0) mobileDay.value-- }
+function mobileDayNext() { if (mobileDay.value < jours.length - 1) mobileDay.value++ }
 
 // Créneaux = horaires distincts de mes séances, triés par heure de début.
 const creneaux = computed(() => {
@@ -107,4 +136,23 @@ function cellAt(jour, debut) { return grid[`${jour}__${debut}`] || null }
 .edt-salle { color: var(--tx3, #9AA2B1); font-weight: 500; }
 .edt-empty { color: var(--muted, #6b7280); font-size: 13.5px; padding: 26px 0; text-align: center; }
 @media (max-width: 900px) { .edt-h1 { font-size: 20px; } }
+
+/* ── Vue mobile : EDT enseignant un jour à la fois ── */
+.edt-mday { display: none; }
+@media (max-width: 560px) {
+  .edt-grid-wrap { display: none; }
+  .edt-mday { display: block; }
+  .edt-mday-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+  .edt-mday-arrow { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--hair, rgba(20,32,64,.12)); background: var(--card); color: var(--pr); font-size: 22px; line-height: 1; cursor: pointer; flex-shrink: 0; }
+  .edt-mday-arrow:disabled { opacity: .35; cursor: default; }
+  .edt-mday-title { flex: 1; text-align: center; font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 16px; color: var(--tx); }
+  .edt-mday-list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+  .edt-mday-slot { display: flex; align-items: stretch; gap: 12px; padding: 10px 12px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+  .edt-mday-slot:last-child { border-bottom: none; }
+  .edt-mday-time { flex-shrink: 0; width: 46px; align-self: center; text-align: center; font-family: 'Poppins', sans-serif; font-size: 12px; font-weight: 600; color: var(--tx2, #6f767e); line-height: 1.35; }
+  .edt-mday-session { flex: 1; min-width: 0; }
+  .edt-mday-code { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--tx); }
+  .edt-mday-meta { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 2px; }
+  .edt-mday-empty { flex: 1; align-self: center; color: var(--tx3, #9aa2b1); font-size: 13px; }
+}
 </style>

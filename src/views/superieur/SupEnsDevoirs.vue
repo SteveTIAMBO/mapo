@@ -84,6 +84,22 @@
         </tbody>
       </table>
       <p v-else class="dvr-empty">Aucune évaluation programmée pour l'instant.</p>
+
+      <!-- Liste mobile : cartes (tableau masqué sur petit écran) -->
+      <ul v-if="items.length" class="dvr-mlist">
+        <li v-for="it in items" :key="it.id" class="dvr-mrow">
+          <div class="dvr-mrow-main">
+            <div class="dvr-mrow-name">{{ it.titre }}</div>
+            <div class="dvr-mrow-sub">
+              <span class="dvr-badge" :class="'t-' + it.type">{{ it.type === 'examen' ? 'Examen' : 'Devoir' }}</span>
+              {{ it.ueCode || '—' }} · {{ fmtDate(it.date) }}
+            </div>
+          </div>
+          <button class="dvr-del" type="button" title="Supprimer" @click="supprimer(it.id)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
+        </li>
+      </ul>
     </section>
   </div>
 </template>
@@ -211,4 +227,16 @@ textarea.dvr-input { resize: vertical; }
 .dvr-fade-enter-active, .dvr-fade-leave-active { transition: opacity .3s ease; }
 .dvr-fade-enter-from, .dvr-fade-leave-to { opacity: 0; }
 @media (max-width: 900px) { .dvr-h1 { font-size: 20px; } .dvr-fg { min-width: 0; } }
+
+/* ── Liste mobile (remplace le tableau sur petit écran) ── */
+.dvr-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.dvr-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+.dvr-mrow:last-child { border-bottom: none; }
+.dvr-mrow-main { flex: 1; min-width: 0; }
+.dvr-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dvr-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+@media (max-width: 560px) {
+  .dvr-table { display: none; }
+  .dvr-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>

@@ -60,6 +60,29 @@
       </table>
       <p v-else class="snote-empty">Sélectionnez une UE pour saisir les notes.</p>
 
+      <!-- Liste mobile : cartes de saisie (tableau masqué sur petit écran) -->
+      <ul v-if="notesUE.length" class="snote-mlist">
+        <li v-for="n in notesUE" :key="n.etudiant.id" class="snote-mrow">
+          <div class="snote-mrow-head">
+            <div class="snote-mrow-name">{{ n.etudiant.nomComplet }} <span class="snote-mrow-mat">{{ n.etudiant.matricule }}</span></div>
+            <span class="snote-val" :class="n.note == null ? 'is-wait' : n.note >= 10 ? 'is-ok' : 'is-bad'">
+              {{ n.note == null ? 'En attente' : n.note >= 10 ? 'Validée' : 'Non validée' }}
+            </span>
+          </div>
+          <div class="snote-mrow-fields">
+            <label class="snote-mfield">CC /20
+              <input class="snote-input" type="number" min="0" max="20" step="0.25" :value="n.cc ?? ''" placeholder="—" @change="saveNote(n.etudiant.id, 'cc', $event.target.value)" />
+            </label>
+            <label class="snote-mfield">Examen /20
+              <input class="snote-input" type="number" min="0" max="20" step="0.25" :value="n.examen ?? ''" placeholder="—" @change="saveNote(n.etudiant.id, 'examen', $event.target.value)" />
+            </label>
+            <div class="snote-mfield">Note UE
+              <strong :class="n.note == null ? 'snote-wait' : n.note < 10 ? 'snote-bad' : 'snote-ok'">{{ n.note != null ? n.note.toFixed(2) : '—' }}</strong>
+            </div>
+          </div>
+        </li>
+      </ul>
+
       <div class="snote-actions">
         <span class="snote-auto">Les notes sont enregistrées automatiquement. Le directeur valide et signe le relevé.</span>
         <transition name="snote-fade"><span v-if="saved" class="snote-saved">✓ Enregistré</span></transition>
@@ -140,4 +163,19 @@ function saveNote(etudiantId, field, value) {
 .snote-fade-enter-active, .snote-fade-leave-active { transition: opacity .3s ease; }
 .snote-fade-enter-from, .snote-fade-leave-to { opacity: 0; }
 @media (max-width: 900px) { .snote-h1 { font-size: 20px; } .snote-select { min-width: 0; width: 100%; } }
+
+/* ── Liste mobile : cartes de saisie (remplace le tableau sur petit écran) ── */
+.snote-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.snote-mrow { padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); }
+.snote-mrow:last-child { border-bottom: none; }
+.snote-mrow-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.snote-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14px; color: var(--tx); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.snote-mrow-mat { font-weight: 500; font-size: 12px; color: var(--tx3, #9aa2b1); }
+.snote-mrow-fields { display: flex; align-items: flex-end; gap: 10px; margin-top: 8px; }
+.snote-mfield { flex: 1; display: flex; flex-direction: column; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--tx3, #9aa2b1); text-transform: uppercase; letter-spacing: .03em; }
+.snote-mfield .snote-input { width: 100%; }
+@media (max-width: 560px) {
+  .snote-table { display: none; }
+  .snote-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>
