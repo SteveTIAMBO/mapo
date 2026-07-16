@@ -1083,6 +1083,9 @@ async function copyMessage() {
 }
 @media (max-width: 700px) {
   .si-h1 { font-size: 22px; }
+  .si-intro { flex-direction: column; align-items: stretch; gap: 12px; }
+  .si-head-actions { flex-direction: column; width: 100%; }
+  .si-head-actions .si-settings-btn { width: 100%; justify-content: center; }
   .si-filters { flex-direction: column; align-items: stretch; }
   .si-modal-overlay { padding: 0; align-items: flex-end; }
   .si-modal { max-width: 100%; max-height: 92vh; border-radius: 14px 14px 0 0; }
