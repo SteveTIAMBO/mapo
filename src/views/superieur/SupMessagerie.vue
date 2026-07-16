@@ -4,7 +4,7 @@
     <div class="page-header">
       <div class="page-header-text">
         <h1>{{ t('mess.title') }}</h1>
-        <p>{{ t('mess.subtitle') }}</p>
+        <p>Communiquez avec la direction, les intervenants et les étudiants.</p>
       </div>
       <div class="header-actions">
         <button class="btn btn-primary" @click="openCompose()">
