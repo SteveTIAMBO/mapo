@@ -547,7 +547,13 @@ function exportEdtPdf() {
 const editMode = ref(false)
 
 // Vue mobile : un jour à la fois (navigation par jour, évite le tableau large)
-const mobileDay = ref(0)
+// Ouvre sur le jour actuel (Aujourd'hui) s'il figure dans la grille, sinon le 1er jour.
+function jourAujourdhuiIndex() {
+  const noms = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
+  const i = (jours.value || []).indexOf(noms[new Date().getDay()])
+  return i >= 0 ? i : 0
+}
+const mobileDay = ref(jourAujourdhuiIndex())
 function mobileDayPrev() { if (mobileDay.value > 0) mobileDay.value-- }
 function mobileDayNext() { if (mobileDay.value < jours.value.length - 1) mobileDay.value++ }
 function toggleEdit() {

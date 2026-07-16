@@ -260,22 +260,17 @@
     </div>
 
     <!-- Barre d'actions basse (mobile) : nav rapide + bouton central selon le profil -->
-    <nav class="sup-bbar" aria-label="Actions rapides">
-      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[0].key }" type="button" @click="choisirTab(bbar.items[0].key)">
-        <span v-html="bbar.items[0].icon"></span><span>{{ bbar.items[0].label }}</span>
-      </button>
-      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[1].key }" type="button" @click="choisirTab(bbar.items[1].key)">
-        <span v-html="bbar.items[1].icon"></span><span>{{ bbar.items[1].label }}</span>
-      </button>
-      <button class="sup-bbar-center" type="button" @click="bbarCenter">
-        <span class="sup-bbar-center-btn" v-html="bbar.center.icon"></span>
-        <span>{{ bbar.center.label }}</span>
-      </button>
-      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[2].key }" type="button" @click="choisirTab(bbar.items[2].key)">
-        <span v-html="bbar.items[2].icon"></span><span>{{ bbar.items[2].label }}</span>
-      </button>
-      <button class="sup-bbar-item" :class="{ active: activeTab === bbar.items[3].key }" type="button" @click="choisirTab(bbar.items[3].key)">
-        <span v-html="bbar.items[3].icon"></span><span>{{ bbar.items[3].label }}</span>
+    <nav class="sup-bbar" aria-label="Navigation rapide">
+      <button
+        v-for="it in bbar"
+        :key="it.key"
+        class="sup-bbar-item"
+        :class="{ active: activeTab === it.key }"
+        type="button"
+        @click="choisirTab(it.key)"
+      >
+        <span class="sup-bbar-ic" v-html="it.icon"></span>
+        <span>{{ it.label }}</span>
       </button>
     </nav>
   </div>
@@ -795,39 +790,33 @@ const BBAR_ICONS = {
   plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>',
   chart: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
 }
 const bbar = computed(() => {
   const r = authSup.role
-  if (r === 'comptable') return {
-    items: [
-      { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
-      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
-      { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
-      { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
-    ],
-    center: { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-  }
-  if (r === 'enseignant') return {
-    items: [
-      { key: 'espace_enseignant', label: 'Accueil', icon: BBAR_ICONS.home },
-      { key: 'ens_ue', label: 'Mes UE', icon: BBAR_ICONS.book },
-      { key: 'ens_edt', label: 'EDT', icon: BBAR_ICONS.calendar },
-      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
-    ],
-    center: { key: 'ens_notes', label: 'Notes', icon: BBAR_ICONS.plus },
-  }
-  // Directeur (admin) et par défaut : Dashboard = bouton principal (centre)
-  return {
-    items: [
-      { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
-      { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
-      { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
-      { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
-    ],
-    center: { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
-  }
+  if (r === 'comptable') return [
+    { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
+    { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
+    { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
+    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
+  ]
+  if (r === 'enseignant') return [
+    { key: 'espace_enseignant', label: 'Accueil', icon: BBAR_ICONS.home },
+    { key: 'ens_ue', label: 'Mes UE', icon: BBAR_ICONS.book },
+    { key: 'ens_edt', label: 'EDT', icon: BBAR_ICONS.calendar },
+    { key: 'ens_notes', label: 'Notes', icon: BBAR_ICONS.edit },
+    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+  ]
+  // Directeur (admin) et par défaut : 5 accès de même niveau
+  return [
+    { key: 'dashboard', label: 'Accueil', icon: BBAR_ICONS.home },
+    { key: 'etudiants', label: 'Étudiants', icon: BBAR_ICONS.users },
+    { key: 'finance', label: 'Compta', icon: BBAR_ICONS.wallet },
+    { key: 'ens_messagerie', label: 'Messages', icon: BBAR_ICONS.chat },
+    { key: 'rapports', label: 'Rapports', icon: BBAR_ICONS.chart },
+  ]
 })
-function bbarCenter() { choisirTab(bbar.value.center.key) }
 
 // ── Mode groupe (fondateur) vs mode campus (directeur / campus ouvert) ──
 // Fondateur sans campus ouvert → dashboard groupe agrégé uniquement.
@@ -1630,37 +1619,27 @@ watch(
   .sup-hdr-school-name { max-width: 92px; }
 }
 
-/* ── Barre d'actions basse (mobile only) : nav + bouton central ── */
+/* ── Barre de navigation basse (mobile only) : 5 accès de même niveau ── */
 .sup-bbar { display: none; }
 @media (max-width: 560px) {
   .sup-bbar {
-    display: flex; align-items: flex-end; justify-content: space-around;
+    display: flex; align-items: center; justify-content: space-around;
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 12;
-    padding: 6px 6px calc(8px + env(safe-area-inset-bottom, 0px));
-    background: var(--glass, rgba(255,255,255,.92));
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
+    background: var(--glass, rgba(255,255,255,.94));
     -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
     border-top: 1px solid var(--divider, rgba(20,32,64,.10));
   }
   .sup-bbar-item {
-    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
     background: none; border: none; cursor: pointer; padding: 5px 0; min-width: 0;
     color: var(--tx3, #9aa2b1); font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 600;
   }
   .sup-bbar-item.active { color: var(--pr); }
-  .sup-bbar-center {
-    flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 3px;
-    background: none; border: none; cursor: pointer; padding: 0 6px;
-    color: var(--pr); font-family: 'Poppins', sans-serif; font-size: 10px; font-weight: 700;
-  }
-  .sup-bbar-center-btn {
-    display: flex; align-items: center; justify-content: center;
-    width: 50px; height: 50px; border-radius: 50%; margin-top: -20px;
-    background: var(--pr); color: #fff; box-shadow: 0 6px 16px rgba(var(--pr-rgb), .42);
-  }
-  .sup-bbar svg { width: 22px; height: 22px; display: block; }
-  .sup-bbar-center-btn svg { width: 26px; height: 26px; }
+  .sup-bbar-ic { display: inline-flex; }
+  .sup-bbar svg { width: 23px; height: 23px; display: block; }
   /* Le contenu ne passe pas sous la barre */
-  .sup-body { padding-bottom: 80px !important; }
+  .sup-body { padding-bottom: 72px !important; }
 }
 
 /* Onboarding magic link : définir un mot de passe initial */
