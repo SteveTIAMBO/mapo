@@ -110,6 +110,23 @@
         </table>
       </div>
 
+      <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+      <ul class="sc-mlist">
+        <li v-for="item in pagedComptes" :key="item.compte.id" class="sc-mrow" @click="openDetail(item)">
+          <div class="sc-etu-avatar">{{ initiales(item.etudiant.nomComplet) }}</div>
+          <div class="sc-mrow-main">
+            <div class="sc-mrow-name">{{ item.etudiant.nomComplet }}</div>
+            <div class="sc-mrow-sub">{{ item.etudiant.matricule }} · {{ item.etudiant.programmeNom }}</div>
+            <div class="sc-mrow-meta">
+              <span class="sc-statut" :class="`st-${item.compte.statut}`">{{ labelStatut(item.compte.statut) }}</span>
+              <span class="sc-mrow-reste">Reste {{ fmtMontant(item.compte.totalRestant) }}</span>
+            </div>
+          </div>
+          <svg class="sc-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+        <li v-if="store.filteredComptes.length === 0" class="sc-mempty">Aucun compte ne correspond à vos filtres.</li>
+      </ul>
+
       <!-- Pagination (50 étudiants max par page) -->
       <div v-if="totalPages > 1" class="sc-pagination">
         <span class="sc-page-info">
@@ -640,5 +657,22 @@ function typeLabel(k) { return TYPES_FINANCEMENT[k]?.label || k }
     max-height: 92vh;
     border-radius: 14px 14px 0 0;
   }
+}
+
+/* ── Liste mobile (remplace le tableau des comptes sur petit écran) ── */
+.sc-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sc-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sc-mrow:last-child { border-bottom: none; }
+.sc-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sc-mrow-main { flex: 1; min-width: 0; }
+.sc-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sc-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; flex-wrap: wrap; }
+.sc-mrow-reste { font-size: 11.5px; font-weight: 700; color: var(--tx2, #6f767e); }
+.sc-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sc-mempty { padding: 24px; text-align: center; color: var(--tx3); font-size: 13.5px; }
+@media (max-width: 560px) {
+  .sc-table-wrap, .sc-pagination { display: none; }
+  .sc-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
 }
 </style>

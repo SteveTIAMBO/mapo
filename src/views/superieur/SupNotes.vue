@@ -139,6 +139,18 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+      <ul v-if="semestreView === 2" class="sn-mlist">
+        <li v-for="r in promoRows" :key="r.student.id" class="sn-mrow" @click="openReleve(r.index)">
+          <div class="sn-mrow-main">
+            <div class="sn-mrow-name">{{ r.student.nomComplet }}</div>
+            <div class="sn-mrow-sub">{{ r.student.matricule }} · Moyenne {{ r.moyenne != null ? r.moyenne.toFixed(2) : '—' }}</div>
+          </div>
+          <span class="sn-decision-pill" :class="r.admis ? 'is-admis' : 'is-ajourne'">{{ r.admis ? 'Admis' : 'Ajourné' }}</span>
+          <svg class="sn-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+      </ul>
     </section>
 
     <!-- ══════════ Vue 3 : Relevé d'un étudiant ══════════ -->
@@ -877,4 +889,18 @@ const typeLabel = (t) => UE_TYPES[t]?.label || t
 .st-modal-cancel:hover { background: rgba(0, 0, 0, 0.04); }
 .st-modal-confirm { background: var(--pr); color: #fff; }
 .st-modal-confirm:hover { opacity: 0.9; }
+
+/* ── Liste mobile (remplace le tableau des notes sur petit écran) ── */
+.sn-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sn-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sn-mrow:last-child { border-bottom: none; }
+.sn-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sn-mrow-main { flex: 1; min-width: 0; }
+.sn-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sn-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .sn-table { display: none; }
+  .sn-mlist { display: block; background: var(--card); border-radius: 14px; box-shadow: var(--card-shadow); overflow: hidden; }
+}
 </style>
