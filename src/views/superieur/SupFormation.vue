@@ -150,6 +150,21 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- Liste mobile : cartes UE tappables (tableau masqué sur petit écran) -->
+          <ul class="sf-mlist">
+            <li v-for="u in sem.ue" :key="u.id" class="sf-mrow" @click="openEdit(u, annee, sem)">
+              <div class="sf-mrow-main">
+                <div class="sf-mrow-name"><span class="sf-code">{{ u.code }}</span> {{ u.intitule }}</div>
+                <div class="sf-mrow-sub">
+                  <span class="sf-type" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
+                  {{ u.intervenantNom }} · {{ u.volumeHoraire }}h · {{ u.ects }} ECTS
+                </div>
+              </div>
+              <svg class="sf-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+            <li v-if="!sem.ue.length" class="sf-mempty">Aucune UE dans ce semestre.</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -1033,5 +1048,20 @@ const statutLabel = (statut) =>
   .sf-semestres {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Liste mobile (remplace le tableau des UE sur petit écran) ── */
+.sf-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.sf-mrow { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-bottom: 1px solid var(--hair, rgba(20,32,64,.08)); cursor: pointer; }
+.sf-mrow:last-child { border-bottom: none; }
+.sf-mrow:active { background: rgba(var(--pr-rgb), .07); }
+.sf-mrow-main { flex: 1; min-width: 0; }
+.sf-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13.5px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sf-mrow-chev { color: var(--tx3, #9aa2b1); flex-shrink: 0; }
+.sf-mempty { padding: 20px; text-align: center; color: var(--tx3); font-size: 13px; }
+@media (max-width: 560px) {
+  .sf-ue-table { display: none; }
+  .sf-mlist { display: block; }
 }
 </style>
