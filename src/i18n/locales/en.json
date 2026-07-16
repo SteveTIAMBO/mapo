@@ -1908,6 +1908,31 @@
       "payslips": "Monthly payslips",
       "netShort": "Net",
       "download": "Download"
+    },
+    "ensCours": {
+      "title": "Courses & resources",
+      "subtitle": "Publish course material or a resource for your students.",
+      "publish": "Publish content",
+      "type": "Type",
+      "typeCours": "Course",
+      "typeTd": "Tutorial / Exercises",
+      "typeRessource": "Resource (link)",
+      "typeRessourceShort": "Resource",
+      "ue": "Course unit",
+      "allUe": "— All my units —",
+      "titleField": "Title",
+      "titlePlaceholder": "e.g. Chapter 3 — Financial analysis",
+      "link": "Link",
+      "description": "Description",
+      "optional": "(optional)",
+      "descPlaceholder": "Summary, instructions, key concepts…",
+      "publishBtn": "Publish",
+      "published": "✓ Published",
+      "publishedContent": "Published content",
+      "untitled": "Untitled",
+      "openLink": "Open link",
+      "delete": "Delete",
+      "empty": "No content published yet."
     }
   },
   "mal": {

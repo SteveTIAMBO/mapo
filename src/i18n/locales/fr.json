@@ -1908,6 +1908,31 @@
       "payslips": "Bulletins mensuels",
       "netShort": "Net",
       "download": "Télécharger"
+    },
+    "ensCours": {
+      "title": "Cours & ressources",
+      "subtitle": "Publiez un support de cours ou une ressource pour vos étudiants.",
+      "publish": "Publier un contenu",
+      "type": "Type",
+      "typeCours": "Cours",
+      "typeTd": "TD / Exercices",
+      "typeRessource": "Ressource (lien)",
+      "typeRessourceShort": "Ressource",
+      "ue": "Unité d'enseignement",
+      "allUe": "— Toutes mes UE —",
+      "titleField": "Titre",
+      "titlePlaceholder": "Ex. Chapitre 3 — Analyse financière",
+      "link": "Lien",
+      "description": "Description",
+      "optional": "(optionnel)",
+      "descPlaceholder": "Résumé, consignes, notions clés…",
+      "publishBtn": "Publier",
+      "published": "✓ Publié",
+      "publishedContent": "Contenus publiés",
+      "untitled": "Sans titre",
+      "openLink": "Ouvrir le lien",
+      "delete": "Supprimer",
+      "empty": "Aucun contenu publié pour l'instant."
     }
   },
   "mal": {
