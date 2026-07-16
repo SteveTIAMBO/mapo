@@ -94,10 +94,11 @@ const promoFilter = ref('')
 
 // Seuils de détection (adaptés au supérieur : pas d'assiduité dans le modèle,
 // on s'appuie sur les résultats et l'avancée en crédits ECTS du semestre).
-const WEAK_AVG = 11        // moyenne < 11/20 = résultats fragiles
-const VERY_WEAK_AVG = 9.5  // moyenne < 9,5 = sévère
+const WEAK_AVG = 11        // moyenne < 11/20 = à suivre (fragile ou en échec)
+const HIGH_AVG = 10        // moyenne < 10/20 (sous la barre) = risque élevé
+const VERY_WEAK_AVG = 9    // moyenne < 9 = facteur « fort »
 const CREDIT_GAP = 6       // ≥ 6 ECTS de retard sur le semestre = signal
-const CREDIT_GAP_HIGH = 12 // ≥ 12 ECTS de retard = sévère
+const CREDIT_GAP_HIGH = 12 // ≥ 12 ECTS de retard = facteur « fort »
 const SEMESTER_ECTS = 30   // crédits attendus au terme du 1er semestre
 const MAX_ROWS = 60
 
@@ -133,7 +134,10 @@ function riskFor(e) {
   }
   if (!facteurs.length) return null
 
-  const niveau = (facteurs.length >= 2 || (moyenne !== null && moyenne < VERY_WEAK_AVG) || creditGap >= CREDIT_GAP_HIGH) ? 'eleve' : 'moyen'
+  // Niveau piloté par la SÉVÉRITÉ (moyenne sous la barre des 10/20), pas par le
+  // simple cumul de facteurs : dans les données, faible moyenne et retard de
+  // crédits sont corrélés, donc « 2 facteurs » ne discrimine pas le risque.
+  const niveau = (moyenne !== null && moyenne < HIGH_AVG) ? 'eleve' : 'moyen'
   const score = creditGap * 4 + (moyenne !== null && moyenne < WEAK_AVG ? (WEAK_AVG - moyenne) * 8 : 0) + facteurs.length * 10
   return {
     id: e.id, nomComplet: e.nomComplet || `${e.nom || ''} ${e.prenom || ''}`.trim(),
