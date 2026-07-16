@@ -1,54 +1,54 @@
 <template>
   <div class="ep">
     <div class="ep-intro">
-      <h1 class="ep-h1">Mes fiches de paie</h1>
-      <p class="ep-sub">Décompte de rémunération et téléchargement des bulletins mensuels.</p>
+      <h1 class="ep-h1">{{ t('sup.ensPaie.title') }}</h1>
+      <p class="ep-sub">{{ t('sup.ensPaie.subtitle') }}</p>
     </div>
 
     <div class="ep-kpis">
-      <div class="ep-kpi"><div class="ep-kpi-lab">Salaire brut / mois</div><div class="ep-kpi-val">{{ fmt(paie.brut) }}<span> FCFA</span></div></div>
-      <div class="ep-kpi"><div class="ep-kpi-lab">Net à payer / mois</div><div class="ep-kpi-val is-ok">{{ fmt(paie.net) }}<span> FCFA</span></div></div>
-      <div class="ep-kpi"><div class="ep-kpi-lab">Brut annuel</div><div class="ep-kpi-val">{{ fmt(paie.brutAnnuel) }}<span> FCFA</span></div></div>
+      <div class="ep-kpi"><div class="ep-kpi-lab">{{ t('sup.ensPaie.grossMonth') }}</div><div class="ep-kpi-val">{{ fmt(paie.brut) }}<span> FCFA</span></div></div>
+      <div class="ep-kpi"><div class="ep-kpi-lab">{{ t('sup.ensPaie.netMonth') }}</div><div class="ep-kpi-val is-ok">{{ fmt(paie.net) }}<span> FCFA</span></div></div>
+      <div class="ep-kpi"><div class="ep-kpi-lab">{{ t('sup.ensPaie.grossYear') }}</div><div class="ep-kpi-val">{{ fmt(paie.brutAnnuel) }}<span> FCFA</span></div></div>
     </div>
 
     <div class="ep-grid">
       <section class="ep-panel">
-        <h2 class="ep-h2">Décompte mensuel</h2>
+        <h2 class="ep-h2">{{ t('sup.ensPaie.monthlyBreakdown') }}</h2>
         <div class="ep-meta">
-          {{ paie.statut === 'vacataire' ? 'Vacataire' : 'Permanent' }} · Volume {{ paie.volume }} h<template v-if="paie.statut === 'vacataire' && paie.tauxHoraire"> · {{ fmt(paie.tauxHoraire) }} FCFA/h</template>
+          {{ paie.statut === 'vacataire' ? t('sup.ensPaie.vacataire') : t('sup.ensPaie.permanent') }} · {{ t('sup.ensPaie.volume') }} {{ paie.volume }} h<template v-if="paie.statut === 'vacataire' && paie.tauxHoraire"> · {{ fmt(paie.tauxHoraire) }} FCFA/h</template>
         </div>
 
-        <div class="ep-block-title">Gains</div>
+        <div class="ep-block-title">{{ t('sup.ensPaie.gains') }}</div>
         <div class="ep-rows">
-          <div class="ep-row"><span>Salaire de base</span><strong>{{ fmt(paie.base) }} FCFA</strong></div>
-          <div v-if="paie.indemniteTransport" class="ep-row"><span>Indemnité de transport</span><strong>{{ fmt(paie.indemniteTransport) }} FCFA</strong></div>
-          <div v-if="paie.primeTechnicite" class="ep-row"><span>Prime de technicité (8 %)</span><strong>{{ fmt(paie.primeTechnicite) }} FCFA</strong></div>
-          <div class="ep-row is-total"><span>Salaire brut</span><strong>{{ fmt(paie.brut) }} FCFA</strong></div>
+          <div class="ep-row"><span>{{ t('sup.ensPaie.baseSalary') }}</span><strong>{{ fmt(paie.base) }} FCFA</strong></div>
+          <div v-if="paie.indemniteTransport" class="ep-row"><span>{{ t('sup.ensPaie.transport') }}</span><strong>{{ fmt(paie.indemniteTransport) }} FCFA</strong></div>
+          <div v-if="paie.primeTechnicite" class="ep-row"><span>{{ t('sup.ensPaie.techBonus') }}</span><strong>{{ fmt(paie.primeTechnicite) }} FCFA</strong></div>
+          <div class="ep-row is-total"><span>{{ t('sup.ensPaie.gross') }}</span><strong>{{ fmt(paie.brut) }} FCFA</strong></div>
         </div>
 
-        <div class="ep-block-title">Retenues</div>
+        <div class="ep-block-title">{{ t('sup.ensPaie.deductions') }}</div>
         <div class="ep-rows">
-          <div class="ep-row is-neg"><span>CNPS (part salariale, 4,2 %)</span><strong>- {{ fmt(paie.cnpsSalarie) }} FCFA</strong></div>
-          <div class="ep-row is-neg"><span>IRPP (barème simplifié)</span><strong>- {{ fmt(paie.irpp) }} FCFA</strong></div>
-          <div class="ep-row is-neg"><span>CAC (10 % de l'IRPP)</span><strong>- {{ fmt(paie.cac) }} FCFA</strong></div>
-          <div class="ep-row is-total is-neg"><span>Total des retenues</span><strong>- {{ fmt(paie.totalRetenues) }} FCFA</strong></div>
+          <div class="ep-row is-neg"><span>{{ t('sup.ensPaie.cnps') }}</span><strong>- {{ fmt(paie.cnpsSalarie) }} FCFA</strong></div>
+          <div class="ep-row is-neg"><span>{{ t('sup.ensPaie.irpp') }}</span><strong>- {{ fmt(paie.irpp) }} FCFA</strong></div>
+          <div class="ep-row is-neg"><span>{{ t('sup.ensPaie.cac') }}</span><strong>- {{ fmt(paie.cac) }} FCFA</strong></div>
+          <div class="ep-row is-total is-neg"><span>{{ t('sup.ensPaie.totalDeductions') }}</span><strong>- {{ fmt(paie.totalRetenues) }} FCFA</strong></div>
         </div>
 
         <div class="ep-net">
-          <span>Net à payer</span>
+          <span>{{ t('sup.ensPaie.net') }}</span>
           <strong>{{ fmt(paie.net) }} FCFA</strong>
         </div>
-        <p class="ep-note">Charges patronales CNPS (employeur, ~11,2 %) : {{ fmt(paie.cnpsEmployeur) }} FCFA — indicatif, non déduites. Bulletin indicatif (démonstration).</p>
+        <p class="ep-note">{{ t('sup.ensPaie.employerNote', { n: fmt(paie.cnpsEmployeur) }) }}</p>
       </section>
 
       <section class="ep-panel">
-        <h2 class="ep-h2">Bulletins mensuels</h2>
+        <h2 class="ep-h2">{{ t('sup.ensPaie.payslips') }}</h2>
         <div v-for="m in moisDispo" :key="m.year + '-' + m.monthIndex" class="ep-paie-row">
           <span class="ep-paie-mois">{{ m.label }}</span>
-          <span class="ep-paie-net">Net {{ fmt(paie.net) }} FCFA</span>
+          <span class="ep-paie-net">{{ t('sup.ensPaie.netShort') }} {{ fmt(paie.net) }} FCFA</span>
           <button type="button" class="ep-paie-btn" @click="telecharger(m)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Télécharger
+            {{ t('sup.ensPaie.download') }}
           </button>
         </div>
       </section>
@@ -58,7 +58,10 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
+
+const { t } = useI18n({ useScope: 'global' })
 import { generateFichePaie, fichePaieDetail, moisLabel } from '../../utils/pdfFichePaie'
 
 const store = useSuperieurStore()

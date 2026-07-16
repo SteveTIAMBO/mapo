@@ -1882,6 +1882,32 @@
         "fiche_inscription": "Fiche d'inscription signée",
         "certificat_medical": "Certificat médical"
       }
+    },
+    "ensPaie": {
+      "title": "Mes fiches de paie",
+      "subtitle": "Décompte de rémunération et téléchargement des bulletins mensuels.",
+      "grossMonth": "Salaire brut / mois",
+      "netMonth": "Net à payer / mois",
+      "grossYear": "Brut annuel",
+      "monthlyBreakdown": "Décompte mensuel",
+      "vacataire": "Vacataire",
+      "permanent": "Permanent",
+      "volume": "Volume",
+      "gains": "Gains",
+      "baseSalary": "Salaire de base",
+      "transport": "Indemnité de transport",
+      "techBonus": "Prime de technicité (8 %)",
+      "gross": "Salaire brut",
+      "deductions": "Retenues",
+      "cnps": "CNPS (part salariale, 4,2 %)",
+      "irpp": "IRPP (barème simplifié)",
+      "cac": "CAC (10 % de l'IRPP)",
+      "totalDeductions": "Total des retenues",
+      "net": "Net à payer",
+      "employerNote": "Charges patronales CNPS (employeur, ~11,2 %) : {n} FCFA — indicatif, non déduites. Bulletin indicatif (démonstration).",
+      "payslips": "Bulletins mensuels",
+      "netShort": "Net",
+      "download": "Télécharger"
     }
   },
   "mal": {

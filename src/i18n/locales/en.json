@@ -1882,6 +1882,32 @@
         "fiche_inscription": "Signed enrollment form",
         "certificat_medical": "Medical certificate"
       }
+    },
+    "ensPaie": {
+      "title": "My payslips",
+      "subtitle": "Compensation breakdown and download of monthly payslips.",
+      "grossMonth": "Gross salary / month",
+      "netMonth": "Net pay / month",
+      "grossYear": "Annual gross",
+      "monthlyBreakdown": "Monthly breakdown",
+      "vacataire": "Adjunct",
+      "permanent": "Permanent",
+      "volume": "Volume",
+      "gains": "Earnings",
+      "baseSalary": "Base salary",
+      "transport": "Transport allowance",
+      "techBonus": "Skills bonus (8%)",
+      "gross": "Gross salary",
+      "deductions": "Deductions",
+      "cnps": "CNPS (employee share, 4.2%)",
+      "irpp": "Income tax (simplified scale)",
+      "cac": "CAC (10% of income tax)",
+      "totalDeductions": "Total deductions",
+      "net": "Net pay",
+      "employerNote": "Employer CNPS contributions (~11.2%): {n} FCFA — indicative, not deducted. Indicative payslip (demo).",
+      "payslips": "Monthly payslips",
+      "netShort": "Net",
+      "download": "Download"
     }
   },
   "mal": {
