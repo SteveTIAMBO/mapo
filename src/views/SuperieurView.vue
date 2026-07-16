@@ -1581,7 +1581,7 @@ watch(
     flex-shrink: 0;
   }
   .sup-body {
-    padding: 16px 14px 32px;
+    padding: 16px 16px 32px;
   }
   .sup-notif-menu {
     width: calc(100vw - 28px);
@@ -1616,7 +1616,7 @@ watch(
 
 @media (max-width: 400px) {
   .sup-topbar { padding: 8px 10px; gap: 6px; }
-  .sup-body { padding: 12px 10px 28px; }
+  .sup-body { padding: 12px 16px 28px; }
   /* Très étroit (type Galaxy Z Fold, ~344px) : ne garder que l'essentiel */
   .sup-topbar-right { gap: 2px; }
   .sup-hdr-lang { display: none; }
