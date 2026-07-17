@@ -1548,7 +1548,16 @@
       "actionPaiement": "Encaisser un paiement",
       "actionInscriptions": "Inscriptions pédagogiques",
       "actionEdt": "Emploi du temps",
-      "actionRelance": "Relancer les impayés"
+      "actionRelance": "Relancer les impayés",
+      "decroTitle": "Risque de décrochage",
+      "decroHigh": "Risque élevé",
+      "decroWatch": "À surveiller",
+      "decroSee": "Voir le suivi",
+      "decroNone": "Aucun signal de décrochage.",
+      "messagesTitle": "Derniers messages",
+      "messagesSee": "Ouvrir la messagerie",
+      "messagesNone": "Aucun message reçu.",
+      "messagesFrom": "De"
     },
     "groupe": {
       "title": "Direction du groupe",

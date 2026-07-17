@@ -86,6 +86,7 @@ import { ref, computed, inject, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useSuperieurPresencesStore } from '../../stores/superieurPresences'
+import { computeDecrochage } from '../../utils/supDecrochage'
 
 const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
@@ -96,19 +97,7 @@ onMounted(() => presences.loadPresences())
 
 const promoFilter = ref('')
 
-// Seuils de détection (adaptés au supérieur : pas d'assiduité dans le modèle,
-// on s'appuie sur les résultats et l'avancée en crédits ECTS du semestre).
-const WEAK_AVG = 11        // moyenne < 11/20 = à suivre (fragile ou en échec)
-const HIGH_AVG = 10        // moyenne < 10/20 (sous la barre) = risque élevé
-const VERY_WEAK_AVG = 9    // moyenne < 9 = facteur « fort »
-const CREDIT_GAP = 6       // ≥ 6 ECTS de retard sur le semestre = signal
-const CREDIT_GAP_HIGH = 12 // ≥ 12 ECTS de retard = facteur « fort »
-const SEMESTER_ECTS = 30   // crédits attendus au terme du 1er semestre
-const ABS_RATE = 0.15      // ≥ 15 % d'absences = assiduité préoccupante (1er signal)
-const ABS_RATE_HIGH = 0.28 // ≥ 28 % d'absences = sévère
-const ABS_COUNT = 4        // ou ≥ 4 absences absolues
-const MAX_ROWS = 60
-
+// Icônes des facteurs (SVG inline avec width/height explicites — v-html).
 const ICON_AVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 18l-9.5-9.5-5 5L1 6"/><path d="M17 18h6v-6"/></svg>'
 const ICON_CREDIT = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>'
 const ICON_ABS = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M15 15l-4 4M11 15l4 4"/></svg>'
@@ -119,60 +108,17 @@ const promoById = computed(() => {
   return m
 })
 
-function initials(e) {
-  return `${(e.prenom || '')[0] || ''}${(e.nom || '')[0] || ''}`.toUpperCase()
+// Convertit un facteur brut (util) en facteur d'affichage (icône + libellé i18n).
+function displayFactor(f) {
+  if (f.key === 'abs') return { key: 'abs', icon: ICON_ABS, strong: f.strong, label: t('sup.decrochage.factorAbs', { pct: f.pct, n: f.n }) }
+  if (f.key === 'avg') return { key: 'avg', icon: ICON_AVG, strong: f.strong, label: t('sup.decrochage.factorAvg', { avg: f.avg.toFixed(1) }) }
+  return { key: 'credit', icon: ICON_CREDIT, strong: f.strong, label: t('sup.decrochage.factorCredits', { n: f.n }) }
 }
 
-function riskFor(e) {
-  const promo = promoById.value[e.promotionId]
-  const rang = promo?.rang || 1
-  const moyenne = typeof e.moyenne === 'number' ? e.moyenne : null
-  // Crédits acquis cette année (hors années précédentes), vs les 30 attendus au S1.
-  const ectsThisYear = (e.ectsValides || 0) - (rang - 1) * 60
-  const creditGap = Math.max(0, SEMESTER_ECTS - ectsThisYear)
-  // Assiduité (signal indépendant, alimenté par le module Assiduité).
-  const pr = presences.statsFor(e.id)
-  const tauxAbs = pr.tauxAbs
-
-  const facteurs = []
-  const resultatsFaibles = moyenne !== null && moyenne < WEAK_AVG
-  const creditRetard = creditGap >= CREDIT_GAP
-  const assiduiteFaible = tauxAbs >= ABS_RATE || pr.absent >= ABS_COUNT
-  if (assiduiteFaible) {
-    facteurs.push({ key: 'abs', icon: ICON_ABS, strong: tauxAbs >= ABS_RATE_HIGH, label: t('sup.decrochage.factorAbs', { pct: Math.round(tauxAbs * 100), n: pr.absent }) })
-  }
-  if (resultatsFaibles) {
-    facteurs.push({ key: 'avg', icon: ICON_AVG, strong: moyenne < VERY_WEAK_AVG, label: t('sup.decrochage.factorAvg', { avg: moyenne.toFixed(1) }) })
-  }
-  if (creditRetard) {
-    facteurs.push({ key: 'credit', icon: ICON_CREDIT, strong: creditGap >= CREDIT_GAP_HIGH, label: t('sup.decrochage.factorCredits', { n: creditGap }) })
-  }
-  if (!facteurs.length) return null
-
-  // Niveau piloté par la SÉVÉRITÉ : moyenne sous la barre des 10/20 OU absentéisme
-  // sévère (≥ 28 %). Le simple cumul de facteurs ne discrimine pas (faible moyenne
-  // et retard de crédits sont corrélés dans les données).
-  const niveau = ((moyenne !== null && moyenne < HIGH_AVG) || tauxAbs >= ABS_RATE_HIGH) ? 'eleve' : 'moyen'
-  const score = Math.round(tauxAbs * 120) + creditGap * 4 + (moyenne !== null && moyenne < WEAK_AVG ? (WEAK_AVG - moyenne) * 8 : 0) + facteurs.length * 10
-  return {
-    id: e.id, nomComplet: e.nomComplet || `${e.nom || ''} ${e.prenom || ''}`.trim(),
-    sexe: e.sexe, initials: initials(e),
-    promoNom: promo ? `${promo.programmeNom} · ${promo.anneeNom}` : (e.programmeNom || ''),
-    facteurs, niveau, score,
-  }
-}
-
-const students = computed(() => {
-  const out = []
-  for (const e of store.etudiants) {
-    if (e.statut && e.statut !== 'inscrit' && e.statut !== 'en_difficulte') continue
-    const r = riskFor(e)
-    if (r) out.push(r)
-  }
-  return out
-    .sort((a, b) => (a.niveau === b.niveau ? b.score - a.score : (a.niveau === 'eleve' ? -1 : 1)))
-    .slice(0, MAX_ROWS)
-})
+const students = computed(() =>
+  computeDecrochage(store.etudiants, promoById.value, (id) => presences.statsFor(id))
+    .map((r) => ({ ...r, facteurs: r.factors.map(displayFactor) }))
+)
 
 const filteredStudents = computed(() =>
   promoFilter.value ? students.value.filter((s) => s.promoNom === promoFilter.value) : students.value

@@ -41,6 +41,44 @@
       </div>
     </section>
 
+    <!-- Suivi urgent : risque de décrochage + derniers messages -->
+    <section class="sd-urgent">
+      <div class="sd-card sd-urgent-card">
+        <div class="sd-card-h">
+          <h2 class="sd-h2">{{ t('sup.dash.decroTitle') }}</h2>
+          <button type="button" class="sd-more" @click="goTab('decrochage')">{{ t('sup.dash.decroSee') }}</button>
+        </div>
+        <div v-if="decroStats.total" class="sd-decro">
+          <button type="button" class="sd-decro-stat is-high" @click="goTab('decrochage')">
+            <span class="sd-decro-num">{{ decroStats.eleve }}</span>
+            <span class="sd-decro-lab">{{ t('sup.dash.decroHigh') }}</span>
+          </button>
+          <button type="button" class="sd-decro-stat is-watch" @click="goTab('decrochage')">
+            <span class="sd-decro-num">{{ decroStats.moyen }}</span>
+            <span class="sd-decro-lab">{{ t('sup.dash.decroWatch') }}</span>
+          </button>
+        </div>
+        <p v-else class="sd-urgent-empty">{{ t('sup.dash.decroNone') }}</p>
+      </div>
+
+      <div class="sd-card sd-urgent-card">
+        <div class="sd-card-h">
+          <h2 class="sd-h2">{{ t('sup.dash.messagesTitle') }}</h2>
+          <button type="button" class="sd-more" @click="goTab('messagerie')">{{ t('sup.dash.messagesSee') }}</button>
+        </div>
+        <ul v-if="recentMessages.length" class="sd-msg-list">
+          <li v-for="m in recentMessages" :key="m.id" class="sd-msg" @click="goTab('messagerie')">
+            <div class="sd-msg-ic"><MessageSquare :size="16" /></div>
+            <div class="sd-msg-body">
+              <div class="sd-msg-top"><span class="sd-msg-from">{{ m.senderName }}</span><span class="sd-msg-date">{{ fmtMsgDate(m.sentAt) }}</span></div>
+              <div class="sd-msg-sub">{{ m.subject }}</div>
+            </div>
+          </li>
+        </ul>
+        <p v-else class="sd-urgent-empty">{{ t('sup.dash.messagesNone') }}</p>
+      </div>
+    </section>
+
     <!-- Actions rapides -->
     <section class="sd-card sd-actions">
       <h2 class="sd-h2">{{ t('sup.dash.quickActions') }}</h2>
@@ -83,19 +121,24 @@
 </template>
 
 <script setup>
-import { computed, inject } from 'vue'
+import { computed, inject, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useSuperieurMiapoStore } from '../../stores/superieurMiapo'
+import { useSuperieurPresencesStore } from '../../stores/superieurPresences'
 import { useFinanceStore } from '../../stores/finance'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
+import { useMessagesStore } from '../../stores/messages'
+import { useAuthStore } from '../../stores/auth'
+import { computeDecrochage } from '../../utils/supDecrochage'
 import {
   Users, GraduationCap, Award, TrendingUp, Wallet, Presentation,
   Sparkles, ArrowRight, ChevronRight, AlertTriangle, PiggyBank,
   UserPlus, FileText, CreditCard, ClipboardList, CalendarDays, BellRing,
+  MessageSquare,
 } from 'lucide-vue-next'
 
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
@@ -181,6 +224,47 @@ const maxEffectif = computed(() => Math.max(...s.value.parProgramme.map((p) => p
 function barWidth(effectif) {
   return Math.round((effectif / maxEffectif.value) * 100)
 }
+
+// ── Widget « Risque de décrochage » (mêmes chiffres que le module dédié) ──
+const presences = useSuperieurPresencesStore()
+const promoById = computed(() => {
+  const m = {}
+  for (const p of store.promotions) m[p.id] = p
+  return m
+})
+const decroRows = computed(() =>
+  computeDecrochage(store.etudiants, promoById.value, (id) => presences.statsFor(id))
+)
+const decroStats = computed(() => ({
+  total: decroRows.value.length,
+  eleve: decroRows.value.filter((r) => r.niveau === 'eleve').length,
+  moyen: decroRows.value.filter((r) => r.niveau === 'moyen').length,
+}))
+
+// ── Widget « Derniers messages » (boîte de réception du directeur) ──
+const messagesStore = useMessagesStore()
+const authStore = useAuthStore()
+const myUserId = computed(() => authStore.userProfile?.uid || null)
+const myRole = computed(() => authStore.userProfile?.role || null)
+const myServiceKeys = computed(() => {
+  const role = myRole.value
+  const keys = []
+  if (['directeur', 'admin'].includes(role)) keys.push('direction', 'secretariat')
+  if (['comptable', 'admin'].includes(role)) keys.push('comptabilite')
+  return keys
+})
+const recentMessages = computed(() =>
+  messagesStore.getInbox({ userId: myUserId.value, userRole: myRole.value, serviceKeys: myServiceKeys.value }).slice(0, 4)
+)
+function fmtMsgDate(iso) {
+  const d = new Date(iso)
+  return isNaN(d) ? '' : d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })
+}
+
+onMounted(() => {
+  presences.loadPresences()
+  messagesStore.loadMessages()
+})
 </script>
 
 <style scoped>
@@ -342,6 +426,28 @@ function barWidth(effectif) {
 .sd-miapo-lab { font-size: 12px; color: rgba(255, 255, 255, 0.85); margin-top: 3px; line-height: 1.35; }
 .sd-miapo-arrow { flex-shrink: 0; opacity: 0.7; }
 
+/* Suivi urgent : décrochage + messages */
+.sd-urgent { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+.sd-urgent-empty { font-size: 13px; color: var(--tx3); margin: 6px 0 2px; }
+.sd-decro { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.sd-decro-stat { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; border: 1px solid var(--card-border); border-radius: 12px; padding: 14px 16px; cursor: pointer; font-family: inherit; background: var(--input-bg); transition: transform 0.12s ease, border-color 0.12s ease; }
+.sd-decro-stat:hover { transform: translateY(-2px); }
+.sd-decro-stat.is-high { background: rgba(217,48,37,0.05); border-color: rgba(217,48,37,0.28); }
+.sd-decro-stat.is-watch { background: rgba(184,122,0,0.06); border-color: rgba(184,122,0,0.28); }
+.sd-decro-num { font-family: 'Poppins', sans-serif; font-size: 26px; font-weight: 800; line-height: 1; color: var(--tx); }
+.sd-decro-stat.is-high .sd-decro-num { color: #D93025; }
+.sd-decro-stat.is-watch .sd-decro-num { color: #B07308; }
+.sd-decro-lab { font-size: 12px; font-weight: 600; color: var(--tx2); }
+.sd-msg-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sd-msg { display: flex; align-items: flex-start; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--card-border); cursor: pointer; }
+.sd-msg:last-child { border-bottom: none; }
+.sd-msg-ic { flex-shrink: 0; width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; color: var(--pr); background: rgba(var(--pr-rgb), 0.1); }
+.sd-msg-body { flex: 1; min-width: 0; }
+.sd-msg-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sd-msg-from { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 13px; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sd-msg-date { flex-shrink: 0; font-size: 11.5px; color: var(--tx3); }
+.sd-msg-sub { font-size: 12.5px; color: var(--tx2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+
 /* Actions rapides */
 .sd-actions { margin-bottom: 18px; }
 .sd-actions-grid {
@@ -470,6 +576,7 @@ function barWidth(effectif) {
   .sd-miapo-grid { grid-template-columns: 1fr; }
   .sd-actions-grid { grid-template-columns: repeat(3, 1fr); }
   .sd-grid { grid-template-columns: 1fr; }
+  .sd-urgent { grid-template-columns: 1fr; }
 }
 @media (max-width: 680px) {
   .sd-kpis { grid-template-columns: 1fr; }

@@ -1548,7 +1548,16 @@
       "actionPaiement": "Record a payment",
       "actionInscriptions": "Course registration",
       "actionEdt": "Timetable",
-      "actionRelance": "Chase unpaid fees"
+      "actionRelance": "Chase unpaid fees",
+      "decroTitle": "Dropout risk",
+      "decroHigh": "High risk",
+      "decroWatch": "To watch",
+      "decroSee": "View monitoring",
+      "decroNone": "No dropout signal.",
+      "messagesTitle": "Latest messages",
+      "messagesSee": "Open messages",
+      "messagesNone": "No message received.",
+      "messagesFrom": "From"
     },
     "groupe": {
       "title": "Group management",
