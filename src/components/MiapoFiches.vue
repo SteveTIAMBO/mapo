@@ -5,6 +5,12 @@
       <div class="card-head"><Layers :size="18" /><h3>{{ t('mia.fichesTitle') }}</h3></div>
       <p class="muted">{{ t('mia.fichesHint') }}</p>
 
+      <select v-if="publishedCourses.length" v-model="pickedCourseId" class="input matiere-sel" @change="onPickCourse">
+        <option value="">{{ t('mia.fichesPickCourse') }}</option>
+        <option v-for="c in publishedCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
+      </select>
+      <div v-if="publishedCourses.length" class="or-sep">{{ t('mia.fichesOr') }}</div>
+
       <select v-model="matiere" class="input matiere-sel">
         <option value="">{{ t('mia.chooseSubject') }}</option>
         <option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option>
@@ -70,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
@@ -96,6 +102,19 @@ const fileInput = ref(null)
 const niveau = computed(() => props.enfant?.niveau || '')
 const matieresList = computed(() => matieresPourNiveau(niveau.value))
 const hasCourse = computed(() => courseText.value.trim().length >= 40)
+
+// ── Option B : cours déjà publiés par le professeur (module Cours) comme source. ──
+const pickedCourseId = ref('')
+const publishedCourses = computed(() => (cours.items || [])
+  .filter((c) => c && c.contenu && c.contenu.trim().length >= 40)
+  .map((c) => ({ id: c.id, label: [c.titre, c.matiere].filter(Boolean).join(' · '), contenu: c.contenu, matiere: c.matiere, titre: c.titre })))
+function onPickCourse() {
+  const c = publishedCourses.value.find((x) => x.id === pickedCourseId.value)
+  if (!c) return
+  courseText.value = [c.titre, c.contenu].filter(Boolean).join('\n').slice(0, 6000)
+  if (c.matiere && matieresList.value.includes(c.matiere)) matiere.value = c.matiere
+}
+onMounted(() => { if (!cours.loaded) cours.load() })
 
 function pickFile() { fileInput.value?.click() }
 async function onFile(e) {
@@ -216,6 +235,7 @@ async function extractPdfText(file) {
 .small { font-size: 12.5px; }
 .input { width: 100%; padding: 10px 12px; border: 1px solid var(--bd); border-radius: 10px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tx); }
 .matiere-sel { margin-bottom: 10px; }
+.or-sep { text-align: center; font-size: 11px; color: var(--tx3); margin: 2px 0 8px; text-transform: uppercase; letter-spacing: .5px; }
 .course-input { width: 100%; padding: 12px 14px; border: 1px solid var(--bd); border-radius: 12px; font-family: inherit; font-size: 14px; line-height: 1.5; background: #fff; color: var(--tx); resize: vertical; box-sizing: border-box; }
 .src-actions { display: flex; align-items: center; gap: 12px; margin: 10px 0 4px; flex-wrap: wrap; }
 .hidden-file { display: none; }

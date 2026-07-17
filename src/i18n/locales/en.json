@@ -4696,6 +4696,8 @@
     "fichesImported": "Imported: {name}",
     "fichesPdfError": "Could not read the file. Paste the course text instead.",
     "fichesFromCourseNote": "Sheet and cards generated only from your course.",
+    "fichesPickCourse": "Start from a course published by the teacher…",
+    "fichesOr": "— or —",
     "fichesCourseWord": "Course",
     "fichesFichePrompt": "Write a concise, clear REVISION SHEET (the essentials to remember, structured with bullet points), ONLY from the course below, adding nothing that isn't in it. Course:",
     "fichesQuizPrompt": "Test the key ideas based ONLY on the course below. Course:",

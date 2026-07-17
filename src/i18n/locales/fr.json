@@ -4696,6 +4696,8 @@
     "fichesImported": "Importé : {name}",
     "fichesPdfError": "Lecture du fichier impossible. Colle plutôt le texte du cours.",
     "fichesFromCourseNote": "Fiche et cartes générées uniquement à partir de ton cours.",
+    "fichesPickCourse": "Partir d'un cours publié par le professeur…",
+    "fichesOr": "— ou —",
     "fichesCourseWord": "Cours",
     "fichesFichePrompt": "Rédige une FICHE DE RÉVISION synthétique et claire (l'essentiel à retenir, structuré avec des tirets), UNIQUEMENT à partir du cours ci-dessous, sans rien ajouter qui n'y figure pas. Cours :",
     "fichesQuizPrompt": "Teste les notions clés en te basant UNIQUEMENT sur le cours ci-dessous. Cours :",
