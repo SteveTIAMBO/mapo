@@ -2,14 +2,11 @@
   <div class="sn">
     <div class="sn-intro">
       <div>
-        <h1 class="sn-h1">Financements tiers</h1>
-        <p class="sn-sub">
-          Conventions de financement par un tiers : CPF, OPCO, employeur, alternance, France Travail,
-          collectivités. Pilotage du cycle négociation → signature → facturation → encaissement.
-        </p>
+        <h1 class="sn-h1">{{ t('sup.financements.title') }}</h1>
+        <p class="sn-sub">{{ t('sup.financements.subtitle') }}</p>
       </div>
       <button class="sn-btn-primary" type="button" @click="openAdd">
-        + Nouvelle convention
+        {{ t('sup.financements.addConvention') }}
       </button>
     </div>
 
@@ -17,25 +14,25 @@
     <div class="sn-kpis">
       <div class="sn-kpi">
         <div class="sn-kpi-num">{{ store.financements.length }}</div>
-        <div class="sn-kpi-lab">Conventions</div>
+        <div class="sn-kpi-lab">{{ t('sup.financements.kpiConventions') }}</div>
       </div>
       <div class="sn-kpi">
         <div class="sn-kpi-num">{{ fmtMontant(totalConventions) }}</div>
-        <div class="sn-kpi-lab">Volume total</div>
+        <div class="sn-kpi-lab">{{ t('sup.financements.kpiVolume') }}</div>
       </div>
       <div class="sn-kpi">
         <div class="sn-kpi-num">{{ fmtMontant(store.stats.totalFinancementsAcquis) }}</div>
-        <div class="sn-kpi-lab">Acquis (facturé ou encaissé)</div>
+        <div class="sn-kpi-lab">{{ t('sup.financements.kpiAcquis') }}</div>
       </div>
       <div class="sn-kpi">
         <div class="sn-kpi-num">{{ nbAlternants }}</div>
-        <div class="sn-kpi-lab">Alternants</div>
+        <div class="sn-kpi-lab">{{ t('sup.financements.kpiAlternants') }}</div>
       </div>
     </div>
 
     <!-- Répartition par type -->
     <section class="sn-card">
-      <h2 class="sn-h2">Répartition par dispositif</h2>
+      <h2 class="sn-h2">{{ t('sup.financements.repartitionTitle') }}</h2>
       <div class="sn-repartition">
         <div v-for="r in repartition" :key="r.type" class="sn-rep">
           <div class="sn-rep-head">
@@ -53,14 +50,14 @@
     <!-- Tableau -->
     <section class="sn-card">
       <div class="sn-filters">
-        <input type="text" v-model="filtreSearch" placeholder="Rechercher étudiant, employeur, OPCO…" class="sn-input" />
+        <input type="text" v-model="filtreSearch" :placeholder="t('sup.financements.searchPlaceholder')" class="sn-input" />
         <select v-model="filtreType" class="sn-select">
-          <option value="">Tous les dispositifs</option>
-          <option v-for="(t, k) in typesFinancement" :key="k" :value="k">{{ t.label }}</option>
+          <option value="">{{ t('sup.financements.allDispositifs') }}</option>
+          <option v-for="(tf, k) in typesFinancement" :key="k" :value="k">{{ tf.label }}</option>
         </select>
         <select v-model="filtreStatut" class="sn-select">
-          <option value="">Tous les statuts</option>
-          <option v-for="(s, k) in statutsConvention" :key="k" :value="k">{{ s.label }}</option>
+          <option value="">{{ t('sup.financements.allStatuts') }}</option>
+          <option v-for="(sc, k) in statutsConvention" :key="k" :value="k">{{ sc.label }}</option>
         </select>
       </div>
 
@@ -68,14 +65,14 @@
         <table class="sn-table">
           <thead>
             <tr>
-              <th>Étudiant</th>
-              <th>Dispositif</th>
-              <th>Tiers / Employeur</th>
-              <th>Référence</th>
-              <th class="num">Montant</th>
-              <th>Statut</th>
-              <th>Date</th>
-              <th>Actions</th>
+              <th>{{ t('sup.financements.thStudent') }}</th>
+              <th>{{ t('sup.financements.thDispositif') }}</th>
+              <th>{{ t('sup.financements.thTiers') }}</th>
+              <th>{{ t('sup.financements.thReference') }}</th>
+              <th class="num">{{ t('sup.financements.thMontant') }}</th>
+              <th>{{ t('sup.financements.thStatut') }}</th>
+              <th>{{ t('sup.financements.thDate') }}</th>
+              <th>{{ t('sup.financements.thActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -91,16 +88,16 @@
               <td><span class="sn-statut" :class="`st-${item.f.statut}`">{{ statutLabel(item.f.statut) }}</span></td>
               <td class="date">{{ fmtDate(item.f.dateSignature) }}</td>
               <td class="actions">
-                <button class="sn-btn-icon" type="button" @click="openEdit(item.f)" title="Modifier">
+                <button class="sn-btn-icon" type="button" @click="openEdit(item.f)" :title="t('sup.financements.edit')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="sn-btn-icon sn-btn-del" type="button" @click="supprimer(item.f)" title="Supprimer">
+                <button class="sn-btn-icon sn-btn-del" type="button" @click="supprimer(item.f)" :title="t('sup.financements.delete')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
               </td>
             </tr>
             <tr v-if="filteredFinancements.length === 0">
-              <td colspan="8" class="sn-empty">Aucune convention.</td>
+              <td colspan="8" class="sn-empty">{{ t('sup.financements.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -116,7 +113,7 @@
           </div>
           <svg class="sn-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
-        <li v-if="filteredFinancements.length === 0" class="sn-mempty">Aucun financement.</li>
+        <li v-if="filteredFinancements.length === 0" class="sn-mempty">{{ t('sup.financements.mEmpty') }}</li>
       </ul>
     </section>
 
@@ -124,15 +121,15 @@
     <div v-if="modal" class="sn-modal" @click.self="closeModal">
       <div class="sn-modal-content">
         <header class="sn-modal-head">
-          <h3>{{ modal.id ? 'Modifier la convention' : 'Nouvelle convention' }}</h3>
+          <h3>{{ modal.id ? t('sup.financements.editTitle') : t('sup.financements.newTitle') }}</h3>
           <button class="sn-modal-close" type="button" @click="closeModal">×</button>
         </header>
         <div class="sn-modal-body">
           <div class="sn-form">
             <label>
-              <span>Étudiant</span>
+              <span>{{ t('sup.financements.fStudent') }}</span>
               <select v-model="form.etudiantId">
-                <option value="">— Choisir —</option>
+                <option value="">{{ t('sup.financements.chooseStudent') }}</option>
                 <option v-for="e in etudiantsList" :key="e.id" :value="e.id">
                   {{ e.nomComplet }} — {{ e.programmeNom }}
                 </option>
@@ -140,50 +137,50 @@
             </label>
             <div class="sn-form-row">
               <label>
-                <span>Dispositif</span>
+                <span>{{ t('sup.financements.fDispositif') }}</span>
                 <select v-model="form.type">
-                  <option v-for="(t, k) in typesFinancement" :key="k" :value="k">{{ t.label }}</option>
+                  <option v-for="(tf, k) in typesFinancement" :key="k" :value="k">{{ tf.label }}</option>
                 </select>
               </label>
               <label>
-                <span>Statut</span>
+                <span>{{ t('sup.financements.fStatut') }}</span>
                 <select v-model="form.statut">
-                  <option v-for="(s, k) in statutsConvention" :key="k" :value="k">{{ s.label }}</option>
+                  <option v-for="(sc, k) in statutsConvention" :key="k" :value="k">{{ sc.label }}</option>
                 </select>
               </label>
             </div>
             <label v-if="['employeur', 'alternance', 'opco'].includes(form.type)">
-              <span>Employeur</span>
-              <input type="text" v-model="form.employeur" placeholder="Nom de l'employeur" />
+              <span>{{ t('sup.financements.fEmployeur') }}</span>
+              <input type="text" v-model="form.employeur" :placeholder="t('sup.financements.employeurPlaceholder')" />
             </label>
             <label v-if="form.type === 'opco'">
-              <span>OPCO</span>
-              <input type="text" v-model="form.opco" placeholder="ex. OPCO ATLAS" />
+              <span>{{ t('sup.financements.fOpco') }}</span>
+              <input type="text" v-model="form.opco" :placeholder="t('sup.financements.opcoPlaceholder')" />
             </label>
             <div class="sn-form-row">
               <label>
-                <span>Montant (FCFA)</span>
+                <span>{{ t('sup.financements.fMontant') }}</span>
                 <input type="number" min="0" step="100" v-model.number="form.montant" />
               </label>
               <label>
-                <span>Date de signature</span>
+                <span>{{ t('sup.financements.fDateSignature') }}</span>
                 <input type="date" v-model="form.dateSignature" />
               </label>
             </div>
             <label>
-              <span>Référence</span>
-              <input type="text" v-model="form.reference" placeholder="N° dossier, contrat…" />
+              <span>{{ t('sup.financements.fReference') }}</span>
+              <input type="text" v-model="form.reference" :placeholder="t('sup.financements.referencePlaceholder')" />
             </label>
             <label>
-              <span>Notes</span>
+              <span>{{ t('sup.financements.fNotes') }}</span>
               <textarea v-model="form.notes" rows="2"></textarea>
             </label>
           </div>
         </div>
         <footer class="sn-modal-foot">
-          <button class="sn-btn-secondary" type="button" @click="closeModal">Annuler</button>
+          <button class="sn-btn-secondary" type="button" @click="closeModal">{{ t('sup.financements.cancel') }}</button>
           <button class="sn-btn-primary" type="button" @click="enregistrer" :disabled="!form.etudiantId || !form.montant">
-            Enregistrer
+            {{ t('sup.financements.save') }}
           </button>
         </footer>
       </div>
@@ -193,11 +190,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   useFinanceStore, fmtMontant, fmtDate, FIN_TODAY,
   TYPES_FINANCEMENT, STATUTS_CONVENTION,
 } from '../../stores/finance'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const typesFinancement = TYPES_FINANCEMENT
 const statutsConvention = STATUTS_CONVENTION
@@ -298,7 +297,7 @@ function enregistrer() {
 }
 function supprimer(f) {
   const etu = etuMap.value[f.etudiantId]
-  if (!confirm(`Supprimer la convention ${f.reference} de ${etu?.nomComplet || ''} ?`)) return
+  if (!confirm(t('sup.financements.confirmDelete', { ref: f.reference, name: etu?.nomComplet || '' }))) return
   store.deleteFinancement(f.id)
 }
 function typeLabel(t) { return TYPES_FINANCEMENT[t]?.label || t }
