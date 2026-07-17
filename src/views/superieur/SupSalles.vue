@@ -2,82 +2,82 @@
   <div class="sl">
     <div class="sl-intro">
       <div>
-        <h1 class="sl-h1">Salles &amp; espaces</h1>
+        <h1 class="sl-h1">{{ t('sup.salles.title') }}</h1>
         <p class="sl-sub">
-          Inventaire des salles de classe, amphithéâtres, salles informatiques et salles de réunion.
+          {{ t('sup.salles.subtitle') }}
         </p>
       </div>
       <button class="sl-btn-primary" type="button" @click="openCreate">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Ajouter une salle
+        {{ t('sup.salles.addSalle') }}
       </button>
     </div>
 
     <!-- KPIs -->
     <div class="sl-kpis">
       <div class="sl-kpi">
-        <div class="sl-kpi-label">Salles totales</div>
+        <div class="sl-kpi-label">{{ t('sup.salles.kpiTotal') }}</div>
         <div class="sl-kpi-value">{{ s.total }}</div>
-        <div class="sl-kpi-foot">{{ s.maintenance }} en maintenance</div>
+        <div class="sl-kpi-foot">{{ t('sup.salles.kpiMaintenance', { count: s.maintenance }) }}</div>
       </div>
       <div class="sl-kpi">
-        <div class="sl-kpi-label">Salles de cours</div>
+        <div class="sl-kpi-label">{{ t('sup.salles.kpiClasses') }}</div>
         <div class="sl-kpi-value">{{ s.classes }}</div>
-        <div class="sl-kpi-foot">classes + informatique</div>
+        <div class="sl-kpi-foot">{{ t('sup.salles.kpiClassesFoot') }}</div>
       </div>
       <div class="sl-kpi">
-        <div class="sl-kpi-label">Amphithéâtres</div>
+        <div class="sl-kpi-label">{{ t('sup.salles.kpiAmphis') }}</div>
         <div class="sl-kpi-value">{{ s.amphis }}</div>
       </div>
       <div class="sl-kpi">
-        <div class="sl-kpi-label">Salles de réunion</div>
+        <div class="sl-kpi-label">{{ t('sup.salles.kpiReunion') }}</div>
         <div class="sl-kpi-value">{{ s.reunion }}</div>
       </div>
       <div class="sl-kpi">
-        <div class="sl-kpi-label">Capacité totale</div>
+        <div class="sl-kpi-label">{{ t('sup.salles.kpiCapacite') }}</div>
         <div class="sl-kpi-value">{{ fmt(s.capaciteTotal) }}</div>
-        <div class="sl-kpi-foot">places</div>
+        <div class="sl-kpi-foot">{{ t('sup.salles.seats') }}</div>
       </div>
     </div>
 
     <!-- Filtres -->
     <div class="sl-filters">
       <div class="sl-filter">
-        <span class="sl-filter-label">Type</span>
+        <span class="sl-filter-label">{{ t('sup.salles.fType') }}</span>
         <select :value="store.sallesFilters.type" @change="store.setSalleFilter('type', $event.target.value)">
-          <option value="">Tous les types</option>
-          <option v-for="t in Object.values(SALLE_TYPES)" :key="t.key" :value="t.key">{{ t.label }}</option>
+          <option value="">{{ t('sup.salles.allTypes') }}</option>
+          <option v-for="tp in Object.values(SALLE_TYPES)" :key="tp.key" :value="tp.key">{{ tp.label }}</option>
         </select>
       </div>
       <div class="sl-filter">
-        <span class="sl-filter-label">Bâtiment</span>
+        <span class="sl-filter-label">{{ t('sup.salles.fBatiment') }}</span>
         <select :value="store.sallesFilters.batiment" @change="store.setSalleFilter('batiment', $event.target.value)">
-          <option value="">Tous les bâtiments</option>
-          <option v-for="b in store.sallesBatiments" :key="b" :value="b">Bâtiment {{ b }}</option>
+          <option value="">{{ t('sup.salles.allBatiments') }}</option>
+          <option v-for="b in store.sallesBatiments" :key="b" :value="b">{{ t('sup.salles.batimentOpt', { b }) }}</option>
         </select>
       </div>
       <div class="sl-filter">
-        <span class="sl-filter-label">Statut</span>
+        <span class="sl-filter-label">{{ t('sup.salles.fStatut') }}</span>
         <select :value="store.sallesFilters.statut" @change="store.setSalleFilter('statut', $event.target.value)">
-          <option value="">Tous statuts</option>
-          <option value="active">Actives</option>
-          <option value="maintenance">En maintenance</option>
+          <option value="">{{ t('sup.salles.allStatuts') }}</option>
+          <option value="active">{{ t('sup.salles.filterActives') }}</option>
+          <option value="maintenance">{{ t('sup.salles.filterMaintenance') }}</option>
         </select>
       </div>
       <div class="sl-filter sl-filter-search">
-        <span class="sl-filter-label">Recherche</span>
+        <span class="sl-filter-label">{{ t('sup.salles.fSearch') }}</span>
         <input
           type="text"
           :value="store.sallesFilters.search"
           @input="store.setSalleFilter('search', $event.target.value)"
-          placeholder="Nom de salle…"
+          :placeholder="t('sup.salles.searchPlaceholder')"
         />
       </div>
       <button v-if="hasFilters" class="sl-reset" type="button" @click="store.resetSalleFilters()">
-        Réinitialiser
+        {{ t('sup.salles.reset') }}
       </button>
       <span class="sl-count">
-        {{ store.filteredSalles.length }} salle{{ store.filteredSalles.length > 1 ? 's' : '' }}
+        {{ store.filteredSalles.length }} {{ store.filteredSalles.length > 1 ? t('sup.salles.rooms') : t('sup.salles.room') }}
       </span>
     </div>
 
@@ -86,12 +86,12 @@
       <table class="sl-table">
         <thead>
           <tr>
-            <th>Salle</th>
-            <th>Type</th>
-            <th class="num">Capacité</th>
-            <th>Bâtiment / étage</th>
-            <th>Équipements</th>
-            <th>Statut</th>
+            <th>{{ t('sup.salles.thSalle') }}</th>
+            <th>{{ t('sup.salles.thType') }}</th>
+            <th class="num">{{ t('sup.salles.thCapacite') }}</th>
+            <th>{{ t('sup.salles.thBatiment') }}</th>
+            <th>{{ t('sup.salles.thEquipements') }}</th>
+            <th>{{ t('sup.salles.thStatut') }}</th>
             <th class="sl-actions-head"></th>
           </tr>
         </thead>
@@ -105,7 +105,7 @@
               <span class="sl-pill" :class="`tp-${sa.type}`">{{ typeLabel(sa.type) }}</span>
             </td>
             <td class="num">{{ sa.capacite }}</td>
-            <td>Bât. {{ sa.batiment }} · étage {{ sa.etage }}</td>
+            <td>{{ t('sup.salles.batEtage', { b: sa.batiment, e: sa.etage }) }}</td>
             <td>
               <span class="sl-equips">
                 <span v-for="eq in sa.equipements" :key="eq" class="sl-equip">{{ equipLabel(eq) }}</span>
@@ -114,20 +114,20 @@
             </td>
             <td>
               <span class="sl-statut" :class="`st-${sa.statut}`">
-                {{ sa.statut === 'maintenance' ? 'Maintenance' : 'Active' }}
+                {{ sa.statut === 'maintenance' ? t('sup.salles.statutMaintenance') : t('sup.salles.statutActive') }}
               </span>
             </td>
             <td class="sl-actions">
-              <button type="button" class="sl-icon-btn" title="Modifier" @click="openEdit(sa)">
+              <button type="button" class="sl-icon-btn" :title="t('sup.salles.edit')" @click="openEdit(sa)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
-              <button type="button" class="sl-icon-btn is-danger" title="Supprimer" @click="askDelete(sa)">
+              <button type="button" class="sl-icon-btn is-danger" :title="t('sup.salles.delete')" @click="askDelete(sa)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               </button>
             </td>
           </tr>
           <tr v-if="store.filteredSalles.length === 0">
-            <td colspan="7" class="sl-empty">Aucune salle ne correspond aux filtres.</td>
+            <td colspan="7" class="sl-empty">{{ t('sup.salles.empty') }}</td>
           </tr>
         </tbody>
       </table>
@@ -138,14 +138,14 @@
       <li v-for="sa in store.filteredSalles" :key="sa.id" class="sl-mrow" @click="openEdit(sa)">
         <div class="sl-mrow-main">
           <div class="sl-mrow-name">{{ sa.nom }}</div>
-          <div class="sl-mrow-sub">{{ typeLabel(sa.type) }} · {{ sa.capacite }} places · Bât. {{ sa.batiment }}</div>
+          <div class="sl-mrow-sub">{{ typeLabel(sa.type) }} · {{ sa.capacite }} {{ t('sup.salles.seats') }} · {{ t('sup.salles.bldgShort') }} {{ sa.batiment }}</div>
           <div class="sl-mrow-meta">
-            <span class="sl-statut" :class="`st-${sa.statut}`">{{ sa.statut === 'maintenance' ? 'Maintenance' : 'Active' }}</span>
+            <span class="sl-statut" :class="`st-${sa.statut}`">{{ sa.statut === 'maintenance' ? t('sup.salles.statutMaintenance') : t('sup.salles.statutActive') }}</span>
           </div>
         </div>
         <svg class="sl-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </li>
-      <li v-if="store.filteredSalles.length === 0" class="sl-mempty">Aucune salle ne correspond aux filtres.</li>
+      <li v-if="store.filteredSalles.length === 0" class="sl-mempty">{{ t('sup.salles.empty') }}</li>
     </ul>
 
     <!-- Modale création / édition -->
@@ -153,7 +153,7 @@
       <div v-if="modalOpen" class="sl-modal-overlay" @click.self="closeModal">
         <div class="sl-modal">
           <div class="sl-modal-head">
-            <h2 class="sl-modal-title">{{ editing ? 'Modifier la salle' : 'Nouvelle salle' }}</h2>
+            <h2 class="sl-modal-title">{{ editing ? t('sup.salles.editTitle') : t('sup.salles.newTitle') }}</h2>
             <button class="sl-modal-close" type="button" @click="closeModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
@@ -161,32 +161,32 @@
           <form class="sl-form" @submit.prevent="submit">
             <div class="sl-form-row">
               <div class="sl-field">
-                <label class="sl-form-label">Nom</label>
+                <label class="sl-form-label">{{ t('sup.salles.fNom') }}</label>
                 <input v-model="form.nom" type="text" class="sl-input" required />
               </div>
               <div class="sl-field">
-                <label class="sl-form-label">Type</label>
+                <label class="sl-form-label">{{ t('sup.salles.fType') }}</label>
                 <select v-model="form.type" class="sl-input">
-                  <option v-for="t in Object.values(SALLE_TYPES)" :key="t.key" :value="t.key">{{ t.label }}</option>
+                  <option v-for="tp in Object.values(SALLE_TYPES)" :key="tp.key" :value="tp.key">{{ tp.label }}</option>
                 </select>
               </div>
             </div>
             <div class="sl-form-row">
               <div class="sl-field">
-                <label class="sl-form-label">Capacité (places)</label>
+                <label class="sl-form-label">{{ t('sup.salles.fCapacite') }}</label>
                 <input v-model.number="form.capacite" type="number" min="1" max="500" class="sl-input" required />
               </div>
               <div class="sl-field">
-                <label class="sl-form-label">Bâtiment</label>
-                <input v-model="form.batiment" type="text" class="sl-input" placeholder="A, B, C…" />
+                <label class="sl-form-label">{{ t('sup.salles.fBatiment') }}</label>
+                <input v-model="form.batiment" type="text" class="sl-input" :placeholder="t('sup.salles.batimentPlaceholder')" />
               </div>
               <div class="sl-field">
-                <label class="sl-form-label">Étage</label>
+                <label class="sl-form-label">{{ t('sup.salles.fEtage') }}</label>
                 <input v-model.number="form.etage" type="number" min="0" max="20" class="sl-input" />
               </div>
             </div>
             <div class="sl-field">
-              <label class="sl-form-label">Équipements</label>
+              <label class="sl-form-label">{{ t('sup.salles.fEquipements') }}</label>
               <div class="sl-equips-grid">
                 <label v-for="eq in EQUIPEMENTS_SALLE" :key="eq.key" class="sl-equip-check">
                   <input type="checkbox" :value="eq.key" v-model="form.equipements" />
@@ -195,17 +195,17 @@
               </div>
             </div>
             <div class="sl-field">
-              <label class="sl-form-label">Statut</label>
+              <label class="sl-form-label">{{ t('sup.salles.fStatut') }}</label>
               <select v-model="form.statut" class="sl-input">
-                <option value="active">Active</option>
-                <option value="maintenance">En maintenance</option>
+                <option value="active">{{ t('sup.salles.statutActive') }}</option>
+                <option value="maintenance">{{ t('sup.salles.filterMaintenance') }}</option>
               </select>
             </div>
             <p v-if="formError" class="sl-form-error">{{ formError }}</p>
             <div class="sl-modal-actions">
-              <button type="button" class="sl-btn-ghost" @click="closeModal">Annuler</button>
+              <button type="button" class="sl-btn-ghost" @click="closeModal">{{ t('sup.salles.cancel') }}</button>
               <button type="submit" class="sl-btn-primary">
-                {{ editing ? 'Enregistrer' : 'Créer la salle' }}
+                {{ editing ? t('sup.salles.save') : t('sup.salles.create') }}
               </button>
             </div>
           </form>
@@ -217,8 +217,10 @@
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, SALLE_TYPES, EQUIPEMENTS_SALLE } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const s = computed(() => store.sallesStats)
 
@@ -227,7 +229,7 @@ const hasFilters = computed(() => {
   return !!(f.type || f.batiment || f.statut || f.search)
 })
 
-const typeLabel = (t) => SALLE_TYPES[t]?.label || t
+const typeLabel = (ty) => SALLE_TYPES[ty]?.label || ty
 const equipLabel = (k) => EQUIPEMENTS_SALLE.find((e) => e.key === k)?.label || k
 const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
 
@@ -262,14 +264,14 @@ function openEdit(sa) {
 }
 function closeModal() { modalOpen.value = false; editing.value = null }
 function submit() {
-  if (!form.nom.trim()) { formError.value = 'Le nom est obligatoire.'; return }
-  if (!form.capacite || form.capacite < 1) { formError.value = 'La capacité doit être positive.'; return }
+  if (!form.nom.trim()) { formError.value = t('sup.salles.errNom'); return }
+  if (!form.capacite || form.capacite < 1) { formError.value = t('sup.salles.errCapacite'); return }
   if (editing.value) store.updateSalle(editing.value.id, { ...form })
   else store.addSalle({ ...form })
   closeModal()
 }
 function askDelete(sa) {
-  if (window.confirm(`Supprimer la salle "${sa.nom}" ?`)) {
+  if (window.confirm(t('sup.salles.confirmDelete', { name: sa.nom }))) {
     store.deleteSalle(sa.id)
   }
 }
