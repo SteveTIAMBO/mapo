@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { isMiapoTenant } from '../utils/tenantContext'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useUsageStore, COUT_ACTION } from './usage'
+import { useMiapoRefStore } from './miapoRef'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -98,9 +99,16 @@ export const useTuteurStore = defineStore('tuteur', () => {
     lastReason.value = ''
     // Jauge d'usage IA (freemium) : on décompte le quiz. Non bloquant en démo.
     try { useUsageStore().consume(COUT_ACTION.quiz) } catch (e) { /* jauge indisponible : silencieux */ }
+    // Personnalisation par école : injecte des exemples de sujets (miapoRef) dans
+    // les thèmes → quiz calibré sur le niveau/style de l'établissement.
+    let effThemes = themes
+    try {
+      const ex = useMiapoRefStore().getExemples(matiere)
+      if (ex) effThemes = (themes ? themes + ' ; ' : '') + `Inspire-toi du niveau et du style de ces sujets de l'école : ${ex.slice(0, 1500)}`
+    } catch (e) { /* silencieux */ }
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
-    // Uniquement pour une révision générique (pas de thème imposé).
-    if (!themes) {
+    // Uniquement pour une révision générique (pas de thème ni de perso imposés).
+    if (!effThemes) {
       const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre })
       if (fromBank) {
         generating.value = false
@@ -117,7 +125,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'tutor_quiz', data: { matiere, niveau, nombre, themes, difficulte } }),
+        body: JSON.stringify({ task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte } }),
       })
       const json = await res.json().catch(() => null)
 
@@ -126,7 +134,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         if (parsed.length) {
           lastMode.value = 'ia'
           // Alimente la banque partagée pour les prochains élèves (best-effort).
-          if (!themes) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
+          if (!effThemes) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
           return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '' }
         }
         lastReason.value = 'Réponse IA illisible, mode démonstration'

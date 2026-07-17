@@ -187,12 +187,14 @@ import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../serv
 import CoursFileViewer from '../components/CoursFileViewer.vue'
 import { Sparkles, Upload, BookOpen, Trash2, Info, Loader2, NotebookPen, Link as LinkIcon, Paperclip, Eye, Download, FileText, X, Lock, Camera } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
+import { useMiapoRefStore } from '../stores/miapoRef'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const store = useCoursStore()
 const authStore = useAuthStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
+const miapoRef = useMiapoRefStore()
 const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const tuteur = useTuteurStore()
@@ -284,6 +286,11 @@ function buildInstructions(adapt) {
     if (form.value.nbExercices) parts.push(`${form.value.nbExercices} exercices`)
   }
   if (adapt) parts.push(adapt)
+  // Personnalisation par école : exemples de sujets fournis en modèle.
+  if (form.value.type !== 'ressource') {
+    const ex = miapoRef.getExemples(form.value.matiere)
+    if (ex) parts.push(`Aligne-toi sur le style, le niveau et le format de ces sujets de l'école (imite sans recopier) :\n${ex.slice(0, 4000)}`)
+  }
   return parts.join(' ; ')
 }
 async function prepare(adapt) {
