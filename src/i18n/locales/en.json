@@ -2132,6 +2132,17 @@
       "lowBadge": "Low attendance",
       "empty": "No student to display.",
       "footNote": "Attendance feeds dropout monitoring (MIAPO). Local demo data."
+    },
+    "compta": {
+      "comptes": "Student fees",
+      "paiements": "Payments",
+      "salaires": "Salaries",
+      "charges": "Expenses",
+      "synthese": "Summary",
+      "tarifs": "Fee schedule",
+      "echeanciers": "Payment schedules",
+      "bourses": "Scholarships",
+      "financements": "Third-party funding"
     }
   },
   "mal": {

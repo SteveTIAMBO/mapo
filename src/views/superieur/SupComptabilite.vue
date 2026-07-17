@@ -27,7 +27,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import SupComptesEtudiants from './SupComptesEtudiants.vue'
 import SupPaiements from './SupPaiements.vue'
 import SupSalaires from './SupSalaires.vue'
@@ -49,18 +50,20 @@ const icoEch = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stro
 const icoBourses = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>'
 const icoFin = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'
 
+const { t } = useI18n({ useScope: 'global' })
+
 // Ordre : structure Secondaire d'abord, spécificités Supérieur ensuite.
-const tabs = [
-  { key: 'comptes', label: 'Frais étudiants', icon: icoComptes },
-  { key: 'paiements', label: 'Paiements', icon: icoPay },
-  { key: 'salaires', label: 'Salaires', icon: icoSalaires },
-  { key: 'charges', label: 'Charges', icon: icoCharges },
-  { key: 'synthese', label: 'Synthèse', icon: icoSynthese },
-  { key: 'tarifs', label: 'Grille tarifaire', icon: icoTarifs },
-  { key: 'echeanciers', label: 'Échéanciers', icon: icoEch },
-  { key: 'bourses', label: 'Bourses', icon: icoBourses },
-  { key: 'financements', label: 'Financements tiers', icon: icoFin },
-]
+const tabs = computed(() => [
+  { key: 'comptes', label: t('sup.compta.comptes'), icon: icoComptes },
+  { key: 'paiements', label: t('sup.compta.paiements'), icon: icoPay },
+  { key: 'salaires', label: t('sup.compta.salaires'), icon: icoSalaires },
+  { key: 'charges', label: t('sup.compta.charges'), icon: icoCharges },
+  { key: 'synthese', label: t('sup.compta.synthese'), icon: icoSynthese },
+  { key: 'tarifs', label: t('sup.compta.tarifs'), icon: icoTarifs },
+  { key: 'echeanciers', label: t('sup.compta.echeanciers'), icon: icoEch },
+  { key: 'bourses', label: t('sup.compta.bourses'), icon: icoBourses },
+  { key: 'financements', label: t('sup.compta.financements'), icon: icoFin },
+])
 
 const panels = {
   comptes: SupComptesEtudiants,

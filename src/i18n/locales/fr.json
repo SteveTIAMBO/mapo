@@ -2132,6 +2132,17 @@
       "lowBadge": "Assiduité faible",
       "empty": "Aucun étudiant à afficher.",
       "footNote": "L'assiduité alimente le suivi du décrochage (MIAPO). Données locales de démonstration."
+    },
+    "compta": {
+      "comptes": "Frais étudiants",
+      "paiements": "Paiements",
+      "salaires": "Salaires",
+      "charges": "Charges",
+      "synthese": "Synthèse",
+      "tarifs": "Grille tarifaire",
+      "echeanciers": "Échéanciers",
+      "bourses": "Bourses",
+      "financements": "Financements tiers"
     }
   },
   "mal": {
