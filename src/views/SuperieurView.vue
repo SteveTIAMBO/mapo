@@ -270,6 +270,9 @@
         <span>{{ it.label }}</span>
       </button>
     </nav>
+
+    <!-- Copilote MIAPO (langage naturel, Ctrl+J) — bouton flottant + barre -->
+    <SuperieurMiapoBar />
   </div>
 </template>
 
@@ -286,6 +289,7 @@ import { setLang } from '../i18n'
 import { useConnectionStatus } from '../composables/useConnectionStatus'
 import { PanelLeftClose, PanelLeftOpen, Menu, Search, Settings } from 'lucide-vue-next'
 import SuperieurLogin from './superieur/SuperieurLogin.vue'
+import SuperieurMiapoBar from './superieur/SuperieurMiapoBar.vue'
 import SupDashboard from './superieur/SupDashboard.vue'
 import SupGroupeDashboard from './superieur/SupGroupeDashboard.vue'
 import SupEtudiants from './superieur/SupEtudiants.vue'
