@@ -42,7 +42,7 @@
 
       <div class="sen-side">
         <!-- Assistant IA (masqué si MIAPO désactivé pour la préparation de cours) -->
-        <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-card sen-ia">
+        <section v-if="miapoGlobal.isEnabled('preparationCours')" class="sen-ia">
           <div class="sen-ia-badge">MIAPO</div>
           <h2 class="sen-h2 sen-ia-h2">{{ t('sup.espaceEnseignant.iaTitle') }}</h2>
           <p class="sen-ia-txt">{{ t('sup.espaceEnseignant.iaText') }}</p>
@@ -194,7 +194,7 @@ function iaClick() { iaMsg.value = "L'assistant MIAPO génère cours, devoirs et
 .sen-ue-code { font-weight: 700; color: var(--pr); font-size: 13px; }
 .sen-ue-int { font-size: 12.5px; color: var(--muted, #5b6472); }
 .sen-ue-h { font-size: 13px; font-weight: 600; color: var(--text, #23262E); }
-.sen-ia { background: linear-gradient(150deg, #4F46E5, #7C3AED); color: #fff; border: none; }
+.sen-ia { background: linear-gradient(150deg, #4F46E5, #7C3AED); color: #fff; border: none; border-radius: 16px; padding: 20px 22px; }
 .sen-ia-badge { display: inline-block; background: rgba(255,255,255,.2); border-radius: 20px; padding: 3px 12px; font-weight: 800; font-size: 12px; }
 .sen-ia-h2 { color: #fff; margin-top: 12px; }
 .sen-ia-txt { font-size: 13px; line-height: 1.55; color: rgba(255,255,255,.92); }
