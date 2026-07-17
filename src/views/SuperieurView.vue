@@ -275,7 +275,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
-import { useRouter } from 'vue-router'
 import { useSuperieurStore } from '../stores/superieur'
 import { useSuperieurAuthStore, SUP_ROLES } from '../stores/superieurAuth'
 import { useAuthStore } from '../stores/auth'
@@ -323,7 +322,6 @@ import SupRapports from './superieur/SupRapports.vue'
 import SupDecrochage from './superieur/SupDecrochage.vue'
 import SupMessagerie from './superieur/SupMessagerie.vue'
 
-const router = useRouter()
 const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
 const authStore = useAuthStore()
