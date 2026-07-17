@@ -1,52 +1,52 @@
 <template>
   <div class="sf">
     <div class="sf-intro">
-      <h1 class="sf-h1">Pilotage finance</h1>
-      <p class="sf-sub">Vue d'ensemble de la scolarité — année académique 2025-2026</p>
+      <h1 class="sf-h1">{{ t('sup.financeBoard.title') }}</h1>
+      <p class="sf-sub">{{ t('sup.financeBoard.subtitle') }}</p>
     </div>
 
     <!-- KPIs principaux -->
     <div class="sf-kpis">
       <div class="sf-kpi">
-        <div class="sf-kpi-label">Chiffre d'affaires attendu</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiCaAttendu') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.totalDu) }}</div>
-        <div class="sf-kpi-foot">{{ s.nbEtudiants }} étudiants facturés</div>
+        <div class="sf-kpi-foot">{{ t('sup.financeBoard.kpiFactures', { n: s.nbEtudiants }) }}</div>
       </div>
       <div class="sf-kpi">
-        <div class="sf-kpi-label">Encaissé à ce jour</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiEncaisse') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.totalPaye) }}</div>
         <div class="sf-kpi-foot is-ok">
-          Taux de recouvrement : {{ s.tauxRecouvrement }}%
+          {{ t('sup.financeBoard.kpiTauxRecouvrement', { n: s.tauxRecouvrement }) }}
         </div>
       </div>
       <div class="sf-kpi">
-        <div class="sf-kpi-label">Reste à encaisser</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiReste') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.totalRestant) }}</div>
-        <div class="sf-kpi-foot">{{ s.nbEtudiants - s.nbEnRetard }} étudiants à jour</div>
+        <div class="sf-kpi-foot">{{ t('sup.financeBoard.kpiAJour', { n: s.nbEtudiants - s.nbEnRetard }) }}</div>
       </div>
       <div class="sf-kpi" :class="{ 'is-alert': s.nbEnRetard > 0 }">
-        <div class="sf-kpi-label">En retard de paiement</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiEnRetard') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.montantEnRetard) }}</div>
         <div class="sf-kpi-foot" :class="s.nbEnRetard > 0 ? 'is-danger' : 'is-ok'">
-          {{ s.nbEnRetard }} étudiants concernés
+          {{ t('sup.financeBoard.kpiConcernes', { n: s.nbEnRetard }) }}
         </div>
       </div>
       <div class="sf-kpi">
-        <div class="sf-kpi-label">Bourses accordées</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiBourses') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.totalBourses) }}</div>
-        <div class="sf-kpi-foot">{{ s.nbBoursiers }} boursiers</div>
+        <div class="sf-kpi-foot">{{ t('sup.financeBoard.kpiBoursiers', { n: s.nbBoursiers }) }}</div>
       </div>
       <div class="sf-kpi">
-        <div class="sf-kpi-label">Financements tiers</div>
+        <div class="sf-kpi-label">{{ t('sup.financeBoard.kpiFinancements') }}</div>
         <div class="sf-kpi-value">{{ fmtMontant(s.totalFinancementsAcquis) }}</div>
-        <div class="sf-kpi-foot">{{ s.nbFinancements }} conventions</div>
+        <div class="sf-kpi-foot">{{ t('sup.financeBoard.kpiConventions', { n: s.nbFinancements }) }}</div>
       </div>
     </div>
 
     <!-- Taux de recouvrement -->
     <div class="sf-grid">
       <section class="sf-card">
-        <h2 class="sf-h2">Taux de recouvrement</h2>
+        <h2 class="sf-h2">{{ t('sup.financeBoard.recTitle') }}</h2>
         <div class="sf-rec">
           <div class="sf-rec-ring">
             <svg viewBox="0 0 120 120" width="132" height="132">
@@ -59,19 +59,19 @@
                 transform="rotate(-90 60 60)"
               />
               <text x="60" y="56" text-anchor="middle" class="sf-ring-num">{{ s.tauxRecouvrement }}%</text>
-              <text x="60" y="74" text-anchor="middle" class="sf-ring-cap">collecté</text>
+              <text x="60" y="74" text-anchor="middle" class="sf-ring-cap">{{ t('sup.financeBoard.ringCap') }}</text>
             </svg>
           </div>
           <div class="sf-rec-text">
             <p>
-              <strong>{{ fmtMontant(s.totalPaye) }}</strong> encaissés sur
-              <strong>{{ fmtMontant(s.totalDu) }}</strong> attendus.
+              <strong>{{ fmtMontant(s.totalPaye) }}</strong> {{ t('sup.financeBoard.recCollected') }}
+              <strong>{{ fmtMontant(s.totalDu) }}</strong> {{ t('sup.financeBoard.recExpected') }}
             </p>
             <p class="sf-rec-note" v-if="s.nbRelancesNiveau3 > 0">
-              {{ s.nbRelancesNiveau3 }} dossier(s) en relance niveau 3 — risque de recouvrement contentieux.
+              {{ t('sup.financeBoard.recNote3', { n: s.nbRelancesNiveau3 }) }}
             </p>
             <p class="sf-rec-note" v-else>
-              Aucun dossier en procédure contentieuse à ce jour.
+              {{ t('sup.financeBoard.recNoteNone') }}
             </p>
           </div>
         </div>
@@ -79,12 +79,12 @@
 
       <!-- CA par programme -->
       <section class="sf-card">
-        <h2 class="sf-h2">CA par programme</h2>
+        <h2 class="sf-h2">{{ t('sup.financeBoard.caProgTitle') }}</h2>
         <div class="sf-prog-list">
           <div v-for="p in store.caParProgramme" :key="p.programmeId" class="sf-prog">
             <div class="sf-prog-head">
               <span class="sf-prog-nom">{{ p.programmeNom }}</span>
-              <span class="sf-prog-eff">{{ p.nbEtudiants }} étudiants</span>
+              <span class="sf-prog-eff">{{ t('sup.financeBoard.progStudents', { n: p.nbEtudiants }) }}</span>
             </div>
             <div class="sf-prog-amount">
               <span class="sf-prog-paye">{{ fmtMontant(p.paye) }}</span>
@@ -101,7 +101,7 @@
 
     <!-- Encaissements mensuels -->
     <section class="sf-card">
-      <h2 class="sf-h2">Encaissements mensuels</h2>
+      <h2 class="sf-h2">{{ t('sup.financeBoard.monthlyTitle') }}</h2>
       <div class="sf-chart">
         <div v-for="(b, i) in store.encaissementsParMois" :key="i" class="sf-bar-wrap">
           <div class="sf-bar-amount" v-if="b.montant > 0">{{ fmtAbrev(b.montant) }}</div>
@@ -115,7 +115,7 @@
     <section class="sf-card" v-if="retardsList.length > 0">
       <div class="sf-card-head">
         <div>
-          <h2 class="sf-h2 sf-h2-inline">Étudiants en retard d'échéance</h2>
+          <h2 class="sf-h2 sf-h2-inline">{{ t('sup.financeBoard.retardsTitle') }}</h2>
           <span class="sf-card-tag">{{ retardsList.length }}</span>
         </div>
         <div class="sf-card-actions" v-if="canEdit">
@@ -127,15 +127,14 @@
           <div class="sf-alert-info">
             <div class="sf-alert-name">{{ item.etudiant?.nomComplet || '—' }}</div>
             <div class="sf-alert-sub">
-              Échéance {{ fmtDate(item.echeance.dateEcheance) }} ·
-              {{ item.joursRetard }} jours de retard
+              {{ t('sup.financeBoard.alertEcheance', { date: fmtDate(item.echeance.dateEcheance), n: item.joursRetard }) }}
             </div>
           </div>
           <div class="sf-alert-mt">
             <span class="sf-alert-amount">{{ fmtMontant(item.echeance.montantDu - item.echeance.montantPaye) }}</span>
-            <span class="sf-alert-niveau" :class="`niv-${item.prochainNiveau}`">Relance N{{ item.prochainNiveau }}</span>
+            <span class="sf-alert-niveau" :class="`niv-${item.prochainNiveau}`">{{ t('sup.financeBoard.relanceN', { n: item.prochainNiveau }) }}</span>
             <button v-if="canEdit" class="sf-btn-primary sf-btn-small" type="button" @click="openPaiementForm(item)">
-              Enregistrer paiement
+              {{ t('sup.financeBoard.recordPayment') }}
             </button>
           </div>
         </div>
@@ -146,58 +145,58 @@
     <div v-if="paiementForm" class="sf-modal" @click.self="closePaiementForm">
       <div class="sf-modal-content">
         <header class="sf-modal-head">
-          <h3>Enregistrer un paiement reçu</h3>
+          <h3>{{ t('sup.financeBoard.payTitle') }}</h3>
           <button class="sf-modal-close" type="button" @click="closePaiementForm">×</button>
         </header>
         <div class="sf-modal-body">
           <div class="sf-pay-context">
             <div class="sf-pay-line">
-              <span class="sf-pay-lab">Étudiant</span>
+              <span class="sf-pay-lab">{{ t('sup.financeBoard.payStudent') }}</span>
               <span class="sf-pay-val">{{ paiementForm.etudiantNom }}</span>
             </div>
             <div class="sf-pay-line">
-              <span class="sf-pay-lab">Échéance</span>
-              <span class="sf-pay-val">{{ fmtDate(paiementForm.dateEcheance) }} ({{ paiementForm.joursRetard }} j de retard)</span>
+              <span class="sf-pay-lab">{{ t('sup.financeBoard.payEcheance') }}</span>
+              <span class="sf-pay-val">{{ t('sup.financeBoard.payEcheanceVal', { date: fmtDate(paiementForm.dateEcheance), n: paiementForm.joursRetard }) }}</span>
             </div>
             <div class="sf-pay-line">
-              <span class="sf-pay-lab">Reste dû</span>
+              <span class="sf-pay-lab">{{ t('sup.financeBoard.payReste') }}</span>
               <span class="sf-pay-val sf-pay-amount">{{ fmtMontant(paiementForm.montantDu) }}</span>
             </div>
           </div>
 
           <div class="sf-pay-form">
             <div class="sf-pay-row">
-              <label class="sf-pay-flab">Montant reçu (FCFA)</label>
+              <label class="sf-pay-flab">{{ t('sup.financeBoard.payMontant') }}</label>
               <input v-model.number="paiementForm.montant" type="number" min="0" class="sf-pay-input" />
             </div>
             <div class="sf-pay-row">
-              <label class="sf-pay-flab">Méthode</label>
+              <label class="sf-pay-flab">{{ t('sup.financeBoard.payMethode') }}</label>
               <select v-model="paiementForm.methode" class="sf-pay-input">
                 <option v-for="m in methodesPaiement" :key="m.key" :value="m.key">{{ m.label }}</option>
               </select>
             </div>
             <div class="sf-pay-row">
-              <label class="sf-pay-flab">Date de réception</label>
+              <label class="sf-pay-flab">{{ t('sup.financeBoard.payDate') }}</label>
               <input v-model="paiementForm.date" type="date" class="sf-pay-input" />
             </div>
             <div class="sf-pay-row">
-              <label class="sf-pay-flab">Référence (optionnelle)</label>
-              <input v-model="paiementForm.reference" type="text" class="sf-pay-input" placeholder="N° virement, chèque..." />
+              <label class="sf-pay-flab">{{ t('sup.financeBoard.payReference') }}</label>
+              <input v-model="paiementForm.reference" type="text" class="sf-pay-input" :placeholder="t('sup.financeBoard.payRefPlaceholder')" />
             </div>
           </div>
 
           <p class="sf-pay-note">
-            Un reçu peut être édité depuis la fiche du compte étudiant après enregistrement.
+            {{ t('sup.financeBoard.payNote') }}
           </p>
 
           <div class="sf-pay-actions">
-            <button class="sf-btn-secondary" type="button" @click="closePaiementForm">Annuler</button>
+            <button class="sf-btn-secondary" type="button" @click="closePaiementForm">{{ t('sup.financeBoard.cancel') }}</button>
             <button
               class="sf-btn-primary"
               type="button"
               :disabled="!paiementForm.montant || paiementForm.montant <= 0"
               @click="enregistrerPaiement"
-            >Enregistrer le paiement</button>
+            >{{ t('sup.financeBoard.payConfirm') }}</button>
           </div>
         </div>
       </div>
@@ -207,12 +206,14 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFinanceStore, fmtMontant, fmtDate, METHODES_PAIEMENT } from '../../stores/finance'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { exportToExcel } from '../../utils/exportExcel'
 import { exportToPdf } from '../../utils/exportPdf'
 import ExportMenu from '../../components/ExportMenu.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const auth = useSuperieurAuthStore()
 const s = computed(() => store.stats)
