@@ -126,6 +126,21 @@
             </tbody>
           </table>
         </div>
+
+        <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+        <ul class="mt-mlist">
+          <li v-for="subject in filteredSubjects" :key="subject.id" class="mt-mrow" @click="openEditModal(subject)">
+            <span class="color-dot" :style="{ background: subject.color }"></span>
+            <div class="mt-mrow-main">
+              <div class="mt-mrow-name">{{ subject.name }}</div>
+              <div class="mt-mrow-meta">
+                <span v-if="subject.cycles.includes('college')" class="cycle-tag cycle-college">{{ t('matieres.firstCycleTag') }}</span>
+                <span v-if="subject.cycles.includes('lycee')" class="cycle-tag cycle-lycee">{{ t('matieres.secondCycleTag') }}</span>
+              </div>
+            </div>
+            <svg class="mt-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </li>
+        </ul>
       </div>
 
       <!-- Summary -->
@@ -434,6 +449,21 @@ onMounted(async () => {
 
 /* Table */
 .table-wrap { overflow-x: auto; }
+
+/* ── Liste mobile (remplace le tableau sur petit écran, <=560px) ── */
+.mt-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.mt-mrow { display: flex; align-items: center; gap: 11px; padding: 13px 14px; border-bottom: 1px solid var(--border, #ECECE8); cursor: pointer; }
+.mt-mrow:last-child { border-bottom: none; }
+.mt-mrow:active { background: rgba(var(--pr-rgb, 21, 88, 176), .07); }
+.mt-mrow .color-dot { flex-shrink: 0; }
+.mt-mrow-main { flex: 1; min-width: 0; }
+.mt-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); }
+.mt-mrow-meta { display: flex; gap: 6px; margin-top: 5px; flex-wrap: wrap; }
+.mt-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .table-wrap { display: none; }
+  .mt-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+}
 .subjects-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .subjects-table th {
   text-align: center; padding: 10px 8px; font-size: 11px;
