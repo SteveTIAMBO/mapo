@@ -3,15 +3,12 @@
     <div class="sp-intro">
       <div class="sp-intro-row">
         <div>
-          <h1 class="sp-h1">Paiements & relances</h1>
-          <p class="sp-sub">
-            Registre des encaissements et pilotage des relances. Niveau 1 à J+15, niveau 2 à J+30,
-            niveau 3 à J+45 (procédure contentieuse).
-          </p>
+          <h1 class="sp-h1">{{ t('sup.paiements.title') }}</h1>
+          <p class="sp-sub">{{ t('sup.paiements.subtitle') }}</p>
         </div>
         <button class="sp-btn-primary sp-btn-lg" type="button" @click="openModal">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          Enregistrer un paiement
+          {{ t('sup.paiements.addPaiement') }}
         </button>
       </div>
     </div>
@@ -20,29 +17,29 @@
     <div class="sp-kpis">
       <div class="sp-kpi">
         <div class="sp-kpi-num">{{ store.paiements.length }}</div>
-        <div class="sp-kpi-lab">Paiements enregistrés</div>
+        <div class="sp-kpi-lab">{{ t('sup.paiements.kpiCount') }}</div>
       </div>
       <div class="sp-kpi">
         <div class="sp-kpi-num">{{ fmtMontant(totalPaiements) }}</div>
-        <div class="sp-kpi-lab">Total encaissé</div>
+        <div class="sp-kpi-lab">{{ t('sup.paiements.kpiTotal') }}</div>
       </div>
       <div class="sp-kpi" :class="{ 'is-alert': store.relancesAFaire.length > 0 }">
         <div class="sp-kpi-num">{{ store.relancesAFaire.length }}</div>
-        <div class="sp-kpi-lab">Relances à envoyer</div>
+        <div class="sp-kpi-lab">{{ t('sup.paiements.kpiRelancesToDo') }}</div>
       </div>
       <div class="sp-kpi">
         <div class="sp-kpi-num">{{ store.relances.length }}</div>
-        <div class="sp-kpi-lab">Relances envoyées</div>
+        <div class="sp-kpi-lab">{{ t('sup.paiements.kpiRelancesSent') }}</div>
       </div>
     </div>
 
     <!-- Onglets -->
     <div class="sp-tabs">
       <button class="sp-tab" :class="{ active: tab === 'paiements' }" @click="tab = 'paiements'">
-        Registre des paiements
+        {{ t('sup.paiements.tabRegistre') }}
       </button>
       <button class="sp-tab" :class="{ active: tab === 'relances' }" @click="tab = 'relances'">
-        Relances
+        {{ t('sup.paiements.tabRelances') }}
         <span v-if="store.relancesAFaire.length > 0" class="sp-tab-badge">
           {{ store.relancesAFaire.length }}
         </span>
@@ -56,11 +53,11 @@
           v-model="filtres.search"
           @input="setF('search', filtres.search)"
           type="text"
-          placeholder="Rechercher étudiant ou référence…"
+          :placeholder="t('sup.paiements.searchPlaceholder')"
           class="sp-input"
         />
         <select v-model="filtres.methode" @change="setF('methode', filtres.methode)" class="sp-select">
-          <option value="">Toutes les méthodes</option>
+          <option value="">{{ t('sup.paiements.allMethodes') }}</option>
           <option v-for="m in methodes" :key="m.key" :value="m.key">{{ m.label }}</option>
         </select>
         <input type="date" v-model="filtres.dateDebut" @change="setF('dateDebut', filtres.dateDebut)" class="sp-input" />
@@ -71,11 +68,11 @@
         <table class="sp-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Étudiant</th>
-              <th>Référence</th>
-              <th>Méthode</th>
-              <th class="num">Montant</th>
+              <th>{{ t('sup.paiements.thDate') }}</th>
+              <th>{{ t('sup.paiements.thStudent') }}</th>
+              <th>{{ t('sup.paiements.thReference') }}</th>
+              <th>{{ t('sup.paiements.thMethode') }}</th>
+              <th class="num">{{ t('sup.paiements.thMontant') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -92,7 +89,7 @@
               <td class="num"><strong>{{ fmtMontant(item.paiement.montant) }}</strong></td>
             </tr>
             <tr v-if="store.filteredPaiements.length === 0">
-              <td colspan="5" class="sp-empty">Aucun paiement ne correspond.</td>
+              <td colspan="5" class="sp-empty">{{ t('sup.paiements.emptyPaiements') }}</td>
             </tr>
           </tbody>
         </table>
@@ -107,7 +104,7 @@
           </div>
           <div class="sp-mrow-amount">{{ fmtMontant(item.paiement.montant) }}</div>
         </li>
-        <li v-if="store.filteredPaiements.length === 0" class="sp-mempty">Aucun paiement ne correspond.</li>
+        <li v-if="store.filteredPaiements.length === 0" class="sp-mempty">{{ t('sup.paiements.emptyPaiements') }}</li>
       </ul>
     </section>
 
@@ -117,44 +114,41 @@
         <div class="sp-empty-icon">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
         </div>
-        <h3>Aucune relance en attente</h3>
-        <p>Toutes les échéances en retard ont déjà reçu la relance attendue. Bon travail.</p>
+        <h3>{{ t('sup.paiements.noRelanceTitle') }}</h3>
+        <p>{{ t('sup.paiements.noRelanceText') }}</p>
       </div>
 
       <div v-else>
-        <p class="sp-relance-intro">
-          {{ store.relancesAFaire.length }} échéances en retard nécessitent une relance.
-          Cliquez sur « Envoyer » pour générer la communication.
-        </p>
+        <p class="sp-relance-intro">{{ t('sup.paiements.relanceIntro', { n: store.relancesAFaire.length }) }}</p>
         <div class="sp-relance-list">
           <div v-for="r in store.relancesAFaire" :key="r.echeance.id" class="sp-relance">
             <div class="sp-relance-info">
               <div class="sp-relance-name">{{ r.etudiant?.nomComplet || '—' }}</div>
               <div class="sp-relance-sub">
-                Échéance {{ fmtDate(r.echeance.dateEcheance) }} —
-                <strong>{{ fmtMontant(r.echeance.montantDu - r.echeance.montantPaye) }}</strong> restant ·
-                <span class="sp-relance-days">{{ r.joursRetard }} jours de retard</span>
+                {{ t('sup.paiements.echeanceWord') }} {{ fmtDate(r.echeance.dateEcheance) }} —
+                <strong>{{ fmtMontant(r.echeance.montantDu - r.echeance.montantPaye) }}</strong> {{ t('sup.paiements.resteWord') }} ·
+                <span class="sp-relance-days">{{ t('sup.paiements.joursRetard', { n: r.joursRetard }) }}</span>
               </div>
             </div>
             <div class="sp-relance-action">
-              <span class="sp-niveau" :class="`niv-${r.prochainNiveau}`">Niveau {{ r.prochainNiveau }}</span>
+              <span class="sp-niveau" :class="`niv-${r.prochainNiveau}`">{{ t('sup.paiements.niveau', { n: r.prochainNiveau }) }}</span>
               <button class="sp-btn-primary" type="button" @click="envoyer(r)">
-                Envoyer
+                {{ t('sup.paiements.send') }}
               </button>
             </div>
           </div>
         </div>
 
         <!-- Historique des relances -->
-        <h3 class="sp-h3">Historique récent</h3>
+        <h3 class="sp-h3">{{ t('sup.paiements.historique') }}</h3>
         <table class="sp-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Étudiant</th>
-              <th>Niveau</th>
-              <th>Canal</th>
-              <th>Statut</th>
+              <th>{{ t('sup.paiements.thDate') }}</th>
+              <th>{{ t('sup.paiements.thStudent') }}</th>
+              <th>{{ t('sup.paiements.thNiveau') }}</th>
+              <th>{{ t('sup.paiements.thCanal') }}</th>
+              <th>{{ t('sup.paiements.thStatut') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -165,12 +159,12 @@
               <td>{{ rel.canal }}</td>
               <td>
                 <span class="sp-statut" :class="rel.envoyee ? 'ok' : 'ko'">
-                  {{ rel.envoyee ? 'Envoyée' : 'En attente' }}
+                  {{ rel.envoyee ? t('sup.paiements.envoyee') : t('sup.paiements.enAttente') }}
                 </span>
               </td>
             </tr>
             <tr v-if="historiqueRelances.length === 0">
-              <td colspan="5" class="sp-empty">Aucun historique.</td>
+              <td colspan="5" class="sp-empty">{{ t('sup.paiements.emptyHistorique') }}</td>
             </tr>
           </tbody>
         </table>
@@ -179,10 +173,10 @@
 
     <!-- Modal : enregistrer un paiement -->
     <div v-if="showModal" class="sp-modal" @click.self="closeModal">
-      <div class="sp-modal-content" role="dialog" aria-modal="true" aria-label="Enregistrer un paiement">
+      <div class="sp-modal-content" role="dialog" aria-modal="true" :aria-label="t('sup.paiements.modalTitle')">
         <div class="sp-modal-head">
-          <h2 class="sp-modal-title">Enregistrer un paiement</h2>
-          <button class="sp-modal-close" type="button" @click="closeModal" aria-label="Fermer">
+          <h2 class="sp-modal-title">{{ t('sup.paiements.modalTitle') }}</h2>
+          <button class="sp-modal-close" type="button" @click="closeModal" :aria-label="t('sup.paiements.close')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -190,7 +184,7 @@
         <div class="sp-modal-body">
           <!-- Étudiant (recherche) -->
           <div class="sp-fld">
-            <label class="sp-fld-lab">Étudiant</label>
+            <label class="sp-fld-lab">{{ t('sup.paiements.fStudent') }}</label>
             <div class="sp-combo">
               <input
                 type="text"
@@ -198,10 +192,10 @@
                 v-model="search"
                 @input="onSearchInput"
                 @focus="dropdownOpen = true"
-                placeholder="Rechercher par matricule ou nom…"
+                :placeholder="t('sup.paiements.comboPlaceholder')"
                 autocomplete="off"
               />
-              <button v-if="selectedCompteId" class="sp-combo-clear" type="button" @click="clearCompte" aria-label="Changer d'étudiant">
+              <button v-if="selectedCompteId" class="sp-combo-clear" type="button" @click="clearCompte" :aria-label="t('sup.paiements.changeStudent')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
               <div v-if="dropdownOpen && !selectedCompteId" class="sp-combo-list">
@@ -213,9 +207,9 @@
                   @click="pickCompte(o)"
                 >
                   <span class="sp-combo-name">{{ o.etudiant.nomComplet }}</span>
-                  <span class="sp-combo-meta">{{ o.etudiant.matricule }} · reste dû {{ fmtMontant(o.compte.totalRestant) }}</span>
+                  <span class="sp-combo-meta">{{ t('sup.paiements.comboMeta', { mat: o.etudiant.matricule, reste: fmtMontant(o.compte.totalRestant) }) }}</span>
                 </button>
-                <div v-if="comptesFiltres.length === 0" class="sp-combo-empty">Aucun étudiant trouvé.</div>
+                <div v-if="comptesFiltres.length === 0" class="sp-combo-empty">{{ t('sup.paiements.comboEmpty') }}</div>
               </div>
             </div>
           </div>
@@ -223,43 +217,42 @@
           <!-- Reste dû + imputation -->
           <div v-if="selected" class="sp-reste">
             <div class="sp-reste-row">
-              <span>Reste dû</span>
+              <span>{{ t('sup.paiements.resteDu') }}</span>
               <strong>{{ fmtMontant(selected.compte.totalRestant) }}</strong>
             </div>
             <label v-if="earliestEch" class="sp-check">
               <input type="checkbox" v-model="form.imputer" />
-              <span>Imputer sur l'échéance du {{ fmtDate(earliestEch.dateEcheance) }}
-                ({{ fmtMontant(earliestEch.montantDu - earliestEch.montantPaye) }} restant)</span>
+              <span>{{ t('sup.paiements.imputer', { date: fmtDate(earliestEch.dateEcheance), reste: fmtMontant(earliestEch.montantDu - earliestEch.montantPaye) }) }}</span>
             </label>
-            <p v-else class="sp-reste-note">Aucune échéance en attente — paiement enregistré sans imputation.</p>
+            <p v-else class="sp-reste-note">{{ t('sup.paiements.noEcheance') }}</p>
           </div>
 
           <div class="sp-grid2">
             <div class="sp-fld">
-              <label class="sp-fld-lab">Montant (FCFA)</label>
+              <label class="sp-fld-lab">{{ t('sup.paiements.fMontant') }}</label>
               <input type="number" min="0" step="1000" class="sp-input" v-model="form.montant" placeholder="0" />
             </div>
             <div class="sp-fld">
-              <label class="sp-fld-lab">Méthode</label>
+              <label class="sp-fld-lab">{{ t('sup.paiements.fMethode') }}</label>
               <select class="sp-select sp-select-full" v-model="form.methode">
                 <option v-for="m in methodes" :key="m.key" :value="m.key">{{ m.label }}</option>
               </select>
             </div>
             <div class="sp-fld">
-              <label class="sp-fld-lab">Date</label>
+              <label class="sp-fld-lab">{{ t('sup.paiements.fDate') }}</label>
               <input type="date" class="sp-input" v-model="form.date" />
             </div>
             <div class="sp-fld">
-              <label class="sp-fld-lab">Référence (optionnel)</label>
-              <input type="text" class="sp-input" v-model="form.reference" placeholder="Auto si vide" />
+              <label class="sp-fld-lab">{{ t('sup.paiements.fReference') }}</label>
+              <input type="text" class="sp-input" v-model="form.reference" :placeholder="t('sup.paiements.refPlaceholder')" />
             </div>
           </div>
         </div>
 
         <div class="sp-modal-foot">
-          <button class="sp-btn-ghost" type="button" @click="closeModal">Annuler</button>
+          <button class="sp-btn-ghost" type="button" @click="closeModal">{{ t('sup.paiements.cancel') }}</button>
           <button class="sp-btn-primary" type="button" :disabled="!canSubmit" @click="submitPaiement">
-            Enregistrer le paiement
+            {{ t('sup.paiements.submitPaiement') }}
           </button>
         </div>
       </div>
@@ -274,9 +267,11 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFinanceStore, fmtMontant, fmtDate, METHODES_PAIEMENT, FIN_TODAY } from '../../stores/finance'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const superieurStore = useSuperieurStore()
 const methodes = METHODES_PAIEMENT
@@ -360,7 +355,7 @@ function submitPaiement() {
   })
   const montant = Number(form.value.montant)
   showModal.value = false
-  toast.value = `Paiement de ${fmtMontant(montant)} enregistré`
+  toast.value = t('sup.paiements.toastSaved', { montant: fmtMontant(montant) })
   setTimeout(() => { toast.value = '' }, 3200)
 }
 
