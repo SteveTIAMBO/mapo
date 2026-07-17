@@ -3,63 +3,63 @@
     <div class="spa-hero">
       <div class="spa-avatar">{{ initials }}</div>
       <div class="spa-hero-info">
-        <div class="spa-hello">Espace parent</div>
-        <div class="spa-sub">Vous suivez <strong>{{ enfant.nomComplet }}</strong> · {{ enfant.programmeNom }} · {{ enfant.anneeNom }}</div>
+        <div class="spa-hello">{{ t('sup.espaceParent.title') }}</div>
+        <div class="spa-sub">{{ t('sup.espaceParent.followingPre') }} <strong>{{ enfant.nomComplet }}</strong> · {{ enfant.programmeNom }} · {{ enfant.anneeNom }}</div>
       </div>
     </div>
 
     <div class="spa-kpis">
-      <div class="spa-kpi"><div class="spa-kpi-lab">Moyenne</div><div class="spa-kpi-val">{{ releve ? releve.moyenne.toFixed(2) : (enfant.moyenne != null ? enfant.moyenne.toFixed(2) : '—') }}<span>/20</span></div></div>
-      <div class="spa-kpi"><div class="spa-kpi-lab">Crédits acquis</div><div class="spa-kpi-val">{{ enfant.ectsValides }}<span> / {{ enfant.ectsRequis }}</span></div></div>
-      <div class="spa-kpi"><div class="spa-kpi-lab">Statut</div><div class="spa-kpi-val spa-statut" :class="enfant.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">{{ enfant.statut === 'en_difficulte' ? 'En difficulté' : 'Inscrit' }}</div></div>
-      <div class="spa-kpi"><div class="spa-kpi-lab">Reste à payer</div><div class="spa-kpi-val spa-reste">{{ formatFcfa(scolarite.reste) }}<span> FCFA</span></div></div>
+      <div class="spa-kpi"><div class="spa-kpi-lab">{{ t('sup.espaceParent.kpiMoyenne') }}</div><div class="spa-kpi-val">{{ releve ? releve.moyenne.toFixed(2) : (enfant.moyenne != null ? enfant.moyenne.toFixed(2) : '—') }}<span>/20</span></div></div>
+      <div class="spa-kpi"><div class="spa-kpi-lab">{{ t('sup.espaceParent.kpiCredits') }}</div><div class="spa-kpi-val">{{ enfant.ectsValides }}<span> / {{ enfant.ectsRequis }}</span></div></div>
+      <div class="spa-kpi"><div class="spa-kpi-lab">{{ t('sup.espaceParent.kpiStatut') }}</div><div class="spa-kpi-val spa-statut" :class="enfant.statut === 'en_difficulte' ? 'is-warn' : 'is-ok'">{{ enfant.statut === 'en_difficulte' ? t('sup.espaceParent.enDifficulte') : t('sup.espaceParent.inscrit') }}</div></div>
+      <div class="spa-kpi"><div class="spa-kpi-lab">{{ t('sup.espaceParent.kpiReste') }}</div><div class="spa-kpi-val spa-reste">{{ formatFcfa(scolarite.reste) }}<span> FCFA</span></div></div>
     </div>
 
     <div class="spa-grid">
       <!-- Scolarité & paiements -->
       <section class="spa-card">
-        <h2 class="spa-h2">Scolarité &amp; paiements</h2>
+        <h2 class="spa-h2">{{ t('sup.espaceParent.scolTitle') }}</h2>
         <div class="spa-scol-sum">
-          <div><span>Total scolarité</span><strong>{{ formatFcfa(scolarite.total) }} FCFA</strong></div>
-          <div><span>Déjà payé</span><strong class="is-ok">{{ formatFcfa(scolarite.paye) }} FCFA</strong></div>
-          <div><span>Reste</span><strong class="is-warn">{{ formatFcfa(scolarite.reste) }} FCFA</strong></div>
+          <div><span>{{ t('sup.espaceParent.totalScol') }}</span><strong>{{ formatFcfa(scolarite.total) }} FCFA</strong></div>
+          <div><span>{{ t('sup.espaceParent.dejaPaye') }}</span><strong class="is-ok">{{ formatFcfa(scolarite.paye) }} FCFA</strong></div>
+          <div><span>{{ t('sup.espaceParent.reste') }}</span><strong class="is-warn">{{ formatFcfa(scolarite.reste) }} FCFA</strong></div>
         </div>
         <table class="spa-table">
-          <thead><tr><th>Échéance</th><th>Date</th><th class="num">Montant</th><th>Statut</th></tr></thead>
+          <thead><tr><th>{{ t('sup.espaceParent.thEcheance') }}</th><th>{{ t('sup.espaceParent.thDate') }}</th><th class="num">{{ t('sup.espaceParent.thMontant') }}</th><th>{{ t('sup.espaceParent.thStatut') }}</th></tr></thead>
           <tbody>
-            <tr v-for="(t, i) in echeances" :key="i">
-              <td>Tranche {{ i + 1 }}</td>
-              <td>{{ t.date }}</td>
-              <td class="num">{{ formatFcfa(t.montant) }} FCFA</td>
+            <tr v-for="(ech, i) in echeances" :key="i">
+              <td>{{ t('sup.espaceParent.tranche', { n: i + 1 }) }}</td>
+              <td>{{ ech.date }}</td>
+              <td class="num">{{ formatFcfa(ech.montant) }} FCFA</td>
               <td>
-                <span v-if="t.paye" class="spa-pay-st is-ok">Payée</span>
-                <button v-else class="spa-pay-btn" type="button" @click="payer(i)">Payer</button>
+                <span v-if="ech.paye" class="spa-pay-st is-ok">{{ t('sup.espaceParent.payee') }}</span>
+                <button v-else class="spa-pay-btn" type="button" @click="payer(i)">{{ t('sup.espaceParent.payer') }}</button>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="spa-pay-hint">Paiement sécurisé par MTN MoMo / Orange Money.</p>
+        <p class="spa-pay-hint">{{ t('sup.espaceParent.payHint') }}</p>
       </section>
 
       <div class="spa-side">
         <!-- Suivi pédagogique -->
         <section class="spa-card">
-          <h2 class="spa-h2">Suivi pédagogique</h2>
+          <h2 class="spa-h2">{{ t('sup.espaceParent.suiviTitle') }}</h2>
           <div v-if="releve && releve.lignes.length">
             <div v-for="l in releve.lignes.slice(0, 5)" :key="l.ueId" class="spa-note">
               <div class="spa-note-int">{{ l.ueIntitule }}</div>
               <div class="spa-note-val" :class="l.note != null && l.note < 10 ? 'is-bad' : ''">{{ l.note != null ? l.note.toFixed(1) : '—' }}</div>
             </div>
           </div>
-          <p v-else class="spa-empty">Relevé bientôt disponible.</p>
+          <p v-else class="spa-empty">{{ t('sup.espaceParent.releveSoon') }}</p>
         </section>
 
         <!-- MIAPO+ pour la famille (promo vers l'app B2C MIAPO+ — hors contrôle école) -->
         <section class="spa-card spa-miapo">
           <div class="spa-miapo-badge">MIAPO+</div>
-          <h2 class="spa-h2 spa-miapo-h2">Aidez {{ enfant.prenom }} à progresser</h2>
-          <p class="spa-miapo-txt">MIAPO+, le tuteur intelligent : révisions, quiz et suivi de progression à la maison, 24h/24. Offert 1 mois aux familles de l'établissement.</p>
-          <a class="spa-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">Découvrir MIAPO+</a>
+          <h2 class="spa-h2 spa-miapo-h2">{{ t('sup.espaceParent.miapoTitle', { name: enfant.prenom }) }}</h2>
+          <p class="spa-miapo-txt">{{ t('sup.espaceParent.miapoTxt') }}</p>
+          <a class="spa-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceParent.miapoCta') }}</a>
         </section>
       </div>
     </div>
@@ -68,38 +68,38 @@
     <div v-if="showPay" class="spa-ov" @click.self="!payProcessing && closePay()">
       <div class="spa-modal">
         <div class="spa-modal-head">
-          <h3>Paiement mobile money</h3>
+          <h3>{{ t('sup.espaceParent.payModalTitle') }}</h3>
           <button v-if="!payProcessing" class="spa-x" type="button" @click="closePay">✕</button>
         </div>
 
         <div v-if="paySuccess" class="spa-pay-done">
           <div class="spa-check">✓</div>
-          <p class="spa-done-t">Paiement confirmé</p>
-          <small>{{ formatFcfa(payAmount) }} FCFA · réf {{ payTx }}</small>
-          <button class="spa-pay-btn spa-wide" type="button" @click="closePay">Fermer</button>
+          <p class="spa-done-t">{{ t('sup.espaceParent.payConfirmed') }}</p>
+          <small>{{ t('sup.espaceParent.payRef', { amount: formatFcfa(payAmount), tx: payTx }) }}</small>
+          <button class="spa-pay-btn spa-wide" type="button" @click="closePay">{{ t('sup.espaceParent.close') }}</button>
         </div>
 
         <template v-else-if="!payProcessing">
-          <div class="spa-pay-amount"><span>Montant à payer</span><strong>{{ formatFcfa(payAmount) }} FCFA</strong></div>
+          <div class="spa-pay-amount"><span>{{ t('sup.espaceParent.amountToPay') }}</span><strong>{{ formatFcfa(payAmount) }} FCFA</strong></div>
           <div class="spa-op-grid">
             <button v-for="op in OPERATORS" :key="op.key" type="button" class="spa-op" :class="{ on: payOperator === op.key }" @click="payOperator = op.key">
               <span class="spa-op-dot" :style="{ background: op.color }"></span>{{ op.label }}
             </button>
           </div>
-          <label class="spa-lab">Numéro mobile money</label>
-          <input v-model="payPhone" type="tel" class="spa-input" placeholder="Ex : 6XX XXX XXX" />
-          <small class="spa-hint">Démo (bac à sable) : 237674000009 valide le paiement, 237674000000 le refuse.</small>
+          <label class="spa-lab">{{ t('sup.espaceParent.momoNumber') }}</label>
+          <input v-model="payPhone" type="tel" class="spa-input" :placeholder="t('sup.espaceParent.momoPlaceholder')" />
+          <small class="spa-hint">{{ t('sup.espaceParent.sandboxHint') }}</small>
           <p v-if="payErr" class="spa-err">{{ payErr }}</p>
           <div class="spa-modal-actions">
-            <button class="spa-btn-ghost" type="button" @click="closePay">Annuler</button>
-            <button class="spa-pay-btn" type="button" @click="doPay">Payer {{ formatFcfa(payAmount) }} FCFA</button>
+            <button class="spa-btn-ghost" type="button" @click="closePay">{{ t('sup.espaceParent.cancel') }}</button>
+            <button class="spa-pay-btn" type="button" @click="doPay">{{ t('sup.espaceParent.payAmount', { amount: formatFcfa(payAmount) }) }}</button>
           </div>
         </template>
 
         <div v-else class="spa-pay-wait">
           <div class="spa-spin"></div>
-          <p class="spa-wait-t">Demande envoyée au {{ payPhone }}</p>
-          <small>Validez le paiement sur votre téléphone (code PIN mobile money)…</small>
+          <p class="spa-wait-t">{{ t('sup.espaceParent.requestSent', { phone: payPhone }) }}</p>
+          <small>{{ t('sup.espaceParent.validateOnPhone') }}</small>
           <p v-if="payErr" class="spa-err" style="margin-top:12px;">{{ payErr }}</p>
           <button class="spa-btn-ghost spa-wide" type="button" @click="closePay">Annuler</button>
         </div>
@@ -110,9 +110,11 @@
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useTranzakStore } from '../../stores/tranzak'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const tranzak = useTranzakStore()
 const enfant = computed(() =>
@@ -170,7 +172,7 @@ function payer(i) {
 async function doPay() {
   payErr.value = ''
   const phone = tranzak.normalizePhone(payPhone.value)
-  if (!phone) { payErr.value = 'Numéro mobile money invalide.'; return }
+  if (!phone) { payErr.value = t('sup.espaceParent.errInvalidNumber'); return }
   payProcessing.value = true
   const res = await tranzak.initPayment({
     amount: payAmount.value,
@@ -180,7 +182,7 @@ async function doPay() {
     metadata: enfant?.matricule || enfant?.id || '',
     customerName: enfant?.nomComplet || 'Parent',
   })
-  if (!res.ok) { payErr.value = res.error || 'Impossible de démarrer le paiement.'; payProcessing.value = false; return }
+  if (!res.ok) { payErr.value = res.error || t('sup.espaceParent.errCantStart'); payProcessing.value = false; return }
   payTx.value = res.transaction_id
   startPayPoll()
 }
@@ -194,7 +196,7 @@ function startPayPoll() {
 function stopPayPoll() { if (payTimer) { clearInterval(payTimer); payTimer = null } }
 async function runPayCheck() {
   if (!payTx.value) return
-  if (Date.now() > payDeadline) { stopPayPoll(); payErr.value = 'Toujours en attente de votre validation. Réessayez.'; payProcessing.value = false; return }
+  if (Date.now() > payDeadline) { stopPayPoll(); payErr.value = t('sup.espaceParent.errStillWaiting'); payProcessing.value = false; return }
   const r = await tranzak.checkPayment(payTx.value)
   if (r.status === 'ACCEPTED') {
     stopPayPoll()
@@ -202,7 +204,7 @@ async function runPayCheck() {
     payProcessing.value = false
     paySuccess.value = true
   } else if (r.status === 'REFUSED') {
-    stopPayPoll(); payErr.value = 'Paiement refusé ou annulé. Vous pouvez réessayer.'; payProcessing.value = false
+    stopPayPoll(); payErr.value = t('sup.espaceParent.errRefused'); payProcessing.value = false
   }
 }
 function closePay() { stopPayPoll(); showPay.value = false; payProcessing.value = false }
