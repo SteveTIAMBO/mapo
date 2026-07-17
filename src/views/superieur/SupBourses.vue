@@ -2,14 +2,11 @@
   <div class="sb">
     <div class="sb-intro">
       <div>
-        <h1 class="sb-h1">Bourses</h1>
-        <p class="sb-sub">
-          Dispositifs de bourse — mérite, sociaux, internes EDUFREM. Chaque bourse réduit
-          le coût total de la scolarité en pourcentage ou montant forfaitaire.
-        </p>
+        <h1 class="sb-h1">{{ t('sup.bourses.title') }}</h1>
+        <p class="sb-sub">{{ t('sup.bourses.subtitle') }}</p>
       </div>
       <button class="sb-btn-primary" type="button" @click="openAdd">
-        + Ajouter un dispositif
+        {{ t('sup.bourses.addDispositif') }}
       </button>
     </div>
 
@@ -17,35 +14,35 @@
     <div class="sb-kpis">
       <div class="sb-kpi">
         <div class="sb-kpi-num">{{ store.bourses.length }}</div>
-        <div class="sb-kpi-lab">Dispositifs actifs</div>
+        <div class="sb-kpi-lab">{{ t('sup.bourses.kpiActive') }}</div>
       </div>
       <div class="sb-kpi">
         <div class="sb-kpi-num">{{ store.stats.nbBoursiers }}</div>
-        <div class="sb-kpi-lab">Étudiants boursiers</div>
+        <div class="sb-kpi-lab">{{ t('sup.bourses.kpiBoursiers') }}</div>
       </div>
       <div class="sb-kpi">
         <div class="sb-kpi-num">{{ fmtMontant(store.stats.totalBourses) }}</div>
-        <div class="sb-kpi-lab">Effort total annuel</div>
+        <div class="sb-kpi-lab">{{ t('sup.bourses.kpiEffort') }}</div>
       </div>
       <div class="sb-kpi">
         <div class="sb-kpi-num">{{ tauxBoursiers }}%</div>
-        <div class="sb-kpi-lab">de l'effectif</div>
+        <div class="sb-kpi-lab">{{ t('sup.bourses.kpiRate') }}</div>
       </div>
     </div>
 
     <!-- Tableau bourses -->
     <section class="sb-card">
-      <h2 class="sb-h2">Catalogue des dispositifs</h2>
+      <h2 class="sb-h2">{{ t('sup.bourses.catalogue') }}</h2>
       <div class="sb-table-wrap">
         <table class="sb-table">
           <thead>
             <tr>
-              <th>Libellé</th>
-              <th>Type</th>
-              <th class="num">Réduction</th>
-              <th>Conditions</th>
-              <th class="num">Bénéficiaires</th>
-              <th>Actions</th>
+              <th>{{ t('sup.bourses.thLibelle') }}</th>
+              <th>{{ t('sup.bourses.thType') }}</th>
+              <th class="num">{{ t('sup.bourses.thReduction') }}</th>
+              <th>{{ t('sup.bourses.thConditions') }}</th>
+              <th class="num">{{ t('sup.bourses.thBeneficiaires') }}</th>
+              <th>{{ t('sup.bourses.thActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -60,10 +57,10 @@
               <td class="conditions">{{ b.conditions || '—' }}</td>
               <td class="num">{{ nbBeneficiaires(b.id) }}</td>
               <td class="actions">
-                <button class="sb-btn-icon" type="button" @click="openEdit(b)" title="Modifier">
+                <button class="sb-btn-icon" type="button" @click="openEdit(b)" :title="t('sup.bourses.edit')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
-                <button class="sb-btn-icon sb-btn-del" type="button" @click="supprimer(b)" title="Supprimer">
+                <button class="sb-btn-icon sb-btn-del" type="button" @click="supprimer(b)" :title="t('sup.bourses.delete')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
               </td>
@@ -77,12 +74,12 @@
         <li v-for="b in store.bourses" :key="b.id" class="sb-mrow" @click="openEdit(b)">
           <div class="sb-mrow-main">
             <div class="sb-mrow-name">{{ b.libelle }}</div>
-            <div class="sb-mrow-sub">{{ b.mode === 'pourcentage' ? `${b.valeur} %` : fmtMontant(b.valeur) }} · {{ nbBeneficiaires(b.id) }} bénéf.</div>
+            <div class="sb-mrow-sub">{{ b.mode === 'pourcentage' ? `${b.valeur} %` : fmtMontant(b.valeur) }} · {{ nbBeneficiaires(b.id) }} {{ t('sup.bourses.mBenef') }}</div>
             <div class="sb-mrow-meta"><span class="sb-type" :class="`tp-${b.type}`">{{ typeLabel(b.type) }}</span></div>
           </div>
           <svg class="sb-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
-        <li v-if="store.bourses.length === 0" class="sb-mempty">Aucune bourse.</li>
+        <li v-if="store.bourses.length === 0" class="sb-mempty">{{ t('sup.bourses.mEmpty') }}</li>
       </ul>
     </section>
 
@@ -90,44 +87,44 @@
     <div v-if="modal" class="sb-modal" @click.self="closeModal">
       <div class="sb-modal-content">
         <header class="sb-modal-head">
-          <h3>{{ modal.id ? 'Modifier le dispositif' : 'Nouveau dispositif' }}</h3>
+          <h3>{{ modal.id ? t('sup.bourses.editTitle') : t('sup.bourses.newTitle') }}</h3>
           <button class="sb-modal-close" type="button" @click="closeModal">×</button>
         </header>
         <div class="sb-modal-body">
           <div class="sb-form">
             <label>
-              <span>Libellé</span>
-              <input type="text" v-model="form.libelle" placeholder="ex. Bourse au mérite Master" />
+              <span>{{ t('sup.bourses.fLibelle') }}</span>
+              <input type="text" v-model="form.libelle" :placeholder="t('sup.bourses.libellePlaceholder')" />
             </label>
             <label>
-              <span>Type</span>
+              <span>{{ t('sup.bourses.fType') }}</span>
               <select v-model="form.type">
-                <option v-for="(t, k) in typesBourse" :key="k" :value="k">{{ t.label }}</option>
+                <option v-for="(tb, k) in typesBourse" :key="k" :value="k">{{ tb.label }}</option>
               </select>
             </label>
             <div class="sb-form-row">
               <label>
-                <span>Mode de réduction</span>
+                <span>{{ t('sup.bourses.fMode') }}</span>
                 <select v-model="form.mode">
-                  <option value="pourcentage">Pourcentage</option>
-                  <option value="montant">Montant fixe</option>
+                  <option value="pourcentage">{{ t('sup.bourses.modePct') }}</option>
+                  <option value="montant">{{ t('sup.bourses.modeFixed') }}</option>
                 </select>
               </label>
               <label>
-                <span>Valeur {{ form.mode === 'pourcentage' ? '(%)' : '(FCFA)' }}</span>
+                <span>{{ t('sup.bourses.fValue', { unit: form.mode === 'pourcentage' ? '(%)' : '(FCFA)' }) }}</span>
                 <input type="number" min="0" step="1" v-model.number="form.valeur" />
               </label>
             </div>
             <label>
-              <span>Conditions d'attribution</span>
-              <textarea v-model="form.conditions" rows="3" placeholder="ex. Moyenne ≥ 14/20"></textarea>
+              <span>{{ t('sup.bourses.fConditions') }}</span>
+              <textarea v-model="form.conditions" rows="3" :placeholder="t('sup.bourses.conditionsPlaceholder')"></textarea>
             </label>
           </div>
         </div>
         <footer class="sb-modal-foot">
-          <button class="sb-btn-secondary" type="button" @click="closeModal">Annuler</button>
+          <button class="sb-btn-secondary" type="button" @click="closeModal">{{ t('sup.bourses.cancel') }}</button>
           <button class="sb-btn-primary" type="button" @click="enregistrer" :disabled="!form.libelle">
-            Enregistrer
+            {{ t('sup.bourses.save') }}
           </button>
         </footer>
       </div>
@@ -137,8 +134,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFinanceStore, fmtMontant, TYPES_BOURSE } from '../../stores/finance'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const typesBourse = TYPES_BOURSE
 
@@ -164,7 +163,7 @@ function enregistrer() {
   closeModal()
 }
 function supprimer(b) {
-  if (!confirm(`Supprimer le dispositif « ${b.libelle} » ? Les étudiants déjà bénéficiaires gardent leur réduction.`)) return
+  if (!confirm(t('sup.bourses.confirmDelete', { name: b.libelle }))) return
   store.deleteBourse(b.id)
 }
 function typeLabel(t) { return TYPES_BOURSE[t]?.label || t }
