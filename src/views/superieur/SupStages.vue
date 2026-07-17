@@ -2,86 +2,86 @@
   <div class="sg">
     <div class="sg-intro">
       <div>
-        <h1 class="sg-h1">Stages &amp; alternance</h1>
+        <h1 class="sg-h1">{{ t('sup.stages.title') }}</h1>
         <p class="sg-sub">
-          Conventions, suivi par étudiant, périodes, tuteurs et soutenances.
+          {{ t('sup.stages.subtitle') }}
         </p>
       </div>
       <button class="sg-btn-primary" type="button" @click="openCreate">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-        Nouvelle convention
+        {{ t('sup.stages.newConvention') }}
       </button>
     </div>
 
     <!-- KPIs -->
     <div class="sg-kpis">
       <div class="sg-kpi">
-        <div class="sg-kpi-label">Conventions</div>
+        <div class="sg-kpi-label">{{ t('sup.stages.kpiConventions') }}</div>
         <div class="sg-kpi-value">{{ s.total }}</div>
-        <div class="sg-kpi-foot">{{ s.alternances }} en alternance</div>
+        <div class="sg-kpi-foot">{{ t('sup.stages.kpiAlternances', { count: s.alternances }) }}</div>
       </div>
       <div class="sg-kpi">
-        <div class="sg-kpi-label">En cours</div>
+        <div class="sg-kpi-label">{{ t('sup.stages.kpiEnCours') }}</div>
         <div class="sg-kpi-value">{{ s.enCours }}</div>
-        <div class="sg-kpi-foot">stages actifs</div>
+        <div class="sg-kpi-foot">{{ t('sup.stages.kpiEnCoursFoot') }}</div>
       </div>
       <div class="sg-kpi">
-        <div class="sg-kpi-label">À pourvoir</div>
+        <div class="sg-kpi-label">{{ t('sup.stages.kpiAPourvoir') }}</div>
         <div class="sg-kpi-value">{{ s.aPourvoir }}</div>
         <div class="sg-kpi-foot" :class="s.aPourvoir > 0 ? 'is-warn' : 'is-ok'">
-          {{ s.aPourvoir > 0 ? 'À placer rapidement' : 'Tous placés' }}
+          {{ s.aPourvoir > 0 ? t('sup.stages.kpiAPourvoirWarn') : t('sup.stages.kpiAPourvoirOk') }}
         </div>
       </div>
       <div class="sg-kpi">
-        <div class="sg-kpi-label">Soutenances à venir</div>
+        <div class="sg-kpi-label">{{ t('sup.stages.kpiSoutenances') }}</div>
         <div class="sg-kpi-value">{{ s.soutenance }}</div>
-        <div class="sg-kpi-foot">{{ s.valides }} déjà validées</div>
+        <div class="sg-kpi-foot">{{ t('sup.stages.kpiValidees', { count: s.valides }) }}</div>
       </div>
     </div>
 
     <!-- Filtres -->
     <div class="sg-filters">
       <div class="sg-filter">
-        <span class="sg-filter-label">Statut</span>
+        <span class="sg-filter-label">{{ t('sup.stages.fStatut') }}</span>
         <select :value="store.stagesFilters.statut" @change="store.setStageFilter('statut', $event.target.value)">
-          <option value="">Tous</option>
-          <option value="en_cours">En cours</option>
-          <option value="a_pourvoir">À pourvoir</option>
-          <option value="soutenance_prevue">Soutenance prévue</option>
-          <option value="valide">Validé</option>
+          <option value="">{{ t('sup.stages.statutTous') }}</option>
+          <option value="en_cours">{{ t('sup.stages.statutEnCours') }}</option>
+          <option value="a_pourvoir">{{ t('sup.stages.statutAPourvoir') }}</option>
+          <option value="soutenance_prevue">{{ t('sup.stages.statutSoutenancePrevue') }}</option>
+          <option value="valide">{{ t('sup.stages.statutValide') }}</option>
         </select>
       </div>
       <div class="sg-filter">
-        <span class="sg-filter-label">Type</span>
+        <span class="sg-filter-label">{{ t('sup.stages.fType') }}</span>
         <select :value="store.stagesFilters.type" @change="store.setStageFilter('type', $event.target.value)">
-          <option value="">Stage et alternance</option>
-          <option value="stage">Stage</option>
-          <option value="alternance">Alternance</option>
+          <option value="">{{ t('sup.stages.typeAll') }}</option>
+          <option value="stage">{{ t('sup.stages.typeStage') }}</option>
+          <option value="alternance">{{ t('sup.stages.typeAlternance') }}</option>
         </select>
       </div>
       <div class="sg-filter">
-        <span class="sg-filter-label">Promotion</span>
+        <span class="sg-filter-label">{{ t('sup.stages.fPromotion') }}</span>
         <select :value="store.stagesFilters.promotionId" @change="store.setStageFilter('promotionId', $event.target.value)">
-          <option value="">Toutes les promotions</option>
+          <option value="">{{ t('sup.stages.allPromotions') }}</option>
           <option v-for="p in store.promotions" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
         </select>
       </div>
       <div class="sg-filter sg-filter-search">
-        <span class="sg-filter-label">Recherche</span>
+        <span class="sg-filter-label">{{ t('sup.stages.fSearch') }}</span>
         <input
           type="text"
           :value="store.stagesFilters.search"
           @input="store.setStageFilter('search', $event.target.value)"
-          placeholder="Étudiant, entreprise, ville…"
+          :placeholder="t('sup.stages.searchPlaceholder')"
         />
       </div>
       <button v-if="hasFilters" class="sg-reset" type="button" @click="store.resetStageFilters()">
-        Réinitialiser
+        {{ t('sup.stages.reset') }}
       </button>
       <span class="sg-count">
-        {{ store.filteredStages.length }} convention{{ store.filteredStages.length > 1 ? 's' : '' }}
+        {{ store.filteredStages.length }} {{ store.filteredStages.length > 1 ? t('sup.stages.conventions') : t('sup.stages.convention') }}
       </span>
     </div>
 
@@ -90,13 +90,13 @@
       <table class="sg-table">
         <thead>
           <tr>
-            <th>Étudiant</th>
-            <th>Promotion</th>
-            <th>Type</th>
-            <th>Entreprise</th>
-            <th>Période</th>
-            <th>Tuteurs</th>
-            <th>Statut</th>
+            <th>{{ t('sup.stages.thStudent') }}</th>
+            <th>{{ t('sup.stages.thPromotion') }}</th>
+            <th>{{ t('sup.stages.thType') }}</th>
+            <th>{{ t('sup.stages.thCompany') }}</th>
+            <th>{{ t('sup.stages.thPeriod') }}</th>
+            <th>{{ t('sup.stages.thTutors') }}</th>
+            <th>{{ t('sup.stages.thStatut') }}</th>
             <th class="sg-actions-head"></th>
           </tr>
         </thead>
@@ -109,7 +109,7 @@
             <td>{{ st.anneeNom }}</td>
             <td>
               <span class="sg-pill" :class="`tp-${st.type}`">
-                {{ st.type === 'alternance' ? 'Alternance' : 'Stage' }}
+                {{ st.type === 'alternance' ? t('sup.stages.typeAlternance') : t('sup.stages.typeStage') }}
               </span>
             </td>
             <td>
@@ -120,14 +120,14 @@
               <div class="sg-period">
                 {{ formatDate(st.dateDebut) }} → {{ formatDate(st.dateFin) }}
               </div>
-              <div class="sg-duree">{{ st.dureeSemaines }} semaines</div>
+              <div class="sg-duree">{{ t('sup.stages.weeks', { count: st.dureeSemaines }) }}</div>
             </td>
             <td>
               <div class="sg-tut">
-                <span class="sg-tut-label">Entr.</span> {{ st.tuteurEntreprise }}
+                <span class="sg-tut-label">{{ t('sup.stages.tutCompany') }}</span> {{ st.tuteurEntreprise }}
               </div>
               <div class="sg-tut">
-                <span class="sg-tut-label">École</span> {{ st.tuteurEcole }}
+                <span class="sg-tut-label">{{ t('sup.stages.tutSchool') }}</span> {{ st.tuteurEcole }}
               </div>
             </td>
             <td>
@@ -137,16 +137,16 @@
               </div>
             </td>
             <td class="sg-actions">
-              <button type="button" class="sg-icon-btn" title="Modifier" @click="openEdit(st)">
+              <button type="button" class="sg-icon-btn" :title="t('sup.stages.edit')" @click="openEdit(st)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
               </button>
-              <button type="button" class="sg-icon-btn is-danger" title="Supprimer" @click="askDelete(st)">
+              <button type="button" class="sg-icon-btn is-danger" :title="t('sup.stages.delete')" @click="askDelete(st)">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
               </button>
             </td>
           </tr>
           <tr v-if="store.filteredStages.length === 0">
-            <td colspan="8" class="sg-empty">Aucune convention ne correspond aux filtres.</td>
+            <td colspan="8" class="sg-empty">{{ t('sup.stages.empty') }}</td>
           </tr>
         </tbody>
       </table>
@@ -159,13 +159,13 @@
           <div class="sg-mrow-name">{{ st.etudiantNom }}</div>
           <div class="sg-mrow-sub">{{ st.entreprise }} · {{ st.ville }}</div>
           <div class="sg-mrow-meta">
-            <span class="sg-pill" :class="`tp-${st.type}`">{{ st.type === 'alternance' ? 'Alternance' : 'Stage' }}</span>
+            <span class="sg-pill" :class="`tp-${st.type}`">{{ st.type === 'alternance' ? t('sup.stages.typeAlternance') : t('sup.stages.typeStage') }}</span>
             <span class="sg-statut" :class="`st-${st.statut}`">{{ statutLabel(st.statut) }}</span>
           </div>
         </div>
         <svg class="sg-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
       </li>
-      <li v-if="store.filteredStages.length === 0" class="sg-mempty">Aucune convention ne correspond aux filtres.</li>
+      <li v-if="store.filteredStages.length === 0" class="sg-mempty">{{ t('sup.stages.empty') }}</li>
     </ul>
 
     <!-- Modale création / édition -->
@@ -173,16 +173,16 @@
       <div v-if="modalOpen" class="sg-modal-overlay" @click.self="closeModal">
         <div class="sg-modal">
           <div class="sg-modal-head">
-            <h2 class="sg-modal-title">{{ editing ? 'Modifier la convention' : 'Nouvelle convention' }}</h2>
+            <h2 class="sg-modal-title">{{ editing ? t('sup.stages.editTitle') : t('sup.stages.newConvention') }}</h2>
             <button class="sg-modal-close" type="button" @click="closeModal">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <form class="sg-form" @submit.prevent="submit">
             <div class="sg-field">
-              <label class="sg-form-label">Étudiant</label>
+              <label class="sg-form-label">{{ t('sup.stages.thStudent') }}</label>
               <select v-model="form.etudiantId" class="sg-input" required>
-                <option value="">— Choisir un étudiant —</option>
+                <option value="">{{ t('sup.stages.chooseStudent') }}</option>
                 <option v-for="e in etudiantsTries" :key="e.id" :value="e.id">
                   {{ e.matricule }} · {{ e.nomComplet }} ({{ e.anneeNom }})
                 </option>
@@ -190,65 +190,65 @@
             </div>
             <div class="sg-form-row">
               <div class="sg-field">
-                <label class="sg-form-label">Type</label>
+                <label class="sg-form-label">{{ t('sup.stages.fType') }}</label>
                 <select v-model="form.type" class="sg-input">
-                  <option value="stage">Stage</option>
-                  <option value="alternance">Alternance</option>
+                  <option value="stage">{{ t('sup.stages.typeStage') }}</option>
+                  <option value="alternance">{{ t('sup.stages.typeAlternance') }}</option>
                 </select>
               </div>
               <div class="sg-field">
-                <label class="sg-form-label">Statut</label>
+                <label class="sg-form-label">{{ t('sup.stages.fStatut') }}</label>
                 <select v-model="form.statut" class="sg-input">
-                  <option value="a_pourvoir">À pourvoir</option>
-                  <option value="en_cours">En cours</option>
-                  <option value="soutenance_prevue">Soutenance prévue</option>
-                  <option value="valide">Validé</option>
+                  <option value="a_pourvoir">{{ t('sup.stages.statutAPourvoir') }}</option>
+                  <option value="en_cours">{{ t('sup.stages.statutEnCours') }}</option>
+                  <option value="soutenance_prevue">{{ t('sup.stages.statutSoutenancePrevue') }}</option>
+                  <option value="valide">{{ t('sup.stages.statutValide') }}</option>
                 </select>
               </div>
             </div>
             <div class="sg-form-row">
               <div class="sg-field">
-                <label class="sg-form-label">Entreprise</label>
+                <label class="sg-form-label">{{ t('sup.stages.thCompany') }}</label>
                 <input v-model="form.entreprise" type="text" class="sg-input" required />
               </div>
               <div class="sg-field">
-                <label class="sg-form-label">Ville</label>
+                <label class="sg-form-label">{{ t('sup.stages.fCity') }}</label>
                 <input v-model="form.ville" type="text" class="sg-input" />
               </div>
             </div>
             <div class="sg-form-row">
               <div class="sg-field">
-                <label class="sg-form-label">Date début</label>
+                <label class="sg-form-label">{{ t('sup.stages.fDateStart') }}</label>
                 <input v-model="form.dateDebut" type="date" class="sg-input" />
               </div>
               <div class="sg-field">
-                <label class="sg-form-label">Date fin</label>
+                <label class="sg-form-label">{{ t('sup.stages.fDateEnd') }}</label>
                 <input v-model="form.dateFin" type="date" class="sg-input" />
               </div>
               <div class="sg-field">
-                <label class="sg-form-label">Semaines</label>
+                <label class="sg-form-label">{{ t('sup.stages.fWeeks') }}</label>
                 <input v-model.number="form.dureeSemaines" type="number" min="1" max="60" class="sg-input" />
               </div>
             </div>
             <div class="sg-form-row">
               <div class="sg-field">
-                <label class="sg-form-label">Tuteur entreprise</label>
+                <label class="sg-form-label">{{ t('sup.stages.fTutorCompany') }}</label>
                 <input v-model="form.tuteurEntreprise" type="text" class="sg-input" />
               </div>
               <div class="sg-field">
-                <label class="sg-form-label">Tuteur école</label>
+                <label class="sg-form-label">{{ t('sup.stages.fTutorSchool') }}</label>
                 <input v-model="form.tuteurEcole" type="text" class="sg-input" />
               </div>
             </div>
             <div v-if="form.statut === 'valide'" class="sg-field">
-              <label class="sg-form-label">Note de soutenance /20</label>
+              <label class="sg-form-label">{{ t('sup.stages.fNote') }}</label>
               <input v-model.number="form.noteSoutenance" type="number" min="0" max="20" step="0.25" class="sg-input" />
             </div>
             <p v-if="formError" class="sg-form-error">{{ formError }}</p>
             <div class="sg-modal-actions">
-              <button type="button" class="sg-btn-ghost" @click="closeModal">Annuler</button>
+              <button type="button" class="sg-btn-ghost" @click="closeModal">{{ t('sup.stages.cancel') }}</button>
               <button type="submit" class="sg-btn-primary">
-                {{ editing ? 'Enregistrer' : 'Créer la convention' }}
+                {{ editing ? t('sup.stages.save') : t('sup.stages.create') }}
               </button>
             </div>
           </form>
@@ -260,8 +260,10 @@
 
 <script setup>
 import { computed, ref, reactive } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const s = computed(() => store.stagesStats)
 
@@ -303,8 +305,8 @@ function openEdit(st) {
 }
 function closeModal() { modalOpen.value = false; editing.value = null }
 function submit() {
-  if (!form.etudiantId) { formError.value = "L'étudiant est obligatoire."; return }
-  if (!form.entreprise.trim()) { formError.value = "L'entreprise est obligatoire."; return }
+  if (!form.etudiantId) { formError.value = t('sup.stages.errStudent'); return }
+  if (!form.entreprise.trim()) { formError.value = t('sup.stages.errCompany'); return }
   const payload = { ...form }
   if (payload.statut !== 'valide') payload.noteSoutenance = null
   if (editing.value) store.updateStage(editing.value.id, payload)
@@ -312,7 +314,7 @@ function submit() {
   closeModal()
 }
 function askDelete(st) {
-  if (window.confirm(`Supprimer la convention de ${st.etudiantNom} chez ${st.entreprise} ?`)) {
+  if (window.confirm(t('sup.stages.confirmDelete', { name: st.etudiantNom, company: st.entreprise }))) {
     store.deleteStage(st.id)
   }
 }
@@ -322,18 +324,17 @@ const hasFilters = computed(() => {
   return !!(f.statut || f.type || f.promotionId || f.search)
 })
 
-const STATUT_LABELS = {
-  en_cours: 'En cours',
-  a_pourvoir: 'À pourvoir',
-  soutenance_prevue: 'Soutenance prévue',
-  valide: 'Validé',
-}
-const statutLabel = (s) => STATUT_LABELS[s] || s
+const statutLabel = (code) => ({
+  en_cours: t('sup.stages.statutEnCours'),
+  a_pourvoir: t('sup.stages.statutAPourvoir'),
+  soutenance_prevue: t('sup.stages.statutSoutenancePrevue'),
+  valide: t('sup.stages.statutValide'),
+}[code] || code)
 
 function formatDate(iso) {
   if (!iso) return ''
   const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 
