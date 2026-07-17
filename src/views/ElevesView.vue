@@ -174,6 +174,25 @@
           </table>
         </div>
 
+        <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+        <ul class="el-mlist">
+          <li v-for="eleve in paginatedEleves" :key="eleve.id" class="el-mrow" @click="openDetail(eleve)">
+            <span class="student-avatar" :style="{ background: eleve.gender === 'F' ? 'var(--gold)' : 'var(--pr)' }">{{ getInitials(eleve) }}</span>
+            <div class="el-mrow-main">
+              <div class="el-mrow-name">{{ eleve.lastName }} {{ eleve.firstName }}</div>
+              <div class="el-mrow-sub">{{ eleve.className }} · {{ eleve.gender === 'M' ? 'M' : 'F' }} · {{ eleve.matricule }}</div>
+              <div class="el-mrow-meta">
+                <span class="badge" :class="getStatusBadge(eleve.status)">{{ getStatusLabel(eleve.status) }}</span>
+                <span v-if="eleve.handicap" class="tag-mini tag-handicap" :title="t('eleves.disability')">H</span>
+                <span v-if="eleve.redoublant" class="tag-mini tag-redoublant" :title="t('eleves.profileRepeater')">R</span>
+                <span v-if="eleve.boursier" class="tag-mini tag-boursier" :title="t('eleves.profileScholarship')">B</span>
+                <span v-if="eleve.vulnerabilities && eleve.vulnerabilities.length > 0" class="tag-mini tag-vulnerable" :title="t('eleves.profileVulnerable')">V</span>
+              </div>
+            </div>
+            <svg class="el-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </li>
+        </ul>
+
         <!-- Pagination bas -->
         <PaginationBar
           :currentPage="currentPage"
@@ -740,6 +759,21 @@ watch(() => route.query, applyMiapoQuery)
 }
 
 .table-wrap { overflow-x: auto; }
+
+/* ── Liste mobile (remplace le tableau sur petit écran, <=560px) ── */
+.el-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.el-mrow { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid var(--border, #ECECE8); cursor: pointer; }
+.el-mrow:last-child { border-bottom: none; }
+.el-mrow:active { background: rgba(var(--pr-rgb, 21, 88, 176), .07); }
+.el-mrow-main { flex: 1; min-width: 0; }
+.el-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.el-mrow-sub { font-size: 12.5px; color: var(--muted, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.el-mrow-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.el-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .table-wrap { display: none; }
+  .el-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+}
 .table { width: 100%; border-collapse: collapse; }
 .table th {
   padding: 12px 16px;
