@@ -29,13 +29,13 @@
         <button
           class="ma-tab" :class="{ active: tab === 'miapo' }"
           role="tab" type="button" @click="tab = 'miapo'"
-        >MIAPO+</button>
+        >MAPO+</button>
       </div>
 
       <!-- Vue Paiements scolarité -->
       <MegaPaiementsScolarite v-if="tab === 'paiements'" />
 
-      <!-- Vue MIAPO+ (analytics d'adoption B2C) -->
+      <!-- Vue MAPO+ (analytics d'adoption B2C) -->
       <MegaMiapoAnalytics v-else-if="tab === 'miapo'" />
 
       <!-- Vue Établissements (existante) -->

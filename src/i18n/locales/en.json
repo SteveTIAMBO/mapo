@@ -16,12 +16,12 @@
     "eleveCta": "Enter the student space",
     "proName": "I'm training",
     "proTag": "Training & certifications",
-    "proText": "MBA, exams, certification… Add your program, even off-catalogue: MIAPO+ helps you revise with quizzes and a plan tailored to your syllabus.",
+    "proText": "MBA, exams, certification… Add your program, even off-catalogue: MAPO+ helps you revise with quizzes and a plan tailored to your syllabus.",
     "proCta": "Enter the training space",
-    "createAccount": "Create my MIAPO+ account",
+    "createAccount": "Create my MAPO+ account",
     "demoHint": "The spaces above are a shared demo. Create your account to save your progress and access it on all your devices.",
-    "haveAccount": "I already have a MIAPO+ account",
-    "footerCopy": "© 2026 MIAPO+ — Learning, supported"
+    "haveAccount": "I already have a MAPO+ account",
+    "footerCopy": "© 2026 MAPO+ — Learning, supported"
   },
   "login": {
     "tagline": "School Management by EDUFREM",
@@ -2635,11 +2635,11 @@
       "enAttente": "Pending",
       "releveSoon": "Transcript available soon.",
       "miapoTitle": "Your smart tutor",
-      "miapoTxt": "Revise your units with MIAPO+: adaptive quizzes, personalized revision paths and progress tracking, available 24/7.",
+      "miapoTxt": "Revise your units with MAPO+: adaptive quizzes, personalized revision paths and progress tracking, available 24/7.",
       "miapoLi1": "Targeted quizzes on your weak subjects",
       "miapoLi2": "Analysis of your exam papers",
       "miapoLi3": "Revision plan before finals",
-      "miapoCta": "Open MIAPO+"
+      "miapoCta": "Open MAPO+"
     },
     "roles": {
       "title": "Roles & access",
@@ -2711,8 +2711,8 @@
       "suiviTitle": "Academic tracking",
       "releveSoon": "Transcript available soon.",
       "miapoTitle": "Help {name} progress",
-      "miapoTxt": "MIAPO+, the smart tutor: revision, quizzes and progress tracking at home, 24/7. 1 month free for the school's families.",
-      "miapoCta": "Discover MIAPO+",
+      "miapoTxt": "MAPO+, the smart tutor: revision, quizzes and progress tracking at home, 24/7. 1 month free for the school's families.",
+      "miapoCta": "Discover MAPO+",
       "payModalTitle": "Mobile money payment",
       "payConfirmed": "Payment confirmed",
       "payRef": "{amount} FCFA · ref {tx}",
@@ -3871,7 +3871,7 @@
     "verifierDiplome": "Verify a diploma",
     "eleves": "Students",
     "taglineMapo": "MAPO — School Management by EDUFREM",
-    "taglineMiapo": "MIAPO+ — The smart tutor by EDUFREM"
+    "taglineMiapo": "MAPO+ — The smart tutor by EDUFREM"
   },
   "mess": {
     "title": "Messaging",
@@ -4548,7 +4548,7 @@
     "regenConflicts": " — {n} conflict(s)"
   },
   "mia": {
-    "brandSubLearner": "Your revision coach",
+    "brandSubLearner": "Your smart private tutor",
     "brandSubParent": "Tracking & lessons at home",
     "logout": "Log out",
     "addChild": "Add a child",
@@ -4561,7 +4561,7 @@
     "secProgress": "Progress",
     "secTimetable": "Timetable",
     "edtTitle": "My timetable",
-    "edtHint": "Enter or scan your timetable. MIAPO+ will suggest revising the day before each class.",
+    "edtHint": "Enter or scan your timetable. MAPO+ will suggest revising the day before each class.",
     "edtDay": "Day",
     "edtSubject": "Subject",
     "edtScan": "Scan the timetable",
@@ -4742,7 +4742,7 @@
     "progEmptyTail": "to see progress appear here.",
     "tutorWord": "Tutor",
     "notesOverview": "Grades overview",
-    "aboTitle": "MIAPO+ — the complete support",
+    "aboTitle": "MAPO+ — the complete support",
     "aboTextLearner": "Continuous tracking, private lessons at home, paper reading and guidance: MIAPO supports you like a private teacher.",
     "aboTextParent": "Continuous tracking, private lessons at home, paper reading and guidance: MIAPO supports {name} like a private teacher.",
     "aboFeat1": "Tailored, progressive revisions",
@@ -4853,6 +4853,6 @@
     "devoirs": "Homework",
     "paiements": "Payments",
     "revisions": "Revision",
-    "miapo": "MIAPO+"
+    "miapo": "MAPO+"
   }
 }

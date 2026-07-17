@@ -65,7 +65,7 @@ if (tenant.mode === 'school') {
   editionStore.setEdition('superieur')
 }
 
-// Branding MIAPO+ standalone : favicon, manifest et thème dédiés (sinon le PWA
+// Branding MAPO+ standalone : favicon, manifest et thème dédiés (sinon le PWA
 // hérite de l'identité MAPO « ERP gestion scolaire »).
 if (tenant.mode === 'miapo') {
   const set = (sel, attr, val) => { const el = document.querySelector(sel); if (el) el.setAttribute(attr, val) }
@@ -74,13 +74,13 @@ if (tenant.mode === 'miapo') {
   set('link[rel="apple-touch-icon"]', 'href', '/apple-touch-icon-miapo.png')
   set('link[rel="manifest"]', 'href', '/manifest-miapo.webmanifest')
   set('meta[name="theme-color"]', 'content', '#7c3aed')
-  set('meta[name="description"]', 'content', "MIAPO+ — le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
+  set('meta[name="description"]', 'content', "MAPO+ — le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
 }
 
 // Deep-link « ouvrir la démo » : ?edition=primaire|secondaire|superieur pré-charge
 // l'édition et ?lang=fr|en fixe la langue. Utilisé par les liens « ouvrir l'école »
 // du complexe et par les QR codes des plaquettes commerciales. L'édition n'est
-// appliquée que sur la vitrine (jamais sur une instance école/MIAPO+/admin où
+// appliquée que sur la vitrine (jamais sur une instance école/MAPO+/admin où
 // l'édition est imposée par le sous-domaine).
 try {
   const qp = new URLSearchParams(window.location.search)

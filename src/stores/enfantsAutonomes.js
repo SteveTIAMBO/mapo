@@ -76,7 +76,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   const owner = computed(() => authStore.userProfile?.email || authStore.userProfile?.phone || 'demo-parent')
 
-  // ── Mode d'usage de MIAPO+ (multi-personas, 1er pas) ──────────────────
+  // ── Mode d'usage de MAPO+ (multi-personas, 1er pas) ──────────────────
   // 'parent'    : un parent suit son/ses enfant(s) (cadre par défaut).
   // 'apprenant' : l'apprenant (élève/étudiant) pilote SON propre apprentissage.
   // Même moteur, même profil — seul le point de vue (langage, sujet) change.
@@ -122,7 +122,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
    */
   async function hydrate() {
     load() // local d'abord (affichage instantané, offline)
-    // Démo : amorcer un écolier cohérent pour que l'espace MIAPO+ ne soit pas vide.
+    // Démo : amorcer un écolier cohérent pour que l'espace MAPO+ ne soit pas vide.
     if (authStore.isDemo) seedDemoIfEmpty()
     const uid = cloudUid()
     if (!uid) return
@@ -297,7 +297,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     persist()
   }
 
-  // Amorçage démo : un écolier cohérent (notes + profil 6C) pour montrer MIAPO+
+  // Amorçage démo : un écolier cohérent (notes + profil 6C) pour montrer MAPO+
   // sans saisie préalable. Démo uniquement, et seulement si aucun enfant.
   function seedDemoIfEmpty() {
     if (enfants.value.length) return
@@ -310,7 +310,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   }
 
   // Démo : (re)pose un profil UNIQUE cohérent avec le point de vue choisi sur
-  // l'accueil MIAPO+ (parent/élève → un écolier ; formation pro → un apprenant
+  // l'accueil MAPO+ (parent/élève → un écolier ; formation pro → un apprenant
   // ADULTE hors-catalogue, ex. MBA). Uniquement en démo — on repart propre à
   // chaque entrée pour montrer le bon persona. `kind` : 'ecolier' | 'pro'.
   function seedDemoAs(kind) {

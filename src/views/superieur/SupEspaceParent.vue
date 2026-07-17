@@ -54,9 +54,9 @@
           <p v-else class="spa-empty">{{ t('sup.espaceParent.releveSoon') }}</p>
         </section>
 
-        <!-- MIAPO+ pour la famille (promo vers l'app B2C MIAPO+ — hors contrôle école) -->
+        <!-- MAPO+ pour la famille (promo vers l'app B2C MAPO+ — hors contrôle école) -->
         <section class="spa-card spa-miapo">
-          <div class="spa-miapo-badge">MIAPO+</div>
+          <div class="spa-miapo-badge">MAPO+</div>
           <h2 class="spa-h2 spa-miapo-h2">{{ t('sup.espaceParent.miapoTitle', { name: enfant.prenom }) }}</h2>
           <p class="spa-miapo-txt">{{ t('sup.espaceParent.miapoTxt') }}</p>
           <a class="spa-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceParent.miapoCta') }}</a>

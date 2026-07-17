@@ -53,9 +53,9 @@
         <p v-else class="see-empty">{{ t('sup.espaceEtudiant.releveSoon') }}</p>
       </section>
 
-      <!-- MIAPO+ (promo vers l'app B2C MIAPO+ — hors contrôle école) -->
+      <!-- MAPO+ (promo vers l'app B2C MAPO+ — hors contrôle école) -->
       <section class="see-card see-miapo">
-        <div class="see-miapo-badge">MIAPO+</div>
+        <div class="see-miapo-badge">MAPO+</div>
         <h2 class="see-h2 see-miapo-h2">{{ t('sup.espaceEtudiant.miapoTitle') }}</h2>
         <p class="see-miapo-txt">{{ t('sup.espaceEtudiant.miapoTxt') }}</p>
         <ul class="see-miapo-list">

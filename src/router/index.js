@@ -76,7 +76,7 @@ const routes = [
     path: '/miapo',
     name: 'MiapoWelcome',
     component: () => import('../views/MiapoWelcomeView.vue'),
-    meta: { requiresAuth: false, title: 'MIAPO+' }
+    meta: { requiresAuth: false, title: 'MAPO+' }
   },
   {
     path: '/verifier',
@@ -167,7 +167,7 @@ const routes = [
         path: 'parent/miapo',
         name: 'ParentMiapo',
         component: () => import('../views/ParentMiapoView.vue'),
-        meta: { title: 'MIAPO+', parentOnly: true }
+        meta: { title: 'MAPO+', parentOnly: true }
       },
       {
         path: 'parent/messagerie',
@@ -445,11 +445,11 @@ router.beforeEach(async (to) => {
     return { name: 'Welcome' }
   }
 
-  // ── Tenant MIAPO+ standalone (miapo.app-edufrem.com) ──────────────
-  // Produit B2C dédié : on entre par l'accueil MIAPO+ (Parent / Enfant) puis on
+  // ── Tenant MAPO+ standalone (miapo.app-edufrem.com) ──────────────
+  // Produit B2C dédié : on entre par l'accueil MAPO+ (Parent / Enfant) puis on
   // reste dans l'expérience famille (espaces parent + élève + tuteur). La
   // vitrine multi-éditions (Welcome) et l'enseignement supérieur ne
-  // s'appliquent pas à cette instance → on renvoie vers l'accueil MIAPO+.
+  // s'appliquent pas à cette instance → on renvoie vers l'accueil MAPO+.
   if (tenant.mode === 'miapo') {
     if (to.name === 'Welcome' || to.name === 'Superieur') {
       return { name: 'MiapoWelcome' }
@@ -530,7 +530,7 @@ router.beforeEach(async (to) => {
 
   const isParent = authStore.userProfile?.role === 'parent'
   const isEleve = authStore.userProfile?.role === 'eleve'
-  // Parent B2C autonome (hors école) : son accueil est l'espace MIAPO+.
+  // Parent B2C autonome (hors école) : son accueil est l'espace MAPO+.
   const isB2C = !!authStore.userProfile?.b2c
   const parentHome = isB2C ? 'ParentMiapo' : 'ParentDashboard'
 
@@ -555,7 +555,7 @@ router.beforeEach(async (to) => {
     return { name: parentHome }
   }
 
-  // Parent B2C autonome : confiné à MIAPO+ (et son profil). Les autres espaces
+  // Parent B2C autonome : confiné à MAPO+ (et son profil). Les autres espaces
   // parent dépendent d'une école et seraient vides/cassés en mode autonome.
   if (isParent && isB2C && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
     return { name: 'ParentMiapo' }
@@ -606,11 +606,11 @@ router.beforeEach(async (to) => {
 
 // Titre de page dynamique
 router.afterEach((to) => {
-  // Le tenant MIAPO+ standalone s'affiche MIAPO+, pas MAPO.
+  // Le tenant MAPO+ standalone s'affiche MAPO+, pas MAPO.
   const title = localizedTitle(to.meta.title)
   if (isMiapoTenant()) {
-    document.title = title && to.meta.title !== 'MIAPO+'
-      ? `${title} — MIAPO+`
+    document.title = title && to.meta.title !== 'MAPO+'
+      ? `${title} — MAPO+`
       : i18n.global.t('rt.taglineMiapo')
   } else {
     document.title = title ? `${title} — MAPO` : i18n.global.t('rt.taglineMapo')

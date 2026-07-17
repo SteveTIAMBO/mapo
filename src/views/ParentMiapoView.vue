@@ -7,7 +7,7 @@
     <aside class="volet" :class="{ open: menuOpen, collapsed: voletCollapsed }">
       <div class="volet-brand">
         <div class="brand-ic"><Sparkles :size="18" /></div>
-        <div class="brand-tx"><strong>MIAPO+</strong><small>{{ L.brandSub }}</small></div>
+        <div class="brand-tx"><strong>MAPO+</strong><small>{{ L.brandSub }}</small></div>
         <button type="button" class="volet-close" @click="menuOpen = false" aria-label="Fermer le menu"><X :size="20" /></button>
       </div>
       <!-- Replier le menu en icônes (desktop) — le menu reste fixe. -->
@@ -513,20 +513,25 @@ const tuteur = useTuteurStore()
 const analytics = useMiapoAnalyticsStore()
 const enfants = computed(() => store.enfants)
 
-// Suivi d'adoption MIAPO+ : marque l'install PWA. Défini ici pour pouvoir le
+// Suivi d'adoption MAPO+ : marque l'install PWA. Défini ici pour pouvoir le
 // retirer proprement au démontage (évite les écouteurs en double).
 function onAppInstalled() { try { analytics.markInstalled() } catch { /* best-effort */ } }
 
-// Mode apprenant : MIAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
+// Mode apprenant : MAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
 // profil unique = lui) plutôt que par un parent qui suit ses enfants. Même moteur.
 const isApprenant = computed(() => store.mode === 'apprenant')
 function setMode(m) { store.setMode(m) }
 
+// Seules les classes qui passent un examen national ont des annales (pas 5ème, etc.).
+function estClasseExamen(niveau) {
+  const n = niveau || ''
+  return n === 'CM2' || n === '3ème' || /^(1ère|Tle)/.test(n)
+}
 const SECTIONS = computed(() => [
   { key: 'accueil', label: t('mia.secHome'), icon: Home },
   { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
   { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
-  { key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList },
+  ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList }] : []),
   { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
   { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
   { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays },
@@ -572,6 +577,8 @@ const L = computed(() => isApprenant.value ? {
 
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
+// Si l'enfant actif n'est pas en classe d'examen, on ne reste pas bloqué sur l'onglet Annales.
+watch(() => activeEnfant.value?.niveau, () => { if (section.value === 'annales' && !estClasseExamen(activeEnfant.value?.niveau)) section.value = 'accueil' })
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
@@ -936,7 +943,7 @@ onMounted(async () => {
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
-  // ── Suivi d'adoption MIAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
+  // ── Suivi d'adoption MAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
   try {
     const persona = store.mode === 'apprenant' ? 'apprenant' : 'parent'
     const country = enfants.value[0]?.pays || ''

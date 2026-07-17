@@ -28,7 +28,7 @@ const DEMO_ACCOUNTS = {
   enseignant: { uid: 'demo-enseignant', firstName: 'Jean', lastName: 'Kamga', role: 'enseignant', email: 'enseignant@demo', subjects: ['Mathématiques'], className: '6ème A' },
   parent: { uid: 'demo-parent', firstName: 'Thomas', lastName: 'Mbarga', role: 'parent', email: 'parent@demo' },
   eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo', className: '6ème A' },
-  // MIAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MIAPO+ seul.
+  // MAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MAPO+ seul.
   miapo: { uid: 'demo-miapo', firstName: 'Famille', lastName: 'Démo', role: 'parent', email: 'miapo@demo', b2c: true },
   // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).
   // → espace groupe consolidé (/complexe). En démo, complexeId 'demo' = seed d'exemple.
@@ -344,7 +344,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Inscription B2C autonome : un parent crée son compte (email + mot de passe)
   // sans passer par une invitation d'école. loadUserProfile lui attribue alors
-  // automatiquement un profil parent B2C (étape 4) → accès direct à MIAPO+.
+  // automatiquement un profil parent B2C (étape 4) → accès direct à MAPO+.
   async function signUpWithEmail(email, password, displayName) {
     try {
       flagFreshLogin()
@@ -516,7 +516,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     // 4) Aucune école / invitation → compte PARENT B2C AUTONOME (« école-optionnel »).
-    // Le parent accède directement à l'espace MIAPO+ (tuteur, suivi de son enfant)
+    // Le parent accède directement à l'espace MAPO+ (tuteur, suivi de son enfant)
     // sans dépendre d'un établissement. Ses données vivent sous users/{uid}/...
     userProfile.value = {
       uid: firebaseUser.uid,

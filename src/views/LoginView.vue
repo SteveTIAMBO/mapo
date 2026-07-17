@@ -165,15 +165,15 @@ const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
 const miapoStore = useEnfantsAutonomesStore()
-// MIAPO+ standalone : à l'inscription, on demande si le compte est celui d'un
+// MAPO+ standalone : à l'inscription, on demande si le compte est celui d'un
 // parent (qui suit un enfant) ou de l'apprenant lui-même (étudiant/adulte).
 const isMiapoMode = isMiapoTenant()
 const signupRole = ref('parent') // 'parent' | 'apprenant'
 
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
-// MIAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
+// MAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
-// (la démo MIAPO+ s'entre par les cartes Parent / Élève de l'accueil).
+// (la démo MAPO+ s'entre par les cartes Parent / Élève de l'accueil).
 const isSchoolTenantMode = isSchoolTenant() || isMiapoTenant()
 
 function changerVersion() {
@@ -208,10 +208,10 @@ async function handleSignUp() {
   const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value)
   isLoading.value = false
   if (result.success) {
-    // MIAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
+    // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
     // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
     if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
-    router.push('/parent/miapo') // nouveau compte B2C → MIAPO+
+    router.push('/parent/miapo') // nouveau compte B2C → MAPO+
   } else {
     errorMessage.value = result.error
   }
@@ -261,10 +261,10 @@ function loginDemoAs(role) {
 
 // Deep-link « ouvrir la démo » : ?demo=directeur|enseignant|parent|eleve|complexe
 // lance directement la session de démonstration (utilisé par les liens du
-// complexe et les QR codes des plaquettes). Ignoré sur une vraie école / MIAPO+.
+// complexe et les QR codes des plaquettes). Ignoré sur une vraie école / MAPO+.
 onMounted(() => {
   // Deep-link « Créer mon compte » : ?signup=1 ouvre directement le formulaire
-  // d'inscription (compte persistant). Vaut sur toutes les instances, MIAPO+ inclus.
+  // d'inscription (compte persistant). Vaut sur toutes les instances, MAPO+ inclus.
   try {
     const sp = new URLSearchParams(window.location.search)
     if (sp.get('signup')) {

@@ -223,7 +223,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       due,
     }
     saveRevisions(studentId, data)
-    // Suivi d'adoption MIAPO+ (B2C) : on ne compte QUE dans le tenant MIAPO+,
+    // Suivi d'adoption MAPO+ (B2C) : on ne compte QUE dans le tenant MAPO+,
     // pas les quiz des élèves d'école. Best-effort (n'impacte jamais le quiz).
     if (isMiapoTenant()) {
       try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }

@@ -2,7 +2,7 @@
   <div class="mma">
     <div class="mma-intro">
       <div>
-        <h1 class="mma-h1">MIAPO+ · Adoption</h1>
+        <h1 class="mma-h1">MAPO+ · Adoption</h1>
         <p class="mma-sub">
           Suivi de l'usage du tuteur intelligent (B2C). Installs, utilisateurs actifs,
           sessions et progression moyenne — pour voir si le projet prend.
@@ -16,7 +16,7 @@
 
     <div v-if="isSample" class="mma-note">
       Aucune donnée réelle pour l'instant — affichage d'un <strong>échantillon</strong> pour
-      illustrer le tableau de bord. Les vraies données apparaîtront dès les premiers comptes MIAPO+.
+      illustrer le tableau de bord. Les vraies données apparaîtront dès les premiers comptes MAPO+.
     </div>
 
     <!-- KPIs -->
@@ -59,7 +59,7 @@
 
       <div v-if="store.loading" class="mma-empty">Chargement…</div>
       <div v-else-if="store.recentUsers.length === 0" class="mma-empty">
-        Aucun utilisateur MIAPO+ pour l'instant.
+        Aucun utilisateur MAPO+ pour l'instant.
       </div>
       <table v-else class="mma-table">
         <thead>

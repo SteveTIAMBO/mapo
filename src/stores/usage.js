@@ -10,13 +10,13 @@ import { ref, computed } from 'vue'
  *   - Plus le palier est faible, plus la jauge se remplit (se vide) vite → pousse
  *     à monter de palier ou à racheter des tokens.
  *   - Le MÊME code sert côté école (pool partagé admin + enseignants) et côté
- *     famille (MIAPO+, jauge individuelle). Offres PARTICULIER ≠ offres PRO.
+ *     famille (MAPO+, jauge individuelle). Offres PARTICULIER ≠ offres PRO.
  *
  * Le coût API réel au palier bas est négligeable : la jauge sert surtout à
  * l'upsell, pas à couvrir un coût.
  */
 
-// Paliers PARTICULIER (MIAPO+ familles). Plafond hebdo en tokens.
+// Paliers PARTICULIER (MAPO+ familles). Plafond hebdo en tokens.
 // Base ≈ 5 quiz + 2-3 lectures de copie / semaine. Prix : API ≤ 50 % du prix.
 export const PLANS = [
   { key: 'gratuit', label: 'Gratuit', capSemaine: 25000, prixMois: 0, rechargeHeures: 168, cible: 'Inclus / essai' },

@@ -16,12 +16,12 @@
     "eleveCta": "Entrer dans l'espace élève",
     "proName": "Je me forme",
     "proTag": "Formation & certifications",
-    "proText": "MBA, BTS, concours, certification… Indique ta formation, même hors catalogue : MIAPO+ te fait réviser avec des quiz et un plan adaptés à ton programme.",
+    "proText": "MBA, BTS, concours, certification… Indique ta formation, même hors catalogue : MAPO+ te fait réviser avec des quiz et un plan adaptés à ton programme.",
     "proCta": "Entrer dans l'espace formation",
-    "createAccount": "Créer mon compte MIAPO+",
+    "createAccount": "Créer mon compte MAPO+",
     "demoHint": "Les espaces ci-dessus sont une démo commune. Créez votre compte pour enregistrer votre suivi et le retrouver sur tous vos appareils.",
-    "haveAccount": "J'ai déjà un compte MIAPO+",
-    "footerCopy": "© 2026 MIAPO+ — Apprendre, accompagné"
+    "haveAccount": "J'ai déjà un compte MAPO+",
+    "footerCopy": "© 2026 MAPO+ — Apprendre, accompagné"
   },
   "login": {
     "tagline": "Gestion Scolaire by EDUFREM",
@@ -2635,11 +2635,11 @@
       "enAttente": "En attente",
       "releveSoon": "Relevé bientôt disponible.",
       "miapoTitle": "Ton tuteur intelligent",
-      "miapoTxt": "Révise tes UE avec MIAPO+ : quiz adaptatifs, parcours de révision personnalisé et suivi de ta progression, disponible 24h/24.",
+      "miapoTxt": "Révise tes UE avec MAPO+ : quiz adaptatifs, parcours de révision personnalisé et suivi de ta progression, disponible 24h/24.",
       "miapoLi1": "Quiz ciblés sur tes matières faibles",
       "miapoLi2": "Analyse de tes copies d'examen",
       "miapoLi3": "Plan de révision avant les partiels",
-      "miapoCta": "Ouvrir MIAPO+"
+      "miapoCta": "Ouvrir MAPO+"
     },
     "roles": {
       "title": "Rôles & Accès",
@@ -2711,8 +2711,8 @@
       "suiviTitle": "Suivi pédagogique",
       "releveSoon": "Relevé bientôt disponible.",
       "miapoTitle": "Aidez {name} à progresser",
-      "miapoTxt": "MIAPO+, le tuteur intelligent : révisions, quiz et suivi de progression à la maison, 24h/24. Offert 1 mois aux familles de l'établissement.",
-      "miapoCta": "Découvrir MIAPO+",
+      "miapoTxt": "MAPO+, le tuteur intelligent : révisions, quiz et suivi de progression à la maison, 24h/24. Offert 1 mois aux familles de l'établissement.",
+      "miapoCta": "Découvrir MAPO+",
       "payModalTitle": "Paiement mobile money",
       "payConfirmed": "Paiement confirmé",
       "payRef": "{amount} FCFA · réf {tx}",
@@ -3871,7 +3871,7 @@
     "verifierDiplome": "Vérifier un diplôme",
     "eleves": "Élèves",
     "taglineMapo": "MAPO — Gestion Scolaire by EDUFREM",
-    "taglineMiapo": "MIAPO+ — Le tuteur intelligent par EDUFREM"
+    "taglineMiapo": "MAPO+ — Le tuteur intelligent par EDUFREM"
   },
   "mess": {
     "title": "Messagerie",
@@ -4548,7 +4548,7 @@
     "regenConflicts": " — {n} conflit(s)"
   },
   "mia": {
-    "brandSubLearner": "Ton coach de révision",
+    "brandSubLearner": "Ton professeur particulier intelligent",
     "brandSubParent": "Suivi & cours à la maison",
     "logout": "Se déconnecter",
     "addChild": "Ajouter un enfant",
@@ -4561,7 +4561,7 @@
     "secProgress": "Progression",
     "secTimetable": "Emploi du temps",
     "edtTitle": "Mon emploi du temps",
-    "edtHint": "Saisissez ou scannez votre emploi du temps. MIAPO+ vous proposera de réviser la veille de chaque cours.",
+    "edtHint": "Saisissez ou scannez votre emploi du temps. MAPO+ vous proposera de réviser la veille de chaque cours.",
     "edtDay": "Jour",
     "edtSubject": "Matière",
     "edtScan": "Scanner l'emploi du temps",
@@ -4742,7 +4742,7 @@
     "progEmptyTail": "pour voir la progression apparaître ici.",
     "tutorWord": "Tuteur",
     "notesOverview": "Aperçu des notes",
-    "aboTitle": "MIAPO+ — l'accompagnement complet",
+    "aboTitle": "MAPO+ — l'accompagnement complet",
     "aboTextLearner": "Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO t'accompagne comme un professeur particulier.",
     "aboTextParent": "Suivi continu, cours particuliers à la maison, lecture des copies et orientation : MIAPO accompagne {name} comme un professeur particulier.",
     "aboFeat1": "Révisions adaptées et progressives",
@@ -4853,6 +4853,6 @@
     "devoirs": "Devoirs",
     "paiements": "Paiements",
     "revisions": "Révisions",
-    "miapo": "MIAPO+"
+    "miapo": "MAPO+"
   }
 }

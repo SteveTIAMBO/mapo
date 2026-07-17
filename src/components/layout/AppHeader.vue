@@ -1,7 +1,7 @@
 <template>
   <header class="header">
     <div class="header-left">
-      <!-- Sur MIAPO+ (B2C), le menu est FIXE en desktop : pas de bouton toggle
+      <!-- Sur MAPO+ (B2C), le menu est FIXE en desktop : pas de bouton toggle
            (il ne ferait rien). On garde le hamburger uniquement en mobile. -->
       <button v-if="isMobile || !authStore.isB2C" class="collapse-toggle" @click="$emit('toggle-sidebar')" :title="t('header.menu')">
         <Menu v-if="isMobile" :size="22" />
@@ -101,14 +101,14 @@ onUnmounted(() => { window.removeEventListener('resize', checkMobile) })
 
 const canAccessSettings = computed(() => permissionsStore.hasAccess('parametres'))
 const firstName = computed(() => {
-  // MIAPO+ en mode apprenant : on salue l'apprenant lui-même (ex. Diane), pas le
+  // MAPO+ en mode apprenant : on salue l'apprenant lui-même (ex. Diane), pas le
   // nom du compte (« Famille »). En mode parent, on garde le nom du compte.
   if (authStore.isB2C && miapoStore.mode === 'apprenant' && miapoStore.enfants.length) {
     return miapoStore.enfants[0].firstName || authStore.userFirstName
   }
   return authStore.userFirstName
 })
-// B2C (MIAPO+) : pas de nom d'école dans l'en-tête (la famille n'appartient pas à une école).
+// B2C (MAPO+) : pas de nom d'école dans l'en-tête (la famille n'appartient pas à une école).
 const schoolName = computed(() => authStore.isB2C ? '' : (schoolStore.schoolSettings?.schoolName || ''))
 const schoolLogo = computed(() => schoolStore.schoolSettings?.logo || null)
 

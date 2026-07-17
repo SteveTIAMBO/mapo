@@ -7,7 +7,7 @@ import {
 } from 'firebase/firestore'
 
 /**
- * Store « miapoAnalytics » — suivi d'adoption de MIAPO+ (le tuteur B2C standalone).
+ * Store « miapoAnalytics » — suivi d'adoption de MAPO+ (le tuteur B2C standalone).
  *
  * Objectif (demandé par Steve) : savoir si le projet prend. On suit, par
  * utilisateur réel (compte Firebase), des métriques DÉNORMALISÉES sur un doc
@@ -23,7 +23,7 @@ import {
  *   → progression moyenne d'un user = scoreSum / quizzesCompleted (0-100).
  *
  * ⚠️ Règles Firestore à publier (action Steve, cf. doc de mise en prod) :
- *   - un user MIAPO+ écrit son propre `miapoUsers/{uid}` (+ sous-collection events)
+ *   - un user MAPO+ écrit son propre `miapoUsers/{uid}` (+ sous-collection events)
  *   - le super-admin EDUFREM (doc dans superAdmins/{uid}) lit toute la collection.
  */
 
@@ -36,10 +36,10 @@ export const useMiapoAnalyticsStore = defineStore('miapoAnalytics', () => {
   const error = ref('')
 
   // ─────────────────────────────────────────────────────────────
-  // Instrumentation (appelée côté apprenant, dans le tenant MIAPO+)
+  // Instrumentation (appelée côté apprenant, dans le tenant MAPO+)
   // ─────────────────────────────────────────────────────────────
 
-  /** Enregistre / rafraîchit l'utilisateur courant. À l'ouverture de MIAPO+. */
+  /** Enregistre / rafraîchit l'utilisateur courant. À l'ouverture de MAPO+. */
   async function registerUser({ persona = '', country = '' } = {}) {
     const u = uid()
     if (!u) return // démo / non connecté : pas de tracking cloud
@@ -105,7 +105,7 @@ export const useMiapoAnalyticsStore = defineStore('miapoAnalytics', () => {
   }
 
   // ─────────────────────────────────────────────────────────────
-  // Lecture super-admin (dashboard MegaAdmin → onglet MIAPO+)
+  // Lecture super-admin (dashboard MegaAdmin → onglet MAPO+)
   // ─────────────────────────────────────────────────────────────
 
   async function loadAnalytics() {

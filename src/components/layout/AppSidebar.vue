@@ -266,9 +266,9 @@ const navSections = computed(() => {
   }
 
   if (role === 'parent') {
-    // Parent B2C autonome (hors école) : on ne montre QUE MIAPO+.
+    // Parent B2C autonome (hors école) : on ne montre QUE MAPO+.
     if (authStore.isB2C) {
-      return [{ label: null, items: [{ to: '/parent/miapo', icon: Sparkles, label: 'MIAPO+' }] }]
+      return [{ label: null, items: [{ to: '/parent/miapo', icon: Sparkles, label: 'MAPO+' }] }]
     }
     const items = [
       { to: '/espace-parent', icon: Home, label: 'nav.dashboard' },
@@ -344,7 +344,7 @@ const getInitials = (name) => {
 
 const handleLogout = async () => {
   await authStore.logout()
-  // Sur l'instance MIAPO+, on revient à l'accueil MIAPO+ (et non au login MAPO).
+  // Sur l'instance MAPO+, on revient à l'accueil MAPO+ (et non au login MAPO).
   await router.push(isMiapoTenant() ? '/miapo' : '/login')
 }
 

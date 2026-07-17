@@ -114,9 +114,9 @@ const editionStore = useEditionStore()
 const authStore = useAuthStore()
 const miapoStore = useEnfantsAutonomesStore()
 
-// Les deux entrées ouvrent l'APPLI MIAPO+ (le tuteur qu'on a construit), pas
+// Les deux entrées ouvrent l'APPLI MAPO+ (le tuteur qu'on a construit), pas
 // les espaces parent/élève standards de MAPO : compte démo B2C 'miapo' (confiné
-// à MIAPO+ par le guard), en réglant juste le point de vue —
+// à MAPO+ par le guard), en réglant juste le point de vue —
 //   parent   : un parent qui suit son enfant (« Mes enfants »)
 //   apprenant : l'élève qui pilote son propre apprentissage (« Mon profil »).
 // Trois portes d'entrée :
@@ -144,7 +144,7 @@ function goLogin() {
 
 // Créer un VRAI compte (persistant, propre à chaque personne) : on ouvre la page
 // de connexion directement en mode inscription (?signup=1). C'est le chemin à
-// privilégier pour les utilisateurs à qui on partage MIAPO+ (les cartes ci-dessus
+// privilégier pour les utilisateurs à qui on partage MAPO+ (les cartes ci-dessus
 // restent une démo commune, non persistante).
 function goCreate() {
   editionStore.setEdition('secondaire')
@@ -165,7 +165,7 @@ function goCreate() {
   overflow: hidden;
 }
 
-/* Fond dégradé MIAPO+ (violet profond) */
+/* Fond dégradé MAPO+ (violet profond) */
 .miapo-bg {
   position: fixed;
   inset: 0;

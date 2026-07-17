@@ -27,7 +27,7 @@ export const MIAPO_MODULES = [
     label: 'Préparation de cours',
     desc: 'Assistant pédagogique enseignant : cours, devoirs et examens générés avec corrigé.',
   },
-  // NB : MIAPO+ (tuteur élève/parent) est un produit B2C à part (app MIAPO+) —
+  // NB : MAPO+ (tuteur élève/parent) est un produit B2C à part (app MAPO+) —
   // l'école ne contrôle pas son IA, donc il n'apparaît pas ici.
 ]
 

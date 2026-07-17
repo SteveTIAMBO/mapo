@@ -95,7 +95,7 @@ import { useAuthStore } from '../../stores/auth'
 
 const route = useRoute()
 const authStore = useAuthStore()
-// B2C (MIAPO+) : pas de sidebar principale — le volet MIAPO+ fait office de menu
+// B2C (MAPO+) : pas de sidebar principale — le volet MAPO+ fait office de menu
 // (sinon double menu latéral). Le volet porte sa propre déconnexion.
 const hideSidebar = computed(() => authStore.isB2C)
 const { isOnline, pendingSyncCount, syncStatus, lastSyncError, processSyncQueue } = useConnectionStatus()
@@ -146,8 +146,8 @@ function checkMobile() {
 }
 
 function toggleSidebar() {
-  // B2C / MIAPO+ : pas de sidebar principale → le bouton ⊞ de l'en-tête pilote le
-  // volet MIAPO+ en menu hamburger coulissant (évènement écouté par ParentMiapoView).
+  // B2C / MAPO+ : pas de sidebar principale → le bouton ⊞ de l'en-tête pilote le
+  // volet MAPO+ en menu hamburger coulissant (évènement écouté par ParentMiapoView).
   if (hideSidebar.value) {
     if (isMobile.value) window.dispatchEvent(new CustomEvent('miapo-toggle-menu'))
     return
@@ -199,7 +199,7 @@ onUnmounted(() => {
 .layout-main.collapsed {
   margin-left: 68px;
 }
-/* B2C MIAPO+ : pas de sidebar principale → le contenu (volet inclus) prend toute la largeur */
+/* B2C MAPO+ : pas de sidebar principale → le contenu (volet inclus) prend toute la largeur */
 .layout-main.no-sidebar {
   margin-left: 0;
 }
@@ -211,8 +211,8 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-/* B2C MIAPO+ (≥769px) : on borne la hauteur pour que SEUL le contenu défile —
-   le volet MIAPO+ reste fixe et entièrement visible (en-tête figé en haut). */
+/* B2C MAPO+ (≥769px) : on borne la hauteur pour que SEUL le contenu défile —
+   le volet MAPO+ reste fixe et entièrement visible (en-tête figé en haut). */
 @media (min-width: 769px) {
   .layout-main.no-sidebar { height: 100vh; overflow: hidden; }
   .layout-main.no-sidebar .layout-content { padding: 0; overflow: hidden; min-height: 0; display: flex; }
