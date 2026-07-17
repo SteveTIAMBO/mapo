@@ -2,15 +2,13 @@
   <div class="ga">
     <div class="ga-intro">
       <div>
-        <h1 class="ga-h1">Gestion des accès</h1>
+        <h1 class="ga-h1">{{ t('sup.gestionAcces.title') }}</h1>
         <p class="ga-sub">
-          Invitez les membres de votre équipe et gérez leur rôle. À leur première
-          connexion, leur profil sera automatiquement rattaché à l'école avec le rôle
-          que vous avez choisi.
+          {{ t('sup.gestionAcces.subtitle') }}
         </p>
       </div>
       <button v-if="canInvite" class="ga-btn-primary" type="button" @click="openInviteForm">
-        Inviter un membre
+        {{ t('sup.gestionAcces.invite') }}
       </button>
     </div>
 
@@ -18,37 +16,37 @@
     <div class="ga-kpis">
       <div class="ga-kpi">
         <div class="ga-kpi-num">{{ store.staff.length }}</div>
-        <div class="ga-kpi-lab">Membres actifs</div>
+        <div class="ga-kpi-lab">{{ t('sup.gestionAcces.kpiActive') }}</div>
       </div>
       <div class="ga-kpi" :class="{ 'is-warn': store.pendingInvitations.length > 0 }">
         <div class="ga-kpi-num">{{ store.pendingInvitations.length }}</div>
-        <div class="ga-kpi-lab">Invitations en attente</div>
+        <div class="ga-kpi-lab">{{ t('sup.gestionAcces.kpiPending') }}</div>
       </div>
       <div class="ga-kpi">
         <div class="ga-kpi-num">{{ countByRole.admin || 0 }}</div>
-        <div class="ga-kpi-lab">Administrateurs</div>
+        <div class="ga-kpi-lab">{{ t('sup.gestionAcces.kpiAdmins') }}</div>
       </div>
     </div>
 
     <!-- Personnel actif -->
     <section class="ga-card">
       <header class="ga-card-head">
-        <h2 class="ga-h2">Personnel actif</h2>
-        <span class="ga-card-count">{{ store.staff.length }} membre(s)</span>
+        <h2 class="ga-h2">{{ t('sup.gestionAcces.staffTitle') }}</h2>
+        <span class="ga-card-count">{{ t('sup.gestionAcces.membersCount', { count: store.staff.length }) }}</span>
       </header>
 
-      <div v-if="store.loading" class="ga-empty">Chargement…</div>
+      <div v-if="store.loading" class="ga-empty">{{ t('sup.gestionAcces.loading') }}</div>
       <div v-else-if="store.staff.length === 0" class="ga-empty">
-        Aucun membre actif. Invitez vos premiers collaborateurs pour démarrer.
+        {{ t('sup.gestionAcces.staffEmpty') }}
       </div>
       <div v-else class="ga-table-wrap">
         <table class="ga-table">
           <thead>
             <tr>
-              <th>Membre</th>
-              <th>Email</th>
-              <th>Rôle</th>
-              <th>Statut</th>
+              <th>{{ t('sup.gestionAcces.thMember') }}</th>
+              <th>{{ t('sup.gestionAcces.thEmail') }}</th>
+              <th>{{ t('sup.gestionAcces.thRole') }}</th>
+              <th>{{ t('sup.gestionAcces.thStatus') }}</th>
               <th v-if="canInvite"></th>
             </tr>
           </thead>
@@ -56,7 +54,7 @@
             <tr v-for="s in staffSorted" :key="s.id">
               <td>
                 <div class="ga-name">{{ s.displayName || s.email }}</div>
-                <div v-if="(s.uid || s.id) === currentUid" class="ga-meta">Vous</div>
+                <div v-if="(s.uid || s.id) === currentUid" class="ga-meta">{{ t('sup.gestionAcces.you') }}</div>
               </td>
               <td class="ga-email">{{ s.email }}</td>
               <td>
@@ -64,7 +62,7 @@
               </td>
               <td>
                 <span class="ga-statut" :class="s.status === 'active' ? 'tone-success' : 'tone-neutral'">
-                  {{ s.status === 'active' ? 'Actif' : s.status || 'Inconnu' }}
+                  {{ s.status === 'active' ? t('sup.gestionAcces.statutActif') : (s.status || t('sup.gestionAcces.statutInconnu')) }}
                 </span>
               </td>
               <td v-if="canInvite" class="ga-actions-cell">
@@ -72,10 +70,10 @@
                   class="ga-btn-danger"
                   type="button"
                   :disabled="!canRemoveMember(s)"
-                  :title="removeDisabledReason(s) || 'Supprimer l’accès de ce membre'"
+                  :title="removeDisabledReason(s) || t('sup.gestionAcces.removeTitle')"
                   @click="confirmRemove(s)"
                 >
-                  Supprimer
+                  {{ t('sup.gestionAcces.remove') }}
                 </button>
               </td>
             </tr>
@@ -87,20 +85,20 @@
     <!-- Invitations en attente -->
     <section class="ga-card">
       <header class="ga-card-head">
-        <h2 class="ga-h2">Invitations en attente</h2>
-        <span class="ga-card-count">{{ store.pendingInvitations.length }} en attente</span>
+        <h2 class="ga-h2">{{ t('sup.gestionAcces.kpiPending') }}</h2>
+        <span class="ga-card-count">{{ t('sup.gestionAcces.pendingCount', { count: store.pendingInvitations.length }) }}</span>
       </header>
 
       <div v-if="store.pendingInvitations.length === 0" class="ga-empty">
-        Aucune invitation en attente.
+        {{ t('sup.gestionAcces.pendingEmpty') }}
       </div>
       <div v-else class="ga-table-wrap">
         <table class="ga-table">
           <thead>
             <tr>
-              <th>Email</th>
-              <th>Rôle</th>
-              <th>Invité par</th>
+              <th>{{ t('sup.gestionAcces.thEmail') }}</th>
+              <th>{{ t('sup.gestionAcces.thRole') }}</th>
+              <th>{{ t('sup.gestionAcces.thInvitedBy') }}</th>
               <th></th>
             </tr>
           </thead>
@@ -113,7 +111,7 @@
               <td class="ga-meta">{{ i.invitedByName || '—' }}</td>
               <td class="ga-actions-cell">
                 <button v-if="canInvite" class="ga-btn-danger" type="button" @click="confirmRevoke(i)">
-                  Annuler
+                  {{ t('sup.gestionAcces.cancel') }}
                 </button>
               </td>
             </tr>
@@ -126,27 +124,24 @@
 
     <!-- Bloc info workflow magic link -->
     <div v-if="canInvite" class="ga-note">
-      <strong>Comment ça marche</strong> — au moment où vous créez une invitation,
-      la personne reçoit immédiatement un email avec un lien sécurisé. À sa première
-      connexion via ce lien, elle est invitée à définir son mot de passe pour les
-      prochaines connexions. Aucune intervention technique supplémentaire n'est nécessaire.
+      <strong>{{ t('sup.gestionAcces.noteTitle') }}</strong> {{ t('sup.gestionAcces.noteBody') }}
     </div>
 
     <!-- Modal Inviter un membre -->
     <div v-if="showForm" class="ga-modal" @click.self="closeForm">
       <div class="ga-modal-content">
         <header class="ga-modal-head">
-          <h3>Inviter un membre de l'équipe</h3>
+          <h3>{{ t('sup.gestionAcces.modalInviteTitle') }}</h3>
           <button class="ga-modal-close" type="button" @click="closeForm">×</button>
         </header>
         <form class="ga-modal-body" @submit.prevent="submitInvite">
           <div class="ga-form-row">
-            <label class="ga-lab">Email professionnel</label>
-            <input v-model="form.email" type="email" required class="ga-input" placeholder="prenom.nom@etablissement.fr" />
+            <label class="ga-lab">{{ t('sup.gestionAcces.fEmail') }}</label>
+            <input v-model="form.email" type="email" required class="ga-input" :placeholder="t('sup.gestionAcces.emailPlaceholder')" />
           </div>
 
           <div class="ga-form-row">
-            <label class="ga-lab">Rôle</label>
+            <label class="ga-lab">{{ t('sup.gestionAcces.thRole') }}</label>
             <div class="ga-roles-grid">
               <label v-for="r in rolesPersonnel" :key="r.value" class="ga-role-card" :class="{ 'is-active': form.role === r.value }">
                 <input type="radio" :value="r.value" v-model="form.role" />
@@ -161,9 +156,9 @@
           <p v-if="formError" class="ga-error">{{ formError }}</p>
 
           <div class="ga-form-actions">
-            <button type="button" class="ga-btn-secondary" @click="closeForm">Annuler</button>
+            <button type="button" class="ga-btn-secondary" @click="closeForm">{{ t('sup.gestionAcces.cancel') }}</button>
             <button type="submit" class="ga-btn-primary" :disabled="busy">
-              {{ busy ? 'Envoi…' : 'Créer l\'invitation' }}
+              {{ busy ? t('sup.gestionAcces.sending') : t('sup.gestionAcces.createInvite') }}
             </button>
           </div>
         </form>
@@ -174,28 +169,26 @@
     <div v-if="successInfo" class="ga-modal" @click.self="successInfo = null">
       <div class="ga-modal-content ga-modal-small">
         <header class="ga-modal-head">
-          <h3>Invitation envoyée</h3>
+          <h3>{{ t('sup.gestionAcces.successTitle') }}</h3>
           <button class="ga-modal-close" type="button" @click="successInfo = null">×</button>
         </header>
         <div class="ga-modal-body">
           <p v-if="successInfo.emailSent" class="ga-success-text">
-            <strong>{{ successInfo.email }}</strong> vient de recevoir un email avec un lien sécurisé
-            pour rejoindre l'école en tant que <strong>{{ roleLabel(successInfo.role) }}</strong>.
+            <strong>{{ successInfo.email }}</strong> {{ t('sup.gestionAcces.successSentMid') }} <strong>{{ roleLabel(successInfo.role) }}</strong>.
           </p>
           <p v-else class="ga-success-text">
-            L'invitation pour <strong>{{ successInfo.email }}</strong> ({{ roleLabel(successInfo.role) }}) est enregistrée
-            côté EDUFREM, mais l'envoi du mail a échoué.
+            {{ t('sup.gestionAcces.invitationFor') }} <strong>{{ successInfo.email }}</strong> ({{ roleLabel(successInfo.role) }}) {{ t('sup.gestionAcces.successFailB') }}
           </p>
           <div v-if="successInfo.emailError" class="ga-warn">
             {{ successInfo.emailError }}
           </div>
           <ol class="ga-success-steps">
-            <li>La personne clique le lien dans l'email reçu (vérifie les spams si rien dans la boîte).</li>
-            <li>Elle est connectée automatiquement à l'instance école.</li>
-            <li>Elle définit son mot de passe pour les connexions suivantes.</li>
+            <li>{{ t('sup.gestionAcces.step1') }}</li>
+            <li>{{ t('sup.gestionAcces.step2') }}</li>
+            <li>{{ t('sup.gestionAcces.step3') }}</li>
           </ol>
           <div class="ga-form-actions">
-            <button type="button" class="ga-btn-primary" @click="successInfo = null">Compris</button>
+            <button type="button" class="ga-btn-primary" @click="successInfo = null">{{ t('sup.gestionAcces.gotIt') }}</button>
           </div>
         </div>
       </div>
@@ -205,20 +198,19 @@
     <div v-if="askRemove" class="ga-modal" @click.self="closeRemove">
       <div class="ga-modal-content ga-modal-small">
         <header class="ga-modal-head">
-          <h3>Supprimer ce membre ?</h3>
+          <h3>{{ t('sup.gestionAcces.removeMemberTitle') }}</h3>
           <button class="ga-modal-close" type="button" @click="closeRemove">×</button>
         </header>
         <div class="ga-modal-body">
           <p class="ga-success-text">
-            L'accès à l'école pour <strong>{{ askRemove.displayName || askRemove.email }}</strong>
-            ({{ roleLabel(askRemove.role) }}) sera retiré.
-            Vous pourrez réinviter cette personne à tout moment depuis cet écran.
+            {{ t('sup.gestionAcces.removeA') }} <strong>{{ askRemove.displayName || askRemove.email }}</strong>
+            ({{ roleLabel(askRemove.role) }}) {{ t('sup.gestionAcces.removeB') }}
           </p>
           <p v-if="removeError" class="ga-warn">{{ removeError }}</p>
           <div class="ga-form-actions">
-            <button type="button" class="ga-btn-secondary" :disabled="removing" @click="closeRemove">Garder</button>
+            <button type="button" class="ga-btn-secondary" :disabled="removing" @click="closeRemove">{{ t('sup.gestionAcces.keep') }}</button>
             <button type="button" class="ga-btn-danger" :disabled="removing" @click="doRemove">
-              {{ removing ? 'Suppression…' : 'Supprimer l’accès' }}
+              {{ removing ? t('sup.gestionAcces.removing') : t('sup.gestionAcces.removeAccess') }}
             </button>
           </div>
         </div>
@@ -229,17 +221,16 @@
     <div v-if="askRevoke" class="ga-modal" @click.self="askRevoke = null">
       <div class="ga-modal-content ga-modal-small">
         <header class="ga-modal-head">
-          <h3>Annuler cette invitation ?</h3>
+          <h3>{{ t('sup.gestionAcces.revokeTitle') }}</h3>
           <button class="ga-modal-close" type="button" @click="askRevoke = null">×</button>
         </header>
         <div class="ga-modal-body">
           <p class="ga-success-text">
-            L'invitation pour <strong>{{ askRevoke.email }}</strong> sera supprimée.
-            Cette personne ne pourra plus rejoindre l'école avec ce lien.
+            {{ t('sup.gestionAcces.invitationFor') }} <strong>{{ askRevoke.email }}</strong> {{ t('sup.gestionAcces.revokeB') }}
           </p>
           <div class="ga-form-actions">
-            <button type="button" class="ga-btn-secondary" @click="askRevoke = null">Garder</button>
-            <button type="button" class="ga-btn-danger" @click="doRevoke">Annuler l'invitation</button>
+            <button type="button" class="ga-btn-secondary" @click="askRevoke = null">{{ t('sup.gestionAcces.keep') }}</button>
+            <button type="button" class="ga-btn-danger" @click="doRevoke">{{ t('sup.gestionAcces.revokeConfirm') }}</button>
           </div>
         </div>
       </div>
@@ -249,10 +240,12 @@
 
 <script setup>
 import { ref, computed, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useInvitationsStore, ROLES_PERSONNEL_SUP, roleLabel } from '../../stores/invitations'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { useAuthStore } from '../../stores/auth'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useInvitationsStore()
 const authSup = useSuperieurAuthStore()
 const authStore = useAuthStore()
@@ -316,7 +309,7 @@ async function submitInvite() {
       }
       showForm.value = false
     } else {
-      formError.value = r.error || "L'invitation n'a pas pu être créée."
+      formError.value = r.error || t('sup.gestionAcces.errCreate')
     }
   } finally {
     busy.value = false
@@ -347,8 +340,8 @@ function canRemoveMember(s) {
 function removeDisabledReason(s) {
   if (!canInvite.value) return null
   const uid = s.uid || s.id
-  if (uid === currentUid.value) return 'Vous ne pouvez pas vous supprimer vous-même.'
-  if (s.role === 'directeur') return 'Le directeur ne peut pas être supprimé.'
+  if (uid === currentUid.value) return t('sup.gestionAcces.reasonSelf')
+  if (s.role === 'directeur') return t('sup.gestionAcces.reasonDirecteur')
   return null
 }
 function confirmRemove(s) {
@@ -371,7 +364,7 @@ async function doRemove() {
     if (r.success) {
       askRemove.value = null
     } else {
-      removeError.value = r.error || "La suppression a échoué."
+      removeError.value = r.error || t('sup.gestionAcces.errRemove')
     }
   } finally {
     removing.value = false
