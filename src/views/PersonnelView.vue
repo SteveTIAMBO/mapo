@@ -154,6 +154,22 @@
           </table>
         </div>
 
+        <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+        <ul class="pe-mlist">
+          <li v-for="member in paginatedStaff" :key="member.id" class="pe-mrow" @click="openDetailModal(member)">
+            <span class="member-avatar" :style="{ background: getCategoryColor(member.category) }">{{ getInitials(member) }}</span>
+            <div class="pe-mrow-main">
+              <div class="pe-mrow-name">{{ member.lastName }} {{ member.firstName }}</div>
+              <div class="pe-mrow-sub">{{ member.role }} · {{ getCategoryLabel(member.category) }}</div>
+              <div class="pe-mrow-meta">
+                <span class="badge" :class="(member.status || '').toLowerCase() === 'actif' ? 'badge-success' : 'badge-danger'">{{ statusLabel(member.status) }}</span>
+                <span v-if="member.contractType" class="badge" :class="member.contractType === 'vacataire' ? 'badge-warning' : 'badge-info'">{{ getContractLabel(member.contractType) }}</span>
+              </div>
+            </div>
+            <svg class="pe-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </li>
+        </ul>
+
         <!-- Pagination bas -->
         <PaginationBar
           :currentPage="currentPage"
@@ -663,6 +679,21 @@ onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); clas
 
 /* Table */
 .table-wrap { overflow-x: auto; }
+
+/* ── Liste mobile (remplace le tableau, <=560px) ── */
+.pe-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.pe-mrow { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid var(--border, #ECECE8); cursor: pointer; }
+.pe-mrow:last-child { border-bottom: none; }
+.pe-mrow:active { background: rgba(var(--pr-rgb, 21, 88, 176), .07); }
+.pe-mrow-main { flex: 1; min-width: 0; }
+.pe-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe-mrow-sub { font-size: 12.5px; color: var(--muted, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pe-mrow-meta { display: flex; align-items: center; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+.pe-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .table-wrap { display: none; }
+  .pe-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+}
 .table {
   width: 100%;
   border-collapse: collapse;

@@ -200,6 +200,31 @@
             </table>
           </div>
 
+          <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+          <ul class="pr-mlist">
+            <li v-for="entry in paginatedEntries" :key="entry.eleveId" class="pr-mrow" @click="!isEditing && openEleveDetail(entry)">
+              <span class="student-avatar" :style="{ background: getAvatarColor(entry) }">{{ getInitials(entry.eleveName) }}</span>
+              <div class="pr-mrow-main">
+                <div class="pr-mrow-name">{{ entry.eleveName }}</div>
+                <div class="pr-mrow-sub">{{ getMatricule(entry.eleveId) }}</div>
+                <div v-if="isEditing" class="status-btns pr-mrow-status" @click.stop>
+                  <button
+                    v-for="s in ATTENDANCE_STATUS"
+                    :key="s.value"
+                    class="status-chip"
+                    :class="{ active: entry.status === s.value }"
+                    :style="entry.status === s.value ? { background: s.color, color: '#fff', borderColor: s.color } : {}"
+                    type="button"
+                    @click="entry.status = s.value"
+                  >{{ t('presence.statusLabels.' + s.value) }}</button>
+                </div>
+                <input v-if="isEditing" v-model="entry.note" type="text" class="input input-sm pr-mrow-note" :placeholder="t('presence.reasonPh')" @click.stop />
+              </div>
+              <span v-if="!isEditing" class="badge" :class="getStatusBadge(entry.status)">{{ getStatusLabel(entry.status) }}</span>
+              <svg v-if="!isEditing" class="pr-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </li>
+          </ul>
+
           <!-- PaginationBar BELOW the table -->
           <PaginationBar
             :currentPage="currentPage"
@@ -800,6 +825,22 @@ watch(() => route.query, applyMiapoQuery)
 
 /* Table */
 .table-wrap { overflow-x: auto; }
+
+/* ── Liste mobile (remplace le tableau d'appel, <=560px) ── */
+.pr-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.pr-mrow { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid var(--border, #ECECE8); }
+.pr-mrow:last-child { border-bottom: none; }
+.pr-mrow-main { flex: 1; min-width: 0; }
+.pr-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pr-mrow-sub { font-size: 12px; color: var(--muted, #6f767e); margin-top: 1px; font-family: 'SF Mono', Menlo, monospace; }
+.pr-mrow-status { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.pr-mrow-note { margin-top: 8px; width: 100%; }
+.pr-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .table-wrap { display: none; }
+  .pr-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+  .pr-mrow[class] { cursor: pointer; }
+}
 .table { width: 100%; border-collapse: collapse; }
 .table th {
   padding: 12px 16px;
