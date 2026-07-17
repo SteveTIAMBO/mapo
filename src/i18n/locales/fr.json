@@ -634,7 +634,10 @@
     "miapoNeedSubjectType": "Choisissez d'abord la matière et le type.",
     "miapoError": "MIAPO indisponible pour le moment.",
     "corrigeMiapo": "Corrigé (MIAPO)",
-    "corrigeHint": "à conserver pour vous — non envoyé aux élèves"
+    "corrigeHint": "à conserver pour vous — non envoyé aux élèves",
+    "correctPhoto": "Corriger (photo)",
+    "correcting": "Analyse…",
+    "correctError": "Analyse impossible. Réessayez."
   },
   "discipline": {
     "title": "Discipline",

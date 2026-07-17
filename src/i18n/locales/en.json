@@ -634,7 +634,10 @@
     "miapoNeedSubjectType": "Choose the subject and type first.",
     "miapoError": "MIAPO is unavailable right now.",
     "corrigeMiapo": "Answer key (MIAPO)",
-    "corrigeHint": "keep for yourself — not sent to students"
+    "corrigeHint": "keep for yourself — not sent to students",
+    "correctPhoto": "Grade (photo)",
+    "correcting": "Analyzing…",
+    "correctError": "Analysis failed. Try again."
   },
   "discipline": {
     "title": "Discipline",

@@ -261,6 +261,8 @@
               <p>{{ t('devoirs.noSubmissions') }}</p>
             </div>
 
+            <input ref="photoInput" type="file" accept="image/*" capture="environment" style="display:none" @change="onPhotoChosen" />
+            <p v-if="photoError" class="miapo-gen-err" style="margin: 0 0 8px">{{ photoError }}</p>
             <div v-for="sub in devoirSubmissions" :key="sub.eleveId" class="submission-row">
               <div class="submission-info">
                 <div class="submission-name">{{ getEleveName(sub.eleveId) }}</div>
@@ -286,7 +288,12 @@
                     rows="2"
                     :placeholder="t('devoirs.feedbackPh')"
                   ></textarea>
-                  <button class="btn btn-sm btn-primary" @click="submitGrade(sub.eleveId)">{{ t('devoirs.grade') }}</button>
+                  <div class="grade-actions">
+                    <button type="button" class="btn btn-sm btn-outline" :disabled="photoBusy === sub.eleveId" @click="corrigerPhoto(sub.eleveId)">
+                      <Camera :size="14" /> <span>{{ photoBusy === sub.eleveId ? t('devoirs.correcting') : t('devoirs.correctPhoto') }}</span>
+                    </button>
+                    <button class="btn btn-sm btn-primary" @click="submitGrade(sub.eleveId)">{{ t('devoirs.grade') }}</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -316,6 +323,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDevoirsStore, DEVOIR_TYPES } from '../stores/devoirs'
 import { useCoursStore } from '../stores/cours'
+import { useTuteurStore } from '../stores/tuteur'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
 import { useAuthStore } from '../stores/auth'
@@ -335,13 +343,15 @@ import {
   X,
   BookOpen,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Camera
 } from 'lucide-vue-next'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 // Stores
 const devoirsStore = useDevoirsStore()
 const coursStore = useCoursStore()
+const tuteur = useTuteurStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
 const authStore = useAuthStore()
@@ -534,6 +544,40 @@ async function genererDevoirMiapo() {
   } else {
     miapoError.value = r.reason || t('devoirs.miapoError')
   }
+}
+
+// ── Correction MIAPO d'une copie PAPIER (photo → note + appréciation) ──
+const photoInput = ref(null)
+const photoForEleve = ref('')
+const photoBusy = ref('')
+const photoError = ref('')
+function corrigerPhoto(eleveId) {
+  photoError.value = ''
+  photoForEleve.value = eleveId
+  if (photoInput.value) { photoInput.value.value = ''; photoInput.value.click() }
+}
+function onPhotoChosen(e) {
+  const file = e.target.files && e.target.files[0]
+  const eleveId = photoForEleve.value
+  photoForEleve.value = ''
+  if (!file || !eleveId) return
+  const reader = new FileReader()
+  reader.onload = async () => {
+    photoBusy.value = eleveId
+    photoError.value = ''
+    const cls = classesStore.classes.find(c => c.id === selectedDevoir.value?.classId)
+    const niveau = cls?.level || cls?.name || ''
+    const r = await tuteur.analyserCopie({ imageDataUrl: reader.result, niveau })
+    photoBusy.value = ''
+    if (r.ok && r.analyse) {
+      gradingInputs.value[eleveId] = r.analyse.note
+      const pf = (r.analyse.points_faibles || []).slice(0, 3).join(' · ')
+      feedbackInputs.value[eleveId] = [pf, r.analyse.conseil].filter(Boolean).join(' — ')
+    } else {
+      photoError.value = r.reason || t('devoirs.correctError')
+    }
+  }
+  reader.readAsDataURL(file)
 }
 
 const openCreateModal = () => {
@@ -1124,4 +1168,5 @@ textarea.input {
 .miapo-gen-err { font-size: 12.5px; color: var(--danger, #B23B3B); }
 .miapo-corrige { margin-top: 10px; }
 .miapo-corrige-hint { font-size: 11.5px; color: var(--muted, #6F767E); font-weight: 400; }
+.grade-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 </style>
