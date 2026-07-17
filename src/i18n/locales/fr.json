@@ -628,7 +628,13 @@
       "projet": "Projet",
       "expose": "Exposé",
       "recherche": "Recherche"
-    }
+    },
+    "generateMiapo": "Générer avec MIAPO",
+    "generating": "Génération…",
+    "miapoNeedSubjectType": "Choisissez d'abord la matière et le type.",
+    "miapoError": "MIAPO indisponible pour le moment.",
+    "corrigeMiapo": "Corrigé (MIAPO)",
+    "corrigeHint": "à conserver pour vous — non envoyé aux élèves"
   },
   "discipline": {
     "title": "Discipline",

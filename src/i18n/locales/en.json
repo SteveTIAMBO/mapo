@@ -628,7 +628,13 @@
       "projet": "Project",
       "expose": "Presentation",
       "recherche": "Research"
-    }
+    },
+    "generateMiapo": "Generate with MIAPO",
+    "generating": "Generating…",
+    "miapoNeedSubjectType": "Choose the subject and type first.",
+    "miapoError": "MIAPO is unavailable right now.",
+    "corrigeMiapo": "Answer key (MIAPO)",
+    "corrigeHint": "keep for yourself — not sent to students"
   },
   "discipline": {
     "title": "Discipline",

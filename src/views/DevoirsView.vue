@@ -173,6 +173,16 @@
           <div class="field">
             <label>{{ t('devoirs.descriptionField') }}</label>
             <textarea v-model="formData.description" class="input" rows="4" :placeholder="t('devoirs.descriptionPh')"></textarea>
+            <div class="miapo-gen">
+              <button type="button" class="btn btn-outline btn-sm miapo-gen-btn" :disabled="miapoGenerating || !formData.subjectName || !formData.type" @click="genererDevoirMiapo">
+                <Sparkles :size="15" /> <span>{{ miapoGenerating ? t('devoirs.generating') : t('devoirs.generateMiapo') }}</span>
+              </button>
+              <span v-if="miapoError" class="miapo-gen-err">{{ miapoError }}</span>
+            </div>
+            <div v-if="miapoCorrige" class="field miapo-corrige">
+              <label>{{ t('devoirs.corrigeMiapo') }} <span class="miapo-corrige-hint">{{ t('devoirs.corrigeHint') }}</span></label>
+              <textarea :value="miapoCorrige" class="input" rows="3" readonly></textarea>
+            </div>
           </div>
 
           <div class="field">
@@ -305,6 +315,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDevoirsStore, DEVOIR_TYPES } from '../stores/devoirs'
+import { useCoursStore } from '../stores/cours'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
 import { useAuthStore } from '../stores/auth'
@@ -323,12 +334,14 @@ import {
   ChevronDown,
   X,
   BookOpen,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-vue-next'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 // Stores
 const devoirsStore = useDevoirsStore()
+const coursStore = useCoursStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
 const authStore = useAuthStore()
@@ -500,6 +513,29 @@ const getSubmissionStats = (devoirId) => {
   return devoirsStore.getSubmissionStats(devoirId, classEleves)
 }
 
+// ── Génération assistée MIAPO (réutilise la tâche pedagogie du module Cours) ──
+const miapoGenerating = ref(false)
+const miapoError = ref('')
+const miapoCorrige = ref('')
+async function genererDevoirMiapo() {
+  miapoError.value = ''
+  if (!formData.value.subjectName || !formData.value.type) { miapoError.value = t('devoirs.miapoNeedSubjectType'); return }
+  miapoGenerating.value = true
+  const cls = classesStore.classes.find(c => c.id === formData.value.classId)
+  const niveau = cls?.level || cls?.name || ''
+  const theme = (formData.value.title || formData.value.description || '').trim()
+  const iaType = /exam|compo/i.test(formData.value.type) ? 'examen' : 'devoir'
+  const r = await coursStore.preparerAvecMiapo({ type: iaType, matiere: formData.value.subjectName, niveau, theme })
+  miapoGenerating.value = false
+  if (r.ok) {
+    if (r.titre && !formData.value.title.trim()) formData.value.title = r.titre
+    if (r.document) formData.value.description = r.document
+    miapoCorrige.value = r.corrige || ''
+  } else {
+    miapoError.value = r.reason || t('devoirs.miapoError')
+  }
+}
+
 const openCreateModal = () => {
   editingDevoirId.value = null
   formData.value = {
@@ -511,6 +547,8 @@ const openCreateModal = () => {
     dueDate: '',
     isDigital: false
   }
+  miapoError.value = ''
+  miapoCorrige.value = ''
   showFormModal.value = true
 }
 
@@ -525,6 +563,8 @@ const openEditModal = (devoir) => {
     dueDate: devoir.dueDate,
     isDigital: devoir.isDigital
   }
+  miapoError.value = ''
+  miapoCorrige.value = ''
   showFormModal.value = true
 }
 
@@ -1077,4 +1117,11 @@ textarea.input {
   color: var(--tx2);
   font-size: 13px;
 }
+
+/* Génération MIAPO dans le formulaire de devoir */
+.miapo-gen { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+.miapo-gen-btn { display: inline-flex; align-items: center; gap: 6px; }
+.miapo-gen-err { font-size: 12.5px; color: var(--danger, #B23B3B); }
+.miapo-corrige { margin-top: 10px; }
+.miapo-corrige-hint { font-size: 11.5px; color: var(--muted, #6F767E); font-weight: 400; }
 </style>
