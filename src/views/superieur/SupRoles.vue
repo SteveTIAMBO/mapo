@@ -1,16 +1,13 @@
 <template>
   <div class="sr">
     <div class="sr-intro">
-      <h1 class="sr-h1">Rôles & Accès</h1>
-      <p class="sr-sub">
-        Définissez, pour chaque rôle du personnel, l'accès à chaque module.
-        « Aucun » masque le module dans le menu de ce rôle.
-      </p>
+      <h1 class="sr-h1">{{ t('sup.roles.title') }}</h1>
+      <p class="sr-sub">{{ t('sup.roles.subtitle') }}</p>
     </div>
 
     <!-- Légende des niveaux -->
     <div class="sr-card sr-legend">
-      <span class="sr-legend-title">Niveaux d'accès</span>
+      <span class="sr-legend-title">{{ t('sup.roles.levelsTitle') }}</span>
       <span v-for="lvl in levels" :key="lvl.value" class="sr-legend-item">
         <span class="sr-badge" :style="badgeStyle(lvl.value)">{{ lvl.label }}</span>
         <span class="sr-legend-desc">{{ lvl.description }}</span>
@@ -18,7 +15,7 @@
     </div>
 
     <p v-if="!isAdmin" class="sr-readonly">
-      Lecture seule : seul le directeur peut modifier les rôles et accès.
+      {{ t('sup.roles.readonly') }}
     </p>
 
     <!-- Matrice -->
@@ -26,11 +23,11 @@
       <table class="sr-table">
         <thead>
           <tr>
-            <th class="sr-mod-col">Module</th>
+            <th class="sr-mod-col">{{ t('sup.roles.thModule') }}</th>
             <th v-for="(role, key) in roles" :key="key" class="sr-role-col">
               <span class="sr-role-name">{{ role.label }}</span>
               <span class="sr-role-desc">{{ role.description }}</span>
-              <button v-if="isAdmin && role.custom" type="button" class="sr-role-del" @click="deleteTarget = key">Supprimer</button>
+              <button v-if="isAdmin && role.custom" type="button" class="sr-role-del" @click="deleteTarget = key">{{ t('sup.roles.deleteRole') }}</button>
             </th>
           </tr>
         </thead>
@@ -62,25 +59,25 @@
     <!-- Créer un rôle personnalisé -->
     <div v-if="isAdmin" class="sr-card sr-create">
       <div class="sr-create-head">
-        <strong>Créer un rôle</strong>
-        <p>Ajoutez un rôle (ex. « Professeur principal », « Personnel administratif », « Enseignant ») puis réglez ses accès dans la matrice ci-dessus.</p>
+        <strong>{{ t('sup.roles.createTitle') }}</strong>
+        <p>{{ t('sup.roles.createDesc') }}</p>
       </div>
       <div class="sr-create-form">
-        <input v-model="newRole.label" type="text" class="sr-input" placeholder="Nom du rôle" @keyup.enter="createRole" />
-        <input v-model="newRole.description" type="text" class="sr-input sr-input-grow" placeholder="Description (facultatif)" @keyup.enter="createRole" />
+        <input v-model="newRole.label" type="text" class="sr-input" :placeholder="t('sup.roles.roleName')" @keyup.enter="createRole" />
+        <input v-model="newRole.description" type="text" class="sr-input sr-input-grow" :placeholder="t('sup.roles.roleDesc')" @keyup.enter="createRole" />
         <select v-model="newRole.baseKey" class="sr-input sr-input-select">
-          <option value="">Partir de zéro (aucun accès)</option>
-          <option v-for="(role, key) in roles" :key="key" :value="key">Copier depuis : {{ role.label }}</option>
+          <option value="">{{ t('sup.roles.fromScratch') }}</option>
+          <option v-for="(role, key) in roles" :key="key" :value="key">{{ t('sup.roles.copyFrom', { label: role.label }) }}</option>
         </select>
-        <button type="button" class="sr-btn-primary" :disabled="!newRole.label.trim()" @click="createRole">Créer le rôle</button>
+        <button type="button" class="sr-btn-primary" :disabled="!newRole.label.trim()" @click="createRole">{{ t('sup.roles.createBtn') }}</button>
       </div>
     </div>
 
     <!-- Réinitialisation par rôle -->
     <div v-if="isAdmin" class="sr-card sr-reset">
       <div class="sr-reset-head">
-        <strong>Réinitialiser un rôle</strong>
-        <p>Rétablit les permissions par défaut du rôle choisi.</p>
+        <strong>{{ t('sup.roles.resetTitle') }}</strong>
+        <p>{{ t('sup.roles.resetDesc') }}</p>
       </div>
       <div class="sr-reset-btns">
         <button
@@ -100,11 +97,11 @@
     <transition name="sr-fade">
       <div v-if="resetTarget" class="sr-overlay" @click.self="resetTarget = null">
         <div class="sr-modal">
-          <h2 class="sr-modal-title">Réinitialiser « {{ roles[resetTarget]?.label }} » ?</h2>
-          <p class="sr-modal-txt">Les permissions de ce rôle reviendront aux valeurs par défaut. Action immédiate.</p>
+          <h2 class="sr-modal-title">{{ t('sup.roles.resetConfirmTitle', { label: roles[resetTarget]?.label }) }}</h2>
+          <p class="sr-modal-txt">{{ t('sup.roles.resetConfirmTxt') }}</p>
           <div class="sr-modal-actions">
-            <button type="button" class="sr-btn-ghost" @click="resetTarget = null">Annuler</button>
-            <button type="button" class="sr-btn-primary" @click="confirmReset">Réinitialiser</button>
+            <button type="button" class="sr-btn-ghost" @click="resetTarget = null">{{ t('sup.roles.cancel') }}</button>
+            <button type="button" class="sr-btn-primary" @click="confirmReset">{{ t('sup.roles.reset') }}</button>
           </div>
         </div>
       </div>
@@ -114,22 +111,23 @@
     <transition name="sr-fade">
       <div v-if="deleteTarget" class="sr-overlay" @click.self="deleteTarget = null">
         <div class="sr-modal">
-          <h2 class="sr-modal-title">Supprimer « {{ roles[deleteTarget]?.label }} » ?</h2>
-          <p class="sr-modal-txt">Ce rôle personnalisé et ses accès seront supprimés. Action immédiate.</p>
+          <h2 class="sr-modal-title">{{ t('sup.roles.deleteConfirmTitle', { label: roles[deleteTarget]?.label }) }}</h2>
+          <p class="sr-modal-txt">{{ t('sup.roles.deleteConfirmTxt') }}</p>
           <div class="sr-modal-actions">
-            <button type="button" class="sr-btn-ghost" @click="deleteTarget = null">Annuler</button>
-            <button type="button" class="sr-btn-primary" @click="confirmDelete">Supprimer</button>
+            <button type="button" class="sr-btn-ghost" @click="deleteTarget = null">{{ t('sup.roles.cancel') }}</button>
+            <button type="button" class="sr-btn-primary" @click="confirmDelete">{{ t('sup.roles.delete') }}</button>
           </div>
         </div>
       </div>
     </transition>
 
-    <div v-if="savedHint" class="sr-toast">Modifications enregistrées.</div>
+    <div v-if="savedHint" class="sr-toast">{{ t('sup.roles.savedToast') }}</div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   useSuperieurPermissionsStore,
   SUP_APP_MODULES,
@@ -137,6 +135,7 @@ import {
 } from '../../stores/superieurPermissions'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 
+const { t } = useI18n({ useScope: 'global' })
 const perms = useSuperieurPermissionsStore()
 const authSup = useSuperieurAuthStore()
 

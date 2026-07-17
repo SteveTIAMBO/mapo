@@ -2629,6 +2629,31 @@
       "miapoLi2": "Analysis of your exam papers",
       "miapoLi3": "Revision plan before finals",
       "miapoCta": "Open MIAPO+"
+    },
+    "roles": {
+      "title": "Roles & access",
+      "subtitle": "Set each staff role's access to each module. \"None\" hides the module from that role's menu.",
+      "levelsTitle": "Access levels",
+      "readonly": "Read only: only the director can change roles and access.",
+      "thModule": "Module",
+      "deleteRole": "Delete",
+      "createTitle": "Create a role",
+      "createDesc": "Add a role (e.g. \"Head teacher\", \"Administrative staff\", \"Teacher\") then set its access in the matrix above.",
+      "roleName": "Role name",
+      "roleDesc": "Description (optional)",
+      "fromScratch": "Start from scratch (no access)",
+      "copyFrom": "Copy from: {label}",
+      "createBtn": "Create role",
+      "resetTitle": "Reset a role",
+      "resetDesc": "Restores the default permissions of the selected role.",
+      "resetConfirmTitle": "Reset \"{label}\"?",
+      "resetConfirmTxt": "This role's permissions will return to default values. Immediate action.",
+      "cancel": "Cancel",
+      "reset": "Reset",
+      "deleteConfirmTitle": "Delete \"{label}\"?",
+      "deleteConfirmTxt": "This custom role and its access will be deleted. Immediate action.",
+      "delete": "Delete",
+      "savedToast": "Changes saved."
     }
   },
   "mal": {

@@ -2629,6 +2629,31 @@
       "miapoLi2": "Analyse de tes copies d'examen",
       "miapoLi3": "Plan de révision avant les partiels",
       "miapoCta": "Ouvrir MIAPO+"
+    },
+    "roles": {
+      "title": "Rôles & Accès",
+      "subtitle": "Définissez, pour chaque rôle du personnel, l'accès à chaque module. « Aucun » masque le module dans le menu de ce rôle.",
+      "levelsTitle": "Niveaux d'accès",
+      "readonly": "Lecture seule : seul le directeur peut modifier les rôles et accès.",
+      "thModule": "Module",
+      "deleteRole": "Supprimer",
+      "createTitle": "Créer un rôle",
+      "createDesc": "Ajoutez un rôle (ex. « Professeur principal », « Personnel administratif », « Enseignant ») puis réglez ses accès dans la matrice ci-dessus.",
+      "roleName": "Nom du rôle",
+      "roleDesc": "Description (facultatif)",
+      "fromScratch": "Partir de zéro (aucun accès)",
+      "copyFrom": "Copier depuis : {label}",
+      "createBtn": "Créer le rôle",
+      "resetTitle": "Réinitialiser un rôle",
+      "resetDesc": "Rétablit les permissions par défaut du rôle choisi.",
+      "resetConfirmTitle": "Réinitialiser « {label} » ?",
+      "resetConfirmTxt": "Les permissions de ce rôle reviendront aux valeurs par défaut. Action immédiate.",
+      "cancel": "Annuler",
+      "reset": "Réinitialiser",
+      "deleteConfirmTitle": "Supprimer « {label} » ?",
+      "deleteConfirmTxt": "Ce rôle personnalisé et ses accès seront supprimés. Action immédiate.",
+      "delete": "Supprimer",
+      "savedToast": "Modifications enregistrées."
     }
   },
   "mal": {
