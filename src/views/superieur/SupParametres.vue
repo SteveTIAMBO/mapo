@@ -1,55 +1,55 @@
 <template>
   <div class="sp">
     <div class="sp-intro">
-      <h1 class="sp-h1">Paramètres</h1>
+      <h1 class="sp-h1">{{ t('sup.parametres.title') }}</h1>
       <p class="sp-sub">
-        Identité de l'établissement, profil personnel et historique d'activité.
+        {{ t('sup.parametres.subtitle') }}
       </p>
     </div>
 
     <!-- Onglets internes -->
     <div class="sp-tabs" role="tablist">
-      <button v-for="t in tabs" :key="t.key" class="sp-tab" :class="{ active: activeTab === t.key }" role="tab" type="button" @click="activeTab = t.key">
-        {{ t.label }}
+      <button v-for="tb in tabs" :key="tb.key" class="sp-tab" :class="{ active: activeTab === tb.key }" role="tab" type="button" @click="activeTab = tb.key">
+        {{ tb.label }}
       </button>
     </div>
 
     <!-- Onglet "Mon profil" : tout user connecté édite nom/prénom/photo -->
     <section v-if="activeTab === 'profil'" class="sp-card">
-      <h2 class="sp-h2">Mon profil</h2>
-      <p class="sp-help">Vos informations affichées dans toute l'application : sidebar, suivi d'activité, signatures.</p>
+      <h2 class="sp-h2">{{ t('sup.parametres.myProfile') }}</h2>
+      <p class="sp-help">{{ t('sup.parametres.profilHelp') }}</p>
 
       <div class="sp-row">
         <label class="sp-field">
-          <span>Prénom</span>
-          <input type="text" v-model="myProfile.firstName" placeholder="ex. Léonie" />
+          <span>{{ t('sup.parametres.fFirstName') }}</span>
+          <input type="text" v-model="myProfile.firstName" :placeholder="t('sup.parametres.phFirstName')" />
         </label>
         <label class="sp-field">
-          <span>Nom</span>
-          <input type="text" v-model="myProfile.lastName" placeholder="ex. PARIS" />
+          <span>{{ t('sup.parametres.fLastName') }}</span>
+          <input type="text" v-model="myProfile.lastName" :placeholder="t('sup.parametres.phLastName')" />
         </label>
       </div>
 
       <label class="sp-field">
-        <span>Nom affiché complet</span>
-        <input type="text" v-model="myProfile.displayName" placeholder="ex. Léonie PARIS" />
+        <span>{{ t('sup.parametres.fDisplayName') }}</span>
+        <input type="text" v-model="myProfile.displayName" :placeholder="t('sup.parametres.phDisplayName')" />
       </label>
 
       <div class="sp-logo-row">
         <div class="sp-logo-preview">
-          <img v-if="myProfile.photoURL" :src="myProfile.photoURL" alt="Photo de profil" class="sp-logo-img" />
+          <img v-if="myProfile.photoURL" :src="myProfile.photoURL" :alt="t('sup.parametres.photoAlt')" class="sp-logo-img" />
           <div v-else class="sp-logo-fallback">{{ myInitials }}</div>
         </div>
         <label class="sp-field sp-field-grow">
-          <span>URL de la photo (facultatif)</span>
-          <input type="url" v-model="myProfile.photoURL" placeholder="https://exemple.fr/avatar.jpg" />
+          <span>{{ t('sup.parametres.fPhotoUrl') }}</span>
+          <input type="url" v-model="myProfile.photoURL" :placeholder="t('sup.parametres.phPhotoUrl')" />
         </label>
       </div>
 
       <div class="sp-actions">
-        <button class="sp-btn-secondary" type="button" @click="resetMyProfile" :disabled="!myProfileDirty">Annuler</button>
+        <button class="sp-btn-secondary" type="button" @click="resetMyProfile" :disabled="!myProfileDirty">{{ t('sup.parametres.cancel') }}</button>
         <button class="sp-btn-primary" type="button" @click="saveMyProfile" :disabled="!myProfileDirty || savingProfile">
-          {{ savingProfile ? 'Enregistrement…' : 'Enregistrer mon profil' }}
+          {{ savingProfile ? t('sup.parametres.saving') : t('sup.parametres.saveProfile') }}
         </button>
       </div>
       <div v-if="myProfileMessage" class="sp-toast" :class="myProfileError ? 'is-error' : 'is-success'">
@@ -58,14 +58,13 @@
 
       <!-- Sécurité : mot de passe -->
       <div class="sp-security">
-        <h3 class="sp-h3">Sécurité</h3>
+        <h3 class="sp-h3">{{ t('sup.parametres.security') }}</h3>
         <p class="sp-help">
-          Pour changer votre mot de passe, nous vous envoyons un lien sécurisé sur l'email de votre compte.
-          Vous pourrez définir votre nouveau mot de passe en un clic.
+          {{ t('sup.parametres.securityHelp') }}
         </p>
         <div class="sp-actions">
           <button class="sp-btn-secondary" type="button" @click="askPasswordReset" :disabled="resetSending || !connectedEmail">
-            {{ resetSending ? 'Envoi…' : 'Recevoir un lien de réinitialisation' }}
+            {{ resetSending ? t('sup.parametres.sending') : t('sup.parametres.resetLink') }}
           </button>
         </div>
         <div v-if="resetMessage" class="sp-toast" :class="resetError ? 'is-error' : 'is-success'">
@@ -77,47 +76,47 @@
     <!-- Onglet "Activité école" : admin uniquement -->
     <section v-else-if="activeTab === 'activite'" class="sp-card">
       <div class="sp-activity-head">
-        <h2 class="sp-h2">Activité école</h2>
-        <span class="sp-help-inline" v-if="canSeeActivity">{{ filteredActivities.length }} événement(s) affiché(s)</span>
+        <h2 class="sp-h2">{{ t('sup.parametres.tabActivite') }}</h2>
+        <span class="sp-help-inline" v-if="canSeeActivity">{{ t('sup.parametres.activityCount', { count: filteredActivities.length }) }}</span>
       </div>
-      <p v-if="!canSeeActivity" class="sp-help">Seul un administrateur peut consulter le journal d'activité.</p>
+      <p v-if="!canSeeActivity" class="sp-help">{{ t('sup.parametres.activityAdminOnly') }}</p>
 
       <div v-if="canSeeActivity" class="sp-activity-filters">
         <label class="sp-field sp-field-flex">
-          <span>Type</span>
+          <span>{{ t('sup.parametres.fType') }}</span>
           <select v-model="actFilter.type">
-            <option value="">Tous les types</option>
-            <option v-for="(t, k) in activityTypes" :key="k" :value="k">{{ t.label }}</option>
+            <option value="">{{ t('sup.parametres.allTypes') }}</option>
+            <option v-for="(at, k) in activityTypes" :key="k" :value="k">{{ at.label }}</option>
           </select>
         </label>
         <label class="sp-field sp-field-flex">
-          <span>Membre</span>
+          <span>{{ t('sup.parametres.fMember') }}</span>
           <select v-model="actFilter.user">
-            <option value="">Tous les membres</option>
+            <option value="">{{ t('sup.parametres.allMembers') }}</option>
             <option v-for="u in actUsers" :key="u" :value="u">{{ u }}</option>
           </select>
         </label>
         <label class="sp-field sp-field-flex">
-          <span>Période</span>
+          <span>{{ t('sup.parametres.fPeriod') }}</span>
           <select v-model="actFilter.period">
-            <option value="all">Tout</option>
-            <option value="today">Aujourd'hui</option>
-            <option value="7d">7 derniers jours</option>
-            <option value="30d">30 derniers jours</option>
+            <option value="all">{{ t('sup.parametres.periodAll') }}</option>
+            <option value="today">{{ t('sup.parametres.periodToday') }}</option>
+            <option value="7d">{{ t('sup.parametres.period7d') }}</option>
+            <option value="30d">{{ t('sup.parametres.period30d') }}</option>
           </select>
         </label>
         <label class="sp-field sp-field-flex">
-          <span>Tri</span>
+          <span>{{ t('sup.parametres.fSort') }}</span>
           <select v-model="actFilter.sort">
-            <option value="desc">Plus récent en premier</option>
-            <option value="asc">Plus ancien en premier</option>
+            <option value="desc">{{ t('sup.parametres.sortDesc') }}</option>
+            <option value="asc">{{ t('sup.parametres.sortAsc') }}</option>
           </select>
         </label>
       </div>
 
-      <div v-if="canSeeActivity && activityStore.loading" class="sp-help">Chargement…</div>
+      <div v-if="canSeeActivity && activityStore.loading" class="sp-help">{{ t('sup.parametres.loading') }}</div>
       <div v-else-if="canSeeActivity && filteredActivities.length === 0" class="sp-help">
-        Aucun événement ne correspond aux filtres choisis.
+        {{ t('sup.parametres.activityEmpty') }}
       </div>
       <div v-else-if="canSeeActivity" class="sp-activity-list">
         <div v-for="group in filteredByDay" :key="group.date" class="sp-activity-group">
@@ -139,12 +138,11 @@
 
     <!-- Onglet "MIAPO" : admin — active/désactive l'IA par module -->
     <section v-else-if="activeTab === 'miapo'" class="sp-card">
-      <h2 class="sp-h2">MIAPO — activation par module</h2>
+      <h2 class="sp-h2">{{ t('sup.parametres.miapoTitle') }}</h2>
       <p class="sp-help">
-        Activez MIAPO uniquement là où vous en avez besoin. Désactiver un module coupe l'IA
-        (et sa consommation de crédits) pour ce module : les fonctions concernées disparaissent de l'interface.
+        {{ t('sup.parametres.miapoHelp') }}
       </p>
-      <p v-if="!canSeeActivity" class="sp-help">Seul un administrateur peut modifier ces réglages.</p>
+      <p v-if="!canSeeActivity" class="sp-help">{{ t('sup.parametres.miapoAdminOnly') }}</p>
       <div v-else class="sp-miapo-list">
         <div v-for="m in miapoModules" :key="m.key" class="sp-miapo-item">
           <div class="sp-miapo-txt">
@@ -170,50 +168,49 @@
 
     <!-- Identité -->
     <section class="sp-card">
-      <h2 class="sp-h2">Identité de l'école</h2>
+      <h2 class="sp-h2">{{ t('sup.parametres.schoolIdentity') }}</h2>
 
       <div class="sp-row">
         <label class="sp-field">
-          <span>Nom complet</span>
-          <input type="text" v-model="form.nom" placeholder="ex. ENTPE - École Nationale des Travaux Publics" />
+          <span>{{ t('sup.parametres.fFullName') }}</span>
+          <input type="text" v-model="form.nom" :placeholder="t('sup.parametres.phFullName')" />
         </label>
         <label class="sp-field sp-field-short">
-          <span>Sigle</span>
-          <input type="text" v-model="form.sigle" placeholder="ex. ENTPE" maxlength="10" />
+          <span>{{ t('sup.parametres.fSigle') }}</span>
+          <input type="text" v-model="form.sigle" :placeholder="t('sup.parametres.phSigle')" maxlength="10" />
         </label>
       </div>
 
       <label class="sp-field">
-        <span>Année académique en cours</span>
-        <input type="text" v-model="form.anneeAcademique" placeholder="2025 — 2026" />
+        <span>{{ t('sup.parametres.fYear') }}</span>
+        <input type="text" v-model="form.anneeAcademique" :placeholder="t('sup.parametres.phYear')" />
       </label>
     </section>
 
     <!-- Logo -->
     <section class="sp-card">
-      <h2 class="sp-h2">Logo</h2>
+      <h2 class="sp-h2">{{ t('sup.parametres.logoTitle') }}</h2>
       <p class="sp-help">
-        Indiquez l'URL d'un logo hébergé en ligne (PNG ou SVG, fond transparent recommandé).
-        Apparait en haut de la sidebar et sur l'écran de connexion.
+        {{ t('sup.parametres.logoHelp') }}
       </p>
 
       <div class="sp-logo-row">
         <div class="sp-logo-preview">
-          <img v-if="form.logoUrl" :src="form.logoUrl" :alt="form.sigle || 'Logo'" class="sp-logo-img" />
+          <img v-if="form.logoUrl" :src="form.logoUrl" :alt="form.sigle || t('sup.parametres.logoAlt')" class="sp-logo-img" />
           <div v-else class="sp-logo-fallback">{{ (form.sigle || 'M')[0] }}</div>
         </div>
         <label class="sp-field sp-field-grow">
-          <span>URL du logo</span>
-          <input type="url" v-model="form.logoUrl" placeholder="https://exemple.fr/logo.png" />
+          <span>{{ t('sup.parametres.fLogoUrl') }}</span>
+          <input type="url" v-model="form.logoUrl" :placeholder="t('sup.parametres.phLogoUrl')" />
         </label>
       </div>
     </section>
 
     <!-- Couleur de marque -->
     <section class="sp-card">
-      <h2 class="sp-h2">Couleur de marque</h2>
+      <h2 class="sp-h2">{{ t('sup.parametres.colorTitle') }}</h2>
       <p class="sp-help">
-        Couleur principale utilisée pour les boutons, liens et accents.
+        {{ t('sup.parametres.colorHelp') }}
       </p>
 
       <div class="sp-color-row">
@@ -230,7 +227,7 @@
           ></button>
         </div>
         <label class="sp-field sp-field-color">
-          <span>Personnalisée (hex)</span>
+          <span>{{ t('sup.parametres.fCustomHex') }}</span>
           <div class="sp-color-input">
             <input type="color" v-model="form.couleurPrimaire" class="sp-color-picker" />
             <input type="text" v-model="form.couleurPrimaire" placeholder="var(--pr)" maxlength="7" class="sp-color-text" />
@@ -239,20 +236,20 @@
       </div>
 
       <div class="sp-preview" :style="{ '--preview-color': form.couleurPrimaire }">
-        <div class="sp-preview-label">Aperçu</div>
-        <button class="sp-preview-btn">Bouton principal</button>
-        <span class="sp-preview-link">Un lien</span>
-        <span class="sp-preview-badge">Badge</span>
+        <div class="sp-preview-label">{{ t('sup.parametres.previewLabel') }}</div>
+        <button class="sp-preview-btn">{{ t('sup.parametres.previewBtn') }}</button>
+        <span class="sp-preview-link">{{ t('sup.parametres.previewLink') }}</span>
+        <span class="sp-preview-badge">{{ t('sup.parametres.previewBadge') }}</span>
       </div>
     </section>
 
     <!-- Sauvegarde -->
     <div class="sp-actions">
       <button class="sp-btn-secondary" type="button" @click="reset" :disabled="!dirty">
-        Annuler les modifications
+        {{ t('sup.parametres.cancelChanges') }}
       </button>
       <button class="sp-btn-primary" type="button" @click="save" :disabled="!dirty || saving">
-        {{ saving ? 'Enregistrement…' : 'Enregistrer' }}
+        {{ saving ? t('sup.parametres.saving') : t('sup.parametres.save') }}
       </button>
     </div>
 
@@ -261,8 +258,7 @@
     </div>
 
     <p v-if="!canEdit" class="sp-readonly">
-      Vous êtes en lecture seule. Pour modifier l'identité de l'école, connectez-vous avec un compte
-      administrateur sur l'instance de votre établissement.
+      {{ t('sup.parametres.readonly') }}
     </p>
     </template>
   </div>
@@ -270,6 +266,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { doc, updateDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
@@ -285,16 +282,18 @@ const activityStore = useSupActivityStore()
 const miapoStore = useSuperieurMiapoStore()
 const miapoModules = MIAPO_MODULES
 
+const { t, locale } = useI18n({ useScope: 'global' })
+
 // ── Onglets internes ─────────────────────────────────────────────
 const canSeeActivity = computed(() => authSup.role === 'admin')
 const tabs = computed(() => {
   const list = [
-    { key: 'profil', label: 'Mon profil' },
-    { key: 'etablissement', label: 'Établissement' },
+    { key: 'profil', label: t('sup.parametres.myProfile') },
+    { key: 'etablissement', label: t('sup.parametres.tabEtablissement') },
   ]
   if (canSeeActivity.value) {
     list.push({ key: 'miapo', label: 'MIAPO' })
-    list.push({ key: 'activite', label: 'Activité école' })
+    list.push({ key: 'activite', label: t('sup.parametres.tabActivite') })
   }
   return list
 })
@@ -350,11 +349,11 @@ async function saveMyProfile() {
       photoURL: myProfile.photoURL.trim(),
     })
     if (r.success) {
-      myProfileMessage.value = 'Profil enregistré.'
+      myProfileMessage.value = t('sup.parametres.profilSaved')
       loadMyProfile()
     } else {
       myProfileError.value = true
-      myProfileMessage.value = r.error || "Échec de l'enregistrement."
+      myProfileMessage.value = r.error || t('sup.parametres.saveFailed')
     }
   } finally {
     savingProfile.value = false
@@ -375,10 +374,10 @@ async function askPasswordReset() {
   try {
     const r = await authStore.sendPasswordResetToMe()
     if (r.success) {
-      resetMessage.value = `Lien envoyé à ${connectedEmail.value}. Pensez à vérifier votre dossier spam.`
+      resetMessage.value = t('sup.parametres.resetSent', { email: connectedEmail.value })
     } else {
       resetError.value = true
-      resetMessage.value = r.error || "L'envoi a échoué. Réessayez plus tard."
+      resetMessage.value = r.error || t('sup.parametres.resetFailed')
     }
   } finally {
     resetSending.value = false
@@ -388,8 +387,8 @@ async function askPasswordReset() {
 
 // ── Activité école ──────────────────────────────────────────────
 const activityTypes = ACTIVITY_TYPES
-function typeLabel(t) { return ACTIVITY_TYPES[t]?.label || t }
-function typeTone(t) { return ACTIVITY_TYPES[t]?.tone || 'neutral' }
+function typeLabel(code) { return ACTIVITY_TYPES[code]?.label || code }
+function typeTone(code) { return ACTIVITY_TYPES[code]?.tone || 'neutral' }
 
 const actFilter = reactive({ type: '', user: '', period: 'all', sort: 'desc' })
 
@@ -443,13 +442,13 @@ const filteredByDay = computed(() => {
   return entries
 })
 function fmtDay(isoDate) {
-  if (!isoDate || isoDate === 'sans-date') return 'Sans date'
-  return new Date(isoDate + 'T00:00:00').toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
+  if (!isoDate || isoDate === 'sans-date') return t('sup.parametres.noDate')
+  return new Date(isoDate + 'T00:00:00').toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })
 }
 function fmtTime(ts) {
   const d = ts?.toDate ? ts.toDate() : (ts instanceof Date ? ts : null)
   if (!d) return ''
-  return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+  return d.toLocaleTimeString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 onMounted(() => {
@@ -466,16 +465,16 @@ watch(canSeeActivity, (v) => {
   else activityStore.unsubscribeAll()
 })
 
-const presets = [
-  { value: 'var(--pr)', label: 'Bleu MAPO' },
-  { value: '#0C2D5A', label: 'Bleu nuit' },
-  { value: '#B8892A', label: 'Or' },
-  { value: '#2E8B57', label: 'Vert' },
-  { value: '#B23B3B', label: 'Rouge brique' },
-  { value: '#7C43A7', label: 'Violet' },
-  { value: '#D26B2E', label: 'Orange' },
-  { value: '#0D7377', label: 'Sarcelle' },
-]
+const presets = computed(() => [
+  { value: 'var(--pr)', label: t('sup.parametres.presetBlueMapo') },
+  { value: '#0C2D5A', label: t('sup.parametres.presetNightBlue') },
+  { value: '#B8892A', label: t('sup.parametres.presetGold') },
+  { value: '#2E8B57', label: t('sup.parametres.presetGreen') },
+  { value: '#B23B3B', label: t('sup.parametres.presetBrick') },
+  { value: '#7C43A7', label: t('sup.parametres.presetPurple') },
+  { value: '#D26B2E', label: t('sup.parametres.presetOrange') },
+  { value: '#0D7377', label: t('sup.parametres.presetTeal') },
+])
 
 const initial = ref(null)
 const form = reactive({
@@ -536,11 +535,11 @@ async function save() {
       'configSup.couleurPrimaire': form.couleurPrimaire,
     })
     initial.value = { ...form }
-    saveMessage.value = 'Paramètres enregistrés.'
+    saveMessage.value = t('sup.parametres.paramsSaved')
     setTimeout(() => { saveMessage.value = '' }, 3000)
   } catch (e) {
     saveError.value = true
-    saveMessage.value = `Échec de l'enregistrement : ${e?.message || e}`
+    saveMessage.value = t('sup.parametres.saveFailedErr', { error: e?.message || e })
   } finally {
     saving.value = false
   }
