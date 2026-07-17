@@ -103,7 +103,9 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // les thèmes → quiz calibré sur le niveau/style de l'établissement.
     let effThemes = themes
     try {
-      const ex = useMiapoRefStore().getExemples(matiere)
+      const refStore = useMiapoRefStore()
+      await refStore.load()
+      const ex = refStore.getExemples(matiere)
       if (ex) effThemes = (themes ? themes + ' ; ' : '') + `Inspire-toi du niveau et du style de ces sujets de l'école : ${ex.slice(0, 1500)}`
     } catch (e) { /* silencieux */ }
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).

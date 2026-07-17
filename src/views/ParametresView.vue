@@ -428,8 +428,8 @@ const isDirecteur = computed(() => {
 // ── Personnalisation MIAPO : exemples de sujets de l'école, par matière ──
 const miapoSubjects = computed(() => (subjectsStore.subjects || []).map((s) => s.name).filter(Boolean))
 const miapoRefDraft = reactive({})
-function loadMiapoRefDraft() {
-  miapoRefStore.load()
+async function loadMiapoRefDraft() {
+  await miapoRefStore.load()
   for (const name of miapoSubjects.value) miapoRefDraft[name] = miapoRefStore.getExemples(name)
 }
 function saveMiapoRef(name) {

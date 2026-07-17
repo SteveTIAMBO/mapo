@@ -558,7 +558,7 @@ async function genererDevoirMiapo() {
   parts.push(iaType === 'examen'
     ? `Sujet d'examen complet et structuré : plusieurs exercices progressifs couvrant le programme, un barème indicatif, et un corrigé détaillé.`
     : `Devoir complet : 3 à 5 exercices variés et progressifs, avec un corrigé détaillé.`)
-  miapoRef.load()
+  await miapoRef.load()
   const exemples = miapoRef.getExemples(formData.value.subjectName)
   if (exemples) parts.push(`Aligne-toi sur le style, le niveau et le format de ces sujets de l'école (imite-les sans les recopier) :\n${exemples.slice(0, 4000)}`)
   const theme = parts.join(' ; ')

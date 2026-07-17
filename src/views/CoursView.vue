@@ -295,6 +295,7 @@ function buildInstructions(adapt) {
 }
 async function prepare(adapt) {
   if (!form.value.matiere || store.preparing) return
+  await miapoRef.load()
   const theme = buildInstructions(typeof adapt === 'string' ? adapt : '')
   const r = await store.preparerAvecMiapo({ type: form.value.type, matiere: form.value.matiere, niveau: form.value.classe || '', theme })
   if (r.ok) { form.value.titre = r.titre || form.value.titre; form.value.contenu = r.document || ''; form.value.corrige = r.corrige || '' }
