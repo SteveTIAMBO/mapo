@@ -2,24 +2,24 @@
   <div class="st">
     <div class="st-intro">
       <div>
-        <h1 class="st-h1">Emploi du temps</h1>
-        <p class="st-sub">Planning hebdomadaire par formation, niveau et semestre</p>
+        <h1 class="st-h1">{{ t('sup.edt.title') }}</h1>
+        <p class="st-sub">{{ t('sup.edt.subtitle') }}</p>
       </div>
       <div class="st-intro-actions">
         <ExportMenu :excel="exportEdt" :pdf="exportEdtPdf" :disabled="sessionCount === 0 || proposalMode" />
         <button class="st-btn-ghost" type="button" :disabled="proposalMode" @click="openConfig">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-          Paramètres
+          {{ t('sup.edt.settings') }}
         </button>
         <button
           class="st-btn-miapo"
           type="button"
           :disabled="proposalMode"
-          title="MIAPO propose un emploi du temps pour cette promotion et ce semestre"
+          :title="t('sup.edt.recommendTitle')"
           @click="recommanderEdt"
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></svg>
-          Recommander (MIAPO)
+          {{ t('sup.edt.recommend') }}
         </button>
         <button
           class="st-btn-primary"
@@ -30,7 +30,7 @@
         >
           <svg v-if="!editMode" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
           <svg v-else width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-          {{ editMode ? "Terminer l'édition" : "Modifier l'emploi du temps" }}
+          {{ editMode ? t('sup.edt.finishEdit') : t('sup.edt.editTimetable') }}
         </button>
       </div>
     </div>
@@ -38,13 +38,13 @@
     <!-- Sélecteurs : Formation → Niveau/Promotion -->
     <div class="st-bar">
       <div class="st-filter">
-        <span class="st-filter-label">Formation</span>
+        <span class="st-filter-label">{{ t('sup.edt.fFormation') }}</span>
         <select :value="selectedCycle" :disabled="proposalMode" @change="onCycleChange($event.target.value)">
           <option v-for="c in cycles" :key="c" :value="c">{{ c }}</option>
         </select>
       </div>
       <div class="st-filter">
-        <span class="st-filter-label">Niveau / Promotion</span>
+        <span class="st-filter-label">{{ t('sup.edt.fLevel') }}</span>
         <select :value="store.selectedPromotionId" :disabled="proposalMode" @change="onPromoChange($event.target.value)">
           <option v-for="p in promotionsForCycle" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
@@ -52,12 +52,12 @@
         </select>
       </div>
       <div class="st-context">
-        <span class="st-context-sem">Semestre {{ activeSemestre }}</span>
-        <span class="st-context-count">{{ sessionCount }} séance{{ sessionCount > 1 ? 's' : '' }} / semaine</span>
+        <span class="st-context-sem">{{ t('sup.edt.semestreN', { n: activeSemestre }) }}</span>
+        <span class="st-context-count">{{ t('sup.edt.sessionsPerWeek', { n: sessionCount }) }}</span>
       </div>
       <div class="st-legend">
-        <span v-for="t in legend" :key="t.key" class="st-legend-item">
-          <span class="st-legend-dot" :class="`t-${t.key}`"></span>{{ t.label }}
+        <span v-for="lg in legend" :key="lg.key" class="st-legend-item">
+          <span class="st-legend-dot" :class="`t-${lg.key}`"></span>{{ lg.label }}
         </span>
       </div>
     </div>
@@ -73,14 +73,14 @@
         :disabled="proposalMode"
         @click="activeSemestre = sem"
       >
-        Semestre {{ sem }}
+        {{ t('sup.edt.semestreN', { n: sem }) }}
       </button>
     </div>
 
     <!-- Bandeau mode édition -->
     <div v-if="editMode" class="st-editing-banner">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-      Mode édition — cliquez une case pour ajouter, modifier ou supprimer une séance ; glissez-déposez une séance pour la déplacer.
+      {{ t('sup.edt.editBanner') }}
     </div>
 
     <!-- Indice discret (déplacement impossible) -->
@@ -107,16 +107,16 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z"/><path d="M19 15l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z"/></svg>
         </span>
         <div>
-          <div class="st-proposal-title">MIAPO propose cet emploi du temps</div>
+          <div class="st-proposal-title">{{ t('sup.edt.proposalTitle') }}</div>
           <div class="st-proposal-sub">
-            {{ proposal.n }} séance{{ proposal.n > 1 ? 's' : '' }} placée{{ proposal.n > 1 ? 's' : '' }}<template v-if="proposal.k > 0">, {{ proposal.k }} UE non placée{{ proposal.k > 1 ? 's' : '' }}</template>.
-            <span class="st-proposal-tag">MIAPO propose, la scolarité valide.</span>
+            {{ t('sup.edt.proposalPlaced', { n: proposal.n }) }}<template v-if="proposal.k > 0">{{ t('sup.edt.proposalUnplaced', { k: proposal.k }) }}</template>.
+            <span class="st-proposal-tag">{{ t('sup.edt.proposalTag') }}</span>
           </div>
         </div>
       </div>
       <div class="st-proposal-actions">
-        <button type="button" class="st-btn-ghost" @click="cancelProposal">Annuler</button>
-        <button type="button" class="st-btn-miapo" @click="validateProposal">Valider</button>
+        <button type="button" class="st-btn-ghost" @click="cancelProposal">{{ t('sup.edt.cancel') }}</button>
+        <button type="button" class="st-btn-miapo" @click="validateProposal">{{ t('sup.edt.validate') }}</button>
       </div>
     </div>
 
@@ -126,7 +126,7 @@
         <thead>
           <tr>
             <th class="st-corner"></th>
-            <th v-for="jour in jours" :key="jour">{{ jour }}<span class="st-th-date">{{ dateForDayName(jour) }}</span></th>
+            <th v-for="jour in jours" :key="jour">{{ dayLabel(jour) }}<span class="st-th-date">{{ dateForDayName(jour) }}</span></th>
           </tr>
         </thead>
         <tbody>
@@ -181,9 +181,9 @@
     <!-- Vue mobile : un jour à la fois (le tableau est masqué sur petit écran) -->
     <div class="st-mday">
       <div class="st-mday-nav">
-        <button type="button" class="st-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" aria-label="Jour précédent">‹</button>
-        <div class="st-mday-title">{{ jours[mobileDay] }} <span class="st-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
-        <button type="button" class="st-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" aria-label="Jour suivant">›</button>
+        <button type="button" class="st-mday-arrow" @click="mobileDayPrev" :disabled="mobileDay === 0" :aria-label="t('sup.edt.prevDay')">‹</button>
+        <div class="st-mday-title">{{ dayLabel(jours[mobileDay]) }} <span class="st-mday-date">{{ dateForDayName(jours[mobileDay]) }}</span></div>
+        <button type="button" class="st-mday-arrow" @click="mobileDayNext" :disabled="mobileDay >= jours.length - 1" :aria-label="t('sup.edt.nextDay')">›</button>
       </div>
       <ul class="st-mday-list">
         <li
@@ -198,18 +198,18 @@
             <div class="st-mday-code">{{ getSession(jours[mobileDay], cr.debut).ueCode }} · {{ getSession(jours[mobileDay], cr.debut).ueIntitule }}</div>
             <div class="st-mday-meta">{{ getSession(jours[mobileDay], cr.debut).intervenantNom }} · {{ getSession(jours[mobileDay], cr.debut).salle }}</div>
           </div>
-          <div v-else class="st-mday-empty">{{ editMode ? '+ Ajouter' : '—' }}</div>
+          <div v-else class="st-mday-empty">{{ editMode ? t('sup.edt.addLabel') : '—' }}</div>
         </li>
       </ul>
     </div>
 
     <p v-if="sessionCount === 0" class="st-empty-hint">
-      Aucune séance pour ce semestre.
-      <template v-if="editMode">Cliquez une case pour ajouter un cours.</template>
-      <template v-else>Activez « Modifier l'emploi du temps » pour le construire.</template>
+      {{ t('sup.edt.emptyHint') }}
+      <template v-if="editMode">{{ t('sup.edt.emptyHintEdit') }}</template>
+      <template v-else>{{ t('sup.edt.emptyHintView') }}</template>
     </p>
 
-    <div v-if="isDemoTenant" class="st-demo-note">Données de démonstration — planning fictif.</div>
+    <div v-if="isDemoTenant" class="st-demo-note">{{ t('sup.edt.demoNote') }}</div>
 
     <!-- Modale : éditeur de séance -->
     <transition name="st-fade">
@@ -217,8 +217,8 @@
         <div class="st-modal">
           <div class="st-modal-head">
             <div>
-              <h2 class="st-modal-title">{{ editorEditing ? 'Modifier la séance' : 'Nouvelle séance' }}</h2>
-              <p class="st-modal-sub">{{ editorCell.jour }} · {{ editorCell.debut }}–{{ editorCell.fin }}</p>
+              <h2 class="st-modal-title">{{ editorEditing ? t('sup.edt.editorEditTitle') : t('sup.edt.editorNewTitle') }}</h2>
+              <p class="st-modal-sub">{{ dayLabel(editorCell.jour) }} · {{ editorCell.debut }}–{{ editorCell.fin }}</p>
             </div>
             <button class="st-modal-close" type="button" @click="editorOpen = false">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -226,9 +226,9 @@
           </div>
           <form class="st-form" @submit.prevent="submitEditor">
             <div v-if="uesPromo.length" class="st-field">
-              <label class="st-form-label">Pré-remplir depuis une UE du semestre</label>
+              <label class="st-form-label">{{ t('sup.edt.prefillUe') }}</label>
               <select v-model="ueChoisieId" class="st-input" @change="onPickUe">
-                <option value="">— Choisir une UE (optionnel) —</option>
+                <option value="">{{ t('sup.edt.chooseUe') }}</option>
                 <option v-for="u in uesPromo" :key="u.id" :value="u.id">
                   {{ u.code }} · {{ u.intitule }}
                 </option>
@@ -236,45 +236,45 @@
             </div>
             <div class="st-form-row">
               <div class="st-field">
-                <label class="st-form-label">Code UE</label>
-                <input v-model="editorForm.ueCode" type="text" class="st-input" placeholder="FND-012" />
+                <label class="st-form-label">{{ t('sup.edt.fUeCode') }}</label>
+                <input v-model="editorForm.ueCode" type="text" class="st-input" :placeholder="t('sup.edt.phUeCode')" />
               </div>
               <div class="st-field st-field-grow">
-                <label class="st-form-label">Intitulé UE</label>
-                <input v-model="editorForm.ueIntitule" type="text" class="st-input" placeholder="Marketing fondamental" />
+                <label class="st-form-label">{{ t('sup.edt.fUeName') }}</label>
+                <input v-model="editorForm.ueIntitule" type="text" class="st-input" :placeholder="t('sup.edt.phUeName')" />
               </div>
             </div>
             <div class="st-field">
-              <label class="st-form-label">Intervenant</label>
-              <input v-model="editorForm.intervenantNom" type="text" class="st-input" list="st-intervenants" placeholder="Nom de l'intervenant" />
+              <label class="st-form-label">{{ t('sup.edt.fIntervenant') }}</label>
+              <input v-model="editorForm.intervenantNom" type="text" class="st-input" list="st-intervenants" :placeholder="t('sup.edt.phIntervenant')" />
               <datalist id="st-intervenants">
                 <option v-for="n in intervenantOptions" :key="n" :value="n"></option>
               </datalist>
             </div>
             <div class="st-form-row">
               <div class="st-field">
-                <label class="st-form-label">Salle</label>
-                <input v-model="editorForm.salle" type="text" class="st-input" list="st-salles" placeholder="Salle 101" />
+                <label class="st-form-label">{{ t('sup.edt.fSalle') }}</label>
+                <input v-model="editorForm.salle" type="text" class="st-input" list="st-salles" :placeholder="t('sup.edt.phSalle')" />
                 <datalist id="st-salles">
                   <option v-for="n in salleOptions" :key="n" :value="n"></option>
                 </datalist>
               </div>
               <div class="st-field">
-                <label class="st-form-label">Type d'UE</label>
+                <label class="st-form-label">{{ t('sup.edt.fUeType') }}</label>
                 <select v-model="editorForm.type" class="st-input">
-                  <option v-for="t in Object.values(UE_TYPES)" :key="t.key" :value="t.key">{{ t.label }}</option>
+                  <option v-for="tp in Object.values(UE_TYPES)" :key="tp.key" :value="tp.key">{{ tp.label }}</option>
                 </select>
               </div>
             </div>
             <p v-if="editorError" class="st-form-error">{{ editorError }}</p>
             <div class="st-modal-actions">
               <button v-if="editorEditing" type="button" class="st-btn-danger" @click="confirmDeleteOpen = true">
-                Supprimer
+                {{ t('sup.edt.delete') }}
               </button>
               <span class="st-spacer"></span>
-              <button type="button" class="st-btn-ghost" @click="editorOpen = false">Annuler</button>
+              <button type="button" class="st-btn-ghost" @click="editorOpen = false">{{ t('sup.edt.cancel') }}</button>
               <button type="submit" class="st-btn-primary">
-                {{ editorEditing ? 'Enregistrer' : 'Ajouter la séance' }}
+                {{ editorEditing ? t('sup.edt.save') : t('sup.edt.addSession') }}
               </button>
             </div>
           </form>
@@ -287,15 +287,15 @@
       <div v-if="confirmDeleteOpen" class="st-modal-overlay st-modal-overlay-top" @click.self="confirmDeleteOpen = false">
         <div class="st-modal st-modal-sm">
           <div class="st-modal-head">
-            <h2 class="st-modal-title">Supprimer la séance ?</h2>
+            <h2 class="st-modal-title">{{ t('sup.edt.deleteTitle') }}</h2>
           </div>
           <div class="st-confirm-body">
-            <p>Cette séance sera retirée de l'emploi du temps de cette promotion pour le semestre {{ activeSemestre }}.</p>
+            <p>{{ t('sup.edt.deleteBody', { sem: activeSemestre }) }}</p>
           </div>
           <div class="st-modal-actions">
             <span class="st-spacer"></span>
-            <button type="button" class="st-btn-ghost" @click="confirmDeleteOpen = false">Annuler</button>
-            <button type="button" class="st-btn-danger" @click="confirmDelete">Supprimer</button>
+            <button type="button" class="st-btn-ghost" @click="confirmDeleteOpen = false">{{ t('sup.edt.cancel') }}</button>
+            <button type="button" class="st-btn-danger" @click="confirmDelete">{{ t('sup.edt.delete') }}</button>
           </div>
         </div>
       </div>
@@ -307,52 +307,52 @@
         <div class="st-modal">
           <div class="st-modal-head">
             <div>
-              <h2 class="st-modal-title">Paramètres de la grille</h2>
-              <p class="st-modal-sub">Créneaux horaires et jours ouvrés</p>
+              <h2 class="st-modal-title">{{ t('sup.edt.configTitle') }}</h2>
+              <p class="st-modal-sub">{{ t('sup.edt.configSub') }}</p>
             </div>
             <button class="st-modal-close" type="button" @click="configOpen = false">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
             </button>
           </div>
           <div class="st-form">
-            <label class="st-form-label">Créneaux horaires</label>
+            <label class="st-form-label">{{ t('sup.edt.timeSlots') }}</label>
             <div class="st-cfg-creneaux">
               <div v-for="(c, i) in cfgForm.creneaux" :key="i" class="st-cfg-row">
                 <input v-model="c.debut" type="time" class="st-input st-input-time" />
                 <span class="st-cfg-dash">—</span>
                 <input v-model="c.fin" type="time" class="st-input st-input-time" />
                 <div class="st-cfg-move">
-                  <button type="button" class="st-icon-btn" title="Monter" :disabled="i === 0" @click="moveCreneau(i, -1)">
+                  <button type="button" class="st-icon-btn" :title="t('sup.edt.moveUp')" :disabled="i === 0" @click="moveCreneau(i, -1)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
                   </button>
-                  <button type="button" class="st-icon-btn" title="Descendre" :disabled="i === cfgForm.creneaux.length - 1" @click="moveCreneau(i, 1)">
+                  <button type="button" class="st-icon-btn" :title="t('sup.edt.moveDown')" :disabled="i === cfgForm.creneaux.length - 1" @click="moveCreneau(i, 1)">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
                   </button>
                 </div>
-                <button type="button" class="st-icon-btn is-danger" title="Retirer" @click="removeCreneau(i)">
+                <button type="button" class="st-icon-btn is-danger" :title="t('sup.edt.remove')" @click="removeCreneau(i)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
               </div>
             </div>
             <button type="button" class="st-cfg-add" @click="addCreneau">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-              Ajouter un créneau
+              {{ t('sup.edt.addSlot') }}
             </button>
 
-            <label class="st-form-label st-cfg-jours-label">Jours ouvrés</label>
+            <label class="st-form-label st-cfg-jours-label">{{ t('sup.edt.workingDays') }}</label>
             <div class="st-cfg-jours">
               <label v-for="j in JOURS_SEMAINE" :key="j" class="st-cfg-jour" :class="{ 'is-on': cfgForm.jours.includes(j) }">
                 <input type="checkbox" :checked="cfgForm.jours.includes(j)" @change="toggleJour(j)" />
-                {{ j }}
+                {{ dayLabel(j) }}
               </label>
             </div>
 
             <p v-if="cfgError" class="st-form-error">{{ cfgError }}</p>
             <div class="st-modal-actions">
-              <button type="button" class="st-btn-ghost" @click="resetConfigDefaults">Valeurs par défaut</button>
+              <button type="button" class="st-btn-ghost" @click="resetConfigDefaults">{{ t('sup.edt.defaults') }}</button>
               <span class="st-spacer"></span>
-              <button type="button" class="st-btn-ghost" @click="configOpen = false">Annuler</button>
-              <button type="button" class="st-btn-primary" @click="saveConfig">Enregistrer</button>
+              <button type="button" class="st-btn-ghost" @click="configOpen = false">{{ t('sup.edt.cancel') }}</button>
+              <button type="button" class="st-btn-primary" @click="saveConfig">{{ t('sup.edt.save') }}</button>
             </div>
           </div>
         </div>
@@ -363,6 +363,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, UE_TYPES, SALLES_POOL_EDT } from '../../stores/superieur'
 import { useSuperieurEdtStore } from '../../stores/superieurEdt'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
@@ -374,6 +375,11 @@ const store = useSuperieurStore()
 const edtStore = useSuperieurEdtStore()
 const schoolIdentity = useSchoolIdentityStore()
 const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
+
+const { t, locale } = useI18n({ useScope: 'global' })
+// Libellé du jour (affichage) — la logique garde le nom FR pour matcher le store.
+const DAY_KEY = { Lundi: 'mon', Mardi: 'tue', Mercredi: 'wed', Jeudi: 'thu', Vendredi: 'fri', Samedi: 'sat', Dimanche: 'sun' }
+function dayLabel(name) { return t('sup.days.' + (DAY_KEY[name] || 'mon')) }
 
 // ── Grille : créneaux + jours (configurables) ──
 const jours = computed(() => edtStore.config.jours)
@@ -503,13 +509,13 @@ function buildEdtExport() {
     return String(a.debut).localeCompare(String(b.debut))
   })
   const columns = [
-    { key: 'jour', label: 'Jour', width: 12 },
-    { key: 'creneau', label: 'Créneau', width: 16 },
-    { key: 'ueCode', label: 'Code UE', width: 12 },
-    { key: 'ueIntitule', label: 'Intitulé', width: 34 },
-    { key: 'intervenant', label: 'Intervenant', width: 24 },
-    { key: 'salle', label: 'Salle', width: 12 },
-    { key: 'type', label: 'Type', width: 16 },
+    { key: 'jour', label: t('sup.edt.colJour'), width: 12 },
+    { key: 'creneau', label: t('sup.edt.colCreneau'), width: 16 },
+    { key: 'ueCode', label: t('sup.edt.fUeCode'), width: 12 },
+    { key: 'ueIntitule', label: t('sup.edt.colIntitule'), width: 34 },
+    { key: 'intervenant', label: t('sup.edt.fIntervenant'), width: 24 },
+    { key: 'salle', label: t('sup.edt.fSalle'), width: 12 },
+    { key: 'type', label: t('sup.edt.colType'), width: 16 },
   ]
   const data = sorted.map((s) => ({
     jour: s.jour || '',
@@ -522,13 +528,13 @@ function buildEdtExport() {
   }))
   const promo = store.selectedPromotion
   const filename = `emploi_du_temps_${slugify(promo.programmeNom)}_${slugify(promo.anneeNom)}_${slugify(activeSemestre.value)}`
-  const title = `Emploi du temps — ${promo.programmeNom} ${promo.anneeNom} · ${activeSemestre.value}`
+  const title = t('sup.edt.exportTitle', { prog: promo.programmeNom, annee: promo.anneeNom, sem: activeSemestre.value })
   return { data, columns, filename, title }
 }
 function exportEdt() {
   const { data, columns, filename } = buildEdtExport()
   if (!data.length) return
-  exportToExcel(data, columns, filename, 'Emploi du temps')
+  exportToExcel(data, columns, filename, t('sup.edt.title'))
 }
 function exportEdtPdf() {
   const { data, filename, title } = buildEdtExport()
@@ -563,7 +569,7 @@ function dateForDayName(name) {
   if (target < 0) return ''
   const now = new Date()
   const d = new Date(now); d.setDate(now.getDate() + (target - now.getDay()))
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+  return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' })
 }
 function toggleEdit() {
   editMode.value = !editMode.value
@@ -619,7 +625,7 @@ function onDrop(jour, cr) {
   if (src.jour === jour && src.debut === cr.debut) return
   // Cible occupée → on bloque avec un indice discret (comportement le plus simple et correct).
   if (getSession(jour, cr.debut)) {
-    flashMoveHint('Case déjà occupée — déposez la séance sur une case libre.')
+    flashMoveHint(t('sup.edt.hintOccupied'))
     return
   }
   const session = getSession(src.jour, src.debut)
@@ -675,7 +681,7 @@ function onCellClick(jour, cr) {
 }
 function submitEditor() {
   if (!editorForm.ueCode.trim() && !editorForm.ueIntitule.trim()) {
-    editorError.value = "Renseignez au moins le code ou l'intitulé de l'UE."
+    editorError.value = t('sup.edt.errUeRequired')
     return
   }
   edtStore.setSession(store.selectedPromotion.id, activeSemestre.value, {
@@ -757,11 +763,11 @@ function toggleJour(j) {
 function saveConfig() {
   const valid = cfgForm.creneaux.filter((c) => c.debut && c.fin)
   if (!valid.length) {
-    cfgError.value = 'Ajoutez au moins un créneau (heure de début et de fin).'
+    cfgError.value = t('sup.edt.errNoSlot')
     return
   }
   if (!cfgForm.jours.length) {
-    cfgError.value = 'Sélectionnez au moins un jour.'
+    cfgError.value = t('sup.edt.errNoDay')
     return
   }
   edtStore.saveConfig({ creneaux: cfgForm.creneaux, jours: cfgForm.jours })
@@ -891,11 +897,11 @@ function recommanderEdt() {
 
   const built = buildProposal()
   if (built.ueCount === 0) {
-    showToast("Aucune UE définie pour ce semestre : MIAPO n'a pas de cours à planifier.", 'info')
+    showToast(t('sup.edt.toastNoUe'), 'info')
     return
   }
   if (!built.sessions.length) {
-    showToast("MIAPO n'a pas pu placer de séance — vérifiez les créneaux dans les paramètres.", 'info')
+    showToast(t('sup.edt.toastNoPlace'), 'info')
     return
   }
   proposal.value = {
@@ -918,7 +924,7 @@ function validateProposal() {
   edtStore.applyProposal(p.promotionId, p.semestre, p.sessions, demoCells)
   proposalMode.value = false
   proposal.value = null
-  showToast("Emploi du temps enregistré. Vous pouvez l'ajuster à tout moment.", 'success')
+  showToast(t('sup.edt.toastSaved'), 'success')
 }
 
 function cancelProposal() {
