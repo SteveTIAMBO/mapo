@@ -2,16 +2,11 @@
   <div class="ec">
     <div class="ec-intro">
       <div>
-        <h1 class="ec-h1">Échéanciers de paiement</h1>
-        <p class="ec-sub">
-          Les grilles d'échéancier définissent la répartition des paiements (acompte + versements).
-          Une grille école s'applique à tous les étudiants par défaut. Vous pouvez créer une grille
-          spécifique à un programme (alternance, mensualités) ou à un étudiant (cas particulier).
-          La cascade de résolution est : étudiant, puis programme, puis école.
-        </p>
+        <h1 class="ec-h1">{{ t('sup.echeanciers.title') }}</h1>
+        <p class="ec-sub">{{ t('sup.echeanciers.subtitle') }}</p>
       </div>
       <div v-if="canEdit" class="ec-intro-cta">
-        <button class="ec-btn-primary" type="button" @click="openCreateForm">Créer une grille</button>
+        <button class="ec-btn-primary" type="button" @click="openCreateForm">{{ t('sup.echeanciers.createGrille') }}</button>
       </div>
     </div>
 
@@ -19,15 +14,15 @@
     <div class="ec-kpis">
       <div class="ec-kpi">
         <div class="ec-kpi-num">{{ store.grilles.length }}</div>
-        <div class="ec-kpi-lab">Grilles définies</div>
+        <div class="ec-kpi-lab">{{ t('sup.echeanciers.kpiDefined') }}</div>
       </div>
       <div class="ec-kpi">
         <div class="ec-kpi-num">{{ nbProgrammeOverrides }}</div>
-        <div class="ec-kpi-lab">Overrides programme</div>
+        <div class="ec-kpi-lab">{{ t('sup.echeanciers.kpiProgOverrides') }}</div>
       </div>
       <div class="ec-kpi">
         <div class="ec-kpi-num">{{ nbEtudiantOverrides }}</div>
-        <div class="ec-kpi-lab">Overrides étudiant</div>
+        <div class="ec-kpi-lab">{{ t('sup.echeanciers.kpiEtuOverrides') }}</div>
       </div>
     </div>
 
@@ -35,12 +30,12 @@
     <section v-for="(grilles, scope) in grillesGroupees" :key="scope" class="ec-card">
       <header class="ec-card-head">
         <h2 class="ec-h2">{{ scopeLabels[scope].titre }}</h2>
-        <span class="ec-card-count">{{ grilles.length }} grille(s)</span>
+        <span class="ec-card-count">{{ t('sup.echeanciers.grilleCount', { n: grilles.length }) }}</span>
       </header>
       <p class="ec-section-note">{{ scopeLabels[scope].note }}</p>
 
       <div v-if="grilles.length === 0" class="ec-empty">
-        Aucune grille à ce niveau.
+        {{ t('sup.echeanciers.emptyScope') }}
       </div>
 
       <div v-else class="ec-grille-list">
@@ -49,23 +44,23 @@
             <div>
               <div class="ec-grille-title">
                 {{ g.libelle }}
-                <span v-if="g.parDefaut" class="ec-tag tone-info">Par défaut</span>
+                <span v-if="g.parDefaut" class="ec-tag tone-info">{{ t('sup.echeanciers.parDefaut') }}</span>
               </div>
               <div class="ec-grille-meta">
                 <span v-if="g.scope === 'programme'">{{ programmeName(g.scopeId) }}</span>
                 <span v-else-if="g.scope === 'etudiant'">{{ etudiantName(g.scopeId) }}</span>
-                <span>· {{ g.nbEtudiants }} étudiant(s) concerné(s)</span>
-                <span>· Créée le {{ fmtDate(g.cree) }}</span>
+                <span>· {{ t('sup.echeanciers.concernedCount', { n: g.nbEtudiants }) }}</span>
+                <span>· {{ t('sup.echeanciers.createdOn', { date: fmtDate(g.cree) }) }}</span>
               </div>
             </div>
             <div v-if="canEdit" class="ec-grille-actions">
-              <button class="ec-btn-secondary" type="button" @click="openEditForm(g)">Modifier</button>
+              <button class="ec-btn-secondary" type="button" @click="openEditForm(g)">{{ t('sup.echeanciers.edit') }}</button>
               <button
                 v-if="!g.parDefaut"
                 class="ec-btn-danger"
                 type="button"
                 @click="confirmDelete(g)"
-              >Supprimer</button>
+              >{{ t('sup.echeanciers.delete') }}</button>
             </div>
           </header>
           <p v-if="g.description" class="ec-grille-desc">{{ g.description }}</p>
@@ -75,16 +70,16 @@
               <div class="ec-ligne-content">
                 <div class="ec-ligne-lab">{{ l.libelle }}</div>
                 <div class="ec-ligne-meta">
-                  J+{{ l.joursApresInscription }} jour(s) après inscription
+                  {{ t('sup.echeanciers.daysAfter', { n: l.joursApresInscription }) }}
                 </div>
               </div>
               <div class="ec-ligne-pct">{{ l.pourcentage }}%</div>
             </div>
           </div>
           <div class="ec-totaux">
-            <span>Total : {{ totalPct(g.lignes) }}%</span>
+            <span>{{ t('sup.echeanciers.total', { n: totalPct(g.lignes) }) }}</span>
             <span v-if="totalPct(g.lignes) !== 100" class="ec-warning">
-              La somme doit faire 100% pour être valide
+              {{ t('sup.echeanciers.mustBe100') }}
             </span>
           </div>
         </article>
@@ -95,79 +90,79 @@
     <div v-if="showForm" class="ec-modal" @click.self="closeForm">
       <div class="ec-modal-content">
         <header class="ec-modal-head">
-          <h3>{{ form.id ? 'Modifier la grille' : 'Nouvelle grille d\'échéancier' }}</h3>
+          <h3>{{ form.id ? t('sup.echeanciers.editTitle') : t('sup.echeanciers.newTitle') }}</h3>
           <button class="ec-modal-close" type="button" @click="closeForm">×</button>
         </header>
         <div class="ec-modal-body">
           <div class="ec-form-row">
-            <label class="ec-lab">Libellé</label>
-            <input v-model="form.libelle" type="text" class="ec-input" placeholder="Ex : Grille standard Licence" />
+            <label class="ec-lab">{{ t('sup.echeanciers.fLibelle') }}</label>
+            <input v-model="form.libelle" type="text" class="ec-input" :placeholder="t('sup.echeanciers.libellePlaceholder')" />
           </div>
 
           <div class="ec-form-row">
-            <label class="ec-lab">Niveau d'application</label>
+            <label class="ec-lab">{{ t('sup.echeanciers.fScope') }}</label>
             <select v-model="form.scope" :disabled="!!form.id" class="ec-select">
-              <option value="ecole">École (s'applique à tous par défaut)</option>
-              <option value="programme">Programme (surclasse la grille école pour ce programme)</option>
-              <option value="etudiant">Étudiant (surclasse pour un étudiant spécifique)</option>
+              <option value="ecole">{{ t('sup.echeanciers.scopeEcole') }}</option>
+              <option value="programme">{{ t('sup.echeanciers.scopeProgramme') }}</option>
+              <option value="etudiant">{{ t('sup.echeanciers.scopeEtudiant') }}</option>
             </select>
           </div>
 
           <div v-if="form.scope === 'programme'" class="ec-form-row">
-            <label class="ec-lab">Programme concerné</label>
+            <label class="ec-lab">{{ t('sup.echeanciers.fProgramme') }}</label>
             <select v-model="form.scopeId" class="ec-select">
-              <option value="">Choisir un programme</option>
+              <option value="">{{ t('sup.echeanciers.chooseProgramme') }}</option>
               <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.nom }}</option>
             </select>
           </div>
 
           <div v-if="form.scope === 'etudiant'" class="ec-form-row">
-            <label class="ec-lab">Étudiant concerné</label>
+            <label class="ec-lab">{{ t('sup.echeanciers.fEtudiant') }}</label>
             <select v-model="form.scopeId" class="ec-select">
-              <option value="">Choisir un étudiant</option>
+              <option value="">{{ t('sup.echeanciers.chooseEtudiant') }}</option>
               <option v-for="e in etudiantsForSelect" :key="e.id" :value="e.id">{{ e.nomComplet }}</option>
             </select>
           </div>
 
           <div class="ec-form-row">
-            <label class="ec-lab">Description (optionnelle)</label>
-            <input v-model="form.description" type="text" class="ec-input" placeholder="Contexte ou justification" />
+            <label class="ec-lab">{{ t('sup.echeanciers.fDescription') }}</label>
+            <input v-model="form.description" type="text" class="ec-input" :placeholder="t('sup.echeanciers.descPlaceholder')" />
           </div>
 
           <div class="ec-form-section">
             <div class="ec-form-section-head">
-              <h4 class="ec-form-h4">Lignes de l'échéancier</h4>
-              <button class="ec-btn-secondary ec-btn-small" type="button" @click="addLigne">+ Ajouter une ligne</button>
+              <h4 class="ec-form-h4">{{ t('sup.echeanciers.lignesTitle') }}</h4>
+              <button class="ec-btn-secondary ec-btn-small" type="button" @click="addLigne">{{ t('sup.echeanciers.addLigne') }}</button>
             </div>
 
             <div v-for="(l, idx) in form.lignes" :key="idx" class="ec-form-ligne">
               <div class="ec-form-ligne-step">{{ idx + 1 }}</div>
-              <input v-model="l.libelle" type="text" class="ec-input ec-input-flex" placeholder="Libellé du versement" />
+              <input v-model="l.libelle" type="text" class="ec-input ec-input-flex" :placeholder="t('sup.echeanciers.lignePlaceholder')" />
               <div class="ec-form-pct">
                 <input v-model.number="l.pourcentage" type="number" min="0" max="100" class="ec-input ec-input-num" />
                 <span>%</span>
               </div>
               <div class="ec-form-jours">
                 <input v-model.number="l.joursApresInscription" type="number" min="0" class="ec-input ec-input-num" />
-                <span>jours</span>
+                <span>{{ t('sup.echeanciers.daysUnit') }}</span>
               </div>
-              <button class="ec-btn-icon" type="button" @click="removeLigne(idx)" title="Supprimer cette ligne">×</button>
+              <button class="ec-btn-icon" type="button" @click="removeLigne(idx)" :title="t('sup.echeanciers.removeLigne')">×</button>
             </div>
 
             <div class="ec-form-total" :class="{ 'is-error': totalPct(form.lignes) !== 100 }">
-              Total : {{ totalPct(form.lignes) }}%
-              <span v-if="totalPct(form.lignes) !== 100">(doit être 100%)</span>
+              {{ t('sup.echeanciers.formTotal', { n: totalPct(form.lignes) }) }}
+              <span v-if="totalPct(form.lignes) !== 100">{{ t('sup.echeanciers.mustBe100Short') }}</span>
             </div>
           </div>
 
           <div class="ec-form-actions">
-            <button class="ec-btn-secondary" type="button" @click="closeForm">Annuler</button>
+            <button class="ec-btn-secondary" type="button" @click="closeForm">{{ t('sup.echeanciers.cancel') }}</button>
             <button
               class="ec-btn-primary"
               type="button"
               :disabled="!isFormValid"
               @click="saveForm"
-            >{{ form.id ? 'Enregistrer' : 'Créer la grille' }}</button>
+            >{{ form.id ? t('sup.echeanciers.save') : t('sup.echeanciers.createBtn') }}</button>
           </div>
         </div>
       </div>
@@ -177,17 +172,16 @@
     <div v-if="askDelete" class="ec-modal" @click.self="askDelete = null">
       <div class="ec-modal-content ec-modal-small">
         <header class="ec-modal-head">
-          <h3>Supprimer cette grille ?</h3>
+          <h3>{{ t('sup.echeanciers.deleteTitle') }}</h3>
           <button class="ec-modal-close" type="button" @click="askDelete = null">×</button>
         </header>
         <div class="ec-modal-body">
           <p class="ec-confirm-text">
-            La grille <strong>{{ askDelete.libelle }}</strong> sera supprimée. Les étudiants
-            qu'elle couvrait basculeront sur la grille de niveau supérieur (programme ou école).
+            {{ t('sup.echeanciers.confirmPre') }} <strong>{{ askDelete.libelle }}</strong> {{ t('sup.echeanciers.confirmPost') }}
           </p>
           <div class="ec-form-actions">
-            <button class="ec-btn-secondary" type="button" @click="askDelete = null">Annuler</button>
-            <button class="ec-btn-danger" type="button" @click="doDelete">Confirmer la suppression</button>
+            <button class="ec-btn-secondary" type="button" @click="askDelete = null">{{ t('sup.echeanciers.cancel') }}</button>
+            <button class="ec-btn-danger" type="button" @click="doDelete">{{ t('sup.echeanciers.confirmDelete') }}</button>
           </div>
         </div>
       </div>
@@ -197,10 +191,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFinanceStore } from '../../stores/finance'
 import { useSuperieurStore, PROGRAMMES } from '../../stores/superieur'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const supStore = useSuperieurStore()
 const auth = useSuperieurAuthStore()
@@ -223,20 +219,20 @@ function etudiantName(id) {
   return e ? e.nomComplet : id
 }
 
-const scopeLabels = {
+const scopeLabels = computed(() => ({
   ecole: {
-    titre: 'Niveau école',
-    note: 'S\'applique à tous les étudiants par défaut, sauf overrides programme ou étudiant.',
+    titre: t('sup.echeanciers.scopeEcoleTitre'),
+    note: t('sup.echeanciers.scopeEcoleNote'),
   },
   programme: {
-    titre: 'Niveau programme',
-    note: 'Surclasse la grille école pour les étudiants du programme.',
+    titre: t('sup.echeanciers.scopeProgTitre'),
+    note: t('sup.echeanciers.scopeProgNote'),
   },
   etudiant: {
-    titre: 'Niveau étudiant',
-    note: 'Cas particulier (alternance, boursier, accord exceptionnel). Surclasse tout le reste.',
+    titre: t('sup.echeanciers.scopeEtuTitre'),
+    note: t('sup.echeanciers.scopeEtuNote'),
   },
-}
+}))
 
 const grillesAvecCouverture = computed(() => store.grillesAvecCouverture)
 
@@ -344,7 +340,7 @@ function doDelete() {
 
 function fmtDate(iso) {
   if (!iso) return ''
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return new Date(iso + 'T00:00:00').toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 
