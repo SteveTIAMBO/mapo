@@ -3758,7 +3758,11 @@
     "fbSending": "Envoi…",
     "fbSent": "Merci ! Votre retour a bien été envoyé.",
     "fbError": "L'envoi a échoué.",
-    "fbMailto": "Envoyer par e-mail à la place"
+    "fbMailto": "Envoyer par e-mail à la place",
+    "secMiapoRef": "MIAPO — exemples de l'école",
+    "miapoRefHint": "Collez ici des sujets de devoirs ou d'examens des années précédentes, par matière. MIAPO s'en inspire (style, niveau, format) pour générer des sujets alignés sur votre établissement — sans les recopier.",
+    "miapoRefPh": "Collez un ou plusieurs sujets types pour cette matière…",
+    "miapoRefNoSubjects": "Ajoutez d'abord des matières pour personnaliser MIAPO."
   },
   "onb": {
     "welcome": "Bienvenue ! Comment démarrer ?",

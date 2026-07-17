@@ -3758,7 +3758,11 @@
     "fbSending": "Sending…",
     "fbSent": "Thanks! Your feedback has been sent.",
     "fbError": "Sending failed.",
-    "fbMailto": "Send by email instead"
+    "fbMailto": "Send by email instead",
+    "secMiapoRef": "MIAPO — school examples",
+    "miapoRefHint": "Paste past assignment or exam papers here, by subject. MIAPO uses them (style, level, format) to generate content aligned with your school — without copying them.",
+    "miapoRefPh": "Paste one or more sample papers for this subject…",
+    "miapoRefNoSubjects": "Add subjects first to personalize MIAPO."
   },
   "onb": {
     "welcome": "Welcome! How would you like to start?",

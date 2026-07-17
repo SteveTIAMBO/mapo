@@ -264,6 +264,21 @@
           </div>
         </section>
 
+        <!-- MIAPO — exemples de sujets de l'école (personnalisation de la génération) -->
+        <section v-if="isDirecteur" class="card settings-card">
+          <div class="card-header">
+            <div class="section-label">{{ t('param.secMiapoRef') }}</div>
+          </div>
+          <div class="card-body">
+            <p style="font-size: 13px; color: var(--tx3); margin: 0 0 16px 0;">{{ t('param.miapoRefHint') }}</p>
+            <div v-for="subj in miapoSubjects" :key="subj" class="miapo-ref-row">
+              <label class="miapo-ref-lbl">{{ subj }}</label>
+              <textarea v-model="miapoRefDraft[subj]" class="input miapo-ref-ta" rows="3" :placeholder="t('param.miapoRefPh')" @change="saveMiapoRef(subj)"></textarea>
+            </div>
+            <p v-if="!miapoSubjects.length" style="font-size: 13px; color: var(--tx3); margin: 0;">{{ t('param.miapoRefNoSubjects') }}</p>
+          </div>
+        </section>
+
         <!-- Gestion de l'année scolaire -->
         <section v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
@@ -395,16 +410,33 @@ import { useAuthStore } from '../stores/auth'
 import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck, Bug, Lightbulb, Send } from 'lucide-vue-next'
 import { DEFAULT_SERVICES } from '../stores/messages'
 import { sendFeedback, feedbackMailto } from '../services/feedback'
+import { useSubjectsStore } from '../stores/subjects'
+import { useMiapoRefStore } from '../stores/miapoRef'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const schoolStore = useSchoolStore()
 const editionStore = useEditionStore()
 const authStore = useAuthStore()
+const subjectsStore = useSubjectsStore()
+const miapoRefStore = useMiapoRefStore()
 
 const isDirecteur = computed(() => {
   const role = authStore.userProfile?.role || ''
   return role === 'directeur' || role === 'admin'
 })
+
+// ── Personnalisation MIAPO : exemples de sujets de l'école, par matière ──
+const miapoSubjects = computed(() => (subjectsStore.subjects || []).map((s) => s.name).filter(Boolean))
+const miapoRefDraft = reactive({})
+function loadMiapoRefDraft() {
+  miapoRefStore.load()
+  for (const name of miapoSubjects.value) miapoRefDraft[name] = miapoRefStore.getExemples(name)
+}
+function saveMiapoRef(name) {
+  miapoRefStore.setExemples(name, miapoRefDraft[name] || '')
+}
+watch(miapoSubjects, loadMiapoRefDraft)
+onMounted(loadMiapoRefDraft)
 
 const COLOR_PRESETS = [
   { value: '#0A84FF', label: 'Bleu système (défaut)' },
@@ -1255,4 +1287,10 @@ const saveSettings = async () => {
     margin-top: 4px;
   }
 }
+
+/* MIAPO — exemples de sujets de l'école */
+.miapo-ref-row { margin-bottom: 14px; }
+.miapo-ref-lbl { display: block; font-size: 12.5px; font-weight: 600; color: var(--tx2); margin-bottom: 5px; }
+.miapo-ref-ta { width: 100%; resize: vertical; box-sizing: border-box; }
+
 </style>

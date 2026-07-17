@@ -324,6 +324,7 @@ import { useI18n } from 'vue-i18n'
 import { useDevoirsStore, DEVOIR_TYPES } from '../stores/devoirs'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
+import { useMiapoRefStore } from '../stores/miapoRef'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
 import { useAuthStore } from '../stores/auth'
@@ -352,6 +353,7 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const devoirsStore = useDevoirsStore()
 const coursStore = useCoursStore()
 const tuteur = useTuteurStore()
+const miapoRef = useMiapoRefStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
 const authStore = useAuthStore()
@@ -533,8 +535,18 @@ async function genererDevoirMiapo() {
   miapoGenerating.value = true
   const cls = classesStore.classes.find(c => c.id === formData.value.classId)
   const niveau = cls?.level || cls?.name || ''
-  const theme = (formData.value.title || formData.value.description || '').trim()
   const iaType = /exam|compo/i.test(formData.value.type) ? 'examen' : 'devoir'
+  // Consignes enrichies (évite les sujets trop légers) + exemples de l'école
+  const parts = []
+  const base = (formData.value.title || formData.value.description || '').trim()
+  if (base) parts.push(base)
+  parts.push(iaType === 'examen'
+    ? `Sujet d'examen complet et structuré : plusieurs exercices progressifs couvrant le programme, un barème indicatif, et un corrigé détaillé.`
+    : `Devoir complet : 3 à 5 exercices variés et progressifs, avec un corrigé détaillé.`)
+  miapoRef.load()
+  const exemples = miapoRef.getExemples(formData.value.subjectName)
+  if (exemples) parts.push(`Aligne-toi sur le style, le niveau et le format de ces sujets de l'école (imite-les sans les recopier) :\n${exemples.slice(0, 4000)}`)
+  const theme = parts.join(' ; ')
   const r = await coursStore.preparerAvecMiapo({ type: iaType, matiere: formData.value.subjectName, niveau, theme })
   miapoGenerating.value = false
   if (r.ok) {
