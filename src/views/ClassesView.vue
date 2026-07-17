@@ -137,6 +137,18 @@
         </table>
       </div>
 
+      <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+      <ul v-if="filteredClasses.length > 0" class="cl-mlist">
+        <li v-for="cls in paginatedClasses" :key="cls.id" class="cl-mrow" @click="openClassDetail(cls)">
+          <span class="class-icon" :style="{ background: getLevelColor(cls.level) }">{{ cls.section || cls.name?.[0] || '?' }}</span>
+          <div class="cl-mrow-main">
+            <div class="cl-mrow-name">{{ cls.name }}</div>
+            <div class="cl-mrow-sub">{{ getLevelLabel(cls.level) }} · {{ cls.enrolled || 0 }}/{{ cls.capacity || '-' }} · {{ getFillPercent(cls) }}%</div>
+          </div>
+          <svg class="cl-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+      </ul>
+
       <div v-if="filteredClasses.length > 0" class="pagination-bottom">
         <PaginationBar
           :currentPage="currentPage"
@@ -554,6 +566,20 @@ watch(() => route.query, applyMiapoQuery)
 
 /* Table */
 .table-wrap { overflow-x: auto; }
+
+/* ── Liste mobile (remplace le tableau sur petit écran, <=560px) ── */
+.cl-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.cl-mrow { display: flex; align-items: center; gap: 11px; padding: 12px 14px; border-bottom: 1px solid var(--border, #ECECE8); cursor: pointer; }
+.cl-mrow:last-child { border-bottom: none; }
+.cl-mrow:active { background: rgba(var(--pr-rgb, 21, 88, 176), .07); }
+.cl-mrow-main { flex: 1; min-width: 0; }
+.cl-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-mrow-sub { font-size: 12.5px; color: var(--muted, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cl-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .table-wrap { display: none; }
+  .cl-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+}
 .table {
   width: 100%;
   border-collapse: collapse;

@@ -951,5 +951,7 @@ onMounted(async () => {
 @media (max-width: 560px) {
   .kpis { grid-template-columns: 1fr 1fr; }
   .bars { height: 150px; }
+  /* Reco MIAPO « À traiter aujourd'hui » masquée sur mobile (écran restreint). */
+  .attn-card { display: none; }
 }
 </style>
