@@ -1,68 +1,65 @@
 <template>
   <div class="tra">
     <div class="tra-intro">
-      <h1 class="tra-h1">Passage à l'année suivante</h1>
-      <p class="tra-sub">
-        Simulation du passage de l'année {{ anneeCourante }} vers {{ anneeSuivante }} :
-        les admis montent d'un rang, la dernière année devient diplômée, les ajournés redoublent.
-      </p>
+      <h1 class="tra-h1">{{ t('sup.transition.title') }}</h1>
+      <p class="tra-sub">{{ t('sup.transition.subtitle', { courante: anneeCourante, suivante: anneeSuivante }) }}</p>
     </div>
 
     <!-- Stepper -->
     <div class="tra-steps">
       <div class="tra-step" :class="{ active: step === 0, done: step > 0 }">
         <span class="tra-step-dot">{{ step > 0 ? '✓' : '1' }}</span>
-        <span class="tra-step-name">Bilan</span>
+        <span class="tra-step-name">{{ t('sup.transition.step1') }}</span>
       </div>
       <div class="tra-step-line" :class="{ done: step > 0 }"></div>
       <div class="tra-step" :class="{ active: step === 1 }">
         <span class="tra-step-dot">2</span>
-        <span class="tra-step-name">Aperçu &amp; confirmation</span>
+        <span class="tra-step-name">{{ t('sup.transition.step2') }}</span>
       </div>
     </div>
 
     <!-- ═══ ÉTAPE 0 : BILAN ═══ -->
     <div v-if="step === 0" class="tra-panel">
-      <h2 class="tra-h2">Bilan de fin d'année {{ anneeCourante }}</h2>
-      <p class="tra-desc">Récapitulatif des résultats servant de base au passage. Aucune donnée n'est encore modifiée.</p>
+      <h2 class="tra-h2">{{ t('sup.transition.bilanTitle', { annee: anneeCourante }) }}</h2>
+      <p class="tra-desc">{{ t('sup.transition.bilanDesc') }}</p>
 
       <div class="tra-kpis">
         <div class="tra-kpi">
           <span class="tra-kpi-value">{{ recap.promotions }}</span>
-          <span class="tra-kpi-label">Promotions</span>
+          <span class="tra-kpi-label">{{ t('sup.transition.kpiPromotions') }}</span>
         </div>
         <div class="tra-kpi">
           <span class="tra-kpi-value">{{ recap.total }}</span>
-          <span class="tra-kpi-label">Étudiants</span>
+          <span class="tra-kpi-label">{{ t('sup.transition.kpiStudents') }}</span>
         </div>
         <div class="tra-kpi tra-kpi-ok">
           <span class="tra-kpi-value">{{ recap.admis }}</span>
-          <span class="tra-kpi-label">Admis</span>
+          <span class="tra-kpi-label">{{ t('sup.transition.kpiAdmis') }}</span>
         </div>
         <div class="tra-kpi tra-kpi-warn">
           <span class="tra-kpi-value">{{ recap.ajournes }}</span>
-          <span class="tra-kpi-label">Ajournés</span>
+          <span class="tra-kpi-label">{{ t('sup.transition.kpiAjournes') }}</span>
         </div>
       </div>
 
       <div class="tra-breakdown">
         <div class="tra-brk-row">
-          <span>Promus à l'année supérieure</span>
+          <span>{{ t('sup.transition.brkPromus') }}</span>
           <strong class="cs-green">{{ recap.promus }}</strong>
         </div>
         <div class="tra-brk-row">
-          <span>Diplômés / sortants (dernière année)</span>
+          <span>{{ t('sup.transition.brkSortants') }}</span>
           <strong>{{ recap.sortants }}</strong>
         </div>
         <div class="tra-brk-row">
-          <span>Redoublants</span>
+          <span>{{ t('sup.transition.brkRedoublants') }}</span>
           <strong class="cs-red">{{ recap.redoublants }}</strong>
         </div>
       </div>
 
       <div class="tra-actions">
         <button class="tra-btn-primary" type="button" @click="step = 1">
-          Simuler / Prévisualiser
+          {{ t('sup.transition.simulate') }}
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
         </button>
       </div>
@@ -72,21 +69,21 @@
     <div v-if="step === 1" class="tra-panel">
       <div class="tra-panel-head">
         <div>
-          <h2 class="tra-h2">Aperçu du passage vers {{ anneeSuivante }}</h2>
-          <p class="tra-desc">Pour chaque promotion : devenir des admis et des ajournés. Vous validez avant toute application.</p>
+          <h2 class="tra-h2">{{ t('sup.transition.apercuTitle', { suivante: anneeSuivante }) }}</h2>
+          <p class="tra-desc">{{ t('sup.transition.apercuDesc') }}</p>
         </div>
-        <ExportMenu :excel="exportExcel" :pdf="exportPdf" label="Exporter" />
+        <ExportMenu :excel="exportExcel" :pdf="exportPdf" :label="t('sup.transition.export')" />
       </div>
 
       <div class="tra-table-wrap">
         <table class="tra-table">
           <thead>
             <tr>
-              <th>Promotion</th>
-              <th class="tc">Effectif</th>
-              <th class="tc">Admis</th>
-              <th class="tc">Ajournés</th>
-              <th>Deviennent</th>
+              <th>{{ t('sup.transition.thPromotion') }}</th>
+              <th class="tc">{{ t('sup.transition.thEffectif') }}</th>
+              <th class="tc">{{ t('sup.transition.thAdmis') }}</th>
+              <th class="tc">{{ t('sup.transition.thAjournes') }}</th>
+              <th>{{ t('sup.transition.thBecome') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -100,38 +97,38 @@
               <td class="tc cs-red">{{ r.ajournes }}</td>
               <td>
                 <div v-if="r.isFinal" class="tra-become">
-                  <span class="tra-pill tra-pill-grad">{{ r.sortants }} diplômé(s) / sortant(s)</span>
+                  <span class="tra-pill tra-pill-grad">{{ t('sup.transition.becomeGrad', { n: r.sortants }) }}</span>
                 </div>
                 <div v-else class="tra-become">
-                  <span class="tra-pill tra-pill-up">{{ r.promus }} → {{ r.nextLabel }}</span>
+                  <span class="tra-pill tra-pill-up">{{ t('sup.transition.becomeUp', { n: r.promus, label: r.nextLabel }) }}</span>
                 </div>
-                <div v-if="r.redoublants > 0" class="tra-become-sub">{{ r.redoublants }} redoublant(s) en {{ r.anneeNom }}</div>
+                <div v-if="r.redoublants > 0" class="tra-become-sub">{{ t('sup.transition.redoublantsIn', { n: r.redoublants, annee: r.anneeNom }) }}</div>
               </td>
             </tr>
             <tr v-if="transitionRows.length === 0">
-              <td colspan="5" class="tra-empty">Aucune promotion avec des étudiants à faire passer.</td>
+              <td colspan="5" class="tra-empty">{{ t('sup.transition.emptyRows') }}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="tra-recap">
-        <div class="tra-recap-item"><span>Reportés (promus + redoublants)</span><strong>{{ recap.promus + recap.redoublants }}</strong></div>
-        <div class="tra-recap-item"><span>Diplômés / sortants</span><strong>{{ recap.sortants }}</strong></div>
-        <div class="tra-recap-item"><span>Nouvelle année académique</span><strong>{{ anneeSuivante }}</strong></div>
+        <div class="tra-recap-item"><span>{{ t('sup.transition.recapReported') }}</span><strong>{{ recap.promus + recap.redoublants }}</strong></div>
+        <div class="tra-recap-item"><span>{{ t('sup.transition.recapGrad') }}</span><strong>{{ recap.sortants }}</strong></div>
+        <div class="tra-recap-item"><span>{{ t('sup.transition.recapNewYear') }}</span><strong>{{ anneeSuivante }}</strong></div>
       </div>
 
       <div class="tra-note">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-        <span>Aperçu de simulation : ce passage est réversible et ne modifie aucune donnée de démonstration tant que l'établissement n'a pas activé la clôture réelle de l'année.</span>
+        <span>{{ t('sup.transition.note') }}</span>
       </div>
 
       <div class="tra-actions tra-actions-split">
         <button class="tra-btn-ghost" type="button" @click="step = 0">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          Retour
+          {{ t('sup.transition.back') }}
         </button>
-        <button class="tra-btn-primary" type="button" @click="confirmOpen = true">Confirmer le passage</button>
+        <button class="tra-btn-primary" type="button" @click="confirmOpen = true">{{ t('sup.transition.confirmPassage') }}</button>
       </div>
     </div>
 
@@ -140,27 +137,24 @@
       <div v-if="confirmOpen" class="tra-modal-overlay" @click.self="confirmOpen = false">
         <div class="tra-modal">
           <template v-if="!done">
-            <h3 class="tra-modal-title">Confirmer le passage vers {{ anneeSuivante }}</h3>
+            <h3 class="tra-modal-title">{{ t('sup.transition.confirmTitle', { suivante: anneeSuivante }) }}</h3>
             <p class="tra-modal-text">
-              {{ recap.promus }} étudiant(s) promus, {{ recap.redoublants }} redoublant(s),
-              {{ recap.sortants }} diplômé(s). Cette action est présentée en <strong>aperçu de simulation</strong> :
-              les données de démonstration ne sont pas altérées.
+              {{ t('sup.transition.confirmText', { promus: recap.promus, redoublants: recap.redoublants, sortants: recap.sortants }) }}
             </p>
             <div class="tra-modal-actions">
-              <button class="tra-btn-ghost" type="button" @click="confirmOpen = false">Annuler</button>
-              <button class="tra-btn-primary" type="button" @click="applyTransition">Lancer la simulation</button>
+              <button class="tra-btn-ghost" type="button" @click="confirmOpen = false">{{ t('sup.transition.cancel') }}</button>
+              <button class="tra-btn-primary" type="button" @click="applyTransition">{{ t('sup.transition.launchSim') }}</button>
             </div>
           </template>
           <template v-else>
             <div class="tra-success">
               <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#2E8B57" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-              <h3 class="tra-modal-title">Simulation effectuée</h3>
+              <h3 class="tra-modal-title">{{ t('sup.transition.simDone') }}</h3>
               <p class="tra-modal-text">
-                Aperçu du passage vers {{ anneeSuivante }} généré. Vous pouvez l'exporter depuis l'écran précédent.
-                Aucune donnée n'a été modifiée.
+                {{ t('sup.transition.simDoneText', { suivante: anneeSuivante }) }}
               </p>
               <div class="tra-modal-actions tra-modal-actions-center">
-                <button class="tra-btn-primary" type="button" @click="closeSuccess">Terminer</button>
+                <button class="tra-btn-primary" type="button" @click="closeSuccess">{{ t('sup.transition.finish') }}</button>
               </div>
             </div>
           </template>
@@ -172,11 +166,13 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import ExportMenu from '../../components/ExportMenu.vue'
 import { exportToExcel } from '../../utils/exportExcel'
 import { exportToPdf } from '../../utils/exportPdf'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 
 const step = ref(0)
