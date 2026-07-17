@@ -1,11 +1,8 @@
 <template>
   <div class="si">
     <div class="si-intro">
-      <h1 class="si-h1">Import groupé des étudiants</h1>
-      <p class="si-sub">
-        Importez une promotion entière depuis un fichier Excel ou CSV.
-        MAPO lit le fichier, vous relisez l'aperçu, puis vous validez la création.
-      </p>
+      <h1 class="si-h1">{{ t('sup.importView.title') }}</h1>
+      <p class="si-sub">{{ t('sup.importView.subtitle') }}</p>
     </div>
 
     <!-- Classeur de démarrage -->
@@ -15,13 +12,13 @@
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v14"/><path d="m19 10-7 7-7-7"/><path d="M5 21h14"/></svg>
         </span>
         <div>
-          <strong>Classeur de démarrage</strong>
-          <span>Un modèle Excel pré-rempli d'exemples (promotions réelles de l'établissement) à compléter puis réimporter.</span>
+          <strong>{{ t('sup.importView.starterTitle') }}</strong>
+          <span>{{ t('sup.importView.starterDesc') }}</span>
         </div>
       </div>
       <button class="si-btn-ghost" type="button" @click="downloadStarterWorkbook">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Télécharger le classeur
+        {{ t('sup.importView.downloadWorkbook') }}
       </button>
     </div>
 
@@ -29,12 +26,12 @@
     <div class="si-panel">
       <div class="si-panel-head">
         <div>
-          <h3 class="si-panel-title">Colonnes attendues</h3>
-          <p class="si-panel-desc">Le fichier doit comporter au minimum le nom et le prénom. La promotion peut être indiquée par colonne ou choisie ci-dessous.</p>
+          <h3 class="si-panel-title">{{ t('sup.importView.colsTitle') }}</h3>
+          <p class="si-panel-desc">{{ t('sup.importView.colsDesc') }}</p>
         </div>
         <button class="si-btn-ghost si-btn-sm" type="button" @click="downloadTemplate">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Modèle vierge
+          {{ t('sup.importView.blankTemplate') }}
         </button>
       </div>
       <div class="si-cols">
@@ -43,13 +40,13 @@
         </span>
       </div>
       <div class="si-fallback">
-        <label class="si-fallback-label">Promotion par défaut</label>
+        <label class="si-fallback-label">{{ t('sup.importView.defaultPromo') }}</label>
         <select v-model="fallbackPromotionId" class="si-select" @change="revalidate">
           <option v-for="p in store.promotions" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
         </select>
-        <span class="si-fallback-hint">Appliquée aux lignes sans colonne « Promotion » reconnaissable.</span>
+        <span class="si-fallback-hint">{{ t('sup.importView.defaultPromoHint') }}</span>
       </div>
     </div>
 
@@ -63,18 +60,18 @@
     >
       <template v-if="!parsedData.length">
         <svg class="si-drop-ico" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-        <p class="si-drop-text">Glissez un fichier ici, ou</p>
+        <p class="si-drop-text">{{ t('sup.importView.dropText') }}</p>
         <label class="si-btn-primary si-drop-btn">
           <input type="file" accept=".xlsx,.xls,.csv" @change="onFileSelect" style="display:none" />
-          Choisir un fichier
+          {{ t('sup.importView.chooseFile') }}
         </label>
-        <p class="si-drop-hint">Formats acceptés : .xlsx, .xls, .csv</p>
+        <p class="si-drop-hint">{{ t('sup.importView.dropHint') }}</p>
       </template>
       <template v-else>
         <div class="si-file">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--pr)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-          <span><strong>{{ fileName }}</strong> — {{ parsedData.length }} ligne(s) détectée(s)</span>
-          <button class="si-btn-ghost si-btn-sm" type="button" @click="clearImport">Changer de fichier</button>
+          <span><strong>{{ fileName }}</strong> — {{ t('sup.importView.linesDetected', { n: parsedData.length }) }}</span>
+          <button class="si-btn-ghost si-btn-sm" type="button" @click="clearImport">{{ t('sup.importView.changeFile') }}</button>
         </div>
       </template>
     </div>
@@ -88,10 +85,10 @@
     <!-- Aperçu -->
     <div v-if="parsedData.length" class="si-panel">
       <div class="si-preview-head">
-        <h3 class="si-panel-title">Aperçu avant import</h3>
+        <h3 class="si-panel-title">{{ t('sup.importView.previewTitle') }}</h3>
         <div class="si-stats">
-          <span class="si-stat-ok">{{ validCount }} valide(s)</span>
-          <span v-if="errorCount" class="si-stat-err">{{ errorCount }} en erreur</span>
+          <span class="si-stat-ok">{{ t('sup.importView.validCount', { n: validCount }) }}</span>
+          <span v-if="errorCount" class="si-stat-err">{{ t('sup.importView.errorCount', { n: errorCount }) }}</span>
         </div>
       </div>
 
@@ -101,8 +98,8 @@
             <tr>
               <th class="si-num">#</th>
               <th v-for="c in COLUMNS" :key="c.key">{{ c.label }}</th>
-              <th>Promotion cible</th>
-              <th>Statut</th>
+              <th>{{ t('sup.importView.thPromoCible') }}</th>
+              <th>{{ t('sup.importView.thStatut') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -113,21 +110,21 @@
               </td>
               <td class="si-promo">{{ row._promoLabel }}</td>
               <td>
-                <span v-if="row._errors.length" class="si-badge si-badge-err">{{ row._errors.length }} erreur(s)</span>
-                <span v-else class="si-badge si-badge-ok">OK</span>
+                <span v-if="row._errors.length" class="si-badge si-badge-err">{{ t('sup.importView.rowErrors', { n: row._errors.length }) }}</span>
+                <span v-else class="si-badge si-badge-ok">{{ t('sup.importView.ok') }}</span>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
       <div v-if="parsedData.length > maxPreview" class="si-more">
-        + {{ parsedData.length - maxPreview }} autre(s) ligne(s) non affichée(s)
+        {{ t('sup.importView.moreLines', { n: parsedData.length - maxPreview }) }}
       </div>
 
       <div class="si-actions">
-        <button class="si-btn-ghost" type="button" @click="clearImport">Annuler</button>
+        <button class="si-btn-ghost" type="button" @click="clearImport">{{ t('sup.importView.cancel') }}</button>
         <button class="si-btn-primary" type="button" :disabled="validCount === 0 || importing" @click="executeImport">
-          {{ importing ? 'Import en cours…' : `Importer ${validCount} étudiant(s)` }}
+          {{ importing ? t('sup.importView.importing') : t('sup.importView.importBtn', { n: validCount }) }}
         </button>
       </div>
     </div>
@@ -146,8 +143,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 
 // XLSX chargé à la demande (évite d'alourdir le bundle initial).
@@ -243,7 +242,7 @@ function parseFile(file) {
       const matchName = workbook.SheetNames.find((n) => wanted.includes(norm(n)))
       const sheet = workbook.Sheets[matchName || workbook.SheetNames[0]]
       const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' })
-      if (!raw.length) { parseError.value = 'Le fichier ne contient aucune ligne exploitable.'; return }
+      if (!raw.length) { parseError.value = t('sup.importView.errEmpty'); return }
 
       const rawHeaders = Object.keys(raw[0])
       const mapping = {}
@@ -271,7 +270,7 @@ function parseFile(file) {
       }
       parsedData.value = rows.map(validateRow)
     } catch (err) {
-      parseError.value = `Lecture impossible : ${err.message}`
+      parseError.value = t('sup.importView.errRead', { msg: err.message })
     }
   }
   reader.readAsArrayBuffer(file)
@@ -323,12 +322,12 @@ function executeImport() {
     }
     importResult.value = {
       type: 'success',
-      title: 'Import terminé',
-      detail: `${added} étudiant(s) ajouté(s) à l'établissement. Ils apparaissent dès maintenant dans la liste des étudiants.`,
+      title: t('sup.importView.resSuccessTitle'),
+      detail: t('sup.importView.resSuccessDetail', { n: added }),
     }
     clearImport()
   } catch (err) {
-    importResult.value = { type: 'error', title: "Échec de l'import", detail: err.message || 'Erreur inconnue.' }
+    importResult.value = { type: 'error', title: t('sup.importView.resErrTitle'), detail: err.message || t('sup.importView.errUnknown') }
   } finally {
     importing.value = false
   }
