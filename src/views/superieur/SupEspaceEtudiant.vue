@@ -4,66 +4,66 @@
     <div class="see-hero">
       <div class="see-avatar">{{ initials }}</div>
       <div class="see-hero-info">
-        <div class="see-hello">Bonjour {{ moi.prenom }}</div>
-        <div class="see-sub">{{ moi.programmeNom }} · {{ moi.anneeNom }}<span v-if="campusVille"> · Campus de {{ campusVille }}</span></div>
-        <div class="see-mat">Matricule {{ moi.matricule }}</div>
+        <div class="see-hello">{{ t('sup.espaceEtudiant.hello', { name: moi.prenom }) }}</div>
+        <div class="see-sub">{{ moi.programmeNom }} · {{ moi.anneeNom }}<span v-if="campusVille"> · {{ t('sup.espaceEtudiant.campus', { ville: campusVille }) }}</span></div>
+        <div class="see-mat">{{ t('sup.espaceEtudiant.matricule', { mat: moi.matricule }) }}</div>
       </div>
     </div>
 
     <!-- Indicateurs -->
     <div class="see-kpis">
       <div class="see-kpi">
-        <div class="see-kpi-lab">Crédits acquis</div>
+        <div class="see-kpi-lab">{{ t('sup.espaceEtudiant.kpiCredits') }}</div>
         <div class="see-kpi-val">{{ moi.ectsValides }}<span> / {{ moi.ectsRequis }}</span></div>
         <div class="see-bar"><div class="see-bar-fill" :style="{ width: pct + '%' }"></div></div>
       </div>
       <div class="see-kpi">
-        <div class="see-kpi-lab">Moyenne du semestre</div>
+        <div class="see-kpi-lab">{{ t('sup.espaceEtudiant.kpiMoyenne') }}</div>
         <div class="see-kpi-val">{{ releve ? releve.moyenne.toFixed(2) : (moi.moyenne != null ? moi.moyenne.toFixed(2) : '—') }}<span>/20</span></div>
-        <div class="see-kpi-foot" :class="mentionOk ? 'is-ok' : 'is-warn'">{{ releve && releve.mention ? releve.mention : (mentionOk ? 'En bonne voie' : 'À consolider') }}</div>
+        <div class="see-kpi-foot" :class="mentionOk ? 'is-ok' : 'is-warn'">{{ releve && releve.mention ? releve.mention : (mentionOk ? t('sup.espaceEtudiant.enBonneVoie') : t('sup.espaceEtudiant.aConsolider')) }}</div>
       </div>
       <div class="see-kpi">
-        <div class="see-kpi-lab">UE ce semestre</div>
+        <div class="see-kpi-lab">{{ t('sup.espaceEtudiant.kpiUe') }}</div>
         <div class="see-kpi-val">{{ releve ? releve.lignes.length : 0 }}</div>
-        <div class="see-kpi-foot">semestre {{ releve ? releve.semestre : '—' }}</div>
+        <div class="see-kpi-foot">{{ t('sup.espaceEtudiant.semestre', { n: releve ? releve.semestre : '—' }) }}</div>
       </div>
       <div class="see-kpi see-kpi-scol">
-        <div class="see-kpi-lab">Scolarité</div>
+        <div class="see-kpi-lab">{{ t('sup.espaceEtudiant.kpiScolarite') }}</div>
         <div class="see-kpi-val see-scol-reste">{{ formatFcfa(scolarite.reste) }}<span> FCFA</span></div>
-        <div class="see-kpi-foot">reste à payer sur {{ formatFcfa(scolarite.total) }}</div>
+        <div class="see-kpi-foot">{{ t('sup.espaceEtudiant.resteSur', { total: formatFcfa(scolarite.total) }) }}</div>
       </div>
     </div>
 
     <div class="see-grid">
       <!-- Mon relevé -->
       <section class="see-card see-card-wide">
-        <h2 class="see-h2">Mon relevé de notes</h2>
+        <h2 class="see-h2">{{ t('sup.espaceEtudiant.releveTitle') }}</h2>
         <table v-if="releve && releve.lignes.length" class="see-table">
-          <thead><tr><th>UE</th><th>Intitulé</th><th class="num">Crédits</th><th class="num">Note</th><th>Statut</th></tr></thead>
+          <thead><tr><th>{{ t('sup.espaceEtudiant.thUe') }}</th><th>{{ t('sup.espaceEtudiant.thIntitule') }}</th><th class="num">{{ t('sup.espaceEtudiant.thCredits') }}</th><th class="num">{{ t('sup.espaceEtudiant.thNote') }}</th><th>{{ t('sup.espaceEtudiant.thStatut') }}</th></tr></thead>
           <tbody>
             <tr v-for="l in releve.lignes" :key="l.ueId">
               <td class="see-code">{{ l.ueCode }}</td>
               <td>{{ l.ueIntitule }}</td>
               <td class="num">{{ l.ects }}</td>
               <td class="num"><span :class="l.note != null && l.note < 10 ? 'is-bad' : ''">{{ l.note != null ? l.note.toFixed(1) : '—' }}</span></td>
-              <td><span class="see-vld" :class="l.validee ? 'is-ok' : 'is-warn'">{{ l.validee ? 'Validée' : (l.note != null ? 'Non validée' : 'En attente') }}</span></td>
+              <td><span class="see-vld" :class="l.validee ? 'is-ok' : 'is-warn'">{{ l.validee ? t('sup.espaceEtudiant.validee') : (l.note != null ? t('sup.espaceEtudiant.nonValidee') : t('sup.espaceEtudiant.enAttente')) }}</span></td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="see-empty">Relevé bientôt disponible.</p>
+        <p v-else class="see-empty">{{ t('sup.espaceEtudiant.releveSoon') }}</p>
       </section>
 
       <!-- MIAPO+ (promo vers l'app B2C MIAPO+ — hors contrôle école) -->
       <section class="see-card see-miapo">
         <div class="see-miapo-badge">MIAPO+</div>
-        <h2 class="see-h2 see-miapo-h2">Ton tuteur intelligent</h2>
-        <p class="see-miapo-txt">Révise tes UE avec MIAPO+ : quiz adaptatifs, parcours de révision personnalisé et suivi de ta progression, disponible 24h/24.</p>
+        <h2 class="see-h2 see-miapo-h2">{{ t('sup.espaceEtudiant.miapoTitle') }}</h2>
+        <p class="see-miapo-txt">{{ t('sup.espaceEtudiant.miapoTxt') }}</p>
         <ul class="see-miapo-list">
-          <li>Quiz ciblés sur tes matières faibles</li>
-          <li>Analyse de tes copies d'examen</li>
-          <li>Plan de révision avant les partiels</li>
+          <li>{{ t('sup.espaceEtudiant.miapoLi1') }}</li>
+          <li>{{ t('sup.espaceEtudiant.miapoLi2') }}</li>
+          <li>{{ t('sup.espaceEtudiant.miapoLi3') }}</li>
         </ul>
-        <a class="see-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">Ouvrir MIAPO+</a>
+        <a class="see-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceEtudiant.miapoCta') }}</a>
       </section>
     </div>
 
@@ -73,9 +73,11 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, CAMPUS } from '../../stores/superieur'
 import UsageGauge from '../../components/UsageGauge.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 // Étudiant de démonstration : un profil crédible (bon dossier) pour la démo.
 const moi = computed(() =>
