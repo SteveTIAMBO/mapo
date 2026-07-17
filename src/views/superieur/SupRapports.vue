@@ -1,27 +1,24 @@
 <template>
   <div class="srp">
     <div class="srp-intro">
-      <h1 class="srp-h1">Rapports &amp; pilotage</h1>
-      <p class="srp-sub">
-        Vue consolidée de l'établissement — effectifs, réussite et situation financière,
-        avec la lecture de MIAPO. Année académique {{ ecole.anneeAcademique }}.
-      </p>
+      <h1 class="srp-h1">{{ t('sup.rapports.title') }}</h1>
+      <p class="srp-sub">{{ t('sup.rapports.subtitle', { annee: ecole.anneeAcademique }) }}</p>
     </div>
 
     <!-- KPI -->
     <div class="srp-kpis">
-      <div class="srp-kpi"><span class="srp-kpi-label">Étudiants</span><span class="srp-kpi-value">{{ stats.nbEtudiants }}</span></div>
-      <div class="srp-kpi"><span class="srp-kpi-label">Intervenants</span><span class="srp-kpi-value">{{ stats.nbIntervenants }}</span></div>
-      <div class="srp-kpi"><span class="srp-kpi-label">Réussite globale</span><span class="srp-kpi-value">{{ tauxReussiteGlobal }}%</span></div>
-      <div class="srp-kpi"><span class="srp-kpi-label">Moyenne générale</span><span class="srp-kpi-value">{{ (stats.moyenneGenerale || 0).toFixed(1) }}<span class="srp-kpi-unit">/20</span></span></div>
-      <div class="srp-kpi"><span class="srp-kpi-label">Recouvrement</span><span class="srp-kpi-value">{{ finance.stats.tauxRecouvrement }}%</span></div>
+      <div class="srp-kpi"><span class="srp-kpi-label">{{ t('sup.rapports.kpiStudents') }}</span><span class="srp-kpi-value">{{ stats.nbEtudiants }}</span></div>
+      <div class="srp-kpi"><span class="srp-kpi-label">{{ t('sup.rapports.kpiIntervenants') }}</span><span class="srp-kpi-value">{{ stats.nbIntervenants }}</span></div>
+      <div class="srp-kpi"><span class="srp-kpi-label">{{ t('sup.rapports.kpiReussite') }}</span><span class="srp-kpi-value">{{ tauxReussiteGlobal }}%</span></div>
+      <div class="srp-kpi"><span class="srp-kpi-label">{{ t('sup.rapports.kpiMoyenne') }}</span><span class="srp-kpi-value">{{ (stats.moyenneGenerale || 0).toFixed(1) }}<span class="srp-kpi-unit">/20</span></span></div>
+      <div class="srp-kpi"><span class="srp-kpi-label">{{ t('sup.rapports.kpiRecouvrement') }}</span><span class="srp-kpi-value">{{ finance.stats.tauxRecouvrement }}%</span></div>
     </div>
 
     <!-- Lecture MIAPO -->
     <section class="srp-miapo">
       <div class="srp-miapo-head">
         <span class="srp-miapo-badge">MIAPO</span>
-        <h2 class="srp-miapo-title">Lecture du pilotage</h2>
+        <h2 class="srp-miapo-title">{{ t('sup.rapports.miapoTitle') }}</h2>
       </div>
       <div class="srp-miapo-list">
         <div v-for="(ins, i) in miapoInsights" :key="i" class="srp-miapo-row" :class="'is-' + ins.type">
@@ -36,21 +33,21 @@
 
     <!-- Onglets -->
     <div class="srp-tabs">
-      <button class="srp-tab" :class="{ active: tab === 'effectifs' }" @click="tab = 'effectifs'">Effectifs</button>
-      <button class="srp-tab" :class="{ active: tab === 'reussite' }" @click="tab = 'reussite'">Réussite</button>
-      <button class="srp-tab" :class="{ active: tab === 'finance' }" @click="tab = 'finance'">Finance</button>
+      <button class="srp-tab" :class="{ active: tab === 'effectifs' }" @click="tab = 'effectifs'">{{ t('sup.rapports.tabEffectifs') }}</button>
+      <button class="srp-tab" :class="{ active: tab === 'reussite' }" @click="tab = 'reussite'">{{ t('sup.rapports.tabReussite') }}</button>
+      <button class="srp-tab" :class="{ active: tab === 'finance' }" @click="tab = 'finance'">{{ t('sup.rapports.tabFinance') }}</button>
     </div>
 
     <!-- ═══ EFFECTIFS ═══ -->
     <template v-if="tab === 'effectifs'">
       <div class="srp-panel">
         <div class="srp-panel-head">
-          <h3 class="srp-panel-title">Effectifs par programme</h3>
-          <ExportMenu :excel="() => exportExcel(stats.parProgramme, progColumns, 'effectifs_par_programme')" :pdf="() => exportPdf(stats.parProgramme, progColumns, 'effectifs_par_programme', 'Effectifs par programme')" label="Exporter" />
+          <h3 class="srp-panel-title">{{ t('sup.rapports.effProgTitle') }}</h3>
+          <ExportMenu :excel="() => exportExcel(stats.parProgramme, progColumns, 'effectifs_par_programme')" :pdf="() => exportPdf(stats.parProgramme, progColumns, 'effectifs_par_programme', 'Effectifs par programme')" :label="t('sup.rapports.export')" />
         </div>
         <div class="srp-table-wrap">
           <table class="srp-table">
-            <thead><tr><th>Programme</th><th class="tc">Niveau</th><th class="tr">Effectif</th></tr></thead>
+            <thead><tr><th>{{ t('sup.rapports.thProgramme') }}</th><th class="tc">{{ t('sup.rapports.thNiveau') }}</th><th class="tr">{{ t('sup.rapports.thEffectif') }}</th></tr></thead>
             <tbody>
               <tr v-for="p in stats.parProgramme" :key="p.id">
                 <td><strong>{{ p.nom }}</strong></td>
@@ -59,7 +56,7 @@
               </tr>
             </tbody>
             <tfoot>
-              <tr class="srp-total"><td><strong>Total</strong></td><td></td><td class="tr mono"><strong>{{ stats.nbEtudiants }}</strong></td></tr>
+              <tr class="srp-total"><td><strong>{{ t('sup.rapports.total') }}</strong></td><td></td><td class="tr mono"><strong>{{ stats.nbEtudiants }}</strong></td></tr>
             </tfoot>
           </table>
         </div>
@@ -67,15 +64,15 @@
 
       <div class="srp-panel">
         <div class="srp-panel-head">
-          <h3 class="srp-panel-title">Effectifs par campus</h3>
-          <ExportMenu :excel="() => exportExcel(stats.parCampus, campusColumns, 'effectifs_par_campus')" :pdf="() => exportPdf(stats.parCampus, campusColumns, 'effectifs_par_campus', 'Effectifs par campus')" label="Exporter" />
+          <h3 class="srp-panel-title">{{ t('sup.rapports.effCampusTitle') }}</h3>
+          <ExportMenu :excel="() => exportExcel(stats.parCampus, campusColumns, 'effectifs_par_campus')" :pdf="() => exportPdf(stats.parCampus, campusColumns, 'effectifs_par_campus', 'Effectifs par campus')" :label="t('sup.rapports.export')" />
         </div>
         <div class="srp-table-wrap">
           <table class="srp-table">
-            <thead><tr><th>Campus</th><th>Ville</th><th class="tr">Effectif</th><th class="tr">Moyenne</th><th class="tr">En difficulté</th></tr></thead>
+            <thead><tr><th>{{ t('sup.rapports.thCampus') }}</th><th>{{ t('sup.rapports.thVille') }}</th><th class="tr">{{ t('sup.rapports.thEffectif') }}</th><th class="tr">{{ t('sup.rapports.thMoyenne') }}</th><th class="tr">{{ t('sup.rapports.thEnDiff') }}</th></tr></thead>
             <tbody>
               <tr v-for="c in stats.parCampus" :key="c.id">
-                <td><strong>{{ c.nom }}</strong><span v-if="c.siege" class="srp-siege">siège</span></td>
+                <td><strong>{{ c.nom }}</strong><span v-if="c.siege" class="srp-siege">{{ t('sup.rapports.siege') }}</span></td>
                 <td>{{ c.ville }}</td>
                 <td class="tr mono">{{ c.effectif }}</td>
                 <td class="tr mono">{{ c.moyenne.toFixed(1) }}/20</td>
@@ -91,13 +88,13 @@
     <template v-if="tab === 'reussite'">
       <div class="srp-panel">
         <div class="srp-panel-head">
-          <h3 class="srp-panel-title">Taux de réussite par promotion</h3>
-          <ExportMenu :excel="() => exportExcel(reussiteRows, reussiteColumns, 'reussite_par_promotion')" :pdf="() => exportPdf(reussiteRows, reussiteColumns, 'reussite_par_promotion', 'Réussite par promotion')" label="Exporter" />
+          <h3 class="srp-panel-title">{{ t('sup.rapports.reussiteTitle') }}</h3>
+          <ExportMenu :excel="() => exportExcel(reussiteRows, reussiteColumns, 'reussite_par_promotion')" :pdf="() => exportPdf(reussiteRows, reussiteColumns, 'reussite_par_promotion', 'Réussite par promotion')" :label="t('sup.rapports.export')" />
         </div>
         <div class="srp-table-wrap">
           <table class="srp-table">
             <thead>
-              <tr><th>Programme</th><th>Année</th><th class="tr">Effectif</th><th class="tr">Admis</th><th class="tr">Ajournés</th><th class="tr">Moyenne</th><th class="tc">Réussite</th></tr>
+              <tr><th>{{ t('sup.rapports.thProgramme') }}</th><th>{{ t('sup.rapports.thAnnee') }}</th><th class="tr">{{ t('sup.rapports.thEffectif') }}</th><th class="tr">{{ t('sup.rapports.thAdmis') }}</th><th class="tr">{{ t('sup.rapports.thAjournes') }}</th><th class="tr">{{ t('sup.rapports.thMoyenne') }}</th><th class="tc">{{ t('sup.rapports.thReussite') }}</th></tr>
             </thead>
             <tbody>
               <tr v-for="r in reussiteRows" :key="r.promotionId">
@@ -111,7 +108,7 @@
                   <span class="srp-rate" :class="r.taux >= 70 ? 'ok' : r.taux >= 50 ? 'mid' : 'low'">{{ r.taux }}%</span>
                 </td>
               </tr>
-              <tr v-if="reussiteRows.length === 0"><td colspan="7" class="srp-empty">Aucune promotion notée.</td></tr>
+              <tr v-if="reussiteRows.length === 0"><td colspan="7" class="srp-empty">{{ t('sup.rapports.emptyReussite') }}</td></tr>
             </tbody>
           </table>
         </div>
@@ -121,40 +118,40 @@
     <!-- ═══ FINANCE ═══ -->
     <template v-if="tab === 'finance'">
       <div class="srp-panel">
-        <h3 class="srp-panel-title">Synthèse financière</h3>
-        <p class="srp-panel-desc">Résultat = revenus encaissés − masse salariale − charges de fonctionnement (annuel).</p>
+        <h3 class="srp-panel-title">{{ t('sup.rapports.synthTitle') }}</h3>
+        <p class="srp-panel-desc">{{ t('sup.rapports.synthDesc') }}</p>
         <div class="srp-metrics">
           <div class="srp-tile">
-            <span class="srp-tile-label">Encaissé</span>
+            <span class="srp-tile-label">{{ t('sup.rapports.tileEncaisse') }}</span>
             <span class="srp-tile-value cs-green">{{ fmtMontant(finance.stats.totalPaye) }}</span>
-            <span class="srp-tile-sub">Attendu {{ fmtMontant(finance.stats.totalDu) }}</span>
+            <span class="srp-tile-sub">{{ t('sup.rapports.tileAttendu', { m: fmtMontant(finance.stats.totalDu) }) }}</span>
           </div>
           <div class="srp-tile">
-            <span class="srp-tile-label">Masse salariale (annuelle)</span>
+            <span class="srp-tile-label">{{ t('sup.rapports.tileMasse') }}</span>
             <span class="srp-tile-value">{{ fmtMontant(salaires.masseAnnuelle) }}</span>
-            <span class="srp-tile-sub">{{ salaires.nbPermanents }} perm. · {{ salaires.nbVacataires }} vac.</span>
+            <span class="srp-tile-sub">{{ t('sup.rapports.tilePermVac', { perm: salaires.nbPermanents, vac: salaires.nbVacataires }) }}</span>
           </div>
           <div class="srp-tile">
-            <span class="srp-tile-label">Charges (annuelles)</span>
+            <span class="srp-tile-label">{{ t('sup.rapports.tileCharges') }}</span>
             <span class="srp-tile-value">{{ fmtMontant(chargesAnn) }}</span>
-            <span class="srp-tile-sub">{{ fmtMontant(chargesMens) }} / mois</span>
+            <span class="srp-tile-sub">{{ t('sup.rapports.tilePerMonth', { m: fmtMontant(chargesMens) }) }}</span>
           </div>
           <div class="srp-tile" :class="resultatPrevisionnel >= 0 ? 'is-pos' : 'is-neg'">
-            <span class="srp-tile-label">Résultat prévisionnel</span>
+            <span class="srp-tile-label">{{ t('sup.rapports.tileResultat') }}</span>
             <span class="srp-tile-value" :class="resultatPrevisionnel >= 0 ? 'cs-green' : 'cs-red'">{{ fmtMontant(resultatPrevisionnel) }}</span>
-            <span class="srp-tile-sub">Sur encaissements {{ fmtMontant(resultatActuel) }}</span>
+            <span class="srp-tile-sub">{{ t('sup.rapports.tileSurEnc', { m: fmtMontant(resultatActuel) }) }}</span>
           </div>
         </div>
       </div>
 
       <div class="srp-panel">
         <div class="srp-panel-head">
-          <h3 class="srp-panel-title">Recouvrement par campus</h3>
-          <ExportMenu :excel="() => exportRecouvrement('excel')" :pdf="() => exportRecouvrement('pdf')" label="Exporter" />
+          <h3 class="srp-panel-title">{{ t('sup.rapports.recouvTitle') }}</h3>
+          <ExportMenu :excel="() => exportRecouvrement('excel')" :pdf="() => exportRecouvrement('pdf')" :label="t('sup.rapports.export')" />
         </div>
         <div class="srp-table-wrap">
           <table class="srp-table">
-            <thead><tr><th>Campus</th><th class="tr">Attendu</th><th class="tr">Encaissé</th><th class="tr">Reste dû</th><th class="tc">Taux</th></tr></thead>
+            <thead><tr><th>{{ t('sup.rapports.thCampus') }}</th><th class="tr">{{ t('sup.rapports.thAttendu') }}</th><th class="tr">{{ t('sup.rapports.thEncaisse') }}</th><th class="tr">{{ t('sup.rapports.thResteDu') }}</th><th class="tc">{{ t('sup.rapports.thTaux') }}</th></tr></thead>
             <tbody>
               <tr v-for="r in recouvrementRows" :key="r.id">
                 <td><strong>{{ r.campus }}</strong></td>
@@ -166,7 +163,7 @@
             </tbody>
             <tfoot>
               <tr class="srp-total">
-                <td><strong>Total</strong></td>
+                <td><strong>{{ t('sup.rapports.total') }}</strong></td>
                 <td class="tr mono"><strong>{{ fmtMontant(finance.stats.totalDu) }}</strong></td>
                 <td class="tr mono clr-green"><strong>{{ fmtMontant(finance.stats.totalPaye) }}</strong></td>
                 <td class="tr mono clr-red"><strong>{{ fmtMontant(finance.stats.totalRestant) }}</strong></td>
@@ -182,6 +179,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useFinanceStore, fmtMontant } from '../../stores/finance'
 import { computeSalaires, supCharges, chargesMensuel, chargesAnnuel } from '../../utils/supComptaHelpers'
@@ -189,6 +187,7 @@ import ExportMenu from '../../components/ExportMenu.vue'
 import { exportToExcel } from '../../utils/exportExcel'
 import { exportToPdf } from '../../utils/exportPdf'
 
+const { t } = useI18n({ useScope: 'global' })
 const ecole = ECOLE
 const store = useSuperieurStore()
 const finance = useFinanceStore()
@@ -241,29 +240,29 @@ const miapoInsights = computed(() => {
     const worst = [...rows].sort((a, b) => a.taux - b.taux)[0]
     arr.push({
       type: tauxReussiteGlobal.value >= 60 ? 'ok' : 'warn',
-      titre: `Réussite globale de ${tauxReussiteGlobal.value}%`,
-      detail: `Meilleure promotion : ${best.programme} (${best.annee}) à ${best.taux}%. À surveiller : ${worst.programme} (${worst.annee}) à ${worst.taux}%.`,
+      titre: t('sup.rapports.insReussiteTitle', { taux: tauxReussiteGlobal.value }),
+      detail: t('sup.rapports.insReussiteDetail', { best: best.programme, bestYear: best.annee, bestTaux: best.taux, worst: worst.programme, worstYear: worst.annee, worstTaux: worst.taux }),
     })
   }
   const campus = [...stats.value.parCampus].filter((c) => c.effectif > 0).sort((a, b) => b.effectif - a.effectif)[0]
   if (campus) {
     arr.push({
       type: 'info',
-      titre: `Campus principal : ${campus.ville}`,
-      detail: `${campus.effectif} étudiants (moyenne ${campus.moyenne.toFixed(1)}/20), soit le plus gros effectif du groupe. ${campus.enDifficulte} étudiant(s) en difficulté à accompagner.`,
+      titre: t('sup.rapports.insCampusTitle', { ville: campus.ville }),
+      detail: t('sup.rapports.insCampusDetail', { n: campus.effectif, moy: campus.moyenne.toFixed(1), diff: campus.enDifficulte }),
     })
   }
   if (resultatPrevisionnel.value < 0) {
     arr.push({
       type: 'danger',
-      titre: `Résultat prévisionnel négatif`,
-      detail: `Les dépenses annuelles dépassent le CA attendu de ${fmtMontant(Math.abs(resultatPrevisionnel.value))}. Recouvrement à ${finance.stats.tauxRecouvrement}% — prioriser les relances.`,
+      titre: t('sup.rapports.insDangerTitle'),
+      detail: t('sup.rapports.insDangerDetail', { m: fmtMontant(Math.abs(resultatPrevisionnel.value)), taux: finance.stats.tauxRecouvrement }),
     })
   } else {
     arr.push({
       type: 'ok',
-      titre: `Équilibre financier prévisionnel positif`,
-      detail: `Résultat prévisionnel de ${fmtMontant(resultatPrevisionnel.value)} avec un recouvrement à ${finance.stats.tauxRecouvrement}%. ${fmtMontant(finance.stats.totalRestant)} restent à encaisser.`,
+      titre: t('sup.rapports.insOkTitle'),
+      detail: t('sup.rapports.insOkDetail', { m: fmtMontant(resultatPrevisionnel.value), taux: finance.stats.tauxRecouvrement, reste: fmtMontant(finance.stats.totalRestant) }),
     })
   }
   return arr
