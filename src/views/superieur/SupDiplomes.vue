@@ -1,36 +1,35 @@
 <template>
   <div class="sd">
     <div class="sd-intro">
-      <h1 class="sd-h1">Diplômes</h1>
+      <h1 class="sd-h1">{{ t('sup.diplomes.title') }}</h1>
       <p class="sd-sub">
-        Émission de diplômes <strong>vérifiables</strong> (code public + empreinte cryptographique).
-        Chaque diplôme est vérifiable en ligne sur la page publique.
+        {{ t('sup.diplomes.subtitlePre') }} <strong>{{ t('sup.diplomes.subtitleStrong') }}</strong> {{ t('sup.diplomes.subtitlePost') }}
       </p>
     </div>
 
     <div class="sd-kpis">
       <div class="sd-kpi">
-        <div class="sd-kpi-lab">Diplômes émis</div>
+        <div class="sd-kpi-lab">{{ t('sup.diplomes.kpiEmis') }}</div>
         <div class="sd-kpi-val">{{ supDiplomes.length }}</div>
       </div>
       <div class="sd-kpi">
-        <div class="sd-kpi-lab">Valides</div>
+        <div class="sd-kpi-lab">{{ t('sup.diplomes.kpiValides') }}</div>
         <div class="sd-kpi-val is-ok">{{ nbValides }}</div>
       </div>
       <div class="sd-kpi">
-        <div class="sd-kpi-lab">Révoqués</div>
+        <div class="sd-kpi-lab">{{ t('sup.diplomes.kpiRevoques') }}</div>
         <div class="sd-kpi-val" :class="{ 'is-bad': nbRevoques > 0 }">{{ nbRevoques }}</div>
       </div>
       <div class="sd-kpi sd-kpi-verify">
-        <div class="sd-kpi-lab">Vérification publique</div>
-        <a class="sd-verify-link" :href="verifyUrl" target="_blank" rel="noopener">Ouvrir la page ↗</a>
+        <div class="sd-kpi-lab">{{ t('sup.diplomes.kpiVerif') }}</div>
+        <a class="sd-verify-link" :href="verifyUrl" target="_blank" rel="noopener">{{ t('sup.diplomes.openPage') }}</a>
       </div>
     </div>
 
     <!-- Émettre -->
     <section class="sd-card">
       <div class="sd-card-head">
-        <h2 class="sd-h2">Émettre des diplômes</h2>
+        <h2 class="sd-h2">{{ t('sup.diplomes.emitTitle') }}</h2>
         <select v-model="selectedPromoId" class="sd-select">
           <option v-for="p in terminalPromos" :key="p.id" :value="p.id">
             {{ p.niveau }} — {{ p.programmeNom }} ({{ p.anneeNom }})
@@ -40,26 +39,26 @@
 
       <template v-if="selectedPromo">
         <p class="sd-note">
-          Diplôme délivré : <strong>{{ typeLabel(typeForPromo(selectedPromo)) }}</strong> ·
-          {{ admisRows.length }} admis sur {{ promoStudents.length }} ·
-          {{ dejaEmisCount }} déjà émis
+          {{ t('sup.diplomes.noteDelivered') }} <strong>{{ typeLabel(typeForPromo(selectedPromo)) }}</strong> ·
+          {{ t('sup.diplomes.noteAdmis', { admis: admisRows.length, total: promoStudents.length }) }} ·
+          {{ t('sup.diplomes.noteDeja', { n: dejaEmisCount }) }}
           <button
             v-if="canEmit && aEmettreIds.length"
             class="sd-bulk-btn"
             type="button"
             @click="emettreTous"
             :disabled="busy"
-          >Émettre pour tous les admis ({{ aEmettreIds.length }})</button>
+          >{{ t('sup.diplomes.emitAll', { n: aEmettreIds.length }) }}</button>
         </p>
 
         <table v-if="admisRows.length" class="sd-table">
           <thead>
             <tr>
-              <th>Matricule</th>
-              <th>Étudiant</th>
-              <th class="num">Moyenne</th>
-              <th>Mention</th>
-              <th>Diplôme</th>
+              <th>{{ t('sup.diplomes.thMat') }}</th>
+              <th>{{ t('sup.diplomes.thStudent') }}</th>
+              <th class="num">{{ t('sup.diplomes.thMoyenne') }}</th>
+              <th>{{ t('sup.diplomes.thMention') }}</th>
+              <th>{{ t('sup.diplomes.thDiplome') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -76,30 +75,30 @@
                   type="button"
                   :disabled="busy"
                   @click="emettreUn(r.student)"
-                >Émettre</button>
+                >{{ t('sup.diplomes.emit') }}</button>
                 <span v-else class="sd-muted">—</span>
               </td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="sd-empty">Aucun étudiant admis dans cette promotion.</p>
+        <p v-else class="sd-empty">{{ t('sup.diplomes.noAdmis') }}</p>
       </template>
-      <p v-else class="sd-empty">Aucune promotion diplômante (fin de cycle) disponible.</p>
+      <p v-else class="sd-empty">{{ t('sup.diplomes.noPromo') }}</p>
     </section>
 
     <!-- Registre -->
     <section class="sd-card">
-      <h2 class="sd-h2">Diplômes émis</h2>
+      <h2 class="sd-h2">{{ t('sup.diplomes.registerTitle') }}</h2>
       <table v-if="supDiplomes.length" class="sd-table">
         <thead>
           <tr>
-            <th>Code</th>
-            <th>Étudiant</th>
-            <th>Diplôme</th>
-            <th>Mention</th>
-            <th>Année</th>
-            <th>Émis le</th>
-            <th>Statut</th>
+            <th>{{ t('sup.diplomes.thCode') }}</th>
+            <th>{{ t('sup.diplomes.thStudent') }}</th>
+            <th>{{ t('sup.diplomes.thDiplome') }}</th>
+            <th>{{ t('sup.diplomes.thMention') }}</th>
+            <th>{{ t('sup.diplomes.thAnnee') }}</th>
+            <th>{{ t('sup.diplomes.thEmisLe') }}</th>
+            <th>{{ t('sup.diplomes.thStatut') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -113,36 +112,35 @@
             <td>{{ formatDate(d.emisLe) }}</td>
             <td>
               <span class="sd-statut" :class="d.statut === 'revoque' ? 'is-bad' : 'is-ok'">
-                {{ d.statut === 'revoque' ? 'Révoqué' : 'Valide' }}
+                {{ d.statut === 'revoque' ? t('sup.diplomes.revoque') : t('sup.diplomes.valide') }}
               </span>
             </td>
             <td class="sd-actions">
-              <a class="sd-link" :href="verifyUrl" target="_blank" rel="noopener" title="Vérifier">Vérifier</a>
+              <a class="sd-link" :href="verifyUrl" target="_blank" rel="noopener" :title="t('sup.diplomes.verify')">{{ t('sup.diplomes.verify') }}</a>
               <button
                 v-if="canEmit && d.statut !== 'revoque'"
                 class="sd-revoke"
                 type="button"
                 @click="askRevoke(d)"
-              >Révoquer</button>
+              >{{ t('sup.diplomes.revoke') }}</button>
             </td>
           </tr>
         </tbody>
       </table>
-      <p v-else class="sd-empty">Aucun diplôme émis pour l'instant.</p>
+      <p v-else class="sd-empty">{{ t('sup.diplomes.noDiplomes') }}</p>
     </section>
 
     <!-- Confirmation de révocation (fond opaque) -->
     <div v-if="revokeTarget" class="sd-modal-overlay" @click.self="revokeTarget = null">
       <div class="sd-modal">
-        <h3 class="sd-modal-title">Révoquer le diplôme</h3>
+        <h3 class="sd-modal-title">{{ t('sup.diplomes.revokeTitle') }}</h3>
         <p class="sd-modal-text">
-          Révoquer le diplôme <strong>{{ revokeTarget.code }}</strong> de
-          <strong>{{ revokeTarget.eleveName }}</strong> ? Le diplôme apparaîtra comme
-          « révoqué » à la vérification.
+          {{ t('sup.diplomes.revokeTextPre') }} <strong>{{ revokeTarget.code }}</strong> {{ t('sup.diplomes.revokeTextMid') }}
+          <strong>{{ revokeTarget.eleveName }}</strong>{{ t('sup.diplomes.revokeTextPost') }}
         </p>
         <div class="sd-modal-actions">
-          <button type="button" class="sd-modal-btn sd-modal-cancel" @click="revokeTarget = null">Annuler</button>
-          <button type="button" class="sd-modal-btn sd-modal-confirm" @click="confirmRevoke">Révoquer</button>
+          <button type="button" class="sd-modal-btn sd-modal-cancel" @click="revokeTarget = null">{{ t('sup.diplomes.cancel') }}</button>
+          <button type="button" class="sd-modal-btn sd-modal-confirm" @click="confirmRevoke">{{ t('sup.diplomes.revoke') }}</button>
         </div>
       </div>
     </div>
@@ -151,10 +149,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
 import { useDiplomesStore, SUP_DIPLOME_TYPES } from '../../stores/diplomes'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
 const diplomes = useDiplomesStore()
@@ -271,7 +271,7 @@ function confirmRevoke() {
 function formatDate(iso) {
   if (!iso) return ''
   const d = new Date(iso)
-  return isNaN(d.getTime()) ? '' : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
+  return isNaN(d.getTime()) ? '' : d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short', year: 'numeric' })
 }
 </script>
 
