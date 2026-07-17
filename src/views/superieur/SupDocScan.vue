@@ -3,28 +3,28 @@
     <div v-if="doc" class="sds-overlay" @click.self="cancel">
       <div class="sds-modal">
         <div class="sds-head">
-          <h2 class="sds-title">Ajouter — {{ doc.label }}</h2>
-          <button class="sds-close" type="button" @click="cancel" aria-label="Fermer">
+          <h2 class="sds-title">{{ t('sup.docScan.addTitle', { label: doc.label }) }}</h2>
+          <button class="sds-close" type="button" @click="cancel" :aria-label="t('sup.docScan.close')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
 
         <div class="sds-tabs">
-          <button type="button" :class="{ on: mode === 'scan' }" @click="setMode('scan')">Scanner (caméra)</button>
-          <button type="button" :class="{ on: mode === 'import' }" @click="setMode('import')">Importer un fichier</button>
+          <button type="button" :class="{ on: mode === 'scan' }" @click="setMode('scan')">{{ t('sup.docScan.scanTab') }}</button>
+          <button type="button" :class="{ on: mode === 'import' }" @click="setMode('import')">{{ t('sup.docScan.importTab') }}</button>
         </div>
 
         <div class="sds-body">
           <!-- Aperçu capturé / importé -->
           <div v-if="preview || pdfName" class="sds-preview">
-            <img v-if="preview" :src="preview" class="sds-preview-img" alt="Aperçu du document" />
+            <img v-if="preview" :src="preview" class="sds-preview-img" :alt="t('sup.docScan.previewAlt')" />
             <div v-else class="sds-pdf">
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
               <div>{{ pdfName }}</div>
             </div>
             <label v-if="preview" class="sds-bw">
               <input type="checkbox" v-model="bw" @change="applyPreview" />
-              Rendu « document » (noir &amp; blanc, contraste renforcé)
+              {{ t('sup.docScan.bwRender') }}
             </label>
           </div>
 
@@ -34,14 +34,14 @@
               <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:6px"><path d="M23 7l-7 5 7 5V7z"/><path d="M16 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h13"/><path d="M1 1l22 22"/></svg>
               <div>{{ camError }}</div>
               <div class="sds-cam-err-actions">
-                <button type="button" class="sds-linkbtn" @click="startCamera">Réessayer</button>
-                <button type="button" class="sds-linkbtn" @click="setMode('import')">Importer un fichier</button>
+                <button type="button" class="sds-linkbtn" @click="startCamera">{{ t('sup.docScan.retry') }}</button>
+                <button type="button" class="sds-linkbtn" @click="setMode('import')">{{ t('sup.docScan.importTab') }}</button>
               </div>
             </div>
             <div v-else class="sds-cam-wrap">
               <video ref="video" autoplay playsinline muted class="sds-video"></video>
               <div class="sds-cam-frame"></div>
-              <div class="sds-cam-hint">Cadrez le document dans le rectangle, puis capturez.</div>
+              <div class="sds-cam-hint">{{ t('sup.docScan.camHint') }}</div>
             </div>
           </template>
 
@@ -50,17 +50,17 @@
             <label class="sds-drop">
               <input type="file" accept="image/*,application/pdf" @change="onFile" />
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>
-              <div class="sds-drop-txt">Choisir une photo ou un PDF</div>
-              <div class="sds-drop-sub">JPG, PNG ou PDF</div>
+              <div class="sds-drop-txt">{{ t('sup.docScan.choosePhoto') }}</div>
+              <div class="sds-drop-sub">{{ t('sup.docScan.fileTypes') }}</div>
             </label>
           </template>
         </div>
 
         <div class="sds-actions">
-          <button type="button" class="sds-btn-ghost" @click="cancel">Annuler</button>
-          <button v-if="mode === 'scan' && !preview && !camError" type="button" class="sds-btn-primary" @click="capture">Capturer</button>
-          <button v-if="preview || pdfName" type="button" class="sds-btn-ghost" @click="retake">Reprendre</button>
-          <button v-if="preview || pdfName" type="button" class="sds-btn-primary" @click="use">Joindre ce document</button>
+          <button type="button" class="sds-btn-ghost" @click="cancel">{{ t('sup.docScan.cancel') }}</button>
+          <button v-if="mode === 'scan' && !preview && !camError" type="button" class="sds-btn-primary" @click="capture">{{ t('sup.docScan.capture') }}</button>
+          <button v-if="preview || pdfName" type="button" class="sds-btn-ghost" @click="retake">{{ t('sup.docScan.retake') }}</button>
+          <button v-if="preview || pdfName" type="button" class="sds-btn-primary" @click="use">{{ t('sup.docScan.attach') }}</button>
         </div>
         <canvas ref="canvas" class="sds-hidden"></canvas>
       </div>
@@ -70,6 +70,9 @@
 
 <script setup>
 import { ref, watch, onUnmounted, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({ doc: { type: Object, default: null } })
 const emit = defineEmits(['close', 'attached'])
@@ -101,7 +104,7 @@ async function startCamera() {
     await nextTick()
     if (video.value) { video.value.srcObject = stream; await video.value.play().catch(() => {}) }
   } catch (e) {
-    camError.value = "Caméra indisponible ou accès refusé. Vous pouvez importer un fichier."
+    camError.value = t('sup.docScan.camError')
   }
 }
 function stopCamera() {

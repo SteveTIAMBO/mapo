@@ -2658,6 +2658,23 @@
     "docViewer": {
       "close": "Close",
       "caption": "Demo preview — the original document will be viewable once file upload is enabled."
+    },
+    "docScan": {
+      "addTitle": "Add — {label}",
+      "close": "Close",
+      "scanTab": "Scan (camera)",
+      "importTab": "Import a file",
+      "previewAlt": "Document preview",
+      "bwRender": "\"Document\" rendering (black & white, enhanced contrast)",
+      "retry": "Retry",
+      "camHint": "Frame the document in the rectangle, then capture.",
+      "choosePhoto": "Choose a photo or PDF",
+      "fileTypes": "JPG, PNG or PDF",
+      "cancel": "Cancel",
+      "capture": "Capture",
+      "retake": "Retake",
+      "attach": "Attach this document",
+      "camError": "Camera unavailable or access denied. You can import a file instead."
     }
   },
   "mal": {

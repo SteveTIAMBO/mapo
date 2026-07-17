@@ -2658,6 +2658,23 @@
     "docViewer": {
       "close": "Fermer",
       "caption": "Aperçu de démonstration — le document original sera consultable une fois le dépôt de fichiers activé."
+    },
+    "docScan": {
+      "addTitle": "Ajouter — {label}",
+      "close": "Fermer",
+      "scanTab": "Scanner (caméra)",
+      "importTab": "Importer un fichier",
+      "previewAlt": "Aperçu du document",
+      "bwRender": "Rendu « document » (noir & blanc, contraste renforcé)",
+      "retry": "Réessayer",
+      "camHint": "Cadrez le document dans le rectangle, puis capturez.",
+      "choosePhoto": "Choisir une photo ou un PDF",
+      "fileTypes": "JPG, PNG ou PDF",
+      "cancel": "Annuler",
+      "capture": "Capturer",
+      "retake": "Reprendre",
+      "attach": "Joindre ce document",
+      "camError": "Caméra indisponible ou accès refusé. Vous pouvez importer un fichier."
     }
   },
   "mal": {
