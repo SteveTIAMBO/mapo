@@ -1,9 +1,9 @@
 <template>
   <div class="sn">
     <div class="sn-intro">
-      <h1 class="sn-h1">Notes &amp; relevés</h1>
+      <h1 class="sn-h1">{{ t('sup.notes.title') }}</h1>
       <p class="sn-sub">
-        Sélectionnez une promotion pour consulter et signer les relevés de notes des étudiants.
+        {{ t('sup.notes.subtitle') }}
       </p>
     </div>
 
@@ -11,25 +11,25 @@
     <template v-if="view === 'promos'">
       <div class="sn-kpis">
         <div class="sn-kpi">
-          <div class="sn-kpi-label">Étudiants notés</div>
+          <div class="sn-kpi-label">{{ t('sup.notes.kpiGraded') }}</div>
           <div class="sn-kpi-value">{{ globalStats.nbReleves }}</div>
         </div>
         <div class="sn-kpi">
-          <div class="sn-kpi-label">Taux de réussite</div>
+          <div class="sn-kpi-label">{{ t('sup.notes.kpiSuccess') }}</div>
           <div class="sn-kpi-value">{{ globalStats.tauxReussite }}<span class="sn-kpi-unit">%</span></div>
           <div class="sn-kpi-foot" :class="globalStats.tauxReussite >= 75 ? 'is-ok' : 'is-warn'">
-            {{ globalStats.admis }} admis · {{ globalStats.ajournes }} ajournés
+            {{ t('sup.notes.kpiSuccessFoot', { admis: globalStats.admis, ajournes: globalStats.ajournes }) }}
           </div>
         </div>
         <div class="sn-kpi">
-          <div class="sn-kpi-label">Moyenne générale</div>
+          <div class="sn-kpi-label">{{ t('sup.notes.kpiAverage') }}</div>
           <div class="sn-kpi-value">{{ globalStats.moyenne }}<span class="sn-kpi-unit">/20</span></div>
         </div>
         <div class="sn-kpi">
-          <div class="sn-kpi-label">Relevés signés</div>
+          <div class="sn-kpi-label">{{ t('sup.notes.kpiSigned') }}</div>
           <div class="sn-kpi-value">{{ globalStats.nbSignes }}<span class="sn-kpi-unit">/{{ globalStats.nbReleves }}</span></div>
           <div class="sn-kpi-foot" :class="globalStats.nbSignes >= globalStats.nbReleves && globalStats.nbReleves ? 'is-ok' : ''">
-            {{ globalStats.nbReleves ? Math.round((globalStats.nbSignes / globalStats.nbReleves) * 100) : 0 }}% du total
+            {{ t('sup.notes.kpiSignedFoot', { pct: globalStats.nbReleves ? Math.round((globalStats.nbSignes / globalStats.nbReleves) * 100) : 0 }) }}
           </div>
         </div>
       </div>
@@ -45,33 +45,33 @@
           <div class="sn-tile-top">
             <span class="sn-niveau" :class="`n-${j.promotion.niveau.toLowerCase()}`">{{ j.promotion.niveau }}</span>
             <span class="sn-tile-sign" :class="j.nbEtudiants && j.nbSignes === j.nbEtudiants ? 'is-done' : ''">
-              {{ j.nbSignes }}/{{ j.nbEtudiants }} signés
+              {{ t('sup.notes.cardSigned', { signes: j.nbSignes, total: j.nbEtudiants }) }}
             </span>
           </div>
           <div class="sn-tile-name">{{ j.promotion.programmeNom }}</div>
-          <div class="sn-tile-annee">{{ j.promotion.anneeNom }} · Semestre 2 en cours</div>
+          <div class="sn-tile-annee">{{ j.promotion.anneeNom }} · {{ t('sup.notes.sem2Current') }}</div>
           <div class="sn-tile-stats">
             <div class="sn-tile-stat">
               <span class="sn-tile-num">{{ j.nbEtudiants }}</span>
-              <span class="sn-tile-lbl">étudiants</span>
+              <span class="sn-tile-lbl">{{ t('sup.notes.tileStudents') }}</span>
             </div>
             <div class="sn-tile-stat">
               <span class="sn-tile-num">{{ j.moyennePromo.toFixed(2) }}</span>
-              <span class="sn-tile-lbl">moyenne</span>
+              <span class="sn-tile-lbl">{{ t('sup.notes.tileAverage') }}</span>
             </div>
             <div class="sn-tile-stat">
               <span class="sn-tile-num">{{ j.tauxReussite }}%</span>
-              <span class="sn-tile-lbl">réussite</span>
+              <span class="sn-tile-lbl">{{ t('sup.notes.tileSuccess') }}</span>
             </div>
           </div>
-          <div class="sn-tile-cta">Ouvrir la promotion →</div>
+          <div class="sn-tile-cta">{{ t('sup.notes.openPromo') }} →</div>
         </button>
       </div>
     </template>
 
     <!-- ══════════ Vue 2 : Promotion ouverte (liste des étudiants) ══════════ -->
     <section v-else-if="view === 'promo' && currentPromo" class="sn-card">
-      <button class="sn-back" type="button" @click="backToPromos">← Toutes les promotions</button>
+      <button class="sn-back" type="button" @click="backToPromos">← {{ t('sup.notes.backAllPromos') }}</button>
 
       <div class="sn-promo-header">
         <div>
@@ -80,40 +80,40 @@
             {{ currentPromo.promotion.programmeNom }}
           </div>
           <div class="sn-promo-h-sub">
-            {{ currentPromo.promotion.anneeNom }} · Semestre {{ promoSem }} · {{ promoStudents.length }} étudiants
+            {{ currentPromo.promotion.anneeNom }} · {{ t('sup.notes.semN', { n: promoSem }) }} · {{ t('sup.notes.studentsCount', { count: promoStudents.length }) }}
           </div>
         </div>
         <div class="sn-promo-h-actions">
-          <span class="sn-sign-progress">{{ promoSignedCount }}/{{ promoStudents.length }} relevés signés</span>
+          <span class="sn-sign-progress">{{ t('sup.notes.signedProgress', { signed: promoSignedCount, total: promoStudents.length }) }}</span>
           <button
             v-if="canSignReleve"
             class="sn-bulk-btn"
             type="button"
             :disabled="!promoSignableIds.length"
-            :title="!promoSignableIds.length ? 'Tous les relevés signables sont déjà signés' : `Signer ${promoSignableIds.length} relevé(s)`"
+            :title="!promoSignableIds.length ? t('sup.notes.allSignedTitle') : t('sup.notes.signNReleves', { n: promoSignableIds.length })"
             @click="openBulkSignModal"
-          >Signer toute la promo</button>
+          >{{ t('sup.notes.signWholePromo') }}</button>
         </div>
       </div>
 
       <div class="sn-sem-toggle">
-        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">Semestre 1</button>
-        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">Semestre 2 <span class="sn-sem-tag">en cours</span></button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">{{ t('sup.notes.sem1') }}</button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">{{ t('sup.notes.sem2') }} <span class="sn-sem-tag">{{ t('sup.notes.inProgress') }}</span></button>
       </div>
 
       <div v-if="semestreView === 1" class="sn-sem-placeholder">
-        <div class="sn-sem-ph-title">Semestre 1</div>
-        <p>Les relevés du <strong>Semestre 1</strong> seront disponibles prochainement. Les relevés en ligne concernent le <strong>Semestre 2</strong> (en cours).</p>
+        <div class="sn-sem-ph-title">{{ t('sup.notes.sem1') }}</div>
+        <p>{{ t('sup.notes.phListA') }} <strong>{{ t('sup.notes.sem1') }}</strong> {{ t('sup.notes.phListB') }} <strong>{{ t('sup.notes.sem2') }}</strong> {{ t('sup.notes.phListC') }}</p>
       </div>
       <table v-else class="sn-table">
         <thead>
           <tr>
-            <th>Matricule</th>
-            <th>Étudiant</th>
-            <th class="num">Moyenne</th>
-            <th>Mention</th>
-            <th>Décision</th>
-            <th>Relevé</th>
+            <th>{{ t('sup.notes.thMatricule') }}</th>
+            <th>{{ t('sup.notes.thStudent') }}</th>
+            <th class="num">{{ t('sup.notes.thAverage') }}</th>
+            <th>{{ t('sup.notes.thMention') }}</th>
+            <th>{{ t('sup.notes.thDecision') }}</th>
+            <th>{{ t('sup.notes.thReleve') }}</th>
           </tr>
         </thead>
         <tbody>
@@ -128,12 +128,12 @@
             <td class="sn-cell-mention">{{ r.mention || '—' }}</td>
             <td>
               <span class="sn-decision-pill" :class="r.admis ? 'is-admis' : 'is-ajourne'">
-                {{ r.admis ? 'Admis' : 'Ajourné' }}
+                {{ r.admis ? t('sup.notes.admis') : t('sup.notes.ajourne') }}
               </span>
             </td>
             <td>
               <span class="sn-sign-tag" :class="r.signed ? 'is-signed' : 'is-unsigned'">
-                {{ r.signed ? 'Signé' : 'Non signé' }}
+                {{ r.signed ? t('sup.notes.signe') : t('sup.notes.nonSigne') }}
               </span>
             </td>
           </tr>
@@ -145,9 +145,9 @@
         <li v-for="r in promoRows" :key="r.student.id" class="sn-mrow" @click="openReleve(r.index)">
           <div class="sn-mrow-main">
             <div class="sn-mrow-name">{{ r.student.nomComplet }}</div>
-            <div class="sn-mrow-sub">{{ r.student.matricule }} · Moyenne {{ r.moyenne != null ? r.moyenne.toFixed(2) : '—' }}</div>
+            <div class="sn-mrow-sub">{{ r.student.matricule }} · {{ t('sup.notes.thAverage') }} {{ r.moyenne != null ? r.moyenne.toFixed(2) : '—' }}</div>
           </div>
-          <span class="sn-decision-pill" :class="r.admis ? 'is-admis' : 'is-ajourne'">{{ r.admis ? 'Admis' : 'Ajourné' }}</span>
+          <span class="sn-decision-pill" :class="r.admis ? 'is-admis' : 'is-ajourne'">{{ r.admis ? t('sup.notes.admis') : t('sup.notes.ajourne') }}</span>
           <svg class="sn-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
       </ul>
@@ -159,9 +159,9 @@
         <button class="sn-back" type="button" @click="backToPromo">← {{ currentPromo.promotion.programmeNom }}</button>
         <div class="sn-releve-bar-right">
           <div class="sn-pager">
-            <button class="sn-pager-btn" type="button" :disabled="currentIndex <= 0" @click="prevReleve">‹ Précédent</button>
+            <button class="sn-pager-btn" type="button" :disabled="currentIndex <= 0" @click="prevReleve">{{ t('sup.notes.pagerPrev') }}</button>
             <span class="sn-pager-pos">{{ currentIndex + 1 }} / {{ promoStudents.length }}</span>
-            <button class="sn-pager-btn" type="button" :disabled="currentIndex >= promoStudents.length - 1" @click="nextReleve">Suivant ›</button>
+            <button class="sn-pager-btn" type="button" :disabled="currentIndex >= promoStudents.length - 1" @click="nextReleve">{{ t('sup.notes.pagerNext') }}</button>
           </div>
           <ExportMenu
             :excel="exportReleve"
@@ -172,13 +172,13 @@
       </div>
 
       <div class="sn-sem-toggle">
-        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">Semestre 1</button>
-        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">Semestre 2 <span class="sn-sem-tag">en cours</span></button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 1 }" @click="semestreView = 1">{{ t('sup.notes.sem1') }}</button>
+        <button type="button" class="sn-sem-btn" :class="{ active: semestreView === 2 }" @click="semestreView = 2">{{ t('sup.notes.sem2') }} <span class="sn-sem-tag">{{ t('sup.notes.inProgress') }}</span></button>
       </div>
 
       <div v-if="semestreView === 1" class="sn-sem-placeholder">
-        <div class="sn-sem-ph-title">Semestre 1</div>
-        <p>Le relevé du <strong>Semestre 1</strong> sera disponible prochainement. Le relevé affiché concerne le <strong>Semestre 2</strong> (en cours).</p>
+        <div class="sn-sem-ph-title">{{ t('sup.notes.sem1') }}</div>
+        <p>{{ t('sup.notes.phReleveA') }} <strong>{{ t('sup.notes.sem1') }}</strong> {{ t('sup.notes.phReleveB') }} <strong>{{ t('sup.notes.sem2') }}</strong> {{ t('sup.notes.phListC') }}</p>
       </div>
 
       <div v-else-if="releve">
@@ -186,23 +186,23 @@
           <div>
             <div class="sn-releve-title">{{ releve.etudiant.nomComplet }}</div>
             <div class="sn-releve-sub">
-              {{ releve.etudiant.programmeNom }} · {{ releve.etudiant.anneeNom }} · Semestre 2
+              {{ releve.etudiant.programmeNom }} · {{ releve.etudiant.anneeNom }} · {{ t('sup.notes.sem2') }}
             </div>
           </div>
           <div class="sn-releve-result">
             <div class="sn-result-line">
-              <span class="sn-result-label">Moyenne semestre</span>
+              <span class="sn-result-label">{{ t('sup.notes.avgSemester') }}</span>
               <span class="sn-result-val">{{ releve.moyenne.toFixed(2) }}<small>/20</small></span>
             </div>
             <div class="sn-result-line">
-              <span class="sn-result-label">crédits validés</span>
+              <span class="sn-result-label">{{ t('sup.notes.creditsValidated') }}</span>
               <span class="sn-result-val">{{ releve.ectsValides }}<small>/{{ releve.totalEcts }}</small></span>
             </div>
             <div class="sn-result-decision">
               <span class="sn-decision-pill" :class="releve.admis ? 'is-admis' : 'is-ajourne'">
-                {{ releve.admis ? 'Admis' : 'Ajourné' }}
+                {{ releve.admis ? t('sup.notes.admis') : t('sup.notes.ajourne') }}
               </span>
-              <span v-if="releve.mention" class="sn-mention">Mention {{ releve.mention }}</span>
+              <span v-if="releve.mention" class="sn-mention">{{ t('sup.notes.thMention') }} {{ releve.mention }}</span>
             </div>
           </div>
         </div>
@@ -210,11 +210,11 @@
         <table class="sn-table sn-releve-table">
           <thead>
             <tr>
-              <th>UE</th>
-              <th>Type</th>
-              <th class="num">crédits</th>
-              <th class="num">Note</th>
-              <th>Validation</th>
+              <th>{{ t('sup.notes.thUE') }}</th>
+              <th>{{ t('sup.notes.thType') }}</th>
+              <th class="num">{{ t('sup.notes.thCredits') }}</th>
+              <th class="num">{{ t('sup.notes.thNote') }}</th>
+              <th>{{ t('sup.notes.thValidation') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -232,7 +232,7 @@
               </td>
               <td>
                 <span class="sn-val-pill" :class="l.note == null ? 'is-wait' : l.validee ? 'is-ok' : 'is-bad'">
-                  {{ l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée' }}
+                  {{ l.note == null ? t('sup.notes.enAttente') : l.validee ? t('sup.notes.validee') : t('sup.notes.nonValidee') }}
                 </span>
               </td>
             </tr>
@@ -241,18 +241,18 @@
 
         <!-- Signature du directeur sur le relevé -->
         <div class="st-sign">
-          <div class="st-sign-head">Le Directeur</div>
+          <div class="st-sign-head">{{ t('sup.notes.director') }}</div>
 
           <div v-if="releveSigned" class="st-sign-done">
-            <img :src="releveSignatureImg" alt="Signature du directeur" class="st-sign-img" />
+            <img :src="releveSignatureImg" :alt="t('sup.notes.signatureAlt')" class="st-sign-img" />
             <div class="st-sign-badge">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
-              <span>Validé et signé</span>
+              <span>{{ t('sup.notes.validatedSigned') }}</span>
             </div>
             <div class="st-sign-name">{{ releveSignature.signedBy }}</div>
-            <div class="st-sign-date">Signé le {{ formatSignDate(releveSignature.signedAt) }}</div>
+            <div class="st-sign-date">{{ t('sup.notes.signedOn', { date: formatSignDate(releveSignature.signedAt) }) }}</div>
             <button v-if="canSignReleve" type="button" class="st-sign-undo" @click="cancelSignReleve">
-              Annuler la signature
+              {{ t('sup.notes.cancelSignature') }}
             </button>
           </div>
 
@@ -261,11 +261,11 @@
               type="button"
               class="st-sign-btn"
               :disabled="pendingUE > 0"
-              :title="pendingUE > 0 ? `Relevé incomplet — ${pendingUE} UE en attente de note` : ''"
+              :title="pendingUE > 0 ? t('sup.notes.incompleteTitle', { n: pendingUE }) : ''"
               @click="openSignModal"
-            >Valider et signer le relevé</button>
+            >{{ t('sup.notes.validateSign') }}</button>
             <span v-if="pendingUE > 0" class="st-sign-hint">
-              Relevé incomplet — {{ pendingUE }} UE en attente de note
+              {{ t('sup.notes.incompleteTitle', { n: pendingUE }) }}
             </span>
           </div>
 
@@ -277,23 +277,22 @@
     <!-- Modale de confirmation de signature (fond opaque) -->
     <div v-if="showSignModal" class="st-modal-overlay" @click.self="showSignModal = false">
       <div class="st-modal">
-        <h3 class="st-modal-title">{{ signMode === 'bulk' ? 'Signer toute la promotion' : 'Signer le relevé' }}</h3>
+        <h3 class="st-modal-title">{{ signMode === 'bulk' ? t('sup.notes.modalBulkTitle') : t('sup.notes.modalSingleTitle') }}</h3>
         <p v-if="signMode === 'bulk'" class="st-modal-text">
-          Vous vous apprêtez à signer <strong>{{ promoSignableIds.length }}</strong>
-          relevé{{ promoSignableIds.length > 1 ? 's' : '' }} non signé{{ promoSignableIds.length > 1 ? 's' : '' }}
-          de <strong>{{ currentPromo ? currentPromo.promotion.programmeNom : '' }}</strong>
-          (Semestre {{ promoSem }}). Votre signature sera apposée sur chacun.
+          {{ t('sup.notes.bulkTextA') }} <strong>{{ promoSignableIds.length }}</strong>
+          {{ t('sup.notes.bulkTextB') }}
+          <strong>{{ currentPromo ? currentPromo.promotion.programmeNom : '' }}</strong>
+          {{ t('sup.notes.bulkTextC', { sem: promoSem }) }}
         </p>
         <p v-else class="st-modal-text">
-          Vous vous apprêtez à signer le relevé de
+          {{ t('sup.notes.singleTextA') }}
           <strong>{{ releve ? releve.etudiant.nomComplet : '' }}</strong>
-          (Semestre {{ releve ? releve.semestre : '' }}).
-          Votre signature figurera sur le relevé.
+          {{ t('sup.notes.singleTextB', { sem: releve ? releve.semestre : '' }) }}
         </p>
         <div class="st-modal-actions">
-          <button type="button" class="st-modal-btn st-modal-cancel" @click="showSignModal = false">Annuler</button>
+          <button type="button" class="st-modal-btn st-modal-cancel" @click="showSignModal = false">{{ t('sup.notes.cancel') }}</button>
           <button type="button" class="st-modal-btn st-modal-confirm" @click="confirmSign">
-            {{ signMode === 'bulk' ? 'Signer la promotion' : 'Valider et signer' }}
+            {{ signMode === 'bulk' ? t('sup.notes.confirmBulk') : t('sup.notes.confirmSingle') }}
           </button>
         </div>
       </div>
@@ -303,6 +302,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { UE_TYPES } from '../../stores/superieur'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
@@ -311,11 +311,12 @@ import { exportToExcel } from '../../utils/exportExcel'
 import { exportRelevePdf as exportRelevePdfUtil } from '../../utils/exportPdf'
 import { makeSignatureDataUrl } from '../../utils/signatureImage'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
 // Le directeur / l'admin ne saisit pas les notes : il RELIT et SIGNE le relevé.
 const canSignReleve = computed(() => authSup.isAdmin)
-const dirName = () => authSup.profile?.displayName || 'Le Directeur'
+const dirName = () => authSup.profile?.displayName || t('sup.notes.director')
 
 // ── Navigation : Promotions → étudiants → relevé ──
 const view = ref('promos') // 'promos' | 'promo' | 'releve'
@@ -448,7 +449,7 @@ function formatSignDate(iso) {
   const d = new Date(iso)
   return isNaN(d.getTime())
     ? ''
-    : d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
 // ── KPIs globaux (scopés au campus actif, cohérents avec les cartes) ──
@@ -474,11 +475,11 @@ const globalStats = computed(() => {
 })
 
 // ── Export du relevé individuel (Excel / PDF) ──
-const releveColumns = [
-  { key: 'ue', label: 'UE', width: 48 },
-  { key: 'credits', label: 'Crédits', width: 10 },
-  { key: 'note', label: 'Note /20', width: 12 },
-  { key: 'validation', label: 'Validation', width: 16 },
+const releveColumns = () => [
+  { key: 'ue', label: t('sup.notes.thUE'), width: 48 },
+  { key: 'credits', label: t('sup.notes.colCredits'), width: 10 },
+  { key: 'note', label: t('sup.notes.colNote'), width: 12 },
+  { key: 'validation', label: t('sup.notes.thValidation'), width: 16 },
 ]
 function releveRows() {
   const r = releve.value
@@ -487,7 +488,7 @@ function releveRows() {
     ue: `${l.ueCode} — ${l.ueIntitule}`.trim(),
     credits: l.ects,
     note: l.note != null ? l.note.toFixed(2) : '—',
-    validation: l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée',
+    validation: l.note == null ? t('sup.notes.enAttente') : l.validee ? t('sup.notes.validee') : t('sup.notes.nonValidee'),
   }))
 }
 function releveFilename() {
@@ -496,7 +497,7 @@ function releveFilename() {
 }
 function exportReleve() {
   if (!releve.value) return
-  exportToExcel(releveRows(), releveColumns, releveFilename(), 'Relevé')
+  exportToExcel(releveRows(), releveColumns(), releveFilename(), t('sup.notes.thReleve'))
 }
 function exportRelevePdf() {
   const r = releve.value
@@ -507,21 +508,21 @@ function exportRelevePdf() {
     semestre: r.semestre,
     moyenne: r.moyenne,
     mention: r.mention,
-    decision: r.admis ? 'Admis' : 'Ajourné',
+    decision: r.admis ? t('sup.notes.admis') : t('sup.notes.ajourne'),
     lignes: r.lignes.map((l) => ({
       ueCode: l.ueCode,
       ueIntitule: l.ueIntitule,
       ects: l.ects,
       note: l.note,
-      validation: l.note == null ? 'En attente' : l.validee ? 'Validée' : 'Non validée',
+      validation: l.note == null ? t('sup.notes.enAttente') : l.validee ? t('sup.notes.validee') : t('sup.notes.nonValidee'),
     })),
     signature: store.getReleveSignature(selectedEtudiantId.value, r.semestre),
     filename: releveFilename(),
-    title: 'Relevé de notes semestriel',
+    title: t('sup.notes.pdfTitle'),
   })
 }
 
-const typeLabel = (t) => UE_TYPES[t]?.label || t
+const typeLabel = (ty) => UE_TYPES[ty]?.label || ty
 </script>
 
 <style scoped>
