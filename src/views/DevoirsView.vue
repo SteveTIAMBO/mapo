@@ -132,6 +132,21 @@
           </tr>
         </tbody>
       </table>
+
+      <!-- Liste mobile : cartes tappables (le tableau est masqué sur petit écran) -->
+      <ul v-if="filteredDevoirs.length" class="dv-mlist">
+        <li v-for="devoir in filteredDevoirs" :key="devoir.id" class="dv-mrow" @click="openDetailModal(devoir)">
+          <div class="dv-mrow-main">
+            <div class="dv-mrow-name">{{ devoir.title }}</div>
+            <div class="dv-mrow-sub">{{ devoir.subjectName }} · {{ getTypeLabel(devoir.type) }} · {{ formatDate(devoir.dueDate) }}</div>
+            <div class="dv-mrow-meta">
+              <span v-if="devoir.isDigital" class="devoir-badge"><Upload :size="12" style="display: inline" /> {{ t('devoirs.digital') }}</span>
+              <span v-if="getSubmissionStats(devoir.id)" class="dv-mrow-stat">{{ getSubmissionStats(devoir.id).submitted }}/{{ getSubmissionStats(devoir.id).total }}</span>
+            </div>
+          </div>
+          <svg class="dv-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </li>
+      </ul>
     </div>
 
     <!-- Modal: Create/Edit Devoir -->
@@ -1181,4 +1196,20 @@ textarea.input {
 .miapo-corrige { margin-top: 10px; }
 .miapo-corrige-hint { font-size: 11.5px; color: var(--muted, #6F767E); font-weight: 400; }
 .grade-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* ── Liste mobile (remplace le tableau des devoirs, <=560px) ── */
+.dv-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.dv-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border, #ECECE8); cursor: pointer; }
+.dv-mrow:last-child { border-bottom: none; }
+.dv-mrow:active { background: rgba(var(--pr-rgb, 21, 88, 176), .07); }
+.dv-mrow-main { flex: 1; min-width: 0; }
+.dv-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--text, #1A1D1F); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-mrow-sub { font-size: 12.5px; color: var(--muted, #6f767e); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dv-mrow-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+.dv-mrow-stat { font-size: 12px; color: var(--muted, #6f767e); }
+.dv-mrow-chev { color: var(--muted, #9aa2b1); flex-shrink: 0; }
+@media (max-width: 560px) {
+  .data-table { display: none; }
+  .dv-mlist { display: block; background: var(--card, #fff); border: 1px solid var(--border, #ECECE8); border-radius: 12px; overflow: hidden; }
+}
 </style>
