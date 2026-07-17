@@ -119,7 +119,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { openCarre } from '../../services/carreSso'
@@ -303,7 +303,7 @@ const navSections = computed(() => {
   return sections
 })
 
-// ── Accordéon des thèmes : un seul groupe ouvert à la fois ──
+// ── Accordéon des thèmes : tout fermé par défaut, un seul groupe ouvert à la fois (au clic) ──
 const openGroup = ref(null)
 function isSectionOpen(si) {
   if (props.collapsed && !props.mobileOpen) return true // mode réduit (icônes) : tout visible
@@ -348,21 +348,9 @@ const handleLogout = async () => {
   await router.push(isMiapoTenant() ? '/miapo' : '/login')
 }
 
-// Ouvre automatiquement le thème contenant la page active ; sinon, par défaut,
-// seul le PREMIER thème est ouvert (le reste fermé).
-watch(
-  [navSections, () => route.path],
-  () => {
-    const secs = navSections.value
-    const active = secs.findIndex((s) => s.label && s.items.some((it) => it.to && isActive(it.to)))
-    if (active >= 0) openGroup.value = active
-    else if (openGroup.value === null) {
-      const first = secs.findIndex((s) => s.label)
-      if (first >= 0) openGroup.value = first
-    }
-  },
-  { immediate: true }
-)
+// Accordéon : AUCUN thème ouvert par défaut (tout fermé au chargement).
+// L'ouverture se fait uniquement au clic sur l'en-tête d'un thème (voir toggleSection),
+// et un seul thème reste ouvert à la fois (ouvrir l'un referme l'autre).
 </script>
 
 <style scoped>
