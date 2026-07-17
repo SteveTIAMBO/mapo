@@ -2654,6 +2654,10 @@
       "deleteConfirmTxt": "Ce rôle personnalisé et ses accès seront supprimés. Action immédiate.",
       "delete": "Supprimer",
       "savedToast": "Modifications enregistrées."
+    },
+    "docViewer": {
+      "close": "Fermer",
+      "caption": "Aperçu de démonstration — le document original sera consultable une fois le dépôt de fichiers activé."
     }
   },
   "mal": {

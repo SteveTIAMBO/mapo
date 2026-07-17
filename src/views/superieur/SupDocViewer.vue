@@ -4,7 +4,7 @@
       <div class="sdv-modal">
         <div class="sdv-head">
           <h2 class="sdv-title">{{ doc.label }} — {{ candidat && candidat.nomComplet }}</h2>
-          <button class="sdv-close" type="button" @click="$emit('close')" aria-label="Fermer">
+          <button class="sdv-close" type="button" @click="$emit('close')" :aria-label="t('sup.docViewer.close')">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
           </button>
         </div>
@@ -63,7 +63,7 @@
 
           <div class="sdv-caption">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
-            Aperçu de démonstration — le document original sera consultable une fois le dépôt de fichiers activé.
+            {{ t('sup.docViewer.caption') }}
           </div>
         </div>
       </div>
@@ -73,6 +73,9 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({
   doc: { type: Object, default: null },

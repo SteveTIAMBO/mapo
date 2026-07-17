@@ -2654,6 +2654,10 @@
       "deleteConfirmTxt": "This custom role and its access will be deleted. Immediate action.",
       "delete": "Delete",
       "savedToast": "Changes saved."
+    },
+    "docViewer": {
+      "close": "Close",
+      "caption": "Demo preview — the original document will be viewable once file upload is enabled."
     }
   },
   "mal": {
