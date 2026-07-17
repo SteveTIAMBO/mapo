@@ -4791,5 +4791,19 @@
       "secondaire": "Secondary",
       "superieur": "Higher ed."
     }
+  },
+  "bbar": {
+    "accueil": "Home",
+    "eleves": "Students",
+    "compta": "Billing",
+    "salaire": "Payroll",
+    "messages": "Messages",
+    "rapports": "Reports",
+    "notes": "Grades",
+    "edt": "Schedule",
+    "devoirs": "Homework",
+    "paiements": "Payments",
+    "revisions": "Revision",
+    "miapo": "MIAPO+"
   }
 }

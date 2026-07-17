@@ -75,6 +75,9 @@
 
     <!-- Copilote MIAPO (Ctrl+J) — barre de commande en langage naturel -->
     <MiapoBar />
+
+    <!-- Barre basse mobile (5 accès par profil) — masquée pour le B2C (menu propre) -->
+    <MobileBottomBar v-if="!hideSidebar" />
   </div>
 </template>
 
@@ -86,6 +89,7 @@ import AppSidebar from './AppSidebar.vue'
 import AppHeader from './AppHeader.vue'
 import GlobalSearch from './GlobalSearch.vue'
 import MiapoBar from './MiapoBar.vue'
+import MobileBottomBar from './MobileBottomBar.vue'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
 import { useAuthStore } from '../../stores/auth'
 
@@ -234,8 +238,15 @@ onUnmounted(() => {
     max-width: 100vw;
   }
   .layout-content {
-    padding: 16px 4px 12px;
+    padding: 16px 16px 12px;
     max-width: 100vw;
+  }
+}
+
+/* Barre basse mobile (<=560px) : réserver la hauteur pour ne rien masquer dessous. */
+@media (max-width: 560px) {
+  .layout-content {
+    padding-bottom: 84px;
   }
 }
 
