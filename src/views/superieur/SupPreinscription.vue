@@ -6,60 +6,57 @@
         <div class="spi-logo">IS</div>
         <div>
           <div class="spi-school">Institut Supérieur EDUFREM</div>
-          <div class="spi-tag">Pré-inscription en ligne · Année 2025-2026</div>
+          <div class="spi-tag">{{ t('sup.preinsc.tag') }}</div>
         </div>
       </div>
 
       <!-- Formulaire -->
       <template v-if="!submitted">
-        <h1 class="spi-h1">Demande de pré-inscription</h1>
-        <p class="spi-sub">
-          Remplissez ce formulaire et joignez vos pièces. Votre demande sera transmise à la scolarité,
-          qui reviendra vers vous pour la valider ou vous demander un complément.
-        </p>
+        <h1 class="spi-h1">{{ t('sup.preinsc.title') }}</h1>
+        <p class="spi-sub">{{ t('sup.preinsc.subtitle') }}</p>
 
         <form class="spi-form" @submit.prevent="submit">
           <div class="spi-field">
-            <label class="spi-label">Type de demande</label>
+            <label class="spi-label">{{ t('sup.preinsc.typeLabel') }}</label>
             <div class="spi-radios">
               <label class="spi-radio" :class="{ on: form.type === 'inscription' }">
-                <input type="radio" value="inscription" v-model="form.type" /> Nouvelle inscription
+                <input type="radio" value="inscription" v-model="form.type" /> {{ t('sup.preinsc.newInscription') }}
               </label>
               <label class="spi-radio" :class="{ on: form.type === 'reinscription' }">
-                <input type="radio" value="reinscription" v-model="form.type" /> Réinscription
+                <input type="radio" value="reinscription" v-model="form.type" /> {{ t('sup.preinsc.reinscription') }}
               </label>
             </div>
           </div>
 
           <div class="spi-row">
             <div class="spi-field">
-              <label class="spi-label">Prénom(s)</label>
+              <label class="spi-label">{{ t('sup.preinsc.prenom') }}</label>
               <input v-model="form.prenom" type="text" class="spi-input" required />
             </div>
             <div class="spi-field">
-              <label class="spi-label">Nom</label>
+              <label class="spi-label">{{ t('sup.preinsc.nom') }}</label>
               <input v-model="form.nom" type="text" class="spi-input" required />
             </div>
           </div>
 
           <div class="spi-row">
             <div class="spi-field">
-              <label class="spi-label">Sexe</label>
+              <label class="spi-label">{{ t('sup.preinsc.sexe') }}</label>
               <select v-model="form.sexe" class="spi-input">
-                <option value="M">Masculin</option>
-                <option value="F">Féminin</option>
+                <option value="M">{{ t('sup.preinsc.masculin') }}</option>
+                <option value="F">{{ t('sup.preinsc.feminin') }}</option>
               </select>
             </div>
             <div class="spi-field">
-              <label class="spi-label">Téléphone (WhatsApp de préférence)</label>
+              <label class="spi-label">{{ t('sup.preinsc.phone') }}</label>
               <input v-model="form.telephone" type="tel" class="spi-input" placeholder="6XX XX XX XX" />
             </div>
           </div>
 
           <div class="spi-field">
-            <label class="spi-label">Filière demandée</label>
+            <label class="spi-label">{{ t('sup.preinsc.filiere') }}</label>
             <select v-model="form.promotionId" class="spi-input" required>
-              <option value="">— Choisir une filière —</option>
+              <option value="">{{ t('sup.preinsc.chooseFiliere') }}</option>
               <option v-for="p in promotions" :key="p.id" :value="p.id">
                 {{ p.programmeNom }} — {{ p.anneeNom }}
               </option>
@@ -68,30 +65,28 @@
 
           <!-- Pièces à joindre -->
           <div class="spi-docs">
-            <div class="spi-docs-head">Pièces à joindre</div>
-            <p class="spi-docs-hint">Cochez les pièces que vous fournissez. Vous pourrez transmettre les manquantes plus tard.</p>
+            <div class="spi-docs-head">{{ t('sup.preinsc.docsHead') }}</div>
+            <p class="spi-docs-hint">{{ t('sup.preinsc.docsHint') }}</p>
             <div v-for="d in documents" :key="d.key" class="spi-doc" :class="{ on: !!attached[d.key] }">
               <span class="spi-doc-state-ic">
                 <svg v-if="attached[d.key]" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
               </span>
               <span class="spi-doc-lbl">
                 {{ d.label }}
-                <span v-if="d.required" class="spi-doc-req">obligatoire</span>
+                <span v-if="d.required" class="spi-doc-req">{{ t('sup.preinsc.required') }}</span>
               </span>
               <img v-if="scans[d.key] && scans[d.key].dataUrl" :src="scans[d.key].dataUrl" class="spi-doc-thumb" alt="" />
               <button type="button" class="spi-doc-btn" @click="scanDoc = d">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M6 12h12"/></svg>
-                {{ attached[d.key] ? 'Modifier' : 'Scanner / Importer' }}
+                {{ attached[d.key] ? t('sup.preinsc.modify') : t('sup.preinsc.scanImport') }}
               </button>
             </div>
           </div>
 
           <p v-if="error" class="spi-error">{{ error }}</p>
 
-          <button type="submit" class="spi-submit">Envoyer ma pré-inscription</button>
-          <p class="spi-legal">
-            En envoyant ce formulaire, vous acceptez que l'établissement traite ces informations pour l'étude de votre dossier.
-          </p>
+          <button type="submit" class="spi-submit">{{ t('sup.preinsc.submit') }}</button>
+          <p class="spi-legal">{{ t('sup.preinsc.legal') }}</p>
         </form>
       </template>
 
@@ -100,13 +95,10 @@
         <div class="spi-done-ic">
           <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
         </div>
-        <h2 class="spi-done-title">Pré-inscription transmise</h2>
-        <p class="spi-done-txt">
-          Merci {{ submittedName }}. Votre demande a bien été reçue par la scolarité de l'Institut Supérieur EDUFREM.
-          Vous serez recontacté(e) au numéro indiqué pour la suite (validation ou pièces complémentaires).
-        </p>
-        <div class="spi-ref">Référence du dossier : <strong>{{ reference }}</strong></div>
-        <button type="button" class="spi-again" @click="reset">Faire une autre pré-inscription</button>
+        <h2 class="spi-done-title">{{ t('sup.preinsc.doneTitle') }}</h2>
+        <p class="spi-done-txt">{{ t('sup.preinsc.doneTxt', { name: submittedName }) }}</p>
+        <div class="spi-ref">{{ t('sup.preinsc.reference') }} <strong>{{ reference }}</strong></div>
+        <button type="button" class="spi-again" @click="reset">{{ t('sup.preinsc.again') }}</button>
       </div>
 
       <div class="spi-foot">Propulsé par EDUFREM</div>
@@ -118,10 +110,12 @@
 
 <script setup>
 import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { useSuperieurInscriptionsStore } from '../../stores/superieurInscriptions'
 import SupDocScan from './SupDocScan.vue'
 
+const { t } = useI18n({ useScope: 'global' })
 const superieur = useSuperieurStore()
 const store = useSuperieurInscriptionsStore()
 
@@ -141,8 +135,8 @@ const reference = ref('')
 
 function submit() {
   error.value = ''
-  if (!form.prenom.trim() || !form.nom.trim()) { error.value = 'Merci d’indiquer votre prénom et votre nom.'; return }
-  if (!form.promotionId) { error.value = 'Merci de choisir la filière demandée.'; return }
+  if (!form.prenom.trim() || !form.nom.trim()) { error.value = t('sup.preinsc.errName'); return }
+  if (!form.promotionId) { error.value = t('sup.preinsc.errFiliere'); return }
   const promo = promotions.value.find((p) => p.id === form.promotionId) || {}
   const id = store.addPreinscription({
     type: form.type,
