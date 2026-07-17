@@ -1,34 +1,32 @@
 <template>
   <div class="sip">
     <div class="sip-intro">
-      <h1 class="sip-h1">Inscriptions pédagogiques</h1>
-      <p class="sip-sub">
-        Le responsable de formation pose les UE obligatoires ; chaque étudiant choisit ses électives dans ce cadre. Suivi pour le semestre en cours.
-      </p>
+      <h1 class="sip-h1">{{ t('sup.inscPeda.title') }}</h1>
+      <p class="sip-sub">{{ t('sup.inscPeda.subtitle') }}</p>
     </div>
 
     <!-- KPIs -->
     <div class="sip-kpis">
       <div class="sip-kpi">
-        <div class="sip-kpi-label">Inscriptions</div>
+        <div class="sip-kpi-label">{{ t('sup.inscPeda.kpiInscriptions') }}</div>
         <div class="sip-kpi-value">{{ s.total }}</div>
-        <div class="sip-kpi-foot">étudiants concernés</div>
+        <div class="sip-kpi-foot">{{ t('sup.inscPeda.kpiInscriptionsFoot') }}</div>
       </div>
       <div class="sip-kpi">
-        <div class="sip-kpi-label">Validées par scolarité</div>
+        <div class="sip-kpi-label">{{ t('sup.inscPeda.kpiValidees') }}</div>
         <div class="sip-kpi-value">{{ s.validee }}</div>
         <div class="sip-kpi-foot is-ok">{{ pct(s.validee) }}%</div>
       </div>
       <div class="sip-kpi">
-        <div class="sip-kpi-label">Complètes — à valider</div>
+        <div class="sip-kpi-label">{{ t('sup.inscPeda.kpiComplete') }}</div>
         <div class="sip-kpi-value">{{ s.complete }}</div>
         <div class="sip-kpi-foot">{{ pct(s.complete) }}%</div>
       </div>
       <div class="sip-kpi">
-        <div class="sip-kpi-label">Incomplètes</div>
+        <div class="sip-kpi-label">{{ t('sup.inscPeda.kpiIncomplete') }}</div>
         <div class="sip-kpi-value">{{ s.incomplete }}</div>
         <div class="sip-kpi-foot" :class="s.incomplete > 0 ? 'is-warn' : 'is-ok'">
-          {{ pct(s.incomplete) }}% — électifs manquants
+          {{ pct(s.incomplete) }}% — {{ t('sup.inscPeda.kpiIncompleteFoot') }}
         </div>
       </div>
     </div>
@@ -38,48 +36,48 @@
       <section class="sip-main">
         <div class="sip-filters">
           <div class="sip-filter">
-            <span class="sip-filter-label">Promotion</span>
+            <span class="sip-filter-label">{{ t('sup.inscPeda.filterPromotion') }}</span>
             <select :value="store.inscriptionsFilters.promotionId" @change="store.setInscriptionFilter('promotionId', $event.target.value)">
-              <option value="">Toutes les promotions</option>
+              <option value="">{{ t('sup.inscPeda.allPromotions') }}</option>
               <option v-for="p in store.promotions" :key="p.id" :value="p.id">
                 {{ p.programmeNom }} — {{ p.anneeNom }}
               </option>
             </select>
           </div>
           <div class="sip-filter">
-            <span class="sip-filter-label">Statut</span>
+            <span class="sip-filter-label">{{ t('sup.inscPeda.filterStatut') }}</span>
             <select :value="store.inscriptionsFilters.statut" @change="store.setInscriptionFilter('statut', $event.target.value)">
-              <option value="">Tous les statuts</option>
-              <option value="validee">Validée par scolarité</option>
-              <option value="complete">Complète — à valider</option>
-              <option value="incomplete">Incomplète</option>
+              <option value="">{{ t('sup.inscPeda.allStatuts') }}</option>
+              <option value="validee">{{ t('sup.inscPeda.statutValidee') }}</option>
+              <option value="complete">{{ t('sup.inscPeda.statutComplete') }}</option>
+              <option value="incomplete">{{ t('sup.inscPeda.statutIncomplete') }}</option>
             </select>
           </div>
           <div class="sip-filter sip-filter-search">
-            <span class="sip-filter-label">Recherche</span>
+            <span class="sip-filter-label">{{ t('sup.inscPeda.search') }}</span>
             <input
               type="text"
               :value="store.inscriptionsFilters.search"
               @input="store.setInscriptionFilter('search', $event.target.value)"
-              placeholder="Nom ou matricule…"
+              :placeholder="t('sup.inscPeda.searchPlaceholder')"
             />
           </div>
           <button v-if="hasFilters" class="sip-reset" type="button" @click="store.resetInscriptionFilters()">
-            Réinitialiser
+            {{ t('sup.inscPeda.reset') }}
           </button>
-          <span class="sip-count">{{ store.inscriptionsList.length }} étudiant{{ store.inscriptionsList.length > 1 ? 's' : '' }}</span>
+          <span class="sip-count">{{ t('sup.inscPeda.countStudents', store.inscriptionsList.length, { n: store.inscriptionsList.length }) }}</span>
         </div>
 
         <div class="sip-table-wrap">
           <table class="sip-table">
             <thead>
               <tr>
-                <th>Étudiant</th>
-                <th>Promotion</th>
-                <th class="num">UE choisies</th>
-                <th class="num">Électives</th>
-                <th class="num">crédits</th>
-                <th>Statut</th>
+                <th>{{ t('sup.inscPeda.thStudent') }}</th>
+                <th>{{ t('sup.inscPeda.thPromotion') }}</th>
+                <th class="num">{{ t('sup.inscPeda.thUeChoisies') }}</th>
+                <th class="num">{{ t('sup.inscPeda.thElectives') }}</th>
+                <th class="num">{{ t('sup.inscPeda.thCredits') }}</th>
+                <th>{{ t('sup.inscPeda.thStatut') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -108,7 +106,7 @@
                 </td>
               </tr>
               <tr v-if="store.inscriptionsList.length === 0">
-                <td colspan="6" class="sip-empty">Aucune inscription ne correspond aux filtres.</td>
+                <td colspan="6" class="sip-empty">{{ t('sup.inscPeda.emptyRows') }}</td>
               </tr>
             </tbody>
           </table>
@@ -118,8 +116,8 @@
       <!-- Popularité des électifs -->
       <aside class="sip-side">
         <div class="sip-card">
-          <h2 class="sip-h2">Popularité des cours électifs</h2>
-          <p class="sip-card-hint">Nombre d'étudiants ayant choisi chaque électif.</p>
+          <h2 class="sip-h2">{{ t('sup.inscPeda.popTitle') }}</h2>
+          <p class="sip-card-hint">{{ t('sup.inscPeda.popHint') }}</p>
           <ul class="sip-elec-list">
             <li v-for="e in topElectifs" :key="e.id" class="sip-elec">
               <div class="sip-elec-head">
@@ -146,7 +144,7 @@
               <h3 class="sip-modal-title">{{ selected.etudiant.nomComplet }}</h3>
               <p class="sip-modal-loc">
                 {{ selected.etudiant.programmeNom }} · {{ selected.etudiant.anneeNom }} ·
-                Semestre {{ selected.inscription.semestre }}
+                {{ t('sup.inscPeda.semestre', { n: selected.inscription.semestre }) }}
               </p>
             </div>
             <button class="sip-modal-close" type="button" @click="selected = null">
@@ -155,28 +153,28 @@
           </div>
 
           <div class="sip-modal-section">
-            <div class="sip-section-label">UE choisies ({{ selected.inscription.ueChoisies.length }})</div>
+            <div class="sip-section-label">{{ t('sup.inscPeda.ueChoisiesLabel', { n: selected.inscription.ueChoisies.length }) }}</div>
             <ul class="sip-ue-list">
               <li v-for="u in ueChoisiesDetail" :key="u.id" class="sip-ue">
                 <span class="sip-ue-code">{{ u.code }}</span>
                 <span class="sip-ue-nom">{{ u.intitule }}</span>
                 <span class="sip-ue-tags">
                   <span class="sip-tag" :class="`t-${u.type}`">{{ typeLabel(u.type) }}</span>
-                  <span class="sip-ue-ects">{{ u.ects }} crédits</span>
+                  <span class="sip-ue-ects">{{ u.ects }} {{ t('sup.inscPeda.creditsSuffix') }}</span>
                 </span>
               </li>
             </ul>
           </div>
 
           <div v-if="ueElectivesManquantes.length > 0" class="sip-modal-section">
-            <div class="sip-section-label is-warn">Électives à choisir ({{ ueElectivesManquantes.length }})</div>
+            <div class="sip-section-label is-warn">{{ t('sup.inscPeda.electivesToChoose', { n: ueElectivesManquantes.length }) }}</div>
             <ul class="sip-ue-list">
               <li v-for="u in ueElectivesManquantes" :key="u.id" class="sip-ue is-missing">
                 <span class="sip-ue-code">{{ u.code }}</span>
                 <span class="sip-ue-nom">{{ u.intitule }}</span>
                 <span class="sip-ue-tags">
-                  <span class="sip-tag t-electif">Électif</span>
-                  <span class="sip-ue-ects">{{ u.ects }} crédits</span>
+                  <span class="sip-tag t-electif">{{ t('sup.inscPeda.electif') }}</span>
+                  <span class="sip-ue-ects">{{ u.ects }} {{ t('sup.inscPeda.creditsSuffix') }}</span>
                 </span>
               </li>
             </ul>
@@ -189,9 +187,11 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { UE_TYPES } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 const selected = ref(null)
 
@@ -220,7 +220,7 @@ const ueElectivesManquantes = computed(() => {
 })
 
 const pct = (n) => store.inscriptionsStats.total ? Math.round((n / store.inscriptionsStats.total) * 100) : 0
-const statutLabel = (s) => ({ validee: 'Validée', complete: 'Complète', incomplete: 'Incomplète' }[s] || s)
+const statutLabel = (st) => ({ validee: t('sup.inscPeda.lblValidee'), complete: t('sup.inscPeda.lblComplete'), incomplete: t('sup.inscPeda.lblIncomplete') }[st] || st)
 const typeLabel = (t) => UE_TYPES[t]?.label || t
 </script>
 
