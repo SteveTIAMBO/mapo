@@ -123,9 +123,6 @@
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
           {{ t('sidebar.logout') }}
         </button>
-        <button v-if="isDemoTenant" class="sup-quit" type="button" @click="quitterEdition">
-          {{ t('sup.shell.changeEdition') }}
-        </button>
       </div>
     </aside>
 
@@ -279,7 +276,6 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, provide } from 'vue'
 import { useRouter } from 'vue-router'
-import { useEditionStore } from '../stores/edition'
 import { useSuperieurStore } from '../stores/superieur'
 import { useSuperieurAuthStore, SUP_ROLES } from '../stores/superieurAuth'
 import { useAuthStore } from '../stores/auth'
@@ -328,7 +324,6 @@ import SupDecrochage from './superieur/SupDecrochage.vue'
 import SupMessagerie from './superieur/SupMessagerie.vue'
 
 const router = useRouter()
-const editionStore = useEditionStore()
 const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
 const authStore = useAuthStore()
@@ -409,9 +404,6 @@ function fmtDateNotif(iso) {
 function fmtMontantNotif(n) {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(n)
 }
-
-// Badge "Démonstration" visible uniquement sur la vitrine mapo.app-edufrem.com
-const isDemoTenant = computed(() => schoolIdentity.isDemoTenant)
 
 // Click outside (directive locale)
 const vClickOutside = {
@@ -872,11 +864,6 @@ function onLoggedIn() {
 
 function seDeconnecter() {
   authSup.logout()
-}
-
-function quitterEdition() {
-  editionStore.clearEdition()
-  router.push('/bienvenue')
 }
 
 // ─────────────────────────────────────────────────────────────────
