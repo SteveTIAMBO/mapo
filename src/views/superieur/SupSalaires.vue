@@ -1,46 +1,43 @@
 <template>
   <div class="sal">
     <div class="sal-intro">
-      <h1 class="sal-h1">Salaires & masse salariale</h1>
-      <p class="sal-sub">
-        Rémunération des intervenants. Les permanents perçoivent un salaire mensuel ;
-        les vacataires sont rémunérés au volume horaire assuré (coût horaire × heures).
-      </p>
+      <h1 class="sal-h1">{{ t('sup.salaires.title') }}</h1>
+      <p class="sal-sub">{{ t('sup.salaires.subtitle') }}</p>
     </div>
 
     <!-- KPIs -->
     <div class="sal-kpis">
       <div class="sal-kpi">
-        <div class="sal-kpi-label">Masse salariale mensuelle</div>
+        <div class="sal-kpi-label">{{ t('sup.salaires.kpiMonthly') }}</div>
         <div class="sal-kpi-value">{{ fmtMontant(data.masseMensuelle) }}</div>
-        <div class="sal-kpi-foot">{{ data.rows.length }} intervenants rémunérés</div>
+        <div class="sal-kpi-foot">{{ t('sup.salaires.paidCount', { n: data.rows.length }) }}</div>
       </div>
       <div class="sal-kpi">
-        <div class="sal-kpi-label">Masse salariale annuelle</div>
+        <div class="sal-kpi-label">{{ t('sup.salaires.kpiAnnual') }}</div>
         <div class="sal-kpi-value">{{ fmtMontant(data.masseAnnuelle) }}</div>
-        <div class="sal-kpi-foot">Base 12 mois</div>
+        <div class="sal-kpi-foot">{{ t('sup.salaires.base12') }}</div>
       </div>
       <div class="sal-kpi">
-        <div class="sal-kpi-label">Permanents</div>
+        <div class="sal-kpi-label">{{ t('sup.salaires.permanentsKpi') }}</div>
         <div class="sal-kpi-value">{{ data.nbPermanents }}</div>
-        <div class="sal-kpi-foot">Salaire mensuel fixe</div>
+        <div class="sal-kpi-foot">{{ t('sup.salaires.permanentsFoot') }}</div>
       </div>
       <div class="sal-kpi">
-        <div class="sal-kpi-label">Vacataires</div>
+        <div class="sal-kpi-label">{{ t('sup.salaires.vacatairesKpi') }}</div>
         <div class="sal-kpi-value">{{ data.nbVacataires }}</div>
-        <div class="sal-kpi-foot">Rémunérés au volume</div>
+        <div class="sal-kpi-foot">{{ t('sup.salaires.vacatairesFoot') }}</div>
       </div>
     </div>
 
     <!-- Suivi du versement du mois -->
     <div class="sal-verse">
       <div class="sal-verse-info">
-        <span class="sal-verse-lab">Versé ce mois</span>
+        <span class="sal-verse-lab">{{ t('sup.salaires.versedThisMonth') }}</span>
         <span class="sal-verse-val cs-green">{{ fmtMontant(verseCeMois) }}</span>
         <span class="sal-verse-sep">/</span>
         <span class="sal-verse-tot">{{ fmtMontant(data.masseMensuelle) }}</span>
       </div>
-      <div class="sal-verse-count">{{ paidIds.size }} / {{ data.rows.length }} intervenants payés</div>
+      <div class="sal-verse-count">{{ t('sup.salaires.paidRatio', { paid: paidIds.size, total: data.rows.length }) }}</div>
     </div>
 
     <!-- Tableau -->
@@ -49,13 +46,13 @@
         <table class="sal-table">
           <thead>
             <tr>
-              <th>Intervenant</th>
-              <th>Statut</th>
-              <th>Spécialité</th>
-              <th class="num">Volume</th>
-              <th class="num">Coût horaire</th>
-              <th class="num">Salaire mensuel</th>
-              <th>Paiement</th>
+              <th>{{ t('sup.salaires.thIntervenant') }}</th>
+              <th>{{ t('sup.salaires.thStatut') }}</th>
+              <th>{{ t('sup.salaires.thSpecialite') }}</th>
+              <th class="num">{{ t('sup.salaires.thVolume') }}</th>
+              <th class="num">{{ t('sup.salaires.thHourly') }}</th>
+              <th class="num">{{ t('sup.salaires.thMonthly') }}</th>
+              <th>{{ t('sup.salaires.thPayment') }}</th>
               <th class="act"></th>
             </tr>
           </thead>
@@ -66,7 +63,7 @@
               </td>
               <td>
                 <span class="sal-badge" :class="row.statut === 'permanent' ? 'is-perm' : 'is-vac'">
-                  {{ row.statut === 'permanent' ? 'Permanent' : 'Vacataire' }}
+                  {{ row.statut === 'permanent' ? t('sup.salaires.permanent') : t('sup.salaires.vacataire') }}
                 </span>
               </td>
               <td class="sal-spec">{{ row.intervenant.specialite || '—' }}</td>
@@ -75,7 +72,7 @@
               <td class="num"><strong>{{ fmtMontant(row.mensuel) }}</strong></td>
               <td>
                 <span class="sal-pay" :class="paidIds.has(row.intervenant.id) ? 'ok' : 'ko'">
-                  {{ paidIds.has(row.intervenant.id) ? 'Payé' : 'À payer' }}
+                  {{ paidIds.has(row.intervenant.id) ? t('sup.salaires.paid') : t('sup.salaires.toPay') }}
                 </span>
               </td>
               <td class="act">
@@ -85,17 +82,17 @@
                   type="button"
                   @click="togglePaid(row.intervenant.id)"
                 >
-                  {{ paidIds.has(row.intervenant.id) ? 'Annuler' : 'Marquer payé' }}
+                  {{ paidIds.has(row.intervenant.id) ? t('sup.salaires.cancel') : t('sup.salaires.markPaid') }}
                 </button>
               </td>
             </tr>
             <tr v-if="data.rows.length === 0">
-              <td colspan="8" class="sal-empty">Aucun intervenant rémunéré pour le moment.</td>
+              <td colspan="8" class="sal-empty">{{ t('sup.salaires.empty') }}</td>
             </tr>
           </tbody>
           <tfoot v-if="data.rows.length > 0">
             <tr class="sal-total">
-              <td colspan="5">Masse salariale mensuelle</td>
+              <td colspan="5">{{ t('sup.salaires.footMonthly') }}</td>
               <td class="num"><strong>{{ fmtMontant(data.masseMensuelle) }}</strong></td>
               <td colspan="2"></td>
             </tr>
@@ -111,10 +108,10 @@
             <div class="sal-mrow-sub">{{ row.intervenant.specialite || '—' }} · {{ fmtMontant(row.mensuel) }}/mois</div>
           </div>
           <button class="sal-btn" :class="{ 'is-done': paidIds.has(row.intervenant.id) }" type="button" @click="togglePaid(row.intervenant.id)">
-            {{ paidIds.has(row.intervenant.id) ? 'Payé' : 'Payer' }}
+            {{ paidIds.has(row.intervenant.id) ? t('sup.salaires.paid') : t('sup.salaires.mPay') }}
           </button>
         </li>
-        <li v-if="data.rows.length === 0" class="sal-mempty">Aucun intervenant.</li>
+        <li v-if="data.rows.length === 0" class="sal-mempty">{{ t('sup.salaires.mEmpty') }}</li>
       </ul>
     </section>
   </div>
@@ -122,10 +119,12 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore } from '../../stores/superieur'
 import { fmtMontant } from '../../stores/finance'
 import { computeSalaires } from '../../utils/supComptaHelpers'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useSuperieurStore()
 
 // Masse salariale calculée depuis les intervenants (avec charge) du store Supérieur.
