@@ -76,6 +76,11 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   const owner = computed(() => authStore.userProfile?.email || authStore.userProfile?.phone || 'demo-parent')
 
+  // Co-parent : si mon compte est rattaché à un parent propriétaire (pointeur
+  // `users/{uid}/b2c/link`), mes données « enfants » sont les SIENNES.
+  const linkedOwnerUid = ref(null)
+  function dataUid() { return linkedOwnerUid.value || cloudUid() }
+
   // ── Mode d'usage de MAPO+ (multi-personas, 1er pas) ──────────────────
   // 'parent'    : un parent suit son/ses enfant(s) (cadre par défaut).
   // 'apprenant' : l'apprenant (élève/étudiant) pilote SON propre apprentissage.
@@ -109,7 +114,8 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       }
     }
     // Miroir Firestore pour les vrais comptes (durable, cross-appareils).
-    const uid = cloudUid()
+    // Co-parent : on écrit dans l'espace du parent propriétaire (droits partagés).
+    const uid = dataUid()
     if (uid) {
       setDoc(enfantsDocRef(uid), { enfants: enfants.value, updatedAt: new Date().toISOString() })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
@@ -124,8 +130,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     load() // local d'abord (affichage instantané, offline)
     // Démo : amorcer un écolier cohérent pour que l'espace MAPO+ ne soit pas vide.
     if (authStore.isDemo) seedDemoIfEmpty()
-    const uid = cloudUid()
-    if (!uid) return
+    const myUid = cloudUid()
+    if (!myUid) return
+    // Co-parent : le pointeur `b2c/link` désigne le parent propriétaire des enfants.
+    try {
+      const ls = await getDoc(doc(db, 'users', myUid, 'b2c', 'link'))
+      linkedOwnerUid.value = ls.exists() ? (ls.data()?.ownerUid || null) : null
+    } catch { linkedOwnerUid.value = null }
+    const uid = dataUid()
     try {
       const snap = await getDoc(enfantsDocRef(uid))
       if (snap.exists() && Array.isArray(snap.data()?.enfants)) {

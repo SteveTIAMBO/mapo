@@ -113,6 +113,9 @@
             <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
           </div>
 
+          <!-- Co-parent : l'autre parent accède à la même scolarité -->
+          <MiapoCoParent v-if="!isApprenant" />
+
           <!-- Notes -->
           <div class="card">
             <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName }) }}</h3></div>
@@ -501,6 +504,7 @@ import Miapo6C from '../components/Miapo6C.vue'
 import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
+import MiapoCoParent from '../components/MiapoCoParent.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers } from 'lucide-vue-next'
 
 const router = useRouter()
