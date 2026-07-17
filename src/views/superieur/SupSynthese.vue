@@ -1,18 +1,15 @@
 <template>
   <div class="syn">
     <div class="syn-intro">
-      <h1 class="syn-h1">Synthèse financière</h1>
-      <p class="syn-sub">
-        Compte de résultat de l'établissement — année académique {{ ecole.anneeAcademique }}.
-        Résultat = revenus encaissés − masse salariale − charges de fonctionnement.
-      </p>
+      <h1 class="syn-h1">{{ t('sup.synthese.title') }}</h1>
+      <p class="syn-sub">{{ t('sup.synthese.subtitle', { year: ecole.anneeAcademique }) }}</p>
     </div>
 
     <!-- Analyse MIAPO : incohérences financières + relances -->
     <section class="syn-miapo">
       <div class="syn-miapo-head">
         <span class="syn-miapo-badge">MIAPO</span>
-        <h2 class="syn-miapo-title">Analyse financière</h2>
+        <h2 class="syn-miapo-title">{{ t('sup.synthese.miapoTitle') }}</h2>
       </div>
       <div class="syn-miapo-list">
         <div v-for="(ins, i) in miapoInsights" :key="i" class="syn-miapo-row" :class="'is-' + ins.type">
@@ -28,18 +25,18 @@
     <section class="syn-panel">
       <!-- Revenus -->
       <div class="syn-section">
-        <h2 class="syn-h2">Revenus (scolarité)</h2>
+        <h2 class="syn-h2">{{ t('sup.synthese.revenus') }}</h2>
         <div class="syn-grid">
           <div class="syn-item">
-            <span class="syn-label">Encaissé à ce jour</span>
+            <span class="syn-label">{{ t('sup.synthese.encaisse') }}</span>
             <span class="syn-value cs-green">{{ fmtMontant(revenus.encaisse) }}</span>
           </div>
           <div class="syn-item">
-            <span class="syn-label">Chiffre d'affaires attendu</span>
+            <span class="syn-label">{{ t('sup.synthese.caAttendu') }}</span>
             <span class="syn-value cs-blue">{{ fmtMontant(revenus.attendu) }}</span>
           </div>
           <div class="syn-item">
-            <span class="syn-label">Taux de recouvrement</span>
+            <span class="syn-label">{{ t('sup.synthese.tauxRecouvrement') }}</span>
             <span class="syn-value">{{ revenus.taux }}%</span>
           </div>
         </div>
@@ -47,20 +44,20 @@
 
       <!-- Charges de personnel -->
       <div class="syn-section">
-        <h2 class="syn-h2">Charges de personnel (masse salariale)</h2>
+        <h2 class="syn-h2">{{ t('sup.synthese.personnel') }}</h2>
         <div class="syn-grid syn-grid-3">
           <div class="syn-item">
-            <span class="syn-label">Masse salariale mensuelle</span>
+            <span class="syn-label">{{ t('sup.synthese.masseMensuelle') }}</span>
             <span class="syn-value">{{ fmtMontant(salaires.masseMensuelle) }}</span>
           </div>
           <div class="syn-item">
-            <span class="syn-label">Masse salariale annuelle</span>
+            <span class="syn-label">{{ t('sup.synthese.masseAnnuelle') }}</span>
             <span class="syn-value">{{ fmtMontant(salaires.masseAnnuelle) }}</span>
           </div>
           <div class="syn-item">
-            <span class="syn-label">Effectif rémunéré</span>
+            <span class="syn-label">{{ t('sup.synthese.effectif') }}</span>
             <span class="syn-value">{{ salaires.rows.length }}
-              <span class="syn-unit">({{ salaires.nbPermanents }} perm. · {{ salaires.nbVacataires }} vac.)</span>
+              <span class="syn-unit">{{ t('sup.synthese.effectifUnit', { perm: salaires.nbPermanents, vac: salaires.nbVacataires }) }}</span>
             </span>
           </div>
         </div>
@@ -68,14 +65,14 @@
 
       <!-- Charges de fonctionnement -->
       <div class="syn-section">
-        <h2 class="syn-h2">Charges de fonctionnement</h2>
+        <h2 class="syn-h2">{{ t('sup.synthese.fonctionnement') }}</h2>
         <div class="syn-grid">
           <div class="syn-item">
-            <span class="syn-label">Charges mensuelles</span>
+            <span class="syn-label">{{ t('sup.synthese.chargesMensuelles') }}</span>
             <span class="syn-value">{{ fmtMontant(chargesMens) }}</span>
           </div>
           <div class="syn-item">
-            <span class="syn-label">Charges annuelles</span>
+            <span class="syn-label">{{ t('sup.synthese.chargesAnnuelles') }}</span>
             <span class="syn-value">{{ fmtMontant(chargesAnn) }}</span>
           </div>
         </div>
@@ -83,10 +80,10 @@
 
       <!-- Dépenses totales -->
       <div class="syn-section">
-        <h2 class="syn-h2">Total des dépenses (annuel)</h2>
+        <h2 class="syn-h2">{{ t('sup.synthese.totalDepenses') }}</h2>
         <div class="syn-grid">
           <div class="syn-item">
-            <span class="syn-label">Masse salariale + charges</span>
+            <span class="syn-label">{{ t('sup.synthese.masseCharges') }}</span>
             <span class="syn-value cs-red">{{ fmtMontant(depensesAnnuelles) }}</span>
           </div>
         </div>
@@ -94,17 +91,17 @@
 
       <!-- Résultat -->
       <div class="syn-section">
-        <h2 class="syn-h2">Résultat</h2>
+        <h2 class="syn-h2">{{ t('sup.synthese.resultat') }}</h2>
         <div class="syn-balance">
           <div class="syn-bal" :class="resultatActuel >= 0 ? 'positive' : 'negative'">
-            <span class="syn-bal-label">Résultat sur encaissements</span>
+            <span class="syn-bal-label">{{ t('sup.synthese.resultEncaisse') }}</span>
             <span class="syn-bal-value">{{ fmtMontant(resultatActuel) }}</span>
-            <span class="syn-bal-note">Encaissé − dépenses annuelles</span>
+            <span class="syn-bal-note">{{ t('sup.synthese.resultEncaisseNote') }}</span>
           </div>
           <div class="syn-bal" :class="resultatPrevisionnel >= 0 ? 'positive' : 'negative'">
-            <span class="syn-bal-label">Résultat prévisionnel</span>
+            <span class="syn-bal-label">{{ t('sup.synthese.resultPrev') }}</span>
             <span class="syn-bal-value">{{ fmtMontant(resultatPrevisionnel) }}</span>
-            <span class="syn-bal-note">CA attendu − dépenses annuelles</span>
+            <span class="syn-bal-note">{{ t('sup.synthese.resultPrevNote') }}</span>
           </div>
         </div>
       </div>
@@ -114,10 +111,12 @@
 
 <script setup>
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useSuperieurStore, ECOLE } from '../../stores/superieur'
 import { useFinanceStore, fmtMontant } from '../../stores/finance'
 import { computeSalaires, supCharges, chargesMensuel, chargesAnnuel } from '../../utils/supComptaHelpers'
 
+const { t } = useI18n({ useScope: 'global' })
 const ecole = ECOLE
 const supStore = useSuperieurStore()
 const financeStore = useFinanceStore()
@@ -148,19 +147,19 @@ const ratioMasse = computed(() => (revenus.value.attendu ? Math.round((salaires.
 const miapoInsights = computed(() => {
   const arr = []
   if (comptesEnRetard.value.length) {
-    arr.push({ type: 'relance', titre: `${comptesEnRetard.value.length} comptes en retard de paiement`, detail: `${fmtMontant(montantRetard.value)} à recouvrer. MIAPO peut préparer les relances (J+15 puis J+30) depuis l'onglet Paiements.` })
+    arr.push({ type: 'relance', titre: t('sup.synthese.insRelanceTitle', { n: comptesEnRetard.value.length }), detail: t('sup.synthese.insRelanceDetail', { amount: fmtMontant(montantRetard.value) }) })
   }
   if (revenus.value.taux < 85) {
-    arr.push({ type: 'warn', titre: `Recouvrement à ${revenus.value.taux}%`, detail: `Sous le seuil de 85 % : risque de tension de trésorerie. Prioriser les relances des plus gros restes dus.` })
+    arr.push({ type: 'warn', titre: t('sup.synthese.insTauxTitle', { taux: revenus.value.taux }), detail: t('sup.synthese.insTauxDetail') })
   }
   if (ratioMasse.value > 55) {
-    arr.push({ type: 'warn', titre: `Masse salariale = ${ratioMasse.value}% du CA attendu`, detail: `Ratio élevé (> 55 %). Surveiller l'équilibre entre charges de personnel et revenus de scolarité.` })
+    arr.push({ type: 'warn', titre: t('sup.synthese.insMasseTitle', { ratio: ratioMasse.value }), detail: t('sup.synthese.insMasseDetail') })
   }
   if (resultatPrevisionnel.value < 0) {
-    arr.push({ type: 'danger', titre: `Résultat prévisionnel négatif`, detail: `Les dépenses annuelles dépassent le CA attendu de ${fmtMontant(Math.abs(resultatPrevisionnel.value))}. Revoir la grille tarifaire ou réduire les charges.` })
+    arr.push({ type: 'danger', titre: t('sup.synthese.insDangerTitle'), detail: t('sup.synthese.insDangerDetail', { amount: fmtMontant(Math.abs(resultatPrevisionnel.value)) }) })
   }
   if (!arr.length) {
-    arr.push({ type: 'ok', titre: `Situation financière saine`, detail: `Recouvrement satisfaisant et résultat positif. Aucune alerte financière détectée par MIAPO.` })
+    arr.push({ type: 'ok', titre: t('sup.synthese.insOkTitle'), detail: t('sup.synthese.insOkDetail') })
   }
   return arr
 })
