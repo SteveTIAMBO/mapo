@@ -121,6 +121,35 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Liste mobile : cartes (le tableau est masqué sur petit écran) -->
+        <ul class="ex-mlist">
+          <li v-for="c in candidats" :key="c.eleveId" class="ex-mrow">
+            <div class="ex-mrow-head">
+              <div class="ex-mrow-name">{{ c.eleveName }}</div>
+              <div class="ex-mrow-sub">{{ c.className }}</div>
+            </div>
+            <div class="ex-mrow-fields">
+              <label class="ex-mrow-field">
+                <span>{{ t('examens.thTableNo') }}</span>
+                <input class="ex-input ex-input-sm" :value="c.numeroTable" @change="store.updateCandidat(selectedExam.id, c.eleveId, { numeroTable: $event.target.value })" placeholder="—" />
+              </label>
+              <label class="ex-mrow-field">
+                <span>{{ t('examens.thResult') }}</span>
+                <select class="ex-input" :value="c.statut" @change="onStatut(c, $event.target.value)">
+                  <option v-for="s in statuses" :key="s.value" :value="s.value">{{ statusLabel(s.value) }}</option>
+                </select>
+              </label>
+              <label v-if="c.statut === 'admis'" class="ex-mrow-field">
+                <span>{{ t('examens.thMention') }}</span>
+                <select class="ex-input" :value="c.mention" @change="store.updateCandidat(selectedExam.id, c.eleveId, { mention: $event.target.value })">
+                  <option value="">{{ t('examens.mentionPlaceholder') }}</option>
+                  <option v-for="m in mentions" :key="m" :value="m">{{ m }}</option>
+                </select>
+              </label>
+            </div>
+          </li>
+        </ul>
       </section>
     </template>
 
@@ -352,6 +381,20 @@ async function emettreDiplomesAdmis() {
 
 .ex-tablecard { background: var(--card, #fff); border: 1px solid var(--divider, #eee); border-radius: 16px; padding: 6px; overflow-x: auto; }
 .ex-table { width: 100%; border-collapse: collapse; }
+
+/* ── Liste mobile (remplace le tableau des candidats, <=560px) ── */
+.ex-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.ex-mrow { padding: 12px 10px; border-bottom: 1px solid var(--divider, #eee); }
+.ex-mrow:last-child { border-bottom: none; }
+.ex-mrow-name { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 14.5px; color: var(--tx, #1A1D1F); }
+.ex-mrow-sub { font-size: 12.5px; color: var(--tx3, #6f767e); margin-top: 1px; }
+.ex-mrow-fields { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.ex-mrow-field { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 90px; }
+.ex-mrow-field > span { font-size: 10.5px; font-weight: 600; color: var(--tx3, #6f767e); text-transform: uppercase; letter-spacing: .03em; }
+@media (max-width: 560px) {
+  .ex-table { display: none; }
+  .ex-mlist { display: block; }
+}
 .ex-table th { text-align: left; font-size: 12px; font-weight: 600; color: var(--tx2); padding: 12px; border-bottom: 1px solid var(--divider, #eee); }
 .ex-table td { padding: 9px 12px; border-bottom: 1px solid var(--divider, #f3f3f3); font-size: 13.5px; color: var(--tx); }
 .ex-td-name { font-weight: 600; }
