@@ -66,6 +66,16 @@
               </tr>
             </tbody>
           </table>
+
+          <ul class="en-mlist">
+            <li v-for="row in subjectNotes" :key="row.subjectId" class="en-mrow">
+              <div class="en-mrow-head">
+                <span class="en-mrow-name">{{ row.subjectName }}</span>
+                <span class="en-mrow-avg mono" :class="row.avg !== null ? (row.avg >= 10 ? 'clr-green' : 'clr-red') : ''">{{ row.avg !== null ? row.avg.toFixed(2) : '—' }}</span>
+              </div>
+              <div class="en-mrow-sub">Coeff {{ row.coeff }} · S1 {{ row.s1 !== null ? row.s1.toFixed(1) : '—' }} · S2 {{ row.s2 !== null ? row.s2.toFixed(1) : '—' }}</div>
+            </li>
+          </ul>
         </div>
       </div>
     </template>
@@ -180,6 +190,18 @@ onMounted(async () => {
 .card-header-inner { padding: 18px 24px 14px; }
 .card-header-inner h3 { font-size: 16px; font-weight: 600; margin: 0; }
 .table-wrap { overflow-x: auto; }
+/* ── Liste mobile (remplace le tableau de notes, <=560px) ── */
+.en-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.en-mrow { padding: 11px 4px; border-bottom: 1px solid rgba(0,0,0,.06); }
+.en-mrow:last-child { border-bottom: none; }
+.en-mrow-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.en-mrow-name { font-weight: 700; font-size: 14px; color: var(--tx, #1A1D1F); }
+.en-mrow-avg { font-size: 15px; font-weight: 800; }
+.en-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 3px; }
+@media (max-width: 560px) {
+  .data-table { display: none; }
+  .en-mlist { display: block; }
+}
 .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .data-table th { background: rgba(0,0,0,.02); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--tx2); padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.06); }
 .data-table td { padding: 12px 14px; border-bottom: 1px solid rgba(0,0,0,.04); }

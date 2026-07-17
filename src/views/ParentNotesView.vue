@@ -103,6 +103,27 @@
               </tr>
             </tfoot>
           </table>
+
+          <ul class="pn-mlist">
+            <li v-for="row in childGrades" :key="row.subject" class="pn-mrow">
+              <div class="pn-mrow-head">
+                <span class="pn-mrow-name">{{ row.subject }}</span>
+                <span class="pn-mrow-avg font-mono" :class="row.avg !== null ? (row.avg >= 10 ? 'cs-green' : 'cs-red') : ''">{{ row.avg !== null ? row.avg.toFixed(2) : '—' }}</span>
+              </div>
+              <div class="pn-mrow-sub">
+                <span>Coef {{ row.coef }}</span>
+                <span v-for="seq in currentSequences" :key="seq.value"> · {{ seq.shortLabel }} {{ row.seqNotes[seq.value] !== null ? row.seqNotes[seq.value].toFixed(1) : '—' }}</span>
+              </div>
+              <div v-if="row.appreciation" class="pn-mrow-app"><span class="appreciation-badge" :class="'app-' + row.appreciationClass">{{ row.appreciation }}</span></div>
+            </li>
+            <li class="pn-mrow pn-mrow-total">
+              <div class="pn-mrow-head">
+                <span class="pn-mrow-name">{{ t('eleve.generalAvg') }}</span>
+                <span class="pn-mrow-avg font-mono" :class="childAverage !== null ? (childAverage >= 10 ? 'cs-green' : 'cs-red') : ''">{{ childAverage !== null ? childAverage : '—' }}/20</span>
+              </div>
+              <div class="pn-mrow-sub"><strong>{{ childAppreciation || '—' }}</strong><span v-if="childRank"> · {{ t('parent.rankColon', { rank: childRank }) }}</span></div>
+            </li>
+          </ul>
         </div>
 
         <!-- Signed notice -->
@@ -565,4 +586,20 @@ onMounted(async () => {
     gap: 6px;
   }
 }
+
+/* Liste mobile notes parent (remplace le tableau <=560px) */
+.pn-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.pn-mrow { padding: 11px 4px; border-bottom: 1px solid rgba(0,0,0,.06); }
+.pn-mrow:last-child { border-bottom: none; }
+.pn-mrow-total { background: rgba(0,0,0,.02); border-radius: 8px; padding: 11px 8px; margin-top: 4px; }
+.pn-mrow-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.pn-mrow-name { font-weight: 700; font-size: 14px; color: var(--tx, #1A1D1F); }
+.pn-mrow-avg { font-size: 15px; font-weight: 800; }
+.pn-mrow-sub { font-size: 12px; color: var(--tx2, #6f767e); margin-top: 3px; }
+.pn-mrow-app { margin-top: 6px; }
+@media (max-width: 560px) {
+  .table-wrapper .data-table { display: none; }
+  .pn-mlist { display: block; }
+}
+
 </style>
