@@ -104,7 +104,7 @@ function buildPedagogiePrompts($d) {
   $type    = in_array(($d['type'] ?? 'devoir'), ['cours', 'devoir', 'examen'], true) ? $d['type'] : 'devoir';
   $matiere = clean($d['matiere'] ?? '', 50);
   $niveau  = clean($d['niveau'] ?? '', 30);
-  $theme   = clean($d['theme'] ?? '', 200);
+  $theme   = clean($d['theme'] ?? '', 6000);
   $contexte = "Programme proche des systèmes scolaires d'Afrique francophone (Cameroun/Sénégal/France).";
 
   if ($type === 'cours') {
@@ -524,7 +524,7 @@ function buildTutorQuizPrompts($d) {
   $matiere = clean($d['matiere'] ?? 'Culture générale', 50);
   $niveau  = clean($d['niveau'] ?? '', 30);
   $count   = isset($d['nombre']) ? max(3, min(12, intval($d['nombre']))) : 10;
-  $themes  = clean($d['themes'] ?? '', 200);
+  $themes  = clean($d['themes'] ?? '', 6000);
   $diff    = isset($d['difficulte']) ? max(1, min(5, intval($d['difficulte']))) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
 
