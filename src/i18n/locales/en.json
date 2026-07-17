@@ -2275,6 +2275,30 @@
       "cancel": "Cancel",
       "save": "Save",
       "confirmDelete": "Delete the scheme \"{name}\"? Students already receiving it keep their reduction."
+    },
+    "grilles": {
+      "title": "Fee schedules",
+      "subtitle": "One schedule per cohort. Includes registration, tuition and miscellaneous fees. Payment-plan templates offered to students at enrolment.",
+      "modelesTitle": "Available payment-plan templates",
+      "echeancesMonths": "Instalments in months: {mois}",
+      "grilleTitle": "2025-2026 schedules by cohort",
+      "thProgramme": "Programme",
+      "thAnnee": "Year",
+      "thInscription": "Registration",
+      "thScolarite": "Tuition",
+      "thDivers": "Misc.",
+      "thTotal": "Annual total",
+      "thAction": "Action",
+      "edit": "Edit",
+      "mTotal": "Total",
+      "mEmpty": "No fee schedule.",
+      "editTitle": "Edit schedule",
+      "fInscription": "Registration fee (FCFA)",
+      "fScolarite": "Tuition fee (FCFA)",
+      "fDivers": "Miscellaneous fee (FCFA)",
+      "newTotal": "New total:",
+      "cancel": "Cancel",
+      "save": "Save"
     }
   },
   "mal": {

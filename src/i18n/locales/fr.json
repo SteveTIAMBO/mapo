@@ -2275,6 +2275,30 @@
       "cancel": "Annuler",
       "save": "Enregistrer",
       "confirmDelete": "Supprimer le dispositif « {name} » ? Les étudiants déjà bénéficiaires gardent leur réduction."
+    },
+    "grilles": {
+      "title": "Grilles tarifaires",
+      "subtitle": "Une grille par promotion. Inclut les frais d'inscription, de scolarité et divers. Modèles d'échéancier proposés aux étudiants à l'inscription.",
+      "modelesTitle": "Modèles d'échéancier disponibles",
+      "echeancesMonths": "Échéances aux mois : {mois}",
+      "grilleTitle": "Grilles 2025-2026 par promotion",
+      "thProgramme": "Programme",
+      "thAnnee": "Année",
+      "thInscription": "Inscription",
+      "thScolarite": "Scolarité",
+      "thDivers": "Divers",
+      "thTotal": "Total annuel",
+      "thAction": "Action",
+      "edit": "Modifier",
+      "mTotal": "Total",
+      "mEmpty": "Aucune grille tarifaire.",
+      "editTitle": "Modifier la grille",
+      "fInscription": "Frais d'inscription (FCFA)",
+      "fScolarite": "Frais de scolarité (FCFA)",
+      "fDivers": "Frais divers (FCFA)",
+      "newTotal": "Nouveau total :",
+      "cancel": "Annuler",
+      "save": "Enregistrer"
     }
   },
   "mal": {

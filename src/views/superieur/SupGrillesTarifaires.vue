@@ -2,17 +2,14 @@
   <div class="sg">
     <div class="sg-intro">
       <div>
-        <h1 class="sg-h1">Grilles tarifaires</h1>
-        <p class="sg-sub">
-          Une grille par promotion. Inclut les frais d'inscription, de scolarité et divers.
-          Modèles d'échéancier proposés aux étudiants à l'inscription.
-        </p>
+        <h1 class="sg-h1">{{ t('sup.grilles.title') }}</h1>
+        <p class="sg-sub">{{ t('sup.grilles.subtitle') }}</p>
       </div>
     </div>
 
     <!-- Modèles d'échéancier -->
     <section class="sg-card">
-      <h2 class="sg-h2">Modèles d'échéancier disponibles</h2>
+      <h2 class="sg-h2">{{ t('sup.grilles.modelesTitle') }}</h2>
       <div class="sg-modeles">
         <div v-for="m in modeles" :key="m.key" class="sg-modele">
           <div class="sg-modele-head">
@@ -20,7 +17,7 @@
             <span class="sg-modele-label">{{ m.label }}</span>
           </div>
           <div class="sg-modele-desc">
-            Échéances aux mois : {{ formatMois(m.mois) }}
+            {{ t('sup.grilles.echeancesMonths', { mois: formatMois(m.mois) }) }}
           </div>
         </div>
       </div>
@@ -28,33 +25,33 @@
 
     <!-- Tableau des grilles -->
     <section class="sg-card">
-      <h2 class="sg-h2">Grilles 2025-2026 par promotion</h2>
+      <h2 class="sg-h2">{{ t('sup.grilles.grilleTitle') }}</h2>
       <div class="sg-table-wrap">
         <table class="sg-table">
           <thead>
             <tr>
-              <th>Programme</th>
-              <th>Année</th>
-              <th class="num">Inscription</th>
-              <th class="num">Scolarité</th>
-              <th class="num">Divers</th>
-              <th class="num">Total annuel</th>
-              <th>Action</th>
+              <th>{{ t('sup.grilles.thProgramme') }}</th>
+              <th>{{ t('sup.grilles.thAnnee') }}</th>
+              <th class="num">{{ t('sup.grilles.thInscription') }}</th>
+              <th class="num">{{ t('sup.grilles.thScolarite') }}</th>
+              <th class="num">{{ t('sup.grilles.thDivers') }}</th>
+              <th class="num">{{ t('sup.grilles.thTotal') }}</th>
+              <th>{{ t('sup.grilles.thAction') }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="t in store.tarifs" :key="t.id">
+            <tr v-for="tr in store.tarifs" :key="tr.id">
               <td>
-                <span class="sg-prog">{{ t.programmeNom }}</span>
-                <span class="sg-niveau" :class="niveauClass(t.niveau)">{{ t.niveau }}</span>
+                <span class="sg-prog">{{ tr.programmeNom }}</span>
+                <span class="sg-niveau" :class="niveauClass(tr.niveau)">{{ tr.niveau }}</span>
               </td>
-              <td>{{ t.anneeNom }}</td>
-              <td class="num">{{ fmtMontant(t.fraisInscription) }}</td>
-              <td class="num">{{ fmtMontant(t.fraisScolarite) }}</td>
-              <td class="num">{{ fmtMontant(t.fraisDivers) }}</td>
-              <td class="num total">{{ fmtMontant(t.total) }}</td>
+              <td>{{ tr.anneeNom }}</td>
+              <td class="num">{{ fmtMontant(tr.fraisInscription) }}</td>
+              <td class="num">{{ fmtMontant(tr.fraisScolarite) }}</td>
+              <td class="num">{{ fmtMontant(tr.fraisDivers) }}</td>
+              <td class="num total">{{ fmtMontant(tr.total) }}</td>
               <td>
-                <button class="sg-btn-edit" type="button" @click="openEdit(t)" title="Modifier">
+                <button class="sg-btn-edit" type="button" @click="openEdit(tr)" :title="t('sup.grilles.edit')">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </button>
               </td>
@@ -65,15 +62,15 @@
 
       <!-- Liste mobile : cartes tappables (tableau masqué sur petit écran) -->
       <ul class="sg-mlist">
-        <li v-for="t in store.tarifs" :key="t.id" class="sg-mrow" @click="openEdit(t)">
+        <li v-for="tr in store.tarifs" :key="tr.id" class="sg-mrow" @click="openEdit(tr)">
           <div class="sg-mrow-main">
-            <div class="sg-mrow-name">{{ t.programmeNom }}</div>
-            <div class="sg-mrow-sub"><span class="sg-niveau" :class="niveauClass(t.niveau)">{{ t.niveau }}</span> {{ t.anneeNom }}</div>
-            <div class="sg-mrow-meta"><span class="sg-mrow-total">Total {{ fmtMontant(t.total) }}</span></div>
+            <div class="sg-mrow-name">{{ tr.programmeNom }}</div>
+            <div class="sg-mrow-sub"><span class="sg-niveau" :class="niveauClass(tr.niveau)">{{ tr.niveau }}</span> {{ tr.anneeNom }}</div>
+            <div class="sg-mrow-meta"><span class="sg-mrow-total">{{ t('sup.grilles.mTotal') }} {{ fmtMontant(tr.total) }}</span></div>
           </div>
           <svg class="sg-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
-        <li v-if="store.tarifs.length === 0" class="sg-mempty">Aucune grille tarifaire.</li>
+        <li v-if="store.tarifs.length === 0" class="sg-mempty">{{ t('sup.grilles.mEmpty') }}</li>
       </ul>
     </section>
 
@@ -81,7 +78,7 @@
     <div v-if="modal" class="sg-modal" @click.self="closeModal">
       <div class="sg-modal-content">
         <header class="sg-modal-head">
-          <h3>Modifier la grille</h3>
+          <h3>{{ t('sup.grilles.editTitle') }}</h3>
           <button class="sg-modal-close" type="button" @click="closeModal">×</button>
         </header>
         <div class="sg-modal-body">
@@ -90,25 +87,25 @@
           </p>
           <div class="sg-form">
             <label>
-              <span>Frais d'inscription (FCFA)</span>
+              <span>{{ t('sup.grilles.fInscription') }}</span>
               <input type="number" min="0" step="50" v-model.number="form.fraisInscription" />
             </label>
             <label>
-              <span>Frais de scolarité (FCFA)</span>
+              <span>{{ t('sup.grilles.fScolarite') }}</span>
               <input type="number" min="0" step="100" v-model.number="form.fraisScolarite" />
             </label>
             <label>
-              <span>Frais divers (FCFA)</span>
+              <span>{{ t('sup.grilles.fDivers') }}</span>
               <input type="number" min="0" step="50" v-model.number="form.fraisDivers" />
             </label>
             <div class="sg-form-total">
-              Nouveau total : <strong>{{ fmtMontant(totalForm) }}</strong>
+              {{ t('sup.grilles.newTotal') }} <strong>{{ fmtMontant(totalForm) }}</strong>
             </div>
           </div>
         </div>
         <footer class="sg-modal-foot">
-          <button class="sg-btn-secondary" type="button" @click="closeModal">Annuler</button>
-          <button class="sg-btn-primary" type="button" @click="enregistrer">Enregistrer</button>
+          <button class="sg-btn-secondary" type="button" @click="closeModal">{{ t('sup.grilles.cancel') }}</button>
+          <button class="sg-btn-primary" type="button" @click="enregistrer">{{ t('sup.grilles.save') }}</button>
         </footer>
       </div>
     </div>
@@ -117,8 +114,10 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useFinanceStore, fmtMontant, MODELES_ECHEANCIER } from '../../stores/finance'
 
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const modeles = MODELES_ECHEANCIER
 
@@ -150,9 +149,11 @@ const totalForm = computed(() =>
 )
 function niveauClass(n) { return n === 'Master' ? 'n-master' : n === 'Doctorat' ? 'n-doctorat' : 'n-licence' }
 
-const MOIS_NOMS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc']
+const MOIS_FR = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov', 'Déc']
+const MOIS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 function formatMois(mois) {
-  return mois.map((m) => MOIS_NOMS[m - 1]).join(', ')
+  const noms = locale.value === 'en' ? MOIS_EN : MOIS_FR
+  return mois.map((m) => noms[m - 1]).join(', ')
 }
 </script>
 
