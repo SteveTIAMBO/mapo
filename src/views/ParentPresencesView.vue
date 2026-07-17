@@ -92,6 +92,21 @@
               </tr>
             </tbody>
           </table>
+
+          <ul class="pp-mlist">
+            <li v-for="p in childPresences" :key="p.id" class="pp-mrow">
+              <div class="pp-mrow-head">
+                <span class="badge" :class="presenceClass(p.status)">{{ presenceLabel(p.status) }}</span>
+                <span class="pp-mrow-date">{{ formatDate(p.date) }}</span>
+              </div>
+              <div v-if="p.note" class="pp-mrow-sub">{{ p.note }}</div>
+              <div v-if="p.status === 'absent'" class="absence-actions pp-mrow-act">
+                <button class="btn btn-outline btn-sm" @click="justifyAbsence(p)" :title="t('parent.justifyAbsenceTitle')"><FileText :size="13" /> <span>{{ t('parent.justify') }}</span></button>
+                <button class="btn btn-ghost btn-sm" @click="askAboutAbsence(p)" :title="t('parent.askExplanations')"><HelpCircle :size="13" /></button>
+              </div>
+              <span v-else-if="p.status === 'excuse'" class="excuse-badge">{{ t('parent.justified') }}</span>
+            </li>
+          </ul>
         </div>
       </div>
     </template>
@@ -664,4 +679,15 @@ onMounted(async () => {
     font-size: 13px;
   }
 }
+
+/* Liste mobile présences parent (remplace le tableau <=560px) */
+.pp-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.pp-mrow { padding: 12px 4px; border-bottom: 1px solid rgba(0,0,0,.06); }
+.pp-mrow:last-child { border-bottom: none; }
+.pp-mrow-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.pp-mrow-date { font-size: 12.5px; color: var(--tx2, #6f767e); }
+.pp-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 6px; }
+.pp-mrow-act { margin-top: 8px; display: flex; gap: 6px; }
+@media (max-width: 560px) { .table-wrapper .data-table { display: none; } .pp-mlist { display: block; } }
+
 </style>

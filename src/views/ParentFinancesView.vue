@@ -125,6 +125,19 @@
               </tr>
             </tbody>
           </table>
+
+          <ul class="pf-mlist">
+            <li v-for="pay in childPayments" :key="pay.id" class="pf-mrow">
+              <div class="pf-mrow-main">
+                <div class="pf-mrow-head">
+                  <span class="pf-mrow-amt font-mono">{{ formatMoney(pay.amount) }}</span>
+                  <span class="pf-mrow-date">{{ formatDate(pay.date) }}</span>
+                </div>
+                <div class="pf-mrow-sub">{{ paymentMethodLabel(pay.method) }}<span v-if="pay.reference"> · {{ pay.reference }}</span></div>
+              </div>
+              <button class="btn btn-ghost btn-sm" @click="previewReceipt(pay)" :title="t('parent.fin.viewReceipt')"><Eye :size="15" /></button>
+            </li>
+          </ul>
         </div>
       </div>
     </template>
@@ -1095,4 +1108,16 @@ onUnmounted(() => { stopPolling(); stopSimPolling() })
     max-height: 50vh;
   }
 }
+
+/* Liste mobile paiements parent (remplace le tableau <=560px) */
+.pf-mlist { display: none; list-style: none; margin: 0; padding: 0; }
+.pf-mrow { display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid rgba(0,0,0,.06); }
+.pf-mrow:last-child { border-bottom: none; }
+.pf-mrow-main { flex: 1; min-width: 0; }
+.pf-mrow-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.pf-mrow-amt { font-weight: 800; font-size: 15px; color: var(--tx, #1A1D1F); }
+.pf-mrow-date { font-size: 12px; color: var(--tx3, #9aa2b1); }
+.pf-mrow-sub { font-size: 12.5px; color: var(--tx2, #6f767e); margin-top: 2px; }
+@media (max-width: 560px) { .table-wrapper .data-table { display: none; } .pf-mlist { display: block; } }
+
 </style>
