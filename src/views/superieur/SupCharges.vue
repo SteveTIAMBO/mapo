@@ -1,69 +1,66 @@
 <template>
   <div class="chg">
     <div class="chg-intro">
-      <h1 class="chg-h1">Charges de fonctionnement</h1>
-      <p class="chg-sub">
-        Loyer, énergie, télécom, fournitures pédagogiques… Les montants sont ramenés
-        au mois pour le suivi (trimestriel ÷ 3, annuel ÷ 12).
-      </p>
+      <h1 class="chg-h1">{{ t('sup.charges.title') }}</h1>
+      <p class="chg-sub">{{ t('sup.charges.subtitle') }}</p>
     </div>
 
     <!-- KPIs -->
     <div class="chg-kpis">
       <div class="chg-kpi">
-        <div class="chg-kpi-label">Total mensuel</div>
+        <div class="chg-kpi-label">{{ t('sup.charges.kpiMonthly') }}</div>
         <div class="chg-kpi-value">{{ fmtMontant(totalMensuel) }}</div>
-        <div class="chg-kpi-foot">{{ supCharges.length }} charges suivies</div>
+        <div class="chg-kpi-foot">{{ t('sup.charges.tracked', { n: supCharges.length }) }}</div>
       </div>
       <div class="chg-kpi">
-        <div class="chg-kpi-label">Total trimestriel</div>
+        <div class="chg-kpi-label">{{ t('sup.charges.kpiQuarterly') }}</div>
         <div class="chg-kpi-value">{{ fmtMontant(totalMensuel * 3) }}</div>
-        <div class="chg-kpi-foot">Base 3 mois</div>
+        <div class="chg-kpi-foot">{{ t('sup.charges.base3') }}</div>
       </div>
       <div class="chg-kpi">
-        <div class="chg-kpi-label">Total annuel</div>
+        <div class="chg-kpi-label">{{ t('sup.charges.kpiAnnual') }}</div>
         <div class="chg-kpi-value">{{ fmtMontant(totalAnnuel) }}</div>
-        <div class="chg-kpi-foot">Base 12 mois</div>
+        <div class="chg-kpi-foot">{{ t('sup.charges.base12') }}</div>
       </div>
     </div>
 
     <!-- Tableau -->
     <section class="chg-panel">
       <div class="chg-panel-head">
-        <h2 class="chg-h2">Détail des charges</h2>
+        <h2 class="chg-h2">{{ t('sup.charges.detail') }}</h2>
         <button class="chg-btn-primary" type="button" @click="showAdd = !showAdd">
-          {{ showAdd ? 'Fermer' : '+ Ajouter une charge' }}
+          {{ showAdd ? t('sup.charges.close') : t('sup.charges.addCharge') }}
         </button>
       </div>
 
       <!-- Formulaire d'ajout -->
       <div v-if="showAdd" class="chg-form">
         <div class="chg-form-row">
-          <label class="chg-flab">Libellé</label>
-          <input v-model="form.label" type="text" class="chg-input" placeholder="Ex. Abonnement plateforme e-learning" />
+          <label class="chg-flab">{{ t('sup.charges.fLabel') }}</label>
+          <input v-model="form.label" type="text" class="chg-input" :placeholder="t('sup.charges.labelPlaceholder')" />
         </div>
         <div class="chg-form-grid">
           <div class="chg-form-row">
-            <label class="chg-flab">Catégorie</label>
+            <label class="chg-flab">{{ t('sup.charges.fCategory') }}</label>
             <select v-model="form.category" class="chg-input">
               <option v-for="c in CHARGE_CATEGORIES" :key="c.value" :value="c.value">{{ c.label }}</option>
             </select>
           </div>
           <div class="chg-form-row">
-            <label class="chg-flab">Montant (FCFA)</label>
+            <label class="chg-flab">{{ t('sup.charges.fAmount') }}</label>
             <input v-model.number="form.amount" type="number" min="0" class="chg-input" placeholder="0" />
           </div>
           <div class="chg-form-row">
-            <label class="chg-flab">Fréquence</label>
+            <label class="chg-flab">{{ t('sup.charges.fFrequency') }}</label>
             <select v-model="form.frequency" class="chg-input">
               <option v-for="f in CHARGE_FREQUENCIES" :key="f.value" :value="f.value">{{ f.label }}</option>
             </select>
           </div>
         </div>
         <div class="chg-form-actions">
-          <button class="chg-btn-secondary" type="button" @click="showAdd = false">Annuler</button>
+          <button class="chg-btn-secondary" type="button" @click="showAdd = false">{{ t('sup.charges.cancel') }}</button>
           <button class="chg-btn-primary" type="button" :disabled="!form.label || !form.amount" @click="submitAdd">
-            Ajouter
+            {{ t('sup.charges.add') }}
           </button>
         </div>
       </div>
@@ -72,11 +69,11 @@
         <table class="chg-table">
           <thead>
             <tr>
-              <th>Libellé</th>
-              <th>Catégorie</th>
-              <th class="num">Montant</th>
-              <th>Fréquence</th>
-              <th class="num">Équiv. mensuel</th>
+              <th>{{ t('sup.charges.thLabel') }}</th>
+              <th>{{ t('sup.charges.thCategory') }}</th>
+              <th class="num">{{ t('sup.charges.thAmount') }}</th>
+              <th>{{ t('sup.charges.thFrequency') }}</th>
+              <th class="num">{{ t('sup.charges.thMonthlyEq') }}</th>
               <th class="act"></th>
             </tr>
           </thead>
@@ -88,16 +85,16 @@
               <td>{{ chargeFrequencyLabel(c.frequency) }}</td>
               <td class="num chg-muted">{{ fmtMontant(equivMensuel(c)) }}</td>
               <td class="act">
-                <button class="chg-del" type="button" title="Supprimer" @click="remove(c.id)">Supprimer</button>
+                <button class="chg-del" type="button" :title="t('sup.charges.delete')" @click="remove(c.id)">{{ t('sup.charges.delete') }}</button>
               </td>
             </tr>
             <tr v-if="supCharges.length === 0">
-              <td colspan="6" class="chg-empty">Aucune charge enregistrée. Ajoutez-en une.</td>
+              <td colspan="6" class="chg-empty">{{ t('sup.charges.empty') }}</td>
             </tr>
           </tbody>
           <tfoot v-if="supCharges.length > 0">
             <tr class="chg-total">
-              <td colspan="4">Total ramené au mois</td>
+              <td colspan="4">{{ t('sup.charges.totalMonth') }}</td>
               <td class="num"><strong>{{ fmtMontant(totalMensuel) }}</strong></td>
               <td></td>
             </tr>
@@ -114,21 +111,21 @@
           </div>
           <div class="chg-mrow-right">
             <div class="chg-mrow-amount">{{ fmtMontant(c.amount) }}</div>
-            <button class="chg-del" type="button" title="Supprimer" @click="remove(c.id)">Suppr.</button>
+            <button class="chg-del" type="button" :title="t('sup.charges.delete')" @click="remove(c.id)">{{ t('sup.charges.mDelete') }}</button>
           </div>
         </li>
-        <li v-if="supCharges.length === 0" class="chg-mempty">Aucune charge.</li>
+        <li v-if="supCharges.length === 0" class="chg-mempty">{{ t('sup.charges.mEmpty') }}</li>
       </ul>
     </section>
 
     <!-- Détail par catégorie -->
     <section v-if="supCharges.length > 0" class="chg-panel">
-      <h2 class="chg-h2">Répartition par catégorie</h2>
+      <h2 class="chg-h2">{{ t('sup.charges.byCategory') }}</h2>
       <div class="chg-cat-grid">
         <div v-for="cat in parCategorie" :key="cat.category" class="chg-cat-tile">
           <div class="chg-cat-name">{{ cat.categoryLabel }}</div>
-          <div class="chg-cat-total">{{ fmtMontant(cat.mensuel) }}<span class="chg-cat-unit"> / mois</span></div>
-          <div class="chg-cat-count">{{ cat.count }} charge{{ cat.count > 1 ? 's' : '' }}</div>
+          <div class="chg-cat-total">{{ fmtMontant(cat.mensuel) }}<span class="chg-cat-unit">{{ t('sup.charges.perMonth') }}</span></div>
+          <div class="chg-cat-count">{{ t('sup.charges.catCount', { n: cat.count }) }}</div>
         </div>
       </div>
     </section>
@@ -137,6 +134,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { fmtMontant } from '../../stores/finance'
 import {
   supCharges,
@@ -151,6 +149,7 @@ import {
   CHARGE_FREQUENCIES,
 } from '../../utils/supComptaHelpers'
 
+const { t } = useI18n({ useScope: 'global' })
 const totalMensuel = computed(() => chargesMensuel(supCharges))
 const totalAnnuel = computed(() => chargesAnnuel(supCharges))
 const parCategorie = computed(() => chargesParCategorie(supCharges))
