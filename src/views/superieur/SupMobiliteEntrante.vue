@@ -2,11 +2,9 @@
   <div class="sm">
     <div class="sm-intro">
       <div>
-        <h1 class="sm-h1">Mobilité entrante</h1>
+        <h1 class="sm-h1">{{ t('sup.mobilite.title') }}</h1>
         <p class="sm-sub">
-          Suivi des étudiants internationaux acceptés, depuis la candidature jusqu'à leur intégration.
-          Les statuts du workflow viennent de MOBI (lecture seule). Les actions d'inscription, de facturation
-          et d'inscription pédagogique sont gérées ici.
+          {{ t('sup.mobilite.subtitle') }}
         </p>
       </div>
     </div>
@@ -15,27 +13,27 @@
     <div class="sm-kpis">
       <div class="sm-kpi">
         <div class="sm-kpi-num">{{ stats.total }}</div>
-        <div class="sm-kpi-lab">Dossiers ouverts</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiOpen') }}</div>
       </div>
       <div class="sm-kpi">
         <div class="sm-kpi-num">{{ stats.acceptes }}</div>
-        <div class="sm-kpi-lab">Acceptés</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiAccepted') }}</div>
       </div>
       <div class="sm-kpi">
         <div class="sm-kpi-num">{{ stats.visaObtenu }}</div>
-        <div class="sm-kpi-lab">Visa obtenu</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiVisa') }}</div>
       </div>
       <div class="sm-kpi">
         <div class="sm-kpi-num">{{ stats.arrives }}</div>
-        <div class="sm-kpi-lab">Arrivés</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiArrived') }}</div>
       </div>
       <div class="sm-kpi">
         <div class="sm-kpi-num">{{ stats.tauxConversion }}%</div>
-        <div class="sm-kpi-lab">Conversion accepté → arrivé</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiConversion') }}</div>
       </div>
       <div class="sm-kpi" :class="{ 'is-alert': stats.enRetard > 0 }">
         <div class="sm-kpi-num">{{ stats.enRetard }}</div>
-        <div class="sm-kpi-lab">En retard (rentrée &lt; 30j)</div>
+        <div class="sm-kpi-lab">{{ t('sup.mobilite.kpiLate') }}</div>
       </div>
     </div>
 
@@ -49,19 +47,17 @@
     <!-- Paiements de scolarité réels (pont MOBI) -->
     <section class="sm-card">
       <div class="sm-ps-head">
-        <h2 class="sm-h2">Paiements de scolarité (MOBI)</h2>
+        <h2 class="sm-h2">{{ t('sup.mobilite.psTitle') }}</h2>
         <button class="sm-btn-secondary" type="button" :disabled="psStore.loading" @click="rafraichirPaiements">
-          {{ psStore.loading ? 'Actualisation…' : 'Actualiser' }}
+          {{ psStore.loading ? t('sup.mobilite.refreshing') : t('sup.mobilite.refresh') }}
         </button>
       </div>
       <p class="sm-section-note">
-        Paiements déclarés par vos étudiants dans MOBI et validés par EDUFREM.
-        Confirmez la réception du virement, puis envoyez le certificat de scolarité (PDF) :
-        l'étudiant le reçoit directement dans son application MOBI.
+        {{ t('sup.mobilite.psNote') }}
       </p>
       <p v-if="psStore.error" class="sm-ps-error">{{ psStore.error }}</p>
       <p v-else-if="psStore.paiements.length === 0 && !psStore.loading" class="sm-section-note">
-        Aucun paiement validé par EDUFREM pour l'instant.
+        {{ t('sup.mobilite.psEmpty') }}
       </p>
       <div v-else class="sm-paiements">
         <div v-for="p in psStore.paiementsTries" :key="p.id" class="sm-paiement">
@@ -69,7 +65,7 @@
             <div>
               <div class="sm-paiement-montant">{{ fmtMontantPS(p.montant, p.devise) }}</div>
               <div class="sm-paiement-motif">
-                {{ p.studentName || p.studentEmail || 'Étudiant' }} · {{ p.motif || 'Scolarité' }}<span v-if="p.modePaiement"> · {{ labelMode(p.modePaiement) }}</span>
+                {{ p.studentName || p.studentEmail || t('sup.mobilite.studentFallback') }} · {{ p.motif || t('sup.mobilite.motifFallback') }}<span v-if="p.modePaiement"> · {{ labelMode(p.modePaiement) }}</span>
               </div>
             </div>
             <span class="sm-statut" :class="`tone-${psStatuts[p.status]?.tone || 'neutral'}`">
@@ -77,30 +73,30 @@
             </span>
           </div>
           <div class="sm-paiement-timeline">
-            <span v-if="p.declareAt">Déclaré le {{ fmtDate(p.declareAt) }}</span>
-            <span v-if="p.recuEdufremAt"> · Reçu EDUFREM le {{ fmtDate(p.recuEdufremAt) }}</span>
-            <span v-if="p.transfertEnvoyeAt"> · Transfert envoyé le {{ fmtDate(p.transfertEnvoyeAt) }}</span>
-            <span v-if="p.recuEcoleAt"> · Confirmé école le {{ fmtDate(p.recuEcoleAt) }}</span>
+            <span v-if="p.declareAt">{{ t('sup.mobilite.declaredOn', { date: fmtDate(p.declareAt) }) }}</span>
+            <span v-if="p.recuEdufremAt"> {{ t('sup.mobilite.receivedEdufremOn', { date: fmtDate(p.recuEdufremAt) }) }}</span>
+            <span v-if="p.transfertEnvoyeAt"> {{ t('sup.mobilite.transferSentOn', { date: fmtDate(p.transfertEnvoyeAt) }) }}</span>
+            <span v-if="p.recuEcoleAt"> {{ t('sup.mobilite.confirmedSchoolOn', { date: fmtDate(p.recuEcoleAt) }) }}</span>
           </div>
-          <div v-if="p.reference" class="sm-paiement-ref">Réf. : {{ p.reference }}</div>
-          <div v-if="p.certificatNom" class="sm-paiement-ref">Certificat : {{ p.certificatNom }}<span v-if="p.certificatAt"> (envoyé le {{ fmtDate(p.certificatAt) }})</span></div>
+          <div v-if="p.reference" class="sm-paiement-ref">{{ t('sup.mobilite.refPrefix', { ref: p.reference }) }}</div>
+          <div v-if="p.certificatNom" class="sm-paiement-ref">{{ t('sup.mobilite.certifLabel', { nom: p.certificatNom }) }}<span v-if="p.certificatAt"> {{ t('sup.mobilite.certifSentOn', { date: fmtDate(p.certificatAt) }) }}</span></div>
           <div class="sm-action-btns sm-mt8">
             <button
               v-if="peutConfirmerPaiementEcole && p.status === 'transfert_envoye'"
               class="sm-btn-primary" type="button"
               @click="confirmerPaiementEcole(p)"
-            >Confirmer la réception du virement</button>
+            >{{ t('sup.mobilite.confirmTransfer') }}</button>
             <button
               v-if="peutConfirmerPaiementEcole && !p.certificatNom && p.status !== 'declare_etudiant'"
               class="sm-btn-secondary" type="button"
               :disabled="certifEnvoiEnCours === p.id"
               @click="choisirCertificat(p)"
-            >{{ certifEnvoiEnCours === p.id ? 'Envoi en cours…' : 'Envoyer le certificat (PDF)' }}</button>
+            >{{ certifEnvoiEnCours === p.id ? t('sup.mobilite.sendingCertif') : t('sup.mobilite.sendCertif') }}</button>
             <button
               v-if="p.certificatNom"
               class="sm-btn-secondary" type="button"
               @click="telechargerCertificatPS(p)"
-            >Télécharger le certificat</button>
+            >{{ t('sup.mobilite.downloadCertif') }}</button>
           </div>
         </div>
       </div>
@@ -109,7 +105,7 @@
 
     <!-- Répartition par programme -->
     <section class="sm-card">
-      <h2 class="sm-h2">Répartition par programme</h2>
+      <h2 class="sm-h2">{{ t('sup.mobilite.repartTitle') }}</h2>
       <div class="sm-prog-list">
         <div v-for="p in store.repartitionParProgramme" :key="p.programmeId" class="sm-prog">
           <div class="sm-prog-head">
@@ -130,25 +126,25 @@
           :value="store.filters.search"
           @input="(e) => store.setFilter('search', e.target.value)"
           type="text"
-          placeholder="Rechercher (nom, email, pays, identifiant MOBI...)"
+          :placeholder="t('sup.mobilite.searchPlaceholder')"
           class="sm-input"
         />
         <select :value="store.filters.statut" @change="(e) => store.setFilter('statut', e.target.value)" class="sm-select">
-          <option value="">Tous les statuts MOBI</option>
+          <option value="">{{ t('sup.mobilite.allStatuts') }}</option>
           <option v-for="(s, k) in statutsMobi" :key="k" :value="k">{{ s.label }}</option>
         </select>
         <select :value="store.filters.programmeId" @change="(e) => store.setFilter('programmeId', e.target.value)" class="sm-select">
-          <option value="">Tous les programmes</option>
+          <option value="">{{ t('sup.mobilite.allProgrammes') }}</option>
           <option v-for="p in programmes" :key="p.id" :value="p.id">{{ p.nom }}</option>
         </select>
         <select :value="store.filters.rentree" @change="(e) => store.setFilter('rentree', e.target.value)" class="sm-select">
-          <option value="">Toutes les rentrées</option>
+          <option value="">{{ t('sup.mobilite.allRentrees') }}</option>
           <option v-for="r in rentreesUniques" :key="r" :value="r">{{ fmtDateShort(r) }}</option>
         </select>
         <select :value="store.filters.dossier" @change="(e) => store.setFilter('dossier', e.target.value)" class="sm-select">
-          <option value="">Tous les dossiers</option>
-          <option value="incomplet">Dossier à compléter</option>
-          <option value="complet">Dossier complet</option>
+          <option value="">{{ t('sup.mobilite.allDossiers') }}</option>
+          <option value="incomplet">{{ t('sup.mobilite.dossierIncomplet') }}</option>
+          <option value="complet">{{ t('sup.mobilite.dossierComplet') }}</option>
         </select>
       </div>
 
@@ -156,13 +152,13 @@
         <table class="sm-table">
           <thead>
             <tr>
-              <th>Étudiant</th>
-              <th>Origine</th>
-              <th>Programme cible</th>
-              <th>Rentrée</th>
-              <th>Statut MOBI</th>
-              <th>Dossier</th>
-              <th>Acompte</th>
+              <th>{{ t('sup.mobilite.thStudent') }}</th>
+              <th>{{ t('sup.mobilite.thOrigin') }}</th>
+              <th>{{ t('sup.mobilite.thTargetProgram') }}</th>
+              <th>{{ t('sup.mobilite.thIntake') }}</th>
+              <th>{{ t('sup.mobilite.thStatutMobi') }}</th>
+              <th>{{ t('sup.mobilite.thDossier') }}</th>
+              <th>{{ t('sup.mobilite.thAcompte') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -198,7 +194,7 @@
               </td>
             </tr>
             <tr v-if="store.filteredDossiers.length === 0">
-              <td colspan="7" class="sm-empty">Aucun dossier ne correspond.</td>
+              <td colspan="7" class="sm-empty">{{ t('sup.mobilite.emptyDossiers') }}</td>
             </tr>
           </tbody>
         </table>
@@ -216,7 +212,7 @@
           </div>
           <svg class="sm-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
-        <li v-if="store.filteredDossiers.length === 0" class="sm-mempty">Aucun dossier ne correspond.</li>
+        <li v-if="store.filteredDossiers.length === 0" class="sm-mempty">{{ t('sup.mobilite.emptyDossiers') }}</li>
       </ul>
     </section>
 
@@ -224,20 +220,20 @@
     <div v-if="askCertifFor" class="sm-modal" @click.self="annulerEnvoiCertificat">
       <div class="sm-modal-content sm-modal-small">
         <header class="sm-modal-head">
-          <h3>Confirmer l'envoi du certificat</h3>
+          <h3>{{ t('sup.mobilite.certifModalTitle') }}</h3>
           <button class="sm-modal-close" type="button" @click="annulerEnvoiCertificat">×</button>
         </header>
         <div class="sm-modal-body">
           <p class="sm-confirm-text">
-            Vous confirmez avoir envoyé le certificat de scolarité à
+            {{ t('sup.mobilite.certifConfirmText') }}
             <strong>{{ askCertifFor.nomComplet }}</strong> ({{ askCertifFor.email }}).
           </p>
           <p class="sm-confirm-note">
-            Cette action sera tracée dans le dossier. L'étudiant doit avoir reçu son certificat avant que vous validiez ici.
+            {{ t('sup.mobilite.certifConfirmNote') }}
           </p>
           <div class="sm-confirm-btns">
-            <button class="sm-btn-secondary" type="button" @click="annulerEnvoiCertificat">Annuler</button>
-            <button class="sm-btn-primary" type="button" @click="confirmerEnvoiCertificat">Confirmer l'envoi</button>
+            <button class="sm-btn-secondary" type="button" @click="annulerEnvoiCertificat">{{ t('sup.mobilite.cancel') }}</button>
+            <button class="sm-btn-primary" type="button" @click="confirmerEnvoiCertificat">{{ t('sup.mobilite.confirmSend') }}</button>
           </div>
         </div>
       </div>
@@ -259,7 +255,7 @@
         <div class="sm-modal-body">
           <!-- Workflow MOBI -->
           <section class="sm-section">
-            <h4 class="sm-section-h">Avancement (côté MOBI)</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.detailProgressTitle') }}</h4>
             <div class="sm-workflow">
               <div
                 v-for="(s, idx) in workflowSteps"
@@ -275,37 +271,37 @@
               </div>
             </div>
             <p class="sm-section-note">
-              Mis à jour par l'étudiant dans MOBI. MAPO le consomme en lecture.
+              {{ t('sup.mobilite.detailProgressNote') }}
             </p>
           </section>
 
           <!-- Infos étudiant -->
           <section class="sm-section">
-            <h4 class="sm-section-h">Informations étudiant</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.detailStudentInfo') }}</h4>
             <div class="sm-infos">
-              <div><span class="sm-lab">Email</span><span>{{ detail.email }}</span></div>
-              <div><span class="sm-lab">Téléphone</span><span>{{ detail.telephone }}</span></div>
-              <div><span class="sm-lab">Formation actuelle</span><span>{{ detail.formationActuelle }}</span></div>
-              <div><span class="sm-lab">Date d'acceptation</span><span>{{ fmtDate(detail.dateAcceptation) }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labEmail') }}</span><span>{{ detail.email }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labPhone') }}</span><span>{{ detail.telephone }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labCurrentProgram') }}</span><span>{{ detail.formationActuelle }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labAcceptDate') }}</span><span>{{ fmtDate(detail.dateAcceptation) }}</span></div>
             </div>
           </section>
 
           <!-- Cible école -->
           <section class="sm-section">
-            <h4 class="sm-section-h">Programme cible</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.thTargetProgram') }}</h4>
             <div class="sm-infos">
-              <div><span class="sm-lab">Programme</span><span>{{ detail.programmeNom }}</span></div>
-              <div><span class="sm-lab">Année</span><span>{{ detail.anneeNom }}</span></div>
-              <div><span class="sm-lab">Rentrée prévue</span><span>{{ fmtDate(detail.rentreePrevu) }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labProgramme') }}</span><span>{{ detail.programmeNom }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labYear') }}</span><span>{{ detail.anneeNom }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labIntakePlanned') }}</span><span>{{ fmtDate(detail.rentreePrevu) }}</span></div>
             </div>
           </section>
 
           <!-- Actions école (selon rôle) -->
           <section class="sm-section">
-            <h4 class="sm-section-h">Actions école</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.detailActions') }}</h4>
 
             <div class="sm-action-line">
-              <span class="sm-action-lab">Dossier d'inscription :</span>
+              <span class="sm-action-lab">{{ t('sup.mobilite.lineDossier') }}</span>
               <span class="sm-statut" :class="`tone-${statutsDossier[detail.dossierInscription].tone}`">
                 {{ statutsDossier[detail.dossierInscription].label }}
               </span>
@@ -315,36 +311,36 @@
                   class="sm-btn-primary"
                   type="button"
                   @click="action('marquerDossierComplet', detail.id)"
-                >Marquer complet</button>
+                >{{ t('sup.mobilite.markComplete') }}</button>
                 <button
                   v-else
                   class="sm-btn-secondary"
                   type="button"
                   @click="action('marquerDossierIncomplet', detail.id)"
-                >Repasser à compléter</button>
+                >{{ t('sup.mobilite.markIncomplete') }}</button>
               </div>
             </div>
 
             <div class="sm-action-line">
-              <span class="sm-action-lab">Inscription pédagogique :</span>
+              <span class="sm-action-lab">{{ t('sup.mobilite.linePeda') }}</span>
               <span class="sm-statut" :class="detail.inscriptionPedaDeclenchee ? 'tone-success' : 'tone-neutral'">
-                {{ detail.inscriptionPedaDeclenchee ? 'Déclenchée' : 'En attente' }}
+                {{ detail.inscriptionPedaDeclenchee ? t('sup.mobilite.pedaTriggered') : t('sup.mobilite.pedaWaiting') }}
               </span>
               <div v-if="peutEditerInscription && !detail.inscriptionPedaDeclenchee" class="sm-action-btns">
                 <button
                   class="sm-btn-primary"
                   type="button"
                   :disabled="detail.dossierInscription !== 'complet'"
-                  :title="detail.dossierInscription !== 'complet' ? 'Le dossier doit être complet' : ''"
+                  :title="detail.dossierInscription !== 'complet' ? t('sup.mobilite.pedaMustComplete') : ''"
                   @click="action('declencherInscriptionPeda', detail.id)"
-                >Déclencher</button>
+                >{{ t('sup.mobilite.trigger') }}</button>
               </div>
             </div>
 
             <div class="sm-action-line">
-              <span class="sm-action-lab">Facture :</span>
+              <span class="sm-action-lab">{{ t('sup.mobilite.lineFacture') }}</span>
               <span class="sm-statut" :class="detail.factureEmise ? 'tone-info' : 'tone-neutral'">
-                {{ detail.factureEmise ? 'Émise' : 'À émettre' }}
+                {{ detail.factureEmise ? t('sup.mobilite.factureEmise') : t('sup.mobilite.factureAEmettre') }}
               </span>
               <div v-if="peutEditerFinance" class="sm-action-btns">
                 <button
@@ -352,19 +348,19 @@
                   class="sm-btn-primary"
                   type="button"
                   @click="action('marquerFactureEmise', detail.id, true)"
-                >Marquer émise</button>
+                >{{ t('sup.mobilite.markIssued') }}</button>
                 <button
                   v-else
                   class="sm-btn-secondary"
                   type="button"
                   @click="action('marquerFactureEmise', detail.id, false)"
-                >Annuler émission</button>
+                >{{ t('sup.mobilite.cancelIssue') }}</button>
               </div>
             </div>
 
             <!-- Workflow acompte de scolarité -->
             <div class="sm-action-line sm-acompte-line">
-              <span class="sm-action-lab">Acompte de scolarité :</span>
+              <span class="sm-action-lab">{{ t('sup.mobilite.lineAcompte') }}</span>
               <span class="sm-statut" :class="`tone-${statutsAcompte[detail.acompteStatut || 'non_demande'].tone}`">
                 {{ statutsAcompte[detail.acompteStatut || 'non_demande'].label }}
               </span>
@@ -374,11 +370,11 @@
             <!-- Traçabilité -->
             <div v-if="detail.acompteSource" class="sm-acompte-trace">
               <div v-if="detail.acompteValideEdufremDate">
-                Attesté reçu sur compte EDUFREM le {{ fmtDate(detail.acompteValideEdufremDate) }}
+                {{ t('sup.mobilite.traceAttested', { date: fmtDate(detail.acompteValideEdufremDate) }) }}
               </div>
               <div v-if="detail.acompteConfirmeEcoleDate">
-                Confirmé par l'école le {{ fmtDate(detail.acompteConfirmeEcoleDate) }}
-                <span v-if="detail.acompteSource === 'ecole'"> (encaissement direct école)</span>
+                {{ t('sup.mobilite.traceConfirmedSchool', { date: fmtDate(detail.acompteConfirmeEcoleDate) }) }}
+                <span v-if="detail.acompteSource === 'ecole'"> {{ t('sup.mobilite.traceDirectSchool') }}</span>
               </div>
             </div>
 
@@ -389,14 +385,14 @@
                 class="sm-btn-primary"
                 type="button"
                 @click="action('attesterAcompteEdufrem', detail.id, authMega.uid || 'superadmin', detail.acompteMontant)"
-              >Attester paiement reçu sur compte EDUFREM</button>
+              >{{ t('sup.mobilite.attestEdufrem') }}</button>
               <button
                 v-else
                 class="sm-btn-secondary"
                 type="button"
                 disabled
-                title="En attente de confirmation par l'école"
-              >Attestation envoyée à l'école</button>
+                :title="t('sup.mobilite.attestWaitingSchool')"
+              >{{ t('sup.mobilite.attestSentSchool') }}</button>
             </div>
 
             <!-- Boutons école -->
@@ -407,76 +403,76 @@
                 class="sm-btn-primary"
                 type="button"
                 @click="action('confirmerAcompteEcole', detail.id, authSup.userId || 'comptable')"
-              >Confirmer paiement reçu</button>
+              >{{ t('sup.mobilite.confirmPaymentReceived') }}</button>
               <!-- Cas 2 : encaissement direct école (sans EDUFREM) -->
               <button
                 v-if="detail.acompteStatut === 'en_attente' || detail.acompteStatut === 'non_demande'"
                 class="sm-btn-secondary"
                 type="button"
                 @click="action('attesterAcompteEcole', detail.id, authSup.userId || 'comptable', detail.acompteMontant)"
-              >Attester paiement direct (école)</button>
+              >{{ t('sup.mobilite.attestDirectSchool') }}</button>
             </div>
 
             <!-- Envoi certificat de scolarité -->
             <div v-if="detail.acompteStatut === 'confirme_ecole'" class="sm-action-line sm-mt12">
-              <span class="sm-action-lab">Certificat de scolarité :</span>
+              <span class="sm-action-lab">{{ t('sup.mobilite.lineCertif') }}</span>
               <span class="sm-statut" :class="detail.certificatEnvoye ? 'tone-success' : 'tone-warning'">
-                {{ detail.certificatEnvoye ? 'Envoyé' : 'À envoyer' }}
+                {{ detail.certificatEnvoye ? t('sup.mobilite.certifSent') : t('sup.mobilite.certifToSend') }}
               </span>
               <div v-if="peutEnvoyerCertificat && !detail.certificatEnvoye" class="sm-action-btns">
                 <button
                   class="sm-btn-primary"
                   type="button"
                   @click="demanderEnvoiCertificat(detail)"
-                >Marquer certificat envoyé</button>
+                >{{ t('sup.mobilite.markCertifSent') }}</button>
               </div>
               <div v-else-if="detail.certificatEnvoyeDate" class="sm-meta">
-                Envoyé le {{ fmtDate(detail.certificatEnvoyeDate) }}
+                {{ t('sup.mobilite.sentOn', { date: fmtDate(detail.certificatEnvoyeDate) }) }}
               </div>
             </div>
 
             <p v-if="!peutEditerInscription && !peutEditerFinance && !isSuperAdminEdufrem" class="sm-section-note">
-              Votre rôle n'a pas de droits d'action sur ce dossier (lecture seule).
+              {{ t('sup.mobilite.noRights') }}
             </p>
           </section>
 
           <!-- Lien MOBI (futur — affichage info seulement pour cette version) -->
           <section v-if="detail.mobiStudentId" class="sm-section">
-            <h4 class="sm-section-h">Procédure côté MOBI</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.mobiProcTitle') }}</h4>
             <div class="sm-infos">
-              <div><span class="sm-lab">Identifiant MOBI</span><span>{{ detail.mobiStudentId }}</span></div>
-              <div v-if="detail.mobiStatutProcedure"><span class="sm-lab">Étape actuelle</span><span>{{ detail.mobiStatutProcedure }}</span></div>
-              <div v-if="detail.mobiLastUpdate"><span class="sm-lab">Dernière màj</span><span>{{ fmtDate(detail.mobiLastUpdate) }}</span></div>
+              <div><span class="sm-lab">{{ t('sup.mobilite.labMobiId') }}</span><span>{{ detail.mobiStudentId }}</span></div>
+              <div v-if="detail.mobiStatutProcedure"><span class="sm-lab">{{ t('sup.mobilite.labCurrentStep') }}</span><span>{{ detail.mobiStatutProcedure }}</span></div>
+              <div v-if="detail.mobiLastUpdate"><span class="sm-lab">{{ t('sup.mobilite.labLastUpdate') }}</span><span>{{ fmtDate(detail.mobiLastUpdate) }}</span></div>
             </div>
           </section>
 
           <!-- Paiements de scolarité (workflow MOBI ↔ MAPO) -->
           <section v-if="detail.mobiStudentId" class="sm-section">
-            <h4 class="sm-section-h">Paiements de scolarité (MOBI)</h4>
+            <h4 class="sm-section-h">{{ t('sup.mobilite.psTitle') }}</h4>
             <p v-if="paiementsStudent.length === 0" class="sm-section-note">
-              Aucun paiement déclaré par l'étudiant pour l'instant.
+              {{ t('sup.mobilite.psEmptyStudent') }}
             </p>
             <div v-else class="sm-paiements">
               <div v-for="p in paiementsStudent" :key="p.id" class="sm-paiement">
                 <div class="sm-paiement-head">
                   <div>
                     <div class="sm-paiement-montant">{{ fmtMontantPS(p.montant, p.devise) }}</div>
-                    <div class="sm-paiement-motif">{{ p.motif || 'Scolarité' }}<span v-if="p.modePaiement"> · {{ labelMode(p.modePaiement) }}</span></div>
+                    <div class="sm-paiement-motif">{{ p.motif || t('sup.mobilite.motifFallback') }}<span v-if="p.modePaiement"> · {{ labelMode(p.modePaiement) }}</span></div>
                   </div>
                   <span class="sm-statut" :class="`tone-${psStatuts[p.status]?.tone || 'neutral'}`">
                     {{ psStatuts[p.status]?.courtEcole || psStatuts[p.status]?.label || p.status }}
                   </span>
                 </div>
                 <div class="sm-paiement-timeline">
-                  <span v-if="p.declareAt">Déclaré le {{ fmtDate(p.declareAt) }}</span>
-                  <span v-if="p.recuEdufremAt"> · Reçu EDUFREM le {{ fmtDate(p.recuEdufremAt) }}</span>
-                  <span v-if="p.transfertEnvoyeAt"> · Transfert envoyé le {{ fmtDate(p.transfertEnvoyeAt) }}</span>
-                  <span v-if="p.recuEcoleAt"> · Confirmé école le {{ fmtDate(p.recuEcoleAt) }}</span>
+                  <span v-if="p.declareAt">{{ t('sup.mobilite.declaredOn', { date: fmtDate(p.declareAt) }) }}</span>
+                  <span v-if="p.recuEdufremAt"> {{ t('sup.mobilite.receivedEdufremOn', { date: fmtDate(p.recuEdufremAt) }) }}</span>
+                  <span v-if="p.transfertEnvoyeAt"> {{ t('sup.mobilite.transferSentOn', { date: fmtDate(p.transfertEnvoyeAt) }) }}</span>
+                  <span v-if="p.recuEcoleAt"> {{ t('sup.mobilite.confirmedSchoolOn', { date: fmtDate(p.recuEcoleAt) }) }}</span>
                 </div>
-                <div v-if="p.reference" class="sm-paiement-ref">Réf. : {{ p.reference }}</div>
+                <div v-if="p.reference" class="sm-paiement-ref">{{ t('sup.mobilite.refPrefix', { ref: p.reference }) }}</div>
                 <div v-if="peutConfirmerPaiementEcole && p.status === 'transfert_envoye'" class="sm-action-btns sm-mt8">
                   <button class="sm-btn-primary" type="button" @click="confirmerPaiementEcole(p)">
-                    Confirmer la réception du virement
+                    {{ t('sup.mobilite.confirmTransfer') }}
                   </button>
                 </div>
               </div>
@@ -490,6 +486,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useMobiliteStore, STATUTS_MOBI, STATUTS_DOSSIER, STATUTS_ACOMPTE } from '../../stores/mobilite'
 import { currentSchoolId } from '../../utils/supSync'
 import { PROGRAMMES } from '../../stores/superieur'
@@ -502,6 +499,8 @@ const authSup = useSuperieurAuthStore()
 const authMega = useAuthStore()
 const psStore = usePaiementsScolariteStore()
 const psStatuts = PAIEMENT_STATUTS
+
+const { t, locale } = useI18n({ useScope: 'global' })
 
 const statutsMobi = STATUTS_MOBI
 const statutsDossier = STATUTS_DOSSIER
@@ -556,8 +555,8 @@ const alertes = computed(() => {
       items.push({
         key: 'inscription',
         tone: 'warning',
-        titre: 'Dossiers à compléter',
-        message: `${stats.value.dossiersIncomplets} dossier(s) d'inscription incomplets.`,
+        titre: t('sup.mobilite.alertIncompleteTitle'),
+        message: t('sup.mobilite.alertIncompleteMsg', { n: stats.value.dossiersIncomplets }),
       })
     }
   }
@@ -566,8 +565,8 @@ const alertes = computed(() => {
       items.push({
         key: 'finance',
         tone: 'warning',
-        titre: 'Factures à émettre',
-        message: `${stats.value.facturesNonEmises} étudiant(s) accepté(s) sans facture émise.`,
+        titre: t('sup.mobilite.alertInvoiceTitle'),
+        message: t('sup.mobilite.alertInvoiceMsg', { n: stats.value.facturesNonEmises }),
       })
     }
   }
@@ -575,8 +574,8 @@ const alertes = computed(() => {
     items.push({
       key: 'retard',
       tone: 'danger',
-      titre: 'Workflow en retard',
-      message: `${stats.value.enRetard} étudiant(s) avec rentrée à moins de 30 jours et visa non obtenu.`,
+      titre: t('sup.mobilite.alertLateTitle'),
+      message: t('sup.mobilite.alertLateMsg', { n: stats.value.enRetard }),
     })
   }
   return items
@@ -626,13 +625,13 @@ function action(method, ...args) {
 
 function fmtDate(iso) {
   if (!iso) return ''
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', {
+  return new Date(iso + 'T00:00:00').toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', {
     day: '2-digit', month: 'long', year: 'numeric',
   })
 }
 function fmtDateShort(iso) {
   if (!iso) return ''
-  return new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', {
+  return new Date(iso + 'T00:00:00').toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', {
     day: '2-digit', month: 'short', year: 'numeric',
   })
 }
@@ -667,18 +666,18 @@ async function onCertificatChoisi(e) {
   certifPour.value = null
   if (!file || !p) return
   const ok = window.confirm(
-    `Envoyer « ${file.name} » comme certificat de scolarité de ${p.studentName || 'cet étudiant'} ?\n\nL'étudiant le recevra immédiatement dans MOBI.`
+    t('sup.mobilite.confirmSendCertifJs', { file: file.name, name: p.studentName || t('sup.mobilite.studentFallbackJs') })
   )
   if (!ok) return
   certifEnvoiEnCours.value = p.id
   const r = await psStore.envoyerCertificat(p.id, file)
   certifEnvoiEnCours.value = null
-  if (!r.success) window.alert(r.error || "L'envoi du certificat a échoué.")
+  if (!r.success) window.alert(r.error || t('sup.mobilite.certifSendFailed'))
 }
 
 async function telechargerCertificatPS(p) {
   const r = await psStore.telechargerCertificat(p)
-  if (!r.success) window.alert(r.error || 'Téléchargement impossible.')
+  if (!r.success) window.alert(r.error || t('sup.mobilite.downloadFailed'))
 }
 
 const paiementsStudent = computed(() => {
@@ -707,12 +706,12 @@ const peutConfirmerPaiementEcole = computed(
 async function confirmerPaiementEcole(p) {
   if (!p) return
   const ok = window.confirm(
-    `Confirmer la réception du virement de ${fmtMontantPS(p.montant, p.devise)} ?\n\nL'étudiant ${p.studentName} sera notifié de la validation côté MOBI.`
+    t('sup.mobilite.confirmReceiveTransferJs', { montant: fmtMontantPS(p.montant, p.devise), name: p.studentName })
   )
   if (!ok) return
   const r = await psStore.confirmerReceptionEcole(p.id)
   if (!r.success) {
-    window.alert(r.error || 'Échec de la confirmation.')
+    window.alert(r.error || t('sup.mobilite.confirmFailed'))
   }
 }
 </script>
