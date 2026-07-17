@@ -1,0 +1,184 @@
+<template>
+  <div class="fiches">
+    <!-- ===== Choix ===== -->
+    <div v-if="state === 'idle' || state === 'error'" class="card">
+      <div class="card-head"><Layers :size="18" /><h3>{{ t('mia.fichesTitle') }}</h3></div>
+      <p class="muted">{{ t('mia.fichesHint') }}</p>
+      <div class="pick">
+        <select v-model="matiere" class="input">
+          <option value="" disabled>{{ t('mia.chooseSubject') }}</option>
+          <option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option>
+        </select>
+        <input v-model="theme" class="input" :placeholder="t('mia.fichesThemePh')" />
+        <button class="btn btn-primary" :disabled="!matiere" @click="generer">
+          <Sparkles :size="15" /> <span>{{ t('mia.fichesGenerate') }}</span>
+        </button>
+      </div>
+      <p v-if="state === 'error'" class="err-line">{{ errorMsg }}</p>
+    </div>
+
+    <!-- ===== Chargement ===== -->
+    <div v-else-if="state === 'loading'" class="card loading">
+      <Loader2 :size="32" class="spin" /><p>{{ t('mia.fichesGenerating') }}</p><small>{{ t('mia.fewSeconds') }}</small>
+    </div>
+
+    <!-- ===== Résultat ===== -->
+    <template v-else-if="state === 'done'">
+      <!-- Fiche de révision -->
+      <div v-if="fiche" class="card">
+        <div class="vr-head">
+          <span class="vr-mat">{{ fiche.titre || t('mia.fichesSheet') }}</span>
+          <span class="ia-badge"><Sparkles :size="12" /> MIAPO</span>
+        </div>
+        <div class="fiche-body">{{ fiche.document }}</div>
+        <div class="row-actions">
+          <button class="btn btn-outline btn-sm" @click="copierFiche"><Copy :size="14" /> <span>{{ copied ? t('mia.fichesCopied') : t('mia.fichesCopy') }}</span></button>
+          <button class="btn btn-ghost btn-sm" @click="reset">{{ t('mia.fichesNew') }}</button>
+        </div>
+      </div>
+
+      <!-- Flashcards -->
+      <div v-if="cards.length" class="card">
+        <div class="card-head"><Layers :size="18" /><h3>{{ t('mia.fichesFlashcards') }}</h3></div>
+
+        <template v-if="cardIdx < cards.length">
+          <div class="fc" :class="{ flipped }" @click="flipped = !flipped">
+            <div class="fc-face fc-front"><span class="fc-tag">{{ t('mia.fichesFront') }}</span><p>{{ cards[cardIdx].recto }}</p><small class="fc-tap">{{ t('mia.fichesFlip') }}</small></div>
+            <div class="fc-face fc-back"><span class="fc-tag">{{ t('mia.fichesBack') }}</span><p>{{ cards[cardIdx].verso }}</p></div>
+          </div>
+          <div class="fc-counter">{{ t('mia.fichesCardCounter', { n: cardIdx + 1, total: cards.length }) }}</div>
+          <div class="fc-actions">
+            <button class="btn btn-outline" @click="mark(false)"><RotateCcw :size="15" /> <span>{{ t('mia.fichesReview') }}</span></button>
+            <button class="btn btn-primary" @click="mark(true)"><Check :size="15" /> <span>{{ t('mia.fichesKnown') }}</span></button>
+          </div>
+        </template>
+
+        <div v-else class="fc-done">
+          <div class="fc-score" :style="scoreStyle">{{ knownCount }}/{{ cards.length }}</div>
+          <p>{{ t('mia.fichesDoneMsg', { n: knownCount, total: cards.length }) }}</p>
+          <button class="btn btn-primary" @click="restartCards"><RefreshCw :size="15" /> <span>{{ t('mia.fichesRestart') }}</span></button>
+        </div>
+      </div>
+    </template>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { useCoursStore } from '../stores/cours'
+import { useTuteurStore } from '../stores/tuteur'
+import { matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { Layers, Sparkles, Loader2, Check, RotateCcw, RefreshCw, Copy } from 'lucide-vue-next'
+
+const props = defineProps({ enfant: { type: Object, default: null } })
+const { t } = useI18n({ useScope: 'global' })
+const cours = useCoursStore()
+const tuteur = useTuteurStore()
+
+const matiere = ref('')
+const theme = ref('')
+const state = ref('idle') // idle | loading | done | error
+const errorMsg = ref('')
+const fiche = ref(null)
+const cards = ref([])
+const copied = ref(false)
+
+const niveau = computed(() => props.enfant?.niveau || '')
+const matieresList = computed(() => matieresPourNiveau(niveau.value))
+
+async function generer() {
+  if (!matiere.value) return
+  state.value = 'loading'
+  fiche.value = null
+  cards.value = []
+  copied.value = false
+  const th = theme.value.trim()
+  // Fiche (pedagogie type=cours) + flashcards (quiz réutilisé) en parallèle.
+  const [ficheRes, quizRes] = await Promise.all([
+    cours.preparerAvecMiapo({ type: 'cours', matiere: matiere.value, niveau: niveau.value, theme: th || t('mia.fichesSynthTheme', { subject: matiere.value }) }),
+    tuteur.generateQuiz({ matiere: matiere.value, niveau: niveau.value, nombre: 8, themes: th }),
+  ])
+  if (ficheRes?.ok && ficheRes.document) fiche.value = { titre: ficheRes.titre, document: ficheRes.document }
+  cards.value = (quizRes?.questions || []).map((q) => ({
+    recto: q.q,
+    verso: [q.choices?.[q.answer], q.explanation].filter(Boolean).join(' — '),
+  })).filter((c) => c.recto && c.verso)
+  if (!fiche.value && !cards.value.length) {
+    errorMsg.value = ficheRes?.reason || t('mia.fichesUnavailable')
+    state.value = 'error'
+    return
+  }
+  resetCards()
+  state.value = 'done'
+}
+
+// ── Flashcards ──
+const cardIdx = ref(0)
+const flipped = ref(false)
+const knownCount = ref(0)
+function resetCards() { cardIdx.value = 0; flipped.value = false; knownCount.value = 0 }
+function restartCards() { cards.value = shuffle(cards.value); resetCards() }
+function mark(known) {
+  if (known) knownCount.value++
+  flipped.value = false
+  cardIdx.value++
+}
+const scoreStyle = computed(() => {
+  const p = cards.value.length ? knownCount.value / cards.value.length * 100 : 0
+  const c = p >= 80 ? '#1B8A5A' : p >= 50 ? '#B87A00' : '#D93025'
+  return { color: c, backgroundColor: c + '1f' }
+})
+
+function reset() { state.value = 'idle'; fiche.value = null; cards.value = [] }
+async function copierFiche() {
+  const txt = [fiche.value?.titre, fiche.value?.document].filter(Boolean).join('\n\n')
+  try { await navigator.clipboard.writeText(txt); copied.value = true; setTimeout(() => { copied.value = false }, 2000) } catch { /* clipboard indispo */ }
+}
+function shuffle(a) { return [...a].sort(() => Math.random() - 0.5) }
+</script>
+
+<style scoped>
+.fiches { display: flex; flex-direction: column; gap: 16px; }
+.card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }
+.card-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.muted { color: var(--tx3); font-size: 14px; margin: 0 0 14px; }
+.pick { display: flex; flex-wrap: wrap; gap: 10px; }
+.input { flex: 1 1 180px; padding: 10px 12px; border: 1px solid var(--bd); border-radius: 10px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tx); }
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 16px; border-radius: 10px; font-weight: 600; font-size: 14px; cursor: pointer; border: 1px solid transparent; font-family: inherit; }
+.btn-primary { background: var(--pr); color: #fff; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.btn-outline { background: #fff; border-color: var(--bd); color: var(--tx); }
+.btn-ghost { background: none; color: var(--tx3); }
+.btn-sm { padding: 7px 12px; font-size: 13px; }
+.err-line { color: #D93025; font-size: 13px; margin: 12px 0 0; }
+.loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 44px 24px; text-align: center; }
+.loading p { margin: 0; font-size: 15px; color: var(--tx); }
+.loading small { color: var(--tx3); }
+.spin { animation: spin .9s linear infinite; color: var(--pr); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.vr-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+.vr-mat { font-weight: 700; font-size: 16px; color: var(--tx); }
+.ia-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; color: #1B8A5A; background: rgba(27,138,90,.10); }
+.fiche-body { white-space: pre-wrap; font-size: 14.5px; line-height: 1.6; color: var(--tx); }
+.row-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
+
+/* Flashcards */
+.fc { position: relative; min-height: 168px; border-radius: 14px; cursor: pointer; perspective: 1000px; margin-bottom: 12px; }
+.fc-face { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 168px; padding: 22px; border-radius: 14px; text-align: center; transition: opacity .2s ease; }
+.fc-front { background: rgba(var(--pr-rgb),.05); border: 1.5px solid rgba(var(--pr-rgb),.18); }
+.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.fc.flipped .fc-front { opacity: 0; }
+.fc.flipped .fc-back { opacity: 1; }
+.fc-face p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; color: var(--tx); }
+.fc-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--tx3); }
+.fc-tap { color: var(--tx3); font-size: 12px; }
+.fc-counter { text-align: center; font-size: 12.5px; color: var(--tx3); margin-bottom: 12px; }
+.fc-actions { display: flex; gap: 10px; }
+.fc-actions .btn { flex: 1; justify-content: center; }
+.fc-done { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; text-align: center; }
+.fc-score { font-size: 22px; font-weight: 800; padding: 8px 18px; border-radius: 30px; }
+.fc-done p { margin: 0; color: var(--tx2); font-size: 14px; }
+</style>

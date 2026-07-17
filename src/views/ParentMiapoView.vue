@@ -245,6 +245,16 @@
           </template>
         </section>
 
+        <!-- ========== ANNALES ========== -->
+        <section v-else-if="section === 'annales'" class="sec">
+          <MiapoAnnales :enfant="activeEnfant" />
+        </section>
+
+        <!-- ========== FICHES + FLASHCARDS ========== -->
+        <section v-else-if="section === 'fiches'" class="sec">
+          <MiapoFiches :enfant="activeEnfant" />
+        </section>
+
         <!-- ========== PROGRESSION ========== -->
         <section v-else-if="section === 'progression'" class="sec">
           <div class="card">
@@ -489,7 +499,9 @@ import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
 import Radar6C from '../components/Radar6C.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2 } from 'lucide-vue-next'
+import MiapoAnnales from '../components/MiapoAnnales.vue'
+import MiapoFiches from '../components/MiapoFiches.vue'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t } = useI18n({ useScope: 'global' })
@@ -514,6 +526,8 @@ const SECTIONS = computed(() => [
   { key: 'accueil', label: t('mia.secHome'), icon: Home },
   { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
   { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
+  { key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList },
+  { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
   { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
   { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays },
   { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
