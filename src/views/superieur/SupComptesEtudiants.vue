@@ -2,11 +2,8 @@
   <div class="sc">
     <div class="sc-intro">
       <div>
-        <h1 class="sc-h1">Comptes étudiants</h1>
-        <p class="sc-sub">
-          Vue d'ensemble des comptes financiers. Cliquez sur un étudiant pour voir son échéancier complet,
-          ses paiements, ses bourses et ses financements.
-        </p>
+        <h1 class="sc-h1">{{ t('sup.comptes.title') }}</h1>
+        <p class="sc-sub">{{ t('sup.comptes.subtitle') }}</p>
       </div>
     </div>
 
@@ -14,23 +11,23 @@
     <div class="sc-kpis">
       <div class="sc-kpi">
         <div class="sc-kpi-num">{{ store.comptes.length }}</div>
-        <div class="sc-kpi-lab">Comptes ouverts</div>
+        <div class="sc-kpi-lab">{{ t('sup.comptes.kpiOpen') }}</div>
       </div>
       <div class="sc-kpi">
         <div class="sc-kpi-num">{{ store.comptes.filter(c => c.statut === 'a_jour').length }}</div>
-        <div class="sc-kpi-lab">À jour</div>
+        <div class="sc-kpi-lab">{{ t('sup.comptes.kpiAJour') }}</div>
       </div>
       <div class="sc-kpi">
         <div class="sc-kpi-num">{{ store.comptes.filter(c => c.statut === 'partiel').length }}</div>
-        <div class="sc-kpi-lab">Paiements partiels</div>
+        <div class="sc-kpi-lab">{{ t('sup.comptes.kpiPartiel') }}</div>
       </div>
       <div class="sc-kpi" :class="{ 'is-alert': nbRetard > 0 }">
         <div class="sc-kpi-num">{{ nbRetard }}</div>
-        <div class="sc-kpi-lab">En retard</div>
+        <div class="sc-kpi-lab">{{ t('sup.comptes.kpiRetard') }}</div>
       </div>
       <div class="sc-kpi">
         <div class="sc-kpi-num">{{ store.comptes.filter(c => c.statut === 'solde').length }}</div>
-        <div class="sc-kpi-lab">Soldés</div>
+        <div class="sc-kpi-lab">{{ t('sup.comptes.kpiSolde') }}</div>
       </div>
     </div>
 
@@ -41,26 +38,26 @@
           :value="filtresState.search"
           @input="(e) => updateFiltre('search', e.target.value)"
           type="text"
-          placeholder="Rechercher un étudiant, matricule…"
+          :placeholder="t('sup.comptes.searchPlaceholder')"
           class="sc-input"
         />
         <select :value="filtresState.statut" @change="(e) => updateFiltre('statut', e.target.value)" class="sc-select">
-          <option value="">Tous les statuts</option>
-          <option value="a_jour">À jour</option>
-          <option value="partiel">Paiements partiels</option>
-          <option value="en_retard">En retard</option>
-          <option value="solde">Soldés</option>
+          <option value="">{{ t('sup.comptes.allStatuts') }}</option>
+          <option value="a_jour">{{ t('sup.comptes.statutAJour') }}</option>
+          <option value="partiel">{{ t('sup.comptes.statutPartiel') }}</option>
+          <option value="en_retard">{{ t('sup.comptes.statutRetard') }}</option>
+          <option value="solde">{{ t('sup.comptes.statutSolde') }}</option>
         </select>
         <select :value="filtresState.promotionId" @change="(e) => updateFiltre('promotionId', e.target.value)" class="sc-select">
-          <option value="">Toutes les promotions</option>
+          <option value="">{{ t('sup.comptes.allPromotions') }}</option>
           <option v-for="p in promotions" :key="p.id" :value="p.id">
             {{ p.programmeNom }} — {{ p.anneeNom }}
           </option>
         </select>
         <select :value="filtresState.boursier" @change="(e) => updateFiltre('boursier', e.target.value)" class="sc-select">
-          <option value="">Boursiers et non-boursiers</option>
-          <option value="oui">Boursiers seulement</option>
-          <option value="non">Non-boursiers</option>
+          <option value="">{{ t('sup.comptes.allBoursiers') }}</option>
+          <option value="oui">{{ t('sup.comptes.boursiersOnly') }}</option>
+          <option value="non">{{ t('sup.comptes.nonBoursiers') }}</option>
         </select>
       </div>
 
@@ -69,11 +66,11 @@
         <table class="sc-table">
           <thead>
             <tr>
-              <th>Étudiant</th>
-              <th>Promotion</th>
-              <th class="num">Total dû</th>
-              <th class="num">Reste à payer</th>
-              <th>Statut</th>
+              <th>{{ t('sup.comptes.thStudent') }}</th>
+              <th>{{ t('sup.comptes.thPromotion') }}</th>
+              <th class="num">{{ t('sup.comptes.thTotalDu') }}</th>
+              <th class="num">{{ t('sup.comptes.thReste') }}</th>
+              <th>{{ t('sup.comptes.thStatut') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -90,7 +87,7 @@
                     <div class="sc-etu-nom">{{ item.etudiant.nomComplet }}</div>
                     <div class="sc-etu-mat">
                       {{ item.etudiant.matricule }}
-                      <span v-if="item.compte.bourses.length > 0" class="sc-tag-bourse">Boursier</span>
+                      <span v-if="item.compte.bourses.length > 0" class="sc-tag-bourse">{{ t('sup.comptes.boursierTag') }}</span>
                     </div>
                   </div>
                 </div>
@@ -104,7 +101,7 @@
               <td><span class="sc-statut" :class="`st-${item.compte.statut}`">{{ labelStatut(item.compte.statut) }}</span></td>
             </tr>
             <tr v-if="store.filteredComptes.length === 0">
-              <td colspan="5" class="sc-empty">Aucun compte ne correspond à vos filtres.</td>
+              <td colspan="5" class="sc-empty">{{ t('sup.comptes.emptyFilters') }}</td>
             </tr>
           </tbody>
         </table>
@@ -119,23 +116,23 @@
             <div class="sc-mrow-sub">{{ item.etudiant.matricule }} · {{ item.etudiant.programmeNom }}</div>
             <div class="sc-mrow-meta">
               <span class="sc-statut" :class="`st-${item.compte.statut}`">{{ labelStatut(item.compte.statut) }}</span>
-              <span class="sc-mrow-reste">Reste {{ fmtMontant(item.compte.totalRestant) }}</span>
+              <span class="sc-mrow-reste">{{ t('sup.comptes.mReste') }} {{ fmtMontant(item.compte.totalRestant) }}</span>
             </div>
           </div>
           <svg class="sc-mrow-chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </li>
-        <li v-if="store.filteredComptes.length === 0" class="sc-mempty">Aucun compte ne correspond à vos filtres.</li>
+        <li v-if="store.filteredComptes.length === 0" class="sc-mempty">{{ t('sup.comptes.emptyFilters') }}</li>
       </ul>
 
       <!-- Pagination (50 étudiants max par page) -->
       <div v-if="totalPages > 1" class="sc-pagination">
         <span class="sc-page-info">
-          {{ pageStart + 1 }}–{{ pageEnd }} sur {{ store.filteredComptes.length }} comptes
+          {{ t('sup.comptes.pageInfo', { start: pageStart + 1, end: pageEnd, total: store.filteredComptes.length }) }}
         </span>
         <div class="sc-page-ctrl">
-          <button type="button" class="sc-page-btn" :disabled="page === 1" @click="page--">Précédent</button>
-          <span class="sc-page-num">Page {{ page }} / {{ totalPages }}</span>
-          <button type="button" class="sc-page-btn" :disabled="page === totalPages" @click="page++">Suivant</button>
+          <button type="button" class="sc-page-btn" :disabled="page === 1" @click="page--">{{ t('sup.comptes.prev') }}</button>
+          <span class="sc-page-num">{{ t('sup.comptes.pageNum', { page, total: totalPages }) }}</span>
+          <button type="button" class="sc-page-btn" :disabled="page === totalPages" @click="page++">{{ t('sup.comptes.next') }}</button>
         </div>
       </div>
     </section>
@@ -148,7 +145,7 @@
             <h3>{{ detail.etudiant.nomComplet }}</h3>
             <p class="sc-modal-sub">
               {{ detail.etudiant.programmeNom }} — {{ detail.etudiant.anneeNom }} ·
-              Matricule {{ detail.etudiant.matricule }}
+              {{ t('sup.comptes.matricule') }} {{ detail.etudiant.matricule }}
             </p>
           </div>
           <button class="sc-modal-close" type="button" @click="closeDetail">×</button>
@@ -157,28 +154,28 @@
           <!-- Synthèse -->
           <div class="sc-synthese">
             <div class="sc-syn">
-              <div class="sc-syn-lab">Total dû</div>
+              <div class="sc-syn-lab">{{ t('sup.comptes.synTotalDu') }}</div>
               <div class="sc-syn-val">{{ fmtMontant(detail.compte.totalDu) }}</div>
             </div>
             <div class="sc-syn">
-              <div class="sc-syn-lab">Total payé</div>
+              <div class="sc-syn-lab">{{ t('sup.comptes.synTotalPaye') }}</div>
               <div class="sc-syn-val ok">{{ fmtMontant(detail.compte.totalPaye) }}</div>
             </div>
             <div class="sc-syn">
-              <div class="sc-syn-lab">Reste à encaisser</div>
+              <div class="sc-syn-lab">{{ t('sup.comptes.synReste') }}</div>
               <div class="sc-syn-val" :class="detail.compte.totalRestant === 0 ? 'ok' : 'danger'">
                 {{ fmtMontant(detail.compte.totalRestant) }}
               </div>
             </div>
             <div class="sc-syn" v-if="detail.compte.reductionBourse > 0">
-              <div class="sc-syn-lab">Bourse appliquée</div>
+              <div class="sc-syn-lab">{{ t('sup.comptes.synBourse') }}</div>
               <div class="sc-syn-val gold">−{{ fmtMontant(detail.compte.reductionBourse) }}</div>
             </div>
           </div>
 
           <!-- Bourses -->
           <div v-if="detailBourses.length > 0" class="sc-section">
-            <h4 class="sc-section-h">Bourses</h4>
+            <h4 class="sc-section-h">{{ t('sup.comptes.secBourses') }}</h4>
             <div class="sc-bourses">
               <div v-for="b in detailBourses" :key="b.id" class="sc-bourse">
                 <div class="sc-bourse-lib">{{ b.libelle }}</div>
@@ -191,10 +188,10 @@
 
           <!-- Financements -->
           <div v-if="detailFinancements.length > 0" class="sc-section">
-            <h4 class="sc-section-h">Financements tiers</h4>
+            <h4 class="sc-section-h">{{ t('sup.comptes.secFinancements') }}</h4>
             <table class="sc-mini-table">
               <thead>
-                <tr><th>Type</th><th>Tiers</th><th class="num">Montant</th><th>Statut</th></tr>
+                <tr><th>{{ t('sup.comptes.thType') }}</th><th>{{ t('sup.comptes.thTiers') }}</th><th class="num">{{ t('sup.comptes.thMontant') }}</th><th>{{ t('sup.comptes.thStatut') }}</th></tr>
               </thead>
               <tbody>
                 <tr v-for="f in detailFinancements" :key="f.id">
@@ -209,10 +206,10 @@
 
           <!-- Échéancier -->
           <div class="sc-section">
-            <h4 class="sc-section-h">Échéancier ({{ detail.compte.modeleEcheancierLabel }})</h4>
+            <h4 class="sc-section-h">{{ t('sup.comptes.secEcheancier', { modele: detail.compte.modeleEcheancierLabel }) }}</h4>
             <table class="sc-mini-table">
               <thead>
-                <tr><th>Date</th><th class="num">Dû</th><th class="num">Payé</th><th>Statut</th></tr>
+                <tr><th>{{ t('sup.comptes.thDate') }}</th><th class="num">{{ t('sup.comptes.thDu') }}</th><th class="num">{{ t('sup.comptes.thPaye') }}</th><th>{{ t('sup.comptes.thStatut') }}</th></tr>
               </thead>
               <tbody>
                 <tr v-for="ech in detailEcheances" :key="ech.id">
@@ -227,10 +224,10 @@
 
           <!-- Paiements -->
           <div v-if="detailPaiements.length > 0" class="sc-section">
-            <h4 class="sc-section-h">Paiements ({{ detailPaiements.length }})</h4>
+            <h4 class="sc-section-h">{{ t('sup.comptes.secPaiements', { n: detailPaiements.length }) }}</h4>
             <table class="sc-mini-table">
               <thead>
-                <tr><th>Date</th><th class="num">Montant</th><th>Méthode</th><th>Référence</th></tr>
+                <tr><th>{{ t('sup.comptes.thDate') }}</th><th class="num">{{ t('sup.comptes.thMontant') }}</th><th>{{ t('sup.comptes.thMethode') }}</th><th>{{ t('sup.comptes.thReference') }}</th></tr>
               </thead>
               <tbody>
                 <tr v-for="p in detailPaiements" :key="p.id">
@@ -246,7 +243,7 @@
           <!-- Action enregistrer paiement -->
           <div class="sc-action">
             <button class="sc-btn-primary" type="button" @click="openPaiement">
-              + Enregistrer un paiement
+              {{ t('sup.comptes.addPaiement') }}
             </button>
           </div>
         </div>
@@ -257,43 +254,43 @@
     <div v-if="paiementModal" class="sc-modal" @click.self="closePaiement">
       <div class="sc-modal-content sc-modal-small">
         <header class="sc-modal-head">
-          <h3>Nouveau paiement</h3>
+          <h3>{{ t('sup.comptes.newPaiement') }}</h3>
           <button class="sc-modal-close" type="button" @click="closePaiement">×</button>
         </header>
         <div class="sc-modal-body">
           <div class="sc-form">
             <label>
-              <span>Échéance</span>
+              <span>{{ t('sup.comptes.fEcheance') }}</span>
               <select v-model="paiementForm.echeanceId">
-                <option value="">— Hors échéancier —</option>
+                <option value="">{{ t('sup.comptes.horsEcheancier') }}</option>
                 <option v-for="ech in detailEcheances.filter(e => e.statut !== 'payee')" :key="ech.id" :value="ech.id">
-                  {{ fmtDate(ech.dateEcheance) }} — {{ fmtMontant(ech.montantDu - ech.montantPaye) }} restant
+                  {{ t('sup.comptes.echeanceOption', { date: fmtDate(ech.dateEcheance), reste: fmtMontant(ech.montantDu - ech.montantPaye) }) }}
                 </option>
               </select>
             </label>
             <label>
-              <span>Montant (FCFA)</span>
+              <span>{{ t('sup.comptes.fMontant') }}</span>
               <input type="number" min="0" step="10" v-model.number="paiementForm.montant" />
             </label>
             <label>
-              <span>Date</span>
+              <span>{{ t('sup.comptes.fDate') }}</span>
               <input type="date" v-model="paiementForm.date" />
             </label>
             <label>
-              <span>Méthode</span>
+              <span>{{ t('sup.comptes.fMethode') }}</span>
               <select v-model="paiementForm.methode">
                 <option v-for="m in methodes" :key="m.key" :value="m.key">{{ m.label }}</option>
               </select>
             </label>
             <label>
-              <span>Référence (optionnel)</span>
-              <input type="text" v-model="paiementForm.reference" placeholder="N° transaction, chèque…" />
+              <span>{{ t('sup.comptes.fReference') }}</span>
+              <input type="text" v-model="paiementForm.reference" :placeholder="t('sup.comptes.referencePlaceholder')" />
             </label>
           </div>
         </div>
         <footer class="sc-modal-foot">
-          <button class="sc-btn-secondary" type="button" @click="closePaiement">Annuler</button>
-          <button class="sc-btn-primary" type="button" @click="enregistrerPaiement" :disabled="!paiementForm.montant">Enregistrer</button>
+          <button class="sc-btn-secondary" type="button" @click="closePaiement">{{ t('sup.comptes.cancel') }}</button>
+          <button class="sc-btn-primary" type="button" @click="enregistrerPaiement" :disabled="!paiementForm.montant">{{ t('sup.comptes.save') }}</button>
         </footer>
       </div>
     </div>
@@ -302,6 +299,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import {
   useFinanceStore,
   fmtMontant, fmtDate,
@@ -310,6 +308,7 @@ import {
 } from '../../stores/finance'
 import { PROMOTIONS } from '../../stores/superieur'
 
+const { t } = useI18n({ useScope: 'global' })
 const store = useFinanceStore()
 const promotions = PROMOTIONS
 const methodes = METHODES_PAIEMENT
@@ -381,7 +380,7 @@ function initiales(nom) {
   return nom.split(/\s+/).slice(0, 2).map((m) => m[0]?.toUpperCase() || '').join('')
 }
 function labelStatut(s) {
-  return { a_jour: 'À jour', partiel: 'Partiel', en_retard: 'En retard', solde: 'Soldé' }[s] || s
+  return { a_jour: t('sup.comptes.lblAJour'), partiel: t('sup.comptes.lblPartiel'), en_retard: t('sup.comptes.lblRetard'), solde: t('sup.comptes.lblSolde') }[s] || s
 }
 function statutEcheanceLabel(s) { return STATUTS_PAIEMENT[s]?.label || s }
 function statutConventionLabel(s) { return STATUTS_CONVENTION[s]?.label || s }
