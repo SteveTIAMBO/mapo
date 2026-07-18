@@ -87,6 +87,18 @@ export function jourISO(d = new Date()) {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
 }
 
+/**
+ * Identifiant local unique. `Date.now()` SEUL ne suffit pas : plusieurs créations
+ * dans la même milliseconde (l'amorçage démo crée ses 4 notes d'affilée, un
+ * import en crée des dizaines) recevaient toutes le MÊME id — supprimer une
+ * note les supprimait donc TOUTES. Et depuis l'éclatement du stockage, l'id
+ * d'un enfant EST la clé de son document Firestore : deux enfants créés coup
+ * sur coup s'écraseraient l'un l'autre.
+ */
+function localId(prefix) {
+  return prefix + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1e6).toString(36)
+}
+
 export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const authStore = useAuthStore()
   const enfants = ref([])
@@ -238,7 +250,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
-      id: 'ea-' + Date.now().toString(36),
+      id: localId('ea-'),
       firstName: (firstName || '').trim(),
       lastName: (lastName || '').trim(),
       gender: gender === 'F' ? 'F' : 'M',
@@ -325,7 +337,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     // remplace la note existante de la matière, sinon ajoute
     const existing = e.notes.find((x) => x.matiere === matiere)
     if (existing) existing.note = n
-    else e.notes.push({ id: 'n-' + Date.now().toString(36), matiere, note: n })
+    else e.notes.push({ id: localId('n-'), matiere, note: n })
     persist(enfantId)
   }
 
@@ -414,7 +426,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const list = Array.isArray(themes) ? themes.map((t) => String(t).trim()).filter(Boolean) : []
     const existing = e.revisions.find((r) => r.matiere === matiere)
     if (existing) existing.themes = [...new Set([...(existing.themes || []), ...list])]
-    else e.revisions.push({ id: 'rv-' + Date.now().toString(36), matiere, themes: list })
+    else e.revisions.push({ id: localId('rv-'), matiere, themes: list })
     persist(enfantId)
   }
   function removeRevision(enfantId, id) {
