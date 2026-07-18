@@ -22,7 +22,17 @@ export const usePushStore = defineStore('push', () => {
   const busy = ref(false)
 
   function uid() { return auth.currentUser ? auth.currentUser.uid : null }
-  async function ready() { return navigator.serviceWorker.ready }
+
+  // `navigator.serviceWorker.ready` NE se résout PAS tant que la page n'est pas
+  // « contrôlée » par le SW — ce qui arrive à la 1re visite (ou après une mise à
+  // jour) avant le premier rechargement → le bouton tournerait dans le vide.
+  // On prend donc directement la registration active si elle existe ; l'abonnement
+  // push fonctionne dessus même quand la page n'est pas encore contrôlée.
+  async function ready() {
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (reg && reg.active) return reg
+    return navigator.serviceWorker.ready
+  }
 
   /** Reflète l'état réel (permission + abonnement présent) au montage de l'UI. */
   async function refresh() {
