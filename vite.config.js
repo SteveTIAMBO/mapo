@@ -45,6 +45,9 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         cleanupOutdatedCaches: true,
+        // Greffe les handlers push/notificationclick en tête du SW généré,
+        // sans avoir à passer en injectManifest (on garde generateSW).
+        importScripts: ['/push-sw.js'],
         runtimeCaching: [
           // App shell (navigations HTML) : NetworkFirst → on récupère TOUJOURS
           // la dernière version en ligne, donc l'utilisateur voit la nouvelle

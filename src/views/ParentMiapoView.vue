@@ -100,6 +100,9 @@
             </div>
           </div>
 
+          <!-- Rappels de révision (push web gratuit) -->
+          <MiapoNotifications />
+
           <div class="quick">
             <button class="btn btn-primary" @click="section = 'tuteur'"><GraduationCap :size="16" /> <span>{{ t('mia.startRevision') }}</span></button>
             <button class="btn btn-outline" @click="section = 'orientation'"><Compass :size="16" /> <span>{{ t('mia.exploreOrientation') }}</span></button>
@@ -535,6 +538,7 @@ import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
 import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
+import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
