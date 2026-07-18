@@ -42,12 +42,14 @@ if (!isset($VAPID_PRIVATE_PEM) || !isset($VAPID_PUBLIC) || trim($VAPID_PRIVATE_P
   echo json_encode(['ok' => false, 'error' => 'not_configured']); exit;
 }
 
-// ── Auth : jeton Firebase valide, ou mode test si la sentinelle est présente ──
+// ── Auth ──────────────────────────────────────────────────────────────
+// Appelant authentifié (jeton Firebase valide) → peut personnaliser le message.
+// Appelant NON authentifié → autorisé aussi (la démo n'a pas de compte), MAIS le
+// contenu est IMPOSÉ par le serveur (voir plus bas) : anti-hameçonnage. Comme
+// on n'envoie qu'à l'abonnement fourni dans la requête, le pire cas est un
+// auto-rappel bénin à un abonnement que l'appelant possède déjà.
 $uid = verifyFirebaseToken();
-$testMode = file_exists(__DIR__ . '/mapo-push-ALLOW-TEST.flag');
-if ($uid === null && !$testMode) {
-  http_response_code(401); echo json_encode(['ok' => false, 'error' => 'unauthorized']); exit;
-}
+$trusted = ($uid !== null);
 
 // ── Requête ──────────────────────────────────────────────────────────
 $body = json_decode(file_get_contents('php://input'), true);
@@ -58,11 +60,17 @@ $auth = b64url_dec($sub['keys']['auth'] ?? '');
 if ($endpoint === '' || strlen($p256dh) !== 65 || strlen($auth) < 16) {
   http_response_code(400); echo json_encode(['ok' => false, 'error' => 'abonnement_invalide']); exit;
 }
-$payload = json_encode([
-  'title' => mb_substr(trim($body['title'] ?? 'MAPO+'), 0, 100),
-  'body'  => mb_substr(trim($body['body'] ?? ''), 0, 300),
-  'url'   => '/parent/miapo',
-], JSON_UNESCAPED_UNICODE);
+if ($trusted) {
+  $title = mb_substr(trim($body['title'] ?? 'MAPO+'), 0, 100);
+  $text  = mb_substr(trim($body['body'] ?? ''), 0, 300);
+} else {
+  $title = 'MAPO+';
+  $lang = (($body['lang'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  $text = $lang === 'en'
+    ? "Time to revise! Open MAPO+ for today's session."
+    : "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour.";
+}
+$payload = json_encode(['title' => $title, 'body' => $text, 'url' => '/parent/miapo'], JSON_UNESCAPED_UNICODE);
 
 // ── Chiffrement du message pour cet abonnement (RFC 8291, aes128gcm) ──
 try {

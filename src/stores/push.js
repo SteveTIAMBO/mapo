@@ -37,7 +37,6 @@ export const usePushStore = defineStore('push', () => {
   /** Active les rappels : permission → abonnement → rangement Firestore. */
   async function enable() {
     if (!supported.value) return { ok: false, reason: 'unsupported' }
-    if (!uid()) return { ok: false, reason: 'account' }
     busy.value = true
     try {
       const perm = await Notification.requestPermission()
@@ -52,11 +51,16 @@ export const usePushStore = defineStore('push', () => {
           applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
         })
       }
-      await setDoc(doc(db, 'users', uid(), 'push', 'sub'), {
-        subscription: JSON.parse(JSON.stringify(sub)), // endpoint + clés p256dh/auth
-        updatedAt: new Date().toISOString(),
-        ua: navigator.userAgent || '',
-      })
+      // Compte réel : on range l'abonnement pour que le rappel quotidien (CRON)
+      // le retrouve. En démo (pas de compte), on s'abonne quand même — le test
+      // immédiat marche, mais rien n'est persisté côté serveur.
+      if (uid()) {
+        await setDoc(doc(db, 'users', uid(), 'push', 'sub'), {
+          subscription: JSON.parse(JSON.stringify(sub)),
+          updatedAt: new Date().toISOString(),
+          ua: navigator.userAgent || '',
+        })
+      }
       subscribed.value = true
       return { ok: true }
     } catch (e) {
@@ -84,22 +88,21 @@ export const usePushStore = defineStore('push', () => {
    * attendre le CRON quotidien.
    */
   async function sendTest() {
-    if (!uid()) return { ok: false, reason: 'account' }
     busy.value = true
     try {
       const reg = await ready()
       const sub = await reg.pushManager.getSubscription()
       if (!sub) return { ok: false, reason: 'not_subscribed' }
-      const token = await auth.currentUser.getIdToken()
-      const r = await fetch('/mapo-push.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({
-          subscription: sub,
-          title: 'MAPO+',
-          body: "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour.",
-        }),
-      })
+      const headers = { 'Content-Type': 'application/json' }
+      const payload = { subscription: sub, lang: (navigator.language || 'fr').slice(0, 2) }
+      // Compte réel : jeton joint → message personnalisable. Démo : sans jeton,
+      // le serveur impose le texte du rappel standard.
+      if (auth.currentUser) {
+        headers.Authorization = 'Bearer ' + await auth.currentUser.getIdToken()
+        payload.title = 'MAPO+'
+        payload.body = "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour."
+      }
+      const r = await fetch('/mapo-push.php', { method: 'POST', headers, body: JSON.stringify(payload) })
       const data = await r.json().catch(() => ({}))
       return data && data.ok ? { ok: true } : { ok: false, reason: data.error || 'server' }
     } catch (e) {
