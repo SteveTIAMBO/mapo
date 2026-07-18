@@ -4,7 +4,7 @@ Tu as accès à Firebase et à cPanel pour débugger et développer. Si besoin, 
 Ne demande plus à Steve de téléverser les fichiers — c'était la consigne d'avant, elle est levée.
 
 - **Front (src/, server/*.php non secrets)** : `git push origin main` → GitHub Actions build + FTPS. ~5 min.
-- **Fichiers secrets `*-config.php`** : la CI les exclut volontairement (ils ne sont ni dans git ni écrasés par un déploiement). Les envoyer **directement en FTPS** avec le compte unique `superftp`, enraciné sur la racine web : le dossier du projet est `mapo/`.
+- **Fichiers secrets `*-config.php`** : la CI les exclut volontairement (ils ne sont ni dans git ni écrasés par un déploiement). Les envoyer **directement en FTPS** avec le compte de déploiement unique (enraciné sur la racine web) : le dossier du projet est `mapo/`.
   ```
   curl --ssl-reqd -k --user "$U:$P" -Q "-SITE CHMOD 600 <fichier>" \
        -T <local> "ftp://$H/mapo/<fichier>"
