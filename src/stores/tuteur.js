@@ -382,6 +382,54 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
+   * Évalue une réponse RÉDIGÉE (question ouverte). Sépare le FOND (la matière)
+   * de la FORME (orthographe/grammaire) : un devoir d'histoire renseigne aussi
+   * sur le niveau de français, sans jamais pénaliser le fond pour des fautes.
+   * @returns {Promise<{ok, eval?:{note,verdict,explication,langue:{gravite,commentaire,fautes}}, reason?}>}
+   */
+  async function evaluerReponse({ question, reponse, matiere = '', niveau = '' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const o = parseJsonObject(json.text)
+        if (o) {
+          const l = o.langue || {}
+          const g = String(l.gravite || '').toLowerCase()
+          return {
+            ok: true,
+            eval: {
+              note: clampNote10(o.note),
+              verdict: String(o.verdict || '').trim(),
+              explication: String(o.explication || '').trim(),
+              langue: {
+                gravite: ['aucune', 'legere', 'importante'].includes(g) ? g : 'aucune',
+                commentaire: String(l.commentaire || '').trim(),
+                fautes: Array.isArray(l.fautes)
+                  ? l.fautes.map((f) => ({ extrait: String(f?.extrait || '').trim(), correction: String(f?.correction || '').trim() })).filter((f) => f.extrait).slice(0, 3)
+                  : [],
+              },
+            },
+          }
+        }
+      }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Évaluation impossible pour le moment.'
+      return { ok: false, reason }
+    } catch (e) {
+      return { ok: false, reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
+  /**
    * Pistes d'orientation contextualisées (MIAPO / Gemini).
    * @param {{niveau:string, pays?:string, forts?:string[], faibles?:string[]}} opts
    * @returns {Promise<{ok, orientation?:{profil,pistes,conseil}, reason?}>}
@@ -617,7 +665,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse,
   }
 })
 
@@ -720,6 +768,13 @@ function localCoursePlan(formation, programme) {
     actions: ['Relire le cours', 'Faire un quiz MIAPO'],
   }))
   return { modules, plan, conseil: '' }
+}
+
+/** Note sur 10 (question ouverte), au demi-point. */
+function clampNote10(n) {
+  const v = Number(n)
+  if (Number.isNaN(v)) return null
+  return Math.max(0, Math.min(10, Math.round(v * 2) / 2))
 }
 
 function clampNote(n) {

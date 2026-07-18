@@ -227,6 +227,9 @@
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
 
+            <!-- Question rédigée : au-delà du QCM, et MIAPO y lit aussi la langue -->
+            <MiapoQuestionOuverte v-if="isApprenant" :enfant="activeEnfant" @revise="onReviseFrancais" />
+
             <!-- Prépa examen -->
             <div class="card prepa-card">
               <div class="card-head"><Trophy :size="18" /><h3>{{ t('mia.prepareExam') }}</h3></div>
@@ -524,6 +527,7 @@ import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
+import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -709,6 +713,13 @@ function goRevise(matiere, themes) {
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
   section.value = 'tuteur'
+}
+// Lacune de langue repérée sur une réponse rédigée : on l'ajoute aux révisions
+// ciblées ET on lance le français — quelle que soit la matière d'origine.
+function onReviseFrancais(matiere, themes) {
+  const e = activeEnfant.value
+  if (e) store.addRevisionCiblee(e.id, matiere, Array.isArray(themes) ? themes : [])
+  goRevise(matiere, themes)
 }
 // Mode parent : désigner une matière à réviser (l'enfant la verra dans « À réviser »
 // et la travaillera lui-même — le parent ne lance pas le quiz).

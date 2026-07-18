@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -93,6 +93,7 @@ function buildPrompts($task, $d) {
   if ($task === 'course_plan') return buildCoursePlanPrompts($d);
   if ($task === 'commande') return buildCommandePrompts($d);
   if ($task === 'pedagogie') return buildPedagogiePrompts($d);
+  if ($task === 'eval_reponse') return buildEvalReponsePrompts($d);
   return buildAppreciationPrompts($d);
 }
 
@@ -767,4 +768,38 @@ function verifyFirebaseToken() {
   $pub = openssl_pkey_get_public($cert);
   $ok = openssl_verify($parts[0] . '.' . $parts[1], $sig, $pub, OPENSSL_ALGO_SHA256);
   return $ok === 1 ? $p['sub'] : null;
+}
+
+/**
+ * Évaluation d'une réponse RÉDIGÉE (question ouverte).
+ * On sépare volontairement le FOND (la matière) de la FORME (orthographe,
+ * grammaire) : un élève peut avoir juste avec des fautes, et l'inverse. La
+ * partie « langue » sert à repérer des lacunes transversales — un devoir
+ * d'histoire révèle le niveau de français.
+ */
+function buildEvalReponsePrompts($d) {
+  $matiere  = clean($d['matiere'] ?? '', 50);
+  $niveau   = clean($d['niveau'] ?? '', 30);
+  $question = clean($d['question'] ?? '', 1200);
+  $reponse  = clean($d['reponse'] ?? '', 2000);
+
+  $system = "Tu es un professeur particulier francophone, bienveillant et juste, en Afrique francophone. "
+    . "On te donne une QUESTION posee a un eleve et SA REPONSE redigee. "
+    . "Tu evalues DEUX choses SEPAREMENT : (1) le FOND, l'exactitude par rapport a la matiere ; "
+    . "(2) la FORME, orthographe et grammaire. "
+    . "Ne penalise JAMAIS le fond a cause de la forme : un eleve peut avoir juste en faisant des fautes. "
+    . "Pour la forme, releve au maximum 3 fautes reelles avec leur correction ; si la reponse est bien ecrite, dis-le simplement. "
+    . "Sois encourageant, concret et bref. "
+    . "Reponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+    . "{\"note\":0,\"verdict\":\"...\",\"explication\":\"...\",\"langue\":{\"gravite\":\"aucune\",\"fautes\":[{\"extrait\":\"...\",\"correction\":\"...\"}],\"commentaire\":\"...\"}}. "
+    . "\"note\" est la note du FOND sur 10. "
+    . "\"gravite\" vaut EXACTEMENT \"aucune\", \"legere\" ou \"importante\".";
+
+  $u = "Matiere : " . ($matiere !== '' ? $matiere : 'non precisee') . "\n";
+  if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
+  $u .= "\nQUESTION :\n" . ($question !== '' ? $question : '(vide)') . "\n";
+  $u .= "\nREPONSE DE L'ELEVE :\n" . ($reponse !== '' ? $reponse : '(vide)') . "\n";
+  $u .= "\nEvalue au format JSON demande.";
+
+  return [$system, $u, 1200, true, null];
 }
