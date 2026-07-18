@@ -31,6 +31,8 @@
         </button>
       </nav>
       <div class="volet-bottom">
+        <!-- Installer l'appli : condition des notifications gratuites (surtout sur iPhone) -->
+        <MiapoInstall />
         <button type="button" class="nav-item" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false">
           <Settings :size="18" />
           <span>{{ t('mia.secProfile') }}</span>
@@ -528,6 +530,7 @@ import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
+import MiapoInstall from '../components/MiapoInstall.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame } from 'lucide-vue-next'
 
 const router = useRouter()
