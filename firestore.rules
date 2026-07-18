@@ -11,14 +11,29 @@ rules_version = '2';
 //   firebase deploy --only firestore:rules
 //
 // ⚠️ CE FICHIER N'EST PAS IDENTIQUE AUX RÈGLES PUBLIÉES.
-// Relu dans la console le 2026-07-18 (490 lignes en prod, contre ~510 ici) :
+// Relu ligne à ligne dans la console le 2026-07-18 (527 lignes en prod) :
 // la prod et ce fichier accordent les mêmes droits, mais l'ORDRE des blocs et
-// les commentaires divergent (ex. `coParentInvites` est en tête de fichier en
-// prod, en milieu ici). En revanche l'accès d'un compte à ses sous-collections
-// est bien imbriqué dans users/{uid} des DEUX côtés — la version précédente de
-// cet avertissement affirmait le contraire, c'était faux.
-// Le bloc co-parent `match /b2c/{docId}` ci-dessous a été publié en prod
-// le 2026-07-18 par remplacement chirurgical de l'ancien `match /b2c/enfants`.
+// les commentaires divergent — `coParentInvites` est en tête de fichier en
+// prod, en milieu ici.
+// Deux différences de fond à connaître :
+//   1. la prod porte EN PLUS, tout à la fin, un
+//      `match /users/{userId}/{sub}/{docId=**}` en chemin complet
+//      (read+write si request.auth.uid == userId). Il fait doublon avec le
+//      `match /{sub}/{docId=**}` imbriqué ci-dessous — même portée, même droit,
+//      propriétaire uniquement — donc il n'élargit rien ;
+//   2. la prod garde la section MOBI (community_posts, cf_dates, requests…),
+//      d'un AUTRE produit qui partage la base `mapo-edufrem`. Publier ce
+//      fichier tel quel écraserait leurs règles.
+// RÈGLE : toujours COMPARER avec la console et n'y faire que des
+// remplacements chirurgicaux — jamais de copier-coller du fichier entier.
+//
+// Publiés en prod le 2026-07-18 par remplacement chirurgical :
+// `match /b2c/{docId}` (co-parent + compte enfant), `match /enfantsComptes/...`
+// et `match /enfantInvites/{code}`.
+// Vérifiés dans le bac à sable de la console, uid enfant rattaché à `ea-A` :
+//   get b2c/enfant_ea-A → AUTORISÉ · get b2c/enfant_ea-B (le frère) → REFUSÉ.
+// Le refus du `list` n'a PAS pu être simulé (le bac à sable n'offre que
+// get/create/update/delete) — il est déduit de la règle, pas mesuré.
 // La base Firebase `mapo-edufrem` est PARTAGÉE avec un autre produit
 // (collections community_posts, cf_dates, requests… + fonctions mobi*) :
 // publier ce fichier sans comparaison risquerait d'écraser leurs règles.
