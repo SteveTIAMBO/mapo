@@ -9,7 +9,17 @@ rules_version = '2';
 //
 // Déploiement : Firebase Console → Firestore → Règles, ou
 //   firebase deploy --only firestore:rules
-// Ce fichier est la source de vérité — versionné dans le dépôt.
+//
+// ⚠️ CE FICHIER N'EST PAS (ENCORE) IDENTIQUE AUX RÈGLES PUBLIÉES.
+// Vérifié le 2026-07-18 : la prod et ce fichier accordent les mêmes droits,
+// mais l'écriture diffère (ex. l'accès d'un compte à ses sous-collections est
+// ici imbriqué dans users/{uid}, alors qu'en prod il est en chemin complet
+// `match /users/{userId}/{sub}/{docId=**}` placé en fin de fichier), et les
+// commentaires/structure divergent (~16 lignes).
+// La base Firebase `mapo-edufrem` est PARTAGÉE avec un autre produit
+// (collections community_posts, cf_dates, requests… + fonctions mobi*) :
+// publier ce fichier sans comparaison risquerait d'écraser leurs règles.
+// RÈGLE : toujours COMPARER avec la console avant de publier.
 // ═══════════════════════════════════════════════════════════════════
 
 service cloud.firestore {
