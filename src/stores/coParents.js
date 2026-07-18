@@ -19,10 +19,16 @@ import { useAuthStore } from './auth'
  * code d'invitation valide émis par le propriétaire (voir firestore.rules).
  */
 
-function code6() {
+// Code d'invitation : 8 caractères sur un alphabet de 31 → ~8.5e11 combinaisons.
+// Les règles n'autorisent que `get` (pas de listing), donc un code ne peut pas
+// être énuméré : le deviner est hors de portée en pratique.
+function inviteCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' // sans I,O,0,1,L (lisibles)
+  const buf = new Uint32Array(8)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(buf)
+  else for (let i = 0; i < 8; i++) buf[i] = Math.floor(Math.random() * 4294967296)
   let c = ''
-  for (let i = 0; i < 6; i++) c += chars[Math.floor(Math.random() * chars.length)]
+  for (let i = 0; i < 8; i++) c += chars[buf[i] % chars.length]
   return c
 }
 
@@ -44,7 +50,7 @@ export const useCoParentsStore = defineStore('coParents', () => {
     if (!uid) return { ok: false, reason: 'account' }
     busy.value = true
     try {
-      const c = code6()
+      const c = inviteCode()
       await setDoc(doc(db, 'coParentInvites', c), { ownerUid: uid, ownerName: myName(), createdAt: new Date().toISOString() })
       return { ok: true, code: c }
     } catch (e) {

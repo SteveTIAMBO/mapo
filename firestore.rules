@@ -205,7 +205,8 @@ service cloud.firestore {
 
       // Co-parent (MAPO+ B2C) : accès partagé aux données `b2c` (enfants) au
       // propriétaire OU à un co-parent disposant d'un lien valide.
-      match /b2c/{docId=**} {
+      // Moindre privilège : le co-parent n'accède QU'AU document des enfants.
+      match /b2c/enfants {
         allow read, write: if isSignedIn() && (
           request.auth.uid == uid
           || exists(/databases/$(database)/documents/users/$(uid)/coParents/$(request.auth.uid))
@@ -228,7 +229,9 @@ service cloud.firestore {
     // Un code d'invitation rattache un 2e parent à l'espace du 1er.
     // Lecture : tout compte connecté (pour redeem) ; création/suppression : le propriétaire.
     match /coParentInvites/{code} {
-      allow read: if isSignedIn();
+      // `get` et NON `read` : `read` autoriserait le LISTING de tous les codes
+      // (énumération → n'importe qui se rattacherait à n'importe quelle famille).
+      allow get: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
     }

@@ -40,7 +40,7 @@
         <div class="join">
           <div class="join-title">{{ t('mia.coParentJoinTitle') }}</div>
           <div class="join-row">
-            <input v-model="joinCode" class="input" :placeholder="t('mia.coParentJoinPh')" maxlength="6" @input="joinErr = ''" />
+            <input v-model="joinCode" class="input" :placeholder="t('mia.coParentJoinPh')" maxlength="8" @input="joinErr = ''" />
             <button class="btn btn-outline btn-sm" :disabled="cop.busy || !joinCode.trim()" @click="join">
               <component :is="cop.busy ? Loader2 : Check" :size="14" :class="{ spin: cop.busy }" /> <span>{{ t('mia.coParentJoin') }}</span>
             </button>
