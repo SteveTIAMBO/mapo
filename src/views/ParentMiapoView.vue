@@ -49,6 +49,8 @@
         <h2>{{ L.introTitle }}</h2>
         <p>{{ L.introText }}</p>
         <button class="btn btn-primary" @click="openAdd"><Plus :size="16" /> <span>{{ L.introBtn }}</span></button>
+        <!-- L'enfant, lui, ne crée pas de profil : il rejoint le sien avec un code -->
+        <MiapoRejoindreProfil />
       </div>
 
       <template v-else-if="activeEnfant">
@@ -120,6 +122,9 @@
 
           <!-- Co-parent : l'autre parent accède à la même scolarité -->
           <MiapoCoParent v-if="!isApprenant" />
+
+          <!-- Compte propre de l'enfant : il n'accède qu'à SON profil -->
+          <MiapoEnfantCompte v-if="!isApprenant" />
 
           <!-- Notes -->
           <div class="card">
@@ -528,6 +533,8 @@ import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
+import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
+import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'

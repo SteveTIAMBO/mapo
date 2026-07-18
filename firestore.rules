@@ -233,15 +233,43 @@ service cloud.firestore {
       // jamais `link`. Sans cette distinction il pourrait réécrire le pointeur
       // du propriétaire et détourner l'espace qu'il consulte. Une écriture porte
       // toujours sur UN document nommé, donc y filtrer par docId est sûr.
+      //
+      // COMPTE ENFANT : l'enfant n'a droit QU'À son document `enfant_<son id>`.
+      // La portée vient du document de rattachement `enfantsComptes/{son uid}`,
+      // écrit par lui-même contre un code d'invitation valide.
+      // Conséquence assumée : l'enfant ne peut PAS lister `b2c` (sa fratrie ferait
+      // échouer la requête) — son appli lit son document en direct.
       match /b2c/{docId} {
         function isCoParent() {
           return exists(/databases/$(database)/documents/users/$(uid)/coParents/$(request.auth.uid));
         }
-        allow read: if isSignedIn() && (request.auth.uid == uid || isCoParent());
+        function estMonProfil() {
+          return exists(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid))
+            && docId == 'enfant_' + get(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid)).data.enfantId;
+        }
+        allow read: if isSignedIn() && (request.auth.uid == uid || isCoParent() || estMonProfil());
         allow write: if isSignedIn() && (
           request.auth.uid == uid
           || ((docId == 'enfants' || docId.matches('enfant_.*')) && isCoParent())
+          || estMonProfil()
         );
+      }
+
+      // Comptes enfants : le propriétaire gère ; l'enfant crée SON rattachement
+      // uniquement avec un code valide, et l'invitation doit désigner CE parent
+      // ET l'enfant que le rattachement prétend viser (sans quoi il pourrait
+      // pointer le profil d'un frère ou d'une sœur).
+      match /enfantsComptes/{enfantUid} {
+        allow read, delete: if isSignedIn() && (request.auth.uid == uid || request.auth.uid == enfantUid);
+        allow create: if isSignedIn()
+          && request.auth.uid == enfantUid
+          && request.resource.data.enfantUid == enfantUid
+          && exists(/databases/$(database)/documents/enfantInvites/$(request.resource.data.code))
+          && get(/databases/$(database)/documents/enfantInvites/$(request.resource.data.code)).data.ownerUid == uid
+          && get(/databases/$(database)/documents/enfantInvites/$(request.resource.data.code)).data.enfantId == request.resource.data.enfantId;
+        // Jamais de mise à jour : changer `enfantId` après coup rouvrirait la
+        // porte au profil d'un autre enfant. On retire et on refait.
+        allow update: if false;
       }
 
       // Liens co-parents : le propriétaire gère ; le co-parent crée SON lien
@@ -262,6 +290,17 @@ service cloud.firestore {
     match /coParentInvites/{code} {
       // `get` et NON `read` : `read` autoriserait le LISTING de tous les codes
       // (énumération → n'importe qui se rattacherait à n'importe quelle famille).
+      allow get: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;
+    }
+
+    // ── Invitations compte enfant (MAPO+ B2C) ────────────────────────
+    // Un code rattache UN enfant précis (ownerUid + enfantId) à son propre
+    // compte. Même précaution que les codes co-parent : `get` et NON `read`,
+    // sinon n'importe qui listerait tous les codes et se rattacherait à
+    // n'importe quel enfant.
+    match /enfantInvites/{code} {
       allow get: if isSignedIn();
       allow create: if isSignedIn() && request.resource.data.ownerUid == request.auth.uid;
       allow delete: if isSignedIn() && resource.data.ownerUid == request.auth.uid;

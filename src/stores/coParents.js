@@ -22,7 +22,7 @@ import { useAuthStore } from './auth'
 // Code d'invitation : 8 caractères sur un alphabet de 31 → ~8.5e11 combinaisons.
 // Les règles n'autorisent que `get` (pas de listing), donc un code ne peut pas
 // être énuméré : le deviner est hors de portée en pratique.
-function inviteCode() {
+export function inviteCode() {
   const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789' // sans I,O,0,1,L (lisibles)
   const buf = new Uint32Array(8)
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(buf)

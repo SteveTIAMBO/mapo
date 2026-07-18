@@ -111,6 +111,12 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const linkedOwnerUid = ref(null)
   function dataUid() { return linkedOwnerUid.value || cloudUid() }
 
+  // Compte ENFANT : le même pointeur `link` porte en plus un `enfantId`. Il change
+  // tout — je ne suis pas un second parent, je suis UN élève, et je n'ai droit
+  // qu'à mon propre document. Cf. stores/enfantsComptes.js.
+  const linkedEnfantId = ref(null)
+  const isCompteEnfant = computed(() => !!linkedEnfantId.value)
+
   // ── Mode d'usage de MAPO+ (multi-personas, 1er pas) ──────────────────
   // 'parent'    : un parent suit son/ses enfant(s) (cadre par défaut).
   // 'apprenant' : l'apprenant (élève/étudiant) pilote SON propre apprentissage.
@@ -203,6 +209,10 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     // Repli : l'ancien document groupé continue d'être écrit. Un appareil qui
     // sert encore l'ancien bundle (service worker) ne lit QUE celui-là — cesser
     // de l'alimenter lui ferait perdre les mises à jour.
+    // SAUF depuis un compte enfant : ce document contient TOUTE la fratrie, il
+    // n'a ni le droit ni la moindre raison de le réécrire (il l'écraserait avec
+    // son seul profil).
+    if (isCompteEnfant.value) return
     setDoc(legacyDocRef(uid), { enfants: enfants.value, updatedAt: at })
       .catch(() => { /* idem */ })
   }
@@ -217,12 +227,30 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (authStore.isDemo) seedDemoIfEmpty()
     const myUid = cloudUid()
     if (!myUid) return
-    // Co-parent : le pointeur `b2c/link` désigne le parent propriétaire des enfants.
+    // Le pointeur `b2c/link` désigne le parent propriétaire. S'il porte un
+    // `enfantId`, je suis un compte ENFANT et non un co-parent.
     try {
       const ls = await getDoc(doc(db, 'users', myUid, 'b2c', 'link'))
-      linkedOwnerUid.value = ls.exists() ? (ls.data()?.ownerUid || null) : null
-    } catch { linkedOwnerUid.value = null }
+      const lien = ls.exists() ? ls.data() : null
+      linkedOwnerUid.value = lien?.ownerUid || null
+      linkedEnfantId.value = lien?.enfantId || null
+    } catch { linkedOwnerUid.value = null; linkedEnfantId.value = null }
     const uid = dataUid()
+
+    // Compte enfant : lecture DIRECTE de mon seul document. Surtout pas un
+    // `list` sur `b2c` — la règle refuserait la requête entière (elle exige que
+    // TOUS les documents renvoyés soient autorisés, et ceux de ma fratrie ne le
+    // sont pas). C'est voulu : l'isolement vient de la règle, pas de l'écran.
+    if (linkedEnfantId.value) {
+      setMode('apprenant')
+      try {
+        const snap = await getDoc(enfantDocRef(uid, linkedEnfantId.value))
+        const profil = snap.exists() ? snap.data()?.enfant : null
+        if (profil) { enfants.value = [profil]; cacheLocal() }
+      } catch { /* offline / non autorisé : on garde l'état local */ }
+      return
+    }
+
     try {
       // La sous-collection `b2c` héberge aussi `link` (pointeur co-parent) et
       // `enfants` (ancien document groupé) : on ne retient que les `enfant_*`.
@@ -501,7 +529,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   }
 
   return {
-    enfants, mode, setMode, load, hydrate,
+    enfants, mode, setMode, load, hydrate, isCompteEnfant,
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses, objectifDe,
