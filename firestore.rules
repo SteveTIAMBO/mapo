@@ -213,13 +213,31 @@ service cloud.firestore {
         allow read, write: if isSignedIn() && request.auth.uid == uid;
       }
 
-      // Co-parent (MAPO+ B2C) : accès partagé aux données `b2c` (enfants) au
-      // propriétaire OU à un co-parent disposant d'un lien valide.
-      // Moindre privilège : le co-parent n'accède QU'AU document des enfants.
-      match /b2c/enfants {
-        allow read, write: if isSignedIn() && (
+      // Co-parent (MAPO+ B2C) : accès partagé aux données `b2c` au propriétaire
+      // OU à un co-parent disposant d'un lien valide.
+      //
+      // La sous-collection `b2c` contient : `enfant_<id>` (un document PAR
+      // enfant — c'est ce qui permettra à l'enfant de lire SON profil sans voir
+      // sa fratrie), `enfants` (ancien document groupé, conservé en repli) et
+      // `link` (pointeur du co-parent vers son parent propriétaire).
+      //
+      // LECTURE au niveau de la collection : indispensable, l'appli LISTE `b2c`
+      // pour retrouver les enfants. Une règle par nom de document ne suffirait
+      // pas — sur un `list`, Firestore exige que TOUS les documents renvoyés
+      // soient autorisés, sinon la requête entière échoue.
+      //
+      // ÉCRITURE volontairement plus étroite : un co-parent modifie les enfants,
+      // jamais `link`. Sans cette distinction il pourrait réécrire le pointeur
+      // du propriétaire et détourner l'espace qu'il consulte. Une écriture porte
+      // toujours sur UN document nommé, donc y filtrer par docId est sûr.
+      match /b2c/{docId} {
+        function isCoParent() {
+          return exists(/databases/$(database)/documents/users/$(uid)/coParents/$(request.auth.uid));
+        }
+        allow read: if isSignedIn() && (request.auth.uid == uid || isCoParent());
+        allow write: if isSignedIn() && (
           request.auth.uid == uid
-          || exists(/databases/$(database)/documents/users/$(uid)/coParents/$(request.auth.uid))
+          || ((docId == 'enfants' || docId.matches('enfant_.*')) && isCoParent())
         );
       }
 

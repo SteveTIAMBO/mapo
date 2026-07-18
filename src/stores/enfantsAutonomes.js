@@ -2,12 +2,21 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
 import { auth as fbAuth, db } from '../firebase'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
 function cloudUid() { return fbAuth.currentUser ? fbAuth.currentUser.uid : null }
-function enfantsDocRef(uid) { return doc(db, 'users', uid, 'b2c', 'enfants') }
+
+// ── Stockage : UN DOCUMENT PAR ENFANT ────────────────────────────────
+// Firestore donne accès à un document ENTIER ou à rien : tant que la fratrie
+// vivait dans un seul document `b2c/enfants`, un enfant ne pouvait pas lire son
+// propre profil sans voir ceux de ses frères et sœurs. D'où l'éclatement en
+// `b2c/enfant_<id>` — préalable au compte propre de l'enfant.
+// L'ancien document groupé reste écrit en repli (voir persist()).
+function b2cCol(uid) { return collection(db, 'users', uid, 'b2c') }
+function enfantDocRef(uid, id) { return doc(db, 'users', uid, 'b2c', `enfant_${id}`) }
+function legacyDocRef(uid) { return doc(db, 'users', uid, 'b2c', 'enfants') }
 
 /**
  * Store « enfantsAutonomes » — profils enfants gérés par le PARENT, hors école
@@ -152,21 +161,38 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     }
   }
 
-  function persist() {
-    if (!memoryFallback) {
-      try {
-        localStorage.setItem(KEY(owner.value), JSON.stringify(enfants.value))
-      } catch {
-        memoryFallback = true // quota dépassé → on bascule en mémoire, sans casser
-      }
+  /** Cache local (affichage instantané + hors-ligne). Silencieux si quota plein. */
+  function cacheLocal() {
+    if (memoryFallback) return
+    try {
+      localStorage.setItem(KEY(owner.value), JSON.stringify(enfants.value))
+    } catch {
+      memoryFallback = true // quota dépassé → on bascule en mémoire, sans casser
     }
+  }
+
+  /**
+   * Écrit l'état courant. `enfantId` (optionnel) = ne pousser QUE cet enfant vers
+   * Firestore, ce qui est le cas de presque toutes les mutations (une note, une
+   * séance… concernent un seul profil).
+   */
+  function persist(enfantId) {
+    cacheLocal()
     // Miroir Firestore pour les vrais comptes (durable, cross-appareils).
     // Co-parent : on écrit dans l'espace du parent propriétaire (droits partagés).
     const uid = dataUid()
-    if (uid) {
-      setDoc(enfantsDocRef(uid), { enfants: enfants.value, updatedAt: new Date().toISOString() })
+    if (!uid) return
+    const at = new Date().toISOString()
+    const cibles = enfantId ? enfants.value.filter((e) => e.id === enfantId) : enfants.value
+    for (const e of cibles) {
+      setDoc(enfantDocRef(uid, e.id), { enfant: e, updatedAt: at })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
     }
+    // Repli : l'ancien document groupé continue d'être écrit. Un appareil qui
+    // sert encore l'ancien bundle (service worker) ne lit QUE celui-là — cesser
+    // de l'alimenter lui ferait perdre les mises à jour.
+    setDoc(legacyDocRef(uid), { enfants: enfants.value, updatedAt: at })
+      .catch(() => { /* idem */ })
   }
 
   /**
@@ -186,10 +212,26 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { linkedOwnerUid.value = null }
     const uid = dataUid()
     try {
-      const snap = await getDoc(enfantsDocRef(uid))
-      if (snap.exists() && Array.isArray(snap.data()?.enfants)) {
-        enfants.value = snap.data().enfants
-        try { localStorage.setItem(KEY(owner.value), JSON.stringify(enfants.value)) } catch {}
+      // La sous-collection `b2c` héberge aussi `link` (pointeur co-parent) et
+      // `enfants` (ancien document groupé) : on ne retient que les `enfant_*`.
+      const snap = await getDocs(b2cCol(uid))
+      const profils = snap.docs
+        .filter((d) => d.id.startsWith('enfant_'))
+        .map((d) => d.data()?.enfant)
+        .filter(Boolean)
+      if (profils.length) {
+        enfants.value = profils
+        cacheLocal()
+        return
+      }
+      // Migration (idempotente) : aucun document éclaté → on reprend l'ancien
+      // document groupé comme source, puis persist() écrit un document par
+      // enfant. Tant qu'un `enfant_*` existe, cette branche n'est plus prise.
+      const legacy = snap.docs.find((d) => d.id === 'enfants')
+      if (legacy && Array.isArray(legacy.data()?.enfants)) {
+        enfants.value = legacy.data().enfants
+        cacheLocal()
+        if (enfants.value.length) persist()
       }
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
@@ -223,12 +265,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       createdAt: new Date().toISOString(),
     }
     enfants.value.push(enfant)
-    persist()
+    persist(enfant.id)
     return enfant.id
   }
 
   function removeEnfant(id) {
     enfants.value = enfants.value.filter((e) => e.id !== id)
+    const uid = dataUid()
+    if (uid) deleteDoc(enfantDocRef(uid, id)).catch(() => { /* offline */ })
     persist()
   }
 
@@ -243,7 +287,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       const v = Number(patch.objectifNote)
       e.objectifNote = Number.isFinite(v) ? Math.max(0, Math.min(20, v)) : 10
     }
-    persist()
+    persist(id)
   }
 
   function getEnfant(id) {
@@ -270,7 +314,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     }
     if (Array.isArray(plan)) e.formationPlan = plan
     e.formationPlanAt = new Date().toISOString()
-    persist()
+    persist(enfantId)
   }
 
   function addNote(enfantId, matiere, note) {
@@ -282,14 +326,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const existing = e.notes.find((x) => x.matiere === matiere)
     if (existing) existing.note = n
     else e.notes.push({ id: 'n-' + Date.now().toString(36), matiere, note: n })
-    persist()
+    persist(enfantId)
   }
 
   function removeNote(enfantId, noteId) {
     const e = getEnfant(enfantId)
     if (!e) return
     e.notes = e.notes.filter((x) => x.id !== noteId)
-    persist()
+    persist(enfantId)
   }
 
   // ── Emploi du temps (créneaux) ──
@@ -298,19 +342,19 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (!e) return
     if (!Array.isArray(e.edt)) e.edt = []
     e.edt.push({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: creneau.jour || '', heure: creneau.heure || '', matiere: (creneau.matiere || '').trim() })
-    persist()
+    persist(enfantId)
   }
   function removeCreneau(enfantId, crId) {
     const e = getEnfant(enfantId)
     if (!e || !Array.isArray(e.edt)) return
     e.edt = e.edt.filter((x) => x.id !== crId)
-    persist()
+    persist(enfantId)
   }
   function setEdt(enfantId, creneaux) {
     const e = getEnfant(enfantId)
     if (!e) return
     e.edt = (creneaux || []).map((c) => ({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: c.jour || '', heure: c.heure || '', matiere: (c.matiere || '').trim() })).filter((c) => c.matiere)
-    persist()
+    persist(enfantId)
   }
 
   /** Matières fragiles d'un enfant (note < objectif) triées de la plus faible. */
@@ -329,7 +373,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (!e.seances) e.seances = {}
     if (status === 'todo') delete e.seances[jour]
     else e.seances[jour] = { matiere: matiere || '', status, at: new Date().toISOString() }
-    persist()
+    persist(enfantId)
   }
   function getSeance(enfantId, jour) {
     const e = getEnfant(enfantId)
@@ -371,13 +415,13 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const existing = e.revisions.find((r) => r.matiere === matiere)
     if (existing) existing.themes = [...new Set([...(existing.themes || []), ...list])]
     else e.revisions.push({ id: 'rv-' + Date.now().toString(36), matiere, themes: list })
-    persist()
+    persist(enfantId)
   }
   function removeRevision(enfantId, id) {
     const e = getEnfant(enfantId)
     if (!e || !Array.isArray(e.revisions)) return
     e.revisions = e.revisions.filter((r) => r.id !== id)
-    persist()
+    persist(enfantId)
   }
 
   // ── Auto-évaluation 6C (orientation) ────────────────────────────────
@@ -395,7 +439,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     e.comp6cAt = new Date().toISOString()
     if (answers && typeof answers === 'object') e.comp6cAnswers = answers // réponses brutes (refaire/traçabilité)
     e.comp6cBilan = null // le profil change → l'ancien bilan n'est plus valable
-    persist()
+    persist(enfantId)
   }
   function getComp6c(enfantId) {
     const e = getEnfant(enfantId)
@@ -406,7 +450,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const e = getEnfant(enfantId)
     if (!e) return
     e.comp6cBilan = bilan || null
-    persist()
+    persist(enfantId)
   }
 
   // Amorçage démo : un écolier cohérent (notes + profil 6C) pour montrer MAPO+
