@@ -69,6 +69,15 @@ export function matieresPourNiveau(niveau) {
   return NIVEAUX_PRIMAIRE.includes(niveau) ? MATIERES_PRIMAIRE : MATIERES
 }
 
+/**
+ * Clé de jour LOCALE (AAAA-MM-JJ). On n'utilise pas toISOString() : il convertit
+ * en UTC et ferait basculer la séance au mauvais jour selon le fuseau.
+ */
+export function jourISO(d = new Date()) {
+  const p = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
 export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const authStore = useAuthStore()
   const enfants = ref([])
@@ -204,6 +213,10 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // est proposée à la révision. 10 par défaut, modifiable dans le profil —
       // viser 10 en CM2 et 14 en Terminale n'a pas le même sens.
       objectifNote: 10,
+      // Séances de révision : { 'AAAA-MM-JJ': { matiere, status, at } }
+      // status ∈ 'done' | 'skipped'. Une journée sans entrée = simplement pas
+      // encore faite (ou jour de repos) — ce qui ne casse pas la série.
+      seances: {},
       notes: [], // [{ id, matiere, note }]
       revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
       edt: [], // [{ id, jour, heure, matiere }] — emploi du temps (saisie / scan / import)
@@ -308,6 +321,40 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return [...e.notes].filter((n) => n.note < seuil).sort((a, b) => a.note - b.note)
   }
 
+  // ── Séances de révision (agenda actionnable) ──────────────────────────
+  /** Marque une séance : 'done' (faite) ou 'skipped' (reportée). */
+  function setSeance(enfantId, jour, matiere, status) {
+    const e = getEnfant(enfantId)
+    if (!e || !jour) return
+    if (!e.seances) e.seances = {}
+    if (status === 'todo') delete e.seances[jour]
+    else e.seances[jour] = { matiere: matiere || '', status, at: new Date().toISOString() }
+    persist()
+  }
+  function getSeance(enfantId, jour) {
+    const e = getEnfant(enfantId)
+    return (e && e.seances && e.seances[jour]) || null
+  }
+  /**
+   * Série : jours consécutifs (en remontant depuis aujourd'hui) avec une séance
+   * faite. Un jour SANS séance programmée (repos, week-end) ne casse pas la
+   * série ; une séance programmée et non faite, oui — sauf aujourd'hui, encore
+   * en cours.
+   */
+  function serieRevision(enfantId) {
+    const e = getEnfant(enfantId)
+    if (!e || !e.seances) return 0
+    let n = 0
+    const d = new Date(); d.setHours(0, 0, 0, 0)
+    for (let i = 0; i < 90; i++) {
+      const s = e.seances[jourISO(d)]
+      if (s && s.status === 'done') n++
+      else if (s && i > 0) break
+      d.setDate(d.getDate() - 1)
+    }
+    return n
+  }
+
   /** Objectif de note de l'enfant (sur 20). 10 par défaut. */
   function objectifDe(e) {
     const v = Number(e && e.objectifNote)
@@ -402,6 +449,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses, objectifDe,
+    setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,
     setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,

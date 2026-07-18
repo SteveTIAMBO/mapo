@@ -436,13 +436,20 @@
       <div class="aside-card">
         <div class="aside-head"><CalendarDays :size="17" /><h3>{{ t('mia.weekAgenda') }}</h3></div>
         <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
+        <div v-if="serie > 0" class="agenda-serie"><Flame :size="13" /> {{ t('mia.seanceStreak', { n: serie }) }}</div>
         <div class="agenda-days">
-          <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today }">
+          <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today, done: d.status === 'done' }">
             <div class="dy-date"><span class="dy-dow">{{ d.label }}</span><span class="dy-num">{{ d.date }}</span></div>
             <div class="dy-body">
               <button v-if="d.matiere && isApprenant" class="dy-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
               <span v-else-if="d.matiere" class="dy-exo dy-static">{{ d.matiere }}</span>
               <span v-else class="dy-rest">{{ t('mia.restDay') }}</span>
+              <!-- L'apprenant coche sa séance ; le parent voit seulement l'état. -->
+              <button v-if="d.matiere && isApprenant" class="dy-check" :class="{ on: d.status === 'done' }"
+                      :title="d.status === 'done' ? t('mia.seanceUndo') : t('mia.seanceDone')" @click="toggleSeance(d)">
+                <Check :size="12" />
+              </button>
+              <span v-else-if="d.matiere && d.status === 'done'" class="dy-check on is-static"><Check :size="12" /></span>
             </div>
           </div>
         </div>
@@ -504,7 +511,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -517,7 +524,7 @@ import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t } = useI18n({ useScope: 'global' })
@@ -552,8 +559,11 @@ const SECTIONS = computed(() => {
   // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
   // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
   // doit de toute façon rien écrire dans la progression de son enfant.
+  // Pas d'Orientation côté parent : le profil 6C de l'enfant est déjà sur
+  // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
+  // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, orient, abo]
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, abo]
   }
   return [
     home,
@@ -769,13 +779,37 @@ const planHebdo = computed(() => {
   const mats = (aReviser.value.length ? aReviser.value.map((w) => w.matiere) : matieresList.value).filter(Boolean)
   const monday = _startOfWeek(new Date())
   const today = new Date()
+  const e = activeEnfant.value
   const out = []
   for (let i = 0; i < 7; i++) {
     const dt = new Date(monday); dt.setDate(monday.getDate() + i)
     const weekend = i >= 5
-    out.push({ key: i, label: jours[i], date: dt.getDate(), today: _sameDay(dt, today), matiere: (!weekend && mats.length) ? mats[i % mats.length] : null })
+    const jour = jourISO(dt)
+    const s = e ? store.getSeance(e.id, jour) : null
+    out.push({
+      key: i, label: jours[i], date: dt.getDate(), today: _sameDay(dt, today), jour,
+      matiere: (!weekend && mats.length) ? mats[i % mats.length] : null,
+      status: s ? s.status : 'todo',
+    })
   }
   return out
+})
+/** Série : jours consécutifs avec une séance faite (le repos ne la casse pas). */
+const serie = computed(() => (activeEnfant.value ? store.serieRevision(activeEnfant.value.id) : 0))
+/** Seul l'apprenant coche ses séances — le parent les consulte. */
+function toggleSeance(d) {
+  const e = activeEnfant.value
+  if (!e || !d.matiere || !isApprenant.value) return
+  store.setSeance(e.id, d.jour, d.matiere, d.status === 'done' ? 'todo' : 'done')
+}
+// Quiz terminé → la séance du jour se coche toute seule (le compteur de
+// révisions s'incrémente à chaque résultat enregistré).
+watch(() => tuteur.revisionsVersion, () => {
+  const e = activeEnfant.value
+  if (!e || !isApprenant.value) return
+  const k = jourISO(new Date())
+  const d = planHebdo.value.find((x) => x.jour === k)
+  if (d && d.matiere && d.status !== 'done') store.setSeance(e.id, k, d.matiere, 'done')
 })
 const hasEval = computed(() => !!activeEnfant.value?.comp6c && Object.keys(activeEnfant.value.comp6c).length >= 6)
 const moyenne = computed(() => {
@@ -1083,6 +1117,13 @@ onUnmounted(() => {
 /* Vue parent : la matière du jour s'affiche, mais ne se lance pas. */
 .dy-static { cursor: default; background: rgba(0,0,0,.05); color: var(--tx2); }
 .dy-static:hover { background: rgba(0,0,0,.05); }
+/* Séance faite : coche + jour estompé, la série se lit d'un coup d'œil. */
+.dy-check { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 6px; border-radius: 50%; border: 1px solid var(--bd, #e5e7eb); background: #fff; color: var(--tx3); cursor: pointer; flex-shrink: 0; }
+.dy-check:hover { border-color: #1B8A5A; color: #1B8A5A; }
+.dy-check.on { background: #1B8A5A; border-color: #1B8A5A; color: #fff; }
+.dy-check.is-static { cursor: default; }
+.agenda-day.done .dy-exo { opacity: .55; }
+.agenda-serie { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 10px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; color: #B87A00; background: rgba(232,149,10,.12); }
 .dy-rest { font-size: 12px; color: var(--tx3); font-style: italic; }
 .aside-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 13px; }
 .aside-connect { width: 100%; }
