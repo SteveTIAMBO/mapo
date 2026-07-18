@@ -10,12 +10,15 @@ rules_version = '2';
 // Déploiement : Firebase Console → Firestore → Règles, ou
 //   firebase deploy --only firestore:rules
 //
-// ⚠️ CE FICHIER N'EST PAS (ENCORE) IDENTIQUE AUX RÈGLES PUBLIÉES.
-// Vérifié le 2026-07-18 : la prod et ce fichier accordent les mêmes droits,
-// mais l'écriture diffère (ex. l'accès d'un compte à ses sous-collections est
-// ici imbriqué dans users/{uid}, alors qu'en prod il est en chemin complet
-// `match /users/{userId}/{sub}/{docId=**}` placé en fin de fichier), et les
-// commentaires/structure divergent (~16 lignes).
+// ⚠️ CE FICHIER N'EST PAS IDENTIQUE AUX RÈGLES PUBLIÉES.
+// Relu dans la console le 2026-07-18 (490 lignes en prod, contre ~510 ici) :
+// la prod et ce fichier accordent les mêmes droits, mais l'ORDRE des blocs et
+// les commentaires divergent (ex. `coParentInvites` est en tête de fichier en
+// prod, en milieu ici). En revanche l'accès d'un compte à ses sous-collections
+// est bien imbriqué dans users/{uid} des DEUX côtés — la version précédente de
+// cet avertissement affirmait le contraire, c'était faux.
+// Le bloc co-parent `match /b2c/{docId}` ci-dessous a été publié en prod
+// le 2026-07-18 par remplacement chirurgical de l'ancien `match /b2c/enfants`.
 // La base Firebase `mapo-edufrem` est PARTAGÉE avec un autre produit
 // (collections community_posts, cf_dates, requests… + fonctions mobi*) :
 // publier ce fichier sans comparaison risquerait d'écraser leurs règles.
