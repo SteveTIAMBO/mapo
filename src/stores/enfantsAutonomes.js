@@ -93,6 +93,44 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   }
   function loadMode() {
     try { mode.value = localStorage.getItem(MODE_KEY(owner.value)) === 'apprenant' ? 'apprenant' : 'parent' } catch { mode.value = 'parent' }
+    loadSession()
+  }
+
+  // ── « Mode Netflix » : le parent confie le téléphone à un enfant ────────
+  // On reste sur le MÊME compte (pas de reconnexion) : l'appli bascule en vue
+  // apprenant sur l'enfant choisi. Le retour au profil parent demande un code.
+  // NB : ce code est un garde-fou d'usage (empêcher l'enfant de revenir dans
+  // l'espace parent), PAS un secret cryptographique.
+  const PIN_KEY = (o) => `mapo_miapo_pin_${o || 'demo'}`
+  const SESS_KEY = (o) => `mapo_miapo_childsess_${o || 'demo'}`
+  const parentPin = ref('')
+  const childSessionId = ref('')
+
+  function loadSession() {
+    try {
+      parentPin.value = localStorage.getItem(PIN_KEY(owner.value)) || ''
+      childSessionId.value = localStorage.getItem(SESS_KEY(owner.value)) || ''
+    } catch { parentPin.value = ''; childSessionId.value = '' }
+  }
+  function setParentPin(pin) {
+    parentPin.value = String(pin || '').trim()
+    try { localStorage.setItem(PIN_KEY(owner.value), parentPin.value) } catch { /* quota */ }
+  }
+  /** Confie le téléphone à un enfant : vue apprenant verrouillée sur lui. */
+  function startChildSession(enfantId) {
+    if (!enfantId) return false
+    childSessionId.value = enfantId
+    try { localStorage.setItem(SESS_KEY(owner.value), enfantId) } catch { /* quota */ }
+    setMode('apprenant')
+    return true
+  }
+  /** Retour au profil parent — refusé si le code ne correspond pas. */
+  function endChildSession(pin) {
+    if (parentPin.value && String(pin || '').trim() !== parentPin.value) return false
+    childSessionId.value = ''
+    try { localStorage.removeItem(SESS_KEY(owner.value)) } catch { /* silent */ }
+    setMode('parent')
+    return true
   }
 
   function load() {
@@ -361,6 +399,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   return {
     enfants, mode, setMode, load, hydrate,
+    parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
     addNote, removeNote, faiblesses, objectifDe,
     addCreneau, removeCreneau, setEdt,

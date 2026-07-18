@@ -55,6 +55,9 @@
           <button v-if="!isApprenant" class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
         </header>
 
+        <!-- Bascule « mode Netflix » : confier le téléphone à l'enfant / revenir au parent -->
+        <MiapoProfilSwitch :enfant="activeEnfant" />
+
         <!-- ========== ACCUEIL ========== -->
         <section v-if="section === 'accueil'" class="sec">
           <div class="card child-card">
@@ -149,7 +152,7 @@
               <div class="vr-actions">
                 <button v-if="visionResult.matiere && visionResult.note !== null" class="btn btn-outline btn-sm" @click="addVisionNote"><Plus :size="14" /> <span>{{ t('mia.addNoteBtn') }}</span></button>
                 <button v-if="visionResult.matiere && visionResult.points_faibles.length" class="btn btn-outline btn-sm" @click="addToRevisions"><Target :size="14" /> <span>{{ t('mia.addToReviews') }}</span></button>
-                <button v-if="visionResult.matiere" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere, visionResult.points_faibles)"><Sparkles :size="14" /> <span>{{ t('mia.reviseSubject', { subject: visionResult.matiere }) }}</span></button>
+                <button v-if="visionResult.matiere && isApprenant" class="btn btn-primary btn-sm" @click="goRevise(visionResult.matiere, visionResult.points_faibles)"><Sparkles :size="14" /> <span>{{ t('mia.reviseSubject', { subject: visionResult.matiere }) }}</span></button>
                 <button class="btn btn-ghost btn-sm" @click="resetVision">{{ t('mia.otherCopy') }}</button>
               </div>
             </div>
@@ -437,7 +440,8 @@
           <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today }">
             <div class="dy-date"><span class="dy-dow">{{ d.label }}</span><span class="dy-num">{{ d.date }}</span></div>
             <div class="dy-body">
-              <button v-if="d.matiere" class="dy-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
+              <button v-if="d.matiere && isApprenant" class="dy-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
+              <span v-else-if="d.matiere" class="dy-exo dy-static">{{ d.matiere }}</span>
               <span v-else class="dy-rest">{{ t('mia.restDay') }}</span>
             </div>
           </div>
@@ -512,6 +516,7 @@ import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
+import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -672,6 +677,10 @@ const quizMatiere = ref('')
 const reviseMatiere = ref('')
 const quizThemes = ref('')
 function goRevise(matiere, themes) {
+  // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
+  // matières, mais n'écrit jamais dans la progression de son enfant (sinon il
+  // fausserait la détection de niveau). Vaut aussi pour tout futur appelant.
+  if (!isApprenant.value) return
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
   section.value = 'tuteur'
@@ -953,7 +962,10 @@ async function getPrepa() {
 
 onMounted(async () => {
   await store.hydrate()
-  activeId.value = enfants.value[0]?.id || ''
+  // Session enfant en cours (téléphone confié) : on rouvre sur CET enfant,
+  // même après un rechargement — sinon l'enfant retomberait sur le 1er profil.
+  const sess = store.childSessionId
+  activeId.value = (sess && enfants.value.some((e) => e.id === sess) ? sess : enfants.value[0]?.id) || ''
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
@@ -1053,6 +1065,9 @@ onUnmounted(() => {
 .dy-body { flex: 1; min-width: 0; }
 .dy-exo { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; background: rgba(var(--pr-rgb,21,88,176),.09); color: var(--pr); border: none; border-radius: 8px; padding: 6px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; text-align: left; }
 .dy-exo:hover { background: rgba(var(--pr-rgb,21,88,176),.16); }
+/* Vue parent : la matière du jour s'affiche, mais ne se lance pas. */
+.dy-static { cursor: default; background: rgba(0,0,0,.05); color: var(--tx2); }
+.dy-static:hover { background: rgba(0,0,0,.05); }
 .dy-rest { font-size: 12px; color: var(--tx3); font-style: italic; }
 .aside-input { width: 100%; box-sizing: border-box; margin-bottom: 8px; font-size: 13px; }
 .aside-connect { width: 100%; }
