@@ -4699,6 +4699,8 @@
     "fichesPickCourse": "Start from a course published by the teacher…",
     "fichesOr": "— or —",
     "switchHandover": "Hand the phone to {name}",
+    "switchLead": "Hand the phone to:",
+    "switchEnterPinHint": "Enter your code to get back to your parent space.",
     "switchChildMode": "Learner mode",
     "switchBackParent": "Back to parent",
     "switchSetPinTitle": "Choose a parent code",

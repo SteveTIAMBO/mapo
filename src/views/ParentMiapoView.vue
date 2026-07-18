@@ -56,7 +56,7 @@
         </header>
 
         <!-- Bascule « mode Netflix » : confier le téléphone à l'enfant / revenir au parent -->
-        <MiapoProfilSwitch :enfant="activeEnfant" />
+        <MiapoProfilSwitch :enfant="activeEnfant" @switch="activeId = $event" />
 
         <!-- ========== ACCUEIL ========== -->
         <section v-if="section === 'accueil'" class="sec">
@@ -543,18 +543,29 @@ function estClasseExamen(niveau) {
   const n = niveau || ''
   return n === 'CM2' || n === '3ème' || /^(1ère|Tle)/.test(n)
 }
-const SECTIONS = computed(() => [
-  { key: 'accueil', label: t('mia.secHome'), icon: Home },
-  { key: 'enfants', label: isApprenant.value ? t('mia.secMyNotes') : t('mia.secMyChildren'), icon: isApprenant.value ? FileText : Users },
-  { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
-  ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList }] : []),
-  { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
-  { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp },
-  { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays },
-  { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
-  { key: 'orientation', label: t('mia.secOrientation'), icon: Compass },
-  { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
-])
+const SECTIONS = computed(() => {
+  const home = { key: 'accueil', label: t('mia.secHome'), icon: Home }
+  const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp }
+  const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays }
+  const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass }
+  const abo = { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard }
+  // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
+  // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
+  // doit de toute façon rien écrire dans la progression de son enfant.
+  if (!isApprenant.value) {
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, orient, abo]
+  }
+  return [
+    home,
+    { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText },
+    { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
+    ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList }] : []),
+    { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
+    progress, edt,
+    { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
+    orient, abo,
+  ]
+})
 const section = ref('accueil')
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
 const menuOpen = ref(false)
@@ -593,8 +604,12 @@ const L = computed(() => isApprenant.value ? {
 
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
-// Si l'enfant actif n'est pas en classe d'examen, on ne reste pas bloqué sur l'onglet Annales.
-watch(() => activeEnfant.value?.niveau, () => { if (section.value === 'annales' && !estClasseExamen(activeEnfant.value?.niveau)) section.value = 'accueil' })
+// Le menu change selon le mode (parent allégé / apprenant complet) et le niveau
+// (annales). Si la section courante disparaît du menu, on revient à l'accueil
+// plutôt que d'afficher une page vide.
+watch([SECTIONS, () => store.mode], () => {
+  if (section.value !== 'profil' && !SECTIONS.value.some((s) => s.key === section.value)) section.value = 'accueil'
+})
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──

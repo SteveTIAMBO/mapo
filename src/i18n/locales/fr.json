@@ -4699,6 +4699,8 @@
     "fichesPickCourse": "Partir d'un cours publié par le professeur…",
     "fichesOr": "— ou —",
     "switchHandover": "Confier le téléphone à {name}",
+    "switchLead": "Confier le téléphone à :",
+    "switchEnterPinHint": "Saisis ton code pour revenir à ton espace parent.",
     "switchChildMode": "Mode élève",
     "switchBackParent": "Retour parent",
     "switchSetPinTitle": "Choisis un code parent",
