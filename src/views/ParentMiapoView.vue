@@ -192,7 +192,7 @@
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
-              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent') }}</h3></div>
+              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent') }}</h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
               <div class="weak-list">
                 <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && goRevise(w.matiere, w.themes)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
@@ -409,6 +409,13 @@
             </template>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">{{ t('mia.targetGrade') }}</label>
+                <input v-model.number="profil.objectifNote" type="number" min="0" max="20" step="0.5" class="input" />
+                <small class="muted small">{{ t('mia.targetGradeHint') }}</small>
+              </div>
               <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
               <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }}</label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
             </div>
@@ -586,7 +593,9 @@ watch(() => activeEnfant.value?.niveau, () => { if (section.value === 'annales' 
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10 })
+// Objectif de note de l'enfant actif : toute note en dessous part en révision.
+const objectif = computed(() => store.objectifDe(activeEnfant.value))
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value
@@ -595,6 +604,7 @@ function syncProfil() {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
     ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
+    objectifNote: store.objectifDe(e),
   }
 }
 function onPickPhoto(ev) {
@@ -689,7 +699,7 @@ function niveauLabel(e) {
   if (!e) return ''
   return e.niveau === NIVEAU_HORS_CATALOGUE ? (e.formation || NIVEAU_HORS_CATALOGUE) : e.niveau
 }
-function noteClass(n) { return n < 10 ? 'low' : n < 12 ? 'mid' : 'ok' }
+function noteClass(n) { const o = objectif.value; return n < o ? 'low' : n < o + 2 ? 'mid' : 'ok' }
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
 
 // Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
@@ -935,7 +945,7 @@ async function getPrepa() {
   const e = activeEnfant.value
   if (!e) return
   prepaState.value = 'loading'
-  const faibles = e.notes.filter((n) => n.note < 10).map((n) => n.matiere)
+  const faibles = e.notes.filter((n) => n.note < store.objectifDe(e)).map((n) => n.matiere)
   const res = await tuteur.prepaExamen({ niveau: e.niveau, pays: e.pays, faibles })
   if (res.ok && res.prepa) { prepaResult.value = res.prepa; prepaState.value = 'done' }
   else { prepaError.value = res.reason || t('mia.prepaUnavailable'); prepaState.value = 'error' }
@@ -1054,6 +1064,7 @@ onUnmounted(() => {
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }
 .card-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.obj-chip { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: var(--pr); background: rgba(var(--pr-rgb), .10); }
 .muted { color: var(--tx3, #6b7280); font-size: 14px; margin: 0 0 14px; } .small { font-size: 13px; }
 .lnk { background: none; border: none; color: var(--pr); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
 

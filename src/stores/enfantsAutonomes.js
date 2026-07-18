@@ -162,6 +162,10 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
       formationModules: (formationModules || '').trim(), // modules/matières saisis à la main (plan B, séparés par des virgules)
       photoURL: photoURL || '',
+      // Objectif de note (sur 20) choisi par la famille : toute note EN DESSOUS
+      // est proposée à la révision. 10 par défaut, modifiable dans le profil —
+      // viser 10 en CM2 et 14 en Terminale n'a pas le même sens.
+      objectifNote: 10,
       notes: [], // [{ id, matiere, note }]
       revisions: [], // [{ id, matiere, themes:[] }] — faiblesses détectées (photo de copie)
       edt: [], // [{ id, jour, heure, matiere }] — emploi du temps (saisie / scan / import)
@@ -183,6 +187,10 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (!e || !patch) return
     for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
+    }
+    if ('objectifNote' in patch) {
+      const v = Number(patch.objectifNote)
+      e.objectifNote = Number.isFinite(v) ? Math.max(0, Math.min(20, v)) : 10
     }
     persist()
   }
@@ -254,11 +262,18 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     persist()
   }
 
-  /** Matières fragiles d'un enfant (note < 10) triées de la plus faible. */
+  /** Matières fragiles d'un enfant (note < objectif) triées de la plus faible. */
   function faiblesses(enfantId) {
     const e = getEnfant(enfantId)
     if (!e) return []
-    return [...e.notes].filter((n) => n.note < 10).sort((a, b) => a.note - b.note)
+    const seuil = objectifDe(e)
+    return [...e.notes].filter((n) => n.note < seuil).sort((a, b) => a.note - b.note)
+  }
+
+  /** Objectif de note de l'enfant (sur 20). 10 par défaut. */
+  function objectifDe(e) {
+    const v = Number(e && e.objectifNote)
+    return Number.isFinite(v) && v > 0 ? v : 10
   }
 
   // Révisions ciblées : faiblesses détectées par la lecture d'une copie (photo).
@@ -347,7 +362,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   return {
     enfants, mode, setMode, load, hydrate,
     addEnfant, updateEnfant, removeEnfant, getEnfant,
-    addNote, removeNote, faiblesses,
+    addNote, removeNote, faiblesses, objectifDe,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,
     setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,
