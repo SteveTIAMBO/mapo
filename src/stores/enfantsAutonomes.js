@@ -439,6 +439,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return n
   }
 
+  /** Date (jour ISO) de la dernière séance FAITE, ou '' si aucune. Sert à la relance. */
+  function derniereRevision(enfantId) {
+    const e = getEnfant(enfantId)
+    if (!e || !e.seances) return ''
+    const jours = Object.keys(e.seances).filter((j) => e.seances[j] && e.seances[j].status === 'done').sort()
+    return jours.length ? jours[jours.length - 1] : ''
+  }
+
   /** Objectif de note de l'enfant (sur 20). 10 par défaut. */
   function objectifDe(e) {
     const v = Number(e && e.objectifNote)
@@ -537,5 +545,6 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,
     setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,
+    derniereRevision, owner,
   }
 })

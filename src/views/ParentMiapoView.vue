@@ -100,9 +100,6 @@
             </div>
           </div>
 
-          <!-- Rappels de révision (push web gratuit) -->
-          <MiapoNotifications />
-
           <div class="quick">
             <button class="btn btn-primary" @click="section = 'tuteur'"><GraduationCap :size="16" /> <span>{{ t('mia.startRevision') }}</span></button>
             <button class="btn btn-outline" @click="section = 'orientation'"><Compass :size="16" /> <span>{{ t('mia.exploreOrientation') }}</span></button>
@@ -368,6 +365,12 @@
 
         <!-- ========== PROFIL (configuration) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
+          <!-- Rappels de révision (push web gratuit) -->
+          <MiapoNotifications />
+
+          <!-- Relance WhatsApp au parent (rare, payante, opt-in) -->
+          <MiapoRelanceWhatsApp v-if="!isApprenant && activeEnfant" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
+
           <!-- Profil du PARENT (mode parent) — d'abord -->
           <div v-if="!isApprenant" class="card">
             <div class="card-head"><Settings :size="18" /><h3>{{ t('mia.myParentProfile') }}</h3></div>
@@ -528,6 +531,7 @@ import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
+import { useRelanceStore } from '../stores/relance'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
@@ -539,6 +543,7 @@ import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
 import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
+import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
@@ -552,6 +557,7 @@ async function logout() { await authStore.logout(); router.push(isMiapoTenant() 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
 const analytics = useMiapoAnalyticsStore()
+const relance = useRelanceStore()
 const enfants = computed(() => store.enfants)
 
 // Suivi d'adoption MAPO+ : marque l'install PWA. Défini ici pour pouvoir le
@@ -1040,6 +1046,9 @@ onMounted(async () => {
   // même après un rechargement — sinon l'enfant retomberait sur le 1er profil.
   const sess = store.childSessionId
   activeId.value = (sess && enfants.value.some((e) => e.id === sess) ? sess : enfants.value[0]?.id) || ''
+  // Relance WhatsApp : rafraîchit la date de dernière révision des enfants opt-in
+  // à chaque ouverture (best-effort, silencieux).
+  relance.refresh()
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }

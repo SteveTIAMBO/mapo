@@ -16,6 +16,7 @@
  */
 
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, max-age=0'); // réponses jamais mises en cache (LWS)
 @set_time_limit(20);
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
@@ -52,6 +53,19 @@ if ($action === 'register') {
 if ($action === 'unregister') {
   mp_subsRemove($sub['endpoint'] ?? '');
   echo json_encode(['ok' => true]); exit;
+}
+
+// Relance WhatsApp : le parent pose son numéro + opt-in ; l'appli rafraîchit la
+// date de dernière révision. Clé = propriétaire|idEnfant (fournie par le client).
+if ($action === 'relance-set') {
+  $key = trim($body['key'] ?? '');
+  if ($key === '') { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'cle_manquante']); exit; }
+  $fields = [];
+  if (isset($body['phone'])) $fields['phone'] = preg_replace('/[^0-9+]/', '', (string) $body['phone']);
+  if (isset($body['childName'])) $fields['childName'] = mb_substr(trim((string) $body['childName']), 0, 60);
+  if (isset($body['optIn'])) $fields['optIn'] = (bool) $body['optIn'];
+  if (isset($body['lastRevision'])) $fields['lastRevision'] = preg_replace('/[^0-9-]/', '', (string) $body['lastRevision']);
+  echo json_encode(['ok' => mp_relanceSet($key, $fields)]); exit;
 }
 
 $p256dh = mp_b64url_dec($sub['keys']['p256dh'] ?? '');

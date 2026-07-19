@@ -120,6 +120,32 @@ if (!function_exists('mp_b64url')) {
     flock($fp, LOCK_UN); fclose($fp);
   }
 
+  // ── Registre des relances WhatsApp (fichier) ───────────────────────────
+  // Une entrée par enfant suivi : { phone, childName, optIn, lastRevision(jour
+  // AAAA-MM-JJ), lastSentAt(timestamp) }. Le parent pose phone+optIn ; l'appli
+  // rafraîchit lastRevision ; le cron déclenche si l'enfant n'a pas révisé depuis
+  // N jours. Clé = propriétaire|idEnfant (stable, connue du parent ET du compte
+  // enfant). Payant (Twilio) → volontairement rare + opt-in.
+  function mp_relancePath() { return __DIR__ . '/mapo-push-relance.json'; }
+  function mp_relanceLoad() {
+    $p = mp_relancePath();
+    if (!file_exists($p)) return [];
+    $j = json_decode(@file_get_contents($p), true);
+    return is_array($j) ? $j : [];
+  }
+  /** Fusionne $fields dans l'entrée $key (lecture-modif-écriture verrouillée). */
+  function mp_relanceSet($key, $fields) {
+    if ($key === '') return false;
+    $fp = fopen(mp_relancePath(), 'c+'); if (!$fp) return false;
+    flock($fp, LOCK_EX);
+    $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
+    $cur = $map[$key] ?? [];
+    $map[$key] = array_merge($cur, $fields);
+    ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
+    flock($fp, LOCK_UN); fclose($fp);
+    return true;
+  }
+
   /**
    * Envoie un push à UN abonnement. $sub = ['endpoint'=>, 'keys'=>['p256dh'=>, 'auth'=>]]
    * (clés en base64url, telles que stockées). Renvoie le code HTTP du service push
