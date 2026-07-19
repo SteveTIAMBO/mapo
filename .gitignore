@@ -33,3 +33,5 @@ sa-key.json
 # Archives/builds zippés à la racine (évite de re-committer des dist zippés)
 *.zip
 server/mapo-push-subs.json
+server/mapo-credits.json
+server/mapo-credits-pending.json

@@ -24,7 +24,7 @@ export const usePaiementStore = defineStore('paiement', () => {
    * Lance un encaissement. Si `phone` est fourni → push Mobile Money sur le
    * téléphone. Sinon → page web hébergée (`payment_url` à ouvrir).
    */
-  async function init({ amount, description, phone }) {
+  async function init({ amount, description, phone, offerId }) {
     busy.value = true
     try {
       const r = await fetch('/mapo-pay-tranzak.php', {
@@ -36,6 +36,7 @@ export const usePaiementStore = defineStore('paiement', () => {
           currency: 'XAF',
           description: description || 'Abonnement MAPO+',
           mobileWalletNumber: phone || '',
+          subscriptionOffer: offerId || '', // → remise de crédits après paiement confirmé
         }),
       })
       const d = await r.json().catch(() => ({}))

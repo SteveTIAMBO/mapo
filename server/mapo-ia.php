@@ -59,6 +59,19 @@ if (!dailyLimitOk()) {
   http_response_code(429); echo json_encode(['ok' => false, 'error' => 'limite_globale']); exit;
 }
 
+// ── Crédits MAPO+ (B2C) ────────────────────────────────────────────────
+// Décompte uniquement pour les requêtes MAPO+ marquées `metered` (le B2C envoie
+// ce drapeau ; l'espace ÉCOLE ne le fait pas → non décompté, l'école paie).
+// On VÉRIFIE avant l'appel (bloque à 0), on DÉCOMPTE après succès (pas de
+// crédit perdu si l'IA échoue). Source de vérité = registre serveur par uid.
+$metered = $uid && !empty($body['metered']);
+if ($metered) {
+  require_once __DIR__ . '/mapo-credits-lib.php';
+  if (!mc_hasCredit($uid)) {
+    echo json_encode(['ok' => false, 'error' => 'credits_epuises']); exit;
+  }
+}
+
 // ── 3. Construire les prompts (selon la tâche) ────────────────────────
 list($system, $user, $maxTokens, $noReason, $image) = buildPrompts($task, $data);
 
@@ -71,7 +84,9 @@ $r = ($provider === 'anthropic' && !$image)
   : callOpenAICompat($system, $user, $maxTokens, $noReason, $image);
 
 if (!empty($r['ok'])) {
-  echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider]);
+  // Succès → on décompte 1 crédit (si requête MAPO+ metered) et on renvoie le solde.
+  $credits = $metered ? mc_consume($uid, 1) : null;
+  echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider, 'credits' => $credits]);
 } else {
   echo json_encode(['ok' => false, 'error' => 'ia_echec', 'code' => $r['code'] ?? null, 'detail' => $r['detail'] ?? null]);
 }

@@ -39,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 // ── Config marchand ───────────────────────────────────────────────────
 $cfgPath = __DIR__ . '/mapo-pay-tranzak-config.php';
 if (file_exists($cfgPath)) require $cfgPath;
+require_once __DIR__ . '/mapo-credits-lib.php'; // remise de crédits MAPO+ après paiement
 $configured = defined('TRANZAK_APP_ID') && TRANZAK_APP_ID !== '' && strpos((string) TRANZAK_APP_ID, 'A_REMPLIR') !== 0
            && defined('TRANZAK_APP_KEY') && TRANZAK_APP_KEY !== '';
 $demoOpen = defined('PAY_DEMO_OPEN') && PAY_DEMO_OPEN;
@@ -138,9 +139,14 @@ if ($action === 'init') {
   if ($resp === null) { echo json_encode(['ok' => false, 'error' => 'tranzak_injoignable']); exit; }
   if (!empty($resp['success']) && !empty($resp['data'])) {
     $d = $resp['data'];
+    $txid = (string) ($d['requestId'] ?? $ref);
+    // Abonnement MAPO+ : on mémorise {transaction → uid + offre} pour n'accorder
+    // l'offre QU'APRÈS confirmation du paiement (voir check).
+    $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
+    if ($uid && $offre !== '') mc_pendingSet($txid, $uid, $offre);
     echo json_encode([
       'ok' => true, 'mode' => $MODE,
-      'transaction_id' => $d['requestId'] ?? $ref,
+      'transaction_id' => $txid,
       'mch_ref' => $ref,
       'amount' => $amount, 'currency' => $currency,
       'push' => $push,
@@ -176,12 +182,20 @@ if ($action === 'check') {
   $d = $resp['data'] ?? [];
   $st = strtoupper($d['status'] ?? ($d['transactionStatus'] ?? ''));
   if ($st === 'SUCCESSFUL') {
+    // Paiement confirmé → si c'était un abonnement MAPO+, on accorde l'offre au
+    // bon acheteur (uid mémorisé à l'init). Une seule fois (pendingTake retire).
+    $granted = null;
+    $pend = mc_pendingTake($reqId);
+    if ($pend && !empty($pend['uid']) && !empty($pend['offreId'])) {
+      mc_grant($pend['uid'], $pend['offreId']);
+      $granted = $pend['offreId'];
+    }
     // Commission Tranzak : selon le payload, le frais peut être au niveau racine,
     // sous merchant, ou sous payer. On expose aussi le net réellement reçu.
     $fee = $d['fee'] ?? ($d['merchant']['fee'] ?? ($d['payer']['fee'] ?? null));
     $net = $d['merchant']['netAmountReceived'] ?? null;
     echo json_encode([
-      'ok' => true, 'status' => 'ACCEPTED',
+      'ok' => true, 'status' => 'ACCEPTED', 'granted' => $granted,
       'amount' => isset($d['amount']) ? (int) $d['amount'] : null,
       'currency' => $d['currencyCode'] ?? null,
       'method' => $d['paymentMethod'] ?? ($d['payer']['paymentMethod'] ?? null),

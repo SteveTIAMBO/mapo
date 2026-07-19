@@ -4,6 +4,21 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { isMiapoTenant } from '../utils/tenantContext'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
+import { useAuthStore } from './auth'
+import { useAbonnementStore } from './abonnement'
+
+// Crédits MAPO+ : le décompte se fait CÔTÉ SERVEUR, et seulement pour le B2C
+// (drapeau `metered`). L'école n'est pas décomptée. Hors ligne, l'appel IA
+// échoue et l'app retombe sur la banque de quiz LOCALE (gratuite) → aucun
+// crédit consommé, l'offline reste fonctionnel.
+function mtrB2C() { try { return useAuthStore().isB2C } catch { return false } }
+function noteCredits(json) {
+  try {
+    const a = useAbonnementStore()
+    if (json && typeof json.credits === 'number') a.majCredits(json.credits)
+    if (json && json.error === 'credits_epuises') a.marquerEpuise()
+  } catch { /* pas de contexte / offline : sans effet */ }
+}
 import { useUsageStore, COUT_ACTION } from './usage'
 import { useMiapoRefStore } from './miapoRef'
 
@@ -127,9 +142,15 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
+      // Crédits épuisés (B2C) : on ne bascule PAS sur la banque locale, on invite
+      // à passer à l'offre supérieure (l'IA fraîche est réservée aux crédits).
+      if (json && json.error === 'credits_epuises') {
+        return { ok: false, questions: [], mode: 'none', reason: 'credits_epuises' }
+      }
 
       if (json && json.ok && json.text) {
         const parsed = parseQuiz(json.text)
@@ -354,7 +375,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -395,7 +416,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -443,7 +464,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'orientation', data: { niveau, pays, forts, faibles } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'orientation', data: { niveau, pays, forts, faibles } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -487,7 +508,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats, langue } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -532,7 +553,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'prepa_examen', data: { niveau, pays, faibles } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'prepa_examen', data: { niveau, pays, faibles } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -584,7 +605,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'course_plan', data: { formation, programme, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'course_plan', data: { formation, programme, niveau } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -621,7 +642,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {
@@ -644,7 +665,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ task: 'extract_modules', data: { formation, ecole, texte } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'extract_modules', data: { formation, ecole, texte } }),
       })
       const json = await res.json().catch(() => null)
       if (json && json.ok && json.text) {

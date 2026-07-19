@@ -18,7 +18,7 @@
 
     <!-- Les offres -->
     <div class="offres">
-      <div v-for="o in OFFRES" :key="o.id" class="card offre" :class="{ actif: o.id === abo.offreId }">
+      <div v-for="o in abo.offres" :key="o.id" class="card offre" :class="{ actif: o.id === abo.offreId }">
         <div class="of-head">
           <h4>{{ o.nom }}</h4>
           <div class="of-price">
@@ -73,7 +73,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
-import { OFFRES } from '../config/offres'
 import { Check, CreditCard, Smartphone, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -93,19 +92,20 @@ function choisir(o) { choisie.value = o; status.value = 'idle'; phone.value = ''
 function annuler() { choisie.value = null }
 
 async function payer() {
-  // SQUELETTE — en démo (pas de compte), on simule l'encaissement pour montrer
-  // le parcours. Avec un vrai compte, on passe par Tranzak (sandbox/prod).
+  // En démo (pas de compte), on simule l'encaissement pour montrer le parcours.
+  // Avec un vrai compte : Tranzak encaisse, et l'offre est accordée CÔTÉ SERVEUR
+  // à la confirmation (mapo-pay-tranzak.php) → on rafraîchit l'état depuis le serveur.
   if (isDemo) {
     status.value = 'pending'
-    setTimeout(() => { abo.activer(choisie.value.id); status.value = 'ok' }, 1200)
+    setTimeout(() => { abo.activerDemo(choisie.value.id); status.value = 'ok' }, 1200)
     return
   }
-  const r = await pay.init({ amount: choisie.value.prix, description: 'Abonnement MAPO+ ' + choisie.value.nom, phone: phone.value })
+  const r = await pay.init({ amount: choisie.value.prix, description: 'Abonnement MAPO+ ' + choisie.value.nom, phone: phone.value, offerId: choisie.value.id })
   if (!r.ok) { status.value = 'error'; return }
-  if (r.payment_url) { window.open(r.payment_url, '_blank'); }
+  if (r.payment_url) { window.open(r.payment_url, '_blank') }
   status.value = 'pending'
   const issue = await pay.attendreResultat(r.transaction_id)
-  if (issue === 'ACCEPTED') { abo.activer(choisie.value.id); status.value = 'ok' }
+  if (issue === 'ACCEPTED') { await abo.fetchState(); status.value = 'ok' }
   else if (issue === 'REFUSED') status.value = 'refused'
   else status.value = 'timeout'
 }
