@@ -12,8 +12,11 @@ self.addEventListener('push', (event) => {
     icon: data.icon || '/icon-miapo-192.png',
     badge: '/icon-miapo-192.png',
     // Regrouper par enfant : une nouvelle notif remplace la précédente du même
-    // apprenant plutôt que d'en empiler cinq.
+    // apprenant plutôt que d'en empiler cinq. `renotify` = ré-alerter quand même
+    // (sinon le rappel du jour remplacerait celui de la veille EN SILENCE si
+    // l'utilisateur ne l'a pas fermé → il raterait le rappel).
     tag: data.tag || 'mapo-plus',
+    renotify: true,
     data: { url: data.url || '/parent/miapo' },
   }
   event.waitUntil(self.registration.showNotification(title, options))
