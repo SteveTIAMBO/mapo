@@ -347,20 +347,7 @@
 
         <!-- ========== ABONNEMENT ========== -->
         <section v-else-if="section === 'abonnement'" class="sec">
-          <div class="card abo-card">
-            <div class="abo-ic"><Sparkles :size="24" /></div>
-            <h2>{{ t('mia.aboTitle') }}</h2>
-            <p>{{ isApprenant ? t('mia.aboTextLearner') : t('mia.aboTextParent', { name: activeEnfant.firstName }) }}</p>
-            <ul class="abo-feats">
-              <li><Check :size="15" /> {{ t('mia.aboFeat1') }}</li>
-              <li><Check :size="15" /> {{ t('mia.aboFeat2') }}</li>
-              <li><Check :size="15" /> {{ t('mia.aboFeat3') }}</li>
-            </ul>
-            <div class="abo-trial">
-              <Sparkles :size="16" />
-              <span>{{ isApprenant ? t('mia.aboTrialLearner') : t('mia.aboTrialParent', { name: activeEnfant.firstName }) }}</span>
-            </div>
-          </div>
+          <MiapoAbonnement />
         </section>
 
         <!-- ========== PROFIL (configuration) ========== -->
@@ -544,6 +531,7 @@ import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
 import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
+import MiapoAbonnement from '../components/MiapoAbonnement.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
