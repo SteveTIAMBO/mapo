@@ -17,8 +17,11 @@
 import { RouterView } from 'vue-router'
 import { useOnline } from '@vueuse/core'
 import { useAuthStore } from './stores/auth'
+import { useAccessibiliteStore } from './stores/accessibilite'
 const isOnline = useOnline()
 const authStore = useAuthStore()
+// Applique le mode accessibilité (préférences persistées) dès le démarrage.
+useAccessibiliteStore().init()
 </script>
 
 <style scoped>

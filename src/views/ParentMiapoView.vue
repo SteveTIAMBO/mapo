@@ -35,7 +35,7 @@
         <MiapoInstall />
         <button type="button" class="nav-item" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false">
           <Settings :size="18" />
-          <span>{{ t('mia.secProfile') }}</span>
+          <span>{{ t('mia.secSettings') }}</span>
         </button>
         <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
       </div>
@@ -119,12 +119,7 @@
             </div>
             <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
           </div>
-
-          <!-- Co-parent : l'autre parent accède à la même scolarité -->
-          <MiapoCoParent v-if="!isApprenant" />
-
-          <!-- Compte propre de l'enfant : il n'accède qu'à SON profil -->
-          <MiapoEnfantCompte v-if="!isApprenant" />
+          <!-- Co-parent + compte enfant : déplacés dans Paramètres → « Mes enfants ». -->
 
           <!-- Notes -->
           <div class="card">
@@ -198,7 +193,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'; sousSection = 'utilisation'" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -345,17 +340,50 @@
           <MiapoOrientation :enfant="activeEnfant" @eval="section = 'profil6c'" />
         </section>
 
-        <!-- ========== PROFIL (configuration + abonnement) ========== -->
+        <!-- ========== PARAMÈTRES (sous-menu : profil / abonnement / notifications) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
-          <!-- Abonnement MAPO+ (offres + jauge de crédits) -->
-          <MiapoAbonnement />
+          <nav class="param-tabs">
+            <button v-for="st in sousMenus" :key="st.key" type="button" class="param-tab" :class="{ active: sousSection === st.key }" @click="sousSection = st.key">
+              <component :is="st.icon" :size="16" /><span>{{ st.label }}</span>
+            </button>
+          </nav>
 
-          <!-- Rappels de révision (push web gratuit) -->
-          <MiapoNotifications />
+          <!-- Sous-menu : Utilisation (offres + jauge de crédits) -->
+          <div v-show="sousSection === 'utilisation'">
+            <MiapoAbonnement />
+          </div>
 
-          <!-- Relance WhatsApp au parent (rare, payante, opt-in) -->
-          <MiapoRelanceWhatsApp v-if="!isApprenant && activeEnfant" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
+          <!-- Sous-menu : Langue -->
+          <div v-show="sousSection === 'langue'">
+            <div class="card">
+              <div class="card-head"><Languages :size="18" /><h3>{{ t('mia.secLanguage') }}</h3></div>
+              <p class="muted small">{{ t('mia.langHint') }}</p>
+              <div class="lang-choices">
+                <button type="button" class="lang-btn" :class="{ active: locale === 'fr' }" @click="setLangue('fr')">Français</button>
+                <button type="button" class="lang-btn" :class="{ active: locale === 'en' }" @click="setLangue('en')">English</button>
+              </div>
+            </div>
+          </div>
 
+          <!-- Sous-menu : Notifications -->
+          <div v-show="sousSection === 'notification'">
+            <MiapoNotifications />
+            <MiapoRelanceWhatsApp v-if="!isApprenant && activeEnfant" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
+          </div>
+
+          <!-- Sous-menu : Mes enfants (gestion : co-parent, compte enfant) — parent uniquement -->
+          <div v-if="!isApprenant" v-show="sousSection === 'enfants'">
+            <MiapoCoParent />
+            <MiapoEnfantCompte />
+          </div>
+
+          <!-- Sous-menu : Accessibilité -->
+          <div v-show="sousSection === 'accessibilite'">
+            <MiapoAccessibilite />
+          </div>
+
+          <!-- Sous-menu : Profil -->
+          <div v-show="sousSection === 'profil'">
           <!-- Profil du PARENT (mode parent) — d'abord -->
           <div v-if="!isApprenant" class="card">
             <div class="card-head"><Settings :size="18" /><h3>{{ t('mia.myParentProfile') }}</h3></div>
@@ -427,6 +455,7 @@
               <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
               <span v-if="profilSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
             </div>
+          </div>
           </div>
         </section>
       </template>
@@ -510,6 +539,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { setLang } from '../i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, jourISO } from '../stores/enfantsAutonomes'
@@ -530,13 +560,15 @@ import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
 import MiapoAbonnement from '../components/MiapoAbonnement.vue'
+import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility } from 'lucide-vue-next'
 
 const router = useRouter()
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
+function setLangue(l) { setLang(l) }
 const authStore = useAuthStore()
 async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/miapo' : '/login') }
 
@@ -587,6 +619,20 @@ const SECTIONS = computed(() => {
   ]
 })
 const section = ref('accueil')
+// Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
+const sousSection = ref('profil')
+const sousMenus = computed(() => {
+  const items = [
+    { key: 'profil', label: t('mia.secProfile'), icon: Settings },
+    { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge },
+    { key: 'langue', label: t('mia.secLanguage'), icon: Languages },
+    { key: 'notification', label: t('mia.notifTitle'), icon: Bell },
+    { key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility },
+  ]
+  // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
+  if (!isApprenant.value) items.splice(4, 0, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users })
+  return items
+})
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
 const menuOpen = ref(false)
 function onToggleMenu() { menuOpen.value = !menuOpen.value }
@@ -1151,6 +1197,17 @@ onUnmounted(() => {
 .main-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 .main-head h1 { font-size: 23px; font-weight: 700; margin: 0; }
 .sec { display: flex; flex-direction: column; gap: 16px; }
+
+/* Barre d'onglets du menu Paramètres */
+.param-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; background: rgba(var(--pr-rgb), .06); border-radius: 14px; }
+.param-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: none; background: none; border-radius: 10px; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--tx3); cursor: pointer; transition: background .15s ease, color .15s ease; }
+.param-tab:hover { color: var(--tx); }
+.param-tab.active { background: #fff; color: var(--pr); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.param-tab svg { flex-shrink: 0; }
+/* Choix de langue */
+.lang-choices { display: flex; gap: 10px; margin-top: 6px; }
+.lang-btn { padding: 9px 18px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--tx); cursor: pointer; }
+.lang-btn.active { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb), .08); }
 
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }

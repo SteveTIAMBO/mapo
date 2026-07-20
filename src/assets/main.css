@@ -1046,3 +1046,42 @@ h1, h2, h3, h4, h5, h6 { font-family: var(--font-display); }
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ═══════════════════════════════════════════
+   MODE ACCESSIBILITÉ (piloté par le store accessibilite.js)
+   Classes posées sur <html> : a11y-contraste / a11y-grandtexte / a11y-animoff
+   ═══════════════════════════════════════════ */
+
+/* Contraste élevé : texte plus sombre, surfaces plus opaques, bordures nettes,
+   liens soulignés. On renforce les jetons de couleur au niveau <html>. */
+html.a11y-contraste {
+  --tx: #000000;
+  --tx2: #1a1a1a;
+  --tx3: #333333;
+  --bd: #5a5a5a;
+  --glass: rgba(255,255,255,.97);
+  --glass-strong: #ffffff;
+  --glass-thin: rgba(255,255,255,.92);
+  --card: rgba(255,255,255,.97);
+  --card-border: rgba(0,0,0,.32);
+  --sidebar: rgba(255,255,255,.97);
+  --sidebar-muted: rgba(0,0,0,.7);
+  --input-bg: #ffffff;
+  --input-border: rgba(0,0,0,.45);
+}
+html.a11y-contraste a:not(.btn):not([class*="btn-"]) { text-decoration: underline; }
+html.a11y-contraste :focus-visible { outline: 2px solid #000 !important; outline-offset: 2px; }
+
+/* Texte agrandi : zoom global (échelle tout, y compris les tailles en px).
+   Supporté par Chrome/Safari/Edge/Firefox récents — cœur de cible MAPO. */
+html.a11y-grandtexte body { zoom: 1.12; }
+
+/* Animations réduites : neutralise transitions et animations (confort vestibulaire). */
+html.a11y-animoff *,
+html.a11y-animoff *::before,
+html.a11y-animoff *::after {
+  animation-duration: .001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .001ms !important;
+  scroll-behavior: auto !important;
+}
