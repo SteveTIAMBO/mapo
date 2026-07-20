@@ -198,7 +198,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'abonnement'" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -345,13 +345,11 @@
           <MiapoOrientation :enfant="activeEnfant" @eval="section = 'profil6c'" />
         </section>
 
-        <!-- ========== ABONNEMENT ========== -->
-        <section v-else-if="section === 'abonnement'" class="sec">
-          <MiapoAbonnement />
-        </section>
-
-        <!-- ========== PROFIL (configuration) ========== -->
+        <!-- ========== PROFIL (configuration + abonnement) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
+          <!-- Abonnement MAPO+ (offres + jauge de crédits) -->
+          <MiapoAbonnement />
+
           <!-- Rappels de révision (push web gratuit) -->
           <MiapoNotifications />
 
@@ -567,7 +565,7 @@ const SECTIONS = computed(() => {
   const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp }
   const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays }
   const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass }
-  const abo = { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard }
+  // Abonnement retiré du menu principal → vit dans les Paramètres (section « Profil »).
   // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
   // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
   // doit de toute façon rien écrire dans la progression de son enfant.
@@ -575,7 +573,7 @@ const SECTIONS = computed(() => {
   // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
   // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, abo]
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt]
   }
   return [
     home,
@@ -585,7 +583,7 @@ const SECTIONS = computed(() => {
     { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
     progress, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
-    orient, abo,
+    orient,
   ]
 })
 const section = ref('accueil')

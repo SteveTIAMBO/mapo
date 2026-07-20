@@ -7,21 +7,22 @@
  *     crédits après paiement (mapo-pay-tranzak.php) et le décompte (mapo-ia.php)
  *     lisent tous d'ici → aucune valeur en dur ailleurs.
  *
- * MODÈLE (mix décidé avec Steve) : jauge de TOKENS façon Claude. Chaque action
- * IA « coûte » un nombre de tokens (mapo_cout_action) ; l'offre donne un plafond
- * de tokens par cycle. Plus lisible pour l'upsell qu'un simple compteur d'actions,
- * et plus juste (une lecture de copie coûte plus qu'un quiz). Prix en FCFA (XAF),
- * cycle 30 jours (Tranzak sans récurrent → re-charge mensuelle).
+ * MODÈLE (décidé avec Steve) : jauge de TOKENS façon Claude. Chaque action IA
+ * « coûte » un nombre de tokens (mapo_cout_action). L'offre donne un plafond de
+ * tokens PAR SEMAINE (`capTokens`) : une fois épuisé, l'utilisateur doit monter
+ * d'offre OU attendre la recharge du LUNDI (semaine ISO). La FACTURATION, elle,
+ * reste mensuelle (`cycleJours` = validité du palier via Tranzak, re-charge
+ * mensuelle). Deux horloges : palier = mensuel, jauge de tokens = hebdomadaire.
  *
- * Repère : les plafonds ci-dessous ≈ 15 / 60 / 200 quiz par mois (chiffres
- * validés le 2026-07-19), exprimés en tokens (1 quiz ≈ 3000 tokens).
+ * `capTokens` = plafond HEBDOMADAIRE. Prix en FCFA (XAF). Chiffres provisoires,
+ * ajustables ici (avec les coûts d'action ci-dessous).
  */
 
 function mapo_offres() {
   return [
-    ['id' => 'decouverte', 'nom' => 'Découverte', 'prix' => 0,    'capTokens' => 45000,  'cycleJours' => 30],
-    ['id' => 'standard',   'nom' => 'Standard',   'prix' => 1000, 'capTokens' => 180000, 'cycleJours' => 30],
-    ['id' => 'premium',    'nom' => 'Premium',    'prix' => 3000, 'capTokens' => 600000, 'cycleJours' => 30],
+    ['id' => 'decouverte', 'nom' => 'Découverte', 'prix' => 0,    'capTokens' => 25000,  'cycleJours' => 30],
+    ['id' => 'standard',   'nom' => 'Standard',   'prix' => 1000, 'capTokens' => 150000, 'cycleJours' => 30],
+    ['id' => 'premium',    'nom' => 'Premium',    'prix' => 3000, 'capTokens' => 500000, 'cycleJours' => 30],
   ];
 }
 

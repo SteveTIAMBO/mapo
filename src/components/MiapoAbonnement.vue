@@ -8,11 +8,12 @@
           <h3>{{ abo.offre.nom }}</h3>
         </div>
         <div class="ac-credits" :class="{ warn: abo.pourcentage >= 90 }">
-          <strong>≈ {{ quizEquiv(abo.restant) }}</strong>
+          <strong>{{ fmtTokens(abo.restant) }}</strong>
           <span>{{ t('mia.aboQuizLeft') }}</span>
         </div>
       </div>
       <div class="ac-bar"><div class="ac-bar-fill" :class="jaugeClass" :style="{ width: abo.pourcentage + '%' }"></div></div>
+      <p class="muted xsmall">{{ t('mia.aboWeeklyReset') }}</p>
       <p v-if="abo.renewAt" class="muted small">{{ t('mia.aboRenew', { date: dateFr(abo.renewAt) }) }}</p>
       <p v-if="abo.épuisé" class="err-line">{{ t('mia.aboExhausted') }}</p>
     </div>
@@ -27,7 +28,7 @@
             <strong v-else>{{ t('mia.aboFree') }}</strong>
           </div>
         </div>
-        <div class="of-credits">{{ t('mia.aboNQuiz', { n: quizEquiv(o.capTokens) }) }}</div>
+        <div class="of-credits">{{ t('mia.aboNQuiz', { n: fmtTokens(o.capTokens) }) }}</div>
         <ul class="of-feats">
           <li v-for="f in o.features" :key="f"><Check :size="14" /> {{ t('mia.' + f) }}</li>
         </ul>
@@ -74,7 +75,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
-import { quizEquiv } from '../config/offres'
+import { fmtTokens } from '../config/offres'
 import { Check, CreditCard, Smartphone, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })

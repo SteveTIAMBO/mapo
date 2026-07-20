@@ -42,22 +42,34 @@ if (!function_exists('mc_path')) {
     return $entry;
   }
 
-  function mc_free() {
-    $f = mapo_offre('decouverte');
-    return ['offreId' => 'decouverte', 'tokens' => (int) $f['capTokens'], 'cap' => (int) $f['capTokens'], 'renewAt' => mc_renewAt($f['cycleJours'])];
-  }
+  // Deux horloges : le PALIER est mensuel (tierExpiry, via Tranzak), la JAUGE de
+  // tokens se recharge chaque LUNDI (semaine ISO). weekId = année+semaine ISO.
+  function mc_week() { return gmdate('oW'); }
+  function mc_weeklyCap($offreId) { $o = mapo_offre($offreId); return (int) $o['capTokens']; }
 
-  /** Entrée par défaut (offre gratuite) + expiration → retour au gratuit. */
+  /** Entrée « fraîche » pour un palier : jauge pleine, semaine courante. */
+  function mc_fresh($offreId, $tierExpiry) {
+    return ['offreId' => $offreId, 'tokens' => mc_weeklyCap($offreId), 'weekId' => mc_week(), 'tierExpiry' => $tierExpiry];
+  }
+  function mc_free() { return mc_fresh('decouverte', ''); } // le gratuit n'expire pas
+
+  /**
+   * Applique les deux règles : (1) palier mensuel échu → retour au gratuit ;
+   * (2) nouvelle semaine ISO → recharge de la jauge au plafond du palier.
+   */
   function mc_normalize($entry) {
     if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free();
-    // Cycle échu : Tranzak n'a pas de reconduction → on retombe sur le gratuit.
-    if (!empty($entry['renewAt']) && strtotime($entry['renewAt']) < time()) return mc_free();
-    return $entry;
+    $offre = $entry['offreId'];
+    $exp = $entry['tierExpiry'] ?? '';
+    // 1) Palier payant expiré (fin du mois payé, pas de reconduction) → gratuit.
+    if ($exp !== '' && strtotime($exp) < time()) return mc_free();
+    // 2) Recharge hebdomadaire : si on a changé de semaine ISO, jauge au plafond.
+    if (($entry['weekId'] ?? '') !== mc_week()) return mc_fresh($offre, $exp);
+    // Sinon : on borne au plafond courant (au cas où il aurait baissé).
+    return ['offreId' => $offre, 'tokens' => min((int) $entry['tokens'], mc_weeklyCap($offre)), 'weekId' => $entry['weekId'], 'tierExpiry' => $exp];
   }
 
-  function mc_renewAt($jours) { return gmdate('c', time() + ((int) $jours) * 86400); }
-
-  /** État courant (crée le gratuit si absent) : {offreId, tokens, cap, renewAt}. */
+  /** État courant (crée le gratuit si absent) : {offreId, tokens, cap, renewAt, weekId}. */
   function mc_state($uid) {
     return mc_mutate($uid, function ($e) { return $e; });
   }
@@ -80,11 +92,12 @@ if (!function_exists('mc_path')) {
     return $out;
   }
 
-  /** Accorde une offre (APRÈS paiement confirmé). Recharge le plafond de tokens. */
+  /** Accorde une offre (APRÈS paiement confirmé) : palier valable 1 mois, jauge pleine. */
   function mc_grant($uid, $offreId) {
     $o = mapo_offre($offreId);
-    return mc_mutate($uid, function () use ($o) {
-      return ['offreId' => $o['id'], 'tokens' => (int) $o['capTokens'], 'cap' => (int) $o['capTokens'], 'renewAt' => mc_renewAt($o['cycleJours'])];
+    $exp = gmdate('c', time() + ((int) ($o['cycleJours'] ?? 30)) * 86400);
+    return mc_mutate($uid, function () use ($o, $exp) {
+      return mc_fresh($o['id'], $exp);
     });
   }
 

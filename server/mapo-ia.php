@@ -89,7 +89,7 @@ if (!empty($r['ok'])) {
   // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
-  if ($metered) { $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = $st['cap'] ?? null; }
+  if ($metered) { $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']); }
   echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider, 'tokens' => $tokens, 'cap' => $cap]);
 } else {
   echo json_encode(['ok' => false, 'error' => 'ia_echec', 'code' => $r['code'] ?? null, 'detail' => $r['detail'] ?? null]);
