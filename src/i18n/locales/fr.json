@@ -4768,6 +4768,8 @@
     "prioriteFeat": "Priorité et nouveautés en avant-première",
     "aboCurrentPlan": "Votre offre",
     "aboCreditsLeft": "crédits restants",
+    "aboQuizLeft": "révisions restantes",
+    "aboNQuiz": "≈ {n} révisions / mois",
     "aboRenew": "Renouvellement le {date}",
     "aboExhausted": "Crédits épuisés — passe à l'offre supérieure pour continuer.",
     "aboMonth": "mois",

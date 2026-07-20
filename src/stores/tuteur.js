@@ -15,7 +15,7 @@ function mtrB2C() { try { return useAuthStore().isB2C } catch { return false } }
 function noteCredits(json) {
   try {
     const a = useAbonnementStore()
-    if (json && typeof json.credits === 'number') a.majCredits(json.credits)
+    if (json && (typeof json.tokens === 'number' || typeof json.cap === 'number')) a.majJauge(json.tokens, json.cap)
     if (json && json.error === 'credits_epuises') a.marquerEpuise()
   } catch { /* pas de contexte / offline : sans effet */ }
 }
@@ -112,8 +112,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
-    // Jauge d'usage IA (freemium) : on décompte le quiz. Non bloquant en démo.
-    try { useUsageStore().consume(COUT_ACTION.quiz) } catch (e) { /* jauge indisponible : silencieux */ }
+    // Jauge d'usage IA (freemium). B2C (MAPO+) = décompté CÔTÉ SERVEUR (tokens,
+    // via `metered`) → on NE double-compte PAS ici. École/Supérieur = jauge
+    // locale usage.js (inchangée).
+    try { if (!useAuthStore().isB2C) useUsageStore().consume(COUT_ACTION.quiz) } catch (e) { /* jauge indisponible : silencieux */ }
     // Personnalisation par école : injecte des exemples de sujets (miapoRef) dans
     // les thèmes → quiz calibré sur le niveau/style de l'établissement.
     let effThemes = themes

@@ -35,7 +35,7 @@ if ($action === 'state') {
   $uid = verifyFirebaseToken();
   if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
   $e = mc_state($uid);
-  echo json_encode(['ok' => true, 'offreId' => $e['offreId'], 'credits' => (int) $e['credits'], 'renewAt' => $e['renewAt']]);
+  echo json_encode(['ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'], 'cap' => (int) $e['cap'], 'renewAt' => $e['renewAt']]);
   exit;
 }
 

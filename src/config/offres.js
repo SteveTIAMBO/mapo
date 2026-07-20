@@ -1,45 +1,22 @@
-// Offres d'abonnement MAPO+ (B2C) — CONFIGURABLE.
-// 1 crédit = 1 action IA (quiz de révision, orientation/bilan 6C, fiche, plan,
-// lecture de copie, correction). Coût réel d'une action ≈ 2–4 FCFA (Gemini
-// Flash) → ces quotas restent rentables (marges validées le 2026-07-19, à
-// ajuster librement ici). Prix en FCFA (XAF). Épuisement = IA en pause + invite
-// à l'offre supérieure.
+// Offres d'abonnement MAPO+ (B2C) — REPLI local (la source de vérité ajustable
+// est côté serveur : server/mapo-offres-data.php, lu via mapo-offres.php).
 //
-// ⚠️ Tranzak n'a pas de prélèvement récurrent : un abonnement payant = une
-// re-charge mensuelle que le parent/apprenant ré-autorise chaque mois.
+// Modèle = jauge de TOKENS façon Claude. Chaque action IA coûte des tokens ;
+// l'offre donne un plafond par cycle (30 j). On affiche aussi une estimation
+// « ≈ N quiz » pour rester lisible pour les familles (1 quiz ≈ 3000 tokens).
+// Prix en FCFA (XAF).
 
 export const DEVISE = 'XAF'
+export const TOKENS_PAR_QUIZ = 3000
 
 export const OFFRES = [
-  {
-    id: 'decouverte',
-    nom: 'Découverte',
-    prix: 0,
-    credits: 15,
-    duréeJours: 30,
-    features: ['revisionFeat', 'orientationFeat', 'ficheFeat'],
-  },
-  {
-    id: 'standard',
-    nom: 'Standard',
-    prix: 1000,
-    credits: 60,
-    duréeJours: 30,
-    features: ['revisionFeat', 'orientationFeat', 'ficheFeat', 'copieFeat'],
-  },
-  {
-    id: 'premium',
-    nom: 'Premium',
-    prix: 3000,
-    credits: 200,
-    duréeJours: 30,
-    features: ['revisionFeat', 'orientationFeat', 'ficheFeat', 'copieFeat', 'prioriteFeat'],
-  },
+  { id: 'decouverte', nom: 'Découverte', prix: 0,    capTokens: 45000,  cycleJours: 30, features: ['revisionFeat', 'orientationFeat', 'ficheFeat'] },
+  { id: 'standard',   nom: 'Standard',   prix: 1000, capTokens: 180000, cycleJours: 30, features: ['revisionFeat', 'orientationFeat', 'ficheFeat', 'copieFeat'] },
+  { id: 'premium',    nom: 'Premium',    prix: 3000, capTokens: 600000, cycleJours: 30, features: ['revisionFeat', 'orientationFeat', 'ficheFeat', 'copieFeat', 'prioriteFeat'] },
 ]
 
-export function offreById(id) {
-  return OFFRES.find((o) => o.id === id) || OFFRES[0]
-}
+/** Estimation lisible : nombre de quiz équivalent à un plafond de tokens. */
+export function quizEquiv(tokens) { return Math.max(1, Math.round((tokens || 0) / TOKENS_PAR_QUIZ)) }
 
-/** L'offre gratuite par défaut (aucun abonnement actif). */
+export function offreById(id) { return OFFRES.find((o) => o.id === id) || OFFRES[0] }
 export const OFFRE_GRATUITE = OFFRES[0]

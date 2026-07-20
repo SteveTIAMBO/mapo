@@ -42,49 +42,49 @@ if (!function_exists('mc_path')) {
     return $entry;
   }
 
+  function mc_free() {
+    $f = mapo_offre('decouverte');
+    return ['offreId' => 'decouverte', 'tokens' => (int) $f['capTokens'], 'cap' => (int) $f['capTokens'], 'renewAt' => mc_renewAt($f['cycleJours'])];
+  }
+
   /** Entrée par défaut (offre gratuite) + expiration → retour au gratuit. */
   function mc_normalize($entry) {
-    $free = mapo_offre('decouverte');
-    if (!is_array($entry) || empty($entry['offreId'])) {
-      return ['offreId' => 'decouverte', 'credits' => (int) $free['credits'], 'renewAt' => mc_renewAt($free['dureeJours'])];
-    }
+    if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free();
     // Cycle échu : Tranzak n'a pas de reconduction → on retombe sur le gratuit.
-    if (!empty($entry['renewAt']) && strtotime($entry['renewAt']) < time()) {
-      return ['offreId' => 'decouverte', 'credits' => (int) $free['credits'], 'renewAt' => mc_renewAt($free['dureeJours'])];
-    }
+    if (!empty($entry['renewAt']) && strtotime($entry['renewAt']) < time()) return mc_free();
     return $entry;
   }
 
   function mc_renewAt($jours) { return gmdate('c', time() + ((int) $jours) * 86400); }
 
-  /** État courant de l'utilisateur (crée le gratuit si absent). */
+  /** État courant (crée le gratuit si absent) : {offreId, tokens, cap, renewAt}. */
   function mc_state($uid) {
     return mc_mutate($uid, function ($e) { return $e; });
   }
 
-  /** Reste-t-il au moins 1 crédit ? (sans décompter) */
-  function mc_hasCredit($uid) {
+  /** Reste-t-il au moins $cost tokens ? (sans décompter) */
+  function mc_hasTokens($uid, $cost) {
     $e = mc_state($uid);
-    return $e && (int) $e['credits'] > 0;
+    return $e && (int) $e['tokens'] >= (int) $cost;
   }
 
-  /** Décompte $n crédits. Renvoie le solde restant, ou false si insuffisant. */
-  function mc_consume($uid, $n = 1) {
+  /** Décompte $cost tokens. Renvoie le solde restant, ou false si insuffisant. */
+  function mc_consume($uid, $cost) {
     $out = null;
-    mc_mutate($uid, function ($e) use ($n, &$out) {
-      if ((int) $e['credits'] < $n) { $out = false; return $e; }
-      $e['credits'] = (int) $e['credits'] - $n;
-      $out = (int) $e['credits'];
+    mc_mutate($uid, function ($e) use ($cost, &$out) {
+      if ((int) $e['tokens'] < (int) $cost) { $out = false; return $e; }
+      $e['tokens'] = (int) $e['tokens'] - (int) $cost;
+      $out = (int) $e['tokens'];
       return $e;
     });
     return $out;
   }
 
-  /** Accorde une offre (APRÈS paiement confirmé). Recharge les crédits du palier. */
+  /** Accorde une offre (APRÈS paiement confirmé). Recharge le plafond de tokens. */
   function mc_grant($uid, $offreId) {
     $o = mapo_offre($offreId);
     return mc_mutate($uid, function () use ($o) {
-      return ['offreId' => $o['id'], 'credits' => (int) $o['credits'], 'renewAt' => mc_renewAt($o['dureeJours'])];
+      return ['offreId' => $o['id'], 'tokens' => (int) $o['capTokens'], 'cap' => (int) $o['capTokens'], 'renewAt' => mc_renewAt($o['cycleJours'])];
     });
   }
 

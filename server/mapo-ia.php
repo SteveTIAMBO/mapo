@@ -65,9 +65,11 @@ if (!dailyLimitOk()) {
 // On VÉRIFIE avant l'appel (bloque à 0), on DÉCOMPTE après succès (pas de
 // crédit perdu si l'IA échoue). Source de vérité = registre serveur par uid.
 $metered = $uid && !empty($body['metered']);
+$coutTokens = 0;
 if ($metered) {
   require_once __DIR__ . '/mapo-credits-lib.php';
-  if (!mc_hasCredit($uid)) {
+  $coutTokens = mapo_cout_task($task); // coût en tokens de cette action
+  if (!mc_hasTokens($uid, $coutTokens)) {
     echo json_encode(['ok' => false, 'error' => 'credits_epuises']); exit;
   }
 }
@@ -84,9 +86,11 @@ $r = ($provider === 'anthropic' && !$image)
   : callOpenAICompat($system, $user, $maxTokens, $noReason, $image);
 
 if (!empty($r['ok'])) {
-  // Succès → on décompte 1 crédit (si requête MAPO+ metered) et on renvoie le solde.
-  $credits = $metered ? mc_consume($uid, 1) : null;
-  echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider, 'credits' => $credits]);
+  // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
+  // renvoie la jauge (solde + plafond) pour un affichage immédiat.
+  $tokens = null; $cap = null;
+  if ($metered) { $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = $st['cap'] ?? null; }
+  echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider, 'tokens' => $tokens, 'cap' => $cap]);
 } else {
   echo json_encode(['ok' => false, 'error' => 'ia_echec', 'code' => $r['code'] ?? null, 'detail' => $r['detail'] ?? null]);
 }
