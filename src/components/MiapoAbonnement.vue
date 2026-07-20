@@ -8,8 +8,8 @@
           <h3>{{ abo.offre.nom }}</h3>
         </div>
         <div class="ac-credits" :class="{ warn: abo.pourcentage >= 90 }">
-          <strong>{{ fmtTokens(abo.restant) }}</strong>
-          <span>{{ t('mia.aboQuizLeft') }}</span>
+          <strong>{{ restePct }}%</strong>
+          <span>{{ t('mia.aboPctLeft') }}</span>
         </div>
       </div>
       <div class="ac-bar"><div class="ac-bar-fill" :class="jaugeClass" :style="{ width: abo.pourcentage + '%' }"></div></div>
@@ -28,7 +28,10 @@
             <strong v-else>{{ t('mia.aboFree') }}</strong>
           </div>
         </div>
-        <div class="of-credits">{{ t('mia.aboNQuiz', { n: fmtTokens(o.capTokens) }) }}</div>
+        <div class="of-credits">
+          <template v-if="o.prix === 0">{{ t('mia.aboBaseUsage') }}</template>
+          <template v-else>×{{ multiple(o) }} {{ t('mia.aboMoreUsage') }}</template>
+        </div>
         <ul class="of-feats">
           <li v-for="f in o.features" :key="f"><Check :size="14" /> {{ t('mia.' + f) }}</li>
         </ul>
@@ -75,7 +78,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
-import { fmtTokens } from '../config/offres'
 import { Check, CreditCard, Smartphone, Loader2 } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -88,6 +90,10 @@ const phone = ref('')
 const status = ref('idle') // idle | pending | ok | refused | timeout | error
 
 const jaugeClass = computed(() => abo.pourcentage >= 90 ? 'is-danger' : abo.pourcentage >= 70 ? 'is-warn' : 'is-ok')
+const restePct = computed(() => Math.max(0, 100 - abo.pourcentage))
+// « ×N d'usage » relatif à l'offre gratuite (façon Claude) — pas de nombre de crédits.
+const baseCap = computed(() => { const f = abo.offres.find((o) => o.prix === 0) || abo.offres[0]; return (f && f.capTokens) || 1 })
+function multiple(o) { return Math.max(1, Math.round((o.capTokens || 0) / baseCap.value)) }
 
 onMounted(() => abo.load())
 
