@@ -378,6 +378,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj) {
@@ -419,6 +420,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const o = parseJsonObject(json.text)
         if (o) {
@@ -467,6 +469,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'orientation', data: { niveau, pays, forts, faibles } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj) {
@@ -511,6 +514,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, candidats, langue } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj) {
@@ -556,6 +560,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'prepa_examen', data: { niveau, pays, faibles } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj) {
@@ -608,6 +613,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'course_plan', data: { formation, programme, niveau } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj) {
@@ -645,6 +651,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const bilan = normalizeBilan6c(parseJsonObject(json.text))
         if (bilan) return { ok: true, bilan, mode: 'ia' }
@@ -668,6 +675,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         body: JSON.stringify({ metered: mtrB2C(), task: 'extract_modules', data: { formation, ecole, texte } }),
       })
       const json = await res.json().catch(() => null)
+      noteCredits(json)
       if (json && json.ok && json.text) {
         const obj = parseJsonObject(json.text)
         if (obj && Array.isArray(obj.modules)) {

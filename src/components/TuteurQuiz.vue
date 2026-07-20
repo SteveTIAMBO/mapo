@@ -7,6 +7,17 @@
       <small>Quelques secondes</small>
     </div>
 
+    <!-- Crédits épuisés -->
+    <div v-else-if="mode === 'epuise'" class="tq-epuise">
+      <Sparkles :size="30" />
+      <h3>Crédits épuisés</h3>
+      <p>Tu as utilisé tous tes crédits de révision pour ce cycle. Passe à l'offre supérieure pour continuer avec MIAPO.</p>
+      <div class="tq-epuise-act">
+        <button class="btn-primary" @click="$emit('abonnement')"><CreditCard :size="16" /><span>Voir les offres</span></button>
+        <button class="btn-ghost" @click="$emit('quit')">Plus tard</button>
+      </div>
+    </div>
+
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
       <div class="tq-top">
@@ -78,7 +89,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy } from 'lucide-vue-next'
+import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard } from 'lucide-vue-next'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -86,7 +97,7 @@ const props = defineProps({
   studentId: { type: String, default: '' },
   themes: { type: String, default: '' },
 })
-defineEmits(['quit'])
+defineEmits(['quit', 'abonnement'])
 
 const tuteur = useTuteurStore()
 const letters = ['A', 'B', 'C', 'D']
@@ -115,6 +126,7 @@ async function start() {
   // Niveau de difficulté courant (adaptatif) pour cet élève + cette matière.
   level.value = props.studentId ? tuteur.getLevel(props.studentId, subjectId.value) : 1
   const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: 10, themes: props.themes, difficulte: level.value })
+  if (res && res.reason === 'credits_epuises') { mode.value = 'epuise'; return }
   questions.value = res.questions || []
   if (!questions.value.length) { mode.value = 'result'; return }
   index.value = 0
@@ -190,6 +202,10 @@ onMounted(start)
 .tq-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; text-align: center; }
 .tq-loading p { margin: 0; font-size: 15px; color: var(--tx); }
 .tq-loading small { color: var(--tx3); }
+.tq-epuise { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 20px; text-align: center; color: var(--pr); }
+.tq-epuise h3 { margin: 4px 0 0; font-size: 18px; color: var(--tx); }
+.tq-epuise p { margin: 0; max-width: 360px; font-size: 14px; color: var(--tx3); }
+.tq-epuise-act { display: flex; gap: 10px; margin-top: 8px; }
 .spin { animation: spin .9s linear infinite; color: var(--pr); }
 @keyframes spin { to { transform: rotate(360deg); } }
 
