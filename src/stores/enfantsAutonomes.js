@@ -69,13 +69,54 @@ export const MATIERES = [
   'Mathématiques', 'Français', 'Anglais', 'Physique-Chimie', 'SVT',
   'Histoire-Géographie', 'Philosophie', 'Informatique', 'Espagnol', 'Allemand', 'ECM',
 ]
+// Référentiel national camerounais (sous-système francophone), programme uniforme
+// public = privé. Primaire : MINEDUB (APC, mêmes disciplines de la SIL au CM2).
 export const MATIERES_PRIMAIRE = [
-  'Français', 'Mathématiques', 'Anglais', 'Sciences', 'Histoire-Géographie',
-  'Éducation civique et morale', 'Informatique',
+  'Français', 'Anglais', 'Mathématiques', 'Sciences et technologie',
+  'Histoire', 'Géographie', 'Éducation à la citoyenneté et à la morale (ECM)',
+  'Informatique (TIC)', 'Langues et cultures nationales',
+  'Éducation artistique', 'Éducation physique et sportive (EPS)',
 ]
-// Renvoie la liste de matières adaptée au niveau (primaire vs secondaire).
+// Secondaire 1er cycle (6e-3e) — tronc commun MINESEC (sanction : BEPC).
+export const MATIERES_SECONDAIRE_1ER_CYCLE = [
+  'Français', 'Anglais', 'Mathématiques', 'Physique-Chimie-Technologie (PCT)',
+  'SVT', 'Histoire', 'Géographie', 'Éducation à la citoyenneté et à la morale (ECM)',
+  'Informatique', 'Éducation physique et sportive (EPS)',
+  'Deuxième langue (Espagnol/Allemand)', 'Langues et cultures nationales',
+]
+// Second cycle — série A (littéraire).
+export const MATIERES_SERIE_A = [
+  'Français', 'Philosophie', 'Littérature', 'Anglais',
+  'Deuxième langue (Espagnol/Allemand)', 'Histoire', 'Géographie',
+  'Éducation à la citoyenneté et à la morale (ECM)', 'Mathématiques',
+  'Informatique', 'Éducation physique et sportive (EPS)',
+]
+// Second cycle — série C (mathématiques & sciences physiques).
+export const MATIERES_SERIE_C = [
+  'Mathématiques', 'Physique', 'Chimie', 'SVT', 'Technologie', 'Informatique',
+  'Français', 'Philosophie', 'Anglais', 'Histoire', 'Géographie',
+  'Éducation à la citoyenneté et à la morale (ECM)', 'Éducation physique et sportive (EPS)',
+]
+// Second cycle — série D (mathématiques & sciences de la vie).
+export const MATIERES_SERIE_D = [
+  'Mathématiques', 'SVT', 'Physique', 'Chimie', 'Informatique',
+  'Français', 'Philosophie', 'Anglais', 'Histoire', 'Géographie',
+  'Éducation à la citoyenneté et à la morale (ECM)', 'Éducation physique et sportive (EPS)',
+]
+const NIVEAUX_PREMIER_CYCLE = ['6ème', '5ème', '4ème', '3ème']
+// Renvoie la liste de matières adaptée au niveau : primaire, 1er cycle (6e-3e),
+// ou série A/C/D au 2nd cycle. La philosophie n'apparaît qu'en 1ère/Terminale.
 export function matieresPourNiveau(niveau) {
-  return NIVEAUX_PRIMAIRE.includes(niveau) ? MATIERES_PRIMAIRE : MATIERES
+  if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
+  if (NIVEAUX_PREMIER_CYCLE.includes(niveau)) return MATIERES_SECONDAIRE_1ER_CYCLE
+  if (typeof niveau === 'string') {
+    let liste = null
+    if (/ A$/.test(niveau)) liste = MATIERES_SERIE_A
+    else if (/ C$/.test(niveau)) liste = MATIERES_SERIE_C
+    else if (/ D$/.test(niveau)) liste = MATIERES_SERIE_D
+    if (liste) return niveau.startsWith('2nde') ? liste.filter((m) => m !== 'Philosophie') : liste
+  }
+  return MATIERES
 }
 
 /**
