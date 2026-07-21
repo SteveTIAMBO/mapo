@@ -111,7 +111,6 @@ const { t } = useI18n({ useScope: 'global' })
 const isDemo = useAuthStore().isDemo
 const abo = useAbonnementStore()
 const pay = usePaiementStore()
-const enfants = useEnfantsAutonomesStore()
 
 const choisie = ref(null)
 const phone = ref('')
