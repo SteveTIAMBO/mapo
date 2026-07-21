@@ -202,14 +202,17 @@ async function payer() {
 .fam-note { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 10px 14px; border-radius: 12px; background: rgba(var(--pr-rgb),.08); color: var(--tx); font-size: 13px; font-weight: 500; }
 .fam-note svg { color: var(--pr); flex-shrink: 0; }
 
-.offres { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; align-items: start; }
+.offres { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; align-items: start; }
+@media (max-width: 640px) { .offres { grid-template-columns: 1fr; } }
 .offre { display: flex; flex-direction: column; gap: 10px; position: relative; }
 .offre.actif { border-color: var(--pr); box-shadow: 0 0 0 1px var(--pr) inset; }
-.offre.promo { border-color: var(--pr); box-shadow: 0 0 0 2px var(--pr) inset, 0 6px 20px rgba(var(--pr-rgb),.16); padding-top: 26px; }
+.offre.promo { border-color: var(--pr); box-shadow: 0 0 0 2px var(--pr) inset, 0 6px 20px rgba(var(--pr-rgb),.16); padding-top: 28px; }
 .promo-badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--pr); color: #fff; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; padding: 3px 10px; border-radius: 100px; white-space: nowrap; }
-.of-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+/* Nom au-dessus, prix en dessous → tient sur une ligne (devise non coupée). */
+.of-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
 .of-head h4 { margin: 0; font-size: 16px; color: var(--tx); }
-.of-price strong { font-size: 17px; color: var(--pr); } .of-price span { font-size: 12px; color: var(--tx3); }
+.of-price { white-space: nowrap; }
+.of-price strong { font-size: 19px; color: var(--pr); } .of-price span { font-size: 12.5px; color: var(--tx3); }
 .of-credits { font-size: 13px; font-weight: 600; color: var(--tx); background: rgba(var(--pr-rgb),.06); border-radius: 8px; padding: 6px 10px; }
 .acc-toggle { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; padding: 7px 2px; border: none; background: none; font-family: inherit; font-size: 12.5px; font-weight: 600; color: var(--pr); cursor: pointer; }
 .acc-chev { transition: transform .2s ease; } .acc-chev.rot { transform: rotate(180deg); }
