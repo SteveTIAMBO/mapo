@@ -48,7 +48,7 @@
       <div class="step-head">
         <span class="step-num">3</span>
         <h3>{{ t('mia.oriS3Title') }}</h3>
-        <span class="ia-badge"><Sparkles :size="12" /> MIAPO</span>
+        <span class="ia-badge"><MiapoOrbe :size="14" frozen /> MIAPO</span>
       </div>
 
       <div v-if="state === 'idle'">
@@ -112,6 +112,7 @@ import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientati
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 import Radar6C from './Radar6C.vue'
 
 const props = defineProps({ enfant: { type: Object, required: true } })

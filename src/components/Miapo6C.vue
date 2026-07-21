@@ -14,7 +14,7 @@
       </div>
 
       <div class="card bilan6c">
-        <div class="card-head"><Sparkles :size="18" /><h3>{{ t('mia.6cReport') }}</h3><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
+        <div class="card-head"><MiapoOrbe :size="20" frozen /><h3>{{ t('mia.6cReport') }}</h3><span class="ia-badge"><MiapoOrbe :size="14" frozen /> MIAPO</span></div>
         <div v-if="bilanState === 'loading'" class="loading"><Loader2 :size="30" class="spin" /><p>{{ t('mia.6cAnalyzing') }}</p></div>
         <template v-else-if="bilan">
           <p v-if="bilan.synthese" class="b-synth">{{ bilan.synthese }}</p>
@@ -83,6 +83,7 @@ import { useEnfantsAutonomesStore, NIVEAU_HORS_CATALOGUE } from '../stores/enfan
 import { useTuteurStore } from '../stores/tuteur'
 import Radar6C from './Radar6C.vue'
 import { Target, Sliders, Check, Sparkles, Loader2, Lightbulb, ThumbsUp, TrendingUp } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 const { t, locale } = useI18n({ useScope: 'global' })

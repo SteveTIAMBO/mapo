@@ -27,7 +27,7 @@
           <span class="tq-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
         </div>
         <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
-          <Sparkles :size="12" /> {{ lastMode === 'ia' ? 'MIAPO' : 'Démo' }}
+          <MiapoOrbe :size="14" frozen /> {{ lastMode === 'ia' ? 'MIAPO' : 'Démo' }}
         </span>
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
@@ -90,6 +90,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useTuteurStore } from '../stores/tuteur'
 import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({
   matiere: { type: String, required: true },

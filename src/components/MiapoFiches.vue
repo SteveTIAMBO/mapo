@@ -43,7 +43,7 @@
       <div v-if="fiche" class="card">
         <div class="vr-head">
           <span class="vr-mat">{{ fiche.titre || t('mia.fichesSheet') }}</span>
-          <span class="ia-badge"><Sparkles :size="12" /> MAPO+</span>
+          <span class="ia-badge"><MiapoOrbe :size="14" frozen /> MAPO+</span>
         </div>
         <div class="fiche-body">{{ fiche.document }}</div>
         <div class="row-actions">
@@ -82,6 +82,7 @@ import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { Layers, Sparkles, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t } = useI18n({ useScope: 'global' })

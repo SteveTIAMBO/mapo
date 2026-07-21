@@ -30,7 +30,7 @@
       <div class="card">
         <div class="vr-head">
           <span class="vr-mat">{{ sujet.titre || (exam + ' — ' + matiere) }}</span>
-          <span class="ia-badge"><Sparkles :size="12" /> MIAPO</span>
+          <span class="ia-badge"><MiapoOrbe :size="14" frozen /> MIAPO</span>
         </div>
         <div class="exam-meta"><ClipboardList :size="14" /> <span>{{ exam }} · {{ matiere }}</span></div>
         <div class="sujet-body">{{ sujet.document }}</div>
@@ -62,6 +62,7 @@ import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { matieresPourNiveau, NIVEAUX_PRIMAIRE, isNiveauSuperieur, PAYS } from '../stores/enfantsAutonomes'
 import { ClipboardList, Sparkles, Loader2, RefreshCw, Copy, ChevronRight, ChevronDown, Timer, Info } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t } = useI18n({ useScope: 'global' })

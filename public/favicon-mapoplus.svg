@@ -6,9 +6,9 @@
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="15" fill="url(#mapoG)"/>
-  <g transform="translate(4,8)">
-    <path d="M9 40 V11 L24 30 L39 11 V24" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M38 35 H48" fill="none" stroke="#0E1116" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M43 30 V40" fill="none" stroke="#0E1116" stroke-width="4.5" stroke-linecap="round"/>
+  <g transform="translate(3,13) scale(0.87)">
+    <path d="M8 40 V12 L23 31 L38 12 V40" fill="none" stroke="#ffffff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M50 35 H60" fill="none" stroke="#0E1116" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M55 30 V40" fill="none" stroke="#0E1116" stroke-width="4.5" stroke-linecap="round"/>
   </g>
 </svg>

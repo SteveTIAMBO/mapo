@@ -9,7 +9,7 @@
         aria-label="Ouvrir MIAPO"
         @click="open"
       >
-        <Sparkles :size="24" />
+        <MiapoOrbe :size="52" />
       </button>
     </transition>
   </Teleport>
@@ -23,7 +23,7 @@
         <div class="smb-modal">
           <div class="smb-head">
             <div class="smb-brand">
-              <span class="smb-spark"><Sparkles :size="16" /></span>
+              <MiapoOrbe :size="26" />
               <span class="smb-name">MIAPO</span>
               <span class="smb-subt">votre copilote</span>
             </div>
@@ -76,6 +76,7 @@
 <script setup>
 import { ref, nextTick, inject, onMounted, onUnmounted } from 'vue'
 import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight } from 'lucide-vue-next'
+import MiapoOrbe from '../../components/MiapoOrbe.vue'
 import { useMiapoCopilotStore } from '../../stores/miapoCopilot'
 
 const copilot = useMiapoCopilotStore()
@@ -146,11 +147,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
 .smb-fab {
   position: fixed; right: 24px; bottom: 24px; z-index: 60;
   width: 58px; height: 58px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--pr, #1558B0); color: #fff;
+  background: transparent; padding: 0;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 10px 26px rgba(16, 24, 40, 0.28);
+  transition: transform .18s ease;
 }
-.smb-fab:hover { filter: brightness(1.05); }
+.smb-fab:hover { transform: scale(1.06); }
 .smb-fab:active { transform: scale(0.96); }
 .smb-overlay { position: fixed; inset: 0; z-index: 60; background: rgba(16, 24, 40, 0.45); }
 .smb-container {

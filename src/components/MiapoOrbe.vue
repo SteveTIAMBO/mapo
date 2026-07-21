@@ -1,7 +1,7 @@
 <template>
   <!-- Orbe MIAPO : sphère sombre vivante (deux lumières qui orbitent à
        l'intérieur), reprise de l'orbe du site edufrem.com. Purement décorative. -->
-  <span class="orbe" :style="{ width: size + 'px', height: size + 'px' }" aria-hidden="true">
+  <span class="orbe" :class="{ 'is-static': frozen }" :style="{ width: size + 'px', height: size + 'px' }" aria-hidden="true">
     <span class="orbe-sphere">
       <span class="orbe-light"></span>
       <span class="orbe-light orbe-light-2"></span>
@@ -10,7 +10,11 @@
 </template>
 
 <script setup>
-defineProps({ size: { type: Number, default: 54 } })
+// `frozen` = orbe figée (pas d'animation) — pour les petits marqueurs IA.
+defineProps({
+  size: { type: Number, default: 54 },
+  frozen: { type: Boolean, default: false },
+})
 </script>
 
 <style scoped>
@@ -52,4 +56,7 @@ defineProps({ size: { type: Number, default: 54 } })
   75%  { transform: translate(15%, -15%) scale(.95); }
   100% { transform: translate(14%, 12%) scale(1.05); }
 }
+/* Orbe figée (petits marqueurs) : lumières positionnées, sans animation. */
+.orbe.is-static .orbe-light { animation: none; transform: translate(-15%, -17%) scale(1.06); }
+.orbe.is-static .orbe-light-2 { animation: none; transform: translate(16%, 15%) scale(1); }
 </style>
