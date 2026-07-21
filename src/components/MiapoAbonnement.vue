@@ -35,6 +35,21 @@
 
     <p class="muted xsmall monthly">{{ t('mia.aboMonthlyNote') }}</p>
 
+    <!-- Recharge de crédits ponctuelle (PAYG) -->
+    <div class="card packs">
+      <div class="card-head"><Zap :size="18" /><h3>{{ t('mia.creditsTitle') }}</h3></div>
+      <p class="muted small">{{ t('mia.creditsHint') }}</p>
+      <p v-if="abo.bonus > 0" class="bonus-line"><Check :size="14" /> {{ t('mia.creditsBonus', { n: Math.round(abo.bonus / 3000) }) }}</p>
+      <div class="packs-grid">
+        <div v-for="p in abo.packs" :key="p.id" class="pack">
+          <strong>{{ p.nom }}</strong>
+          <span class="pk-qty">≈ {{ Math.round(p.tokens / 3000) }} {{ t('mia.creditsRevisions') }}</span>
+          <span class="pk-price">{{ fmtPrix(p) }}</span>
+          <button class="btn btn-outline btn-sm" @click="choisirPack(p)">{{ t('mia.creditsBuy') }}</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Panneau de paiement -->
     <div v-if="choisie" class="card pay">
       <div class="card-head"><CreditCard :size="18" /><h3>{{ t('mia.aboPayTitle', { offre: choisie.nom, prix: fmtPrix(choisie) }) }}</h3></div>
@@ -86,13 +101,15 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
+import { useFacturationMiapoStore } from '../stores/facturationMiapo'
 import { prixOffre, fmtMontant } from '../utils/devise'
-import { Check, CreditCard, Smartphone, Loader2, ChevronDown, Users } from 'lucide-vue-next'
+import { Check, CreditCard, Smartphone, Loader2, ChevronDown, Users, Zap } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const isDemo = useAuthStore().isDemo
 const abo = useAbonnementStore()
 const pay = usePaiementStore()
+const fact = useFacturationMiapoStore()
 
 const choisie = ref(null)
 const phone = ref('')
@@ -124,20 +141,35 @@ onMounted(async () => {
   if (promo) open.value = { [promo.id]: true }
 })
 
-function choisir(o) { choisie.value = o; status.value = 'idle'; phone.value = '' }
+const choisieType = ref('tier') // 'tier' (palier) | 'pack' (recharge de crédits)
+function choisir(o) { choisie.value = o; choisieType.value = 'tier'; status.value = 'idle'; phone.value = '' }
+function choisirPack(p) { choisie.value = p; choisieType.value = 'pack'; status.value = 'idle'; phone.value = '' }
 function annuler() { choisie.value = null; status.value = 'idle' }
 
 async function payer() {
+  const estPack = choisieType.value === 'pack'
+  const desc = (estPack ? 'Recharge MAPO+ ' : 'Abonnement MAPO+ ') + choisie.value.nom
+  const ids = estPack ? { packId: choisie.value.id } : { offerId: choisie.value.id }
   // En démo (pas de compte), on simule l'encaissement pour montrer le parcours.
   if (isDemo) {
     status.value = 'pending'
-    setTimeout(() => { abo.activerDemo(choisie.value.id); status.value = 'ok' }, 1200)
+    setTimeout(() => {
+      estPack ? abo.activerDemoCredits(choisie.value.id) : abo.activerDemo(choisie.value.id)
+      fact.ajouterDemo({
+        label: desc,
+        montant: abo.devise === 'EUR' ? choisie.value.prixEur : choisie.value.prix,
+        devise: abo.devise,
+        moyen: abo.guichet === 'stripe' ? 'Carte (démo)' : 'Mobile Money (démo)',
+        type: estPack ? 'credits' : 'tier',
+      })
+      status.value = 'ok'
+    }, 1200)
     return
   }
-  // Europe → Stripe (carte) ; Afrique → Tranzak (Mobile Money). L'offre est
+  // Europe → Stripe (carte) ; Afrique → Tranzak (Mobile Money). L'offre/recharge est
   // accordée CÔTÉ SERVEUR à la confirmation → on rafraîchit l'état ensuite.
   if (abo.guichet === 'stripe') {
-    const r = await pay.initStripe({ amount: choisie.value.prixEur, description: 'Abonnement MAPO+ ' + choisie.value.nom, offerId: choisie.value.id })
+    const r = await pay.initStripe({ amount: choisie.value.prixEur, description: desc, ...ids })
     if (!r.ok) { status.value = r.error === 'not_configured' ? 'soon' : 'error'; return }
     if (r.payment_url) window.open(r.payment_url, '_blank')
     status.value = 'pending'
@@ -147,7 +179,7 @@ async function payer() {
     else status.value = 'timeout'
     return
   }
-  const r = await pay.init({ amount: choisie.value.prix, description: 'Abonnement MAPO+ ' + choisie.value.nom, phone: phone.value, offerId: choisie.value.id })
+  const r = await pay.init({ amount: choisie.value.prix, description: desc, phone: phone.value, ...ids })
   if (!r.ok) { status.value = 'error'; return }
   if (r.payment_url) { window.open(r.payment_url, '_blank') }
   status.value = 'pending'
@@ -185,6 +217,17 @@ async function payer() {
 .of-feats { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .of-feats li { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; color: var(--tx2, #444); }
 .of-feats svg { color: #1B8A5A; flex-shrink: 0; margin-top: 2px; }
+
+/* Recharges de crédits (PAYG) */
+.packs { margin-top: 16px; }
+.bonus-line { display: flex; align-items: center; gap: 6px; color: #1B8A5A; font-size: 13px; font-weight: 600; margin: 8px 0 0; }
+.bonus-line svg { flex-shrink: 0; }
+.packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+@media (max-width: 560px) { .packs-grid { grid-template-columns: 1fr; } }
+.pack { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 12px 14px; }
+.pack strong { font-size: 14px; color: var(--tx); }
+.pk-qty { font-size: 12px; color: var(--tx3); }
+.pk-price { font-size: 15px; font-weight: 700; color: var(--pr); margin: 2px 0 6px; }
 
 .pay { margin-top: 16px; }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }

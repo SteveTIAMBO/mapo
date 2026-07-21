@@ -23,6 +23,15 @@ export const OFFRES = [
 // fait foi via mapo-offres.php → remiseFamille).
 export const REMISE_FAMILLE = { minEnfants: 2, pct: 35 }
 
+// Recharges de crédits ponctuelles (PAYG) — REPLI local. Le serveur fait foi.
+// Un achat ajoute des tokens à un solde « bonus » qui ne se recharge pas chaque
+// semaine (consommé après la jauge d'abonnement).
+export const CREDIT_PACKS = [
+  { id: 'pack_s', nom: 'Petite recharge', tokens: 60000,  prix: 1000, prixEur: 1.99 },
+  { id: 'pack_m', nom: 'Recharge',        tokens: 180000, prix: 2500, prixEur: 4.99 },
+  { id: 'pack_l', nom: 'Grande recharge', tokens: 500000, prix: 6000, prixEur: 11.99 },
+]
+
 /** Nombre formaté (25 000). */
 export function fmtTokens(n) { return (n || 0).toLocaleString('fr-FR') }
 

@@ -40,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 $cfgPath = __DIR__ . '/mapo-pay-tranzak-config.php';
 if (file_exists($cfgPath)) require $cfgPath;
 require_once __DIR__ . '/mapo-credits-lib.php'; // remise de crédits MAPO+ après paiement
+require_once __DIR__ . '/mapo-invoices-lib.php'; // enregistrement de la facture/reçu
 $configured = defined('TRANZAK_APP_ID') && TRANZAK_APP_ID !== '' && strpos((string) TRANZAK_APP_ID, 'A_REMPLIR') !== 0
            && defined('TRANZAK_APP_KEY') && TRANZAK_APP_KEY !== '';
 $demoOpen = defined('PAY_DEMO_OPEN') && PAY_DEMO_OPEN;
@@ -88,6 +89,10 @@ if ($action === 'init') {
   $amount = (int) round((float) ($body['amount'] ?? 0));
   $currency = preg_replace('/[^A-Z]/', '', strtoupper($body['currency'] ?? 'XAF'));
   if ($currency === '') $currency = 'XAF';
+  // Recharge de crédits (PAYG) : le montant = prix SERVEUR du pack (anti-triche).
+  $pack = preg_replace('/[^a-z_]/', '', strtolower((string) ($body['creditPack'] ?? '')));
+  $packData = $pack !== '' ? mapo_credit_pack($pack) : null;
+  if ($packData) { $amount = (int) $packData['prix']; $currency = 'XAF'; }
   if ($amount < 1) {
     http_response_code(400); echo json_encode(['ok' => false, 'error' => 'montant_invalide']); exit;
   }
@@ -143,7 +148,10 @@ if ($action === 'init') {
     // Abonnement MAPO+ : on mémorise {transaction → uid + offre} pour n'accorder
     // l'offre QU'APRÈS confirmation du paiement (voir check).
     $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
-    if ($uid && $offre !== '') mc_pendingSet($txid, $uid, $offre);
+    if ($uid) {
+      if ($packData) mc_pendingSet($txid, $uid, $pack, 'credits', (int) $packData['tokens']);
+      elseif ($offre !== '') mc_pendingSet($txid, $uid, $offre, 'tier');
+    }
     echo json_encode([
       'ok' => true, 'mode' => $MODE,
       'transaction_id' => $txid,
@@ -186,9 +194,23 @@ if ($action === 'check') {
     // bon acheteur (uid mémorisé à l'init). Une seule fois (pendingTake retire).
     $granted = null;
     $pend = mc_pendingTake($reqId);
-    if ($pend && !empty($pend['uid']) && !empty($pend['offreId'])) {
-      mc_grant($pend['uid'], $pend['offreId']);
-      $granted = $pend['offreId'];
+    if ($pend && !empty($pend['uid'])) {
+      $kind = $pend['kind'] ?? 'tier';
+      if ($kind === 'credits') { mc_grantCredits($pend['uid'], (int) ($pend['tokens'] ?? 0)); $granted = 'credits'; }
+      elseif (!empty($pend['offreId'])) { mc_grant($pend['uid'], $pend['offreId']); $granted = $pend['offreId']; }
+      // Facture / reçu (montant réel confirmé par Tranzak).
+      $pk = ($kind === 'credits') ? mapo_credit_pack($pend['offreId']) : null;
+      $label = ($kind === 'credits')
+        ? ('Recharge de crédits' . ($pk ? ' — ' . $pk['nom'] : ''))
+        : ('Abonnement MAPO+ ' . (mapo_offre($pend['offreId'])['nom'] ?? ''));
+      mi_record($pend['uid'], [
+        'label' => $label,
+        'montant' => isset($d['amount']) ? (int) $d['amount'] : null,
+        'devise' => 'XAF',
+        'moyen' => $d['paymentMethod'] ?? ($d['payer']['paymentMethod'] ?? 'mobile_money'),
+        'transaction' => $reqId,
+        'type' => $kind,
+      ]);
     }
     // Commission Tranzak : selon le payload, le frais peut être au niveau racine,
     // sous merchant, ou sous payer. On expose aussi le net réellement reçu.

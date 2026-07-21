@@ -26,17 +26,61 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '../stores/auth'
+import { useFacturationMiapoStore } from '../stores/facturationMiapo'
 import { fmtMontant } from '../utils/devise'
 import { Receipt, Download } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
-const factures = ref([]) // rempli par le registre serveur (tâche Facturation)
+const authStore = useAuthStore()
+const fact = useFacturationMiapoStore()
+const { factures } = storeToRefs(fact)
 
-onMounted(() => { /* fetchFactures() — branché à la tranche Facturation */ })
+onMounted(() => fact.fetchFactures())
 function dateFr(iso) { try { return new Date(iso).toLocaleDateString('fr-FR') } catch { return '' } }
-function voir() { /* génération du reçu/facture — tranche Facturation */ }
+function esc(s) { return String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])) }
+
+/**
+ * Ouvre un document imprimable (→ PDF) : REÇU pour un particulier, FACTURE
+ * (avec mentions légales) pour une entreprise. En-tête EDUFREM, bon montant.
+ */
+function voir(f) {
+  const p = authStore.userProfile || {}
+  const entreprise = p.typeCompte === 'entreprise'
+  const docType = entreprise ? 'FACTURE' : 'REÇU'
+  const clientNom = entreprise ? (p.raisonSociale || '—') : (`${p.firstName || ''} ${p.lastName || ''}`.trim() || '—')
+  const clientBlock = entreprise
+    ? `${esc(clientNom)}<br>${esc(p.adresseFact || '')}${p.tva ? '<br>TVA : ' + esc(p.tva) : ''}`
+    : esc(clientNom)
+  const montant = fmtMontant(f.montant, f.devise)
+  const styles = 'body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1D1D1F;max-width:640px;margin:24px auto;padding:0 22px}'
+    + '.hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #0A84FF;padding-bottom:14px}'
+    + '.brand{font-size:22px;font-weight:800;letter-spacing:1px;color:#0A84FF}.brand small{display:block;font-size:12px;font-weight:600;color:#86868B;letter-spacing:0}'
+    + '.doc{text-align:right}.doc h1{margin:0;font-size:20px}.doc div{font-size:12px;color:#86868B}'
+    + '.parties{display:flex;justify-content:space-between;gap:20px;margin:22px 0;font-size:13px}.parties h3{font-size:11px;text-transform:uppercase;color:#86868B;margin:0 0 4px}'
+    + 'table{width:100%;border-collapse:collapse;margin-top:8px}th,td{text-align:left;padding:10px;border-bottom:1px solid #eee;font-size:14px}th{background:#f5f6f8;font-size:11px;text-transform:uppercase;color:#86868B}'
+    + '.tot{text-align:right;font-size:18px;font-weight:800;margin-top:14px}.ft{margin-top:28px;font-size:11px;color:#86868B;border-top:1px solid #eee;padding-top:12px}'
+    + '@media print{.noprint{display:none}}'
+  const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>' + docType + ' ' + esc(f.numero) + '</title><style>' + styles + '</style></head><body>'
+    + '<div class="hd"><div class="brand">EDUFREM<small>MAPO+ — tuteur intelligent</small></div>'
+    + '<div class="doc"><h1>' + docType + '</h1><div>N&deg; ' + esc(f.numero) + '</div><div>' + dateFr(f.date) + '</div></div></div>'
+    + '<div class="parties"><div><h3>&Eacute;mis par</h3>EDUFREM<br>contact@edufrem.com</div>'
+    + '<div><h3>' + (entreprise ? 'Factur&eacute; &agrave;' : 'Client') + '</h3>' + clientBlock + '</div></div>'
+    + '<table><thead><tr><th>D&eacute;signation</th><th style="text-align:right">Montant</th></tr></thead>'
+    + '<tbody><tr><td>' + esc(f.label) + '</td><td style="text-align:right">' + esc(montant) + '</td></tr></tbody></table>'
+    + '<div class="tot">Total : ' + esc(montant) + '</div>'
+    + '<div class="ft">Pay&eacute; par ' + esc(f.moyen || '—') + (f.transaction ? ' &middot; r&eacute;f. ' + esc(f.transaction) : '') + '. '
+    + (entreprise ? 'Facture &eacute;tablie par EDUFREM.' : 'Merci de votre confiance — re&ccedil;u de paiement MAPO+.') + '</div>'
+    + '<button class="noprint" onclick="window.print()" style="margin-top:22px;padding:10px 18px;border:none;border-radius:8px;background:#0A84FF;color:#fff;font-weight:600;cursor:pointer">Imprimer / Enregistrer en PDF</button>'
+    + '</body></html>'
+  const w = window.open('', '_blank')
+  if (!w) return
+  w.document.write(html)
+  w.document.close()
+}
 </script>
 
 <style scoped>

@@ -47,26 +47,29 @@ if (!function_exists('mc_path')) {
   function mc_week() { return gmdate('oW'); }
   function mc_weeklyCap($offreId) { $o = mapo_offre($offreId); return (int) $o['capTokens']; }
 
-  /** Entrée « fraîche » pour un palier : jauge pleine, semaine courante. */
-  function mc_fresh($offreId, $tierExpiry) {
-    return ['offreId' => $offreId, 'tokens' => mc_weeklyCap($offreId), 'weekId' => mc_week(), 'tierExpiry' => $tierExpiry];
+  /** Entrée « fraîche » pour un palier : jauge pleine, semaine courante. Le
+   *  solde `bonus` (crédits PAYG achetés) est CONSERVÉ à travers les recharges. */
+  function mc_fresh($offreId, $tierExpiry, $bonus = 0) {
+    return ['offreId' => $offreId, 'tokens' => mc_weeklyCap($offreId), 'weekId' => mc_week(), 'tierExpiry' => $tierExpiry, 'bonus' => (int) $bonus];
   }
-  function mc_free() { return mc_fresh('decouverte', ''); } // le gratuit n'expire pas
+  function mc_free($bonus = 0) { return mc_fresh('decouverte', '', $bonus); } // le gratuit n'expire pas
 
   /**
    * Applique les deux règles : (1) palier mensuel échu → retour au gratuit ;
    * (2) nouvelle semaine ISO → recharge de la jauge au plafond du palier.
+   * Le solde `bonus` (crédits achetés) est toujours préservé.
    */
   function mc_normalize($entry) {
-    if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free();
+    $bonus = is_array($entry) ? (int) ($entry['bonus'] ?? 0) : 0;
+    if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free($bonus);
     $offre = $entry['offreId'];
     $exp = $entry['tierExpiry'] ?? '';
     // 1) Palier payant expiré (fin du mois payé, pas de reconduction) → gratuit.
-    if ($exp !== '' && strtotime($exp) < time()) return mc_free();
+    if ($exp !== '' && strtotime($exp) < time()) return mc_free($bonus);
     // 2) Recharge hebdomadaire : si on a changé de semaine ISO, jauge au plafond.
-    if (($entry['weekId'] ?? '') !== mc_week()) return mc_fresh($offre, $exp);
+    if (($entry['weekId'] ?? '') !== mc_week()) return mc_fresh($offre, $exp, $bonus);
     // Sinon : on borne au plafond courant (au cas où il aurait baissé).
-    return ['offreId' => $offre, 'tokens' => min((int) $entry['tokens'], mc_weeklyCap($offre)), 'weekId' => $entry['weekId'], 'tierExpiry' => $exp];
+    return ['offreId' => $offre, 'tokens' => min((int) $entry['tokens'], mc_weeklyCap($offre)), 'weekId' => $entry['weekId'], 'tierExpiry' => $exp, 'bonus' => $bonus];
   }
 
   /** État courant (crée le gratuit si absent) : {offreId, tokens, cap, renewAt, weekId}. */
@@ -74,30 +77,44 @@ if (!function_exists('mc_path')) {
     return mc_mutate($uid, function ($e) { return $e; });
   }
 
-  /** Reste-t-il au moins $cost tokens ? (sans décompter) */
+  /** Reste-t-il au moins $cost tokens ? (jauge hebdo + solde bonus, sans décompter) */
   function mc_hasTokens($uid, $cost) {
     $e = mc_state($uid);
-    return $e && (int) $e['tokens'] >= (int) $cost;
+    return $e && ((int) $e['tokens'] + (int) ($e['bonus'] ?? 0)) >= (int) $cost;
   }
 
-  /** Décompte $cost tokens. Renvoie le solde restant, ou false si insuffisant. */
+  /** Décompte $cost tokens : d'abord la jauge hebdo, puis le solde bonus.
+   *  Renvoie le total restant (hebdo + bonus), ou false si insuffisant. */
   function mc_consume($uid, $cost) {
     $out = null;
     mc_mutate($uid, function ($e) use ($cost, &$out) {
-      if ((int) $e['tokens'] < (int) $cost) { $out = false; return $e; }
-      $e['tokens'] = (int) $e['tokens'] - (int) $cost;
-      $out = (int) $e['tokens'];
+      $tok = (int) $e['tokens']; $bon = (int) ($e['bonus'] ?? 0);
+      if ($tok + $bon < (int) $cost) { $out = false; return $e; }
+      $fromWeekly = min($tok, (int) $cost);
+      $e['tokens'] = $tok - $fromWeekly;
+      $e['bonus'] = $bon - ((int) $cost - $fromWeekly);
+      $out = (int) $e['tokens']; // renvoie la jauge HEBDO restante (pour l'affichage)
       return $e;
     });
     return $out;
   }
 
-  /** Accorde une offre (APRÈS paiement confirmé) : palier valable 1 mois, jauge pleine. */
+  /** Accorde une offre (APRÈS paiement confirmé) : palier valable 1 mois, jauge
+   *  pleine. Le solde bonus déjà acheté est conservé. */
   function mc_grant($uid, $offreId) {
     $o = mapo_offre($offreId);
     $exp = gmdate('c', time() + ((int) ($o['cycleJours'] ?? 30)) * 86400);
-    return mc_mutate($uid, function () use ($o, $exp) {
-      return mc_fresh($o['id'], $exp);
+    return mc_mutate($uid, function ($e) use ($o, $exp) {
+      return mc_fresh($o['id'], $exp, (int) ($e['bonus'] ?? 0));
+    });
+  }
+
+  /** Ajoute des crédits au solde bonus (APRÈS paiement d'une recharge confirmé). */
+  function mc_grantCredits($uid, $tokens) {
+    $tokens = (int) $tokens;
+    return mc_mutate($uid, function ($e) use ($tokens) {
+      $e['bonus'] = (int) ($e['bonus'] ?? 0) + max(0, $tokens);
+      return $e;
     });
   }
 
@@ -107,14 +124,15 @@ if (!function_exists('mc_path')) {
   // QU'APRÈS un vrai paiement, et pour le bon acheteur.
   function mc_pendingPath() { return __DIR__ . '/mapo-credits-pending.json'; }
 
-  function mc_pendingSet($txid, $uid, $offreId) {
+  function mc_pendingSet($txid, $uid, $offreId, $kind = 'tier', $tokens = 0) {
     if ($txid === '' || $uid === '' || $offreId === '') return;
     $fp = fopen(mc_pendingPath(), 'c+'); if (!$fp) return;
     flock($fp, LOCK_EX);
     $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
     // Purge des entrées de plus de 24 h (paiements jamais aboutis).
     foreach ($map as $k => $v) { if (($v['at'] ?? 0) < time() - 86400) unset($map[$k]); }
-    $map[$txid] = ['uid' => $uid, 'offreId' => $offreId, 'at' => time()];
+    // $kind : 'tier' (offreId = palier) | 'credits' (offreId = pack, tokens = crédits).
+    $map[$txid] = ['uid' => $uid, 'offreId' => $offreId, 'kind' => $kind, 'tokens' => (int) $tokens, 'at' => time()];
     ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
     flock($fp, LOCK_UN); fclose($fp);
   }

@@ -23,19 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 
 if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem'); // id public
 require __DIR__ . '/mapo-credits-lib.php';
+require __DIR__ . '/mapo-invoices-lib.php';
 
 $body = json_decode(file_get_contents('php://input'), true);
 $action = is_array($body) ? ($body['action'] ?? 'offers') : 'offers';
 
 if ($action === 'offers') {
-  echo json_encode(['ok' => true, 'offres' => mapo_offres(), 'remiseFamille' => mapo_remise_famille()]); exit;
+  echo json_encode(['ok' => true, 'offres' => mapo_offres(), 'remiseFamille' => mapo_remise_famille(), 'packs' => mapo_credit_packs()]); exit;
 }
 
 if ($action === 'state') {
   $uid = verifyFirebaseToken();
   if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
   $e = mc_state($uid);
-  echo json_encode(['ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'], 'cap' => mc_weeklyCap($e['offreId']), 'renewAt' => $e['tierExpiry'] ?? '', 'weekId' => $e['weekId'] ?? '']);
+  echo json_encode(['ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'], 'cap' => mc_weeklyCap($e['offreId']), 'bonus' => (int) ($e['bonus'] ?? 0), 'renewAt' => $e['tierExpiry'] ?? '', 'weekId' => $e['weekId'] ?? '']);
+  exit;
+}
+
+if ($action === 'factures') {
+  $uid = verifyFirebaseToken();
+  if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  echo json_encode(['ok' => true, 'factures' => mi_list($uid)]);
   exit;
 }
 

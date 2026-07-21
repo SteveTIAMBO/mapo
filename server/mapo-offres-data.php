@@ -39,6 +39,23 @@ function mapo_remise_famille() {
   return ['minEnfants' => 2, 'pct' => 35];
 }
 
+/**
+ * Recharges de crédits ponctuelles (PAYG) : un achat one-shot ajoute des tokens
+ * à un solde « bonus » qui NE se réinitialise PAS chaque semaine (à la différence
+ * de la jauge d'abonnement). Consommé APRÈS la jauge hebdo. Prix ajustables.
+ */
+function mapo_credit_packs() {
+  return [
+    ['id' => 'pack_s', 'nom' => 'Petite recharge', 'tokens' => 60000,  'prix' => 1000, 'prixEur' => 1.99],
+    ['id' => 'pack_m', 'nom' => 'Recharge',        'tokens' => 180000, 'prix' => 2500, 'prixEur' => 4.99],
+    ['id' => 'pack_l', 'nom' => 'Grande recharge', 'tokens' => 500000, 'prix' => 6000, 'prixEur' => 11.99],
+  ];
+}
+function mapo_credit_pack($id) {
+  foreach (mapo_credit_packs() as $p) if ($p['id'] === $id) return $p;
+  return null;
+}
+
 /** Coût en tokens par action IA (par `task` de mapo-ia.php). Ajustable. */
 function mapo_cout_action() {
   return [

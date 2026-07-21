@@ -37,6 +37,7 @@ $cfgPath = __DIR__ . '/mapo-pay-stripe-config.php';
 if (file_exists($cfgPath)) require $cfgPath;
 require_once __DIR__ . '/mapo-offres-data.php';  // montant attendu = source serveur (anti-triche)
 require_once __DIR__ . '/mapo-credits-lib.php';  // remise d'offre après paiement
+require_once __DIR__ . '/mapo-invoices-lib.php'; // enregistrement de la facture/reçu
 $SK = defined('STRIPE_SECRET_KEY') ? (string) STRIPE_SECRET_KEY : '';
 $configured = $SK !== '' && strpos($SK, 'sk_') === 0;
 
@@ -67,9 +68,11 @@ if (!$uid && !$demoOpen) {
 // ════════════════════════════════════════════════════════════════════
 if ($action === 'init') {
   $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
-  // Montant attendu = prix serveur de l'offre (on ne fait PAS confiance au front).
+  $pack = preg_replace('/[^a-z_]/', '', strtolower((string) ($body['creditPack'] ?? '')));
+  $packData = $pack !== '' ? mapo_credit_pack($pack) : null;
+  // Montant attendu = prix serveur de l'offre / du pack (on ne fait PAS confiance au front).
   $o = $offre !== '' ? mapo_offre($offre) : null;
-  $eur = $o ? (float) ($o['prixEur'] ?? 0) : (float) ($body['amount'] ?? 0);
+  $eur = $packData ? (float) ($packData['prixEur'] ?? 0) : ($o ? (float) ($o['prixEur'] ?? 0) : (float) ($body['amount'] ?? 0));
   $cents = (int) round($eur * 100);
   if ($cents < 50) { // Stripe : minimum ~0,50 €
     http_response_code(400); echo json_encode(['ok' => false, 'error' => 'montant_invalide']); exit;
@@ -97,8 +100,11 @@ if ($action === 'init') {
   if ($resp === null || empty($resp['id']) || empty($resp['url'])) {
     echo json_encode(['ok' => false, 'error' => 'stripe_init_echec', 'detail' => $resp['error']['message'] ?? null]); exit;
   }
-  // Mémorise {session → uid + offre} pour accorder l'offre APRÈS paiement (check).
-  if ($uid && $offre !== '') mc_pendingSet($resp['id'], $uid, $offre);
+  // Mémorise {session → uid + offre/pack} pour accorder APRÈS paiement (check).
+  if ($uid) {
+    if ($packData) mc_pendingSet($resp['id'], $uid, $pack, 'credits', (int) $packData['tokens']);
+    elseif ($offre !== '') mc_pendingSet($resp['id'], $uid, $offre, 'tier');
+  }
   echo json_encode([
     'ok' => true, 'mode' => (strpos($SK, 'sk_live_') === 0 ? 'live' : 'test'),
     'transaction_id' => $resp['id'], 'payment_url' => $resp['url'],
@@ -121,9 +127,19 @@ if ($action === 'check') {
   if ($paid) {
     $granted = null;
     $pend = mc_pendingTake($sid);
-    if ($pend && !empty($pend['uid']) && !empty($pend['offreId'])) {
-      mc_grant($pend['uid'], $pend['offreId']);
-      $granted = $pend['offreId'];
+    if ($pend && !empty($pend['uid'])) {
+      $kind = $pend['kind'] ?? 'tier';
+      if ($kind === 'credits') { mc_grantCredits($pend['uid'], (int) ($pend['tokens'] ?? 0)); $granted = 'credits'; }
+      elseif (!empty($pend['offreId'])) { mc_grant($pend['uid'], $pend['offreId']); $granted = $pend['offreId']; }
+      $pk = ($kind === 'credits') ? mapo_credit_pack($pend['offreId']) : null;
+      $label = ($kind === 'credits')
+        ? ('Recharge de crédits' . ($pk ? ' — ' . $pk['nom'] : ''))
+        : ('Abonnement MAPO+ ' . (mapo_offre($pend['offreId'])['nom'] ?? ''));
+      mi_record($pend['uid'], [
+        'label' => $label,
+        'montant' => isset($resp['amount_total']) ? $resp['amount_total'] / 100 : null,
+        'devise' => 'EUR', 'moyen' => 'card', 'transaction' => $sid, 'type' => $kind,
+      ]);
     }
     echo json_encode(['ok' => true, 'status' => 'ACCEPTED', 'granted' => $granted,
       'amount' => isset($resp['amount_total']) ? $resp['amount_total'] / 100 : null, 'currency' => 'EUR']);

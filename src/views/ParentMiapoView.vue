@@ -423,6 +423,22 @@
               <div class="form-group"><label class="form-label">{{ t('mia.email') }}</label><input :value="parentProfil.email" class="input" disabled /></div>
               <div class="form-group"><label class="form-label">{{ t('mia.phone') }}</label><input v-model="parentProfil.phone" class="input" type="tel" :placeholder="t('mia.phonePlaceholder')" /></div>
             </div>
+            <!-- Type de compte : particulier (reçu simple) / entreprise (facture complète) -->
+            <div class="form-row">
+              <div class="form-group"><label class="form-label">{{ t('mia.accountType') }}</label>
+                <select v-model="parentProfil.typeCompte" class="input">
+                  <option value="particulier">{{ t('mia.accountIndividual') }}</option>
+                  <option value="entreprise">{{ t('mia.accountBusiness') }}</option>
+                </select>
+              </div>
+            </div>
+            <template v-if="parentProfil.typeCompte === 'entreprise'">
+              <div class="form-row">
+                <div class="form-group"><label class="form-label">{{ t('mia.companyName') }}</label><input v-model="parentProfil.raisonSociale" class="input" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.vat') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="parentProfil.tva" class="input" /></div>
+              </div>
+              <div class="form-group"><label class="form-label">{{ t('mia.billingAddress') }}</label><textarea v-model="parentProfil.adresseFact" class="input" rows="2"></textarea></div>
+            </template>
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveParentProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
               <span v-if="parentSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
@@ -781,11 +797,11 @@ async function genererPlanCours() {
   setTimeout(() => { coursMsg.value = '' }, 4000)
 }
 // Profil du PARENT (compte) — affiché d'abord en mode parent ; le profil enfant suit.
-const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '', photoURL: '' })
+const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '', photoURL: '', typeCompte: 'particulier', raisonSociale: '', adresseFact: '', tva: '' })
 const parentSaved = ref(false)
 function syncParentProfil() {
   const p = authStore.userProfile || {}
-  parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '', photoURL: p.photoURL || '' }
+  parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '', photoURL: p.photoURL || '', typeCompte: p.typeCompte || 'particulier', raisonSociale: p.raisonSociale || '', adresseFact: p.adresseFact || '', tva: p.tva || '' }
 }
 function onPickParentPhoto(ev) {
   const f = ev.target.files && ev.target.files[0]
@@ -800,6 +816,10 @@ function saveParentProfil() {
     lastName: parentProfil.value.lastName.trim(),
     phone: parentProfil.value.phone.trim(),
     photoURL: parentProfil.value.photoURL,
+    typeCompte: parentProfil.value.typeCompte,
+    raisonSociale: parentProfil.value.raisonSociale.trim(),
+    adresseFact: parentProfil.value.adresseFact.trim(),
+    tva: parentProfil.value.tva.trim(),
   })
   parentSaved.value = true
   setTimeout(() => { parentSaved.value = false }, 2000)

@@ -24,7 +24,7 @@ export const usePaiementStore = defineStore('paiement', () => {
    * Lance un encaissement. Si `phone` est fourni → push Mobile Money sur le
    * téléphone. Sinon → page web hébergée (`payment_url` à ouvrir).
    */
-  async function init({ amount, description, phone, offerId }) {
+  async function init({ amount, description, phone, offerId, packId }) {
     busy.value = true
     try {
       const r = await fetch('/mapo-pay-tranzak.php', {
@@ -36,7 +36,8 @@ export const usePaiementStore = defineStore('paiement', () => {
           currency: 'XAF',
           description: description || 'Abonnement MAPO+',
           mobileWalletNumber: phone || '',
-          subscriptionOffer: offerId || '', // → remise de crédits après paiement confirmé
+          subscriptionOffer: offerId || '', // → remise d'offre après paiement confirmé
+          creditPack: packId || '',         // → recharge de crédits (PAYG)
         }),
       })
       const d = await r.json().catch(() => ({}))
@@ -82,7 +83,7 @@ export const usePaiementStore = defineStore('paiement', () => {
    * Stripe / re-vérification de la session). Tant que les clés Stripe ne sont pas
    * posées, l'adaptateur répond `{ ok:false, error:'not_configured' }`.
    */
-  async function initStripe({ amount, description, offerId }) {
+  async function initStripe({ amount, description, offerId, packId }) {
     busy.value = true
     try {
       const r = await fetch('/mapo-pay-stripe.php', {
@@ -94,6 +95,7 @@ export const usePaiementStore = defineStore('paiement', () => {
           currency: 'eur',
           description: description || 'Abonnement MAPO+',
           subscriptionOffer: offerId || '',
+          creditPack: packId || '',  // → recharge de crédits (PAYG)
         }),
       })
       const d = await r.json().catch(() => ({}))

@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { auth } from '../firebase'
 import { useAuthStore } from './auth'
-import { OFFRES as OFFRES_DEFAUT, OFFRE_GRATUITE, REMISE_FAMILLE } from '../config/offres'
+import { OFFRES as OFFRES_DEFAUT, OFFRE_GRATUITE, REMISE_FAMILLE, CREDIT_PACKS } from '../config/offres'
 import { detectDevise, guichetPour } from '../utils/devise'
 
 /**
@@ -28,6 +28,9 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const renewAt = ref('')
   const remiseFamille = ref(REMISE_FAMILLE)       // { minEnfants, pct } — serveur fait foi
   const devise = ref(detectDevise())              // 'XAF' (Tranzak) | 'EUR' (Stripe)
+  const bonus = ref(0)                            // crédits achetés (PAYG), hors jauge hebdo
+  const packsServeur = ref(null)
+  const packs = computed(() => packsServeur.value || CREDIT_PACKS)
 
   // Les offres SERVEUR portent prix + quotas, mais pas la copie « avantages »
   // (texte UI). On la ré-attache depuis la config locale par id.
@@ -55,6 +58,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
       const d = await r.json().catch(() => ({}))
       if (d && d.ok && Array.isArray(d.offres) && d.offres.length) offresServeur.value = d.offres
       if (d && d.remiseFamille) remiseFamille.value = d.remiseFamille
+      if (d && Array.isArray(d.packs) && d.packs.length) packsServeur.value = d.packs
     } catch { /* repli config locale */ }
   }
 
@@ -64,7 +68,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     try {
       const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ action: 'state' }) })
       const d = await r.json().catch(() => ({}))
-      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; renewAt.value = d.renewAt || ''; return true }
+      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; renewAt.value = d.renewAt || ''; return true }
     } catch { /* offline */ }
     return false
   }
@@ -80,12 +84,12 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   function loadLocal() {
     try {
       const raw = JSON.parse(localStorage.getItem(KEY(owner.value)) || 'null')
-      if (raw) { offreId.value = raw.offreId || 'decouverte'; tokens.value = raw.tokens ?? offre.value.capTokens; cap.value = raw.cap ?? offre.value.capTokens; renewAt.value = raw.renewAt || '' }
+      if (raw) { offreId.value = raw.offreId || 'decouverte'; tokens.value = raw.tokens ?? offre.value.capTokens; cap.value = raw.cap ?? offre.value.capTokens; bonus.value = raw.bonus ?? 0; renewAt.value = raw.renewAt || '' }
       else resetLocal()
     } catch { resetLocal() }
     if (renewAt.value && new Date(renewAt.value) < new Date()) resetLocal()
   }
-  function saveLocal() { try { localStorage.setItem(KEY(owner.value), JSON.stringify({ offreId: offreId.value, tokens: tokens.value, cap: cap.value, renewAt: renewAt.value })) } catch { /* quota */ } }
+  function saveLocal() { try { localStorage.setItem(KEY(owner.value), JSON.stringify({ offreId: offreId.value, tokens: tokens.value, cap: cap.value, bonus: bonus.value, renewAt: renewAt.value })) } catch { /* quota */ } }
   function resetLocal() { const f = offres.value[0]; offreId.value = f.id; tokens.value = f.capTokens; cap.value = f.capTokens; renewAt.value = ''; saveLocal() }
 
   /** Démo uniquement : simule l'activation d'une offre (vrai compte = grant serveur). */
@@ -104,5 +108,13 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   }
   function marquerEpuise() { tokens.value = 0; if (isDemo.value) saveLocal() }
 
-  return { isDemo, offreId, tokens, cap, renewAt, remiseFamille, devise, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, majJauge, marquerEpuise }
+  /** Démo : simule l'achat d'une recharge (ajoute les tokens au solde bonus). */
+  function activerDemoCredits(packId) {
+    const p = packs.value.find((x) => x.id === packId)
+    if (!p) return
+    bonus.value = (bonus.value || 0) + (p.tokens || 0)
+    saveLocal()
+  }
+
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise }
 })
