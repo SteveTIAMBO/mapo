@@ -76,7 +76,7 @@
           </div>
 
           <div class="card insight-card">
-            <div class="insight-icon"><Sparkles :size="20" /></div>
+            <div class="insight-icon"><MiapoOrbe :size="30" /></div>
             <div><strong>{{ t('mia.watchPoints') }}</strong><p>{{ insight }}</p></div>
           </div>
 
@@ -93,7 +93,7 @@
 
           <!-- Plan de cours généré par MIAPO (apprenant hors-catalogue) -->
           <div v-if="coursPlan.length" class="card cplan-card">
-            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myCoursePlan') }}</h3><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
+            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myCoursePlan') }}</h3><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
             <div class="cplan-list">
               <div v-for="(p, i) in coursPlan" :key="i" class="cplan-step">
                 <div class="ps-head"><span class="ps-per">{{ p.periode }}</span><button v-if="p.module && isApprenant" class="ps-mod" @click="goRevise(p.module)"><Sparkles :size="12" /> {{ p.module }}</button><span v-else-if="p.module" class="ps-mod-static">{{ p.module }}</span></div>
@@ -244,7 +244,7 @@
               </div>
               <div v-else-if="prepaState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.prepaLoading') }}</p></div>
               <div v-else-if="prepaState === 'done' && prepaResult" class="prepa-result">
-                <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || t('mia.program') }}</span><span class="ia-badge"><Sparkles :size="12" /> MIAPO</span></div>
+                <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || t('mia.program') }}</span><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
                 <div class="prepa-plan">
                   <div v-for="(s, i) in prepaResult.plan" :key="i" class="etape">
                     <div class="etape-head"><span class="etape-num">{{ i + 1 }}</span><strong>{{ s.etape }}</strong></div>
@@ -609,6 +609,7 @@ import MiapoUtilisation from '../components/MiapoUtilisation.vue'
 import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
 import LogoMapoPlus from '../components/LogoMapoPlus.vue'
+import MiapoOrbe from '../components/MiapoOrbe.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
@@ -650,6 +651,8 @@ const SECTIONS = computed(() => {
   // Utilisation (jauge) + Facturation : accès direct au menu principal (payeurs).
   const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge }
   const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt }
+  // Facturation = parent + apprenant (les payeurs). Le compte ENFANT ne paie pas.
+  const billingItems = store.isCompteEnfant ? [] : [billing]
   // Abonnement retiré du menu principal → vit dans les Paramètres (section « Profil »).
   // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
   // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
@@ -658,7 +661,7 @@ const SECTIONS = computed(() => {
   // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
   // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, usage, billing]
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, usage, ...billingItems]
   }
   return [
     home,
@@ -669,7 +672,7 @@ const SECTIONS = computed(() => {
     progress, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
     orient,
-    usage, billing,
+    usage, ...billingItems,
   ]
 })
 const section = ref('accueil')
@@ -1307,7 +1310,7 @@ onUnmounted(() => {
 .child-info h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; } .child-meta { font-size: 13px; color: var(--tx2); display: flex; gap: 8px; } .sep { color: var(--bd); }
 
 .insight-card { display: flex; gap: 14px; align-items: flex-start; background: rgba(var(--pr-rgb,21,88,176),.05); border-color: rgba(var(--pr-rgb,21,88,176),.15); }
-.insight-icon { width: 40px; height: 40px; border-radius: 11px; background: rgba(var(--pr-rgb,21,88,176),.12); color: var(--pr); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.insight-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .insight-card strong { color: var(--pr); } .insight-card p { margin: 4px 0 0; font-size: 14px; color: var(--tx); line-height: 1.5; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }

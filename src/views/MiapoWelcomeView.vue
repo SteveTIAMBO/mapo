@@ -13,9 +13,7 @@
       <header class="miapo-head">
         <div class="miapo-logo">
           <div class="miapo-logo-mark">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z" />
-            </svg>
+            <LogoMapoPlus :size="28" />
           </div>
           <div>
             <div class="miapo-logo-title">MIAPO<span class="plus">+</span></div>
@@ -107,6 +105,7 @@ import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { setLang } from '../i18n'
+import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
