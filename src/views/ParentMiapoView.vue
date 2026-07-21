@@ -193,7 +193,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'; sousSection = 'utilisation'" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'; sousSection = 'abonnement'" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -340,6 +340,16 @@
           <MiapoOrientation :enfant="activeEnfant" @eval="section = 'profil6c'" />
         </section>
 
+        <!-- ========== UTILISATION (jauge d'usage) ========== -->
+        <section v-else-if="section === 'utilisation'" class="sec">
+          <MiapoUtilisation />
+        </section>
+
+        <!-- ========== FACTURATION (factures) ========== -->
+        <section v-else-if="section === 'facturation'" class="sec">
+          <MiapoFacturation />
+        </section>
+
         <!-- ========== PARAMÈTRES (sous-menu : profil / abonnement / notifications) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
           <nav class="param-tabs">
@@ -349,7 +359,7 @@
           </nav>
 
           <!-- Sous-menu : Utilisation (offres + jauge de crédits) -->
-          <div v-show="sousSection === 'utilisation'">
+          <div v-show="sousSection === 'abonnement'">
             <MiapoAbonnement />
           </div>
 
@@ -374,7 +384,7 @@
               <div v-else class="card wa-upsell">
                 <div class="card-head"><MessageCircle :size="18" /><h3>{{ t('mia.waUpsellTitle') }}</h3></div>
                 <p class="muted small">{{ t('mia.waUpsellText') }}</p>
-                <button class="btn btn-primary btn-sm" @click="sousSection = 'utilisation'">{{ t('mia.waUpsellCta') }}</button>
+                <button class="btn btn-primary btn-sm" @click="sousSection = 'abonnement'">{{ t('mia.waUpsellCta') }}</button>
               </div>
             </template>
           </div>
@@ -576,11 +586,13 @@ import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
 import MiapoAbonnement from '../components/MiapoAbonnement.vue'
+import MiapoUtilisation from '../components/MiapoUtilisation.vue'
+import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -614,6 +626,9 @@ const SECTIONS = computed(() => {
   const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp }
   const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays }
   const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass }
+  // Utilisation (jauge) + Facturation : accès direct au menu principal (payeurs).
+  const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge }
+  const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt }
   // Abonnement retiré du menu principal → vit dans les Paramètres (section « Profil »).
   // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
   // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
@@ -622,7 +637,7 @@ const SECTIONS = computed(() => {
   // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
   // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt]
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, usage, billing]
   }
   return [
     home,
@@ -633,6 +648,7 @@ const SECTIONS = computed(() => {
     progress, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
     orient,
+    usage, billing,
   ]
 })
 const section = ref('accueil')
@@ -641,7 +657,7 @@ const sousSection = ref('profil')
 const sousMenus = computed(() => {
   const items = [
     { key: 'profil', label: t('mia.secProfile'), icon: Settings },
-    { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge },
+    { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
     { key: 'langue', label: t('mia.secLanguage'), icon: Languages },
     { key: 'notification', label: t('mia.notifTitle'), icon: Bell },
     { key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility },
