@@ -368,7 +368,15 @@
           <!-- Sous-menu : Notifications -->
           <div v-show="sousSection === 'notification'" class="param-panel">
             <MiapoNotifications />
-            <MiapoRelanceWhatsApp v-if="!isApprenant && activeEnfant" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
+            <!-- Relance WhatsApp : réservée aux offres 6500+ (incitation upsell). -->
+            <template v-if="!isApprenant && activeEnfant">
+              <MiapoRelanceWhatsApp v-if="abo.relanceWhatsappDispo" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
+              <div v-else class="card wa-upsell">
+                <div class="card-head"><MessageCircle :size="18" /><h3>{{ t('mia.waUpsellTitle') }}</h3></div>
+                <p class="muted small">{{ t('mia.waUpsellText') }}</p>
+                <button class="btn btn-primary btn-sm" @click="sousSection = 'utilisation'">{{ t('mia.waUpsellCta') }}</button>
+              </div>
+            </template>
           </div>
 
           <!-- Sous-menu : Mes enfants (gestion : co-parent, compte enfant) — parent uniquement -->
@@ -554,6 +562,7 @@ import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { useRelanceStore } from '../stores/relance'
+import { useAbonnementStore } from '../stores/abonnement'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
@@ -571,7 +580,7 @@ import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -580,6 +589,7 @@ const authStore = useAuthStore()
 async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/miapo' : '/login') }
 
 const store = useEnfantsAutonomesStore()
+const abo = useAbonnementStore()
 const tuteur = useTuteurStore()
 const analytics = useMiapoAnalyticsStore()
 const relance = useRelanceStore()

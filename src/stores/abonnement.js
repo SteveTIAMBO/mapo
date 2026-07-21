@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { auth } from '../firebase'
 import { useAuthStore } from './auth'
-import { OFFRES as OFFRES_DEFAUT, OFFRE_GRATUITE } from '../config/offres'
+import { OFFRES as OFFRES_DEFAUT, OFFRE_GRATUITE, REMISE_FAMILLE } from '../config/offres'
+import { detectDevise, guichetPour } from '../utils/devise'
 
 /**
  * Store « abonnement MAPO+ » — offre courante + JAUGE DE TOKENS (façon Claude).
@@ -25,10 +26,17 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const tokens = ref(OFFRE_GRATUITE.capTokens)   // restants
   const cap = ref(OFFRE_GRATUITE.capTokens)       // plafond du cycle
   const renewAt = ref('')
+  const remiseFamille = ref(REMISE_FAMILLE)       // { minEnfants, pct } — serveur fait foi
+  const devise = ref(detectDevise())              // 'XAF' (Tranzak) | 'EUR' (Stripe)
 
   const offres = computed(() => offresServeur.value || OFFRES_DEFAUT)
   const offre = computed(() => offres.value.find((o) => o.id === offreId.value) || offres.value[0])
   const offresPayantes = computed(() => offres.value.filter((o) => o.prix > 0))
+  const guichet = computed(() => guichetPour(devise.value)) // 'tranzak' | 'stripe'
+  // Relance WhatsApp des parents : réservée aux offres 6500+ (whatsapp:true).
+  const relanceWhatsappDispo = computed(() => !!offre.value?.whatsapp)
+  /** Affine la devise selon le pays du profil (sinon fuseau/langue). */
+  function refreshDevise(pays) { devise.value = detectDevise(pays) }
   const restant = computed(() => Math.max(0, tokens.value))
   const utilise = computed(() => Math.max(0, cap.value - tokens.value))
   const pourcentage = computed(() => (cap.value ? Math.min(100, Math.round((utilise.value / cap.value) * 100)) : 0))
@@ -41,6 +49,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
       const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'offers' }) })
       const d = await r.json().catch(() => ({}))
       if (d && d.ok && Array.isArray(d.offres) && d.offres.length) offresServeur.value = d.offres
+      if (d && d.remiseFamille) remiseFamille.value = d.remiseFamille
     } catch { /* repli config locale */ }
   }
 
@@ -90,5 +99,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   }
   function marquerEpuise() { tokens.value = 0; if (isDemo.value) saveLocal() }
 
-  return { isDemo, offreId, tokens, cap, renewAt, offres, offre, offresPayantes, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, majJauge, marquerEpuise }
+  return { isDemo, offreId, tokens, cap, renewAt, remiseFamille, devise, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, majJauge, marquerEpuise }
 })

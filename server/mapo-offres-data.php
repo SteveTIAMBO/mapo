@@ -4,26 +4,39 @@
  *
  * >>> POUR AJUSTER LES QUOTAS OU LES PRIX PLUS TARD : modifier CE fichier
  *     uniquement, puis le re-déposer. Le front (mapo-offres.php), la remise de
- *     crédits après paiement (mapo-pay-tranzak.php) et le décompte (mapo-ia.php)
- *     lisent tous d'ici → aucune valeur en dur ailleurs.
+ *     crédits après paiement (mapo-pay-tranzak.php / mapo-pay-stripe.php) et le
+ *     décompte (mapo-ia.php) lisent tous d'ici → aucune valeur en dur ailleurs.
  *
  * MODÈLE (décidé avec Steve) : jauge de TOKENS façon Claude. Chaque action IA
  * « coûte » un nombre de tokens (mapo_cout_action). L'offre donne un plafond de
  * tokens PAR SEMAINE (`capTokens`) : une fois épuisé, l'utilisateur doit monter
  * d'offre OU attendre la recharge du LUNDI (semaine ISO). La FACTURATION, elle,
- * reste mensuelle (`cycleJours` = validité du palier via Tranzak, re-charge
- * mensuelle). Deux horloges : palier = mensuel, jauge de tokens = hebdomadaire.
+ * reste mensuelle (`cycleJours` = validité du palier). Deux horloges : palier =
+ * mensuel, jauge de tokens = hebdomadaire.
  *
- * `capTokens` = plafond HEBDOMADAIRE. Prix en FCFA (XAF). Chiffres provisoires,
- * ajustables ici (avec les coûts d'action ci-dessous).
+ * PRINCIPE : TOUTES les fonctions IA sont ouvertes à TOUS les paliers — ce qui
+ * différencie les offres, c'est le VOLUME d'usage (plus on utilise l'IA, plus on
+ * a besoin de monter). Seule exception câblée : la relance WhatsApp des parents,
+ * réservée aux offres 6500+ (`whatsapp` = true) comme incitation à l'upsell.
+ *
+ * 4 paliers (objectif : orienter le maximum de familles vers « Avancé » à 6500,
+ * marqué `promo`). `capTokens` = plafond HEBDOMADAIRE. `prix` en FCFA (XAF,
+ * paiement Tranzak) ; `prixEur` en euros (paiement Stripe, familles d'Europe).
+ * Chiffres ajustables ici.
  */
 
 function mapo_offres() {
   return [
-    ['id' => 'decouverte', 'nom' => 'Découverte', 'prix' => 0,    'capTokens' => 25000,  'cycleJours' => 30],
-    ['id' => 'standard',   'nom' => 'Standard',   'prix' => 1000, 'capTokens' => 150000, 'cycleJours' => 30],
-    ['id' => 'premium',    'nom' => 'Premium',    'prix' => 3000, 'capTokens' => 500000, 'cycleJours' => 30],
+    ['id' => 'decouverte', 'nom' => 'Découverte', 'prix' => 0,     'prixEur' => 0,     'capTokens' => 25000,  'cycleJours' => 30, 'promo' => false, 'whatsapp' => false],
+    ['id' => 'essentiel',  'nom' => 'Essentiel',  'prix' => 3500,  'prixEur' => 5.49,  'capTokens' => 125000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => false],
+    ['id' => 'avance',     'nom' => 'Avancé',     'prix' => 6500,  'prixEur' => 9.99,  'capTokens' => 300000, 'cycleJours' => 30, 'promo' => true,  'whatsapp' => true],
+    ['id' => 'illimite',   'nom' => 'Premium',    'prix' => 10000, 'prixEur' => 14.99, 'capTokens' => 600000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => true],
   ];
+}
+
+/** Offre famille : réduction appliquée dès le 2e enfant abonné. Ajustable. */
+function mapo_remise_famille() {
+  return ['minEnfants' => 2, 'pct' => 35];
 }
 
 /** Coût en tokens par action IA (par `task` de mapo-ia.php). Ajustable. */
@@ -51,4 +64,10 @@ function mapo_cout_task($task) {
 function mapo_offre($id) {
   foreach (mapo_offres() as $o) if ($o['id'] === $id) return $o;
   return mapo_offres()[0]; // repli = offre gratuite
+}
+
+/** L'offre donne-t-elle droit à la relance WhatsApp (6500+) ? */
+function mapo_offre_whatsapp($id) {
+  $o = mapo_offre($id);
+  return !empty($o['whatsapp']);
 }

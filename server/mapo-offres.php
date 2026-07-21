@@ -28,7 +28,7 @@ $body = json_decode(file_get_contents('php://input'), true);
 $action = is_array($body) ? ($body['action'] ?? 'offers') : 'offers';
 
 if ($action === 'offers') {
-  echo json_encode(['ok' => true, 'offres' => mapo_offres()]); exit;
+  echo json_encode(['ok' => true, 'offres' => mapo_offres(), 'remiseFamille' => mapo_remise_famille()]); exit;
 }
 
 if ($action === 'state') {

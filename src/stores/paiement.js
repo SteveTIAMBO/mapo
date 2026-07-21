@@ -46,10 +46,11 @@ export const usePaiementStore = defineStore('paiement', () => {
     } finally { busy.value = false }
   }
 
-  /** Interroge l'état d'une transaction (source de vérité = serveur → Tranzak). */
-  async function check(transactionId) {
+  /** Interroge l'état d'une transaction (source de vérité = serveur → guichet). */
+  async function check(transactionId, guichet = 'tranzak') {
+    const endpoint = guichet === 'stripe' ? '/mapo-pay-stripe.php' : '/mapo-pay-tranzak.php'
     try {
-      const r = await fetch('/mapo-pay-tranzak.php', {
+      const r = await fetch(endpoint, {
         method: 'POST',
         headers: await authHeaders(),
         body: JSON.stringify({ action: 'check', transaction_id: transactionId }),
@@ -63,10 +64,10 @@ export const usePaiementStore = defineStore('paiement', () => {
    * Attend l'issue d'un paiement en interrogeant `check` toutes les 4 s
    * (jusqu'à ~2 min). Renvoie 'ACCEPTED' | 'REFUSED' | 'TIMEOUT'.
    */
-  async function attendreResultat(transactionId, { onTick } = {}) {
+  async function attendreResultat(transactionId, { onTick, guichet = 'tranzak' } = {}) {
     for (let i = 0; i < 30; i++) {
       await new Promise((r) => setTimeout(r, 4000))
-      const d = await check(transactionId)
+      const d = await check(transactionId, guichet)
       if (onTick) onTick(d)
       if (d.ok && d.status === 'ACCEPTED') return 'ACCEPTED'
       if (d.ok && d.status === 'REFUSED') return 'REFUSED'
@@ -74,5 +75,33 @@ export const usePaiementStore = defineStore('paiement', () => {
     return 'TIMEOUT'
   }
 
-  return { busy, init, check, attendreResultat }
+  /**
+   * Paiement par carte via Stripe (familles d'Europe, EUR). Le serveur
+   * `mapo-pay-stripe.php` crée une session Checkout et renvoie l'URL hébergée à
+   * ouvrir. La remise de crédits se fait côté serveur à la confirmation (webhook
+   * Stripe / re-vérification de la session). Tant que les clés Stripe ne sont pas
+   * posées, l'adaptateur répond `{ ok:false, error:'not_configured' }`.
+   */
+  async function initStripe({ amount, description, offerId }) {
+    busy.value = true
+    try {
+      const r = await fetch('/mapo-pay-stripe.php', {
+        method: 'POST',
+        headers: await authHeaders(),
+        body: JSON.stringify({
+          action: 'init',
+          amount,                    // en euros (ex. 9.99)
+          currency: 'eur',
+          description: description || 'Abonnement MAPO+',
+          subscriptionOffer: offerId || '',
+        }),
+      })
+      const d = await r.json().catch(() => ({}))
+      return d && d.ok ? d : { ok: false, error: (d && d.error) || 'init_echec' }
+    } catch (e) {
+      return { ok: false, error: 'reseau', detail: String(e && e.message || e) }
+    } finally { busy.value = false }
+  }
+
+  return { busy, init, check, attendreResultat, initStripe }
 })
