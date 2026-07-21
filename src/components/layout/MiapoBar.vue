@@ -9,7 +9,7 @@
         aria-label="Ouvrir MIAPO"
         @click="isOpen = true"
       >
-        <Sparkles :size="24" />
+        <MiapoOrbe :size="56" />
       </button>
     </transition>
   </Teleport>
@@ -25,7 +25,7 @@
           <!-- En-tête -->
           <div class="miapo-head">
             <div class="miapo-brand">
-              <span class="miapo-spark"><Sparkles :size="16" /></span>
+              <MiapoOrbe :size="26" />
               <span class="miapo-name">MIAPO</span>
               <span class="miapo-sub">votre copilote</span>
             </div>
@@ -173,6 +173,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck } from 'lucide-vue-next'
+import MiapoOrbe from '../MiapoOrbe.vue'
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES } from '../../stores/miapoCopilot'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
@@ -460,39 +461,22 @@ onUnmounted(() => {
   width: 60px;
   height: 60px;
   border: none;
+  padding: 0;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--pr), #7c5cff);
-  color: #fff;
+  background: transparent;
   cursor: pointer;
   z-index: 9990;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 8px 24px rgba(var(--pr-rgb), .42), 0 2px 6px rgba(0,0,0,.12);
-  transition: transform .18s cubic-bezier(.16,1,.3,1), box-shadow .18s ease;
+  transition: transform .18s cubic-bezier(.16,1,.3,1);
   animation: miapo-fab-float 3.5s ease-in-out infinite;
 }
-.miapo-fab:hover {
-  transform: scale(1.08);
-  box-shadow: 0 12px 30px rgba(var(--pr-rgb), .55), 0 3px 8px rgba(0,0,0,.14);
-}
+.miapo-fab:hover { transform: scale(1.08); }
 .miapo-fab:active { transform: scale(.96); }
-.miapo-fab::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 2px solid rgba(var(--pr-rgb), .35);
-  opacity: 0;
-  animation: miapo-fab-pulse 3.5s ease-out infinite;
-}
 @keyframes miapo-fab-float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-4px); }
-}
-@keyframes miapo-fab-pulse {
-  0% { opacity: .6; transform: scale(1); }
-  70%, 100% { opacity: 0; transform: scale(1.35); }
 }
 .fab-pop-enter-active, .fab-pop-leave-active { transition: all .2s cubic-bezier(.16,1,.3,1); }
 .fab-pop-enter-from, .fab-pop-leave-to { opacity: 0; transform: scale(.5); }

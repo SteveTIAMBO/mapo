@@ -6,7 +6,7 @@
     <!-- ───────── Volet menu (sidebar sur PC ; hamburger coulissant sur mobile) ───────── -->
     <aside class="volet" :class="{ open: menuOpen, collapsed: voletCollapsed }">
       <div class="volet-brand">
-        <div class="brand-ic"><Sparkles :size="18" /></div>
+        <div class="brand-ic"><LogoMapoPlus :size="22" /></div>
         <div class="brand-tx"><strong>MAPO+</strong><small>{{ L.brandSub }}</small></div>
         <button type="button" class="volet-close" @click="menuOpen = false" aria-label="Fermer le menu"><X :size="20" /></button>
       </div>
@@ -58,6 +58,9 @@
           <h1>{{ currentSection.label }}</h1>
           <button v-if="!isApprenant" class="btn btn-outline btn-sm" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
         </header>
+
+        <!-- Barre d'alerte d'usage (50 / 90 / 100 %) → Abonnement -->
+        <MiapoAlerteUsage />
 
         <!-- Bascule « mode Netflix » : confier le téléphone à l'enfant / revenir au parent -->
         <MiapoProfilSwitch :enfant="activeEnfant" @switch="activeId = $event" />
@@ -588,6 +591,8 @@ import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
 import MiapoAbonnement from '../components/MiapoAbonnement.vue'
 import MiapoUtilisation from '../components/MiapoUtilisation.vue'
 import MiapoFacturation from '../components/MiapoFacturation.vue'
+import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
+import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
