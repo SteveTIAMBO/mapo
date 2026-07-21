@@ -486,14 +486,34 @@
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
             </div>
+            <!-- Établissement (catalogue) → formation → programme préchargé (supérieur) -->
+            <template v-if="isNiveauSuperieur(profil.niveau)">
+              <div class="form-group">
+                <label class="form-label">{{ t('mia.catSchoolLabel') }}</label>
+                <select v-model="profil.catEcole" class="input" @change="onCatEcole(profil)">
+                  <option value="">{{ t('mia.catSchoolChoose') }}</option>
+                  <option v-for="e in ECOLES_CATALOGUE" :key="e.id" :value="e.id">{{ e.nom }}</option>
+                  <option value="autre">{{ t('mia.catSchoolOther') }}</option>
+                </select>
+              </div>
+              <div v-if="ecoleCatalogueObj(profil)" class="form-group">
+                <label class="form-label">{{ t('mia.catFormationLabel') }}</label>
+                <select v-model="profil.catFormation" class="input" @change="onCatFormation(profil)">
+                  <option value="">{{ t('mia.catFormationChoose') }}</option>
+                  <option v-for="f in ecoleCatalogueObj(profil).formations" :key="f.id" :value="f.id">{{ f.nom }}</option>
+                </select>
+                <p v-if="profil.catFormation" class="muted small preloaded"><Check :size="13" /> {{ t('mia.catPreloaded') }}</p>
+              </div>
+              <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="3" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
+            </template>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">{{ t('mia.targetGrade') }}</label>
                 <input v-model.number="profil.objectifNote" type="number" min="0" max="20" step="0.5" class="input" />
                 <small class="muted small">{{ t('mia.targetGradeHint') }}</small>
               </div>
-              <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
-              <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }}</label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
+              <div v-if="!isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
+              <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
             </div>
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
@@ -562,11 +582,28 @@
             </div>
           </template>
           <template v-if="isNiveauSuperieur(form.niveau)">
-            <div class="form-row">
+            <!-- Établissement (catalogue) → formation → préchargement du programme -->
+            <div class="form-group">
+              <label class="form-label">{{ t('mia.catSchoolLabel') }}</label>
+              <select v-model="form.catEcole" class="input" @change="onCatEcole(form)">
+                <option value="">{{ t('mia.catSchoolChoose') }}</option>
+                <option v-for="e in ECOLES_CATALOGUE" :key="e.id" :value="e.id">{{ e.nom }}</option>
+                <option value="autre">{{ t('mia.catSchoolOther') }}</option>
+              </select>
+            </div>
+            <div v-if="ecoleCatalogueObj(form)" class="form-group">
+              <label class="form-label">{{ t('mia.catFormationLabel') }}</label>
+              <select v-model="form.catFormation" class="input" @change="onCatFormation(form)">
+                <option value="">{{ t('mia.catFormationChoose') }}</option>
+                <option v-for="f in ecoleCatalogueObj(form).formations" :key="f.id" :value="f.id">{{ f.nom }}</option>
+              </select>
+              <p v-if="form.catFormation" class="muted small preloaded"><Check :size="13" /> {{ t('mia.catPreloaded') }}</p>
+            </div>
+            <div v-if="form.catEcole === 'autre'" class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="form.ecole" class="input" :placeholder="t('mia.uniPlaceholder')" /></div>
               <div class="form-group"><label class="form-label">{{ t('mia.filiere') }}</label><input v-model="form.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
             </div>
-            <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="3" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
           </template>
           <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
@@ -609,6 +646,7 @@ import MiapoUtilisation from '../components/MiapoUtilisation.vue'
 import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
 import LogoMapoPlus from '../components/LogoMapoPlus.vue'
+import { ECOLES_CATALOGUE, ecoleCatalogue, formationCatalogue } from '../data/formationsCatalogue'
 import MiapoOrbe from '../components/MiapoOrbe.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
@@ -743,7 +781,7 @@ watch([SECTIONS, () => store.mode], () => {
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10 })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
 const objectif = computed(() => store.objectifDe(activeEnfant.value))
 const profilSaved = ref(false)
@@ -755,6 +793,7 @@ function syncProfil() {
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
     ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
     objectifNote: store.objectifDe(e),
+    catEcole: e.catEcole || '', catFormation: e.catFormation || '',
   }
 }
 function onPickPhoto(ev) {
@@ -863,7 +902,21 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
+// ── Catalogue école → formation → préchargement du programme (apprenant supérieur) ──
+function ecoleCatalogueObj(o) { return (o.catEcole && o.catEcole !== 'autre') ? ecoleCatalogue(o.catEcole) : null }
+function onCatEcole(o) {
+  o.catFormation = ''
+  const e = ecoleCatalogueObj(o)
+  if (e) o.ecole = e.nom
+  else if (o.catEcole === 'autre') o.ecole = ''
+}
+function onCatFormation(o) {
+  const f = formationCatalogue(o.catEcole, o.catFormation)
+  if (!f) return
+  o.formationModules = f.matieres.join(', ') // préchargé, l'apprenant vérifie/ajuste
+  const e = ecoleCatalogue(o.catEcole); if (e) o.ecole = e.nom
+}
 
 const newMatiere = ref('')
 const newNote = ref(null)
