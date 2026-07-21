@@ -785,6 +785,9 @@ function saveParentProfil() {
 }
 // Charge les fiches à l'ouverture de la section / au changement d'enfant.
 watch([() => section.value, activeId], () => { if (section.value === 'profil') { syncProfil(); syncParentProfil() } })
+// Devise (FCFA/EUR) pilotée par le pays de l'enfant actif — prioritaire sur le
+// repli fuseau/langue du navigateur (qui s'appliquait avant l'hydratation).
+watch(() => activeEnfant.value?.pays, (p) => abo.refreshDevise(p || ''), { immediate: true })
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')

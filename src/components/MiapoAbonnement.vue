@@ -104,7 +104,6 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
-import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { prixOffre, fmtMontant } from '../utils/devise'
 import { Check, CreditCard, Smartphone, Loader2, ChevronDown, Users } from 'lucide-vue-next'
 
@@ -139,8 +138,8 @@ function avantageLabel(f) {
 
 onMounted(async () => {
   await abo.load()
-  // Devise selon le pays de l'enfant (sinon fuseau/langue du navigateur).
-  abo.refreshDevise(enfants.enfants?.[0]?.pays || '')
+  // La devise (FCFA/EUR) est pilotée par ParentMiapoView (watch sur le pays de
+  // l'enfant actif) → autorité unique, pas de recalcul ici.
   // Ouvre par défaut l'accordéon de l'offre recommandée.
   const promo = abo.offres.find((o) => o.promo)
   if (promo) open.value = { [promo.id]: true }

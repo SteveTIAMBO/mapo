@@ -29,7 +29,12 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const remiseFamille = ref(REMISE_FAMILLE)       // { minEnfants, pct } — serveur fait foi
   const devise = ref(detectDevise())              // 'XAF' (Tranzak) | 'EUR' (Stripe)
 
-  const offres = computed(() => offresServeur.value || OFFRES_DEFAUT)
+  // Les offres SERVEUR portent prix + quotas, mais pas la copie « avantages »
+  // (texte UI). On la ré-attache depuis la config locale par id.
+  const offres = computed(() => {
+    const src = offresServeur.value || OFFRES_DEFAUT
+    return src.map((o) => ({ ...o, avantages: o.avantages || OFFRES_DEFAUT.find((d) => d.id === o.id)?.avantages || [] }))
+  })
   const offre = computed(() => offres.value.find((o) => o.id === offreId.value) || offres.value[0])
   const offresPayantes = computed(() => offres.value.filter((o) => o.prix > 0))
   const guichet = computed(() => guichetPour(devise.value)) // 'tranzak' | 'stripe'
