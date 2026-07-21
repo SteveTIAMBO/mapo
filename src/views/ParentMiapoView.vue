@@ -366,13 +366,13 @@
           </div>
 
           <!-- Sous-menu : Notifications -->
-          <div v-show="sousSection === 'notification'">
+          <div v-show="sousSection === 'notification'" class="param-panel">
             <MiapoNotifications />
             <MiapoRelanceWhatsApp v-if="!isApprenant && activeEnfant" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
           </div>
 
           <!-- Sous-menu : Mes enfants (gestion : co-parent, compte enfant) — parent uniquement -->
-          <div v-if="!isApprenant" v-show="sousSection === 'enfants'">
+          <div v-if="!isApprenant" v-show="sousSection === 'enfants'" class="param-panel">
             <MiapoCoParent />
             <MiapoEnfantCompte />
           </div>
@@ -383,10 +383,17 @@
           </div>
 
           <!-- Sous-menu : Profil -->
-          <div v-show="sousSection === 'profil'">
+          <div v-show="sousSection === 'profil'" class="param-panel">
           <!-- Profil du PARENT (mode parent) — d'abord -->
           <div v-if="!isApprenant" class="card">
             <div class="card-head"><Settings :size="18" /><h3>{{ t('mia.myParentProfile') }}</h3></div>
+            <div class="profil-photo">
+              <span class="er-avatar pp-avatar av-m">
+                <img v-if="parentProfil.photoURL" :src="parentProfil.photoURL" alt="" />
+                <template v-else>{{ (parentProfil.firstName[0] || '') + (parentProfil.lastName[0] || '') }}</template>
+              </span>
+              <label class="btn btn-outline btn-sm"><Camera :size="15" /> <span>{{ t('mia.changePhoto') }}</span><input type="file" accept="image/*" style="display:none" @change="onPickParentPhoto" /></label>
+            </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.firstName') }}</label><input v-model="parentProfil.firstName" class="input" /></div>
               <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="parentProfil.lastName" class="input" /></div>
@@ -636,6 +643,13 @@ const sousMenus = computed(() => {
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
 const menuOpen = ref(false)
 function onToggleMenu() { menuOpen.value = !menuOpen.value }
+// Ouvre Paramètres → Profil (déclenché par l'avatar de l'en-tête).
+function onOpenSettings(e) {
+  section.value = 'profil'
+  sousSection.value = (e && e.detail && e.detail.tab) || 'profil'
+  syncProfil(); syncParentProfil()
+  menuOpen.value = false
+}
 
 // Menu repliable en icônes (desktop) — persisté ; le menu reste fixe (ne défile pas).
 const voletCollapsed = ref(false)
@@ -736,17 +750,25 @@ async function genererPlanCours() {
   setTimeout(() => { coursMsg.value = '' }, 4000)
 }
 // Profil du PARENT (compte) — affiché d'abord en mode parent ; le profil enfant suit.
-const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '' })
+const parentProfil = ref({ firstName: '', lastName: '', email: '', phone: '', photoURL: '' })
 const parentSaved = ref(false)
 function syncParentProfil() {
   const p = authStore.userProfile || {}
-  parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '' }
+  parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '', photoURL: p.photoURL || '' }
+}
+function onPickParentPhoto(ev) {
+  const f = ev.target.files && ev.target.files[0]
+  if (!f) return
+  const reader = new FileReader()
+  reader.onload = () => { parentProfil.value.photoURL = String(reader.result || '') }
+  reader.readAsDataURL(f)
 }
 function saveParentProfil() {
   authStore.updateProfile({
     firstName: parentProfil.value.firstName.trim(),
     lastName: parentProfil.value.lastName.trim(),
     phone: parentProfil.value.phone.trim(),
+    photoURL: parentProfil.value.photoURL,
   })
   parentSaved.value = true
   setTimeout(() => { parentSaved.value = false }, 2000)
@@ -1082,6 +1104,7 @@ onMounted(async () => {
   // à chaque ouverture (best-effort, silencieux).
   relance.refresh()
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
+  window.addEventListener('open-miapo-settings', onOpenSettings)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
   // ── Suivi d'adoption MAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
@@ -1097,6 +1120,7 @@ onMounted(async () => {
 })
 onUnmounted(() => {
   window.removeEventListener('miapo-toggle-menu', onToggleMenu)
+  window.removeEventListener('open-miapo-settings', onOpenSettings)
   window.removeEventListener('appinstalled', onAppInstalled)
 })
 </script>
@@ -1204,6 +1228,9 @@ onUnmounted(() => {
 .param-tab:hover { color: var(--tx); }
 .param-tab.active { background: #fff; color: var(--pr); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 .param-tab svg { flex-shrink: 0; }
+/* Panneau d'un sous-onglet : espace verticalement les cartes empilées */
+.param-panel { display: flex; flex-direction: column; gap: 16px; }
+.param-panel > :first-child { margin-top: 0; }
 /* Choix de langue */
 .lang-choices { display: flex; gap: 10px; margin-top: 6px; }
 .lang-btn { padding: 9px 18px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--tx); cursor: pointer; }

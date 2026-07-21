@@ -26,8 +26,10 @@
         <span v-if="pendingSyncCount > 0 && !isSyncing" class="pending-badge">{{ pendingSyncCount }}</span>
       </div>
 
-      <!-- Sélecteur de langue (global, sur toute l'app) -->
-      <div class="header-lang">
+      <!-- Sélecteur de langue. Sur MAPO+ (B2C), il vit désormais dans
+           Paramètres → Langue : on le retire donc de l'en-tête. Conservé pour
+           l'ERP école (pas encore de menu Langue dans ses paramètres). -->
+      <div v-if="!authStore.isB2C" class="header-lang">
         <button type="button" :class="{ on: locale === 'fr' }" @click="setLang('fr')">FR</button>
         <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
       </div>
@@ -43,8 +45,15 @@
         <Bell :size="20" />
       </button>
 
-      <!-- User Avatar with online status -->
-      <RouterLink to="/profil" class="header-avatar" :title="t('header.profileOf', { name: displayName }) + (isOnline ? ' — ' + t('header.online') : ' — ' + t('header.offline'))">
+      <!-- User Avatar with online status. Sur MAPO+ (B2C), il ouvre Paramètres →
+           Profil ; sur l'ERP, il mène à la page /profil. -->
+      <button v-if="authStore.isB2C" type="button" class="header-avatar" @click="openB2CProfile"
+        :title="t('header.profileOf', { name: displayName }) + (isOnline ? ' — ' + t('header.online') : ' — ' + t('header.offline'))">
+        <img v-if="userPhoto" :src="userPhoto" :alt="displayName" class="header-avatar-img" />
+        <div v-else class="header-avatar-initials">{{ initials }}</div>
+        <span class="status-dot" :class="isOnline ? 'status-online' : 'status-offline'"></span>
+      </button>
+      <RouterLink v-else to="/profil" class="header-avatar" :title="t('header.profileOf', { name: displayName }) + (isOnline ? ' — ' + t('header.online') : ' — ' + t('header.offline'))">
         <img v-if="userPhoto" :src="userPhoto" :alt="displayName" class="header-avatar-img" />
         <div v-else class="header-avatar-initials">{{ initials }}</div>
         <span class="status-dot" :class="isOnline ? 'status-online' : 'status-offline'"></span>
@@ -119,15 +128,26 @@ const greeting = computed(() => {
   return t('header.greetingEvening')
 })
 
-const displayName = computed(() => authStore.user?.displayName || '')
+const displayName = computed(() => authStore.userProfile?.firstName
+  ? `${authStore.userProfile.firstName} ${authStore.userProfile.lastName || ''}`.trim()
+  : (authStore.user?.displayName || ''))
 const initials = computed(() => {
-  const name = displayName.value || ''
+  // Priorité au profil enregistré (prénom + nom) ; repli sur le displayName.
+  const p = authStore.userProfile
+  if (p && (p.firstName || p.lastName)) {
+    return ((p.firstName?.[0] || '') + (p.lastName?.[0] || '')).toUpperCase()
+  }
+  const name = authStore.user?.displayName || ''
   return name.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2)
 })
 const userPhoto = computed(() => authStore.userProfile?.photoURL || authStore.user?.photoURL || null)
 
 function openSearch() {
   window.dispatchEvent(new CustomEvent('open-global-search'))
+}
+// MAPO+ (B2C) : l'avatar ouvre Paramètres → Profil (pas la page /profil ERP).
+function openB2CProfile() {
+  window.dispatchEvent(new CustomEvent('open-miapo-settings', { detail: { tab: 'profil' } }))
 }
 </script>
 
@@ -274,10 +294,13 @@ function openSearch() {
   justify-content: center;
   width: 36px;
   height: 36px;
+  border: none;
+  padding: 0;
   border-radius: 50%;
   background: var(--pr);
   color: white;
   text-decoration: none;
+  font-family: inherit;
   font-weight: 600;
   font-size: 12px;
   cursor: pointer;

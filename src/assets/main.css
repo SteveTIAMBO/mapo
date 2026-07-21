@@ -67,8 +67,12 @@
 
   /* Inputs — translucides */
   --input-bg: rgba(255,255,255,.55);
-  --input-border: rgba(17,24,39,.10);
+  --input-border: rgba(17,24,39,.22);
   --input-focus: #0A84FF;
+  /* Bordure générique (cartes, champs MAPO+). Sans elle, `border: 1px solid
+     var(--bd)` — sans repli — s'effondrait à « aucune bordure » hors mode
+     contraste. Visible au repos, pas seulement au focus. */
+  --bd: #D3D8E0;
 
   /* Misc */
   --divider: rgba(17,24,39,.08);
