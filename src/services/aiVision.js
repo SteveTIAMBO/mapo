@@ -1,4 +1,9 @@
 import { auth as fbAuth } from '../firebase'
+import { useAuthStore } from '../stores/auth'
+
+// B2C (MAPO+) : chaque appel IA consomme des tokens → on marque `metered`.
+// L'ÉCOLE (ERP) n'est pas décomptée. Le décompte réel se fait dans mapo-ia.php.
+function meteredFlag() { try { return !!useAuthStore().isB2C } catch { return false } }
 
 /**
  * Service de vision MIAPO — numérisation d'un registre de classe.
@@ -37,7 +42,7 @@ async function postVision(task, imageDataUrl, niveau) {
   const res = await fetch(IA_URL, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ task, data: { image: imageDataUrl, niveau } }),
+    body: JSON.stringify({ task, data: { image: imageDataUrl, niveau }, metered: meteredFlag() }),
   })
   const json = await res.json().catch(() => null)
   return json
@@ -120,7 +125,7 @@ export async function analyserRegistre({ imageDataUrl, niveau = '' }) {
     const res = await fetch(IA_URL, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ task: 'vision_registre', data: { image: imageDataUrl, niveau } }),
+      body: JSON.stringify({ task: 'vision_registre', data: { image: imageDataUrl, niveau }, metered: meteredFlag() }),
     })
     const json = await res.json().catch(() => null)
 

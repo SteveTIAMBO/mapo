@@ -21,6 +21,16 @@
       </button>
     </div>
 
+    <!-- Cycle mensuel (facturation) : progression jusqu'au renouvellement -->
+    <div v-if="abo.renewAt" class="card cycle-card">
+      <div class="ac-head">
+        <div><span class="ac-label">{{ t('mia.cycleMonth') }}</span></div>
+        <div class="ac-credits"><strong>{{ joursRestants }}</strong><span>{{ t('mia.cycleDaysLeft') }}</span></div>
+      </div>
+      <div class="ac-bar"><div class="ac-bar-fill is-ok" :style="{ width: cyclePct + '%' }"></div></div>
+      <p class="muted small">{{ t('mia.aboRenew', { date: dateFr(abo.renewAt) }) }}</p>
+    </div>
+
     <p class="muted small hint">{{ t('mia.utilHint') }}</p>
   </div>
 </template>
@@ -36,6 +46,10 @@ const abo = useAbonnementStore()
 
 const restePct = computed(() => Math.max(0, 100 - abo.pourcentage))
 const jaugeClass = computed(() => abo.pourcentage >= 90 ? 'is-danger' : abo.pourcentage >= 70 ? 'is-warn' : 'is-ok')
+// Cycle mensuel : jours restants + progression jusqu'au renouvellement (tierExpiry).
+const cycleJours = computed(() => abo.offre?.cycleJours || 30)
+const joursRestants = computed(() => { if (!abo.renewAt) return 0; const ms = new Date(abo.renewAt) - new Date(); return Math.max(0, Math.ceil(ms / 86400000)) })
+const cyclePct = computed(() => Math.min(100, Math.max(0, Math.round((1 - joursRestants.value / cycleJours.value) * 100))))
 
 onMounted(() => abo.load())
 function dateFr(iso) { try { return new Date(iso).toLocaleDateString('fr-FR') } catch { return '' } }
@@ -60,6 +74,7 @@ function openAbo() { window.dispatchEvent(new CustomEvent('open-miapo-settings',
 .muted { color: var(--tx3); font-size: 14px; margin: 8px 0 0; }
 .small { font-size: 12.5px; } .xsmall { font-size: 12px; }
 .hint { margin-top: 14px; }
+.cycle-card { margin-top: 16px; }
 .err-line { color: #D93025; font-size: 13px; margin: 10px 0 0; }
 .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid transparent; font-family: inherit; }
 .btn-primary { background: var(--pr); color: #fff; }

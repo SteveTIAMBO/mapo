@@ -39,11 +39,10 @@
     <div class="card packs">
       <div class="card-head"><Zap :size="18" /><h3>{{ t('mia.creditsTitle') }}</h3></div>
       <p class="muted small">{{ t('mia.creditsHint') }}</p>
-      <p v-if="abo.bonus > 0" class="bonus-line"><Check :size="14" /> {{ t('mia.creditsBonus', { n: Math.round(abo.bonus / 3000) }) }}</p>
+      <p v-if="abo.bonus > 0" class="bonus-line"><Check :size="14" /> {{ t('mia.creditsBonus') }}</p>
       <div class="packs-grid">
         <div v-for="p in abo.packs" :key="p.id" class="pack">
           <strong>{{ p.nom }}</strong>
-          <span class="pk-qty">≈ {{ Math.round(p.tokens / 3000) }} {{ t('mia.creditsRevisions') }}</span>
           <span class="pk-price">{{ fmtPrix(p) }}</span>
           <button class="btn btn-outline btn-sm" @click="choisirPack(p)">{{ t('mia.creditsBuy') }}</button>
         </div>

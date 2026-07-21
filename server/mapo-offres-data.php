@@ -61,6 +61,9 @@ function mapo_cout_action() {
   return [
     'tutor_quiz'      => 3000,
     'vision_copie'    => 3500,
+    'vision_bulletin' => 3500,
+    'vision_edt'      => 3000,
+    'vision_registre' => 3500,
     'orientation'     => 2600,
     'orientation6c'   => 2600,
     'bilan6c'         => 1600,
