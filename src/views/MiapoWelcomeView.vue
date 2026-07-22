@@ -16,7 +16,7 @@
             <LogoMapoPlus :size="28" />
           </div>
           <div>
-            <div class="miapo-logo-title">MIAPO<span class="plus">+</span></div>
+            <div class="miapo-logo-title">MAPO<span class="plus">+</span></div>
             <div class="miapo-logo-sub">{{ t('common.byEdufrem') }}</div>
           </div>
         </div>

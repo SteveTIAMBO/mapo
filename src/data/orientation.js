@@ -138,6 +138,34 @@ export function interetsLabels(cles, en = false) {
   })
 }
 
+// Indicateurs d'insertion INDICATIFS par domaine (France), pour des estimations
+// probabilistes (« ~X% d'insertion, salaire médian ~Y€, métier en tension »).
+// Ordres de grandeur (France Travail — BMO, DARES, enquêtes d'insertion des
+// diplômés) — à revérifier/affiner chaque année.
+//   taux      = % en emploi ~18-30 mois après le diplôme
+//   poursuite = % qui poursuivent des études après le 1er diplôme
+//   salaire   = salaire net mensuel médian en début de carrière (€)
+//   tension   = demande du marché : 'forte' | 'moyenne' | 'faible'
+export const INSERTION_FR = {
+  sante: { taux: 90, poursuite: 30, salaire: 1900, tension: 'forte' },
+  numerique: { taux: 85, poursuite: 40, salaire: 2300, tension: 'forte' },
+  ingenierie: { taux: 88, poursuite: 45, salaire: 2600, tension: 'forte' },
+  btp_energie: { taux: 82, poursuite: 30, salaire: 2100, tension: 'forte' },
+  commerce_gestion: { taux: 78, poursuite: 50, salaire: 2000, tension: 'moyenne' },
+  droit: { taux: 70, poursuite: 60, salaire: 1900, tension: 'moyenne' },
+  sciences_fond: { taux: 72, poursuite: 65, salaire: 2100, tension: 'moyenne' },
+  lettres_shs: { taux: 68, poursuite: 55, salaire: 1800, tension: 'faible' },
+  arts_design: { taux: 65, poursuite: 40, salaire: 1750, tension: 'faible' },
+  agro_env: { taux: 80, poursuite: 40, salaire: 1950, tension: 'moyenne' },
+  hotellerie_tourisme: { taux: 82, poursuite: 25, salaire: 1800, tension: 'forte' },
+  education: { taux: 85, poursuite: 40, salaire: 1900, tension: 'moyenne' },
+}
+// Retrouve les indicateurs d'insertion à partir du NOM d'un domaine France.
+export function insertionFrParNom(nomDomaine) {
+  const d = (ORIENTATION.france?.domaines || []).find((x) => x.domaine === nomDomaine)
+  return d ? (INSERTION_FR[d.id] || null) : null
+}
+
 export const ORIENTATION = {
   cameroun: {
     intro:

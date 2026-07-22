@@ -4549,7 +4549,7 @@
     "regenConflicts": " — {n} conflict(s)"
   },
   "mia": {
-    "brandSubLearner": "Your smart private tutor",
+    "brandSubLearner": "Your 24/7 private tutor",
     "brandSubParent": "Tracking & lessons at home",
     "logout": "Log out",
     "addChild": "Add a child",
@@ -4598,6 +4598,14 @@
     "6cCancel": "Cancel",
     "oriIntro": "MIAPO guidance works in 3 steps: 1. we assess {name}'s profile (6 competencies); 2. we cross it with the country's real fields and career paths; 3. we suggest reasoned options — never at random.",
     "oriProfileOf": "{name}'s profile",
+    "oriIntroSelf": "Guidance with MIAPO works in 3 steps: 1. we assess your profile (6 competencies); 2. we cross it with the country's real fields and career paths; 3. we suggest reasoned options for you — never at random.",
+    "oriProfileOfSelf": "Your profile",
+    "oriInteretsLabelSelf": "And what are you passionate about right now? (pick one or more)",
+    "oriPaysNoteSelf": "The guidance reference for your country ({pays}) is not available yet. In the meantime, MIAPO relies on regional (Cameroon) and international (France) benchmarks to situate fields and career paths.",
+    "oriS3IdleSelf": "MIAPO combines your 6C profile, your level ({niveau}) and the real data for {pays}.",
+    "oriMobiTextSelf": "Student mobility (admission, « Études en France » visa, housing, budget) needs preparation. Mobi, EDUFREM's mobility app, guides you step by step.",
+    "oriInsertion": "~{taux}% employed within 2 years · median starting salary ~€{salaire}/mo net (indicative)",
+    "oriTension": "in-demand field",
     "ori6cBadge": "the 6Cs",
     "oriEvaluated": "assessed",
     "oriS1Hint": "The profile is set through a short 30-question questionnaire in the « 6C profile » tab — that's what makes the suggestions accurate.",

@@ -1,7 +1,7 @@
 {
-  "name": "MIAPO+ — Tuteur intelligent",
-  "short_name": "MIAPO+",
-  "description": "Le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.",
+  "name": "MAPO+ — Ton professeur particulier disponible 24/7",
+  "short_name": "MAPO+",
+  "description": "Ton professeur particulier disponible 24/7 : révisions, suivi et orientation par l'IA, à la maison.",
   "theme_color": "#7c3aed",
   "background_color": "#2a2550",
   "display": "standalone",

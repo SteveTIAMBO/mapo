@@ -2,14 +2,14 @@
   <div class="orient">
     <!-- En-tête + rappel de la méthode (3 temps) -->
     <div class="orient-intro">
-      <p class="muted">{{ t('mia.oriIntro', { name: enfant.firstName }) }}</p>
+      <p class="muted">{{ tOri('oriIntro', { name: enfant.firstName }) }}</p>
     </div>
 
     <!-- ÉTAPE 1 — Profil 6C -->
     <div class="card step-card">
       <div class="step-head">
         <span class="step-num">1</span>
-        <h3>{{ t('mia.oriProfileOf', { name: enfant.firstName }) }} <span class="six-c">{{ t('mia.ori6cBadge') }}</span></h3>
+        <h3>{{ tOri('oriProfileOf', { name: enfant.firstName }) }} <span class="six-c">{{ t('mia.ori6cBadge') }}</span></h3>
         <span v-if="hasEval && !editing" class="done-pill"><Check :size="13" /> {{ t('mia.oriEvaluated') }}</span>
       </div>
 
@@ -21,7 +21,7 @@
       <template v-else>
         <Radar6C :scores="enfant.comp6c || {}" />
         <div class="interets-box">
-          <p class="int-lab">{{ t('mia.oriInteretsLabel', { name: enfant.firstName }) }}</p>
+          <p class="int-lab">{{ tOri('oriInteretsLabel', { name: enfant.firstName }) }}</p>
           <div class="int-chips">
             <button v-for="it in INTERETS_ORIENTATION" :key="it.key" type="button" class="int-chip" :class="{ on: interets.includes(it.key) }" @click="toggleInteret(it.key)">
               {{ locale === 'en' ? (it.label_en || it.label) : it.label }}
@@ -41,7 +41,7 @@
       <p class="muted small">{{ t('mia.oriS2Hint') }}</p>
       <div v-if="!paysCouvert" class="pays-note">
         <Info :size="16" />
-        <p>{{ t('mia.oriPaysNote', { name: enfant.firstName, pays: paysEnfantLabel || t('mia.oriUnspecified') }) }}</p>
+        <p>{{ tOri('oriPaysNote', { name: enfant.firstName, pays: paysEnfantLabel || t('mia.oriUnspecified') }) }}</p>
       </div>
       <div class="pays-pick">
         <button v-for="p in PAYS_ORIENTATION" :key="p.code" class="pays-btn" :class="{ active: pays === p.code }" :disabled="!hasEval" @click="selectPays(p.code)">
@@ -60,7 +60,7 @@
       </div>
 
       <div v-if="state === 'idle'">
-        <p class="muted small">{{ t('mia.oriS3Idle', { name: enfant.firstName, niveau: enfant.niveau, pays: paysLabel }) }}</p>
+        <p class="muted small">{{ tOri('oriS3Idle', { name: enfant.firstName, niveau: enfant.niveau, pays: paysLabel }) }}</p>
         <button class="btn btn-primary" :disabled="!hasEval" @click="getSuggestions"><Compass :size="16" /> <span>{{ t('mia.oriGet', { pays: paysLabel }) }}</span></button>
       </div>
 
@@ -78,6 +78,10 @@
             <span class="adq" :class="r.adequation === 'forte' ? 'adq-h' : 'adq-m'">{{ r.adequation === 'forte' ? t('mia.oriAdqStrong') : t('mia.oriAdqMed') }}</span>
           </div>
           <p class="reco-why">{{ r.pourquoi }}</p>
+          <div v-if="pays === 'france' && insertionFrParNom(r.domaine)" class="reco-insertion">
+            <TrendingUp :size="13" />
+            <span>{{ t('mia.oriInsertion', { taux: insertionFrParNom(r.domaine).taux, salaire: insertionFrParNom(r.domaine).salaire }) }}<template v-if="insertionFrParNom(r.domaine).tension === 'forte'"> · <strong>{{ t('mia.oriTension') }}</strong></template></span>
+          </div>
           <div v-if="r.metiers_cles.length" class="reco-block">
             <span class="reco-lab">{{ t('mia.oriJobs') }}</span>
             <div class="chips"><span v-for="(m, j) in r.metiers_cles" :key="j" class="chip chip-m">{{ m }}</span></div>
@@ -95,7 +99,7 @@
           <div class="mobi-ic"><Plane :size="20" /></div>
           <div class="mobi-txt">
             <strong>{{ t('mia.oriMobiTitle') }}</strong>
-            <p>{{ t('mia.oriMobiText', { name: enfant.firstName }) }}</p>
+            <p>{{ tOri('oriMobiText', { name: enfant.firstName }) }}</p>
           </div>
           <a class="btn btn-primary btn-sm mobi-cta" href="https://mobi.app-edufrem.com" target="_blank" rel="noopener"><span>{{ t('mia.oriMobiCta') }}</span><ArrowRight :size="15" /></a>
         </div>
@@ -116,10 +120,10 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION, INTERETS_ORIENTATION, domaineMatchInterets, interetsLabels } from '../data/orientation'
+import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION, INTERETS_ORIENTATION, domaineMatchInterets, interetsLabels, INSERTION_FR, insertionFrParNom } from '../data/orientation'
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target } from 'lucide-vue-next'
+import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target, TrendingUp } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import Radar6C from './Radar6C.vue'
 
@@ -129,6 +133,11 @@ const { t, locale } = useI18n({ useScope: 'global' })
 
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
+
+// Voix MIAPO : l'élève/apprenant est tutoyé directement (variantes *Self) ;
+// en mode parent, MIAPO parle de l'enfant (on cite son prénom).
+const isLearner = computed(() => store.mode === 'apprenant' || store.isCompteEnfant)
+const tOri = (base, params) => t(isLearner.value ? `mia.${base}Self` : `mia.${base}`, params)
 
 // Scores 6C locaux (init depuis le profil enregistré, sinon 3 par défaut).
 const scores = ref({})
@@ -199,7 +208,8 @@ function topCandidats() {
     const etablissements = pays.value === 'france'
       ? (d.ecoles || []).map((e) => e.nom + (e.ville ? ` (${e.ville})` : ''))
       : (d.etablissements || [])
-    return { domaine: d.domaine, competences: d.competences || [], metiers, etablissements, _score: score }
+    const insertion = pays.value === 'france' ? (INSERTION_FR[d.id] || null) : null
+    return { domaine: d.domaine, competences: d.competences || [], metiers, etablissements, insertion, _score: score }
   })
   scored.sort((a, b) => b._score - a._score)
   return scored.slice(0, 5).map(({ _score, ...c }) => c)
@@ -310,6 +320,9 @@ async function getSuggestions() {
 .adq-h { color: #1B8A5A; background: rgba(27,138,90,.10); }
 .adq-m { color: #B87A00; background: rgba(232,149,10,.12); }
 .reco-why { margin: 8px 0 10px; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.55; }
+.reco-insertion { display: flex; align-items: center; gap: 6px; margin: 0 0 10px; font-size: 12.5px; color: #1B8A5A; background: rgba(27,138,90,.08); padding: 6px 10px; border-radius: 8px; line-height: 1.4; }
+.reco-insertion svg { flex-shrink: 0; }
+.reco-insertion strong { color: #B87A00; font-weight: 700; }
 .reco-block { margin-top: 8px; }
 .reco-lab { font-size: 11px; font-weight: 600; color: var(--tx2); text-transform: uppercase; letter-spacing: .3px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
