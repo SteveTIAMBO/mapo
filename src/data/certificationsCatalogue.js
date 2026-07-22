@@ -78,3 +78,35 @@ export const CERTIFICATIONS = [
 export function certification(id) {
   return CERTIFICATIONS.find((c) => c.id === id) || null
 }
+
+// Ressources OFFICIELLES / de confiance par certif (organismes de normalisation et
+// de certification uniquement) — pour réviser sur des sources fiables du domaine.
+export const CERT_REFERENCES = {
+  'iso27001-li': [
+    { label: 'Norme ISO/IEC 27001 (iso.org)', url: 'https://www.iso.org/standard/27001' },
+    { label: 'PECB — ISO 27001', url: 'https://pecb.com/en/education-and-certification-for-individuals/iso-iec-27001' },
+    { label: 'ANSSI — guides SSI', url: 'https://cyber.gouv.fr' },
+  ],
+  'iso27001-la': [
+    { label: 'Norme ISO/IEC 27001 (iso.org)', url: 'https://www.iso.org/standard/27001' },
+    { label: 'ISO 19011 — audit', url: 'https://www.iso.org/standard/70017.html' },
+    { label: 'PECB', url: 'https://pecb.com' },
+  ],
+  'itil4-foundation': [
+    { label: 'PeopleCert — ITIL', url: 'https://www.peoplecert.org/browse-certifications/itil-certifications' },
+  ],
+  'pmp': [
+    { label: 'PMI — PMP', url: 'https://www.pmi.org/certifications/project-management-pmp' },
+  ],
+  'cissp': [
+    { label: 'ISC2 — CISSP', url: 'https://www.isc2.org/certifications/cissp' },
+  ],
+  'cisa': [
+    { label: 'ISACA — CISA', url: 'https://www.isaca.org/credentialing/cisa' },
+  ],
+  'iso9001-la': [
+    { label: 'Norme ISO 9001 (iso.org)', url: 'https://www.iso.org/standard/62085.html' },
+    { label: 'PECB', url: 'https://pecb.com' },
+  ],
+}
+export function certReferences(id) { return CERT_REFERENCES[id] || [] }

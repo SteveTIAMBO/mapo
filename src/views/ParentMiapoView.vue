@@ -75,6 +75,19 @@
             </div>
           </div>
 
+          <!-- Programme de révision jusqu'à l'examen (certification) -->
+          <div v-if="planCertif" class="card certif-plan-card">
+            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.certifPlanTitle') }}</h3><span class="cp-jn">{{ t('mia.certifJn', { n: planCertif.jours }) }}</span></div>
+            <p class="muted small cp-hint">{{ t('mia.certifPlanHint', { n: planCertif.modules.length, s: planCertif.semaines, p: planCertif.parSemaine }) }}</p>
+            <div class="cp-mods">
+              <component :is="isApprenant ? 'button' : 'div'" v-for="m in planCertif.modules" :key="m.nom" class="cp-mod" :class="{ 'cp-static': !isApprenant, mastered: m.niveau >= 3 }" @click="isApprenant && goRevise(m.nom)">
+                <MiapoOrbe :size="13" frozen />
+                <span class="cp-name">{{ m.nom }}</span>
+                <span class="cp-lvl" :class="{ ok: m.niveau >= 3 }">{{ m.niveau >= 3 ? t('mia.certifMastered') : t('mia.certifLevel', { n: m.niveau }) }}</span>
+              </component>
+            </div>
+          </div>
+
           <div class="card insight-card">
             <div class="insight-icon"><MiapoOrbe :size="30" /></div>
             <div><strong>{{ t('mia.watchPoints') }}</strong><p>{{ insight }}</p></div>
@@ -480,6 +493,12 @@
               </div>
               <p v-if="profil.certifId && profil.certifId !== 'autre'" class="muted small preloaded"><Check :size="13" /> {{ t('mia.certifPreloaded') }}</p>
               <p v-if="joursAvantCertif(profil) !== null" class="certif-countdown"><CalendarDays :size="14" /> {{ t('mia.certifCountdown', { n: joursAvantCertif(profil) }) }}</p>
+              <div v-if="profil.certifId && certReferences(profil.certifId).length" class="form-group">
+                <label class="form-label">{{ t('mia.certifRefs') }}</label>
+                <div class="cert-refs">
+                  <a v-for="r in certReferences(profil.certifId)" :key="r.url" :href="r.url" target="_blank" rel="noopener" class="cert-ref"><Link2 :size="13" /> {{ r.label }}</a>
+                </div>
+              </div>
               <div class="form-row">
                 <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
                 <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
@@ -682,7 +701,7 @@ import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
 import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 import { ECOLES_CATALOGUE, ecoleCatalogue, formationCatalogue } from '../data/formationsCatalogue'
-import { CERTIFICATIONS, certification } from '../data/certificationsCatalogue'
+import { CERTIFICATIONS, certification, certReferences } from '../data/certificationsCatalogue'
 import MiapoOrbe from '../components/MiapoOrbe.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
@@ -1050,6 +1069,22 @@ const planHebdo = computed(() => {
     })
   }
   return out
+})
+// Programme de révision d'une CERTIFICATION : répartit les modules sur les semaines
+// restantes jusqu'à la date d'examen, les MOINS MAÎTRISÉS d'abord (niveau tuteur) —
+// touche adaptative : plus l'apprenant progresse (quiz), plus l'ordre évolue.
+const planCertif = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return null
+  const jours = joursAvantCertif(e)
+  if (jours === null) return null
+  const modules = (e.formationModules || '').split(',').map((m) => m.trim()).filter(Boolean)
+  if (!modules.length) return null
+  const semaines = Math.max(1, Math.ceil(jours / 7))
+  const parSemaine = Math.max(1, Math.ceil(modules.length / semaines))
+  const withLevel = modules.map((m) => ({ nom: m, niveau: tuteur.getLevel(e.id, 'auto-' + m) || 0 }))
+  withLevel.sort((a, b) => a.niveau - b.niveau)
+  return { jours, semaines, parSemaine, modules: withLevel }
 })
 /** Série : jours consécutifs avec une séance faite (le repos ne la casse pas). */
 const serie = computed(() => (activeEnfant.value ? store.serieRevision(activeEnfant.value.id) : 0))
@@ -1471,6 +1506,19 @@ onUnmounted(() => {
 .saved-ok { color: #1B8A5A; font-weight: 600; }
 .certif-countdown { display: flex; align-items: center; gap: 7px; margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--pr, #1558B0); background: rgba(var(--pr-rgb,21,88,176),.08); padding: 8px 12px; border-radius: 10px; }
 .certif-countdown svg { flex-shrink: 0; }
+.certif-plan-card .cp-jn { margin-left: auto; font-size: 12px; font-weight: 700; color: var(--pr, #1558B0); background: rgba(var(--pr-rgb,21,88,176),.10); padding: 3px 10px; border-radius: 20px; }
+.certif-plan-card .cp-hint { margin: 6px 0 12px; }
+.cp-mods { display: flex; flex-direction: column; gap: 8px; }
+.cp-mod { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; cursor: pointer; font: inherit; }
+button.cp-mod:hover { border-color: var(--pr, #1558B0); }
+.cp-mod.cp-static { cursor: default; }
+.cp-mod.mastered { background: rgba(27,138,90,.05); border-color: rgba(27,138,90,.25); }
+.cp-name { flex: 1; font-size: 14px; color: var(--tx, #1f2937); }
+.cp-lvl { font-size: 11px; font-weight: 700; color: var(--tx3, #6b7280); background: var(--input-bg, #eef1f4); padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.cp-lvl.ok { color: #1B8A5A; background: rgba(27,138,90,.12); }
+.cert-refs { display: flex; flex-wrap: wrap; gap: 8px; }
+.cert-ref { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--pr, #1558B0); text-decoration: none; padding: 5px 10px; border: 1px solid var(--bd, #e5e7eb); border-radius: 8px; }
+.cert-ref:hover { border-color: var(--pr, #1558B0); background: rgba(var(--pr-rgb,21,88,176),.05); }
 .stat-v { display: block; font-size: 22px; font-weight: 700; color: var(--tx); } .stat-v.warn { color: #D93025; }
 .stat-l { font-size: 12px; color: var(--tx3); }
 .quick { display: flex; gap: 10px; flex-wrap: wrap; }
