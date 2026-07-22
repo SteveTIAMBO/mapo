@@ -61,7 +61,7 @@
             <div v-else-if="step === 'idle'" class="miapo-examples">
               <p class="miapo-examples-title">Essayez :</p>
               <button
-                v-for="(ex, i) in EXEMPLES"
+                v-for="(ex, i) in exemples"
                 :key="i"
                 class="miapo-example"
                 @click="runExample(ex)"
@@ -174,14 +174,18 @@ import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck } from 'lucide-vue-next'
 import MiapoOrbe from '../MiapoOrbe.vue'
-import { useMiapoCopilotStore, resolveNavigation, EXEMPLES } from '../../stores/miapoCopilot'
+import { useMiapoCopilotStore, resolveNavigation, EXEMPLES, EXEMPLES_B2C } from '../../stores/miapoCopilot'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
 import { useElevesStore } from '../../stores/eleves'
+import { useAuthStore } from '../../stores/auth'
 
 const router = useRouter()
 const route = useRoute()
 const copilot = useMiapoCopilotStore()
+const authStore = useAuthStore()
+// MAPO+ (B2C) : exemples et invite orientés « apprenant » (pas la gestion d'école).
+const exemples = computed(() => (authStore.isB2C ? EXEMPLES_B2C : EXEMPLES))
 const personnelStore = usePersonnelStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
@@ -290,7 +294,9 @@ const peda = ref({ titre: '', document: '', corrige: '', type: 'devoir' })
 const showCorrige = ref(false)
 const copied = ref('')
 
-const placeholder = 'Demandez à MIAPO… (ex. « affiche les élèves en retard de paiement »)'
+const placeholder = computed(() => authStore.isB2C
+  ? 'Demande à MIAPO… (ex. « explique-moi le théorème de Pythagore »)'
+  : 'Demandez à MIAPO… (ex. « affiche les élèves en retard de paiement »)')
 
 const isOpen = ref(false)
 

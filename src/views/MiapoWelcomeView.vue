@@ -97,6 +97,9 @@
         <button type="button" class="miapo-login-link" @click="goLogin">{{ t('welcome.haveAccount') }}</button>
       </div>
 
+      <!-- Manifeste : l'IA qui cultive l'intelligence au lieu de la remplacer -->
+      <p class="miapo-manifesto">{{ t('welcome.manifesto') }}</p>
+
       <!-- Footer -->
       <footer class="miapo-footer">
         <p class="miapo-footer-org">EDUFREM SAS</p>
@@ -424,9 +427,19 @@ function goCreate() {
 }
 
 /* Footer */
+.miapo-manifesto {
+  max-width: 620px;
+  margin: 40px auto 0;
+  text-align: center;
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.6;
+  color: var(--pr, #1558B0);
+  font-weight: 500;
+}
 .miapo-footer {
   text-align: center;
-  margin-top: 36px;
+  margin-top: 24px;
 }
 .miapo-footer-org {
   font-family: 'Poppins', sans-serif;
