@@ -4,7 +4,7 @@
       <div>
         <h1 class="mma-h1">MAPO+ · Adoption</h1>
         <p class="mma-sub">
-          Suivi de l'usage du tuteur intelligent (B2C). Installs, utilisateurs actifs,
+          Suivi de l'usage de MAPO+ (B2C). Installs, utilisateurs actifs,
           sessions et progression moyenne — pour voir si le projet prend.
         </p>
       </div>

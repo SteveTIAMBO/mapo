@@ -74,7 +74,7 @@ if (tenant.mode === 'miapo') {
   set('link[rel="apple-touch-icon"]', 'href', '/apple-touch-icon-miapo.png')
   set('link[rel="manifest"]', 'href', '/manifest-miapo.webmanifest')
   set('meta[name="theme-color"]', 'content', '#7c3aed')
-  set('meta[name="description"]', 'content', "MAPO+ — le tuteur intelligent qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
+  set('meta[name="description"]', 'content', "MAPO+ — le professeur particulier qui accompagne chaque enfant : révisions, suivi et orientation par l'IA, à la maison.")
 }
 
 // Deep-link « ouvrir la démo » : ?edition=primaire|secondaire|superieur pré-charge

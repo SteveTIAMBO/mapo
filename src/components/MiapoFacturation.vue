@@ -65,7 +65,7 @@ function voir(f) {
     + '.tot{text-align:right;font-size:18px;font-weight:800;margin-top:14px}.ft{margin-top:28px;font-size:11px;color:#86868B;border-top:1px solid #eee;padding-top:12px}'
     + '@media print{.noprint{display:none}}'
   const html = '<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>' + docType + ' ' + esc(f.numero) + '</title><style>' + styles + '</style></head><body>'
-    + '<div class="hd"><div class="brand">EDUFREM<small>MAPO+ — tuteur intelligent</small></div>'
+    + '<div class="hd"><div class="brand">EDUFREM<small>MAPO+ — professeur particulier disponible 24/7</small></div>'
     + '<div class="doc"><h1>' + docType + '</h1><div>N&deg; ' + esc(f.numero) + '</div><div>' + dateFr(f.date) + '</div></div></div>'
     + '<div class="parties"><div><h3>&Eacute;mis par</h3>EDUFREM<br>contact@edufrem.com</div>'
     + '<div><h3>' + (entreprise ? 'Factur&eacute; &agrave;' : 'Client') + '</h3>' + clientBlock + '</div></div>'
