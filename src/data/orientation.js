@@ -107,6 +107,37 @@ export const PAYS_ORIENTATION = [
   { code: 'france', label: 'France (international)', label_en: 'France (international)' },
 ]
 
+// Centres d'intérêt / passions de l'élève (« ce qui te passionne à l'instant T »).
+// `mots` = fragments servant à repérer les domaines liés (boost du matching, sans IA).
+export const INTERETS_ORIENTATION = [
+  { key: 'sciences', label: 'Sciences & maths', label_en: 'Science & maths', mots: ['scienc', 'math', 'physi', 'chimi'] },
+  { key: 'sante', label: 'Santé & vivant', label_en: 'Health & life', mots: ['santé', 'sant', 'médec', 'medec', 'bio', 'infirm', 'pharma', 'soin', 'vivant'] },
+  { key: 'techno', label: 'Technologie & ingénierie', label_en: 'Tech & engineering', mots: ['ingéni', 'ingeni', 'techn', 'industri', 'énerg', 'energ', 'mécani', 'meca', 'électr', 'electr'] },
+  { key: 'numerique', label: 'Numérique & informatique', label_en: 'Digital & IT', mots: ['numéri', 'numeri', 'informat', 'digit', 'donné', 'donne', 'logiciel', 'réseau', 'reseau', 'web'] },
+  { key: 'business', label: 'Économie, gestion & entrepreneuriat', label_en: 'Business & management', mots: ['économ', 'econom', 'gestion', 'commerc', 'market', 'financ', 'compta', 'management', 'entrepr'] },
+  { key: 'droit_societe', label: 'Droit, société & politique', label_en: 'Law, society & politics', mots: ['droit', 'juri', 'politiq', 'administ', 'internation'] },
+  { key: 'lettres_langues', label: 'Lettres, langues & communication', label_en: 'Humanities, languages & communication', mots: ['lettre', 'langue', 'littér', 'litter', 'communic', 'journal', 'traduc'] },
+  { key: 'arts', label: 'Arts & création', label_en: 'Arts & creation', mots: ['art', 'design', 'créat', 'creat', 'audiovis', 'spectacle', 'musi', 'graph'] },
+  { key: 'education', label: 'Éducation & aide aux autres', label_en: 'Education & helping others', mots: ['éduc', 'educ', 'enseign', 'pédago', 'pedago', 'social', 'humanit'] },
+  { key: 'nature_env', label: 'Nature, agriculture & environnement', label_en: 'Nature, farming & environment', mots: ['agro', 'agri', 'environ', 'forêt', 'foret', 'écolo', 'ecolo', 'territoire', 'rural'] },
+]
+// True si le nom d'un domaine correspond à l'un des intérêts choisis (clés).
+export function domaineMatchInterets(nomDomaine, cles) {
+  if (!nomDomaine || !Array.isArray(cles) || !cles.length) return false
+  const nom = String(nomDomaine).toLowerCase()
+  return cles.some((key) => {
+    const it = INTERETS_ORIENTATION.find((x) => x.key === key)
+    return it && it.mots.some((m) => nom.includes(m))
+  })
+}
+// Libellés (fr/en) d'une liste de clés d'intérêt — pour l'affichage et l'IA.
+export function interetsLabels(cles, en = false) {
+  return (cles || []).map((k) => {
+    const it = INTERETS_ORIENTATION.find((x) => x.key === k)
+    return it ? (en ? (it.label_en || it.label) : it.label) : k
+  })
+}
+
 export const ORIENTATION = {
   cameroun: {
     intro:

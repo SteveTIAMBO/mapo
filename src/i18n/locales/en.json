@@ -4603,6 +4603,7 @@
     "oriS1Hint": "The profile is set through a short 30-question questionnaire in the « 6C profile » tab — that's what makes the suggestions accurate.",
     "oriS1Cta": "Take my 6C profile",
     "oriS1Redo": "Review in « 6C profile »",
+    "oriInteretsLabel": "And what is {name} passionate about right now? (pick one or more)",
     "oriS2Title": "Where to aim?",
     "oriS2Hint": "Suggestions will be based on the real fields, schools and career paths of the chosen destination.",
     "oriPaysNote": "The guidance reference for {name}'s country ({pays}) is not available yet. In the meantime, MIAPO relies on regional (Cameroon) and international (France) benchmarks to situate fields and career paths.",

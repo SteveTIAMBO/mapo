@@ -4603,6 +4603,7 @@
     "oriS1Hint": "Le profil se définit via un court questionnaire (30 questions) dans l'onglet « Profil 6C » — c'est ce qui rend les pistes justes.",
     "oriS1Cta": "Faire mon Profil 6C",
     "oriS1Redo": "Revoir dans « Profil 6C »",
+    "oriInteretsLabel": "Et ce qui passionne {name} en ce moment ? (choisis-en un ou plusieurs)",
     "oriS2Title": "Où viser ?",
     "oriS2Hint": "Les pistes seront calées sur les filières, écoles et débouchés réels de la destination choisie.",
     "oriPaysNote": "Le référentiel d'orientation propre au pays de {name} ({pays}) n'est pas encore disponible. En attendant, MIAPO s'appuie sur des repères régionaux (Cameroun) et internationaux (France) pour situer filières et débouchés.",

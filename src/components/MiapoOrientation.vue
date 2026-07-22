@@ -20,6 +20,14 @@
 
       <template v-else>
         <Radar6C :scores="enfant.comp6c || {}" />
+        <div class="interets-box">
+          <p class="int-lab">{{ t('mia.oriInteretsLabel', { name: enfant.firstName }) }}</p>
+          <div class="int-chips">
+            <button v-for="it in INTERETS_ORIENTATION" :key="it.key" type="button" class="int-chip" :class="{ on: interets.includes(it.key) }" @click="toggleInteret(it.key)">
+              {{ locale === 'en' ? (it.label_en || it.label) : it.label }}
+            </button>
+          </div>
+        </div>
         <button class="btn btn-ghost btn-sm refaire" @click="emit('eval')"><Sliders :size="14" /> <span>{{ t('mia.oriS1Redo') }}</span></button>
       </template>
     </div>
@@ -108,7 +116,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION } from '../data/orientation'
+import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION, INTERETS_ORIENTATION, domaineMatchInterets, interetsLabels } from '../data/orientation'
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target } from 'lucide-vue-next'
@@ -133,6 +141,15 @@ function initScores() {
 }
 initScores()
 
+// Centres d'intérêt / passions (« ce qui te passionne à l'instant T ») — alimente le matching.
+const interets = ref([...(props.enfant.interets || [])])
+function toggleInteret(k) {
+  const i = interets.value.indexOf(k)
+  if (i >= 0) interets.value.splice(i, 1); else interets.value.push(k)
+  store.setInterets(props.enfant.id, interets.value)
+  if (state.value === 'done') { state.value = 'idle'; result.value = null } // le profil a changé
+}
+
 const hasEval = computed(() => !!props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6)
 const sorted6c = computed(() => {
   const sv = props.enfant.comp6c || {}
@@ -140,7 +157,7 @@ const sorted6c = computed(() => {
 })
 
 // Quand on change d'enfant, on réinitialise tout.
-watch(() => props.enfant.id, () => { initScores(); editing.value = false; state.value = 'idle'; result.value = null; pays.value = defaultPays() })
+watch(() => props.enfant.id, () => { initScores(); interets.value = [...(props.enfant.interets || [])]; editing.value = false; state.value = 'idle'; result.value = null; pays.value = defaultPays() })
 
 function startEdit() { initScores(); editing.value = true }
 function saveEval() {
@@ -172,7 +189,10 @@ function topCandidats() {
   const sv = props.enfant.comp6c || {}
   const domaines = (ORIENTATION[pays.value]?.domaines) || []
   const scored = domaines.map((d) => {
+    // Score = adéquation 6C (somme des compétences taggées) + bonus « passion » si
+    // le domaine correspond à un centre d'intérêt choisi par l'élève.
     const score = (d.competences || []).reduce((acc, k) => acc + (sv[k] || 0), 0)
+      + (domaineMatchInterets(d.domaine, interets.value) ? 6 : 0)
     const metiers = pays.value === 'france'
       ? (d.metiers || []).map((m) => (typeof m === 'string' ? m : m.metier)).filter(Boolean)
       : (d.metiers || [])
@@ -201,6 +221,7 @@ async function getSuggestions() {
     pays: paysLabel.value,
     competences: e.comp6c || {},
     forts, faibles,
+    interets: interetsLabels(interets.value, locale.value === 'en'),
     candidats: topCandidats(),
     langue: locale.value === 'en' ? 'en' : 'fr',
   })
@@ -247,6 +268,14 @@ async function getSuggestions() {
 .pr-fill { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--pr, #1558B0), #7c3aed); }
 .pr-val { width: 18px; text-align: right; font-weight: 700; font-size: 13px; color: var(--tx2); }
 .refaire { margin-top: 6px; }
+
+/* Centres d'intérêt (passions) */
+.interets-box { margin: 14px 0 4px; }
+.int-lab { font-size: 13.5px; color: var(--tx2, #4b5563); margin: 0 0 9px; line-height: 1.45; }
+.int-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.int-chip { font-size: 13px; padding: 7px 13px; border-radius: 20px; border: 1px solid var(--bd, #e5e7eb); background: #fff; color: var(--tx2, #4b5563); cursor: pointer; transition: all .12s; }
+.int-chip:hover { border-color: var(--pr, #1558B0); }
+.int-chip.on { border-color: var(--pr, #1558B0); background: rgba(var(--pr-rgb,21,88,176),.08); color: var(--pr, #1558B0); font-weight: 600; }
 
 /* Destination */
 .pays-pick { display: flex; gap: 10px; flex-wrap: wrap; }

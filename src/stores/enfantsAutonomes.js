@@ -598,6 +598,13 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const e = getEnfant(enfantId)
     return e && e.comp6c ? e.comp6c : null
   }
+  /** Centres d'intérêt / passions de l'apprenant (orientation) — liste de clés de thèmes. */
+  function setInterets(enfantId, interets) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    e.interets = Array.isArray(interets) ? interets.filter(Boolean) : []
+    persist(enfantId)
+  }
   /** Mémorise le bilan 6C généré (MIAPO ou local) pour l'afficher sans re-générer. */
   function setBilan6c(enfantId, bilan) {
     const e = getEnfant(enfantId)
@@ -660,7 +667,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,
-    setComp6c, getComp6c, setBilan6c, seedDemoAs, setFormationPlan,
+    setComp6c, getComp6c, setInterets, setBilan6c, seedDemoAs, setFormationPlan,
     derniereRevision, owner,
   }
 })
