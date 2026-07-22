@@ -38,6 +38,12 @@
           <span>{{ t('mia.secSettings') }}</span>
         </button>
         <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
+        <!-- Carré : application distincte de l'écosystème EDUFREM (s'ouvre à part) -->
+        <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="volet-carre" :title="t('mia.carreOpen')">
+          <span class="carre-badge sm"><span>C</span></span>
+          <span class="volet-carre-name">Carré</span>
+          <ExternalLink :size="14" class="volet-carre-ext" />
+        </a>
       </div>
     </aside>
 
@@ -417,6 +423,30 @@
             <MiapoAccessibilite />
           </div>
 
+          <!-- Sous-menu : Connecteurs (agenda + compte Carré) -->
+          <div v-show="sousSection === 'connecteurs'" class="param-panel">
+            <p class="muted small">{{ t('mia.connectorsHint') }}</p>
+            <!-- Agenda iCal (Google / Outlook) -->
+            <div class="card">
+              <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myAgenda') }}</h3></div>
+              <p class="muted small">{{ t('mia.myAgendaSub') }}</p>
+              <input class="input connector-input" v-model="agendaUrl" :placeholder="t('mia.calendarUrlPlaceholder')" />
+              <button class="btn btn-outline btn-sm" type="button" @click="saveAgenda">{{ agendaSaved ? t('mia.connected') : t('mia.connect') }}</button>
+            </div>
+            <!-- Compte Carré : MIAPO pourra lire les notes de cours de l'apprenant -->
+            <div class="card">
+              <div class="card-head"><span class="carre-badge"><span>C</span></span><h3>{{ t('mia.carreTitle') }}</h3></div>
+              <p class="muted small">{{ t('mia.carreDesc') }}</p>
+              <template v-if="connecteurs.carreConnected">
+                <div class="connector-state ok"><Check :size="15" /> {{ connecteurs.carrePreview ? t('mia.carrePreview') : t('mia.carreConnectedMsg') }}</div>
+                <button class="btn btn-outline btn-sm" type="button" @click="connecteurs.disconnectCarre()">{{ t('mia.carreDisconnect') }}</button>
+              </template>
+              <template v-else>
+                <button class="btn btn-primary btn-sm" type="button" @click="connecteurs.connectCarre()"><ExternalLink :size="15" /> {{ t('mia.carreConnect') }}</button>
+              </template>
+            </div>
+          </div>
+
           <!-- Sous-menu : Profil -->
           <div v-show="sousSection === 'profil'" class="param-panel">
           <!-- Profil du PARENT (mode parent) — d'abord -->
@@ -683,6 +713,7 @@ import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { useRelanceStore } from '../stores/relance'
 import { useAbonnementStore } from '../stores/abonnement'
+import { useConnecteursStore } from '../stores/connecteurs'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
@@ -707,7 +738,7 @@ import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -718,6 +749,7 @@ async function logout() { await authStore.logout(); router.push(isMiapoTenant() 
 const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()
 const tuteur = useTuteurStore()
+const connecteurs = useConnecteursStore()
 const analytics = useMiapoAnalyticsStore()
 const relance = useRelanceStore()
 const enfants = computed(() => store.enfants)
@@ -777,6 +809,7 @@ const sousMenus = computed(() => {
     { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
     { key: 'langue', label: t('mia.secLanguage'), icon: Languages },
     { key: 'notification', label: t('mia.notifTitle'), icon: Bell },
+    { key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 },
     { key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility },
   ]
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
@@ -1388,6 +1421,26 @@ onUnmounted(() => {
 .volet-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
 .volet-logout { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
 .volet-logout:hover { background: rgba(217,48,37,.07); color: #D93025; }
+/* Carré : app distincte de l'écosystème → séparée visuellement, en bas du volet */
+.volet-carre {
+  display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 9px 12px;
+  border: 1px solid var(--divider, #e5e7eb); border-radius: 10px; cursor: pointer;
+  text-decoration: none; color: var(--tx2, #4b5563); font-size: 13.5px; transition: .15s;
+}
+.volet-carre:hover { background: var(--input-bg, #f1f3f5); border-color: var(--tx3, #9ca3af); }
+.volet-carre-name { font-weight: 600; font-family: var(--font-display, inherit); }
+.volet-carre-ext { margin-left: auto; color: var(--tx3, #9ca3af); }
+.carre-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 6px; flex-shrink: 0;
+  background: #0f172a; color: #fff; font-family: var(--font-display, inherit);
+  font-weight: 800; font-size: 13px; line-height: 1;
+}
+.carre-badge.sm { width: 22px; height: 22px; border-radius: 6px; font-size: 12px; }
+.connector-state { display: inline-flex; align-items: center; gap: 6px; margin: 2px 0 10px; font-size: 13px; }
+.connector-state.ok { color: #16a34a; }
+.connector-state.ok svg { color: #16a34a; }
+.connector-input { margin-bottom: 10px; }
 .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx2, #4b5563); text-align: left; width: 100%; }
 .nav-item:hover { background: var(--input-bg, #f1f3f5); }
 .nav-item.active { background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); font-weight: 600; }

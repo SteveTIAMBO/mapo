@@ -219,6 +219,7 @@ import { useElevesStore } from '../../stores/eleves'
 import { useAuthStore } from '../../stores/auth'
 import { useTuteurStore } from '../../stores/tuteur'
 import { useEnfantsAutonomesStore, matieresPourNiveau } from '../../stores/enfantsAutonomes'
+import { useConnecteursStore } from '../../stores/connecteurs'
 
 const router = useRouter()
 const route = useRoute()
@@ -227,6 +228,7 @@ const copilot = useMiapoCopilotStore()
 const authStore = useAuthStore()
 const tuteur = useTuteurStore()
 const enfantsStore = useEnfantsAutonomesStore()
+const connecteurs = useConnecteursStore()
 // MAPO+ (B2C) : chat pédagogique orienté « apprenant » ; MAPO (ERP) : copilote de gestion.
 const isB2C = computed(() => authStore.isB2C)
 // MAPO+ (B2C) : exemples et invite orientés « apprenant » (pas la gestion d'école).
@@ -413,10 +415,13 @@ async function submitB2C(text) {
     .map((m) => (m.role === 'user' ? 'Apprenant' : 'MIAPO') + ' : ' + m.text)
     .join('\n')
   const ctx = learnerCtx.value
+  // Notes de cours issues de Carré (si l'apprenant a relié son compte) → MIAPO s'appuie dessus.
+  const cours = await connecteurs.carreNotesText().catch(() => '')
   const r = await tuteur.chatTuteur({
     message: text,
     niveau: ctx.niveau,
     matieres: ctx.matieres,
+    cours,
     historique: hist,
     internet: internet.value,
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
