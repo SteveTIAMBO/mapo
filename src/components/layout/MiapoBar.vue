@@ -414,13 +414,24 @@ function openStudentFiche(e) {
 const isLearner = computed(() => enfantsStore.mode === 'apprenant' || enfantsStore.isCompteEnfant)
 function detectB2CAction(text) {
   const q = ' ' + String(text).toLowerCase() + ' '
-  if (isLearner.value && /(quiz|qcm|interrog|exercice|entra[iî]n|r[ée]vis|teste)/.test(q)) return 'quiz'
-  if (/(progression|progr[eè]s|points? faibles|o[uù] j.?en suis)/.test(q)) return 'progression'
-  if (/(orientation|m[ée]tier|fili[eè]re|que faire apr|apr[eè]s le bac)/.test(q)) return 'orientation'
+  // Activités « apprenant » (du plus spécifique au plus large).
+  if (isLearner.value) {
+    if (/annales?|sujets?\s+(du\s+|d.)?(bac|brevet|bepc|cep|probatoire|examen)/.test(q)) return 'annales'
+    if (/(pr[ée]par|programme|plan)[^.]{0,20}(examen|bac|brevet|concours|certif|[ée]preuve)/.test(q)) return 'prepa'
+    if (/(fiche|r[ée]sum|synth[eè]se|m[ée]mo)[^.]{0,15}(cours|r[ée]vision|le[çc]on|chapitre)|fais.?moi une fiche/.test(q)) return 'fiches'
+    if (/quiz|qcm|interrog|exercice|entra[iî]n|r[ée]vis|teste/.test(q)) return 'quiz'
+  }
+  if (/progression|progr[eè]s|points? faibles|o[uù] j.?en suis/.test(q)) return 'progression'
+  if (/orientation|m[ée]tier|fili[eè]re|que faire apr|apr[eè]s (le |la |mon |ma )?(bac|coll|lyc)/.test(q)) return 'orientation'
+  if (/emploi du temps|planning|agenda|calendrier|cr[ée]neau|horaire|mes cours (de |du )?la semaine/.test(q)) return 'edt'
+  if (/mes notes|mes r[ée]sultats|mes moyennes|ajouter? une note|saisir une note/.test(q)) return 'notes'
   return null
 }
 function actionLabel(a) {
-  return a === 'quiz' ? t('mia.actQuiz') : a === 'progression' ? t('mia.actProgress') : t('mia.actOrientation')
+  return {
+    quiz: t('mia.actQuiz'), prepa: t('mia.actPrepa'), fiches: t('mia.actFiches'), annales: t('mia.actAnnales'),
+    progression: t('mia.actProgress'), orientation: t('mia.actOrientation'), edt: t('mia.actEdt'), notes: t('mia.actNotes'),
+  }[a] || t('mia.actProgress')
 }
 function runB2CAction(action, query) {
   window.dispatchEvent(new CustomEvent('miapo-b2c-action', { detail: { action, query: query || '' } }))

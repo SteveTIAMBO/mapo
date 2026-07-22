@@ -837,16 +837,26 @@ function onB2CAction(e) {
   const action = e && e.detail && e.detail.action
   const query = (e && e.detail && e.detail.query) || ''
   menuOpen.value = false
-  if (action === 'quiz') {
-    if (isApprenant.value) {
-      const m = b2cMatchMatiere(query)
-      if (m) { goRevise(m); return }        // lance directement le quiz sur la matière
+  switch (action) {
+    case 'quiz': {
+      if (isApprenant.value) {
+        const m = b2cMatchMatiere(query)
+        if (m) { goRevise(m); return }       // lance directement le quiz sur la matière détectée
+        section.value = 'tuteur'
+      } else section.value = 'enfants'
+      return
     }
-    section.value = isApprenant.value ? 'tuteur' : 'enfants'
-    return
+    case 'prepa':
+      section.value = isApprenant.value ? 'tuteur' : 'enfants'
+      if (isApprenant.value && prepaState.value === 'idle') getPrepa()   // construit le programme d'examen
+      return
+    case 'fiches': section.value = isApprenant.value ? 'fiches' : 'enfants'; return
+    case 'annales': section.value = isApprenant.value ? 'annales' : 'enfants'; return
+    case 'progression': section.value = 'progression'; return
+    case 'orientation': section.value = 'orientation'; return
+    case 'edt': section.value = 'edt'; return
+    case 'notes': section.value = 'enfants'; return
   }
-  if (action === 'progression') { section.value = 'progression'; return }
-  if (action === 'orientation') { section.value = 'orientation' }
 }
 
 // Menu repliable en icônes (desktop) — persisté ; le menu reste fixe (ne défile pas).
