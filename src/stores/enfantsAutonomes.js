@@ -425,7 +425,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'ecole', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     if ('objectifNote' in patch) {

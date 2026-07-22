@@ -465,6 +465,21 @@
               <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in niveauxPrimairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in niveauxSecondairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup v-if="profil.pays !== 'FR'" :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option v-if="profil.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
+              <!-- Certification : catalogue → modules préchargés + organisme + date d'examen -->
+              <div class="form-group">
+                <label class="form-label">{{ t('mia.certifLabel') }}</label>
+                <select v-model="profil.certifId" class="input" @change="onCertif(profil)">
+                  <option value="">{{ t('mia.certifChoose') }}</option>
+                  <option v-for="c in CERTIFICATIONS" :key="c.id" :value="c.id">{{ c.nom }}</option>
+                  <option value="autre">{{ t('mia.certifOther') }}</option>
+                </select>
+              </div>
+              <div v-if="profil.certifId" class="form-row">
+                <div class="form-group"><label class="form-label">{{ t('mia.certifOrg') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.organisme" class="input" :placeholder="t('mia.certifOrgPlaceholder')" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.certifDate') }}</label><input v-model="profil.certifDate" type="date" class="input" /></div>
+              </div>
+              <p v-if="profil.certifId && profil.certifId !== 'autre'" class="muted small preloaded"><Check :size="13" /> {{ t('mia.certifPreloaded') }}</p>
+              <p v-if="joursAvantCertif(profil) !== null" class="certif-countdown"><CalendarDays :size="14" /> {{ t('mia.certifCountdown', { n: joursAvantCertif(profil) }) }}</p>
               <div class="form-row">
                 <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
                 <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
@@ -667,6 +682,7 @@ import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
 import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 import { ECOLES_CATALOGUE, ecoleCatalogue, formationCatalogue } from '../data/formationsCatalogue'
+import { CERTIFICATIONS, certification } from '../data/certificationsCatalogue'
 import MiapoOrbe from '../components/MiapoOrbe.vue'
 import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
@@ -801,7 +817,7 @@ watch([SECTIONS, () => store.mode], () => {
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
 const objectif = computed(() => store.objectifDe(activeEnfant.value))
 const profilSaved = ref(false)
@@ -814,6 +830,7 @@ function syncProfil() {
     ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
     objectifNote: store.objectifDe(e),
     catEcole: e.catEcole || '', catFormation: e.catFormation || '',
+    certifId: e.certifId || '', organisme: e.organisme || '', certifDate: e.certifDate || '',
   }
 }
 function onPickPhoto(ev) {
@@ -946,6 +963,18 @@ function specialitesFR(o) {
 function addSpecialite(o, sp) {
   const list = (o.formationModules || '').split(',').map((m) => m.trim()).filter(Boolean)
   if (!list.includes(sp)) { list.push(sp); o.formationModules = list.join(', ') }
+}
+// ── Certification : catalogue → modules préchargés + compte à rebours jusqu'à l'examen ──
+function onCertif(o) {
+  const c = certification(o.certifId)
+  if (c) { o.formation = c.nom; o.formationModules = c.modules.join(', '); if (!o.organisme) o.organisme = c.organisme || '' }
+}
+function joursAvantCertif(o) {
+  if (!o || !o.certifDate) return null
+  const d = new Date(o.certifDate + 'T00:00:00')
+  if (Number.isNaN(d.getTime())) return null
+  const diff = Math.ceil((d - new Date(new Date().toDateString())) / 86400000)
+  return diff >= 0 ? diff : null
 }
 
 const newMatiere = ref('')
@@ -1440,6 +1469,8 @@ onUnmounted(() => {
 .pp-avatar { width: 64px; height: 64px; font-size: 22px; overflow: hidden; flex-shrink: 0; }
 .pp-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .saved-ok { color: #1B8A5A; font-weight: 600; }
+.certif-countdown { display: flex; align-items: center; gap: 7px; margin: 8px 0 4px; font-size: 13px; font-weight: 600; color: var(--pr, #1558B0); background: rgba(var(--pr-rgb,21,88,176),.08); padding: 8px 12px; border-radius: 10px; }
+.certif-countdown svg { flex-shrink: 0; }
 .stat-v { display: block; font-size: 22px; font-weight: 700; color: var(--tx); } .stat-v.warn { color: #D93025; }
 .stat-l { font-size: 12px; color: var(--tx3); }
 .quick { display: flex; gap: 10px; flex-wrap: wrap; }
