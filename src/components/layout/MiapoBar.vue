@@ -76,7 +76,12 @@
               <template v-else>
                 <div v-for="(m, i) in chatMsgs" :key="i" :class="['miapo-msg', m.role]">
                   <span v-if="m.role === 'miapo'" class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
-                  <p class="miapo-msg-text">{{ m.text }}</p>
+                  <div class="miapo-msg-body">
+                    <p class="miapo-msg-text">{{ m.text }}</p>
+                    <button v-if="m.action" class="miapo-action-chip" @click="runB2CAction(m.action, m.query)">
+                      <ArrowRight :size="13" /> {{ actionLabel(m.action) }}
+                    </button>
+                  </div>
                 </div>
               </template>
               <div v-if="chatThinking" class="miapo-msg miapo">
@@ -403,6 +408,25 @@ function openStudentFiche(e) {
   close()
 }
 
+// MAPO+ (B2C) : MIAPO peut AGIR sur l'app. On détecte une intention simple dans
+// la demande de l'apprenant et on propose un raccourci (« MIAPO propose, tu
+// valides ») exécuté par l'espace MAPO+ (ParentMiapoView) via un évènement.
+const isLearner = computed(() => enfantsStore.mode === 'apprenant' || enfantsStore.isCompteEnfant)
+function detectB2CAction(text) {
+  const q = ' ' + String(text).toLowerCase() + ' '
+  if (isLearner.value && /(quiz|qcm|interrog|exercice|entra[iî]n|r[ée]vis|teste)/.test(q)) return 'quiz'
+  if (/(progression|progr[eè]s|points? faibles|o[uù] j.?en suis)/.test(q)) return 'progression'
+  if (/(orientation|m[ée]tier|fili[eè]re|que faire apr|apr[eè]s le bac)/.test(q)) return 'orientation'
+  return null
+}
+function actionLabel(a) {
+  return a === 'quiz' ? t('mia.actQuiz') : a === 'progression' ? t('mia.actProgress') : t('mia.actOrientation')
+}
+function runB2CAction(action, query) {
+  window.dispatchEvent(new CustomEvent('miapo-b2c-action', { detail: { action, query: query || '' } }))
+  close()
+}
+
 // MAPO+ (B2C) : chat pédagogique socratique. MIAPO cultive la compréhension
 // (n'écrit pas le devoir à la place de l'apprenant) et répond en texte libre.
 async function submitB2C(text) {
@@ -428,7 +452,7 @@ async function submitB2C(text) {
   })
   chatThinking.value = false
   const reply = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
-  chatMsgs.value.push({ role: 'miapo', text: reply })
+  chatMsgs.value.push({ role: 'miapo', text: reply, action: r.ok ? detectB2CAction(text) : null, query: text })
   nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
 }
 
@@ -705,6 +729,15 @@ onUnmounted(() => {
   white-space: pre-wrap; word-break: break-word; max-width: 82%;
 }
 .miapo-msg-orb { flex-shrink: 0; margin-top: 2px; }
+.miapo-msg-body { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.miapo-msg.user .miapo-msg-body { align-items: flex-end; }
+.miapo-action-chip {
+  display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
+  padding: 7px 13px; border: 1px solid var(--pr); border-radius: 999px;
+  background: rgba(var(--pr-rgb), .08); color: var(--pr);
+  font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; transition: .15s;
+}
+.miapo-action-chip:hover { background: var(--pr); color: #fff; }
 .miapo-typing {
   display: inline-flex; align-items: center; gap: 5px;
   padding: 12px 13px; background: var(--input-bg); border-radius: 14px 14px 14px 4px;

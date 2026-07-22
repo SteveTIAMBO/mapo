@@ -821,6 +821,34 @@ function onOpenSettings(e) {
   menuOpen.value = false
 }
 
+// MAPO+ (B2C) : MIAPO agit sur l'app. Le chat (MiapoBar) émet une intention
+// (quiz / progression / orientation) ; on l'exécute ici — « MIAPO propose, tu valides ».
+function b2cMatchMatiere(query) {
+  const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  const q = norm(query)
+  let best = ''
+  for (const m of (matieresList.value || [])) {
+    const nm = norm(m)
+    if (nm.length >= 3 && q.includes(nm) && nm.length > norm(best).length) best = m
+  }
+  return best
+}
+function onB2CAction(e) {
+  const action = e && e.detail && e.detail.action
+  const query = (e && e.detail && e.detail.query) || ''
+  menuOpen.value = false
+  if (action === 'quiz') {
+    if (isApprenant.value) {
+      const m = b2cMatchMatiere(query)
+      if (m) { goRevise(m); return }        // lance directement le quiz sur la matière
+    }
+    section.value = isApprenant.value ? 'tuteur' : 'enfants'
+    return
+  }
+  if (action === 'progression') { section.value = 'progression'; return }
+  if (action === 'orientation') { section.value = 'orientation' }
+}
+
 // Menu repliable en icônes (desktop) — persisté ; le menu reste fixe (ne défile pas).
 const voletCollapsed = ref(false)
 function toggleCollapse() {
@@ -1369,6 +1397,7 @@ onMounted(async () => {
   relance.refresh()
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
   window.addEventListener('open-miapo-settings', onOpenSettings)
+  window.addEventListener('miapo-b2c-action', onB2CAction)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
   // ── Suivi d'adoption MAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
@@ -1393,6 +1422,7 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('miapo-toggle-menu', onToggleMenu)
   window.removeEventListener('open-miapo-settings', onOpenSettings)
+  window.removeEventListener('miapo-b2c-action', onB2CAction)
   window.removeEventListener('appinstalled', onAppInstalled)
 })
 </script>
