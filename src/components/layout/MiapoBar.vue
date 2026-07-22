@@ -424,9 +424,18 @@ function pickChild(text) {
 }
 function subjectFrom(text, e) {
   const q = _norm(text)
+  const toks = q.split(/[^a-z0-9]+/).filter((w) => w.length >= 4)  // pour les abréviations (maths, philo, géo…)
   const cands = [...new Set([...(e.notes || []).map((n) => n.matiere), ...(matieresPourNiveau(e.niveau, e.pays) || [])])]
   let best = ''
-  for (const m of cands) { const nm = _norm(m); if (nm.length >= 3 && q.includes(nm) && nm.length > _norm(best).length) best = m }
+  for (const m of cands) {
+    const nm = _norm(m)
+    if (!nm) continue
+    let hit = q.includes(nm)                       // « mathematiques » présent tel quel (ou « svt »)
+    if (!hit) for (const tk of toks) {             // sinon correspondance par préfixe : maths→mathematiques, philo→philosophie
+      if (nm.startsWith(tk.slice(0, 4)) || tk.startsWith(nm.slice(0, 4))) { hit = true; break }
+    }
+    if (hit && nm.length > _norm(best).length) best = m
+  }
   return best
 }
 
