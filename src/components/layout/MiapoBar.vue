@@ -76,12 +76,7 @@
               <template v-else>
                 <div v-for="(m, i) in chatMsgs" :key="i" :class="['miapo-msg', m.role]">
                   <span v-if="m.role === 'miapo'" class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
-                  <div class="miapo-msg-body">
-                    <p class="miapo-msg-text">{{ m.text }}</p>
-                    <button v-if="m.action" class="miapo-action-chip" @click="runB2CAction(m.action, m.query)">
-                      <ArrowRight :size="13" /> {{ actionLabel(m.action) }}
-                    </button>
-                  </div>
+                  <p class="miapo-msg-text">{{ m.text }}</p>
                 </div>
               </template>
               <div v-if="chatThinking" class="miapo-msg miapo">
@@ -412,30 +407,120 @@ function openStudentFiche(e) {
 // la demande de l'apprenant et on propose un raccourci (« MIAPO propose, tu
 // valides ») exécuté par l'espace MAPO+ (ParentMiapoView) via un évènement.
 const isLearner = computed(() => enfantsStore.mode === 'apprenant' || enfantsStore.isCompteEnfant)
-function detectB2CAction(text) {
-  const q = ' ' + String(text).toLowerCase() + ' '
-  // Activités « apprenant » (du plus spécifique au plus large).
-  if (isLearner.value) {
-    if (/annales?|sujets?\s+(du\s+|d.)?(bac|brevet|bepc|cep|probatoire|examen)/.test(q)) return 'annales'
-    if (/(pr[ée]par|programme|plan)[^.]{0,20}(examen|bac|brevet|concours|certif|[ée]preuve)/.test(q)) return 'prepa'
-    if (/(fiche|r[ée]sum|synth[eè]se|m[ée]mo)[^.]{0,15}(cours|r[ée]vision|le[çc]on|chapitre)|fais.?moi une fiche/.test(q)) return 'fiches'
-    if (/quiz|qcm|interrog|exercice|entra[iî]n|r[ée]vis|teste/.test(q)) return 'quiz'
+// `_norm` (normalisation accents/casse) est déjà défini plus haut pour le copilote ERP — on le réutilise.
+const _fmt = (n) => String(n).replace('.', ',')
+
+// Enfant concerné : apprenant → lui-même ; parent → celui nommé dans la phrase,
+// sinon l'unique enfant, sinon on demande lequel.
+function pickChild(text) {
+  const list = enfantsStore.enfants || []
+  if (!list.length) return null
+  if (isLearner.value) return list[0]
+  const q = _norm(text)
+  const named = list.find((e) => { const fn = _norm(e.firstName); return fn.length >= 2 && new RegExp('\\b' + fn).test(q) })
+  if (named) return named
+  if (list.length === 1) return list[0]
+  return { _ambiguous: list.map((e) => e.firstName) }
+}
+function subjectFrom(text, e) {
+  const q = _norm(text)
+  const cands = [...new Set([...(e.notes || []).map((n) => n.matiere), ...(matieresPourNiveau(e.niveau, e.pays) || [])])]
+  let best = ''
+  for (const m of cands) { const nm = _norm(m); if (nm.length >= 3 && q.includes(nm) && nm.length > _norm(best).length) best = m }
+  return best
+}
+
+// Compose une réponse « progrès / notes » à partir des DONNÉES locales de l'app.
+function composeProgress(e, subject) {
+  const en = locale.value.startsWith('en')
+  const notes = e.notes || []
+  const learner = isLearner.value
+  const nm = e.firstName
+  const obj = enfantsStore.objectifDe(e)
+  if (subject) {
+    const n = notes.find((x) => _norm(x.matiere) === _norm(subject) || _norm(x.matiere).includes(_norm(subject)))
+    const mat = n ? n.matiere : subject
+    if (!n) return learner
+      ? (en ? `I don't have a grade in ${mat} yet. Add it in "My grades".` : `Je n'ai pas encore de note en ${mat} pour toi. Ajoute-la dans « Mes notes ».`)
+      : (en ? `No grade in ${mat} yet for ${nm}.` : `Je n'ai pas encore de note en ${mat} pour ${nm}.`)
+    const lvl = tuteur.getLevel(e.id, 'auto-' + mat)
+    const good = n.note >= obj
+    if (learner) return en
+      ? `In ${mat} you have ${_fmt(n.note)}/20 (revision level ${lvl}/5). ${good ? 'Good level, keep it up!' : 'A subject to work on — I can launch a quiz.'}`
+      : `En ${mat}, tu as ${_fmt(n.note)}/20 (niveau de révision ${lvl}/5). ${good ? 'Bon niveau, continue !' : 'C\'est une matière à travailler — je peux te lancer un quiz.'}`
+    return en
+      ? `In ${mat}, ${nm} has ${_fmt(n.note)}/20 (revision level ${lvl}/5). ${good ? 'Good level.' : 'A subject to work on.'}`
+      : `En ${mat}, ${nm} a ${_fmt(n.note)}/20 (niveau de révision ${lvl}/5). ${good ? 'Bon niveau.' : 'C\'est une matière à travailler.'}`
   }
-  if (/progression|progr[eè]s|points? faibles|o[uù] j.?en suis/.test(q)) return 'progression'
-  if (/orientation|m[ée]tier|fili[eè]re|que faire apr|apr[eè]s (le |la |mon |ma )?(bac|coll|lyc)/.test(q)) return 'orientation'
-  if (/emploi du temps|planning|agenda|calendrier|cr[ée]neau|horaire|mes cours (de |du )?la semaine/.test(q)) return 'edt'
-  if (/mes notes|mes r[ée]sultats|mes moyennes|ajouter? une note|saisir une note/.test(q)) return 'notes'
+  if (!notes.length) return learner
+    ? (en ? `I don't have your grades yet. Add them in "My grades".` : `Je n'ai pas encore tes notes. Ajoute-les dans « Mes notes ».`)
+    : (en ? `No grades recorded for ${nm} yet.` : `Aucune note enregistrée pour ${nm} pour l'instant.`)
+  const moy = Math.round((notes.reduce((a, n) => a + n.note, 0) / notes.length) * 10) / 10
+  const sorted = [...notes].sort((a, b) => b.note - a.note)
+  const forts = sorted.filter((n) => n.note >= obj).slice(0, 2)
+  const faibles = sorted.filter((n) => n.note < obj).slice(-2).reverse()
+  const streak = enfantsStore.serieRevision(e.id)
+  const P = []
+  P.push(learner ? (en ? `Your overall average is ${_fmt(moy)}/20.` : `Ta moyenne générale est de ${_fmt(moy)}/20.`)
+                 : (en ? `${nm}'s overall average: ${_fmt(moy)}/20.` : `Moyenne générale de ${nm} : ${_fmt(moy)}/20.`))
+  if (forts.length) P.push((en ? 'Strengths: ' : 'Points forts : ') + forts.map((n) => `${n.matiere} (${_fmt(n.note)})`).join(', ') + '.')
+  if (faibles.length) P.push((learner ? (en ? 'To work on: ' : 'À travailler : ') : (en ? `To work on for ${nm}: ` : `À travailler pour ${nm} : `)) + faibles.map((n) => `${n.matiere} (${_fmt(n.note)})`).join(', ') + '.')
+  if (streak > 0) P.push(en ? `Revision streak: ${streak} day(s).` : `Série de révision : ${streak} jour(s).`)
+  if (learner && faibles.length) P.push(en ? `Say "quiz on ${faibles[0].matiere}" to revise.` : `Dis « quiz de ${faibles[0].matiere} » quand tu veux réviser.`)
+  return P.join(' ')
+}
+
+// Compose l'emploi du temps depuis les données ; { nav:true } si vide (→ ouvrir la vue).
+function composeEdt(e) {
+  const edt = Array.isArray(e.edt) ? e.edt : []
+  if (!edt.length) return { nav: true }
+  const en = locale.value.startsWith('en')
+  const order = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche']
+  const by = {}
+  for (const c of edt) { const j = _norm(c.jour); (by[j] = by[j] || []).push(c) }
+  const lines = []
+  for (const j of order) {
+    if (!by[j]) continue
+    const items = by[j].sort((a, b) => String(a.heure || '').localeCompare(String(b.heure || ''))).map((c) => `${c.heure ? c.heure + ' ' : ''}${c.matiere}`).join(', ')
+    lines.push(`${j.charAt(0).toUpperCase() + j.slice(1)} : ${items}`)
+  }
+  const nm = e.firstName
+  const head = isLearner.value ? (en ? 'Here is your timetable:' : 'Voici ton emploi du temps :') : (en ? `Here is ${nm}'s timetable:` : `Voici l'emploi du temps de ${nm} :`)
+  return head + '\n' + lines.join('\n')
+}
+
+// Résout la demande à partir des DONNÉES de l'app : réponse inline, OU ouverture
+// directe de la bonne vue. Retourne { answer } | { nav, say } | null (→ chat IA).
+function resolveB2C(text) {
+  const q = ' ' + _norm(text) + ' '
+  const en = locale.value.startsWith('en')
+  // Actions apprenant (du + spécifique au + large)
+  if (isLearner.value) {
+    if (/annales|sujets? (du |d.)?(bac|brevet|bepc|cep|probatoire|examen)|past papers/.test(q)) return { nav: { action: 'annales' }, say: en ? 'Opening the past papers.' : 'J\'ouvre les annales.' }
+    if (/(prepar|programme|plan|prepare).{0,20}(examen|bac|brevet|concours|certif|epreuve|exam)/.test(q)) return { nav: { action: 'prepa' }, say: en ? 'Building your exam program.' : 'Je prépare ton programme d\'examen.' }
+    if (/(fiche|resum|synthese|memo|sheet).{0,15}(cours|revision|lecon|chapitre|lesson)|fais.?moi une fiche/.test(q)) return { nav: { action: 'fiches' }, say: en ? 'Opening your study sheets.' : 'J\'ouvre tes fiches.' }
+    if (/quiz|qcm|interrog|exercice|entra[iî]n|teste|(fais|lance|donne|propose).{0,20}(revis|exercice|quiz)/.test(q)) {
+      const e = enfantsStore.enfants[0]; const subj = e ? subjectFrom(text, e) : ''
+      return { nav: { action: 'quiz' }, say: subj ? (en ? `Launching a ${subj} quiz.` : `Je te lance un quiz de ${subj}.`) : (en ? 'Launching a quiz.' : 'On lance un quiz.') }
+    }
+  }
+  // Progrès / notes / moyenne / points faibles → RÉPONSE avec les données
+  if (/progr|\bnote|moyenne|resultat|niveau|points? faibles|a revis|faibless|comment.{0,15}(va|se debrouil|s.en sort|marche|avance|progress)/.test(q)) {
+    const c = pickChild(text)
+    if (!c) return { answer: en ? 'Add a child profile first to track progress.' : 'Ajoute d\'abord un profil enfant pour suivre la progression.' }
+    if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
+    return { answer: composeProgress(c, subjectFrom(text, c)) }
+  }
+  // Emploi du temps → inline (ou ouverture de la vue si vide)
+  if (/emploi du temps|\bedt\b|planning|horaire|creneau|timetable|schedule/.test(q)) {
+    const c = pickChild(text)
+    if (c && !c._ambiguous) { const r = composeEdt(c); if (r && r.nav) return { nav: { action: 'edt' }, say: en ? 'Opening the timetable.' : 'J\'ouvre l\'emploi du temps.' }; return { answer: r } }
+    if (c && c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
+    return { nav: { action: 'edt' }, say: en ? 'Opening the timetable.' : 'J\'ouvre l\'emploi du temps.' }
+  }
+  // Orientation (module interactif) → ouverture directe
+  if (/orientation|\bmetier|filiere|que faire apr|apres (le |la |mon |ma )?(bac|coll|lyc)|career/.test(q)) return { nav: { action: 'orientation' }, say: en ? 'Opening orientation.' : 'J\'ouvre l\'orientation.' }
   return null
-}
-function actionLabel(a) {
-  return {
-    quiz: t('mia.actQuiz'), prepa: t('mia.actPrepa'), fiches: t('mia.actFiches'), annales: t('mia.actAnnales'),
-    progression: t('mia.actProgress'), orientation: t('mia.actOrientation'), edt: t('mia.actEdt'), notes: t('mia.actNotes'),
-  }[a] || t('mia.actProgress')
-}
-function runB2CAction(action, query) {
-  window.dispatchEvent(new CustomEvent('miapo-b2c-action', { detail: { action, query: query || '' } }))
-  close()
 }
 
 // MAPO+ (B2C) : chat pédagogique socratique. MIAPO cultive la compréhension
@@ -443,9 +528,29 @@ function runB2CAction(action, query) {
 async function submitB2C(text) {
   chatMsgs.value.push({ role: 'user', text })
   instruction.value = ''
+  nextTick(scrollChatBottom)
+
+  // 1) Réponse INSTANTANÉE à partir des données de l'app (progrès, notes, EDT
+  //    d'un enfant nommé…) ou OUVERTURE DIRECTE de la bonne vue — sans appel IA.
+  const local = resolveB2C(text)
+  if (local && local.answer) {
+    chatMsgs.value.push({ role: 'miapo', text: local.answer })
+    nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
+    return
+  }
+  if (local && local.nav) {
+    chatMsgs.value.push({ role: 'miapo', text: local.say })
+    nextTick(scrollChatBottom)
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('miapo-b2c-action', { detail: { action: local.nav.action, query: text } }))
+      close()
+    }, 850)
+    return
+  }
+
+  // 2) Sinon : chat pédagogique IA (socratique).
   chatThinking.value = true
   nextTick(scrollChatBottom)
-  // Fil récent (5 derniers échanges) pour garder le contexte socratique.
   const hist = chatMsgs.value.slice(-6, -1)
     .map((m) => (m.role === 'user' ? 'Apprenant' : 'MIAPO') + ' : ' + m.text)
     .join('\n')
@@ -463,7 +568,7 @@ async function submitB2C(text) {
   })
   chatThinking.value = false
   const reply = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
-  chatMsgs.value.push({ role: 'miapo', text: reply, action: r.ok ? detectB2CAction(text) : null, query: text })
+  chatMsgs.value.push({ role: 'miapo', text: reply })
   nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
 }
 

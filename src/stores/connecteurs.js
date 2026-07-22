@@ -8,7 +8,7 @@ import { auth as fbAuth } from '../firebase'
 // SERVEUR (mapo-carre.php), chiffrés, jamais dans le navigateur : le front ne
 // fait que lancer le flux, interroger l'état, et lire les notes via le proxy.
 const API = '/mapo-carre.php'
-const CARRE_APP_URL = 'https://carre.app-edufrem.com'
+const CARRE_APP_URL = 'https://carre.app-edufrem.com/app'
 const LINK_KEY = 'mapo_carre_linked'
 
 export const useConnecteursStore = defineStore('connecteurs', () => {
