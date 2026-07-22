@@ -129,7 +129,7 @@
             <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName }) }}</h3></div>
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
-                <span class="nr-mat">{{ n.matiere }}</span>
+                <span class="nr-mat">{{ n.matiere }}<span v-if="n.type" class="nr-type">{{ n.type }}</span></span>
                 <span class="nr-note" :class="noteClass(n.note)">{{ n.note }}/20</span>
                 <button class="btn btn-ghost btn-xs" @click="store.removeNote(activeEnfant.id, n.id)"><X :size="14" /></button>
               </div>
@@ -137,6 +137,7 @@
             <p v-else class="muted">{{ t('mia.noNotesHint') }}</p>
             <div class="add-note">
               <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.moduleOrSubject') : t('mia.subjectPlaceholder') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+              <select v-if="newMatiere" v-model="newType" class="input"><option value="">{{ t('mia.noteTypeOptional') }}</option><option v-for="ty in typesNote" :key="ty" :value="ty">{{ ty }}</option></select>
               <input v-model.number="newNote" type="number" min="0" max="20" step="0.5" class="input note-input" placeholder="/20" />
               <button class="btn btn-primary btn-sm" :disabled="!canAddNote" @click="addNote"><Plus :size="15" /></button>
             </div>
@@ -461,7 +462,7 @@
             </div>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
-              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in niveauxPrimairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in niveauxSecondairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup v-if="profil.pays !== 'FR'" :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option v-if="profil.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
               <div class="form-row">
@@ -485,6 +486,22 @@
             </template>
             <div class="form-row">
               <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+            </div>
+            <!-- Matières (primaire/secondaire) : programme national préchargé, personnalisable -->
+            <div v-if="!isNiveauSuperieur(profil.niveau) && profil.niveau !== NIVEAU_HORS_CATALOGUE" class="form-group">
+              <label class="form-label">{{ t('mia.subjectsLabel') }}</label>
+              <template v-if="!profil.formationModules">
+                <p class="muted small">{{ t('mia.subjectsAutoHint') }}</p>
+                <button type="button" class="btn btn-outline btn-sm" @click="preloadMatieres(profil)">{{ t('mia.customizeSubjects') }}</button>
+              </template>
+              <template v-else>
+                <textarea v-model="profil.formationModules" class="input" rows="3" :placeholder="t('mia.subjectsPlaceholder')"></textarea>
+                <div v-if="specialitesFR(profil).length" class="spec-adds">
+                  <span class="muted small">{{ t('mia.addSpecialite') }}</span>
+                  <button v-for="sp in specialitesFR(profil)" :key="sp" type="button" class="btn btn-outline btn-xs spec-btn" @click="addSpecialite(profil, sp)">+ {{ sp }}</button>
+                </div>
+                <button type="button" class="btn btn-ghost btn-xs reset-mat" @click="profil.formationModules = ''">{{ t('mia.resetSubjects') }}</button>
+              </template>
             </div>
             <!-- Établissement (catalogue) → formation → programme préchargé (supérieur) -->
             <template v-if="isNiveauSuperieur(profil.niveau)">
@@ -567,8 +584,12 @@
             <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="form.lastName" class="input" :placeholder="t('mia.lastName')" /></div>
           </div>
           <div class="form-row">
+            <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+            <div v-if="!isNiveauSuperieur(form.niveau) && form.niveau !== NIVEAU_HORS_CATALOGUE" class="form-group"><label class="form-label">{{ t('mia.school') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
+          </div>
+          <div class="form-row">
             <div class="form-group"><label class="form-label">{{ t('mia.sex') }}</label><select v-model="form.gender" class="input"><option value="M">{{ t('mia.boy') }}</option><option value="F">{{ t('mia.girl') }}</option></select></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in NIVEAUX_PRIMAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in NIVEAUX_SECONDAIRE" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in niveauxPrimairePays(form.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in niveauxSecondairePays(form.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup v-if="form.pays !== 'FR'" :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option v-if="form.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
@@ -605,7 +626,6 @@
             </div>
             <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="form.formationModules" class="input" rows="3" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
           </template>
-          <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="form.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
           <div class="compose-actions">
             <button class="btn btn-outline" @click="showAdd = false">{{ t('mia.cancel') }}</button>
             <button class="btn btn-primary" :disabled="!form.firstName.trim()" @click="doAdd"><Check :size="16" /> <span>{{ t('mia.createProfile') }}</span></button>
@@ -623,7 +643,7 @@ import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, jourISO } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -917,9 +937,21 @@ function onCatFormation(o) {
   o.formationModules = f.matieres.join(', ') // préchargé, l'apprenant vérifie/ajuste
   const e = ecoleCatalogue(o.catEcole); if (e) o.ecole = e.nom
 }
+// ── Matières primaire/secondaire : préchargement du programme national + personnalisation ──
+function preloadMatieres(o) { o.formationModules = matieresPourNiveau(o.niveau, o.pays).join(', ') }
+// Spécialités du lycée général FR proposées en 1re/Terminale (à compléter par l'élève).
+function specialitesFR(o) {
+  return (o.pays === 'FR' && (o.niveau === '1re' || o.niveau === 'Terminale')) ? SPECIALITES_LYCEE_GENERAL_FR : []
+}
+function addSpecialite(o, sp) {
+  const list = (o.formationModules || '').split(',').map((m) => m.trim()).filter(Boolean)
+  if (!list.includes(sp)) { list.push(sp); o.formationModules = list.join(', ') }
+}
 
 const newMatiere = ref('')
 const newNote = ref(null)
+const newType = ref('')
+const typesNote = computed(() => typesNotePays(activeEnfant.value?.pays))
 const canAddNote = computed(() => newMatiere.value && newNote.value !== null && newNote.value !== '' && !Number.isNaN(Number(newNote.value)))
 
 function paysLabel(code) { return PAYS.find((p) => p.code === code)?.label || code }
@@ -936,12 +968,13 @@ function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeE
 // (notes → faiblesses → quiz → révision) par SES modules ; sinon catalogue scolaire.
 const matieresList = computed(() => {
   const e = activeEnfant.value
-  // Supérieur et hors-catalogue : les matières = les modules saisis par l'apprenant.
-  if (e && (e.niveau === NIVEAU_HORS_CATALOGUE || isNiveauSuperieur(e.niveau)) && e.formationModules) {
+  // Matières personnalisées (supérieur, hors-catalogue, ou secondaire édité) : priorité.
+  if (e && e.formationModules) {
     const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
     if (mods.length) return mods
   }
-  return matieresPourNiveau(e?.niveau)
+  // Sinon, le programme national selon le niveau ET le pays (Cameroun / France).
+  return matieresPourNiveau(e?.niveau, e?.pays)
 })
 // Contexte passé au quiz IA : pour un apprenant hors-catalogue, le NOM de la
 // formation donne de bien meilleures questions que « Formation (hors catalogue) ».
@@ -1048,8 +1081,8 @@ function doAdd() {
 }
 function addNote() {
   if (!canAddNote.value || !activeEnfant.value) return
-  store.addNote(activeEnfant.value.id, newMatiere.value, newNote.value)
-  newMatiere.value = ''; newNote.value = null
+  store.addNote(activeEnfant.value.id, newMatiere.value, newNote.value, newType.value)
+  newMatiere.value = ''; newNote.value = null; newType.value = ''
 }
 function confirmRemove() {
   if (!activeEnfant.value) return
@@ -1393,6 +1426,10 @@ onUnmounted(() => {
 .note-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--divider, #f0f0f0); }
 .note-row:last-child { border-bottom: none; }
 .nr-mat { flex: 1; font-size: 14px; color: var(--tx); }
+.nr-type { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; background: var(--pr-soft, #eef2ff); color: var(--pr, #4f46e5); font-size: 11px; font-weight: 600; vertical-align: middle; }
+.spec-adds { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 8px; }
+.spec-btn { font-size: 12px; }
+.reset-mat { margin-top: 6px; }
 .nr-note { font-weight: 700; font-size: 13px; padding: 3px 9px; border-radius: 20px; }
 .nr-note.low, .vr-note.low { color: #D93025; background: rgba(217,48,37,.08); }
 .nr-note.mid, .vr-note.mid { color: #B87A00; background: rgba(232,149,10,.10); }

@@ -47,6 +47,13 @@ export const NIVEAUX_SUPERIEUR = ['Licence 1', 'Licence 2', 'Licence 3', 'Master
 export const NIVEAUX = [...NIVEAUX_PRIMAIRE, ...NIVEAUX_SECONDAIRE, ...NIVEAUX_SUPERIEUR]
 export function isNiveauSuperieur(niveau) { return NIVEAUX_SUPERIEUR.includes(niveau) }
 
+// ── France (édition pilotée par le pays du profil = 'FR') ──
+// Réforme du lycée 2019 : plus de séries A/C/D, mais 2nde / 1re / Terminale.
+export const NIVEAUX_PRIMAIRE_FR = ['CP', 'CE1', 'CE2', 'CM1', 'CM2']
+export const NIVEAUX_SECONDAIRE_FR = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale']
+export function niveauxPrimairePays(pays) { return pays === 'FR' ? NIVEAUX_PRIMAIRE_FR : NIVEAUX_PRIMAIRE }
+export function niveauxSecondairePays(pays) { return pays === 'FR' ? NIVEAUX_SECONDAIRE_FR : NIVEAUX_SECONDAIRE }
+
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
 // choisit ce « niveau », il saisit librement le NOM de sa formation (champ
@@ -104,9 +111,55 @@ export const MATIERES_SERIE_D = [
   'Éducation à la citoyenneté et à la morale (ECM)', 'Éducation physique et sportive (EPS)',
 ]
 const NIVEAUX_PREMIER_CYCLE = ['6ème', '5ème', '4ème', '3ème']
-// Renvoie la liste de matières adaptée au niveau : primaire, 1er cycle (6e-3e),
-// ou série A/C/D au 2nd cycle. La philosophie n'apparaît qu'en 1ère/Terminale.
-export function matieresPourNiveau(niveau) {
+
+// ── Référentiel FRANCE (Éducation nationale) — même programme public/privé sous contrat ──
+export const MATIERES_PRIMAIRE_FR = [
+  'Français', 'Mathématiques', 'Anglais (LV1)', 'Sciences et technologie',
+  'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
+  'Éducation physique et sportive (EPS)', 'Arts plastiques', 'Éducation musicale',
+]
+export const MATIERES_COLLEGE_FR = [
+  'Français', 'Mathématiques', 'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
+  'Anglais (LV1)', 'LV2 (Espagnol/Allemand)', 'Sciences de la vie et de la Terre (SVT)',
+  'Physique-Chimie', 'Technologie', 'Éducation physique et sportive (EPS)',
+  'Arts plastiques', 'Éducation musicale',
+]
+export const MATIERES_LYCEE_2NDE_FR = [
+  'Français', 'Histoire-Géographie', 'Anglais (LVA)', 'LVB (Espagnol/Allemand)',
+  'Sciences économiques et sociales (SES)', 'Mathématiques', 'Physique-Chimie',
+  'Sciences de la vie et de la Terre (SVT)', 'Éducation physique et sportive (EPS)',
+  'Enseignement moral et civique (EMC)', 'Sciences numériques et technologie (SNT)',
+]
+// Tronc commun 1re/Tle : Français en 1re → Philosophie en Terminale (filtré selon le niveau).
+const MATIERES_LYCEE_CYCLE_TERMINAL_FR = [
+  'Français', 'Philosophie', 'Histoire-Géographie', 'Anglais (LVA)',
+  'LVB (Espagnol/Allemand)', 'Enseignement scientifique',
+  'Éducation physique et sportive (EPS)', 'Enseignement moral et civique (EMC)',
+]
+// 13 spécialités du lycée général — à ajouter au profil selon le choix de l'élève.
+export const SPECIALITES_LYCEE_GENERAL_FR = [
+  'Mathématiques', 'Physique-Chimie', 'Sciences de la vie et de la Terre (SVT)',
+  'Sciences économiques et sociales (SES)',
+  'Histoire-géographie, géopolitique et sciences politiques (HGGSP)',
+  'Humanités, littérature et philosophie (HLP)',
+  'Langues, littératures et cultures étrangères (LLCER)',
+  'Littératures et langues et cultures de l’Antiquité (LLCA)',
+  'Numérique et sciences informatiques (NSI)', 'Sciences de l’ingénieur (SI)',
+  'Arts', 'Biologie-écologie', 'Éducation physique, pratiques et culture sportives (EPPCS)',
+]
+function matieresFR(niveau) {
+  if (NIVEAUX_PRIMAIRE_FR.includes(niveau)) return MATIERES_PRIMAIRE_FR
+  if (['6e', '5e', '4e', '3e'].includes(niveau)) return MATIERES_COLLEGE_FR
+  if (niveau === '2nde') return MATIERES_LYCEE_2NDE_FR
+  if (niveau === '1re') return MATIERES_LYCEE_CYCLE_TERMINAL_FR.filter((m) => m !== 'Philosophie')
+  if (niveau === 'Terminale') return MATIERES_LYCEE_CYCLE_TERMINAL_FR.filter((m) => m !== 'Français')
+  return MATIERES_COLLEGE_FR
+}
+
+// Renvoie la liste de matières adaptée au niveau ET au pays.
+// Cameroun : primaire APC, 1er cycle 6e-3e, séries A/C/D (philo 1ère/Tle). France : matieresFR().
+export function matieresPourNiveau(niveau, pays) {
+  if (pays === 'FR') return matieresFR(niveau)
   if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
   if (NIVEAUX_PREMIER_CYCLE.includes(niveau)) return MATIERES_SECONDAIRE_1ER_CYCLE
   if (typeof niveau === 'string') {
@@ -118,6 +171,11 @@ export function matieresPourNiveau(niveau) {
   }
   return MATIERES
 }
+
+// Types de note selon le pays (proposés à la saisie, après le choix de la matière).
+export const TYPES_NOTE_CM = ['Devoir', 'Note de séquence', 'Note trimestrielle']
+export const TYPES_NOTE_FR = ['Devoir sur table', 'Devoir maison', 'Interrogation', 'Moyenne trimestrielle', 'Moyenne annuelle']
+export function typesNotePays(pays) { return pays === 'FR' ? TYPES_NOTE_FR : TYPES_NOTE_CM }
 
 /**
  * Clé de jour LOCALE (AAAA-MM-JJ). On n'utilise pas toISOString() : il convertit
@@ -398,15 +456,15 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     persist(enfantId)
   }
 
-  function addNote(enfantId, matiere, note) {
+  function addNote(enfantId, matiere, note, type) {
     const e = getEnfant(enfantId)
     if (!e) return
     const n = Math.max(0, Math.min(20, Number(note)))
     if (Number.isNaN(n) || !matiere) return
-    // remplace la note existante de la matière, sinon ajoute
+    // remplace la note existante de la matière, sinon ajoute (type = devoir/séquence/trimestre…)
     const existing = e.notes.find((x) => x.matiere === matiere)
-    if (existing) existing.note = n
-    else e.notes.push({ id: localId('n-'), matiere, note: n })
+    if (existing) { existing.note = n; if (type !== undefined) existing.type = type }
+    else e.notes.push({ id: localId('n-'), matiere, note: n, type: type || '' })
     persist(enfantId)
   }
 
