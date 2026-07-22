@@ -79,6 +79,13 @@ const routes = [
     meta: { requiresAuth: false, title: 'MAPO+' }
   },
   {
+    // Retour du flux OAuth « Se connecter avec Carré ».
+    path: '/oauth/carre/callback',
+    name: 'CarreCallback',
+    component: () => import('../views/CarreCallbackView.vue'),
+    meta: { requiresAuth: false, title: 'Carré' }
+  },
+  {
     path: '/verifier',
     name: 'VerifierDiplome',
     component: () => import('../views/VerifierDiplomeView.vue'),
@@ -423,6 +430,9 @@ router.beforeEach(async (to) => {
   await authStore.ready()
   const isLoggedIn = authStore.isDemo || !!authStore.user
   const isFirebaseUser = isLoggedIn && !authStore.isDemo
+
+  // Retour du flux OAuth Carré : toujours autorisé (la vue gère l'auth + l'échange).
+  if (to.name === 'CarreCallback') return true
 
   // ── Tenant méga admin (admin.app-edufrem.com) ────────────────────
   // Le sous-domaine d'administration sert exclusivement l'espace méga admin.

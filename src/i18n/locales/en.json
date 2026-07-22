@@ -4565,6 +4565,8 @@
     "carrePreview": "Preview — secure Carré connection coming soon.",
     "carreDisconnect": "Disconnect",
     "carreOpen": "Open Carré",
+    "carreLinking": "Connecting to Carré…",
+    "carreLinkError": "Carré connection failed. Please try again.",
     "logout": "Log out",
     "addChild": "Add a child",
     "secHome": "Home",

@@ -698,7 +698,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
@@ -734,6 +734,7 @@ import MiapoInstall from '../components/MiapoInstall.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const { t, locale } = useI18n({ useScope: 'global' })
 function setLangue(l) { setLang(l) }
 const authStore = useAuthStore()
@@ -1380,6 +1381,14 @@ onMounted(async () => {
     if (standalone) analytics.markInstalled()
     window.addEventListener('appinstalled', onAppInstalled)
   } catch { /* best-effort */ }
+  // Connecteur Carré : reflète l'état réel (serveur) ; au retour du flux OAuth,
+  // ouvre Paramètres → Connecteurs et nettoie la query.
+  connecteurs.refreshStatus()
+  if (route.query && route.query.carre) {
+    section.value = 'profil'
+    sousSection.value = 'connecteurs'
+    try { router.replace({ query: {} }) } catch { /* silent */ }
+  }
 })
 onUnmounted(() => {
   window.removeEventListener('miapo-toggle-menu', onToggleMenu)
