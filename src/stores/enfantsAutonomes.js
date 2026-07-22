@@ -61,6 +61,12 @@ export function niveauxSecondairePays(pays) { return pays === 'FR' ? NIVEAUX_SEC
 // le même modèle ; seul le point d'entrée du cursus change.
 export const NIVEAU_HORS_CATALOGUE = 'Formation (hors catalogue)'
 
+// Pays choisi à l'inscription (accueil MAPO+) → adapte niveaux/matières/notes.
+// Sert de valeur par défaut à la création des profils. Persisté localement.
+export const B2C_PAYS_KEY = 'mapo_b2c_pays'
+export function paysParDefaut() { try { return localStorage.getItem(B2C_PAYS_KEY) || 'CM' } catch { return 'CM' } }
+export function setPaysParDefaut(code) { try { if (code) localStorage.setItem(B2C_PAYS_KEY, code) } catch { /* ignore */ } }
+
 export const PAYS = [
   { code: 'CM', label: 'Cameroun' },
   { code: 'SN', label: 'Sénégal' },
@@ -629,6 +635,17 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       addNote(id, "Finance d'entreprise", 9)
       addNote(id, 'Marketing', 14)
       addNote(id, 'Stratégie', 12)
+    } else if (paysParDefaut() === 'FR') {
+      // Démo adaptée au pays choisi à l'inscription : lycéenne française (1re).
+      const id = addEnfant({
+        firstName: 'Léa', lastName: 'Démo', gender: 'F', niveau: '1re', pays: 'FR', ecole: 'Lycée Victor Hugo',
+        formationModules: [...matieresFR('1re'), 'Mathématiques', 'Physique-Chimie'].join(', '),
+      })
+      addNote(id, 'Mathématiques', 11, 'Moyenne trimestrielle')
+      addNote(id, 'Physique-Chimie', 9, 'Moyenne trimestrielle')
+      addNote(id, 'Français', 14, 'Moyenne trimestrielle')
+      addNote(id, 'Histoire-Géographie', 13, 'Moyenne trimestrielle')
+      setComp6c(id, { creativite: 4, esprit_critique: 4, communication: 3, cooperation: 4, courage: 3, confiance: 3 })
     } else {
       seedDemoIfEmpty()
     }

@@ -6,6 +6,7 @@
   "welcome": {
     "title": "Le tuteur intelligent qui accompagne chaque apprenant",
     "subtitle": "Révisions, suivi et orientation par l'IA — pour l'enfant, l'élève et l'adulte en formation.",
+    "countryLabel": "Mon pays :",
     "parentName": "Je suis un parent",
     "parentTag": "Espace famille",
     "parentText": "Suivez la scolarité de votre enfant — notes, présences, devoirs — et activez son tuteur intelligent pour l'aider à progresser.",
@@ -4699,7 +4700,8 @@
     "subjectPlaceholder": "Matière…",
     "readExamCopy": "Lire une copie d'examen",
     "readReportCard": "Scanner un bulletin",
-    "bulletinPickHint": "Photographiez le bulletin : MIAPO lit les matières et les moyennes, vous validez pour les ajouter.",
+    "bulletinPickHint": "Importez le bulletin (PDF) ou photographiez-le : MIAPO lit les matières et les moyennes, vous validez pour les ajouter.",
+    "chooseBulletinFile": "Choisir un PDF ou une photo",
     "bulletinLoading": "Lecture du bulletin…",
     "bulletinReview": "{n} matières lues — vérifiez avant d'ajouter",
     "bulletinAvg": "moyenne {m}/20",

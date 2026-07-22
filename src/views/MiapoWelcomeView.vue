@@ -24,6 +24,14 @@
         <p class="miapo-subtitle">{{ t('welcome.subtitle') }}</p>
       </header>
 
+      <!-- Pays : choisi à l'inscription → adapte niveaux, matières et notes -->
+      <div class="miapo-pays">
+        <label class="mp-label">{{ t('welcome.countryLabel') }}</label>
+        <select v-model="paysB2C" class="mp-select" @change="onPays">
+          <option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option>
+        </select>
+      </div>
+
       <!-- Choix du profil -->
       <div class="miapo-choices">
         <!-- Parent -->
@@ -99,11 +107,12 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, PAYS, paysParDefaut, setPaysParDefaut } from '../stores/enfantsAutonomes'
 import { setLang } from '../i18n'
 import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 
@@ -112,6 +121,10 @@ const router = useRouter()
 const editionStore = useEditionStore()
 const authStore = useAuthStore()
 const miapoStore = useEnfantsAutonomesStore()
+
+// Pays choisi à l'inscription : mémorisé et utilisé comme défaut pour les profils.
+const paysB2C = ref(paysParDefaut())
+function onPays() { setPaysParDefaut(paysB2C.value) }
 
 // Les deux entrées ouvrent l'APPLI MAPO+ (le tuteur qu'on a construit), pas
 // les espaces parent/élève standards de MAPO : compte démo B2C 'miapo' (confiné
@@ -124,6 +137,7 @@ const miapoStore = useEnfantsAutonomesStore()
 //   pro    : l'adulte en formation (MBA, concours, certif…) — apprenant
 //            hors-catalogue qui apprend à partir de son propre programme.
 function entrer(profil) {
+  setPaysParDefaut(paysB2C.value)
   editionStore.setEdition('secondaire')
   const result = authStore.loginDemo('miapo', 'demo1234')
   if (result && result.success) {
@@ -146,6 +160,7 @@ function goLogin() {
 // privilégier pour les utilisateurs à qui on partage MAPO+ (les cartes ci-dessus
 // restent une démo commune, non persistante).
 function goCreate() {
+  setPaysParDefaut(paysB2C.value)
   editionStore.setEdition('secondaire')
   router.push({ path: '/login', query: { signup: '1' } })
 }
@@ -276,6 +291,9 @@ function goCreate() {
 }
 
 /* Cartes de choix */
+.miapo-pays { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 0 0 22px; flex-wrap: wrap; }
+.miapo-pays .mp-label { font-size: 14px; color: var(--tx-soft, #64748b); font-weight: 600; }
+.miapo-pays .mp-select { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--bd, #D3D8E0); background: var(--card, #fff); color: var(--tx, #0f172a); font-size: 14px; min-width: 180px; }
 .miapo-choices {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

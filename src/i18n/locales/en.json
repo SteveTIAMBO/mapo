@@ -6,6 +6,7 @@
   "welcome": {
     "title": "The smart tutor that supports every learner",
     "subtitle": "AI-powered revision, monitoring and guidance — for the child, the student and the adult in training.",
+    "countryLabel": "My country:",
     "parentName": "I'm a parent",
     "parentTag": "Family space",
     "parentText": "Follow your child's school life — grades, attendance, homework — and turn on their smart tutor to help them progress.",
@@ -4699,7 +4700,8 @@
     "subjectPlaceholder": "Subject…",
     "readExamCopy": "Read an exam paper",
     "readReportCard": "Scan a report card",
-    "bulletinPickHint": "Take a photo of the report card: MIAPO reads the subjects and grades, you confirm to add them.",
+    "bulletinPickHint": "Import the report card (PDF) or take a photo: MIAPO reads the subjects and grades, you confirm to add them.",
+    "chooseBulletinFile": "Choose a PDF or photo",
     "bulletinLoading": "Reading the report card…",
     "bulletinReview": "{n} subjects read — check before adding",
     "bulletinAvg": "average {m}/20",

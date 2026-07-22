@@ -170,7 +170,7 @@
             <div class="card-head"><Camera :size="18" /><h3>{{ t('mia.readReportCard') }}</h3></div>
             <div v-if="bulletinState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.bulletinPickHint') }}</p>
-              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickBulletin" /></label>
+              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseBulletinFile') }}</span><input type="file" accept="image/*,application/pdf" style="display:none" @change="onPickBulletin" /></label>
             </div>
             <div v-else-if="bulletinState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.bulletinLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="bulletinState === 'done'" class="vision-result">
@@ -643,7 +643,7 @@ import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, jourISO } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -922,7 +922,7 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
 // ── Catalogue école → formation → préchargement du programme (apprenant supérieur) ──
 function ecoleCatalogueObj(o) { return (o.catEcole && o.catEcole !== 'autre') ? ecoleCatalogue(o.catEcole) : null }
 function onCatEcole(o) {
@@ -1072,7 +1072,7 @@ const insight = computed(() => {
     : t('mia.insightWeakParent', { subjects: m, name: e.firstName })
 })
 
-function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
+function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
 function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)
@@ -1104,12 +1104,40 @@ const bulletinRows = ref([])        // [{ matiere, note }]
 const bulletinMoyenne = ref(null)
 const bulletinError = ref('')
 function resetBulletin() { bulletinState.value = 'idle'; bulletinRows.value = []; bulletinMoyenne.value = null; bulletinError.value = '' }
+// pdf.js chargé à la demande (CDN) : convertit la 1re page d'un bulletin PDF en
+// image, réutilisée telle quelle par le pipeline vision existant (serveur inchangé).
+let _pdfjs = null
+async function loadPdfjs() {
+  if (_pdfjs) return _pdfjs
+  const base = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174'
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script'); s.src = `${base}/pdf.min.js`; s.onload = resolve; s.onerror = reject; document.head.appendChild(s)
+  })
+  const lib = window.pdfjsLib
+  lib.GlobalWorkerOptions.workerSrc = `${base}/pdf.worker.min.js`
+  _pdfjs = lib
+  return lib
+}
+async function pdfToImageDataUrl(file, maxDim = 1600) {
+  const lib = await loadPdfjs()
+  const data = await file.arrayBuffer()
+  const pdf = await lib.getDocument({ data }).promise
+  const page = await pdf.getPage(1)
+  let vp = page.getViewport({ scale: 1 })
+  const scale = Math.min(maxDim / vp.width, maxDim / vp.height, 3)
+  vp = page.getViewport({ scale })
+  const canvas = document.createElement('canvas')
+  canvas.width = vp.width; canvas.height = vp.height
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise
+  return canvas.toDataURL('image/jpeg', 0.85)
+}
 async function onPickBulletin(e) {
   const file = e.target.files?.[0]; if (e.target) e.target.value = ''
   if (!file || !activeEnfant.value) return
   bulletinState.value = 'loading'; bulletinError.value = ''
   try {
-    const dataUrl = await downscaleImage(file)
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
+    const dataUrl = isPdf ? await pdfToImageDataUrl(file) : await downscaleImage(file)
     const res = await analyserBulletin({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
     if (res.ok) { bulletinRows.value = res.matieres || []; bulletinMoyenne.value = res.moyenne ?? null; bulletinState.value = 'done' }
     else { bulletinError.value = res.reason || t('mia.bulletinFail'); bulletinState.value = 'error' }
@@ -1118,10 +1146,12 @@ async function onPickBulletin(e) {
 function addAllBulletinNotes() {
   const e = activeEnfant.value
   if (!e) return
+  // Un bulletin = des moyennes de période → on tague les notes en conséquence.
+  const typeBulletin = e.pays === 'FR' ? 'Moyenne trimestrielle' : 'Note trimestrielle'
   for (const r of bulletinRows.value) {
     const note = Number(r.note)
     if (r.matiere && String(r.matiere).trim() && Number.isFinite(note)) {
-      store.addNote(e.id, String(r.matiere).trim(), Math.max(0, Math.min(20, note)))
+      store.addNote(e.id, String(r.matiere).trim(), Math.max(0, Math.min(20, note)), typeBulletin)
     }
   }
   resetBulletin()
