@@ -498,6 +498,30 @@ function composeEdt(e) {
   return head + '\n' + lines.join('\n')
 }
 
+// Liste complète des notes.
+function composeNotesList(e) {
+  const en = locale.value.startsWith('en')
+  const notes = e.notes || []
+  const nm = e.firstName; const learner = isLearner.value
+  if (!notes.length) return learner ? (en ? 'You have no grades recorded yet.' : 'Tu n\'as pas encore de notes enregistrées.') : (en ? `No grades for ${nm} yet.` : `Aucune note enregistrée pour ${nm}.`)
+  const list = [...notes].sort((a, b) => b.note - a.note).map((n) => `${n.matiere} ${_fmt(n.note)}/20`).join(', ')
+  return (learner ? (en ? 'Your grades: ' : 'Tes notes : ') : (en ? `${nm}'s grades: ` : `Les notes de ${nm} : `)) + list + '.'
+}
+
+// Ce qu'il faut réviser (points faibles priorisés).
+function composeToRevise(e) {
+  const en = locale.value.startsWith('en')
+  const weak = enfantsStore.faiblesses(e.id)
+  const nm = e.firstName; const learner = isLearner.value
+  if (!weak.length) return learner
+    ? (en ? 'Nothing urgent to revise — everything is above target. Keep it up!' : 'Rien d\'urgent à réviser : tout est au-dessus de l\'objectif. Continue comme ça !')
+    : (en ? `Nothing urgent for ${nm} — everything is above target.` : `Rien d'urgent pour ${nm} : tout est au-dessus de l'objectif.`)
+  const top = weak.slice(0, 3).map((n) => `${n.matiere} (${_fmt(n.note)}/20)`).join(', ')
+  const first = weak[0].matiere
+  return (learner ? (en ? 'To revise first: ' : 'À réviser en priorité : ') : (en ? `${nm} should revise: ` : `À réviser pour ${nm} : `)) + top + '. '
+    + (learner ? (en ? `Say "quiz on ${first}" to start.` : `Dis « quiz de ${first} » pour commencer.`) : (en ? `Start with ${first}.` : `Commence par ${first}.`))
+}
+
 // Résout la demande à partir des DONNÉES de l'app : réponse inline, OU ouverture
 // directe de la bonne vue. Retourne { answer } | { nav, say } | null (→ chat IA).
 function resolveB2C(text) {
@@ -512,6 +536,20 @@ function resolveB2C(text) {
       const e = enfantsStore.enfants[0]; const subj = e ? subjectFrom(text, e) : ''
       return { nav: { action: 'quiz' }, say: subj ? (en ? `Launching a ${subj} quiz.` : `Je te lance un quiz de ${subj}.`) : (en ? 'Launching a quiz.' : 'On lance un quiz.') }
     }
+  }
+  // Liste complète des notes → réponse inline (toutes les notes)
+  if (/toutes? (les |mes |ses )?notes|\b(les|mes|ses) notes\b|liste.{0,12}notes|montre.{0,12}(mes |ses |les )?notes|all (my |the )?grades|list.{0,10}grades/.test(q)) {
+    const c = pickChild(text)
+    if (!c) return { answer: en ? 'Add a child profile first.' : 'Ajoute d\'abord un profil enfant.' }
+    if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
+    return { answer: composeNotesList(c) }
+  }
+  // Que réviser (points faibles priorisés) → réponse inline
+  if (/(que|quoi|sur quoi).{0,15}(revis|travaill)|\ba revis|mes revisions|programme de revision|what.{0,10}(to )?revise/.test(q)) {
+    const c = pickChild(text)
+    if (!c) return { answer: en ? 'Add a child profile first.' : 'Ajoute d\'abord un profil enfant.' }
+    if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
+    return { answer: composeToRevise(c) }
   }
   // Progrès / notes / moyenne / points faibles → RÉPONSE avec les données
   if (/progr|\bnote|moyenne|resultat|niveau|points? faibles|a revis|faibless|comment.{0,15}(va|se debrouil|s.en sort|marche|avance|progress)/.test(q)) {
