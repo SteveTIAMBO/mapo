@@ -629,13 +629,6 @@
           </div>
         </div>
       </div>
-      <div class="aside-card">
-        <div class="aside-head"><Link2 :size="17" /><h3>{{ t('mia.myAgenda') }}</h3></div>
-        <p class="aside-sub">{{ t('mia.myAgendaSub') }}</p>
-        <input class="input aside-input" v-model="agendaUrl" :placeholder="t('mia.calendarUrlPlaceholder')" />
-        <button class="btn btn-outline btn-sm aside-connect" type="button" @click="saveAgenda">{{ agendaSaved ? t('mia.connected') : t('mia.connect') }}</button>
-        <p class="aside-note">{{ t('mia.syncSoon') }}</p>
-      </div>
     </aside>
 
     <!-- Modal ajout enfant -->
