@@ -43,7 +43,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -113,6 +113,7 @@ function buildPrompts($task, $d) {
   if ($task === 'commande') return buildCommandePrompts($d);
   if ($task === 'pedagogie') return buildPedagogiePrompts($d);
   if ($task === 'eval_reponse') return buildEvalReponsePrompts($d);
+  if ($task === 'tuteur_chat') return buildTuteurChatPrompts($d);
   return buildAppreciationPrompts($d);
 }
 
@@ -153,6 +154,56 @@ function buildPedagogiePrompts($d) {
 
   // reasoning_effort:none → tout le budget passe dans la sortie (JSON complet).
   return [$system, $u, $maxTokens, true, null];
+}
+
+// ── Chat tuteur MIAPO (MAPO+ / B2C) : assistant pédagogique SOCRATIQUE ──
+// L'apprenant (élève / étudiant / adulte en formation) discute librement avec
+// MIAPO. But : cultiver la COMPRÉHENSION et l'esprit critique, PAS faire le
+// devoir à sa place. Réponse en TEXTE simple (pas de JSON).
+function buildTuteurChatPrompts($d) {
+  $message  = clean($d['message'] ?? '', 1500);
+  $niveau   = clean($d['niveau'] ?? '', 40);
+  $matieres = clean($d['matieres'] ?? '', 600);
+  $cours    = clean($d['cours'] ?? '', 6000);
+  $historique = clean($d['historique'] ?? '', 3000);
+  $internet = !empty($d['internet']);
+  $langue   = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+
+  if ($langue === 'en') {
+    $system = "You are MIAPO, a caring educational tutor for a learner (school pupil, student, or adult in training). "
+      . "Your MISSION is to cultivate the learner's understanding and critical thinking — NOT to do the work for them. "
+      . "Rules: for an EXPLANATION request, explain clearly with an example, then ask ONE question to check understanding. "
+      . "For HOMEWORK HELP, NEVER write the whole assignment upfront: first make sure the learner understands the concepts "
+      . "(Socratic method — guiding questions, hints), make them reason; only give the full answer AFTER checking understanding, "
+      . "or if they explicitly ask again after trying. For a REVISION PLAN or an EXERCISE, propose a plan or an exercise fit for "
+      . "their level and subjects. Be concise, kind, encouraging, and address the learner directly as 'you'. "
+      . "Base yourself FIRST on the learner's own course material provided below. ";
+    $system .= $internet ? "You may also draw on your general knowledge when useful. " : "If the info is not in the provided material, say so plainly and do not invent it. ";
+    $system .= "Answer in plain text (no JSON, no markdown code fences).";
+    $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message";
+    $none = 'unspecified';
+  } else {
+    $system = "Tu es MIAPO, un tuteur pédagogique bienveillant pour un apprenant (élève, étudiant ou adulte en formation). "
+      . "Ta MISSION : cultiver la COMPRÉHENSION et l'esprit critique de l'apprenant — PAS faire le travail à sa place. "
+      . "Règles : pour une demande d'EXPLICATION, explique clairement avec un exemple, puis pose UNE question pour vérifier la compréhension. "
+      . "Pour une AIDE AUX DEVOIRS, ne rédige JAMAIS le devoir entier d'emblée : assure-toi d'abord que l'apprenant comprend les concepts "
+      . "(méthode socratique — questions guidées, indices), fais-le raisonner ; ne donne la réponse complète QU'APRÈS avoir vérifié la "
+      . "compréhension, ou s'il le redemande explicitement après avoir essayé. Pour un PROGRAMME DE RÉVISION ou un EXERCICE, propose un plan "
+      . "ou un exercice adapté à son niveau et à ses matières. Sois concis, bienveillant, encourageant, et TUTOIE l'apprenant. "
+      . "Base-toi D'ABORD sur les cours de l'apprenant fournis ci-dessous. ";
+    $system .= $internet ? "Tu peux aussi t'appuyer sur tes connaissances générales lorsque c'est utile. " : "Si l'information n'est pas dans les cours fournis, dis-le franchement et n'invente pas. ";
+    $system .= "Réponds en texte simple (pas de JSON, pas de barrières de code markdown).";
+    $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant";
+    $none = 'non précisé';
+  }
+
+  $u  = "{$lvl} : " . ($niveau !== '' ? $niveau : $none) . "\n";
+  if ($matieres !== '') $u .= "{$subj} : {$matieres}\n";
+  if ($cours !== '')    $u .= "{$crs} :\n{$cours}\n";
+  if ($historique !== '') $u .= "\n{$hist} :\n{$historique}\n";
+  $u .= "\n{$msg} : \"{$message}\"";
+
+  return [$system, $u, 1600, true, null];
 }
 
 // ── Copilote MIAPO : commande en langage naturel → intention JSON ──────

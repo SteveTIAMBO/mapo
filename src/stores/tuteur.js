@@ -692,11 +692,43 @@ export const useTuteurStore = defineStore('tuteur', () => {
     } catch { return { ok: false, reason: 'Service indisponible. Réessayez.' } }
   }
 
+  /**
+   * Chat pédagogique MIAPO (MAPO+ / B2C) : réponse SOCRATIQUE en texte libre.
+   * Cultive la compréhension et l'esprit critique — n'écrit pas le devoir à la
+   * place de l'apprenant. `internet` autorise les connaissances générales ;
+   * sinon MIAPO se limite aux `cours` fournis.
+   * @param {{message:string, niveau?:string, matieres?:string, cours?:string, historique?:string, internet?:boolean, langue?:string}} opts
+   * @returns {Promise<{ok, text?, reason?}>}
+   */
+  async function chatTuteur({ message, niveau = '', matieres = '', cours = '', historique = '', internet = false, langue = 'fr' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, langue } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && json.ok && json.text) return { ok: true, text: String(json.text).trim() }
+      const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
+        : json && json.error === 'non_autorise' ? 'Connexion requise'
+        : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale') ? 'Limite de démo atteinte, réessayez plus tard'
+        : (json && (json.detail || json.error)) || 'Réponse impossible pour le moment.'
+      return { ok: false, reason }
+    } catch (e) {
+      return { ok: false, reason: 'Service indisponible. Réessayez.' }
+    }
+  }
+
   return {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur,
   }
 })
 

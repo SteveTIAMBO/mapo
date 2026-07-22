@@ -27,7 +27,7 @@
             <div class="miapo-brand">
               <MiapoOrbe :size="26" />
               <span class="miapo-name">MIAPO</span>
-              <span class="miapo-sub">votre copilote</span>
+              <span class="miapo-sub">{{ isB2C ? t('mia.chatSub') : 'votre copilote' }}</span>
             </div>
             <button class="miapo-close" @click="close" aria-label="Fermer"><X :size="18" /></button>
           </div>
@@ -40,17 +40,53 @@
               type="text"
               class="miapo-input"
               :placeholder="placeholder"
-              :disabled="copilot.thinking || step === 'draft'"
+              :disabled="busy || step === 'draft'"
               @keydown.enter.prevent="submit"
               @keydown.escape="close"
             />
-            <button class="miapo-send" :disabled="!instruction.trim() || copilot.thinking" @click="submit">
+            <button class="miapo-send" :disabled="!instruction.trim() || busy" @click="submit">
               <ArrowUp :size="18" />
             </button>
           </div>
 
+          <!-- MAPO+ (B2C) : option « chercher aussi sur internet » (sinon MIAPO se limite aux cours de l'apprenant) -->
+          <div v-if="isB2C" class="miapo-opts">
+            <label class="miapo-toggle">
+              <input type="checkbox" v-model="internet" />
+              <span class="miapo-toggle-track"><span class="miapo-toggle-thumb" /></span>
+              <Globe :size="13" /> {{ t('mia.chatInternet') }}
+            </label>
+          </div>
+
           <!-- Corps -->
-          <div class="miapo-body">
+          <div class="miapo-body" ref="bodyEl">
+            <!-- MAPO+ (B2C) : chat pédagogique MIAPO ↔ apprenant -->
+            <div v-if="isB2C" class="miapo-chat">
+              <div v-if="!chatMsgs.length" class="miapo-examples">
+                <p class="miapo-examples-title">Essaie :</p>
+                <button
+                  v-for="(ex, i) in exemples"
+                  :key="i"
+                  class="miapo-example"
+                  @click="runExample(ex)"
+                >
+                  <CornerDownRight :size="14" /> {{ ex }}
+                </button>
+              </div>
+              <template v-else>
+                <div v-for="(m, i) in chatMsgs" :key="i" :class="['miapo-msg', m.role]">
+                  <span v-if="m.role === 'miapo'" class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
+                  <p class="miapo-msg-text">{{ m.text }}</p>
+                </div>
+              </template>
+              <div v-if="chatThinking" class="miapo-msg miapo">
+                <span class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
+                <span class="miapo-typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></span>
+              </div>
+            </div>
+
+            <!-- MAPO (ERP) : copilote de gestion d'école -->
+            <template v-else>
             <!-- Réflexion -->
             <div v-if="copilot.thinking" class="miapo-thinking">
               <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -157,6 +193,7 @@
                 </button>
               </div>
             </div>
+            </template>
           </div>
 
           <div class="miapo-foot">
@@ -172,18 +209,26 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck } from 'lucide-vue-next'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES, EXEMPLES_B2C } from '../../stores/miapoCopilot'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
 import { useElevesStore } from '../../stores/eleves'
 import { useAuthStore } from '../../stores/auth'
+import { useTuteurStore } from '../../stores/tuteur'
+import { useEnfantsAutonomesStore, matieresPourNiveau } from '../../stores/enfantsAutonomes'
 
 const router = useRouter()
 const route = useRoute()
+const { t, locale } = useI18n()
 const copilot = useMiapoCopilotStore()
 const authStore = useAuthStore()
+const tuteur = useTuteurStore()
+const enfantsStore = useEnfantsAutonomesStore()
+// MAPO+ (B2C) : chat pédagogique orienté « apprenant » ; MAPO (ERP) : copilote de gestion.
+const isB2C = computed(() => authStore.isB2C)
 // MAPO+ (B2C) : exemples et invite orientés « apprenant » (pas la gestion d'école).
 const exemples = computed(() => (authStore.isB2C ? EXEMPLES_B2C : EXEMPLES))
 const personnelStore = usePersonnelStore()
@@ -294,6 +339,25 @@ const peda = ref({ titre: '', document: '', corrige: '', type: 'devoir' })
 const showCorrige = ref(false)
 const copied = ref('')
 
+// ── Chat pédagogique B2C (MAPO+) : conversation MIAPO ↔ apprenant ──────
+const bodyEl = ref(null)
+const chatMsgs = ref([]) // { role: 'user' | 'miapo', text }
+const chatThinking = ref(false)
+const internet = ref(false) // « chercher aussi sur internet » (sinon : cours de l'apprenant seulement)
+const busy = computed(() => copilot.thinking || chatThinking.value)
+// Contexte de l'apprenant quand il est identifiable (compte enfant ou mode apprenant) :
+// on transmet son niveau et ses matières pour des réponses ciblées.
+const learnerCtx = computed(() => {
+  const list = enfantsStore.enfants || []
+  const e = (enfantsStore.isCompteEnfant || enfantsStore.mode === 'apprenant') ? list[0] : null
+  if (!e) return { niveau: '', matieres: '' }
+  const mats = (Array.isArray(e.formationModules) && e.formationModules.length)
+    ? e.formationModules
+    : matieresPourNiveau(e.niveau, e.pays)
+  return { niveau: e.niveau || '', matieres: (mats || []).join(', ') }
+})
+function scrollChatBottom() { const el = bodyEl.value; if (el) el.scrollTop = el.scrollHeight }
+
 const placeholder = computed(() => authStore.isB2C
   ? 'Demande à MIAPO… (ex. « explique-moi le théorème de Pythagore »)'
   : 'Demandez à MIAPO… (ex. « affiche les élèves en retard de paiement »)')
@@ -337,9 +401,37 @@ function openStudentFiche(e) {
   close()
 }
 
+// MAPO+ (B2C) : chat pédagogique socratique. MIAPO cultive la compréhension
+// (n'écrit pas le devoir à la place de l'apprenant) et répond en texte libre.
+async function submitB2C(text) {
+  chatMsgs.value.push({ role: 'user', text })
+  instruction.value = ''
+  chatThinking.value = true
+  nextTick(scrollChatBottom)
+  // Fil récent (5 derniers échanges) pour garder le contexte socratique.
+  const hist = chatMsgs.value.slice(-6, -1)
+    .map((m) => (m.role === 'user' ? 'Apprenant' : 'MIAPO') + ' : ' + m.text)
+    .join('\n')
+  const ctx = learnerCtx.value
+  const r = await tuteur.chatTuteur({
+    message: text,
+    niveau: ctx.niveau,
+    matieres: ctx.matieres,
+    historique: hist,
+    internet: internet.value,
+    langue: locale.value.startsWith('en') ? 'en' : 'fr',
+  })
+  chatThinking.value = false
+  const reply = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
+  chatMsgs.value.push({ role: 'miapo', text: reply })
+  nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
+}
+
 async function submit() {
   const text = instruction.value.trim()
-  if (!text || copilot.thinking) return
+  if (!text || busy.value) return
+  // MAPO+ (B2C) : chat pédagogique, pas la logique de gestion d'école.
+  if (isB2C.value) { await submitB2C(text); return }
   // 1) Réponse LOCALE si la question porte sur la donnée MAPO (matières d'un
   //    enseignant, fiche d'un élève) — instantané, sans appel IA.
   const local = await resolveLocalQuery(text)
@@ -577,6 +669,44 @@ onUnmounted(() => {
 }
 .miapo-example:hover { border-color: var(--pr); color: var(--tx); }
 .miapo-example svg { color: var(--pr); flex-shrink: 0; }
+
+/* MAPO+ (B2C) : option internet + chat pédagogique */
+.miapo-opts { padding: 0 16px 10px; }
+.miapo-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12.5px; color: var(--tx2); cursor: pointer; user-select: none;
+}
+.miapo-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.miapo-toggle-track {
+  position: relative; width: 34px; height: 20px; border-radius: 999px;
+  background: var(--divider); transition: background .18s; flex-shrink: 0;
+}
+.miapo-toggle-thumb {
+  position: absolute; top: 2px; left: 2px; width: 16px; height: 16px;
+  border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform .18s;
+}
+.miapo-toggle input:checked + .miapo-toggle-track { background: var(--pr); }
+.miapo-toggle input:checked + .miapo-toggle-track .miapo-toggle-thumb { transform: translateX(14px); }
+.miapo-toggle svg { color: var(--tx3); flex-shrink: 0; }
+
+.miapo-chat { padding: 6px 2px 10px; display: flex; flex-direction: column; gap: 10px; }
+.miapo-msg { display: flex; gap: 8px; align-items: flex-start; }
+.miapo-msg.user { justify-content: flex-end; }
+.miapo-msg.user .miapo-msg-text { background: var(--pr); color: #fff; border-radius: 14px 14px 4px 14px; }
+.miapo-msg.miapo .miapo-msg-text { background: var(--input-bg); color: var(--tx); border-radius: 14px 14px 14px 4px; }
+.miapo-msg-text {
+  margin: 0; padding: 10px 13px; font-size: 14.5px; line-height: 1.5;
+  white-space: pre-wrap; word-break: break-word; max-width: 82%;
+}
+.miapo-msg-orb { flex-shrink: 0; margin-top: 2px; }
+.miapo-typing {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 12px 13px; background: var(--input-bg); border-radius: 14px 14px 14px 4px;
+}
+.miapo-typing .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--pr); animation: bounce 1.2s infinite ease-in-out; }
+.miapo-typing .dot:nth-child(2) { animation-delay: .15s; }
+.miapo-typing .dot:nth-child(3) { animation-delay: .3s; }
 
 .miapo-answer {
   display: flex; gap: 10px; align-items: flex-start;

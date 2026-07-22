@@ -4552,6 +4552,10 @@
   "mia": {
     "brandSubLearner": "Your 24/7 private tutor",
     "brandSubParent": "Tracking & lessons at home",
+    "chatSub": "your tutor",
+    "chatInternet": "Also search the web",
+    "chatError": "Sorry, I couldn't answer. Please try again in a moment.",
+    "chatOutOfCredits": "You've used all your AI credits. Upgrade to keep going.",
     "logout": "Log out",
     "addChild": "Add a child",
     "secHome": "Home",

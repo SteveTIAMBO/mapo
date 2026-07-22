@@ -4552,6 +4552,10 @@
   "mia": {
     "brandSubLearner": "Ton professeur particulier disponible 24/7",
     "brandSubParent": "Suivi & cours à la maison",
+    "chatSub": "ton tuteur",
+    "chatInternet": "Chercher aussi sur internet",
+    "chatError": "Désolé, je n'ai pas pu répondre. Réessaie dans un instant.",
+    "chatOutOfCredits": "Tu as utilisé tous tes crédits IA. Passe à une offre supérieure pour continuer.",
     "logout": "Se déconnecter",
     "addChild": "Ajouter un enfant",
     "secHome": "Accueil",

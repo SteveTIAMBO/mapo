@@ -73,6 +73,7 @@ function mapo_cout_action() {
     'extract_modules' => 2000,
     'pedagogie'       => 2500,
     'commande'        => 700,
+    'tuteur_chat'     => 1200,
     'appreciation'    => 1200,
   ];
 }
