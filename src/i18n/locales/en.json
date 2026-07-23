@@ -70,7 +70,17 @@
     "roleParentHint": "You will add your child's account once logged in.",
     "roleLearnerHint": "You are the student revising for yourself.",
     "taglineMiapo": "Your private tutor, 24/7",
-    "countryLabel": "Country"
+    "countryLabel": "Country",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "levelQ": "Your level",
+    "levelSecondaire": "Secondary",
+    "levelSuperieur": "Higher education",
+    "levelOther": "Other (MBA, training, cert…)",
+    "classLabel": "Your class / track",
+    "classPlaceholder": "Choose…",
+    "formationName": "Your program",
+    "formationPlaceholder": "MBA, diploma, exam prep…"
   },
   "verifyEmail": {
     "title": "Activate your MAPO+ account",

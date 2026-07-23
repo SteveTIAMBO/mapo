@@ -106,13 +106,18 @@ const { t } = useI18n({ useScope: 'global' })
 const auth = useAuthStore()
 const store = useEnfantsAutonomesStore()
 
+// Pré-remplissage éventuel depuis l'inscription : l'apprenant a pu saisir son
+// prénom + niveau/formation dès la création du compte → onboarding plus rapide.
+let _prefill = {}
+try { _prefill = JSON.parse(localStorage.getItem('mapo_signup_prefill') || '{}') } catch { _prefill = {} }
+
 const step = ref(0)
-const persona = ref(store.mode === 'apprenant' ? 'apprenant' : 'parent')
-const pays = ref(paysParDefaut() || 'CM')
-const niveau = ref('3ème')
-const formation = ref('')
+const persona = ref(_prefill.persona || (store.mode === 'apprenant' ? 'apprenant' : 'parent'))
+const pays = ref(_prefill.pays || paysParDefaut() || 'CM')
+const niveau = ref(_prefill.niveau || '3ème')
+const formation = ref(_prefill.formation || '')
 // Pour l'apprenant, on pré-remplit avec le nom du compte (souvent le sien).
-const firstName = ref(store.mode === 'apprenant' ? (auth.userFirstName || '') : '')
+const firstName = ref(_prefill.firstName || (store.mode === 'apprenant' ? (auth.userFirstName || '') : ''))
 const ecole = ref('')
 const error = ref('')
 
@@ -138,6 +143,7 @@ function finish() {
     ecole: isHC ? '' : ecole.value.trim(),
     formation: isHC ? formation.value.trim() : '',
   })
+  try { localStorage.removeItem('mapo_signup_prefill') } catch { /* ignore */ }
   emit('done')
 }
 </script>

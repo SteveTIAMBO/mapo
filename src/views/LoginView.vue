@@ -204,9 +204,15 @@
         <form @submit.prevent="handleSignUp" class="auth-form">
           <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
 
-          <div class="auth-field">
-            <label class="auth-label">{{ t('login.yourName') }}</label>
-            <input v-model="signupName" type="text" autocomplete="name" class="auth-input" :placeholder="t('login.namePlaceholder')" required />
+          <div class="mplus-row">
+            <div class="auth-field">
+              <label class="auth-label">{{ t('login.firstName') }}</label>
+              <input v-model="signupFirstName" type="text" autocomplete="given-name" class="auth-input" :placeholder="t('login.firstName')" required />
+            </div>
+            <div class="auth-field">
+              <label class="auth-label">{{ t('login.lastName') }}</label>
+              <input v-model="signupLastName" type="text" autocomplete="family-name" class="auth-input" :placeholder="t('login.lastName')" required />
+            </div>
           </div>
 
           <div class="auth-field">
@@ -224,6 +230,29 @@
               <option v-for="p in PAYS_OPTIONS" :key="p.code" :value="p.code">{{ p.label }}</option>
             </select>
           </div>
+
+          <!-- Apprenant : capture du niveau dès l'inscription (préconfigure l'espace) -->
+          <template v-if="signupRole === 'apprenant'">
+            <div class="auth-field">
+              <label class="auth-label">{{ t('login.levelQ') }}</label>
+              <select v-model="signupCycle" class="auth-input" @change="signupNiveau = ''">
+                <option value="secondaire">{{ t('login.levelSecondaire') }}</option>
+                <option value="superieur">{{ t('login.levelSuperieur') }}</option>
+                <option value="autres">{{ t('login.levelOther') }}</option>
+              </select>
+            </div>
+            <div v-if="signupCycle !== 'autres'" class="auth-field">
+              <label class="auth-label">{{ t('login.classLabel') }}</label>
+              <select v-model="signupNiveau" class="auth-input">
+                <option value="" disabled>{{ t('login.classPlaceholder') }}</option>
+                <option v-for="n in niveauOptions" :key="n" :value="n">{{ n }}</option>
+              </select>
+            </div>
+            <div v-else class="auth-field">
+              <label class="auth-label">{{ t('login.formationName') }}</label>
+              <input v-model="signupFormation" type="text" class="auth-input" :placeholder="t('login.formationPlaceholder')" />
+            </div>
+          </template>
 
           <div class="auth-field">
             <label class="auth-label">{{ t('login.email') }}</label>
@@ -264,12 +293,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
-import { useEnfantsAutonomesStore, setPaysParDefaut, paysParDefaut } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, setPaysParDefaut, paysParDefaut, niveauxSecondairePays, NIVEAUX_SUPERIEUR, NIVEAU_HORS_CATALOGUE } from '../stores/enfantsAutonomes'
 import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 
@@ -291,6 +320,19 @@ const PAYS_OPTIONS = [
   { code: 'BJ', label: 'Bénin' }, { code: 'other', label: 'Autre' },
 ]
 const signupPays = ref(paysParDefaut() || 'CM')
+// MAPO+ : nom/prénom séparés + capture du niveau de l'apprenant dès l'inscription
+// (préconfigure son espace et allège l'onboarding). Les séries suivent le pays :
+// Cameroun → Tle A/C/D (séries dans le niveau), France → Terminale (post-réforme).
+const signupFirstName = ref('')
+const signupLastName = ref('')
+const signupCycle = ref('secondaire') // 'secondaire' | 'superieur' | 'autres'
+const signupNiveau = ref('')
+const signupFormation = ref('')
+const niveauOptions = computed(() => {
+  if (signupCycle.value === 'secondaire') return niveauxSecondairePays(signupPays.value)
+  if (signupCycle.value === 'superieur') return NIVEAUX_SUPERIEUR
+  return []
+})
 
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
 // MAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
@@ -339,8 +381,25 @@ async function handleSignUp() {
   errorMessage.value = ''
   // On fixe le pays choisi AVANT de créer le compte → devise + référentiel prêts.
   if (isMiapoMode && signupPays.value) setPaysParDefaut(signupPays.value)
+  const displayName = isMiapoMode
+    ? `${signupFirstName.value.trim()} ${signupLastName.value.trim()}`.trim()
+    : signupName.value
   const meta = isMiapoMode ? { b2c: true, role: signupRole.value, pays: signupPays.value } : {}
-  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value, meta)
+  // Apprenant : on mémorise prénom + niveau/formation choisis à l'inscription
+  // pour préremplir l'onboarding (préconfiguration de son espace).
+  if (isMiapoMode && signupRole.value === 'apprenant') {
+    try {
+      const niveau = signupCycle.value === 'autres' ? NIVEAU_HORS_CATALOGUE : signupNiveau.value
+      localStorage.setItem('mapo_signup_prefill', JSON.stringify({
+        persona: 'apprenant',
+        firstName: signupFirstName.value.trim(),
+        pays: signupPays.value,
+        niveau: niveau || '',
+        formation: signupCycle.value === 'autres' ? signupFormation.value.trim() : '',
+      }))
+    } catch (e) { /* stockage indisponible : sans gravité */ }
+  }
+  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, displayName, meta)
   isLoading.value = false
   if (result.success) {
     // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
@@ -1008,9 +1067,15 @@ function resetDemo() {
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
 .mplus-modal {
-  position: relative; width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto;
-  background: #fff; border-radius: 22px; padding: 30px 30px 26px;
+  position: relative; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto;
+  background: #fff; border-radius: 22px; padding: 32px 34px 28px;
   box-shadow: 0 30px 80px rgba(15, 10, 45, 0.5);
+}
+/* Prénom + Nom côte à côte */
+.mplus-row { display: flex; gap: 12px; }
+.mplus-row .auth-field { flex: 1; }
+@media (max-width: 460px) {
+  .mplus-row { flex-direction: column; gap: 0; }
 }
 .mplus-modal-x {
   position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; border-radius: 10px;

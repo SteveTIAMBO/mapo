@@ -70,7 +70,17 @@
     "roleParentHint": "Vous ajouterez le compte de votre enfant une fois connecté.",
     "roleLearnerHint": "Vous êtes l'élève ou l'étudiant qui révise pour lui-même.",
     "taglineMiapo": "Ton professeur particulier, 24/7",
-    "countryLabel": "Pays"
+    "countryLabel": "Pays",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "levelQ": "Ton niveau d'études",
+    "levelSecondaire": "Secondaire",
+    "levelSuperieur": "Supérieur",
+    "levelOther": "Autre (MBA, formation, certif…)",
+    "classLabel": "Ta classe / série",
+    "classPlaceholder": "Choisir…",
+    "formationName": "Ta formation",
+    "formationPlaceholder": "MBA, BTS, concours…"
   },
   "verifyEmail": {
     "title": "Active ton compte MAPO+",
