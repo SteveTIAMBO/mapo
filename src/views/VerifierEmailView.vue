@@ -81,7 +81,7 @@ async function resend() {
 
 async function doSignOut() {
   await auth.logout()
-  router.push('/miapo')
+  router.push('/')
 }
 
 // Retour depuis le lien d'activation (souvent un autre onglet) : on revérifie

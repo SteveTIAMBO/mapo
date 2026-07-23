@@ -149,13 +149,13 @@ function entrer(profil) {
     miapoStore.seedDemoAs(profil === 'pro' ? 'pro' : 'ecolier')
     router.push('/parent/miapo')
   } else {
-    router.push('/login')
+    router.push('/')
   }
 }
 
 function goLogin() {
   editionStore.setEdition('secondaire')
-  router.push('/login')
+  router.push('/')
 }
 
 // Créer un VRAI compte (persistant, propre à chaque personne) : on ouvre la page
@@ -165,7 +165,7 @@ function goLogin() {
 function goCreate() {
   setPaysParDefaut(paysB2C.value)
   editionStore.setEdition('secondaire')
-  router.push({ path: '/login', query: { signup: '1' } })
+  router.push({ path: '/', query: { signup: '1' } })
 }
 </script>
 

@@ -771,7 +771,7 @@ const route = useRoute()
 const { t, locale } = useI18n({ useScope: 'global' })
 function setLangue(l) { setLang(l) }
 const authStore = useAuthStore()
-async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/miapo' : '/login') }
+async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/' : '/login') }
 
 const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()

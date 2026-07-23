@@ -61,6 +61,15 @@ const ROUTE_PERMISSION_MAP = {
 
 const routes = [
   {
+    // Racine MAPO+ (façon Facebook) : l'URL nue mapoplus.app-edufrem.com sert
+    // directement la page login / inscription. Le garde redirige les comptes
+    // connectés vers leur espace, et les autres tenants vers leur accueil.
+    path: '/',
+    name: 'Home',
+    component: () => import('../views/LoginView.vue'),
+    meta: { requiresAuth: false }
+  },
+  {
     path: '/bienvenue',
     name: 'Welcome',
     component: () => import('../views/WelcomeView.vue'),
@@ -73,10 +82,16 @@ const routes = [
     meta: { requiresAuth: false, title: 'Enseignement Supérieur' }
   },
   {
-    path: '/miapo',
-    name: 'MiapoWelcome',
+    // Sélection des espaces de démonstration MAPO+ (déplacée hors de la racine).
+    path: '/demo',
+    name: 'Demo',
     component: () => import('../views/MiapoWelcomeView.vue'),
-    meta: { requiresAuth: false, title: 'MAPO+' }
+    meta: { requiresAuth: false, title: 'Démo MAPO+' }
+  },
+  {
+    // Ancien chemin /miapo (codename interne) → redirige vers /demo.
+    path: '/miapo',
+    redirect: '/demo'
   },
   {
     path: '/verifier-email',
@@ -144,7 +159,6 @@ const routes = [
     component: () => import('../components/layout/AppLayout.vue'),
     meta: { requiresAuth: true },
     children: [
-      { path: '', redirect: '/dashboard' },
       {
         path: 'dashboard',
         name: 'Dashboard',
@@ -485,6 +499,20 @@ router.beforeEach(async (to) => {
     return { name: 'Welcome' }
   }
 
+  // ── Racine "/" (Home) ────────────────────────────────────────────
+  // Sur l'instance MAPO+, l'URL nue sert le login/inscription (façon Facebook) ;
+  // un compte déjà connecté est renvoyé vers son espace. Sur les autres tenants,
+  // on reproduit l'ancien comportement de la racine (→ dashboard / accueil).
+  if (to.name === 'Home') {
+    if (tenant.mode === 'miapo') {
+      if (isLoggedIn) return { path: '/parent/miapo' }
+      return true
+    }
+    // Autres tenants : on reproduit exactement l'ancienne racine (redirection
+    // vers /dashboard) ; le reste du garde applique la logique tenant/édition.
+    return { path: '/dashboard' }
+  }
+
   // ── Tenant MAPO+ standalone (miapo.app-edufrem.com) ──────────────
   // Produit B2C dédié : on entre par l'accueil MAPO+ (Parent / Enfant) puis on
   // reste dans l'expérience famille (espaces parent + élève + tuteur). La
@@ -492,18 +520,18 @@ router.beforeEach(async (to) => {
   // s'appliquent pas à cette instance → on renvoie vers l'accueil MAPO+.
   if (tenant.mode === 'miapo') {
     if (to.name === 'Welcome' || to.name === 'Superieur') {
-      return { name: 'MiapoWelcome' }
+      return { name: 'Home' }
     }
     if (!isLoggedIn) {
-      const publicMiapo = new Set(['MiapoWelcome', 'Login', 'VerifierDiplome', 'CompteNonConfigure'])
-      if (!publicMiapo.has(to.name)) return { name: 'MiapoWelcome' }
+      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierDiplome', 'CompteNonConfigure'])
+      if (!publicMiapo.has(to.name)) return { name: 'Home' }
     }
     // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail
     // confirmé. Tant que l'activation n'est pas faite → écran d'activation.
     if (isFirebaseUser) {
       const verified = await authStore.ensureEmailVerified()
       if (!verified) {
-        const verifyAllowed = new Set(['VerifierEmail', 'MiapoWelcome', 'VerifierDiplome', 'CompteNonConfigure'])
+        const verifyAllowed = new Set(['VerifierEmail', 'Demo', 'VerifierDiplome', 'CompteNonConfigure'])
         if (!verifyAllowed.has(to.name)) return { name: 'VerifierEmail' }
       } else if (to.name === 'VerifierEmail') {
         return { path: '/parent/miapo' }

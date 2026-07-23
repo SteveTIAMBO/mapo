@@ -54,7 +54,7 @@ const email = computed(() => authStore.user?.email || t('cnc.unknown'))
 
 async function seDeconnecter() {
   await authStore.logout()
-  router.push(isMiapoTenant() ? '/miapo' : '/login')
+  router.push(isMiapoTenant() ? '/' : '/login')
 }
 </script>
 

@@ -1,7 +1,48 @@
 <template>
-  <div class="auth-page">
-    <!-- Gradient background -->
-    <div class="auth-bg"></div>
+  <div class="auth-page" :class="{ 'mplus-page': isMiapoMode }">
+    <!-- Hero MAPO+ (façon Facebook) : accroche + bénéfices + aperçu produit -->
+    <section v-if="isMiapoMode" class="mplus-hero">
+      <div class="mplus-hero-in">
+        <div class="mplus-hbrand">
+          <div class="mplus-hmark">M+</div>
+          <div>
+            <div class="mplus-htitle">MAPO<span>+</span></div>
+            <div class="mplus-hsub">{{ t('common.byEdufrem') }}</div>
+          </div>
+        </div>
+        <h1 class="mplus-accroche">{{ t('welcome.title') }}</h1>
+        <p class="mplus-hlead">{{ t('welcome.subtitle') }}</p>
+        <ul class="mplus-benefits">
+          <li>
+            <span class="mb-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17.5" cy="9.5" r="2.3"/><path d="M16 20c0-2.6 1.4-4.9 3.6-6"/></svg></span>
+            <span><b>{{ t('welcome.parentName') }}</b> — {{ t('welcome.parentTag') }}</span>
+          </li>
+          <li>
+            <span class="mb-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></span>
+            <span><b>{{ t('welcome.eleveName') }}</b> — {{ t('welcome.eleveTag') }}</span>
+          </li>
+          <li>
+            <span class="mb-ic"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M2 13h20"/></svg></span>
+            <span><b>{{ t('welcome.proName') }}</b> — {{ t('welcome.proTag') }}</span>
+          </li>
+        </ul>
+        <p class="mplus-manifesto">{{ t('welcome.manifesto') }}</p>
+      </div>
+      <div class="mplus-preview" aria-hidden="true">
+        <div class="mpv-head">
+          <div class="mpv-badge">M+</div>
+          <div><b>{{ t('welcome.previewTitle') }}</b><small>{{ t('welcome.previewProgress') }}</small></div>
+        </div>
+        <div class="mpv-msg">{{ t('welcome.previewMsg') }}</div>
+        <div class="mpv-opt">a² − b²</div>
+        <div class="mpv-opt ok">√(a² + b²) ✓</div>
+      </div>
+    </section>
+
+    <!-- Colonne connexion / inscription (droite) -->
+    <div class="auth-col">
+    <!-- Gradient background (hors MAPO+) -->
+    <div class="auth-bg" v-if="!isMiapoMode"></div>
 
     <!-- Auth card -->
     <div class="auth-card">
@@ -145,6 +186,9 @@
       </div>
     </div>
 
+      <!-- Accès démo MAPO+ (sélection des espaces de démonstration) -->
+      <button v-if="isMiapoMode" type="button" class="mplus-demo-link" @click="goDemo">{{ t('welcome.tryDemo') }}</button>
+
     <!-- Footer area (outside card) -->
     <div class="auth-footer">
       <button v-if="!isSchoolTenantMode" class="auth-reset-btn" @click="resetDemo">
@@ -154,6 +198,7 @@
       </button>
       <p class="auth-footer-org">EDUFREM SAS</p>
       <p class="auth-footer-copy">{{ t('login.copy') }}</p>
+    </div>
     </div>
   </div>
 </template>
@@ -196,6 +241,11 @@ const isSchoolTenantMode = isSchoolTenant() || isMiapoTenant()
 function changerVersion() {
   editionStore.clearEdition()
   router.push('/bienvenue')
+}
+
+// Accès à la sélection des espaces de démonstration MAPO+ (déplacée sur /demo).
+function goDemo() {
+  router.push('/demo')
 }
 
 const resetDone = ref(false)
@@ -801,5 +851,116 @@ function resetDemo() {
     font-size: 16px;
     height: 46px;
   }
+}
+
+/* ═══════════ MAPO+ : entrée façon Facebook (hero gauche + auth droite) ═══════════ */
+/* Sur l'instance MAPO+, on colore toute la carte en violet via --pr. */
+.mplus-page {
+  --pr: #7c3aed;
+  --pr-rgb: 124, 58, 237;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+/* La colonne auth n'existe qu'en MAPO+ ; ailleurs elle est transparente au layout. */
+.auth-col { display: contents; }
+.mplus-page .auth-col {
+  display: flex;
+  flex: 0.9;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  background: radial-gradient(900px 500px at 80% 0%, #efeafc 0%, transparent 60%), #f6f7fb;
+}
+.mplus-page .auth-card { box-shadow: 0 24px 60px rgba(20, 32, 64, 0.12); }
+
+.mplus-hero {
+  position: relative;
+  flex: 1.1;
+  overflow: hidden;
+  color: #fff;
+  padding: 46px 54px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(155deg, #2a2550 0%, #3a3470 42%, #574e93 78%, #7468be 100%);
+}
+.mplus-hero::before {
+  content: '';
+  position: absolute;
+  width: 520px; height: 520px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.5), transparent 60%);
+  top: -160px; left: -120px;
+}
+.mplus-hero::after {
+  content: '';
+  position: absolute;
+  width: 440px; height: 440px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(196, 181, 253, 0.28), transparent 60%);
+  bottom: -150px; right: -90px;
+}
+.mplus-hero-in { position: relative; z-index: 1; max-width: 560px; }
+.mplus-hbrand { display: flex; align-items: center; gap: 13px; margin-bottom: 30px; }
+.mplus-hmark {
+  width: 50px; height: 50px; border-radius: 15px; display: grid; place-items: center;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 20px; color: #fff;
+}
+.mplus-htitle { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 23px; line-height: 1; color: #fff; }
+.mplus-htitle span { color: #c4b5fd; }
+.mplus-hsub { font-size: 12.5px; color: rgba(255, 255, 255, 0.6); margin-top: 3px; }
+.mplus-accroche {
+  font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 38px; line-height: 1.15;
+  letter-spacing: -0.01em; margin: 0; color: #fff;
+}
+.mplus-hlead { font-size: 17px; line-height: 1.55; color: rgba(255, 255, 255, 0.78); margin: 16px 0 0; max-width: 500px; }
+.mplus-benefits { list-style: none; padding: 0; margin: 30px 0 0; display: flex; flex-direction: column; gap: 14px; }
+.mplus-benefits li { display: flex; align-items: center; gap: 13px; font-size: 15px; color: rgba(255, 255, 255, 0.9); }
+.mplus-benefits b { font-weight: 700; color: #fff; }
+.mb-ic {
+  flex-shrink: 0; width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center;
+  background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.18); color: #e9deff;
+}
+.mplus-manifesto {
+  margin: 30px 0 0; font-size: 14px; font-style: italic; color: rgba(255, 255, 255, 0.64);
+  line-height: 1.6; max-width: 500px; border-left: 3px solid rgba(196, 181, 253, 0.5); padding-left: 14px;
+}
+.mplus-preview {
+  position: absolute; right: 40px; bottom: 42px; z-index: 1; width: 288px;
+  background: rgba(255, 255, 255, 0.97); border-radius: 20px; box-shadow: 0 30px 70px rgba(15, 10, 45, 0.5);
+  padding: 15px; transform: rotate(-2deg);
+}
+.mpv-head { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid #eef; }
+.mpv-badge {
+  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff;
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 12px;
+}
+.mpv-head b { font-family: 'Poppins', sans-serif; font-size: 13px; color: #1a1d1f; }
+.mpv-head small { display: block; color: #9aa0ad; font-size: 11px; }
+.mpv-msg {
+  background: #f3efff; color: #4c3a86; font-size: 12.5px; line-height: 1.5;
+  padding: 10px 12px; border-radius: 12px 12px 12px 4px; margin: 11px 0 10px;
+}
+.mpv-opt { font-size: 12px; border: 1.5px solid #e6e7ee; border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; color: #3d4350; }
+.mpv-opt.ok { border-color: var(--pr); background: #f6f2ff; color: #6d28d9; font-weight: 600; }
+
+.mplus-demo-link {
+  margin-top: 16px; background: none; border: none; color: #6b7280;
+  font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;
+}
+.mplus-demo-link:hover { color: var(--pr); }
+
+@media (max-width: 900px) {
+  .mplus-page { flex-direction: column; }
+  .mplus-hero { flex: none; padding: 30px 24px 26px; justify-content: flex-start; }
+  .mplus-accroche { font-size: 27px; }
+  .mplus-hlead { font-size: 15px; }
+  .mplus-benefits { margin-top: 20px; gap: 11px; }
+  .mplus-manifesto { display: none; }
+  .mplus-preview { display: none; }
+  .mplus-page .auth-col { flex: none; padding: 26px 20px 40px; }
 }
 </style>

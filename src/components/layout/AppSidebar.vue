@@ -352,7 +352,7 @@ const getInitials = (name) => {
 const handleLogout = async () => {
   await authStore.logout()
   // Sur l'instance MAPO+, on revient à l'accueil MAPO+ (et non au login MAPO).
-  await router.push(isMiapoTenant() ? '/miapo' : '/login')
+  await router.push(isMiapoTenant() ? '/' : '/login')
 }
 
 // Accordéon : AUCUN thème ouvert par défaut (tout fermé au chargement).

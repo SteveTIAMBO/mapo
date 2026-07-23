@@ -23,7 +23,11 @@
     "createAccount": "Create my MAPO+ account",
     "demoHint": "The spaces above are a shared demo. Create your account to save your progress and access it on all your devices.",
     "haveAccount": "I already have a MAPO+ account",
-    "footerCopy": "© 2026 MAPO+ — Learning, supported"
+    "footerCopy": "© 2026 MAPO+ — Learning, supported",
+    "previewTitle": "Your tutor · Maths",
+    "previewProgress": "Chapter · 72%",
+    "previewMsg": "In a right triangle, what's the hypotenuse?",
+    "tryDemo": "Just looking? Try the demo"
   },
   "login": {
     "tagline": "School Management by EDUFREM",

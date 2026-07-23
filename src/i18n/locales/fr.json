@@ -23,7 +23,11 @@
     "createAccount": "Créer mon compte MAPO+",
     "demoHint": "Les espaces ci-dessus sont une démo commune. Créez votre compte pour enregistrer votre suivi et le retrouver sur tous vos appareils.",
     "haveAccount": "J'ai déjà un compte MAPO+",
-    "footerCopy": "© 2026 MAPO+ — Apprendre, accompagné"
+    "footerCopy": "© 2026 MAPO+ — Apprendre, accompagné",
+    "previewTitle": "Ton professeur · Maths",
+    "previewProgress": "Chapitre · 72%",
+    "previewMsg": "Dans un triangle rectangle, que vaut l'hypoténuse ?",
+    "tryDemo": "Juste regarder ? Essayer la démo"
   },
   "login": {
     "tagline": "Gestion Scolaire by EDUFREM",
