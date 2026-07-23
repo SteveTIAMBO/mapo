@@ -632,16 +632,32 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function seedDemoAs(kind) {
     enfants.value = []
     if (kind === 'pro') {
-      const id = addEnfant({
-        firstName: 'Diane', lastName: 'Démo', gender: 'F',
-        niveau: NIVEAU_HORS_CATALOGUE, pays: 'CM', cycle: 'superieur',
-        formation: 'MBA — Management',
-        formationModules: "Contrôle de gestion, Finance d'entreprise, Marketing, Stratégie",
-      })
-      addNote(id, 'Contrôle de gestion', 8)
-      addNote(id, "Finance d'entreprise", 9)
-      addNote(id, 'Marketing', 14)
-      addNote(id, 'Stratégie', 12)
+      if (paysParDefaut() === 'FR') {
+        // Apprenante adulte française (formation / certification, hors catalogue) :
+        // le profil doit rester cohérent avec le pays choisi à l'inscription.
+        const id = addEnfant({
+          firstName: 'Camille', lastName: 'Démo', gender: 'F',
+          niveau: NIVEAU_HORS_CATALOGUE, pays: 'FR', cycle: 'superieur',
+          ecole: 'IAE Paris',
+          formation: 'Master 2 — Management',
+          formationModules: "Contrôle de gestion, Finance d'entreprise, Marketing, Stratégie",
+        })
+        addNote(id, 'Contrôle de gestion', 11, 'Partiel')
+        addNote(id, "Finance d'entreprise", 12, 'Partiel')
+        addNote(id, 'Marketing', 14, 'Partiel')
+        addNote(id, 'Stratégie', 13, 'Partiel')
+      } else {
+        const id = addEnfant({
+          firstName: 'Diane', lastName: 'Démo', gender: 'F',
+          niveau: NIVEAU_HORS_CATALOGUE, pays: 'CM', cycle: 'superieur',
+          formation: 'MBA — Management',
+          formationModules: "Contrôle de gestion, Finance d'entreprise, Marketing, Stratégie",
+        })
+        addNote(id, 'Contrôle de gestion', 8)
+        addNote(id, "Finance d'entreprise", 9)
+        addNote(id, 'Marketing', 14)
+        addNote(id, 'Stratégie', 12)
+      }
     } else if (paysParDefaut() === 'FR') {
       // Démo adaptée au pays choisi à l'inscription : lycéenne française (1re).
       const id = addEnfant({
