@@ -231,6 +231,7 @@ const STAFF_NAV_ITEMS = [
   // Vie scolaire
   { key: 'presences', to: '/presences', icon: CalendarCheck, label: 'nav.presences', group: 'vieScolaire' },
   { key: 'discipline', to: '/discipline', icon: Shield, label: 'nav.discipline', group: 'vieScolaire' },
+  { key: 'bibliotheque', to: '/bibliotheque', icon: Library, label: 'nav.bibliotheque', dirOnly: true, group: 'vieScolaire' },
   { key: 'messagerie', to: '/messagerie', icon: MessageSquare, label: 'nav.messagerie', group: 'vieScolaire' },
   { key: 'messagerie', to: '/alertes', icon: Bell, label: 'nav.alertes', group: 'vieScolaire' },
   // Gestion

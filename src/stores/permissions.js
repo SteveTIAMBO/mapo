@@ -30,6 +30,7 @@ export const APP_MODULES = [
   { key: 'presences', label: 'Présences', icon: 'CalendarCheck', description: 'Appel et suivi des absences' },
   { key: 'notes', label: 'Notes & Évaluations', icon: 'FileText', description: 'Saisie et consultation des notes' },
   { key: 'discipline', label: 'Discipline', icon: 'Shield', description: 'Sanctions et avertissements' },
+  { key: 'bibliotheque', label: 'Bibliothèque', icon: 'Library', description: 'Fonds documentaire et emprunts' },
   { key: 'devoirs', label: 'Devoirs', icon: 'ClipboardCheck', description: 'Création et suivi des devoirs' },
   { key: 'messagerie', label: 'Messagerie', icon: 'MessageSquare', description: 'Communication interne' },
   { key: 'salaire', label: 'Mon salaire', icon: 'Wallet', description: 'Suivi de rémunération et fiches de paie' },
@@ -51,6 +52,8 @@ export const SOCLE_MODULES = [
   'dashboard', 'eleves', 'inscriptions', 'classes', 'matieres',
   'personnel', 'acces', 'import', 'transition-annee',
   'parametres', 'roles', 'profile',
+  // Modules additifs (toujours actifs) — Vie scolaire & services
+  'bibliotheque', 'transport', 'cantine', 'infirmerie',
 ]
 
 // Modules optionnels (clé = clé APP_MODULES / nav / routes)

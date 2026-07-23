@@ -335,6 +335,12 @@ const routes = [
         meta: { title: 'Discipline' }
       },
       {
+        path: 'bibliotheque',
+        name: 'Bibliotheque',
+        component: () => import('../views/BibliothequeView.vue'),
+        meta: { title: 'Bibliothèque' }
+      },
+      {
         path: 'facturation',
         name: 'Facturation',
         component: () => import('../views/FacturationView.vue'),
