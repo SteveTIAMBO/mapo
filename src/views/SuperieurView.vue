@@ -325,6 +325,11 @@ import SupTransitionAnnee from './superieur/SupTransitionAnnee.vue'
 import SupRapports from './superieur/SupRapports.vue'
 import SupDecrochage from './superieur/SupDecrochage.vue'
 import SupMessagerie from './superieur/SupMessagerie.vue'
+// Services additionnels (mémoires, attestations, congés, bibliothèque universitaire)
+import SupMemoires from './superieur/SupMemoires.vue'
+import SupAttestations from './superieur/SupAttestations.vue'
+import SupConges from './superieur/SupConges.vue'
+import SupBiblioUni from './superieur/SupBiblioUni.vue'
 
 const store = useSuperieurStore()
 const authSup = useSuperieurAuthStore()
@@ -500,6 +505,10 @@ const panels = {
   rapports: SupRapports,
   decrochage: SupDecrochage,
   messagerie: SupMessagerie,
+  memoires: SupMemoires,
+  attestations: SupAttestations,
+  conges: SupConges,
+  biblio_uni: SupBiblioUni,
 }
 
 /**
@@ -622,6 +631,18 @@ const ALL_TABS = [
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><line x1="22" y1="10" x2="22" y2="15"/></svg>',
   },
   {
+    key: 'memoires',
+    label: 'Mémoires & soutenances',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M9 7h6M9 11h4"/></svg>',
+  },
+  {
+    key: 'attestations',
+    label: 'Attestations & relevés',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><circle cx="12" cy="15" r="2"/><path d="M12 17v3"/></svg>',
+  },
+  {
     key: 'stages',
     label: 'Stages',
     section: 'Vie scolaire',
@@ -639,6 +660,12 @@ const ALL_TABS = [
     label: 'Salles',
     roles: ['admin'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 21V8a1 1 0 0 1 1-1h6V3h4v4h6a1 1 0 0 1 1 1v13"/><path d="M9 21v-6h6v6"/></svg>',
+  },
+  {
+    key: 'biblio_uni',
+    label: 'Bibliothèque universitaire',
+    roles: ['admin', 'responsable_formation'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
   },
   // ── Finance ─────────────────────────────────────────────────────
   // Un seul module « Comptabilité » (comme le Secondaire /facturation) :
@@ -672,6 +699,12 @@ const ALL_TABS = [
     label: "Passage d'année",
     roles: ['admin'],
     icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1 2.5 3 6 3s6-2 6-3v-5"/><line x1="22" y1="10" x2="22" y2="15"/></svg>',
+  },
+  {
+    key: 'conges',
+    label: 'Congés du personnel',
+    roles: ['admin'],
+    icon: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 16l2 2 4-4"/></svg>',
   },
   // ── Communication ───────────────────────────────────────────────
   {
@@ -722,6 +755,7 @@ const ALL_TABS = [
 function getTabModule(tabKey) {
   if (tabKey === 'finance' || tabKey.startsWith('finance_')) return 'finance'
   if (['formation', 'inscriptions', 'edt', 'intervenants', 'notes', 'diplomes', 'stages', 'assiduite', 'salles', 'import', 'transition_annee', 'rapports', 'decrochage',
+    'memoires', 'attestations', 'conges', 'biblio_uni',
     'ens_ue', 'ens_notes', 'ens_cours', 'ens_devoirs', 'ens_edt', 'ens_messagerie', 'ens_paie'].includes(tabKey)) {
     return 'formation'
   }
