@@ -58,6 +58,13 @@
         <Lightbulb :size="18" />
         <div><strong>Indice</strong><p>{{ current.hint || 'Relis la question et élimine les réponses impossibles.' }}</p></div>
       </div>
+      <div v-if="phase === 'hinted' && (conceptText || conceptBusy)" class="tq-fb concept">
+        <MiapoOrbe :size="18" :frozen="true" />
+        <div><strong>MIAPO t'explique le concept</strong>
+          <p v-if="conceptBusy && !conceptText" class="tq-concept-load">MIAPO prépare l'explication…</p>
+          <p v-else>{{ conceptText }}</p>
+        </div>
+      </div>
       <div v-if="revealed" class="tq-fb" :class="firstTry ? 'ok' : 'expl'">
         <component :is="firstTry ? Check : BookOpen" :size="18" />
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
@@ -117,6 +124,9 @@ const props = defineProps({
   niveau: { type: String, default: '' },
   studentId: { type: String, default: '' },
   themes: { type: String, default: '' },
+  // Session vocale « live » : démarre directement en mode voix (MIAPO lit,
+  // explique le concept sur une erreur, encourage, enchaîne).
+  autoVoice: { type: Boolean, default: false },
 })
 const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
@@ -185,6 +195,59 @@ function jeNaiPasCompris() {
   if (notUnderstood.value < 1) { notUnderstood.value++; readExplanation(true) }
   else { stopSpeaking(); emit('ouvrir-fiche', props.matiere) }
 }
+
+// ── Explication du concept (IA guidée + mémoire locale) ──────────────
+// Sur une mauvaise réponse, MIAPO explique le CONCEPT comme un prof, SANS
+// donner la réponse. On réutilise le tuteur socratique (qui ne donne jamais la
+// solution) et on MÉMORISE l'explication sur l'appareil (frugalité).
+const conceptText = ref('')
+const conceptBusy = ref(false)
+const CONCEPT_KEY = 'mapo_miapo_concept_v1'
+const _normC = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180)
+function _conceptLoad() { try { return JSON.parse(localStorage.getItem(CONCEPT_KEY) || '{}') } catch { return {} } }
+function conceptGet(q) { const c = _conceptLoad(); return c[_normC(q)] || '' }
+function conceptSet(q, a) {
+  const c = _conceptLoad(); c[_normC(q)] = a
+  const ks = Object.keys(c); if (ks.length > 80) delete c[ks[0]]
+  try { localStorage.setItem(CONCEPT_KEY, JSON.stringify(c)) } catch { /* quota */ }
+}
+async function expliqueConcept() {
+  const c = current.value
+  if (!c || !c.q) return
+  let txt = conceptGet(c.q)
+  if (!txt) {
+    conceptBusy.value = true
+    const en = ttsLang().toLowerCase().startsWith('en')
+    const prompt = en
+      ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. DO NOT give the answer or the correct option — only help understand the concept.`
+      : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.`
+    try {
+      const r = await tuteur.chatTuteur({ message: prompt, niveau: props.niveau, matieres: props.matiere, langue: en ? 'en' : 'fr' })
+      txt = r && r.ok ? String(r.text || '').trim() : ''
+      if (txt) conceptSet(c.q, txt)
+    } catch { /* réseau/crédits → repli sur l'indice */ }
+    conceptBusy.value = false
+  }
+  if (!txt) txt = c.hint || ''  // repli 100% sourcé si l'IA n'a rien renvoyé
+  conceptText.value = txt
+  if (txt && voiceOn.value) speak(txt, { lang: ttsLang() })
+}
+function bravo() {
+  const en = ttsLang().toLowerCase().startsWith('en')
+  const fr = ['Bravo, bonne réponse !', 'Excellent !', 'Très bien !', 'Parfait, tu as compris !']
+  const ena = ['Well done, correct!', 'Excellent!', 'Very good!', 'Perfect, you got it!']
+  const a = en ? ena : fr
+  return a[Math.floor(Math.random() * a.length)]
+}
+function encourage() {
+  const en = ttsLang().toLowerCase().startsWith('en')
+  return en ? "That's okay, this is how we learn." : "Ce n'est pas grave, c'est comme ça qu'on apprend."
+}
+// Session vocale : on enchaîne automatiquement après la parole de MIAPO.
+function autoNext() {
+  if (!props.autoVoice) return
+  setTimeout(() => { if (revealed.value && mode.value === 'quiz') next() }, 1300)
+}
 const letters = ['A', 'B', 'C', 'D']
 const mode = ref('loading')
 const questions = ref([])
@@ -205,9 +268,24 @@ const flags = ref([])
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
 // Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
-watch(index, () => { notUnderstood.value = 0; if (mode.value === 'quiz') readQuestion() })
-watch(phase, (p) => { if (p === 'hinted') readHint() })
-watch(revealed, (r) => { if (r) readExplanation(false) })
+watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; if (mode.value === 'quiz') readQuestion() })
+// 1re erreur : l'écran montre l'indice ; MIAPO va plus loin et explique le CONCEPT.
+watch(phase, (p) => { if (p === 'hinted') expliqueConcept() })
+// Révélation : bonne réponse → félicitation (+ enchaîne en mode session) ;
+// après erreurs → encourage + donne la réponse en expliquant, puis enchaîne.
+watch(revealed, (r) => {
+  if (!r || !voiceOn.value) return
+  const c = current.value
+  if (firstTry.value) {
+    if (props.autoVoice) speak(bravo(), { lang: ttsLang(), onend: autoNext })
+    else if (c.explanation) speak(c.explanation, { lang: ttsLang() })
+  } else {
+    const expl = c.explanation || ('La bonne réponse est : ' + (c.choices[c.answer] || '') + '.')
+    speak((props.autoVoice ? encourage() + ' ' : '') + expl, { lang: ttsLang(), onend: props.autoVoice ? autoNext : undefined })
+  }
+})
+// Session vocale « live » : dès que le quiz est chargé, on démarre en mode voix.
+watch(mode, (m) => { if (m === 'quiz' && props.autoVoice && !voiceOn.value) { voiceOn.value = true; warmUpVoices(); readQuestion() } })
 onUnmounted(stopSpeaking)
 
 async function start() {
@@ -339,6 +417,9 @@ onMounted(start)
 .tq-fb.hint { background: rgba(232,149,10,.08); color: #B87A00; }
 .tq-fb.ok { background: rgba(27,138,90,.08); color: #1B8A5A; }
 .tq-fb.expl { background: rgba(var(--pr-rgb),.06); color: var(--pr); }
+.tq-fb.concept { background: rgba(124,92,255,.07); color: #6b46ff; margin-top: 10px; }
+.tq-fb.concept strong { color: #5b34e6; }
+.tq-concept-load { opacity: .7; font-style: italic; }
 
 .tq-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; }
 .tq-actions.center { justify-content: center; gap: 12px; }
