@@ -83,7 +83,6 @@ import { useTuteurStore } from '../stores/tuteur'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
-import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t } = useI18n({ useScope: 'global' })
