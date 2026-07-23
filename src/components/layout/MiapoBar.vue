@@ -44,6 +44,10 @@
               @keydown.enter.prevent="submit"
               @keydown.escape="close"
             />
+            <button v-if="sttSupported" type="button" class="miapo-mic" :class="{ listening: micOn }" :disabled="busy || step === 'draft'"
+              :title="micOn ? 'À l’écoute…' : 'Dicter à la voix'" @click="dicter">
+              <Mic :size="17" />
+            </button>
             <button class="miapo-send" :disabled="!instruction.trim() || busy" @click="submit">
               <ArrowUp :size="18" />
             </button>
@@ -77,6 +81,7 @@
                 <div v-for="(m, i) in chatMsgs" :key="i" :class="['miapo-msg', m.role]">
                   <span v-if="m.role === 'miapo'" class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
                   <p class="miapo-msg-text">{{ m.text }}</p>
+                  <button v-if="voiceSupported && m.role === 'miapo'" type="button" class="miapo-listen" :title="'Écouter'" @click="lire(m.text)"><Volume2 :size="13" /></button>
                 </div>
               </template>
               <div v-if="chatThinking" class="miapo-msg miapo">
@@ -110,12 +115,14 @@
             <div v-else-if="step === 'answer'" class="miapo-answer">
               <span class="miapo-spark sm"><Sparkles :size="14" /></span>
               <p>{{ result.reponse }}</p>
+              <button v-if="voiceSupported" type="button" class="miapo-listen" title="Écouter" @click="lire(result.reponse)"><Volume2 :size="14" /></button>
             </div>
 
             <!-- Confirmation de navigation -->
             <div v-else-if="step === 'nav'" class="miapo-answer">
               <span class="miapo-spark sm"><Sparkles :size="14" /></span>
               <p>{{ result.reponse }}</p>
+              <button v-if="voiceSupported" type="button" class="miapo-listen" title="Écouter" @click="lire(result.reponse)"><Volume2 :size="14" /></button>
             </div>
 
             <!-- Plusieurs élèves correspondent → choisir -->
@@ -209,7 +216,8 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe } from 'lucide-vue-next'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Volume2 } from 'lucide-vue-next'
+import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES, EXEMPLES_B2C } from '../../stores/miapoCopilot'
@@ -334,6 +342,27 @@ async function resolveLocalQuery(text) {
 
 const inputEl = ref(null)
 const instruction = ref('')
+
+// ── Voix : dictée (STT) de l'instruction + lecture (TTS) des réponses ──
+// Réutilise services/voice.js. Sert le copilote MAPO (enseignant : prépa de
+// cours/examens ; directeur : tâches admin) autant que le chat MAPO+ : on peut
+// PARLER à MIAPO et l'ÉCOUTER répondre. Dégrade proprement si non supporté.
+const voiceSupported = isSpeechSupported()
+const sttSupported = isRecognitionSupported()
+const micOn = ref(false)
+async function dicter() {
+  if (micOn.value || busy.value) return
+  stopSpeaking()
+  micOn.value = true
+  try {
+    const heard = await listenOnce({ lang: locale.value })
+    if (heard) { instruction.value = heard; await submit() }
+  } catch { /* non supporté / micro refusé → saisie au clavier */ }
+  finally { micOn.value = false }
+}
+function lire(text) {
+  if (text) speak(String(text), { lang: locale.value })
+}
 const step = ref('idle') // idle | answer | nav | draft | peda | students
 const result = ref({})
 const draft = ref({ destinataires: '', sujet: '', message: '' })
@@ -834,6 +863,13 @@ onUnmounted(() => {
 }
 .miapo-send:hover:not(:disabled) { filter: brightness(1.05); }
 .miapo-send:disabled { opacity: .4; cursor: default; }
+.miapo-mic { flex: none; width: 38px; height: 38px; border-radius: 11px; border: 1.5px solid var(--divider, var(--bd)); background: #fff; color: var(--tx3); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.miapo-mic:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
+.miapo-mic:disabled { opacity: .4; cursor: default; }
+.miapo-mic.listening { border-color: var(--pr); color: #fff; background: var(--pr); animation: miapoMicPulse 1s ease-in-out infinite; }
+@keyframes miapoMicPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(var(--pr-rgb),.4); } 50% { box-shadow: 0 0 0 6px rgba(var(--pr-rgb),0); } }
+.miapo-listen { flex: none; border: none; background: none; color: var(--tx3); cursor: pointer; padding: 4px; border-radius: 7px; align-self: flex-start; }
+.miapo-listen:hover { background: rgba(var(--pr-rgb),.1); color: var(--pr); }
 
 .miapo-body { padding: 0 16px 8px; overflow-y: auto; }
 
