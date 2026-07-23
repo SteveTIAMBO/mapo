@@ -26,9 +26,16 @@
           <span v-if="studentId" class="tq-level" :title="`Difficulté adaptative — niveau ${level} sur 5`">Niveau {{ level }}/5</span>
           <span class="tq-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
         </div>
-        <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
-          <MiapoOrbe :size="14" frozen /> {{ lastMode === 'ia' ? 'MIAPO' : 'Démo' }}
-        </span>
+        <div class="tq-top-right">
+          <button v-if="voiceSupported" type="button" class="tq-voice-toggle" :class="{ on: voiceOn }"
+            :title="voiceOn ? 'Couper la voix' : 'Activer le mode voix (MIAPO lit et explique à voix haute)'" @click="toggleVoice">
+            <component :is="voiceOn ? Volume2 : VolumeX" :size="15" />
+            <span>{{ voiceOn ? 'Voix ON' : 'Mode voix' }}</span>
+          </button>
+          <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
+            <MiapoOrbe :size="14" frozen /> {{ lastMode === 'ia' ? 'MIAPO' : 'Démo' }}
+          </span>
+        </div>
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
 
@@ -43,6 +50,10 @@
         </button>
       </div>
 
+      <button v-if="voiceOn && sttSupported && !revealed" type="button" class="tq-mic" :class="{ listening }" @click="answerByVoice">
+        <Mic :size="16" /><span>{{ listening ? 'Je t’écoute…' : 'Répondre à la voix' }}</span>
+      </button>
+
       <div v-if="phase === 'hinted'" class="tq-fb hint">
         <Lightbulb :size="18" />
         <div><strong>Indice</strong><p>{{ current.hint || 'Relis la question et élimine les réponses impossibles.' }}</p></div>
@@ -51,6 +62,13 @@
         <component :is="firstTry ? Check : BookOpen" :size="18" />
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
           <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p></div>
+      </div>
+
+      <div v-if="voiceOn && revealed && !firstTry" class="tq-voice-help">
+        <button type="button" class="tq-help-btn" @click="readExplanation(true)"><Volume2 :size="14" /> <span>Réécouter</span></button>
+        <button type="button" class="tq-help-btn accent" @click="jeNaiPasCompris">
+          <RotateCcw :size="14" /> <span>{{ notUnderstood < 1 ? "Je n'ai pas compris" : 'Ouvrir la fiche de cours' }}</span>
+        </button>
       </div>
 
       <div class="tq-actions">
@@ -87,10 +105,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard } from 'lucide-vue-next'
+import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
+import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -98,9 +118,73 @@ const props = defineProps({
   studentId: { type: String, default: '' },
   themes: { type: String, default: '' },
 })
-defineEmits(['quit', 'abonnement'])
+const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
+const { locale } = useI18n({ useScope: 'global' })
 const tuteur = useTuteurStore()
+
+// ── Mode Voix (professeur particulier vocal) ─────────────────────────
+// MIAPO lit la question + les choix, écoute la réponse (ou clic), et sur une
+// erreur EXPLIQUE le concept à voix haute. RÈGLE STRICTE : on ne vocalise QUE
+// le contenu déjà présent dans le quiz (question / indice / explication —
+// mêmes champs que le quiz écrit) ; aucune leçon n'est improvisée. Le rebond
+// « je n'ai pas compris » ré-explique plus lentement puis ouvre la fiche de
+// cours (contenu sourcé), sans jamais fabriquer d'explication à la volée.
+const voiceSupported = isSpeechSupported()
+const sttSupported = isRecognitionSupported()
+const voiceOn = ref(false)
+const listening = ref(false)
+const notUnderstood = ref(0)
+
+function ttsLang() { return locale.value }
+function readQuestion() {
+  if (!voiceOn.value) return
+  const c = current.value
+  if (!c || !c.q) return
+  const opts = (c.choices || []).map((ch, i) => `${letters[i]}. ${ch}`).join('. ')
+  speak(`${c.q}. ${opts}`, { lang: ttsLang() })
+}
+function readHint() {
+  if (!voiceOn.value) return
+  speak(current.value.hint || 'Relis la question et élimine les réponses impossibles.', { lang: ttsLang() })
+}
+function readExplanation(slow) {
+  if (!voiceOn.value) return
+  const c = current.value
+  const txt = c.explanation || ('La bonne réponse est : ' + (c.choices[c.answer] || '') + '.')
+  speak(txt, { lang: ttsLang(), rate: slow ? 0.85 : 0.98 })
+}
+function toggleVoice() {
+  voiceOn.value = !voiceOn.value
+  if (voiceOn.value) { warmUpVoices(); readQuestion() }
+  else stopSpeaking()
+}
+function matchChoice(t) {
+  const s = String(t || '').toLowerCase().trim()
+  if (!s) return -1
+  const first = s.split(/[\s,.']+/)[0]
+  const map = { a: 0, b: 1, c: 2, d: 3, un: 0, une: 0, deux: 1, trois: 2, quatre: 3, 1: 0, 2: 1, 3: 2, 4: 3 }
+  if (first in map) return map[first]
+  return current.value.choices.findIndex((c) => {
+    const cs = String(c).toLowerCase()
+    return cs && (s.includes(cs.slice(0, 14)) || cs.includes(s))
+  })
+}
+async function answerByVoice() {
+  if (listening.value || revealed.value) return
+  stopSpeaking()
+  listening.value = true
+  try {
+    const t = await listenOnce({ lang: ttsLang() })
+    const i = matchChoice(t)
+    if (i >= 0 && i < current.value.choices.length) select(i)
+  } catch { /* non supporté / refusé → l'élève répond au clic */ }
+  finally { listening.value = false }
+}
+function jeNaiPasCompris() {
+  if (notUnderstood.value < 1) { notUnderstood.value++; readExplanation(true) }
+  else { stopSpeaking(); emit('ouvrir-fiche', props.matiere) }
+}
 const letters = ['A', 'B', 'C', 'D']
 const mode = ref('loading')
 const questions = ref([])
@@ -119,6 +203,12 @@ const wrongSet = ref(new Set())
 const flags = ref([])
 
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
+
+// Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
+watch(index, () => { notUnderstood.value = 0; if (mode.value === 'quiz') readQuestion() })
+watch(phase, (p) => { if (p === 'hinted') readHint() })
+watch(revealed, (r) => { if (r) readExplanation(false) })
+onUnmounted(stopSpeaking)
 
 async function start() {
   mode.value = 'loading'
@@ -217,6 +307,18 @@ onMounted(start)
 .ia-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
 .ia-badge.is-ia { color: #1B8A5A; background: rgba(27,138,90,.10); }
 .ia-badge.is-sim { color: #6b7280; background: rgba(0,0,0,.05); }
+.tq-top-right { display: inline-flex; align-items: center; gap: 8px; }
+.tq-voice-toggle { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 20px; border: 1.5px solid var(--bd); background: #fff; color: var(--tx3); font-size: 12px; font-weight: 700; cursor: pointer; }
+.tq-voice-toggle:hover { border-color: var(--pr); color: var(--pr); }
+.tq-voice-toggle.on { border-color: var(--pr); color: #fff; background: var(--pr); }
+.tq-mic { display: inline-flex; align-items: center; justify-content: center; gap: 8px; margin-top: 14px; padding: 11px 16px; border-radius: 12px; border: 1.5px solid var(--pr); background: rgba(var(--pr-rgb),.06); color: var(--pr); font-weight: 600; font-size: 14px; cursor: pointer; width: 100%; }
+.tq-mic:hover { background: rgba(var(--pr-rgb),.12); }
+.tq-mic.listening { animation: tqpulse 1s ease-in-out infinite; }
+@keyframes tqpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(var(--pr-rgb),.35); } 50% { box-shadow: 0 0 0 7px rgba(var(--pr-rgb),0); } }
+.tq-voice-help { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.tq-help-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border-radius: 10px; border: 1.5px solid var(--bd); background: #fff; color: var(--tx2, var(--tx)); font-size: 13px; font-weight: 600; cursor: pointer; }
+.tq-help-btn:hover { border-color: var(--pr); color: var(--pr); }
+.tq-help-btn.accent { border-color: rgba(var(--pr-rgb),.4); color: var(--pr); background: rgba(var(--pr-rgb),.05); }
 .tq-progress { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 14px 0 18px; overflow: hidden; }
 .tq-fill { height: 100%; background: var(--pr); border-radius: 6px; transition: width .3s; }
 .tq-q { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0 0 18px; color: var(--tx); }
