@@ -345,12 +345,30 @@ export const useAuthStore = defineStore('auth', () => {
   // Inscription B2C autonome : un parent crée son compte (email + mot de passe)
   // sans passer par une invitation d'école. loadUserProfile lui attribue alors
   // automatiquement un profil parent B2C (étape 4) → accès direct à MAPO+.
-  async function signUpWithEmail(email, password, displayName) {
+  async function signUpWithEmail(email, password, displayName, meta = {}) {
     try {
       flagFreshLogin()
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password)
       if (displayName && displayName.trim()) {
         try { await updateProfile(result.user, { displayName: displayName.trim() }) } catch { /* non bloquant */ }
+      }
+      // MAPO+ (B2C) : on enregistre l'utilisateur dans notre base (collection
+      // dédiée mapoplus_users) pour le suivi côté méga-admin EDUFREM (installs,
+      // persona, pays). Non bloquant : si l'écriture échoue (règle absente), la
+      // création de compte réussit quand même.
+      if (meta && meta.b2c) {
+        try {
+          await setDoc(doc(db, 'mapoplus_users', result.user.uid), {
+            uid: result.user.uid,
+            email: email.trim(),
+            displayName: (displayName || '').trim(),
+            persona: meta.role === 'apprenant' ? 'apprenant' : 'parent',
+            pays: meta.pays || '',
+            source: 'mapo+',
+            createdAt: serverTimestamp(),
+            lastSeenAt: serverTimestamp(),
+          }, { merge: true })
+        } catch (e) { console.warn('[mapoplus_users] écriture ignorée:', e && e.code) }
       }
       user.value = result.user // pose tout de suite (cf loginWithEmail)
       await loadUserProfile(result.user)

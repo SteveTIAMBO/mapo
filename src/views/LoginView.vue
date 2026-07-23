@@ -224,7 +224,8 @@ async function handleSignUp() {
   errorMessage.value = ''
   // On fixe le pays choisi AVANT de créer le compte → devise + référentiel prêts.
   if (isMiapoMode && signupPays.value) setPaysParDefaut(signupPays.value)
-  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value)
+  const meta = isMiapoMode ? { b2c: true, role: signupRole.value, pays: signupPays.value } : {}
+  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value, meta)
   isLoading.value = false
   if (result.success) {
     // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou

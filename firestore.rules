@@ -570,6 +570,15 @@ service cloud.firestore {
       allow delete: if isSuperAdmin() || isMobiSuper();
     }
 
+    // ── Utilisateurs MAPO+ (B2C standalone) ──────────────────────────
+    // Base des inscrits MAPO+ (mapoplus.app-edufrem.com) : chaque personne gère
+    // SON propre enregistrement ; le super-admin EDUFREM peut tout lister
+    // (onglet MAPO+ du méga-admin). Collection isolée, ne touche pas à MOBI.
+    match /mapoplus_users/{uid} {
+      allow read, write: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isSuperAdmin();
+    }
+
     // ── Tout le reste est refusé par défaut ──────────────────────────
     match /{document=**} {
       allow read, write: if false;
