@@ -5070,7 +5070,13 @@
     "insightGoodParent": "Bon niveau d'ensemble pour {name} ! Continuez les révisions régulières pour consolider.",
     "insightWeakLearner": "MIAPO a repéré des difficultés en {subjects}. Lance une révision ciblée — tu progresseras plus vite sur tes points faibles.",
     "insightWeakParent": "MIAPO a repéré des difficultés en {subjects}. Désignez ces matières à réviser — {name} progressera plus vite sur ses points faibles.",
-    "andJoin": "{a} et {b}"
+    "andJoin": "{a} et {b}",
+    "exportBilan": "Exporter le bilan (PDF)",
+    "bilanTitle": "Bilan de progression",
+    "bilanGenerated": "Bilan généré par MAPO+ — EDUFREM",
+    "bilanLevel": "Niveau",
+    "bilanToReview": "À revoir en priorité",
+    "bilanNotes": "Dernières notes"
   },
   "cx": {
     "appTitle": "Espace complexe",

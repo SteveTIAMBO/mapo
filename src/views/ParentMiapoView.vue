@@ -292,7 +292,13 @@
         <!-- ========== PROGRESSION ========== -->
         <section v-else-if="section === 'progression'" class="sec">
           <div class="card">
-            <div class="card-head"><TrendingUp :size="18" /><h3>{{ t('mia.levelBySubject') }}</h3></div>
+            <div class="card-head">
+              <TrendingUp :size="18" /><h3>{{ t('mia.levelBySubject') }}</h3>
+              <button v-if="progression.length || activeEnfant.notes.length" type="button" class="pdf-btn" @click="exporterBilan">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+                {{ t('mia.exportBilan') }}
+              </button>
+            </div>
             <p class="muted">{{ t('mia.levelRises', { name: activeEnfant.firstName }) }}</p>
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
@@ -858,6 +864,39 @@ function onB2CAction(e) {
     case 'edt': section.value = 'edt'; return
     case 'notes': section.value = 'enfants'; return
   }
+}
+
+// ── Export PDF du bilan de progression (impression navigateur → PDF) ──
+function exporterBilan() {
+  const e = activeEnfant.value
+  if (!e) return
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+  const dots = (n) => '●'.repeat(Math.max(0, n)) + '○'.repeat(Math.max(0, 5 - n))
+  const dateStr = new Date().toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  const rowsProg = (progression.value || []).map((p) => `<tr><td>${esc(p.matiere)}</td><td class="dots">${dots(p.level)}</td><td>${t('mia.bilanLevel')} ${p.level}/5</td></tr>`).join('')
+  const rowsRev = (aReviser.value || []).map((w) => `<li><strong>${esc(w.matiere)}</strong>${w.themes && w.themes.length ? ' — ' + esc(w.themes.join(', ')) : ''}</li>`).join('')
+  const rowsNotes = (e.notes || []).map((n) => `<tr><td>${esc(n.matiere)}</td><td>${esc(n.note)}/20</td></tr>`).join('')
+  const w = window.open('', '_blank')
+  if (!w) return
+  w.document.write(`<!doctype html><html lang="${locale.value}"><head><meta charset="utf-8"><title>${t('mia.bilanTitle')} — ${esc(e.firstName)}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a2e;max-width:720px;margin:40px auto;padding:0 32px;line-height:1.55}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #0A84FF;padding-bottom:14px;margin-bottom:24px}
+  .hd h2{margin:0;color:#0A84FF;font-size:22px;letter-spacing:.5px}.hd small{color:#666}
+  h1{font-size:20px;margin:18px 0 6px}.who{color:#555;margin:0 0 22px}
+  h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#0A84FF;margin:26px 0 10px;border-bottom:1px solid #eee;padding-bottom:5px}
+  table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 6px;border-bottom:1px solid #f0f0f0}
+  .dots{letter-spacing:3px;color:#0A84FF}ul{margin:0;padding-left:20px}li{margin:5px 0}
+  .foot{margin-top:40px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}</style></head>
+  <body onload="window.print()">
+  <div class="hd"><div><h2>MAPO+</h2><small>${t('mia.bilanGenerated')}</small></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
+  <h1>${t('mia.bilanTitle')}</h1>
+  <p class="who">${esc(e.firstName)} ${esc(e.lastName || '')}${e.niveau ? ' · ' + esc(e.niveau) : ''}${e.formation ? ' · ' + esc(e.formation) : ''}</p>
+  ${rowsProg ? `<h3>${t('mia.levelBySubject')}</h3><table>${rowsProg}</table>` : ''}
+  ${rowsRev ? `<h3>${t('mia.bilanToReview')}</h3><ul>${rowsRev}</ul>` : ''}
+  ${rowsNotes ? `<h3>${t('mia.bilanNotes')}</h3><table>${rowsNotes}</table>` : ''}
+  <div class="foot">MAPO+ · EDUFREM — ${esc(dateStr)}</div>
+  </body></html>`)
+  w.document.close()
 }
 
 // Menu repliable en icônes (desktop) — persisté ; le menu reste fixe (ne défile pas).
@@ -1572,6 +1611,8 @@ onUnmounted(() => {
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }
 .card-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.pdf-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--pr-rgb), .1); color: var(--pr); border: none; border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.pdf-btn:hover { background: rgba(var(--pr-rgb), .18); }
 .obj-chip { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: var(--pr); background: rgba(var(--pr-rgb), .10); }
 .muted { color: var(--tx3, #6b7280); font-size: 14px; margin: 0 0 14px; } .small { font-size: 13px; }
 .lnk { background: none; border: none; color: var(--pr); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }
