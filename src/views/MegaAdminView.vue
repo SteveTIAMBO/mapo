@@ -29,7 +29,11 @@
         <button
           class="ma-tab" :class="{ active: tab === 'miapo' }"
           role="tab" type="button" @click="tab = 'miapo'"
-        >MAPO+</button>
+        >MAPO+ · Adoption</button>
+        <button
+          class="ma-tab" :class="{ active: tab === 'comptesMapoplus' }"
+          role="tab" type="button" @click="tab = 'comptesMapoplus'"
+        >Comptes MAPO+</button>
       </div>
 
       <!-- Vue Paiements scolarité -->
@@ -37,6 +41,9 @@
 
       <!-- Vue MAPO+ (analytics d'adoption B2C) -->
       <MegaMiapoAnalytics v-else-if="tab === 'miapo'" />
+
+      <!-- Vue Comptes MAPO+ (registre des inscrits B2C) -->
+      <MegaMapoplusUsers v-else-if="tab === 'comptesMapoplus'" />
 
       <!-- Vue Établissements (existante) -->
       <template v-else>
@@ -512,6 +519,7 @@ import { useAuthStore } from '../stores/auth'
 import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
 import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
+import MegaMapoplusUsers from './admin/MegaMapoplusUsers.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
