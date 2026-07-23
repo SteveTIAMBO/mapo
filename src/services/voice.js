@@ -160,6 +160,7 @@ export function createConversation({ lang = 'fr', onText, onState } = {}) {
   let rec = null
   let active = false
   let speaking = false
+  let speakStartAt = 0
   let restartTimer = null
   const emit = (s) => { try { onState && onState(s) } catch { /* no-op */ } }
 
@@ -171,7 +172,10 @@ export function createConversation({ lang = 'fr', onText, onState } = {}) {
     rec.interimResults = true
     rec.maxAlternatives = 1
     // Barge-in : dès que l'utilisateur parle, on coupe la lecture de MIAPO.
-    rec.onspeechstart = () => { if (speaking) { stopSpeaking(); speaking = false; emit('listening') } }
+    // Garde de 600 ms après le début de la lecture pour éviter que la voix de
+    // MIAPO (captée par le micro) ne se coupe elle-même sur les appareils sans
+    // annulation d'écho.
+    rec.onspeechstart = () => { if (speaking && Date.now() - speakStartAt > 600) { stopSpeaking(); speaking = false; emit('listening') } }
     rec.onresult = (e) => {
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i]
@@ -206,7 +210,7 @@ export function createConversation({ lang = 'fr', onText, onState } = {}) {
     // MIAPO parle sa réponse ; l'écoute reste active pour permettre le barge-in.
     say(text) {
       if (!active || !text) return
-      speaking = true; emit('speaking')
+      speaking = true; speakStartAt = Date.now(); emit('speaking')
       speak(text, {
         lang,
         onend: () => { speaking = false; if (active) emit('listening') },
