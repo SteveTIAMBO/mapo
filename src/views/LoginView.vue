@@ -231,7 +231,9 @@ async function handleSignUp() {
     // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
     // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
     if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
-    router.push('/parent/miapo') // nouveau compte B2C → MAPO+
+    // Nouveau compte B2C : écran d'activation tant que l'e-mail n'est pas
+    // confirmé (le lien de bienvenue vient d'être envoyé).
+    router.push(result.needsVerification ? '/verifier-email' : '/parent/miapo')
   } else {
     errorMessage.value = result.error
   }

@@ -68,6 +68,19 @@
     "taglineMiapo": "Your private tutor, 24/7",
     "countryLabel": "Country"
   },
+  "verifyEmail": {
+    "title": "Activate your MAPO+ account",
+    "sentTo": "We've just sent an activation link to:",
+    "checkSpam": "Open the email and click the link to unlock your space. Check your spam folder if you don't see it.",
+    "iActivated": "I've activated my account",
+    "checking": "Checking…",
+    "resend": "Resend the email",
+    "resendWait": "Resend in {s}s",
+    "resendDone": "Done. A new email is on its way.",
+    "resendErr": "Sending failed. Please try again shortly.",
+    "notYet": "Not activated yet. Click the link in the email, then try again.",
+    "signOut": "Sign out"
+  },
   "header": {
     "menu": "Menu",
     "greetingMorning": "Good morning",

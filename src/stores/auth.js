@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  sendEmailVerification,
   updateProfile,
   signOut,
   onAuthStateChanged,
@@ -17,8 +18,9 @@ import {
   doc, getDoc, setDoc, updateDoc,
   collection, query, where, getDocs, serverTimestamp
 } from 'firebase/firestore'
-import { isSchoolTenant } from '../utils/tenantContext'
+import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
 import { identifierToEmail } from '../utils/identifier'
+import { currentLang } from '../i18n'
 
 // Comptes demo SECONDAIRE (pas de Firebase, bypass complet, mot de passe requis)
 const DEMO_ACCOUNTS = {
@@ -365,14 +367,17 @@ export const useAuthStore = defineStore('auth', () => {
             persona: meta.role === 'apprenant' ? 'apprenant' : 'parent',
             pays: meta.pays || '',
             source: 'mapo+',
+            activated: false,
             createdAt: serverTimestamp(),
             lastSeenAt: serverTimestamp(),
           }, { merge: true })
         } catch (e) { console.warn('[mapoplus_users] écriture ignorée:', e && e.code) }
+        // E-mail de bienvenue MAPO+ + lien d'activation (Firebase). Non bloquant.
+        await sendWelcomeVerification(result.user)
       }
       user.value = result.user // pose tout de suite (cf loginWithEmail)
       await loadUserProfile(result.user)
-      return { success: true }
+      return { success: true, needsVerification: !!(meta && meta.b2c) && !result.user.emailVerified }
     } catch (error) {
       console.error('Erreur inscription:', error)
       let msg = "La création du compte a échoué."
@@ -384,6 +389,76 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  // ── MAPO+ : activation du compte par e-mail (Firebase) ───────────────
+  // On réutilise le pipeline d'e-mails Firebase (déjà en place pour le reset
+  // de mot de passe) : livraison Google, aucun serveur SMTP à gérer, rien à
+  // régler côté SPF/DKIM/DMARC de notre domaine. Le lien confirme l'adresse
+  // (emailVerified) puis renvoie sur l'espace MAPO+.
+  function buildVerifyActionSettings() {
+    return {
+      url: `${window.location.origin}/parent/miapo?active=1`,
+      handleCodeInApp: false,
+    }
+  }
+
+  async function sendWelcomeVerification(fbUser) {
+    if (!fbUser) return false
+    try {
+      // Langue de l'e-mail = langue de l'app (modèles FR/EN de la console).
+      try { auth.languageCode = currentLang() === 'en' ? 'en' : 'fr' } catch { /* défaut projet */ }
+      await sendEmailVerification(fbUser, buildVerifyActionSettings())
+      return true
+    } catch (e) {
+      console.warn('[mapo+] envoi e-mail de bienvenue ignoré:', e && e.code)
+      return false
+    }
+  }
+
+  /** Renvoie l'e-mail d'activation au compte connecté (bouton « renvoyer »). */
+  async function resendVerification() {
+    return sendWelcomeVerification(auth.currentUser)
+  }
+
+  /**
+   * Marque le compte MAPO+ « activé » dans mapoplus_users (suivi méga-admin).
+   * Écriture fusionnée non bloquante ; réservée à l'instance MAPO+ et aux
+   * comptes dont l'e-mail est confirmé.
+   */
+  async function markActivated() {
+    const u = auth.currentUser
+    if (!isMiapoTenant() || !u || !u.emailVerified) return
+    try {
+      await setDoc(doc(db, 'mapoplus_users', u.uid), {
+        uid: u.uid,
+        email: u.email || '',
+        displayName: u.displayName || '',
+        source: 'mapo+',
+        activated: true,
+        activatedAt: serverTimestamp(),
+        lastSeenAt: serverTimestamp(),
+      }, { merge: true })
+    } catch (e) { console.warn('[mapoplus_users] activation ignorée:', e && e.code) }
+  }
+
+  /**
+   * Vérifie que l'e-mail est confirmé. Court-circuit si déjà vérifié (aucun
+   * appel réseau → sûr hors-ligne). Sinon on recharge une fois l'état Firebase
+   * (l'utilisateur vient peut-être de cliquer le lien) puis, si c'est bon, on
+   * marque le compte activé. Renvoie true si l'accès MAPO+ est autorisé.
+   */
+  async function ensureEmailVerified() {
+    const u = auth.currentUser
+    if (!u) return true            // pas de compte Firebase (démo…) : géré ailleurs
+    if (u.emailVerified) return true
+    try { await u.reload() } catch { /* hors-ligne : on reste bloqué, normal */ }
+    if (auth.currentUser && auth.currentUser.emailVerified) {
+      user.value = auth.currentUser
+      await markActivated()
+      return true
+    }
+    return false
+  }
+
   // Connexion avec email/mot de passe
   async function loginWithEmail(email, password) {
     try {
@@ -393,6 +468,7 @@ export const useAuthStore = defineStore('auth', () => {
       // connecté » avant que onAuthStateChanged ne se déclenche → renvoi au login).
       user.value = result.user
       await loadUserProfile(result.user)
+      await markActivated()
       return { success: true }
     } catch (error) {
       console.error('Erreur connexion email:', error)
@@ -464,6 +540,7 @@ export const useAuthStore = defineStore('auth', () => {
       const result = await signInWithPopup(auth, googleProvider)
       user.value = result.user // voir loginWithEmail : éviter le renvoi au login
       await loadUserProfile(result.user)
+      await markActivated()
       return { success: true }
     } catch (error) {
       console.error('Erreur connexion Google:', error)
@@ -784,6 +861,7 @@ export const useAuthStore = defineStore('auth', () => {
     edition, isEditionSuperieur, isEditionSecondaire,
     isDemo, notProvisioned, isSuperAdmin, schoolId, userFirstName,
     loginDemo, loginDemoSup, loginWithEmail, loginWithIdentifier, signUpWithEmail, loginWithGoogle, resetPassword,
+    resendVerification, ensureEmailVerified,
     sendPasswordResetToMe,
     needsPassword, setInitialPassword, dismissNeedsPassword,
     magicLinkError, clearMagicLinkError,

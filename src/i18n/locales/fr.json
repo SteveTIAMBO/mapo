@@ -68,6 +68,19 @@
     "taglineMiapo": "Ton professeur particulier, 24/7",
     "countryLabel": "Pays"
   },
+  "verifyEmail": {
+    "title": "Active ton compte MAPO+",
+    "sentTo": "On vient de t'envoyer un lien d'activation à :",
+    "checkSpam": "Ouvre l'e-mail et clique sur le lien pour débloquer ton espace. Pense à regarder dans les indésirables si tu ne le vois pas.",
+    "iActivated": "J'ai activé mon compte",
+    "checking": "Vérification…",
+    "resend": "Renvoyer l'e-mail",
+    "resendWait": "Renvoyer dans {s} s",
+    "resendDone": "C'est reparti : un nouvel e-mail arrive.",
+    "resendErr": "L'envoi a échoué. Réessaie dans un instant.",
+    "notYet": "Pas encore activé. Clique sur le lien reçu par e-mail, puis réessaie.",
+    "signOut": "Me déconnecter"
+  },
   "header": {
     "menu": "Menu",
     "greetingMorning": "Bonjour",

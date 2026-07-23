@@ -79,6 +79,12 @@ const routes = [
     meta: { requiresAuth: false, title: 'MAPO+' }
   },
   {
+    path: '/verifier-email',
+    name: 'VerifierEmail',
+    component: () => import('../views/VerifierEmailView.vue'),
+    meta: { requiresAuth: false, title: 'Activer mon compte' }
+  },
+  {
     // Retour du flux OAuth « Se connecter avec Carré ».
     path: '/oauth/carre/callback',
     name: 'CarreCallback',
@@ -491,6 +497,17 @@ router.beforeEach(async (to) => {
     if (!isLoggedIn) {
       const publicMiapo = new Set(['MiapoWelcome', 'Login', 'VerifierDiplome', 'CompteNonConfigure'])
       if (!publicMiapo.has(to.name)) return { name: 'MiapoWelcome' }
+    }
+    // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail
+    // confirmé. Tant que l'activation n'est pas faite → écran d'activation.
+    if (isFirebaseUser) {
+      const verified = await authStore.ensureEmailVerified()
+      if (!verified) {
+        const verifyAllowed = new Set(['VerifierEmail', 'MiapoWelcome', 'VerifierDiplome', 'CompteNonConfigure'])
+        if (!verifyAllowed.has(to.name)) return { name: 'VerifierEmail' }
+      } else if (to.name === 'VerifierEmail') {
+        return { path: '/parent/miapo' }
+      }
     }
   }
 
