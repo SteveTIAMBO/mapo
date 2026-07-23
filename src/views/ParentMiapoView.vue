@@ -81,6 +81,17 @@
             </div>
           </div>
 
+          <!-- Rappels intelligents : devoirs à rendre + révision du jour -->
+          <button v-if="rappels.hasAny" type="button" class="card rappel-card" @click="section = 'planning'">
+            <div class="rappel-head"><MiapoOrbe :size="16" :frozen="true" /><h3>{{ t('mia.remindTitle') }}</h3></div>
+            <div class="rappel-lines">
+              <span v-if="rappels.late" class="rappel-line late">{{ t('mia.remindOverdue', { n: rappels.late }) }}</span>
+              <span v-if="rappels.due" class="rappel-line">{{ t('mia.remindDueToday', { n: rappels.due }) }}</span>
+              <span v-if="rappels.revision" class="rappel-line rev">{{ t('mia.remindReviseToday', { sujet: rappels.revision }) }}</span>
+            </div>
+            <span class="rappel-cta">{{ t('mia.remindOpen') }} <ChevronRight :size="14" /></span>
+          </button>
+
           <!-- Programme de révision jusqu'à l'examen (certification) -->
           <div v-if="planCertif" class="card certif-plan-card">
             <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.certifPlanTitle') }}</h3><span class="cp-jn">{{ t('mia.certifJn', { n: planCertif.jours }) }}</span></div>
@@ -1167,6 +1178,21 @@ const aReviser = computed(() => {
   return [...map.values()]
 })
 
+// ── Rappels intelligents (accueil) : devoirs à rendre aujourd'hui / en retard
+// (lus depuis le planning) + 1 sujet à réviser. Nudge non intrusif vers le
+// planning ; s'affiche seulement s'il y a quelque chose à signaler. ──
+const rappels = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return { due: 0, late: 0, revision: '', hasAny: false }
+  let devoirs = []
+  try { const r = localStorage.getItem('mapo_b2c_devoirs_' + (e.id || 'me')); if (r) devoirs = JSON.parse(r) } catch { /* silent */ }
+  const today = new Date().toISOString().slice(0, 10)
+  const due = devoirs.filter((d) => !d.fait && d.echeance === today).length
+  const late = devoirs.filter((d) => !d.fait && d.echeance && d.echeance < today).length
+  const revision = (aReviser.value[0] && aReviser.value[0].matiere) || ''
+  return { due, late, revision, hasAny: due > 0 || late > 0 }
+})
+
 // ── Agenda de révision de la semaine : le tuteur propose 1 sujet à réviser par
 // jour ouvré, à partir des points faibles de l'apprenant (week-end = repos). ──
 function _startOfWeek(d) { const x = new Date(d); const dow = (x.getDay() + 6) % 7; x.setDate(x.getDate() - dow); x.setHours(0, 0, 0, 0); return x }
@@ -1629,6 +1655,14 @@ onUnmounted(() => {
 .card-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
 .pdf-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--pr-rgb), .1); color: var(--pr); border: none; border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .pdf-btn:hover { background: rgba(var(--pr-rgb), .18); }
+.rappel-card { display: block; width: 100%; text-align: left; cursor: pointer; border: 1px solid rgba(var(--pr-rgb), .28); background: linear-gradient(180deg, rgba(var(--pr-rgb), .06), rgba(var(--pr-rgb), .02)); }
+.rappel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.rappel-head h3 { font-size: 14.5px; font-weight: 700; margin: 0; color: var(--tx); }
+.rappel-lines { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; }
+.rappel-line { font-size: 13.5px; color: var(--tx); }
+.rappel-line.late { color: #D93025; font-weight: 600; }
+.rappel-line.rev { color: var(--tx2, var(--tx3)); }
+.rappel-cta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--pr); }
 .obj-chip { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: var(--pr); background: rgba(var(--pr-rgb), .10); }
 .muted { color: var(--tx3, #6b7280); font-size: 14px; margin: 0 0 14px; } .small { font-size: 13px; }
 .lnk { background: none; border: none; color: var(--pr); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }

@@ -5093,7 +5093,13 @@
     "planRevise": "Review:",
     "planLate": "Overdue since {date}",
     "planDueToday": "Due today",
-    "planDueOn": "Due {date}"
+    "planDueOn": "Due {date}",
+    "remindTitle": "MIAPO reminds you",
+    "remindDueToday": "Due today: {n}",
+    "remindOverdue": "Overdue: {n}",
+    "remindReviseToday": "Review today: {sujet}",
+    "remindOpen": "Open my planner",
+    "remindAllDone": "All caught up — keep it up!"
   },
   "cx": {
     "appTitle": "Complex workspace",

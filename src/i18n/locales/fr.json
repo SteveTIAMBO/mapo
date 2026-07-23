@@ -5093,7 +5093,13 @@
     "planRevise": "À réviser :",
     "planLate": "En retard depuis le {date}",
     "planDueToday": "À rendre aujourd’hui",
-    "planDueOn": "À rendre le {date}"
+    "planDueOn": "À rendre le {date}",
+    "remindTitle": "MIAPO te rappelle",
+    "remindDueToday": "À rendre aujourd’hui : {n}",
+    "remindOverdue": "En retard : {n}",
+    "remindReviseToday": "À réviser aujourd’hui : {sujet}",
+    "remindOpen": "Voir mon planning",
+    "remindAllDone": "Tout est à jour, continue comme ça !"
   },
   "cx": {
     "appTitle": "Espace complexe",
