@@ -1,29 +1,29 @@
 <template>
-  <div class="inst">
-    <!-- Déjà installée : rien à proposer -->
-    <div v-if="installee" class="inst-ok"><Check :size="14" /> <span>{{ t('mia.instDone') }}</span></div>
+  <!-- Rien à afficher si l'app est déjà installée (ouverte en mode standalone). -->
+  <div v-if="!installee" class="inst">
+    <button class="inst-btn" @click="clic">
+      <span class="inst-ic"><Download :size="16" /></span>
+      <span class="inst-tx">
+        <strong>{{ t('mia.instCta') }}</strong>
+        <small>{{ t('mia.instSub') }}</small>
+      </span>
+    </button>
 
-    <template v-else>
-      <button class="inst-btn" @click="clic">
-        <Download :size="15" /> <span>{{ t('mia.instCta') }}</span>
-      </button>
-
-      <!-- Pas de prompt natif (iPhone, ou évènement manqué) → mode d'emploi -->
-      <div v-if="aide" class="inst-help">
-        <p class="inst-why">{{ t('mia.instWhy') }}</p>
-        <ol class="inst-steps">
-          <li v-for="(s, i) in etapes" :key="i">{{ s }}</li>
-        </ol>
-        <button class="inst-close" @click="aide = false">{{ t('mia.instClose') }}</button>
-      </div>
-    </template>
+    <!-- Pas de prompt natif (iPhone, ou évènement manqué) → mode d'emploi -->
+    <div v-if="aide" class="inst-help">
+      <p class="inst-why">{{ t('mia.instWhy') }}</p>
+      <ol class="inst-steps">
+        <li v-for="(s, i) in etapes" :key="i">{{ s }}</li>
+      </ol>
+      <button class="inst-close" @click="aide = false">{{ t('mia.instClose') }}</button>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Download, Check } from 'lucide-vue-next'
+import { Download } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const prompt = ref(null)     // évènement natif d'installation (Android/Chrome)
@@ -45,11 +45,17 @@ const etapes = computed(() => {
 
 function onPrompt(e) { e.preventDefault(); prompt.value = e }
 function onInstalled() { installee.value = true; aide.value = false }
+// Détecte l'installation : mode standalone (app ouverte depuis l'écran d'accueil).
+function detectInstalled() {
+  try {
+    return !!(window.matchMedia?.('(display-mode: standalone)')?.matches
+      || window.matchMedia?.('(display-mode: window-controls-overlay)')?.matches
+      || window.navigator.standalone)
+  } catch { return false }
+}
 
 onMounted(() => {
-  try {
-    installee.value = !!(window.matchMedia?.('(display-mode: standalone)')?.matches || window.navigator.standalone)
-  } catch { /* silencieux */ }
+  installee.value = detectInstalled()
   window.addEventListener('beforeinstallprompt', onPrompt)
   window.addEventListener('appinstalled', onInstalled)
 })
@@ -72,9 +78,25 @@ async function clic() {
 
 <style scoped>
 .inst { margin: 4px 0; }
-.inst-btn { display: flex; align-items: center; gap: 9px; width: 100%; padding: 9px 12px; border: 1px dashed rgba(var(--pr-rgb), .5); background: rgba(var(--pr-rgb), .05); color: var(--pr); border-radius: 10px; font-family: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; text-align: left; }
-.inst-btn:hover { background: rgba(var(--pr-rgb), .12); border-style: solid; }
-.inst-ok { display: flex; align-items: center; gap: 7px; padding: 8px 12px; font-size: 12.5px; font-weight: 600; color: #1B8A5A; }
+/* CTA d'installation — vrai bouton mis en avant (dégradé de la marque). */
+.inst-btn {
+  display: flex; align-items: center; gap: 11px; width: 100%;
+  padding: 11px 13px; border: none; border-radius: 13px;
+  background: linear-gradient(135deg, var(--pr), #7c5cff); color: #fff;
+  font-family: inherit; cursor: pointer; text-align: left;
+  box-shadow: 0 6px 16px rgba(var(--pr-rgb), .30);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.inst-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgba(var(--pr-rgb), .38); }
+.inst-btn:active { transform: translateY(0); box-shadow: 0 4px 12px rgba(var(--pr-rgb), .30); }
+.inst-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  background: rgba(255, 255, 255, .22);
+}
+.inst-tx { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.inst-tx strong { font-size: 14px; font-weight: 700; }
+.inst-tx small { font-size: 11.5px; opacity: .9; }
 .inst-help { margin-top: 8px; padding: 12px 14px; background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; }
 .inst-why { margin: 0 0 8px; font-size: 12.5px; color: var(--tx2); line-height: 1.45; }
 .inst-steps { margin: 0; padding-left: 18px; font-size: 12.5px; color: var(--tx2); line-height: 1.7; }
