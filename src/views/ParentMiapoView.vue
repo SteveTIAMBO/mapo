@@ -320,6 +320,17 @@
           </div>
         </section>
 
+        <!-- ========== PLANNING (devoirs + semaine) ========== -->
+        <section v-else-if="section === 'planning'" class="sec">
+          <MiapoPlanning
+            :enfant-id="activeEnfant?.id || 'me'"
+            :matieres="matieresList"
+            :a-reviser="aReviser"
+            :can-edit="isApprenant"
+            @revise="(m) => isApprenant && goRevise(m)"
+          />
+        </section>
+
         <!-- ========== ORIENTATION ========== -->
         <!-- ========== PROFIL 6C ========== -->
         <!-- ========== EMPLOI DU TEMPS ========== -->
@@ -737,7 +748,8 @@ import MiapoAccessibilite from '../components/MiapoAccessibilite.vue'
 import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
+import MiapoPlanning from '../components/MiapoPlanning.vue'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -772,6 +784,7 @@ const SECTIONS = computed(() => {
   const home = { key: 'accueil', label: t('mia.secHome'), icon: Home }
   const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp }
   const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays }
+  const planning = { key: 'planning', label: t('mia.secPlanning'), icon: CalendarCheck }
   const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass }
   // Utilisation (jauge) + Facturation : accès direct au menu principal (payeurs).
   const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge }
@@ -787,7 +800,7 @@ const SECTIONS = computed(() => {
   // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
   // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, edt, usage, ...billingItems]
+    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, planning, edt, usage, ...billingItems]
   }
   return [
     home,
@@ -795,7 +808,7 @@ const SECTIONS = computed(() => {
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList }] : []),
     { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
-    progress, edt,
+    progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
     orient,
     usage, ...billingItems,
@@ -862,6 +875,9 @@ function onB2CAction(e) {
     case 'progression': section.value = 'progression'; return
     case 'orientation': section.value = 'orientation'; return
     case 'edt': section.value = 'edt'; return
+    case 'planning':
+    case 'devoirs':
+    case 'calendrier': section.value = 'planning'; return
     case 'notes': section.value = 'enfants'; return
   }
 }
