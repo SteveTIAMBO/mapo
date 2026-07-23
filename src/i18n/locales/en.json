@@ -81,6 +81,25 @@
     "notYet": "Not activated yet. Click the link in the email, then try again.",
     "signOut": "Sign out"
   },
+  "miaOnb": {
+    "lead": "Welcome to MAPO+!",
+    "personaQ": "You're using MAPO+ to…",
+    "personaParent": "Follow my child",
+    "personaParentHint": "I'm a parent supporting one or more children.",
+    "personaLearner": "Study on my own",
+    "personaLearnerHint": "I'm the pupil, student or learner.",
+    "levelQ": "Your country and level",
+    "levelSub": "MAPO+ loads the right programme: subjects and grade types.",
+    "detailsQ": "Almost done",
+    "detailsSub": "A few more details and you're set.",
+    "childName": "Child's first name",
+    "learnerName": "Your first name",
+    "back": "Back",
+    "next": "Continue",
+    "start": "Let's go",
+    "nameRequired": "Enter a first name to continue.",
+    "formationRequired": "Enter your programme name."
+  },
   "header": {
     "menu": "Menu",
     "greetingMorning": "Good morning",

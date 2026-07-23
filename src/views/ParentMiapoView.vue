@@ -1,5 +1,8 @@
 <template>
   <div class="miapo-shell">
+    <!-- Onboarding guidé au 1er lancement (nouveau compte B2C) -->
+    <MiapoOnboarding v-if="showOnboarding" @done="onOnboardingDone" />
+
     <!-- Fond sombre quand le menu coulissant est ouvert (mobile) -->
     <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
 
@@ -760,6 +763,7 @@ import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
+import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -959,6 +963,13 @@ const L = computed(() => isApprenant.value ? {
 
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
+
+// Onboarding guidé au 1er lancement (nouveau compte B2C sans profil). Voir MiapoOnboarding.vue.
+const showOnboarding = ref(false)
+function onOnboardingDone() {
+  showOnboarding.value = false
+  activeId.value = enfants.value[0]?.id || ''
+}
 // Le menu change selon le mode (parent allégé / apprenant complet) et le niveau
 // (annales). Si la section courante disparaît du menu, on revient à l'accueil
 // plutôt que d'afficher une page vide.
@@ -1487,6 +1498,9 @@ onMounted(async () => {
   // même après un rechargement — sinon l'enfant retomberait sur le 1er profil.
   const sess = store.childSessionId
   activeId.value = (sess && enfants.value.some((e) => e.id === sess) ? sess : enfants.value[0]?.id) || ''
+  // Onboarding guidé au 1er lancement : nouveau compte B2C sans aucun profil.
+  // Forçable en QA via ?onboarding=1 ; la démo (profil amorcé) ne le déclenche pas.
+  showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
   // Relance WhatsApp : rafraîchit la date de dernière révision des enfants opt-in
   // à chaque ouverture (best-effort, silencieux).
   relance.refresh()

@@ -81,6 +81,25 @@
     "notYet": "Pas encore activé. Clique sur le lien reçu par e-mail, puis réessaie.",
     "signOut": "Me déconnecter"
   },
+  "miaOnb": {
+    "lead": "Bienvenue sur MAPO+ !",
+    "personaQ": "Tu utilises MAPO+ pour…",
+    "personaParent": "Suivre mon enfant",
+    "personaParentHint": "Je suis parent et j'accompagne un ou plusieurs enfants.",
+    "personaLearner": "Réviser moi-même",
+    "personaLearnerHint": "Je suis l'élève, l'étudiant ou l'apprenant.",
+    "levelQ": "Ton pays et ton niveau",
+    "levelSub": "MAPO+ charge le bon programme : matières et types de notes.",
+    "detailsQ": "Presque fini",
+    "detailsSub": "Encore quelques infos et c'est parti.",
+    "childName": "Prénom de l'enfant",
+    "learnerName": "Ton prénom",
+    "back": "Retour",
+    "next": "Continuer",
+    "start": "C'est parti",
+    "nameRequired": "Indique un prénom pour continuer.",
+    "formationRequired": "Indique le nom de ta formation."
+  },
   "header": {
     "menu": "Menu",
     "greetingMorning": "Bonjour",
