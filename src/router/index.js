@@ -341,6 +341,24 @@ const routes = [
         meta: { title: 'Bibliothèque' }
       },
       {
+        path: 'transport',
+        name: 'Transport',
+        component: () => import('../views/TransportView.vue'),
+        meta: { title: 'Transport scolaire' }
+      },
+      {
+        path: 'cantine',
+        name: 'Cantine',
+        component: () => import('../views/CantineView.vue'),
+        meta: { title: 'Cantine' }
+      },
+      {
+        path: 'infirmerie',
+        name: 'Infirmerie',
+        component: () => import('../views/InfirmerieView.vue'),
+        meta: { title: 'Infirmerie & santé' }
+      },
+      {
         path: 'facturation',
         name: 'Facturation',
         component: () => import('../views/FacturationView.vue'),
