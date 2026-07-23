@@ -128,10 +128,23 @@ const greeting = computed(() => {
   return t('header.greetingEvening')
 })
 
-const displayName = computed(() => authStore.userProfile?.firstName
-  ? `${authStore.userProfile.firstName} ${authStore.userProfile.lastName || ''}`.trim()
-  : (authStore.user?.displayName || ''))
+// En B2C, en mode apprenant ou compte enfant, l'en-tête reflète L'APPRENANT
+// (et non le compte parent) : l'avatar et le prénom correspondent à l'élève affiché.
+const b2cLearner = computed(() => {
+  if (!authStore.isB2C) return null
+  if (miapoStore.mode === 'apprenant' || miapoStore.isCompteEnfant) return miapoStore.enfants?.[0] || null
+  return null
+})
+const displayName = computed(() => {
+  const l = b2cLearner.value
+  if (l) return `${l.firstName} ${l.lastName || ''}`.trim()
+  return authStore.userProfile?.firstName
+    ? `${authStore.userProfile.firstName} ${authStore.userProfile.lastName || ''}`.trim()
+    : (authStore.user?.displayName || '')
+})
 const initials = computed(() => {
+  const l = b2cLearner.value
+  if (l) return ((l.firstName?.[0] || '') + (l.lastName?.[0] || '')).toUpperCase()
   // Priorité au profil enregistré (prénom + nom) ; repli sur le displayName.
   const p = authStore.userProfile
   if (p && (p.firstName || p.lastName)) {
@@ -140,7 +153,7 @@ const initials = computed(() => {
   const name = authStore.user?.displayName || ''
   return name.split(' ').map(word => word.charAt(0).toUpperCase()).join('').slice(0, 2)
 })
-const userPhoto = computed(() => authStore.userProfile?.photoURL || authStore.user?.photoURL || null)
+const userPhoto = computed(() => b2cLearner.value?.photoURL || authStore.userProfile?.photoURL || authStore.user?.photoURL || null)
 
 function openSearch() {
   window.dispatchEvent(new CustomEvent('open-global-search'))

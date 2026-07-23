@@ -617,7 +617,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   // sans saisie préalable. Démo uniquement, et seulement si aucun enfant.
   function seedDemoIfEmpty() {
     if (enfants.value.length) return
-    const id = addEnfant({ firstName: 'Awa', lastName: 'Démo', gender: 'F', niveau: '5ème', pays: 'CM' })
+    const id = addEnfant({ firstName: 'Awa', lastName: 'Nkeng', gender: 'F', niveau: '5ème', pays: 'CM' })
     addNote(id, 'Mathématiques', 8)
     addNote(id, 'Français', 14)
     addNote(id, 'Anglais', 11)

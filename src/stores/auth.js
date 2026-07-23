@@ -29,7 +29,7 @@ const DEMO_ACCOUNTS = {
   parent: { uid: 'demo-parent', firstName: 'Thomas', lastName: 'Mbarga', role: 'parent', email: 'parent@demo' },
   eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo', className: '6ème A' },
   // MAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MAPO+ seul.
-  miapo: { uid: 'demo-miapo', firstName: 'Famille', lastName: 'Démo', role: 'parent', email: 'miapo@demo', b2c: true },
+  miapo: { uid: 'demo-miapo', firstName: 'Mariam', lastName: 'Nkeng', role: 'parent', email: 'miapo@demo', b2c: true },
   // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).
   // → espace groupe consolidé (/complexe). En démo, complexeId 'demo' = seed d'exemple.
   complexe: { uid: 'demo-complexe', firstName: 'Rose', lastName: 'Ngo Bell', role: 'directeur_complexe', email: 'complexe@demo', complexeId: 'demo' },

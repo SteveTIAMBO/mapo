@@ -770,8 +770,9 @@ const SECTIONS = computed(() => {
   // Utilisation (jauge) + Facturation : accès direct au menu principal (payeurs).
   const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge }
   const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt }
-  // Facturation = parent + apprenant (les payeurs). Le compte ENFANT ne paie pas.
-  const billingItems = store.isCompteEnfant ? [] : [billing]
+  // Facturation = réservée au PARENT (le payeur). L'élève/apprenant et le compte
+  // enfant ne gèrent pas la facturation (leur abonnement reste dans Paramètres).
+  const billingItems = (store.isCompteEnfant || isApprenant.value) ? [] : [billing]
   // Abonnement retiré du menu principal → vit dans les Paramètres (section « Profil »).
   // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
   // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne

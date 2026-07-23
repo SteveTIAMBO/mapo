@@ -27,7 +27,7 @@
       </div>
 
       <button class="btn btn-primary gen-btn" :disabled="!hasCourse" @click="generer">
-        <Sparkles :size="15" /> <span>{{ t('mia.fichesGenerate') }}</span>
+        <MiapoOrbe :size="17" :frozen="true" /> <span>{{ t('mia.fichesGenerate') }}</span>
       </button>
       <p class="foot"><Info :size="13" /> {{ t('mia.fichesFromCourseNote') }}</p>
       <p v-if="state === 'error'" class="err-line">{{ errorMsg }}</p>
@@ -81,7 +81,8 @@ import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
-import { Layers, Sparkles, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
+import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
 import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
