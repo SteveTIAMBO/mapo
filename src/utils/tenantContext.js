@@ -62,7 +62,7 @@ function detect() {
   if (host.endsWith('.' + ROOT_DOMAIN)) {
     const sub = host.slice(0, -('.' + ROOT_DOMAIN).length).split('.')[0]
     if (sub === 'adminmapo' || sub === 'admin') return { mode: 'megaAdmin', source: 'host' }
-    if (sub === 'miapo') return { mode: 'miapo', source: 'host' }
+    if (sub === 'miapo' || sub === 'mapoplus') return { mode: 'miapo', source: 'host' }
     if (sub) return { mode: 'school', schoolId: sub, source: 'host' }
   }
 

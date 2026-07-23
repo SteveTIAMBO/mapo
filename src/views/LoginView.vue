@@ -12,10 +12,10 @@
       </div>
       <!-- Logo -->
       <div class="auth-logo">
-        <div class="auth-logo-mark">M</div>
+        <div class="auth-logo-mark">{{ isMiapoMode ? 'M+' : 'M' }}</div>
         <div>
-          <div class="auth-logo-title">MAPO</div>
-          <div class="auth-logo-sub">{{ t('login.tagline') }}</div>
+          <div class="auth-logo-title">{{ isMiapoMode ? 'MAPO+' : 'MAPO' }}</div>
+          <div class="auth-logo-sub">{{ isMiapoMode ? t('login.taglineMiapo') : t('login.tagline') }}</div>
         </div>
       </div>
 

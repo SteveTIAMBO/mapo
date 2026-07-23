@@ -64,7 +64,8 @@
     "sendLink": "Envoyer le lien",
     "backToSignIn": "← Retour à la connexion",
     "roleParentHint": "Vous ajouterez le compte de votre enfant une fois connecté.",
-    "roleLearnerHint": "Vous êtes l'élève ou l'étudiant qui révise pour lui-même."
+    "roleLearnerHint": "Vous êtes l'élève ou l'étudiant qui révise pour lui-même.",
+    "taglineMiapo": "Ton professeur particulier, 24/7"
   },
   "header": {
     "menu": "Menu",
