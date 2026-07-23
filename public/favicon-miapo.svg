@@ -1,14 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="MAPO+">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="MAPO+">
   <defs>
     <linearGradient id="mg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0A84FF"/>
-      <stop offset="1" stop-color="#7C5CFF"/>
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#6d28d9"/>
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="15" fill="url(#mg)"/>
-  <g transform="translate(3,11) scale(0.8)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M8 40 V12 L23 31 L38 12 V40" stroke="#ffffff" stroke-width="5.5"/>
-    <path d="M46 26 H64" stroke="#BFE3FF" stroke-width="5.5"/>
-    <path d="M55 17 V35" stroke="#BFE3FF" stroke-width="5.5"/>
-  </g>
+  <text x="32" y="44" text-anchor="middle" font-family="'Poppins','Segoe UI',Arial,sans-serif" font-weight="700" font-size="30" fill="#ffffff">M+</text>
 </svg>

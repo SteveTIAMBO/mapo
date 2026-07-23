@@ -12,9 +12,7 @@
       <!-- Logo + intro -->
       <header class="miapo-head">
         <div class="miapo-logo">
-          <div class="miapo-logo-mark">
-            <LogoMapoPlus :size="28" />
-          </div>
+          <div class="miapo-logo-mark">M+</div>
           <div>
             <div class="miapo-logo-title">MAPO<span class="plus">+</span></div>
             <div class="miapo-logo-sub">{{ t('common.byEdufrem') }}</div>
@@ -117,7 +115,6 @@ import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, PAYS, paysParDefaut, setPaysParDefaut } from '../stores/enfantsAutonomes'
 import { setLang } from '../i18n'
-import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -256,6 +253,10 @@ function goCreate() {
   color: #fff;
   flex-shrink: 0;
   box-shadow: 0 8px 24px rgba(124, 58, 237, 0.5);
+  font-family: 'Poppins', sans-serif;
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.02em;
 }
 .miapo-logo-title {
   font-family: 'Poppins', sans-serif;

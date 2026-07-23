@@ -9,7 +9,7 @@
     <!-- ───────── Volet menu (sidebar sur PC ; hamburger coulissant sur mobile) ───────── -->
     <aside class="volet" :class="{ open: menuOpen, collapsed: voletCollapsed }">
       <div class="volet-brand">
-        <div class="brand-ic"><LogoMapoPlus :size="22" /></div>
+        <div class="brand-ic">M+</div>
         <div class="brand-tx"><strong>MAPO+</strong><small>{{ L.brandSub }}</small></div>
         <button type="button" class="volet-close" @click="menuOpen = false" aria-label="Fermer le menu"><X :size="20" /></button>
       </div>
@@ -754,7 +754,6 @@ import MiapoAbonnement from '../components/MiapoAbonnement.vue'
 import MiapoUtilisation from '../components/MiapoUtilisation.vue'
 import MiapoFacturation from '../components/MiapoFacturation.vue'
 import MiapoAlerteUsage from '../components/MiapoAlerteUsage.vue'
-import LogoMapoPlus from '../components/LogoMapoPlus.vue'
 import { ECOLES_CATALOGUE, ecoleCatalogue, formationCatalogue } from '../data/formationsCatalogue'
 import { CERTIFICATIONS, certification, certReferences } from '../data/certificationsCatalogue'
 import MiapoOrbe from '../components/MiapoOrbe.vue'
@@ -1545,7 +1544,7 @@ onUnmounted(() => {
 .volet-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
 .volet-close { display: none; margin-left: auto; background: none; border: none; color: var(--tx3, #6b7280); cursor: pointer; padding: 4px; border-radius: 8px; }
 .volet-close:hover { background: rgba(0,0,0,.05); }
-.brand-ic { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.brand-ic { width: 38px; height: 38px; border-radius: 11px; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 15px; letter-spacing: -0.02em; }
 .brand-tx { display: flex; flex-direction: column; line-height: 1.2; }
 .brand-tx strong { font-size: 16px; color: var(--tx, #1f2937); }
 .brand-tx small { font-size: 11px; color: var(--tx3, #6b7280); }

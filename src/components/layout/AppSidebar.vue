@@ -7,9 +7,9 @@
 
     <!-- Logo -->
     <div class="sidebar-logo">
-      <div class="logo-mark">M</div>
+      <div class="logo-mark" :class="{ 'is-mplus': isMiapoTenant() }">{{ isMiapoTenant() ? 'M+' : 'M' }}</div>
       <transition name="fade">
-        <span v-if="!collapsed || mobileOpen" class="logo-text">MAPO</span>
+        <span v-if="!collapsed || mobileOpen" class="logo-text">{{ isMiapoTenant() ? 'MAPO+' : 'MAPO' }}</span>
       </transition>
     </div>
 
@@ -421,6 +421,10 @@ const handleLogout = async () => {
   font-weight: 700;
   font-size: 16px;
   flex-shrink: 0;
+}
+.logo-mark.is-mplus {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  letter-spacing: -0.02em;
 }
 .logo-text {
   font-family: var(--font-display);
