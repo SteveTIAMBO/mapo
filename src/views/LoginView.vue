@@ -28,15 +28,6 @@
         </ul>
         <p class="mplus-manifesto">{{ t('welcome.manifesto') }}</p>
       </div>
-      <div class="mplus-preview" aria-hidden="true">
-        <div class="mpv-head">
-          <div class="mpv-badge">M+</div>
-          <div><b>{{ t('welcome.previewTitle') }}</b><small>{{ t('welcome.previewProgress') }}</small></div>
-        </div>
-        <div class="mpv-msg">{{ t('welcome.previewMsg') }}</div>
-        <div class="mpv-opt">a² − b²</div>
-        <div class="mpv-opt ok">√(a² + b²) ✓</div>
-      </div>
     </section>
 
     <!-- Colonne connexion / inscription (droite) -->
@@ -143,7 +134,7 @@
       <p class="auth-switch">
         <template v-if="mode === 'login'">
           {{ t('login.noAccount') }}
-          <button type="button" class="auth-switch-link" @click="setMode('signup')">{{ t('login.createOne') }}</button>
+          <button type="button" class="auth-switch-link" @click="isMiapoMode ? openSignup() : setMode('signup')">{{ t('login.createOne') }}</button>
         </template>
         <template v-else>
           {{ t('login.haveAccountQ') }}
@@ -199,6 +190,75 @@
       <p class="auth-footer-org">EDUFREM SAS</p>
       <p class="auth-footer-copy">{{ t('login.copy') }}</p>
     </div>
+    </div>
+
+    <!-- Modale d'inscription MAPO+ (façon Facebook) : centrée sur le login flouté -->
+    <div v-if="isMiapoMode && showSignup" class="mplus-modal-backdrop" @click.self="closeSignup">
+      <div class="mplus-modal">
+        <button type="button" class="mplus-modal-x" @click="closeSignup" aria-label="Fermer">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <h2 class="mplus-modal-title">{{ t('login.createAccount') }}</h2>
+        <p class="mplus-modal-lead">{{ t('welcome.subtitle') }}</p>
+
+        <form @submit.prevent="handleSignUp" class="auth-form">
+          <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
+
+          <div class="auth-field">
+            <label class="auth-label">{{ t('login.yourName') }}</label>
+            <input v-model="signupName" type="text" autocomplete="name" class="auth-input" :placeholder="t('login.namePlaceholder')" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">{{ t('login.accountFor') }}</label>
+            <div class="role-seg">
+              <button type="button" :class="{ on: signupRole === 'parent' }" @click="signupRole = 'parent'">{{ t('login.roleParent') }}</button>
+              <button type="button" :class="{ on: signupRole === 'apprenant' }" @click="signupRole = 'apprenant'">{{ t('login.roleLearner') }}</button>
+            </div>
+            <p class="auth-role-hint">{{ signupRole === 'apprenant' ? t('login.roleLearnerHint') : t('login.roleParentHint') }}</p>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">{{ t('login.countryLabel') }}</label>
+            <select v-model="signupPays" class="auth-input">
+              <option v-for="p in PAYS_OPTIONS" :key="p.code" :value="p.code">{{ p.label }}</option>
+            </select>
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">{{ t('login.email') }}</label>
+            <input v-model="loginEmail" type="text" inputmode="email" autocapitalize="none" autocomplete="username" class="auth-input" :placeholder="t('login.emailPlaceholder')" required />
+          </div>
+
+          <div class="auth-field">
+            <label class="auth-label">{{ t('login.password') }}</label>
+            <div class="auth-input-wrap">
+              <input v-model="loginPassword" :type="showPassword ? 'text' : 'password'" class="auth-input" :placeholder="t('login.password')" required />
+              <button type="button" class="auth-eye" @click="showPassword = !showPassword">
+                <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="auth-btn-primary" :disabled="isLoading">
+            <span v-if="isLoading" class="auth-spinner"></span>
+            <span v-else>{{ t('login.createAccount') }}</span>
+          </button>
+        </form>
+
+        <button type="button" class="auth-btn-google" :disabled="isLoading" @click="handleGoogleLogin">
+          <svg width="17" height="17" viewBox="0 0 48 48" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          {{ t('login.continueGoogle') }}
+        </button>
+
+        <p class="auth-switch">{{ t('login.haveAccountQ') }} <button type="button" class="auth-switch-link" @click="closeSignup">{{ t('login.signIn') }}</button></p>
+      </div>
     </div>
   </div>
 </template>
@@ -259,6 +319,11 @@ const signupName = ref('')
 // Démo : profils types affichés par défaut ; le formulaire login/inscription
 // (réservé aux comptes en ligne / vraies écoles) est masqué derrière un lien.
 const showLogin = ref(false)
+// MAPO+ : l'inscription s'ouvre dans une modale centrée (façon Facebook),
+// par-dessus le login flouté. Sur mobile, la modale passe en plein écran.
+const showSignup = ref(false)
+function openSignup() { errorMessage.value = ''; showSignup.value = true }
+function closeSignup() { showSignup.value = false; errorMessage.value = '' }
 
 function setMode(m) {
   mode.value = m
@@ -340,8 +405,12 @@ onMounted(() => {
   try {
     const sp = new URLSearchParams(window.location.search)
     if (sp.get('signup')) {
-      mode.value = 'signup'
-      showLogin.value = true
+      if (isMiapoMode) {
+        showSignup.value = true
+      } else {
+        mode.value = 'signup'
+        showLogin.value = true
+      }
     }
     // ?role=apprenant préselectionne le point de vue « apprenant » (étudiant/adulte).
     if (sp.get('role') === 'apprenant') signupRole.value = 'apprenant'
@@ -862,6 +931,8 @@ function resetDemo() {
   align-items: stretch;
   justify-content: stretch;
   padding: 0;
+  height: 100vh;
+  overflow: hidden; /* seules les colonnes internes défilent, pas la page entière */
 }
 /* La colonne auth n'existe qu'en MAPO+ ; ailleurs elle est transparente au layout. */
 .auth-col { display: contents; }
@@ -872,6 +943,7 @@ function resetDemo() {
   align-items: center;
   justify-content: center;
   padding: 40px 32px;
+  overflow-y: auto; /* c'est cette zone (droite) qui défile si besoin */
   background: radial-gradient(900px 500px at 80% 0%, #efeafc 0%, transparent 60%), #f6f7fb;
 }
 .mplus-page .auth-card { box-shadow: 0 24px 60px rgba(20, 32, 64, 0.12); }
@@ -928,24 +1000,25 @@ function resetDemo() {
   margin: 30px 0 0; font-size: 14px; font-style: italic; color: rgba(255, 255, 255, 0.64);
   line-height: 1.6; max-width: 500px; border-left: 3px solid rgba(196, 181, 253, 0.5); padding-left: 14px;
 }
-.mplus-preview {
-  position: absolute; right: 40px; bottom: 42px; z-index: 1; width: 288px;
-  background: rgba(255, 255, 255, 0.97); border-radius: 20px; box-shadow: 0 30px 70px rgba(15, 10, 45, 0.5);
-  padding: 15px; transform: rotate(-2deg);
+/* Modale d'inscription (façon Facebook) : centrée sur le login flouté */
+.mplus-modal-backdrop {
+  position: fixed; inset: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: rgba(26, 20, 55, 0.55);
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
-.mpv-head { display: flex; align-items: center; gap: 9px; padding-bottom: 10px; border-bottom: 1px solid #eef; }
-.mpv-badge {
-  width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; color: #fff;
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9); font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 12px;
+.mplus-modal {
+  position: relative; width: 100%; max-width: 440px; max-height: 92vh; overflow-y: auto;
+  background: #fff; border-radius: 22px; padding: 30px 30px 26px;
+  box-shadow: 0 30px 80px rgba(15, 10, 45, 0.5);
 }
-.mpv-head b { font-family: 'Poppins', sans-serif; font-size: 13px; color: #1a1d1f; }
-.mpv-head small { display: block; color: #9aa0ad; font-size: 11px; }
-.mpv-msg {
-  background: #f3efff; color: #4c3a86; font-size: 12.5px; line-height: 1.5;
-  padding: 10px 12px; border-radius: 12px 12px 12px 4px; margin: 11px 0 10px;
+.mplus-modal-x {
+  position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; border-radius: 10px;
+  border: none; background: #f2f3f7; color: #6b7280; cursor: pointer; display: grid; place-items: center;
 }
-.mpv-opt { font-size: 12px; border: 1.5px solid #e6e7ee; border-radius: 9px; padding: 8px 10px; margin-bottom: 6px; color: #3d4350; }
-.mpv-opt.ok { border-color: var(--pr); background: #f6f2ff; color: #6d28d9; font-weight: 600; }
+.mplus-modal-x:hover { background: #e8e9ef; color: #1a1d1f; }
+.mplus-modal-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; color: #1a1d1f; margin: 0 0 4px; }
+.mplus-modal-lead { font-size: 13.5px; color: #6f767e; margin: 0 0 20px; line-height: 1.5; max-width: 92%; }
 
 .mplus-demo-link {
   margin-top: 16px; background: none; border: none; color: #6b7280;
@@ -954,13 +1027,15 @@ function resetDemo() {
 .mplus-demo-link:hover { color: var(--pr); }
 
 @media (max-width: 900px) {
-  .mplus-page { flex-direction: column; }
+  .mplus-page { flex-direction: column; height: auto; overflow: visible; }
   .mplus-hero { flex: none; padding: 30px 24px 26px; justify-content: flex-start; }
   .mplus-accroche { font-size: 27px; }
   .mplus-hlead { font-size: 15px; }
   .mplus-benefits { margin-top: 20px; gap: 11px; }
   .mplus-manifesto { display: none; }
-  .mplus-preview { display: none; }
-  .mplus-page .auth-col { flex: none; padding: 26px 20px 40px; }
+  .mplus-page .auth-col { flex: none; padding: 26px 20px 40px; overflow: visible; }
+  /* Inscription en plein écran sur mobile (version classique, sans flou) */
+  .mplus-modal-backdrop { padding: 0; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .mplus-modal { max-width: 100%; max-height: 100vh; height: 100vh; border-radius: 0; box-shadow: none; padding: 26px 22px 40px; }
 }
 </style>
