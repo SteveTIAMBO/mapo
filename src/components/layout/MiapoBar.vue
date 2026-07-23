@@ -44,13 +44,17 @@
               @keydown.enter.prevent="submit"
               @keydown.escape="close"
             />
-            <button v-if="sttSupported" type="button" class="miapo-mic" :class="{ listening: micOn }" :disabled="busy || step === 'draft'"
-              :title="micOn ? 'À l’écoute…' : 'Dicter à la voix'" @click="dicter">
-              <Mic :size="17" />
+            <button v-if="convoSupported" type="button" class="miapo-convo" :class="['s-' + convoState, { on: convoActive }]"
+              :disabled="step === 'draft'"
+              :title="convoActive ? 'Terminer la conversation' : 'Parler avec MIAPO (conversation mains libres)'" @click="toggleConversation">
+              <component :is="convoActive ? Square : Mic" :size="17" />
             </button>
             <button class="miapo-send" :disabled="!instruction.trim() || busy" @click="submit">
               <ArrowUp :size="18" />
             </button>
+          </div>
+          <div v-if="convoActive" class="miapo-convo-hint" :class="'s-' + convoState">
+            <span class="miapo-convo-wave"><i></i><i></i><i></i></span>{{ convoHint }}
           </div>
 
           <!-- MAPO+ (B2C) : option « chercher aussi sur internet » (sinon MIAPO se limite aux cours de l'apprenant) -->
@@ -80,8 +84,12 @@
               <template v-else>
                 <div v-for="(m, i) in chatMsgs" :key="i" :class="['miapo-msg', m.role]">
                   <span v-if="m.role === 'miapo'" class="miapo-msg-orb"><MiapoOrbe :size="22" :frozen="true" /></span>
-                  <p class="miapo-msg-text">{{ m.text }}</p>
-                  <button v-if="voiceSupported && m.role === 'miapo'" type="button" class="miapo-listen" :title="'Écouter'" @click="lire(m.text)"><Volume2 :size="13" /></button>
+                  <div class="miapo-msg-body">
+                    <p class="miapo-msg-text">{{ m.text }}</p>
+                    <button v-if="m.role === 'miapo' && m.action" type="button" class="miapo-goview" @click="goFromMessage(m.action)">
+                      {{ actionLabel(m.action) }} <ArrowRight :size="13" />
+                    </button>
+                  </div>
                 </div>
               </template>
               <div v-if="chatThinking" class="miapo-msg miapo">
@@ -114,16 +122,12 @@
             <!-- Réponse simple (répondre / inconnu) -->
             <div v-else-if="step === 'answer'" class="miapo-answer">
               <span class="miapo-spark sm"><Sparkles :size="14" /></span>
-              <p>{{ result.reponse }}</p>
-              <button v-if="voiceSupported" type="button" class="miapo-listen" title="Écouter" @click="lire(result.reponse)"><Volume2 :size="14" /></button>
-            </div>
+              <p>{{ result.reponse }}</p>            </div>
 
             <!-- Confirmation de navigation -->
             <div v-else-if="step === 'nav'" class="miapo-answer">
               <span class="miapo-spark sm"><Sparkles :size="14" /></span>
-              <p>{{ result.reponse }}</p>
-              <button v-if="voiceSupported" type="button" class="miapo-listen" title="Écouter" @click="lire(result.reponse)"><Volume2 :size="14" /></button>
-            </div>
+              <p>{{ result.reponse }}</p>            </div>
 
             <!-- Plusieurs élèves correspondent → choisir -->
             <div v-else-if="step === 'students'" class="miapo-students">
@@ -216,8 +220,8 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Volume2 } from 'lucide-vue-next'
-import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Square } from 'lucide-vue-next'
+import { createConversation, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
 import { useMiapoCopilotStore, resolveNavigation, EXEMPLES, EXEMPLES_B2C } from '../../stores/miapoCopilot'
@@ -343,25 +347,101 @@ async function resolveLocalQuery(text) {
 const inputEl = ref(null)
 const instruction = ref('')
 
-// ── Voix : dictée (STT) de l'instruction + lecture (TTS) des réponses ──
-// Réutilise services/voice.js. Sert le copilote MAPO (enseignant : prépa de
-// cours/examens ; directeur : tâches admin) autant que le chat MAPO+ : on peut
-// PARLER à MIAPO et l'ÉCOUTER répondre. Dégrade proprement si non supporté.
-const voiceSupported = isSpeechSupported()
-const sttSupported = isRecognitionSupported()
-const micOn = ref(false)
-async function dicter() {
-  if (micOn.value || busy.value) return
-  stopSpeaking()
-  micOn.value = true
-  try {
-    const heard = await listenOnce({ lang: locale.value })
-    if (heard) { instruction.value = heard; await submit() }
-  } catch { /* non supporté / micro refusé → saisie au clavier */ }
-  finally { micOn.value = false }
+// ── Conversation vocale mains libres (UN SEUL bouton) ────────────────
+// Un bouton lance une vraie conversation avec MIAPO (MAPO+ et MAPO) : elle
+// écoute en continu, parle ses réponses, et SE TAIT dès qu'on l'interrompt
+// (barge-in). Réutilise services/voice.js → createConversation. Sert le
+// copilote enseignant/directeur (prépa cours/examens, admin) autant que le
+// chat MAPO+. Le bouton n'apparaît que si voix + reconnaissance disponibles.
+const convoSupported = isSpeechSupported() && isRecognitionSupported()
+const convoCtl = ref(null)
+const convoState = ref('idle') // idle | listening | thinking | speaking | denied
+const convoActive = computed(() => convoState.value !== 'idle' && convoState.value !== 'denied')
+const convoHint = computed(() => ({
+  listening: 'MIAPO vous écoute…',
+  thinking: 'MIAPO réfléchit…',
+  speaking: 'MIAPO parle — coupez-la en parlant',
+  denied: 'Micro non autorisé',
+}[convoState.value] || ''))
+
+// Dernière réponse de MIAPO à lire à voix haute (selon le mode).
+function derniereReponse() {
+  if (isB2C.value) {
+    const arr = chatMsgs.value || []
+    const last = arr[arr.length - 1]
+    return last && last.role === 'miapo' ? last.text : ''
+  }
+  return (result.value && result.value.reponse) || ''
 }
-function lire(text) {
-  if (text) speak(String(text), { lang: locale.value })
+// Phrase entendue → on interroge MIAPO, puis on lit sa réponse.
+async function onConversationText(text) {
+  if (!text || busy.value) return // on ignore si une requête est déjà en cours
+  instruction.value = text
+  try { await submit() } catch { /* on reste en écoute */ }
+  const reponse = derniereReponse()
+  if (reponse && convoCtl.value) convoCtl.value.say(reponse)
+}
+function toggleConversation() {
+  if (convoActive.value) { if (convoCtl.value) convoCtl.value.stop(); return }
+  const ctl = createConversation({
+    lang: locale.value,
+    onText: onConversationText,
+    onState: (s) => { convoState.value = s },
+  })
+  if (!ctl) { convoState.value = 'denied'; return }
+  convoCtl.value = ctl
+  ctl.start()
+}
+onUnmounted(() => { try { convoCtl.value && convoCtl.value.stop() } catch { /* no-op */ } })
+
+// ── Mémoire locale de MIAPO (frugalité) ──────────────────────────────
+// Cache LRU en localStorage : une question déjà posée n'est PAS renvoyée à
+// l'IA, on réutilise la réponse mémorisée sur l'appareil. Économise des
+// appels (et des crédits). Plafonné pour ne pas gonfler le stockage.
+const MIAPO_CACHE_KEY = 'mapo_miapo_cache_v1'
+const MIAPO_CACHE_MAX = 60
+function _cacheLoad() { try { return JSON.parse(localStorage.getItem(MIAPO_CACHE_KEY) || '{}') } catch { return {} } }
+function _cacheSave(c) { try { localStorage.setItem(MIAPO_CACHE_KEY, JSON.stringify(c)) } catch { /* quota */ } }
+function _cacheKey(q, ctx) { return _norm(q).replace(/\s+/g, ' ').trim().slice(0, 180) + '¦' + (ctx || '') }
+function miapoCacheGet(q, ctx) {
+  const c = _cacheLoad(); const e = c[_cacheKey(q, ctx)]
+  if (!e) return null
+  e.t = Date.now(); _cacheSave(c)   // rafraîchit l'ancienneté (LRU)
+  return e.a
+}
+function miapoCacheSet(q, ctx, a) {
+  const c = _cacheLoad()
+  c[_cacheKey(q, ctx)] = { a, t: Date.now() }
+  const keys = Object.keys(c)
+  if (keys.length > MIAPO_CACHE_MAX) {
+    keys.sort((x, y) => (c[x].t || 0) - (c[y].t || 0)).slice(0, keys.length - MIAPO_CACHE_MAX).forEach((k) => delete c[k])
+  }
+  _cacheSave(c)
+}
+// On ne mémorise que les questions AUTONOMES (assez longues) : les suivis
+// courts (« et pourquoi ? ») dépendent de l'historique et ne se cachent pas.
+function miapoCacheEligible(q) { return _norm(q).replace(/\s+/g, ' ').trim().length >= 16 }
+
+// Bouton « ouvrir la vue » sous une réponse data (« montre mes notes » → Notes).
+function actionLabel(a) {
+  const en = locale.value.startsWith('en')
+  const M = {
+    notes: en ? 'Open my marks' : 'Ouvrir mes notes',
+    progression: en ? 'View my progress' : 'Voir ma progression',
+    edt: en ? 'Open timetable' : "Ouvrir l'emploi du temps",
+    fiches: en ? 'Open my sheets' : 'Ouvrir mes fiches',
+    annales: en ? 'Open past papers' : 'Ouvrir les annales',
+    quiz: en ? 'Start a quiz' : 'Lancer un quiz',
+    orientation: en ? 'Open orientation' : "Ouvrir l'orientation",
+    planning: en ? 'Open my planner' : 'Ouvrir mon planning',
+  }
+  return M[a] || (en ? 'Open' : 'Ouvrir')
+}
+function goFromMessage(action) {
+  if (!action) return
+  if (convoCtl.value) { try { convoCtl.value.stop() } catch { /* no-op */ } }
+  window.dispatchEvent(new CustomEvent('miapo-b2c-action', { detail: { action, query: '' } }))
+  close()
 }
 const step = ref('idle') // idle | answer | nav | draft | peda | students
 const result = ref({})
@@ -419,6 +499,7 @@ async function copyText(which) {
 
 function close() {
   isOpen.value = false
+  if (convoCtl.value) { try { convoCtl.value.stop() } catch { /* no-op */ } }
   setTimeout(reset, 200)
 }
 
@@ -571,21 +652,21 @@ function resolveB2C(text) {
     const c = pickChild(text)
     if (!c) return { answer: en ? 'Add a child profile first.' : 'Ajoute d\'abord un profil enfant.' }
     if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
-    return { answer: composeNotesList(c) }
+    return { answer: composeNotesList(c), action: 'notes' }
   }
   // Que réviser (points faibles priorisés) → réponse inline
   if (/(que|quoi|sur quoi).{0,15}(revis|travaill)|\ba revis|mes revisions|programme de revision|what.{0,10}(to )?revise/.test(q)) {
     const c = pickChild(text)
     if (!c) return { answer: en ? 'Add a child profile first.' : 'Ajoute d\'abord un profil enfant.' }
     if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
-    return { answer: composeToRevise(c) }
+    return { answer: composeToRevise(c), action: 'progression' }
   }
   // Progrès / notes / moyenne / points faibles → RÉPONSE avec les données
   if (/progr|\bnote|moyenne|resultat|niveau|points? faibles|a revis|faibless|comment.{0,15}(va|se debrouil|s.en sort|marche|avance|progress)/.test(q)) {
     const c = pickChild(text)
     if (!c) return { answer: en ? 'Add a child profile first to track progress.' : 'Ajoute d\'abord un profil enfant pour suivre la progression.' }
     if (c._ambiguous) return { answer: (en ? 'Which child? ' : 'De quel enfant s\'agit-il ? ') + c._ambiguous.join(', ') + ' ?' }
-    return { answer: composeProgress(c, subjectFrom(text, c)) }
+    return { answer: composeProgress(c, subjectFrom(text, c)), action: 'progression' }
   }
   // Emploi du temps → inline (ou ouverture de la vue si vide)
   if (/emploi du temps|\bedt\b|planning|horaire|creneau|timetable|schedule/.test(q)) {
@@ -610,7 +691,9 @@ async function submitB2C(text) {
   //    d'un enfant nommé…) ou OUVERTURE DIRECTE de la bonne vue — sans appel IA.
   const local = resolveB2C(text)
   if (local && local.answer) {
-    chatMsgs.value.push({ role: 'miapo', text: local.answer })
+    // Réponse data affichée dans la conversation + (si pertinent) un bouton
+    // pour OUVRIR la vue correspondante (« montre mes notes » → bouton Notes).
+    chatMsgs.value.push({ role: 'miapo', text: local.answer, action: local.action || null })
     nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
     return
   }
@@ -625,12 +708,21 @@ async function submitB2C(text) {
   }
 
   // 2) Sinon : chat pédagogique IA (socratique).
+  const ctx = learnerCtx.value
+  const memCtx = (ctx.niveau || '') + '|' + (internet.value ? 'net' : '') + '|' + (locale.value.startsWith('en') ? 'en' : 'fr')
+  // MÉMOIRE LOCALE (frugalité) : question déjà posée → on réutilise la réponse
+  // mémorisée sur l'appareil, aucun appel IA.
+  const cached = miapoCacheGet(text, memCtx)
+  if (cached) {
+    chatMsgs.value.push({ role: 'miapo', text: cached })
+    nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
+    return
+  }
   chatThinking.value = true
   nextTick(scrollChatBottom)
   const hist = chatMsgs.value.slice(-6, -1)
     .map((m) => (m.role === 'user' ? 'Apprenant' : 'MIAPO') + ' : ' + m.text)
     .join('\n')
-  const ctx = learnerCtx.value
   // Notes de cours issues de Carré (si l'apprenant a relié son compte) → MIAPO s'appuie dessus.
   const cours = await connecteurs.carreNotesText().catch(() => '')
   const r = await tuteur.chatTuteur({
@@ -645,6 +737,9 @@ async function submitB2C(text) {
   chatThinking.value = false
   const reply = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
   chatMsgs.value.push({ role: 'miapo', text: reply })
+  // On mémorise seulement une vraie réponse à une question autonome (pas les
+  // suivis courts qui dépendent de l'historique, ni les erreurs/crédits épuisés).
+  if (r.ok && reply && miapoCacheEligible(text)) miapoCacheSet(text, memCtx, reply)
   nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
 }
 
@@ -863,13 +958,26 @@ onUnmounted(() => {
 }
 .miapo-send:hover:not(:disabled) { filter: brightness(1.05); }
 .miapo-send:disabled { opacity: .4; cursor: default; }
-.miapo-mic { flex: none; width: 38px; height: 38px; border-radius: 11px; border: 1.5px solid var(--divider, var(--bd)); background: #fff; color: var(--tx3); display: flex; align-items: center; justify-content: center; cursor: pointer; }
-.miapo-mic:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
-.miapo-mic:disabled { opacity: .4; cursor: default; }
-.miapo-mic.listening { border-color: var(--pr); color: #fff; background: var(--pr); animation: miapoMicPulse 1s ease-in-out infinite; }
-@keyframes miapoMicPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(var(--pr-rgb),.4); } 50% { box-shadow: 0 0 0 6px rgba(var(--pr-rgb),0); } }
-.miapo-listen { flex: none; border: none; background: none; color: var(--tx3); cursor: pointer; padding: 4px; border-radius: 7px; align-self: flex-start; }
-.miapo-listen:hover { background: rgba(var(--pr-rgb),.1); color: var(--pr); }
+/* Bouton unique de conversation vocale mains libres */
+.miapo-convo { flex: none; width: 38px; height: 38px; border-radius: 11px; border: 1.5px solid var(--divider, var(--bd)); background: #fff; color: var(--tx3); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all .15s; }
+.miapo-convo:hover:not(:disabled) { border-color: var(--pr); color: var(--pr); }
+.miapo-convo:disabled { opacity: .4; cursor: default; }
+.miapo-convo.on { border-color: var(--pr); color: #fff; background: var(--pr); }
+.miapo-convo.s-listening { animation: miapoConvoPulse 1.1s ease-in-out infinite; }
+.miapo-convo.s-speaking { background: #1B8A5A; border-color: #1B8A5A; }
+@keyframes miapoConvoPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(var(--pr-rgb),.45); } 50% { box-shadow: 0 0 0 7px rgba(var(--pr-rgb),0); } }
+.miapo-convo-hint { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 12.5px; font-weight: 600; color: var(--pr); }
+.miapo-convo-hint.s-speaking { color: #1B8A5A; }
+.miapo-convo-hint.s-denied { color: #D93025; }
+.miapo-convo-wave { display: inline-flex; align-items: center; gap: 3px; height: 14px; }
+.miapo-convo-wave i { width: 3px; height: 6px; border-radius: 2px; background: currentColor; animation: miapoWave 1s ease-in-out infinite; }
+.miapo-convo-wave i:nth-child(2) { animation-delay: .15s; }
+.miapo-convo-wave i:nth-child(3) { animation-delay: .3s; }
+@keyframes miapoWave { 0%,100% { height: 5px; } 50% { height: 13px; } }
+/* Réponse data : corps (texte + bouton d'ouverture de vue) */
+.miapo-msg-body { display: flex; flex-direction: column; gap: 6px; min-width: 0; align-items: flex-start; }
+.miapo-goview { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 999px; border: 1.5px solid rgba(var(--pr-rgb),.35); background: rgba(var(--pr-rgb),.06); color: var(--pr); font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.miapo-goview:hover { background: rgba(var(--pr-rgb),.14); }
 
 .miapo-body { padding: 0 16px 8px; overflow-y: auto; }
 

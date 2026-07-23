@@ -141,3 +141,78 @@ export function listenOnce(opts = {}) {
     setTimeout(() => { try { rec.stop() } catch { /* no-op */ } }, 12000)
   })
 }
+
+// ── Mode conversation mains libres (un seul bouton) ──────────────────
+/**
+ * Ouvre une conversation vocale continue avec MIAPO : elle ÉCOUTE en permanence,
+ * PARLE ses réponses, et SE TAIT dès que l'utilisateur reprend la parole
+ * (barge-in). Un seul point d'entrée pour tout le cycle — le composant appelant
+ * fournit `onText` (phrase finale entendue → il interroge MIAPO) et rappelle
+ * `say(reponse)` pour faire parler MIAPO. `onState` reflète l'état pour l'UI
+ * (idle | listening | thinking | speaking | denied). Dégrade proprement si la
+ * reconnaissance vocale n'est pas disponible (renvoie null).
+ * @returns {null | { start:Function, stop:Function, say:Function, isActive:Function }}
+ */
+export function createConversation({ lang = 'fr', onText, onState } = {}) {
+  const Ctor = getRecognitionCtor()
+  if (!Ctor || !isSpeechSupported()) return null
+
+  let rec = null
+  let active = false
+  let speaking = false
+  let restartTimer = null
+  const emit = (s) => { try { onState && onState(s) } catch { /* no-op */ } }
+
+  function begin() {
+    if (!active) return
+    try { rec = new Ctor() } catch { active = false; emit('denied'); return }
+    rec.lang = toBcp47(lang)
+    rec.continuous = true
+    rec.interimResults = true
+    rec.maxAlternatives = 1
+    // Barge-in : dès que l'utilisateur parle, on coupe la lecture de MIAPO.
+    rec.onspeechstart = () => { if (speaking) { stopSpeaking(); speaking = false; emit('listening') } }
+    rec.onresult = (e) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i]
+        if (r && r.isFinal) {
+          const txt = ((r[0] && r[0].transcript) || '').trim()
+          if (txt) { emit('thinking'); try { onText && onText(txt) } catch { /* no-op */ } }
+        }
+      }
+    }
+    rec.onerror = (ev) => {
+      const err = ev && ev.error
+      // Permission refusée / indisponible : on arrête proprement.
+      if (err === 'not-allowed' || err === 'service-not-allowed') { active = false; emit('denied') }
+    }
+    rec.onend = () => {
+      if (!active) { emit('idle'); return }
+      // Chrome coupe la reconnaissance après un silence : on la relance en douceur.
+      restartTimer = setTimeout(() => { try { rec.start() } catch { /* déjà relancé */ } }, 300)
+    }
+    try { rec.start(); emit('listening') } catch { /* déjà démarré */ }
+  }
+
+  return {
+    start() { if (active) return; active = true; begin() },
+    stop() {
+      active = false; speaking = false
+      if (restartTimer) { clearTimeout(restartTimer); restartTimer = null }
+      stopSpeaking()
+      try { rec && rec.stop() } catch { /* no-op */ }
+      emit('idle')
+    },
+    // MIAPO parle sa réponse ; l'écoute reste active pour permettre le barge-in.
+    say(text) {
+      if (!active || !text) return
+      speaking = true; emit('speaking')
+      speak(text, {
+        lang,
+        onend: () => { speaking = false; if (active) emit('listening') },
+        onerror: () => { speaking = false; if (active) emit('listening') },
+      })
+    },
+    isActive: () => active,
+  }
+}
