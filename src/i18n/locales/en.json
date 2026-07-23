@@ -65,7 +65,8 @@
     "backToSignIn": "← Back to sign in",
     "roleParentHint": "You will add your child's account once logged in.",
     "roleLearnerHint": "You are the student revising for yourself.",
-    "taglineMiapo": "Your private tutor, 24/7"
+    "taglineMiapo": "Your private tutor, 24/7",
+    "countryLabel": "Country"
   },
   "header": {
     "menu": "Menu",

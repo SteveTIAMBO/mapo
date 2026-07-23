@@ -54,6 +54,13 @@
           <p class="auth-role-hint">{{ signupRole === 'apprenant' ? t('login.roleLearnerHint') : t('login.roleParentHint') }}</p>
         </div>
 
+        <div v-if="mode === 'signup' && isMiapoMode" class="auth-field">
+          <label class="auth-label">{{ t('login.countryLabel') }}</label>
+          <select v-model="signupPays" class="auth-input">
+            <option v-for="p in PAYS_OPTIONS" :key="p.code" :value="p.code">{{ p.label }}</option>
+          </select>
+        </div>
+
         <div class="auth-field">
           <label class="auth-label">{{ mode === 'signup' ? t('login.email') : t('login.emailOrPhone') }}</label>
           <input
@@ -157,7 +164,7 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
-import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, setPaysParDefaut, paysParDefaut } from '../stores/enfantsAutonomes'
 import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 
@@ -170,6 +177,15 @@ const miapoStore = useEnfantsAutonomesStore()
 // parent (qui suit un enfant) ou de l'apprenant lui-même (étudiant/adulte).
 const isMiapoMode = isMiapoTenant()
 const signupRole = ref('parent') // 'parent' | 'apprenant'
+// Pays capturé DÈS l'inscription : détermine la devise (FCFA / €) et le
+// référentiel (Cameroun / France…) — indispensable pour que l'outil soit
+// opérationnel tout de suite. Pré-rempli avec le pays choisi sur l'accueil.
+const PAYS_OPTIONS = [
+  { code: 'CM', label: 'Cameroun' }, { code: 'SN', label: 'Sénégal' },
+  { code: 'CI', label: "Côte d'Ivoire" }, { code: 'FR', label: 'France' },
+  { code: 'BJ', label: 'Bénin' }, { code: 'other', label: 'Autre' },
+]
+const signupPays = ref(paysParDefaut() || 'CM')
 
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
 // MAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
@@ -206,6 +222,8 @@ function handleSubmit() {
 async function handleSignUp() {
   isLoading.value = true
   errorMessage.value = ''
+  // On fixe le pays choisi AVANT de créer le compte → devise + référentiel prêts.
+  if (isMiapoMode && signupPays.value) setPaysParDefaut(signupPays.value)
   const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value)
   isLoading.value = false
   if (result.success) {
@@ -232,7 +250,7 @@ async function handleRealLogin() {
   const result = await authStore.loginWithIdentifier(loginEmail.value.trim(), loginPassword.value)
   isLoading.value = false
   if (result.success) {
-    router.push('/dashboard')
+    router.push(isMiapoMode ? '/parent/miapo' : '/dashboard')
   } else {
     errorMessage.value = result.error
   }
@@ -244,7 +262,7 @@ async function handleGoogleLogin() {
   const result = await authStore.loginWithGoogle()
   isLoading.value = false
   if (result.success) {
-    router.push('/dashboard')
+    router.push(isMiapoMode ? '/parent/miapo' : '/dashboard')
   } else {
     errorMessage.value = result.error
   }
