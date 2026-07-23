@@ -30,9 +30,9 @@
     "version": "{name} edition",
     "change": "Change",
     "yourName": "Your name",
-    "accountFor": "This account is for…",
-    "roleParent": "My child",
-    "roleLearner": "Me (I'm learning)",
+    "accountFor": "I am creating an account as…",
+    "roleParent": "Parent",
+    "roleLearner": "Learner",
     "namePlaceholder": "First name Last name",
     "email": "Email",
     "emailOrPhone": "Email or phone",
@@ -62,7 +62,9 @@
     },
     "forgotPassword": "Forgot password?",
     "sendLink": "Send link",
-    "backToSignIn": "← Back to sign in"
+    "backToSignIn": "← Back to sign in",
+    "roleParentHint": "You will add your child's account once logged in.",
+    "roleLearnerHint": "You are the student revising for yourself."
   },
   "header": {
     "menu": "Menu",

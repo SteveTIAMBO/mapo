@@ -20,7 +20,7 @@
       </div>
 
       <!-- Edition badge -->
-      <div class="auth-edition">
+      <div v-if="!isMiapoMode" class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
           {{ t('login.version', { name: editionStore.meta?.name || 'Secondaire' }) }}
@@ -51,6 +51,7 @@
             <button type="button" :class="{ on: signupRole === 'parent' }" @click="signupRole = 'parent'">{{ t('login.roleParent') }}</button>
             <button type="button" :class="{ on: signupRole === 'apprenant' }" @click="signupRole = 'apprenant'">{{ t('login.roleLearner') }}</button>
           </div>
+          <p class="auth-role-hint">{{ signupRole === 'apprenant' ? t('login.roleLearnerHint') : t('login.roleParentHint') }}</p>
         </div>
 
         <div class="auth-field">
@@ -479,6 +480,12 @@ function resetDemo() {
   background: #fff;
   color: var(--pr);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.auth-role-hint {
+  margin: 8px 2px 0;
+  font-size: 12.5px;
+  color: var(--tx3);
+  line-height: 1.4;
 }
 
 .auth-input {
