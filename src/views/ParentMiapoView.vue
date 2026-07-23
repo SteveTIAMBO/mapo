@@ -1182,6 +1182,9 @@ const aReviser = computed(() => {
 // (lus depuis le planning) + 1 sujet à réviser. Nudge non intrusif vers le
 // planning ; s'affiche seulement s'il y a quelque chose à signaler. ──
 const rappels = computed(() => {
+  // Dépendance à `section` : re-lit le localStorage du planning à chaque retour
+  // sur l'accueil (les écritures localStorage ne sont pas réactives par nature).
+  void section.value
   const e = activeEnfant.value
   if (!e) return { due: 0, late: 0, revision: '', hasAny: false }
   let devoirs = []

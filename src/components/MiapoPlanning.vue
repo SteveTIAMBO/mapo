@@ -91,6 +91,8 @@ function seed() {
 const tab = ref('devoirs')
 const showAdd = ref(false)
 const devoirs = ref(load())
+// Persiste le jeu initial dès le montage pour que l'accueil (rappels) puisse le lire.
+try { if (!localStorage.getItem(KEY())) save() } catch { /* silent */ }
 const nd = ref({ matiere: '', titre: '', echeance: '' })
 
 const today = new Date().toISOString().slice(0, 10)
