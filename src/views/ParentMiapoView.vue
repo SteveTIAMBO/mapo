@@ -3,6 +3,9 @@
     <!-- Onboarding guidé au 1er lancement (nouveau compte B2C) -->
     <MiapoOnboarding v-if="showOnboarding" @done="onOnboardingDone" />
 
+    <!-- Visite guidée (2e onboarding) : explique l'app, sans question de profil -->
+    <MiapoTour v-if="showTour" :steps="tourSteps" :labels="tourLabels" @done="onTourDone" />
+
     <!-- Fond sombre quand le menu coulissant est ouvert (mobile) -->
     <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
 
@@ -20,15 +23,15 @@
       </button>
 
       <!-- Sélecteur d'enfant (parent multi-enfants uniquement) -->
-      <div v-if="enfants.length && !isApprenant" class="volet-child">
+      <div v-if="enfants.length && !isApprenant" class="volet-child" data-tour="child">
         <select v-if="enfants.length > 1" v-model="activeId" class="child-select">
           <option v-for="e in enfants" :key="e.id" :value="e.id">{{ e.firstName }} · {{ niveauLabel(e) }}</option>
         </select>
         <div v-else class="child-single">{{ activeEnfant?.firstName }} <span>{{ niveauLabel(activeEnfant) }}</span></div>
       </div>
 
-      <nav class="volet-nav">
-        <button v-for="s in SECTIONS" :key="s.key" class="nav-item" :class="{ active: section === s.key }" @click="section = s.key; menuOpen = false">
+      <nav class="volet-nav" data-tour="menu">
+        <button v-for="s in SECTIONS" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
           <component :is="s.icon" :size="18" />
           <span>{{ s.label }}</span>
         </button>
@@ -36,7 +39,7 @@
       <div class="volet-bottom">
         <!-- Installer l'appli : condition des notifications gratuites (surtout sur iPhone) -->
         <MiapoInstall />
-        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false">
+        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false">
           <Settings :size="18" />
           <span>{{ t('mia.secSettings') }}</span>
         </button>
@@ -638,7 +641,7 @@
     </main>
 
     <!-- ───────── Rail droit : agenda de révision (desktop large) ───────── -->
-    <aside class="miapo-aside">
+    <aside class="miapo-aside" data-tour="agenda">
       <div class="aside-card">
         <div class="aside-head"><CalendarDays :size="17" /><h3>{{ t('mia.weekAgenda') }}</h3></div>
         <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
@@ -726,7 +729,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter, useRoute } from 'vue-router'
@@ -763,6 +766,7 @@ import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
+import MiapoTour from '../components/MiapoTour.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -968,6 +972,62 @@ const showOnboarding = ref(false)
 function onOnboardingDone() {
   showOnboarding.value = false
   activeId.value = enfants.value[0]?.id || ''
+  // Enchaîne sur la visite guidée (explication de l'app) une fois le profil posé.
+  maybeStartTour()
+}
+
+// ───────── Visite guidée (2ᵉ onboarding) ─────────
+// Explique le fonctionnement de l'app (menus + fonctionnalités principales) SANS
+// reposer de question de profil. Une seule fois par utilisateur, après l'éventuel
+// onboarding profil. Rejouable en QA via ?tour=1.
+const showTour = ref(false)
+const tourLabels = computed(() => ({
+  skip: t('miaTour.skip'), prev: t('miaTour.prev'), next: t('miaTour.next'), done: t('miaTour.done'),
+}))
+const tourSteps = computed(() => {
+  const s = [{ title: t('miaTour.welcomeTitle'), body: t('miaTour.welcomeBody') }]
+  s.push({ target: '[data-tour=menu]', title: t('miaTour.menuTitle'), body: t('miaTour.menuBody') })
+  if (isApprenant.value) {
+    s.push({ target: '[data-tour=nav-tuteur]', title: t('miaTour.tutorTitle'), body: t('miaTour.tutorBody') })
+    s.push({ target: '[data-tour=nav-fiches]', title: t('miaTour.fichesTitle'), body: t('miaTour.fichesBody') })
+    s.push({ target: '[data-tour=nav-progression]', title: t('miaTour.progressTitle'), body: t('miaTour.progressBodyLearner') })
+    s.push({ target: '[data-tour=nav-planning]', title: t('miaTour.planningTitle'), body: t('miaTour.planningBody') })
+  } else {
+    s.push({ target: '[data-tour=nav-enfants]', title: t('miaTour.childrenTitle'), body: t('miaTour.childrenBody') })
+    s.push({ target: '[data-tour=nav-progression]', title: t('miaTour.progressTitle'), body: t('miaTour.progressBodyParent') })
+    s.push({ target: '[data-tour=nav-planning]', title: t('miaTour.planningTitle'), body: t('miaTour.planningBodyParent') })
+  }
+  s.push({ target: '[data-tour=agenda]', title: t('miaTour.agendaTitle'), body: t('miaTour.agendaBody') })
+  s.push({ target: '[data-tour=settings]', title: t('miaTour.settingsTitle'), body: t('miaTour.settingsBody') })
+  s.push({ title: t('miaTour.finalTitle'), body: t('miaTour.finalBody') })
+  return s
+})
+function tourKey() { return 'mapo_miapo_tour_v1_' + (authStore.user?.uid || 'anon') }
+function tourSeen() { try { return localStorage.getItem(tourKey()) === '1' } catch { return false } }
+function maybeStartTour() {
+  const force = route.query.tour === '1' // relecture QA
+  if (!force) {
+    if (authStore.isDemo) return
+    if (!enfants.value.length) return
+    if (tourSeen()) return
+  }
+  nextTick(() => {
+    // Sur mobile le menu est un tiroir fermé : on l'ouvre pour pouvoir pointer
+    // les vrais éléments (sinon la visite retombe sur des cartes centrées).
+    const menuEl = document.querySelector('[data-tour=menu]')
+    let opened = false
+    if (menuEl) {
+      const r = menuEl.getBoundingClientRect()
+      if (r.right <= 8 || r.left >= window.innerWidth - 8) { menuOpen.value = true; opened = true }
+    }
+    if (opened) setTimeout(() => { showTour.value = true }, 320)
+    else showTour.value = true
+  })
+}
+function onTourDone() {
+  showTour.value = false
+  menuOpen.value = false
+  try { localStorage.setItem(tourKey(), '1') } catch { /* stockage indisponible */ }
 }
 // Le menu change selon le mode (parent allégé / apprenant complet) et le niveau
 // (annales). Si la section courante disparaît du menu, on revient à l'accueil
@@ -1521,6 +1581,9 @@ onMounted(async () => {
     // Forçable en QA via ?onboarding=1 ; la démo (profil amorcé) ne le déclenche pas.
     showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
   }
+  // Pas d'onboarding profil à l'écran (apprenant préconfiguré, ou utilisateur qui
+  // revient) → on peut lancer la visite guidée si elle n'a pas encore été vue.
+  if (!showOnboarding.value) maybeStartTour()
   // Relance WhatsApp : rafraîchit la date de dernière révision des enfants opt-in
   // à chaque ouverture (best-effort, silencieux).
   relance.refresh()
