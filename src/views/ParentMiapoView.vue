@@ -58,6 +58,16 @@
 
     <!-- ───────── Contenu ───────── -->
     <main class="miapo-main">
+      <!-- En-tête du contenu (façon hub) : salutation + accès rapides. Le volet de
+           gauche occupe toute la hauteur ; seul ce bloc de contenu défile. -->
+      <header class="miapo-topbar">
+        <button type="button" class="mtb-burger" @click="menuOpen = true" :aria-label="t('header.menu')"><Menu :size="22" /></button>
+        <span class="mtb-hi">{{ greeting }}<template v-if="greetName">, {{ greetName }}</template></span>
+        <span class="mtb-spacer"></span>
+        <button type="button" class="mtb-ic" @click="openSearch" :title="t('header.search')"><Search :size="18" /></button>
+        <button type="button" class="mtb-ic mtb-avatar" @click="section = 'profil'" :title="t('mia.secSettings')"><span class="mtb-initials">{{ headerInitials }}</span></button>
+      </header>
+      <div class="miapo-scroll">
       <!-- Aucun enfant : accueil d'amorçage -->
       <div v-if="!enfants.length" class="card intro-card">
         <div class="intro-icon"><Sparkles :size="26" /></div>
@@ -648,6 +658,7 @@
           </div>
         </section>
       </template>
+      </div>
     </main>
 
     <!-- ───────── Rail droit : agenda de révision (desktop large) ───────── -->
@@ -778,7 +789,7 @@ import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search } from 'lucide-vue-next'
 
 const router = useRouter()
 const route = useRoute()
@@ -1077,6 +1088,24 @@ watch([SECTIONS, () => store.mode], () => {
   if (section.value !== 'profil' && !SECTIONS.value.some((s) => s.key === section.value)) section.value = 'accueil'
 })
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
+
+// ── En-tête du contenu (façon hub) : salutation + accès rapides ──
+const greeting = computed(() => {
+  const h = new Date().getHours()
+  if (h < 12) return t('header.greetingMorning')
+  if (h < 18) return t('header.greetingAfternoon')
+  return t('header.greetingEvening')
+})
+// En mode apprenant on salue l'apprenant lui-même ; sinon le titulaire du compte.
+const greetName = computed(() => {
+  if (isApprenant.value && activeEnfant.value) return activeEnfant.value.firstName || authStore.userFirstName || ''
+  return authStore.userFirstName || ''
+})
+const headerInitials = computed(() => {
+  const n = greetName.value || authStore.userFirstName || 'M'
+  return (n[0] || 'M').toUpperCase()
+})
+function openSearch() { try { window.dispatchEvent(new CustomEvent('open-global-search')) } catch { /* silent */ } }
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
 const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
@@ -1720,7 +1749,30 @@ onUnmounted(() => {
 .nav-item.active { background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); font-weight: 600; }
 
 /* ───────── Main ───────── */
-.miapo-main { flex: 1; min-width: 0; padding: 22px 26px; max-width: 760px; overflow-y: auto; }
+.miapo-main { flex: 1; min-width: 0; max-width: 760px; display: flex; flex-direction: column; overflow: hidden; }
+/* En-tête du contenu (façon hub) : salutation fixe, seul le contenu défile. */
+.miapo-topbar {
+  flex-shrink: 0;
+  position: sticky; top: 0; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  padding: 13px 26px;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--bd, #e8e9ef);
+}
+.mtb-burger { display: none; border: none; background: none; color: #40444f; cursor: pointer; padding: 4px; margin: -2px 2px -2px -4px; }
+.mtb-hi { font-size: 19px; font-weight: 800; color: #1a1c26; letter-spacing: -0.01em; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mtb-spacer { flex: 1; }
+.mtb-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: 11px; border: 1px solid var(--bd, #e8e9ef);
+  background: #fff; color: #4a4f5a; cursor: pointer; transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
+}
+.mtb-ic:hover { background: #f4f2fb; border-color: #d9d3ee; }
+.mtb-avatar { border: none; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; }
+.mtb-initials { font-size: 13px; font-weight: 800; }
+.miapo-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 26px 28px; }
 
 /* ── Bureau (≥769px) : menu latéral FIXE et entièrement visible ; seule la zone
    principale défile. La hauteur est bornée par AppLayout (.no-sidebar). ── */
@@ -2005,7 +2057,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .volet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 55; }
 
 @media (max-width: 768px) {
-  .miapo-shell { display: block; }
+  .miapo-shell { display: flex; width: 100%; min-height: 0; }
   .volet {
     position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; height: 100dvh;
     width: 268px; max-width: 84vw;
@@ -2018,7 +2070,11 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
   .volet-close { display: flex; align-items: center; justify-content: center; }
   .volet-nav { flex-direction: column; overflow-x: visible; }
   .volet-logout { margin-top: auto; }
-  .miapo-main { padding: 16px 14px; max-width: 100%; width: 100%; box-sizing: border-box; }
+  .miapo-main { max-width: 100%; width: 100%; box-sizing: border-box; }
+  .miapo-scroll { padding: 14px 14px 24px; }
+  .miapo-topbar { padding: 11px 14px; }
+  .mtb-burger { display: inline-flex; }
+  .mtb-hi { font-size: 17.5px; }
   .main-head h1 { font-size: 20px; }
   .stat-grid { gap: 8px; }
 }
@@ -2026,7 +2082,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
   .volet-brand .brand-tx small { display: none; }
   .main-head .btn span { display: none; }
   /* Densité confort sur petit écran : moins de marge perdue */
-  .miapo-main { padding: 14px 10px; }
+  .miapo-scroll { padding: 12px 10px 20px; }
   .card { padding: 14px 13px; }
   .intro-card { padding: 28px 18px; margin: 18px auto; }
   .abo-card { padding: 24px 16px; }

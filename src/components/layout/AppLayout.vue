@@ -18,7 +18,11 @@
     />
 
     <div class="layout-main" :class="{ collapsed: sidebarCollapsed, 'no-sidebar': hideSidebar }">
+      <!-- MAPO+ (B2C) : en-tête global masqué → le volet de gauche monte tout en
+           haut (pleine hauteur) et la salutation vit dans l'en-tête du contenu
+           (ParentMiapoView), façon hub. L'ERP école garde l'en-tête global. -->
       <AppHeader
+        v-if="!hideSidebar"
         :sidebar-collapsed="sidebarCollapsed"
         @toggle-sidebar="toggleSidebar"
       />
@@ -211,12 +215,12 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-/* B2C MAPO+ (≥769px) : on borne la hauteur pour que SEUL le contenu défile —
-   le volet MAPO+ reste fixe et entièrement visible (en-tête figé en haut). */
-@media (min-width: 769px) {
-  .layout-main.no-sidebar { height: 100vh; overflow: hidden; }
-  .layout-main.no-sidebar .layout-content { padding: 0; overflow: hidden; min-height: 0; display: flex; }
-}
+/* B2C MAPO+ : on borne la hauteur (mobile inclus) pour que SEUL le contenu
+   défile — le volet reste fixe à gauche et l'en-tête (salutation) figé en haut,
+   façon hub. Un seul conteneur de défilement (.miapo-scroll) évite les scrolls
+   imbriqués qui cassaient l'en-tête collant sur mobile. */
+.layout-main.no-sidebar { height: 100vh; height: 100dvh; overflow: hidden; }
+.layout-main.no-sidebar .layout-content { padding: 0; overflow: hidden; min-height: 0; display: flex; }
 
 /* Backdrop for mobile drawer */
 .sidebar-backdrop {
