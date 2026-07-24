@@ -64,6 +64,7 @@
       <template v-if="isSchoolTenantMode || showLogin">
       <form @submit.prevent="handleSubmit" class="auth-form">
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
+        <div v-if="resetSentMsg" class="auth-ok">{{ resetSentMsg }}</div>
 
         <div v-if="mode === 'signup'" class="auth-field">
           <label class="auth-label">{{ t('login.yourName') }}</label>
@@ -122,6 +123,12 @@
               <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
+        </div>
+
+        <!-- Mot de passe oublié : en mode connexion, une porte de sortie (surtout
+             après une erreur de saisie). Envoie le lien de réinitialisation. -->
+        <div v-if="mode === 'login'" class="auth-forgot-row">
+          <button type="button" class="auth-forgot-link" :disabled="isLoading" @click="handleForgotPassword">{{ t('login.forgotPassword') }}</button>
         </div>
 
         <button type="submit" class="auth-btn-primary" :disabled="isLoading">
@@ -356,6 +363,7 @@ const loginPassword = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const resetSentMsg = ref('')
 const mode = ref('login') // 'login' | 'signup'
 const signupName = ref('')
 // Démo : profils types affichés par défaut ; le formulaire login/inscription
@@ -426,10 +434,32 @@ const demoAccounts = [
 async function handleRealLogin() {
   isLoading.value = true
   errorMessage.value = ''
+  resetSentMsg.value = ''
   const result = await authStore.loginWithIdentifier(loginEmail.value.trim(), loginPassword.value)
   isLoading.value = false
   if (result.success) {
     router.push(isMiapoMode ? '/mon-espace' : '/dashboard')
+  } else {
+    errorMessage.value = result.error
+  }
+}
+
+// Mot de passe oublié : on envoie le lien de réinitialisation à l'e-mail saisi.
+// Message neutre (on ne révèle pas si le compte existe). Si le champ contient un
+// téléphone (ou est vide), on invite à saisir l'e-mail d'abord.
+async function handleForgotPassword() {
+  errorMessage.value = ''
+  resetSentMsg.value = ''
+  const email = loginEmail.value.trim()
+  if (!email || !email.includes('@')) {
+    errorMessage.value = t('login.resetNeedEmail')
+    return
+  }
+  isLoading.value = true
+  const result = await authStore.resetPassword(email)
+  isLoading.value = false
+  if (result.success) {
+    resetSentMsg.value = t('login.resetEmailSent')
   } else {
     errorMessage.value = result.error
   }
@@ -850,6 +880,24 @@ function resetDemo() {
   font-size: 13px;
   color: #D93025;
 }
+.auth-ok {
+  margin-bottom: 18px;
+  padding: 10px 14px;
+  background: rgba(22, 163, 74, 0.07);
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 13px;
+  color: #15803d;
+}
+.auth-forgot-row { display: flex; justify-content: flex-end; margin: -6px 0 14px; }
+.auth-forgot-link {
+  border: none; background: none; cursor: pointer; padding: 2px 0;
+  font-family: 'Poppins', sans-serif; font-size: 12.5px; font-weight: 500;
+  color: var(--pr, #7c3aed);
+}
+.auth-forgot-link:hover { text-decoration: underline; }
+.auth-forgot-link:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Demo credentials ── */
 .auth-demo-credentials {
