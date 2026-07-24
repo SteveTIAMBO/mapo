@@ -451,7 +451,14 @@ export const useAuthStore = defineStore('auth', () => {
     const u = auth.currentUser
     if (!isMiapoTenant() || !u || !u.emailVerified) return
     try {
-      await setDoc(doc(db, 'mapoplus_users', u.uid), {
+      const ref = doc(db, 'mapoplus_users', u.uid)
+      // Bienvenue brandé (Brevo) : UNE SEULE fois, à la 1re activation. On lit le
+      // doc pour ne pas re-souhaiter la bienvenue à un compte déjà activé
+      // (reconnexion, nouvel appareil…). Le fanion welcomeSentAt fait foi ;
+      // en cas d'erreur de lecture on suppose « déjà envoyé » (jamais de spam).
+      let already = true
+      try { const snap = await getDoc(ref); already = !!(snap.exists() && snap.data()?.welcomeSentAt) } catch { already = true }
+      await setDoc(ref, {
         uid: u.uid,
         email: u.email || '',
         displayName: u.displayName || '',
@@ -459,8 +466,30 @@ export const useAuthStore = defineStore('auth', () => {
         activated: true,
         activatedAt: serverTimestamp(),
         lastSeenAt: serverTimestamp(),
+        ...(already ? {} : { welcomeSentAt: serverTimestamp() }),
       }, { merge: true })
+      if (!already) sendWelcomeEmail() // best-effort, ne bloque jamais l'activation
     } catch (e) { console.warn('[mapoplus_users] activation ignorée:', e && e.code) }
+  }
+
+  // Envoi best-effort du mail de bienvenue brandé via /mapo-mail.php (Brevo).
+  // Totalement silencieux si l'endpoint n'est pas déployé/configuré : l'activation
+  // du compte ne dépend jamais de l'e-mail.
+  async function sendWelcomeEmail() {
+    try {
+      const u = auth.currentUser
+      if (!u) return
+      const token = await u.getIdToken()
+      const prenom = (userProfile.value && userProfile.value.firstName)
+        || (u.displayName || '').trim().split(' ')[0] || ''
+      let lang = 'fr'
+      try { if (localStorage.getItem('mapo_lang') === 'en') lang = 'en' } catch { /* ignore */ }
+      await fetch('/mapo-mail.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ template: 'welcome', lang, prenom }),
+      })
+    } catch (e) { /* endpoint absent / non configuré : sans gravité */ }
   }
 
   /**
