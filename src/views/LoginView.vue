@@ -409,7 +409,7 @@ async function handleSignUp() {
     if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
     // Nouveau compte B2C : écran d'activation tant que l'e-mail n'est pas
     // confirmé (le lien de bienvenue vient d'être envoyé).
-    router.push(result.needsVerification ? '/verifier-email' : '/parent/miapo')
+    router.push(result.needsVerification ? '/verifier-email' : '/mon-espace')
   } else {
     errorMessage.value = result.error
   }
@@ -429,7 +429,7 @@ async function handleRealLogin() {
   const result = await authStore.loginWithIdentifier(loginEmail.value.trim(), loginPassword.value)
   isLoading.value = false
   if (result.success) {
-    router.push(isMiapoMode ? '/parent/miapo' : '/dashboard')
+    router.push(isMiapoMode ? '/mon-espace' : '/dashboard')
   } else {
     errorMessage.value = result.error
   }
@@ -441,7 +441,7 @@ async function handleGoogleLogin() {
   const result = await authStore.loginWithGoogle()
   isLoading.value = false
   if (result.success) {
-    router.push(isMiapoMode ? '/parent/miapo' : '/dashboard')
+    router.push(isMiapoMode ? '/mon-espace' : '/dashboard')
   } else {
     errorMessage.value = result.error
   }

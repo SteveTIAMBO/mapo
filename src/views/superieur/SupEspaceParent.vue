@@ -59,7 +59,7 @@
           <div class="spa-miapo-badge">MAPO+</div>
           <h2 class="spa-h2 spa-miapo-h2">{{ t('sup.espaceParent.miapoTitle', { name: enfant.prenom }) }}</h2>
           <p class="spa-miapo-txt">{{ t('sup.espaceParent.miapoTxt') }}</p>
-          <a class="spa-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceParent.miapoCta') }}</a>
+          <a class="spa-miapo-cta" href="https://mapoplus.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceParent.miapoCta') }}</a>
         </section>
       </div>
     </div>

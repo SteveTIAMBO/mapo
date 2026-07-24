@@ -94,6 +94,13 @@ const routes = [
     redirect: '/demo'
   },
   {
+    // Ancienne URL de l'espace MAPO+ (/parent/miapo) → /mon-espace. Conservée en
+    // redirection : les anciens liens d'activation e-mail et les favoris restent
+    // valides. Le « dossier » parent/miapo n'existe plus comme page.
+    path: '/parent/miapo',
+    redirect: '/mon-espace'
+  },
+  {
     path: '/verifier-email',
     name: 'VerifierEmail',
     component: () => import('../views/VerifierEmailView.vue'),
@@ -191,7 +198,11 @@ const routes = [
         meta: { title: 'Paiements', parentOnly: true }
       },
       {
-        path: 'parent/miapo',
+        // Espace MAPO+ (B2C). URL neutre « /mon-espace » : convient au parent qui
+        // suit un enfant COMME à l'apprenant qui pilote son propre apprentissage —
+        // plus de « parent » ni de codename « miapo » dans la barre d'adresse.
+        // (Le nom de route reste 'ParentMiapo' : interne, invisible pour l'usager.)
+        path: 'mon-espace',
         name: 'ParentMiapo',
         component: () => import('../views/ParentMiapoView.vue'),
         meta: { title: 'MAPO+', parentOnly: true }
@@ -505,7 +516,7 @@ router.beforeEach(async (to) => {
   // on reproduit l'ancien comportement de la racine (→ dashboard / accueil).
   if (to.name === 'Home') {
     if (tenant.mode === 'miapo') {
-      if (isLoggedIn) return { path: '/parent/miapo' }
+      if (isLoggedIn) return { name: 'ParentMiapo' }
       return true
     }
     // Autres tenants : on reproduit exactement l'ancienne racine (redirection
@@ -534,7 +545,7 @@ router.beforeEach(async (to) => {
         const verifyAllowed = new Set(['VerifierEmail', 'Demo', 'VerifierDiplome', 'CompteNonConfigure'])
         if (!verifyAllowed.has(to.name)) return { name: 'VerifierEmail' }
       } else if (to.name === 'VerifierEmail') {
-        return { path: '/parent/miapo' }
+        return { name: 'ParentMiapo' }
       }
     }
   }

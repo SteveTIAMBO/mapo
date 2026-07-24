@@ -60,7 +60,7 @@ async function iActivated() {
   const ok = await auth.ensureEmailVerified()
   checking.value = false
   if (ok) {
-    router.push('/parent/miapo')
+    router.push('/mon-espace')
   } else {
     noticeWarn.value = true
     notice.value = t('verifyEmail.notYet')
@@ -88,7 +88,7 @@ async function doSignOut() {
 // dès que la fenêtre reprend le focus, et une fois au montage.
 async function recheck() {
   const ok = await auth.ensureEmailVerified()
-  if (ok) router.push('/parent/miapo')
+  if (ok) router.push('/mon-espace')
 }
 
 onMounted(() => {

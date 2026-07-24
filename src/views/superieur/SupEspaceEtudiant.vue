@@ -63,7 +63,7 @@
           <li>{{ t('sup.espaceEtudiant.miapoLi2') }}</li>
           <li>{{ t('sup.espaceEtudiant.miapoLi3') }}</li>
         </ul>
-        <a class="see-miapo-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceEtudiant.miapoCta') }}</a>
+        <a class="see-miapo-cta" href="https://mapoplus.app-edufrem.com" target="_blank" rel="noopener">{{ t('sup.espaceEtudiant.miapoCta') }}</a>
       </section>
     </div>
 

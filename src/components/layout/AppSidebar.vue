@@ -275,7 +275,7 @@ const navSections = computed(() => {
   if (role === 'parent') {
     // Parent B2C autonome (hors école) : on ne montre QUE MAPO+.
     if (authStore.isB2C) {
-      return [{ label: null, items: [{ to: '/parent/miapo', icon: Sparkles, label: 'MAPO+' }] }]
+      return [{ label: null, items: [{ to: '/mon-espace', icon: Sparkles, label: 'MAPO+' }] }]
     }
     const items = [
       { to: '/espace-parent', icon: Home, label: 'nav.dashboard' },

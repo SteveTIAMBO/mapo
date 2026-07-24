@@ -209,7 +209,17 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const enfants = ref([])
   let memoryFallback = false
 
-  const owner = computed(() => authStore.userProfile?.email || authStore.userProfile?.phone || 'demo-parent')
+  const owner = computed(() => {
+    const p = authStore.userProfile
+    if (p?.email) return p.email
+    if (p?.phone) return p.phone
+    // Compte réel authentifié dont le profil n'est pas encore chargé : on se cale
+    // sur l'uid, JAMAIS sur 'demo-parent'. Ce seau de repli est adjacent aux
+    // données de démo ; un vrai compte ne doit jamais y lire/écrire (source du
+    // mélange démo ↔ production). Seule une session démo utilise un seau démo.
+    if (authStore.user?.uid && !authStore.isDemo) return 'uid-' + authStore.user.uid
+    return 'demo-parent'
+  })
 
   // Co-parent : si mon compte est rattaché à un parent propriétaire (pointeur
   // `users/{uid}/b2c/link`), mes données « enfants » sont les SIENNES.

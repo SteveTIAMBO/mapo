@@ -144,7 +144,7 @@ function entrer(profil) {
     miapoStore.setMode(profil === 'parent' ? 'parent' : 'apprenant')
     // Démo : on pose le persona correspondant (écolier vs apprenant adulte).
     miapoStore.seedDemoAs(profil === 'pro' ? 'pro' : 'ecolier')
-    router.push('/parent/miapo')
+    router.push('/mon-espace')
   } else {
     router.push('/')
   }

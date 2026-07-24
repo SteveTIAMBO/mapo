@@ -120,6 +120,22 @@ function clearDemoSession() {
   } catch (e) { /* silent */ }
 }
 
+// Clés B2C « globales » (non préfixées par compte) qu'une session démo a pu
+// laisser derrière elle. On les purge UNIQUEMENT au passage démo → vrai compte,
+// pour qu'aucun réglage ni donnée de démo ne « colle » au compte de production
+// (pays par défaut, URL d'agenda, jauge de crédits, notifications, cache MIAPO,
+// enfant sélectionné, et le seau de repli 'demo-parent' du store enfants).
+function clearDemoBleedKeys() {
+  const keys = [
+    'mapo_b2c_pays', 'mapo_miapo_agenda_url', 'mapo_usage_v1',
+    'mapo_notify_outbox', 'mapo_notify_settings', 'mapo_miapo_cache_v1',
+    'mapo_parent_active_child',
+    'mapo_enfants_autonomes_demo-parent', 'mapo_miapo_mode_demo-parent',
+    'mapo_miapo_pin_demo-parent', 'mapo_miapo_childsess_demo-parent',
+  ]
+  for (const k of keys) { try { localStorage.removeItem(k) } catch { /* silent */ } }
+}
+
 // Sauvegarder les profils demo modifies (partages entre comptes)
 function saveDemoProfiles(profiles) {
   try {
@@ -354,7 +370,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Un vrai compte prime sur une démo éventuellement essayée avant : on purge
       // la session démo pour qu'elle ne réapparaisse pas au rechargement (sinon
       // elle masque le compte de production, cf. init()).
-      isDemo.value = false; clearDemoSession()
+      if (isDemo.value) clearDemoBleedKeys(); isDemo.value = false; clearDemoSession()
       if (displayName && displayName.trim()) {
         try { await updateProfile(result.user, { displayName: displayName.trim() }) } catch { /* non bloquant */ }
       }
@@ -403,7 +419,7 @@ export const useAuthStore = defineStore('auth', () => {
   // (emailVerified) puis renvoie sur l'espace MAPO+.
   function buildVerifyActionSettings() {
     return {
-      url: `${window.location.origin}/parent/miapo?active=1`,
+      url: `${window.location.origin}/mon-espace?active=1`,
       handleCodeInApp: false,
     }
   }
@@ -472,7 +488,7 @@ export const useAuthStore = defineStore('auth', () => {
       flagFreshLogin()
       const result = await signInWithEmailAndPassword(auth, email, password)
       // Un vrai compte prime sur une démo essayée avant → on la purge.
-      isDemo.value = false; clearDemoSession()
+      if (isDemo.value) clearDemoBleedKeys(); isDemo.value = false; clearDemoSession()
       // Pose user.value tout de suite (sinon le garde de route voit « non
       // connecté » avant que onAuthStateChanged ne se déclenche → renvoi au login).
       user.value = result.user
@@ -547,7 +563,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       flagFreshLogin()
       const result = await signInWithPopup(auth, googleProvider)
-      isDemo.value = false; clearDemoSession() // un vrai compte prime sur la démo
+      if (isDemo.value) clearDemoBleedKeys(); isDemo.value = false; clearDemoSession() // un vrai compte prime sur la démo
       user.value = result.user // voir loginWithEmail : éviter le renvoi au login
       await loadUserProfile(result.user)
       await markActivated()
@@ -814,6 +830,7 @@ export const useAuthStore = defineStore('auth', () => {
       onAuthStateChanged(auth, async (firebaseUser) => {
         if (!firebaseUser) return // pas de vrai compte → on reste en démo
         clearDemoSession()
+        clearDemoBleedKeys() // purge les réglages/données laissés par la démo
         isDemo.value = false
         user.value = firebaseUser
         try { await loadUserProfile(firebaseUser) }

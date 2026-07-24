@@ -1,5 +1,5 @@
 <template>
-  <a class="miapoplus-cta" href="https://miapo.app-edufrem.com" target="_blank" rel="noopener">
+  <a class="miapoplus-cta" href="https://mapoplus.app-edufrem.com" target="_blank" rel="noopener">
     <span class="mpc-ic">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8H20l-4.9 3.6 1.9 5.8L12 14.6 7 18.2l1.9-5.8L4 8.8h6.1z" /></svg>
     </span>

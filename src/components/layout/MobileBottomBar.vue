@@ -42,7 +42,7 @@ const items = computed(() => {
     { to: '/espace-parent', icon: LayoutDashboard, label: 'bbar.accueil' },
     { to: '/parent/notes', icon: FileText, label: 'bbar.notes' },
     { to: '/parent/finances', icon: CreditCard, label: 'bbar.paiements' },
-    { to: '/parent/miapo', icon: Sparkles, label: 'bbar.miapo' },
+    { to: '/mon-espace', icon: Sparkles, label: 'bbar.miapo' },
     { to: '/parent/messagerie', icon: MessageSquare, label: 'bbar.messages' },
   ]
   if (role === 'comptable') return [
