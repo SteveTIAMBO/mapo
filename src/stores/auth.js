@@ -376,7 +376,10 @@ export const useAuthStore = defineStore('auth', () => {
         await sendWelcomeVerification(result.user)
       }
       user.value = result.user // pose tout de suite (cf loginWithEmail)
-      await loadUserProfile(result.user)
+      // Le compte EST créé et l'e-mail parti : un souci de chargement de profil
+      // (lecture Firestore, règle…) ne doit PAS faire échouer l'inscription et
+      // laisser l'utilisateur bloqué sur le formulaire.
+      try { await loadUserProfile(result.user) } catch (e) { console.warn('[inscription] profil non chargé, on continue:', e && (e.code || e.message)) }
       return { success: true, needsVerification: !!(meta && meta.b2c) && !result.user.emailVerified }
     } catch (error) {
       console.error('Erreur inscription:', error)

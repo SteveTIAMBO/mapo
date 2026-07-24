@@ -401,6 +401,9 @@ async function handleSignUp() {
   const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, displayName, meta)
   isLoading.value = false
   if (result.success) {
+    // On referme le modal d'inscription tout de suite : on quitte l'écran de
+    // login pour l'écran d'activation / l'espace, le popup n'a plus lieu d'être.
+    showSignup.value = false
     // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
     // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
     if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
