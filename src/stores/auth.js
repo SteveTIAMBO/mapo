@@ -351,6 +351,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       flagFreshLogin()
       const result = await createUserWithEmailAndPassword(auth, email.trim(), password)
+      // Un vrai compte prime sur une démo éventuellement essayée avant : on purge
+      // la session démo pour qu'elle ne réapparaisse pas au rechargement (sinon
+      // elle masque le compte de production, cf. init()).
+      isDemo.value = false; clearDemoSession()
       if (displayName && displayName.trim()) {
         try { await updateProfile(result.user, { displayName: displayName.trim() }) } catch { /* non bloquant */ }
       }
@@ -467,6 +471,8 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       flagFreshLogin()
       const result = await signInWithEmailAndPassword(auth, email, password)
+      // Un vrai compte prime sur une démo essayée avant → on la purge.
+      isDemo.value = false; clearDemoSession()
       // Pose user.value tout de suite (sinon le garde de route voit « non
       // connecté » avant que onAuthStateChanged ne se déclenche → renvoi au login).
       user.value = result.user
@@ -541,6 +547,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       flagFreshLogin()
       const result = await signInWithPopup(auth, googleProvider)
+      isDemo.value = false; clearDemoSession() // un vrai compte prime sur la démo
       user.value = result.user // voir loginWithEmail : éviter le renvoi au login
       await loadUserProfile(result.user)
       await markActivated()
@@ -800,8 +807,18 @@ export const useAuthStore = defineStore('auth', () => {
         photoURL: demoProfile.photoURL,
       }
       markReady()
-      // On ecoute quand meme Firebase pour le cas ou on switch en prod
-      onAuthStateChanged(auth, () => {})
+      // On écoute Firebase : si une VRAIE session existe, elle PRIME sur la démo.
+      // Sinon une démo essayée une fois masquerait pour toujours le vrai compte
+      // (elle « collait » et court-circuitait la connexion — la démo réapparaissait
+      // à chaque rechargement, même sur l'URL du compte de production).
+      onAuthStateChanged(auth, async (firebaseUser) => {
+        if (!firebaseUser) return // pas de vrai compte → on reste en démo
+        clearDemoSession()
+        isDemo.value = false
+        user.value = firebaseUser
+        try { await loadUserProfile(firebaseUser) }
+        catch (e) { console.warn('[auth] bascule démo→réel : profil non chargé', e && (e.code || e.message)) }
+      })
       return
     }
 
