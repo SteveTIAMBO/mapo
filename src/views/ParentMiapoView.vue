@@ -6,6 +6,9 @@
     <!-- Visite guidée (2e onboarding) : explique l'app, sans question de profil -->
     <MiapoTour v-if="showTour" :steps="tourSteps" :labels="tourLabels" @done="onTourDone" />
 
+    <!-- 3e onboarding : formation hors-catalogue → école + lien + modules proposés -->
+    <MiapoFormationSetup v-if="showFormationSetup && activeEnfant" :enfant="activeEnfant" @done="onFormationDone" @skip="onFormationSkip" />
+
     <!-- Fond sombre quand le menu coulissant est ouvert (mobile) -->
     <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
 
@@ -171,7 +174,11 @@
               </div>
             </div>
             <p v-else class="muted">{{ t('mia.noNotesHint') }}</p>
-            <div class="add-note">
+            <div v-if="needsModules" class="modules-empty">
+              <p class="muted small">{{ t('mia.noModulesHint') }}</p>
+              <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
+            </div>
+            <div v-else class="add-note">
               <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.moduleOrSubject') : t('mia.subjectPlaceholder') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
               <select v-if="newMatiere" v-model="newType" class="input"><option value="">{{ t('mia.noteTypeOptional') }}</option><option v-for="ty in typesNote" :key="ty" :value="ty">{{ ty }}</option></select>
               <input v-model.number="newNote" type="number" min="0" max="20" step="0.5" class="input note-input" placeholder="/20" />
@@ -250,8 +257,11 @@
             <!-- Apprenant : lancer une révision OU ajouter une matière à réviser -->
             <div v-if="isApprenant" class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.privateLessonTitle') }}</h3></div>
-              <p class="muted">{{ t('mia.privateLessonHint') }}</p>
-              <div class="revise-pick">
+              <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.privateLessonHint') }}</p>
+              <div v-if="needsModules" class="modules-empty">
+                <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
+              </div>
+              <div v-else class="revise-pick">
                 <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
                 <button class="btn btn-outline" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>{{ t('mia.start') }}</span></button>
@@ -767,6 +777,7 @@ import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
+import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -972,7 +983,37 @@ const showOnboarding = ref(false)
 function onOnboardingDone() {
   showOnboarding.value = false
   activeId.value = enfants.value[0]?.id || ''
-  // Enchaîne sur la visite guidée (explication de l'app) une fois le profil posé.
+  // Enchaîne le parcours de 1er lancement (3e onboarding formation puis visite).
+  startFirstRunFlow()
+}
+
+// ───────── 3e onboarding : configuration de la formation ─────────
+// Apprenant en formation / supérieur dont MAPO ne connaît pas le programme :
+// on lui fait renseigner école + lien + modules (proposés par l'IA, qu'il valide)
+// AVANT la visite guidée. Rejouable à la demande depuis les écrans vides.
+const showFormationSetup = ref(false)
+function needsModulesSetup() {
+  const e = activeEnfant.value
+  if (!isApprenant.value || !e) return false
+  const sansReferentiel = isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE
+  const sansModules = !e.formationModules || !e.formationModules.split(',').map((s) => s.trim()).filter(Boolean).length
+  return sansReferentiel && sansModules
+}
+function formSetupKey() { return 'mapo_formsetup_skip_' + (activeEnfant.value?.id || 'x') }
+function formSetupSkipped() { try { return localStorage.getItem(formSetupKey()) === '1' } catch { return false } }
+function openFormationSetup() { showFormationSetup.value = true } // depuis un écran vide (forcé)
+function onFormationDone() { showFormationSetup.value = false; maybeStartTour() }
+function onFormationSkip() {
+  showFormationSetup.value = false
+  try { localStorage.setItem(formSetupKey(), '1') } catch { /* stockage indisponible */ }
+  maybeStartTour()
+}
+// Ordonnance le 1er lancement : d'abord la formation (si besoin), puis la visite.
+function startFirstRunFlow() {
+  if (!authStore.isDemo && needsModulesSetup() && !formSetupSkipped()) {
+    nextTick(() => { showFormationSetup.value = true })
+    return
+  }
   maybeStartTour()
 }
 
@@ -1223,9 +1264,18 @@ const matieresList = computed(() => {
     const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
     if (mods.length) return mods
   }
-  // Sinon, le programme national selon le niveau ET le pays (Cameroun / France).
-  return matieresPourNiveau(e?.niveau, e?.pays)
+  // Référentiel national fiable UNIQUEMENT pour le primaire / secondaire. Pour le
+  // supérieur ou une formation hors-catalogue, MAPO ne connaît pas le programme de
+  // l'école : on renvoie une liste VIDE tant que l'apprenant n'a pas défini ses
+  // modules (3e onboarding) — plutôt que d'afficher par erreur des matières du secondaire.
+  if (e && !isNiveauSuperieur(e.niveau) && e.niveau !== NIVEAU_HORS_CATALOGUE) {
+    return matieresPourNiveau(e?.niveau, e?.pays)
+  }
+  return []
 })
+// Apprenant en formation / supérieur dont on ne connaît pas encore les modules :
+// il doit d'abord créer son référentiel avant de saisir des notes ou de réviser.
+const needsModules = computed(() => isApprenant.value && !!activeEnfant.value && matieresList.value.length === 0)
 // Contexte passé au quiz IA : pour un apprenant hors-catalogue, le NOM de la
 // formation donne de bien meilleures questions que « Formation (hors catalogue) ».
 const quizNiveau = computed(() => {
@@ -1582,8 +1632,8 @@ onMounted(async () => {
     showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
   }
   // Pas d'onboarding profil à l'écran (apprenant préconfiguré, ou utilisateur qui
-  // revient) → on peut lancer la visite guidée si elle n'a pas encore été vue.
-  if (!showOnboarding.value) maybeStartTour()
+  // revient) → parcours de 1er lancement : formation (si besoin) puis visite guidée.
+  if (!showOnboarding.value) startFirstRunFlow()
   // Relance WhatsApp : rafraîchit la date de dernière révision des enfants opt-in
   // à chaque ouverture (best-effort, silencieux).
   relance.refresh()
@@ -1842,6 +1892,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .wi-level { font-weight: 700; font-size: 12px; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); padding: 3px 9px; border-radius: 20px; }
 .wi-note { font-weight: 700; font-size: 13px; color: #D93025; background: rgba(217,48,37,.08); padding: 3px 9px; border-radius: 20px; }
 .revise-pick { display: flex; gap: 10px; } .revise-pick .input { flex: 1; }
+.modules-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 2px; }
+.modules-empty .muted { margin: 0; }
 
 .prog-list { display: flex; flex-direction: column; gap: 12px; }
 .prog-row { display: flex; align-items: center; gap: 12px; }
