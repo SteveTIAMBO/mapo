@@ -111,7 +111,9 @@ const store = useEnfantsAutonomesStore()
 let _prefill = {}
 try { _prefill = JSON.parse(localStorage.getItem('mapo_signup_prefill') || '{}') } catch { _prefill = {} }
 
-const step = ref(0)
+// Si le persona a déjà été choisi à l'inscription, on saute l'étape « qui es-tu »
+// (l'utilisateur peut toujours revenir en arrière pour la changer).
+const step = ref(_prefill.persona ? 1 : 0)
 const persona = ref(_prefill.persona || (store.mode === 'apprenant' ? 'apprenant' : 'parent'))
 const pays = ref(_prefill.pays || paysParDefaut() || 'CM')
 const niveau = ref(_prefill.niveau || '3ème')

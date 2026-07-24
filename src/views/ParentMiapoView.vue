@@ -731,7 +731,7 @@ import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, jourISO } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -1497,9 +1497,30 @@ onMounted(async () => {
   // même après un rechargement — sinon l'enfant retomberait sur le 1er profil.
   const sess = store.childSessionId
   activeId.value = (sess && enfants.value.some((e) => e.id === sess) ? sess : enfants.value[0]?.id) || ''
-  // Onboarding guidé au 1er lancement : nouveau compte B2C sans aucun profil.
-  // Forçable en QA via ?onboarding=1 ; la démo (profil amorcé) ne le déclenche pas.
-  showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
+  // Préconfiguration depuis l'inscription : si l'apprenant a déjà choisi son
+  // persona + niveau à la création du compte, on crée directement son profil et
+  // on SAUTE l'onboarding (pas de question redondante).
+  let _pf = null
+  try { _pf = JSON.parse(localStorage.getItem('mapo_signup_prefill') || 'null') } catch { _pf = null }
+  const _pfComplete = _pf && _pf.persona === 'apprenant' && _pf.firstName && (_pf.niveau || _pf.formation)
+  if (_pfComplete && !authStore.isDemo && enfants.value.length === 0) {
+    const isHC = _pf.niveau === NIVEAU_HORS_CATALOGUE || (!_pf.niveau && _pf.formation)
+    store.setMode('apprenant')
+    setPaysParDefaut(_pf.pays || 'CM')
+    activeId.value = store.addEnfant({
+      firstName: _pf.firstName,
+      niveau: isHC ? NIVEAU_HORS_CATALOGUE : _pf.niveau,
+      pays: _pf.pays || 'CM',
+      ecole: '',
+      formation: isHC ? (_pf.formation || '') : '',
+    })
+    try { localStorage.removeItem('mapo_signup_prefill') } catch { /* silent */ }
+    showOnboarding.value = false
+  } else {
+    // Onboarding guidé au 1er lancement : nouveau compte B2C sans aucun profil.
+    // Forçable en QA via ?onboarding=1 ; la démo (profil amorcé) ne le déclenche pas.
+    showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
+  }
   // Relance WhatsApp : rafraîchit la date de dernière révision des enfants opt-in
   // à chaque ouverture (best-effort, silencieux).
   relance.refresh()

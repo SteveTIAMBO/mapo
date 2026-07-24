@@ -387,16 +387,15 @@ async function handleSignUp() {
   const meta = isMiapoMode ? { b2c: true, role: signupRole.value, pays: signupPays.value } : {}
   // Apprenant : on mémorise prénom + niveau/formation choisis à l'inscription
   // pour préremplir l'onboarding (préconfiguration de son espace).
-  if (isMiapoMode && signupRole.value === 'apprenant') {
+  if (isMiapoMode) {
     try {
-      const niveau = signupCycle.value === 'autres' ? NIVEAU_HORS_CATALOGUE : signupNiveau.value
-      localStorage.setItem('mapo_signup_prefill', JSON.stringify({
-        persona: 'apprenant',
-        firstName: signupFirstName.value.trim(),
-        pays: signupPays.value,
-        niveau: niveau || '',
-        formation: signupCycle.value === 'autres' ? signupFormation.value.trim() : '',
-      }))
+      const pf = { persona: signupRole.value === 'apprenant' ? 'apprenant' : 'parent', pays: signupPays.value }
+      if (signupRole.value === 'apprenant') {
+        pf.firstName = signupFirstName.value.trim()
+        pf.niveau = signupCycle.value === 'autres' ? NIVEAU_HORS_CATALOGUE : (signupNiveau.value || '')
+        pf.formation = signupCycle.value === 'autres' ? signupFormation.value.trim() : ''
+      }
+      localStorage.setItem('mapo_signup_prefill', JSON.stringify(pf))
     } catch (e) { /* stockage indisponible : sans gravité */ }
   }
   const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, displayName, meta)
