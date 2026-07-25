@@ -401,6 +401,34 @@
 
         <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
         <section v-else-if="section === 'historique'" class="sec">
+          <!-- Revoir en lecture seule (0 token) une fiche ou une rédaction archivée -->
+          <div v-if="histReview" class="card">
+            <div class="card-head"><History :size="18" /><h3>{{ histFormatLabel(histReview) }} · {{ histReview.subjectName }}</h3></div>
+            <template v-if="histReview.format === 'fiches'">
+              <div v-if="histReview.fiche" class="hr-fiche">
+                <strong>{{ histReview.fiche.titre || t('mia.fichesSheet') }}</strong>
+                <p class="hr-doc">{{ histReview.fiche.document }}</p>
+              </div>
+              <div v-if="histReview.cards && histReview.cards.length" class="hr-cards">
+                <div v-for="(c, i) in histReview.cards" :key="i" class="hr-fc">
+                  <span class="hr-recto">{{ c.recto }}</span>
+                  <span class="hr-verso">{{ c.verso }}</span>
+                </div>
+              </div>
+            </template>
+            <template v-else-if="histReview.format === 'redaction'">
+              <p class="hr-q">{{ histReview.question }}</p>
+              <div class="hr-answer">{{ histReview.answer }}</div>
+              <div v-if="histReview.res" class="hr-corr">
+                <span v-if="histReview.res.note != null" class="hr-note">{{ histReview.res.note }}/10</span>
+                <p v-if="histReview.res.verdict" class="hr-verdict">{{ histReview.res.verdict }}</p>
+                <p v-if="histReview.res.explication" class="muted small">{{ histReview.res.explication }}</p>
+              </div>
+            </template>
+            <button class="btn btn-outline btn-sm hr-back" @click="histReview = null">{{ t('mia.histBack') }}</button>
+          </div>
+
+          <template v-else>
           <div v-if="aReviser.length" class="card">
             <div class="card-head"><Target :size="18" /><h3><DualText :text="t('mia.histWeakTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.histWeakHint') }}</p>
@@ -427,6 +455,7 @@
             </div>
             <p v-else class="muted small hist-empty">{{ t('mia.histEmpty') }}</p>
           </div>
+          </template>
         </section>
 
         <!-- ========== PROGRESSION ========== -->
@@ -1440,14 +1469,17 @@ function rejouerSession(s) {
   section.value = 'tuteur'
 }
 // Toutes les révisions sont archivées (quiz, session guidée, fiches, rédaction) :
-// on reprend chacune selon son format. Le quiz se rejoue SANS régénérer (0 token).
+// on reprend chacune selon son format, SANS régénérer (0 token). Fiches et
+// rédaction se REVOIENT en lecture seule (contenu archivé) ; le quiz se rejoue ;
+// la session guidée se reprend dans le chat.
+const histReview = ref(null)
 function reprendreSession(s) {
   if (!isApprenant.value || !s) return
   const f = s.format || 'quiz'
   if (f === 'quiz') return rejouerSession(s)
-  if (f === 'chat') { if (s.seed) { try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: s.seed } })) } catch { /* silent */ } } return }
-  if (f === 'fiches') { reviseMatiere.value = s.subjectName || ''; section.value = 'fiches'; return }
-  if (f === 'redaction') { reviseMatiere.value = s.subjectName || ''; activeRedaction.value = s.subjectName || ''; section.value = 'tuteur'; return }
+  if (f === 'chat') { if (s.seed) { try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: s.seed, fresh: true } })) } catch { /* silent */ } } return }
+  // fiches / rédaction → revoir le contenu archivé, sans nouvel appel IA.
+  histReview.value = s
 }
 function hasScore(s) { return (s && (s.format || 'quiz') === 'quiz' && s.scorePercent != null) }
 function histFormatLabel(s) {
@@ -1455,7 +1487,14 @@ function histFormatLabel(s) {
   if (f === 'chat' && s.kind) return t('mia.rt_' + s.kind)
   return t('mia.histFmt_' + f)
 }
-function histActionLabel(s) { return ((s && s.format) || 'quiz') === 'quiz' ? t('mia.histReplay') : t('mia.histResume') }
+function histActionLabel(s) {
+  const f = (s && s.format) || 'quiz'
+  if (f === 'quiz') return t('mia.histReplay')
+  if (f === 'chat') return t('mia.histResume')
+  return t('mia.histSee')   // fiches / rédaction → revoir (lecture seule)
+}
+// Referme la revue quand on quitte l'Historique ou change d'enfant.
+watch([() => section.value, activeId], () => { histReview.value = null })
 function histDate(iso) {
   try { return new Date(iso).toLocaleDateString(locale.value.startsWith('en') ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' }) } catch { return '' }
 }
@@ -2376,6 +2415,19 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .hist-meta { font-size: 12px; color: var(--tx3, #6b7280); }
 .hist-score { flex-shrink: 0; font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; }
 .hist-empty { padding: 6px 0 2px; }
+/* Revoir (lecture seule) une fiche / rédaction archivée */
+.hr-fiche strong { display: block; font-size: 14.5px; color: var(--tx, #1f2937); margin-bottom: 6px; }
+.hr-doc { white-space: pre-wrap; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.5; margin: 0 0 12px; }
+.hr-cards { display: flex; flex-direction: column; gap: 8px; }
+.hr-fc { display: flex; flex-direction: column; gap: 3px; padding: 10px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; background: #fff; }
+.hr-recto { font-weight: 700; font-size: 13.5px; color: var(--tx, #1f2937); }
+.hr-verso { font-size: 13px; color: var(--tx3, #6b7280); }
+.hr-q { font-weight: 700; font-size: 14px; color: var(--tx, #1f2937); margin: 0 0 8px; }
+.hr-answer { white-space: pre-wrap; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.5; padding: 11px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; background: rgba(0,0,0,.02); margin-bottom: 12px; }
+.hr-corr { border-left: 3px solid var(--pr); padding-left: 12px; }
+.hr-note { display: inline-block; font-weight: 800; font-size: 13px; color: var(--pr); margin-bottom: 4px; }
+.hr-verdict { font-weight: 600; font-size: 13.5px; color: var(--tx, #1f2937); margin: 0 0 4px; }
+.hr-back { margin-top: 14px; }
 .prepa-result { display: flex; flex-direction: column; gap: 12px; }
 .prepa-plan { display: flex; flex-direction: column; gap: 10px; }
 .etape { border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; }

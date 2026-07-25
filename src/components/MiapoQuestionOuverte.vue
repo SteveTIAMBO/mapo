@@ -130,7 +130,7 @@ async function corriger() {
     res.value = r.eval; etat.value = 'done'
     // Archive la rédaction dans l'Historique (toutes les révisions y figurent).
     if (props.enfant?.id) {
-      try { tuteur.saveRevisionSession(props.enfant.id, { format: 'redaction', subjectName: matiere.value, question: question.value, answer: reponse.value, note: r.eval?.note }) } catch { /* silent */ }
+      try { tuteur.saveRevisionSession(props.enfant.id, { format: 'redaction', subjectName: matiere.value, question: question.value, answer: reponse.value, note: r.eval?.note, res: r.eval }) } catch { /* silent */ }
     }
   }
   else err.value = r?.reason || t('mia.qoUnavailable')

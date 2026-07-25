@@ -4707,6 +4707,8 @@
     "histEmpty": "No revision yet. Start a quiz from the Tutor and it'll show up here.",
     "histReplay": "Replay",
     "histResume": "Resume",
+    "histSee": "Review",
+    "histBack": "← Back to history",
     "histFmt_quiz": "Quiz",
     "histFmt_chat": "Guided session",
     "histFmt_fiches": "Sheets & cards",
