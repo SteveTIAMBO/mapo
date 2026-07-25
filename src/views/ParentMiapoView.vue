@@ -575,6 +575,11 @@
             <MiapoAccessibilite />
           </div>
 
+          <!-- Sous-menu : Mes cours (dépôt personnel importé) — apprenant uniquement -->
+          <div v-if="isApprenant" v-show="sousSection === 'cours'" class="param-panel">
+            <MiapoMesCours :enfant="activeEnfant" />
+          </div>
+
           <!-- Sous-menu : Connecteurs (agenda + compte Carré) -->
           <div v-show="sousSection === 'connecteurs'" class="param-panel">
             <p class="muted small">{{ t('mia.connectorsHint') }}</p>
@@ -884,11 +889,12 @@ import MiapoProfilSwitch from '../components/MiapoProfilSwitch.vue'
 import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
+import MiapoMesCours from '../components/MiapoMesCours.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
-import { History, RotateCcw } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
@@ -957,7 +963,6 @@ const SECTIONS = computed(() => {
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
-    { key: 'fiches', label: t('mia.secFiches'), icon: Layers, group: 'apprendre' },
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
     progress, planning, edt,
@@ -998,6 +1003,8 @@ const sousMenus = computed(() => {
   const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
   // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
   if (isSelfPayer.value) items.push({ key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard })
+  // « Mes cours » (dépôt personnel importé) — apprenant uniquement.
+  if (isApprenant.value) items.push({ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen })
   items.push({ key: 'langue', label: t('mia.secLanguage'), icon: Languages })
   items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
@@ -1229,8 +1236,11 @@ function onTourDone() {
 // Le menu change selon le mode (parent allégé / apprenant complet) et le niveau
 // (annales). Si la section courante disparaît du menu, on revient à l'accueil
 // plutôt que d'afficher une page vide.
+// 'fiches' n'est plus dans le menu mais reste une vue atteignable (type de
+// révision « cartes mémoire », @ouvrir-fiche) → on ne la considère pas orpheline.
+const SECTIONS_HORS_MENU = new Set(['profil', 'fiches'])
 watch([SECTIONS, () => store.mode], () => {
-  if (section.value !== 'profil' && !SECTIONS.value.some((s) => s.key === section.value)) section.value = 'accueil'
+  if (!SECTIONS_HORS_MENU.has(section.value) && !SECTIONS.value.some((s) => s.key === section.value)) section.value = 'accueil'
 })
 const initials = computed(() => activeEnfant.value ? (activeEnfant.value.firstName[0] || '') + (activeEnfant.value.lastName[0] || '') : '')
 

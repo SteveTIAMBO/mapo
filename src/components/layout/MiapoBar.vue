@@ -232,6 +232,7 @@ import { useElevesStore } from '../../stores/eleves'
 import { useAuthStore } from '../../stores/auth'
 import { useTuteurStore } from '../../stores/tuteur'
 import { useEnfantsAutonomesStore, matieresPourNiveau } from '../../stores/enfantsAutonomes'
+import { coursTexteTous } from '../../utils/coursPerso'
 import { useConnecteursStore } from '../../stores/connecteurs'
 
 const router = useRouter()
@@ -462,11 +463,11 @@ const busy = computed(() => copilot.thinking || chatThinking.value)
 const learnerCtx = computed(() => {
   const list = enfantsStore.enfants || []
   const e = (enfantsStore.isCompteEnfant || enfantsStore.mode === 'apprenant') ? list[0] : null
-  if (!e) return { niveau: '', matieres: '', prenom: '' }
+  if (!e) return { niveau: '', matieres: '', prenom: '', id: '' }
   const mats = (Array.isArray(e.formationModules) && e.formationModules.length)
     ? e.formationModules
     : matieresPourNiveau(e.niveau, e.pays)
-  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim() }
+  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim(), id: e.id || '' }
 })
 // Accueil personnalisé (client-side) : le prénom ne quitte pas le navigateur.
 const welcomeGreeting = computed(() => {
@@ -740,8 +741,11 @@ async function submitB2C(text, opts = {}) {
   const hist = chatMsgs.value.slice(-6, -1)
     .map((m) => (m.role === 'user' ? 'Apprenant' : 'MIAPO') + ' : ' + m.text)
     .join('\n')
-  // Notes de cours issues de Carré (si l'apprenant a relié son compte) → MIAPO s'appuie dessus.
-  const cours = await connecteurs.carreNotesText().catch(() => '')
+  // Ancrage « sous-RAG personnel » : cours importés par l'apprenant (Mes cours)
+  // + notes de cours Carré si relié. MIAPO s'appuie dessus EN PRIORITÉ.
+  const perso = ctx.id ? coursTexteTous(ctx.id, 4000) : ''
+  const carre = await connecteurs.carreNotesText().catch(() => '')
+  const cours = [perso, carre].filter(Boolean).join('\n\n').slice(0, 6000)
   const r = await tuteur.chatTuteur({
     message: text,
     niveau: ctx.niveau,

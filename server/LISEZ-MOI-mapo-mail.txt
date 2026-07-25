@@ -1,0 +1,57 @@
+MAPO+ — Mails brandés via Brevo (déploiement)
+=============================================
+
+Ce paquet ajoute l'envoi d'e-mails transactionnels BRANDÉS (bienvenue…) via
+Brevo, indépendamment des mails d'authentification de Firebase.
+
+Contenu :
+  - mapo-mail.php ................ le point d'entrée (à déposer sur le serveur)
+  - mapo-mail-config.example.php . modèle de config (À COPIER + REMPLIR)
+  - emails/welcome.fr.html ....... gabarit bienvenue (français)
+  - emails/welcome.en.html ....... gabarit bienvenue (anglais)
+
+--------------------------------------------------------------------
+ÉTAPES (5 minutes)
+--------------------------------------------------------------------
+
+1) LA CLÉ BREVO (v3 API)
+   app.brevo.com → « SMTP & API » → onglet **API Keys** → « Generate a new
+   API key ». Elle commence par  xkeysib-…
+   ⚠ Ce n'est PAS la clé SMTP (xsmtpsib-…), qui sert au relais SMTP de Firebase.
+   Ici on passe par l'API HTTP de Brevo (plus fiable, même schéma que
+   mapo-notify.php avec Twilio).
+
+2) LA CONFIG
+   - Copie  mapo-mail-config.example.php  →  mapo-mail-config.php
+   - Remplis  BREVO_API_KEY  avec ta clé xkeysib-…
+   - Vérifie l'expéditeur : contact@edufrem.com (domaine déjà authentifié Brevo)
+   - NE COMMITTE PAS  mapo-mail-config.php  (il contient le secret).
+
+3) LE DÉPÔT SUR LE SERVEUR
+   Dépose dans  public_html/mapo/  (à côté de mapo-notify.php) :
+     - mapo-mail.php
+     - mapo-mail-config.php   (le fichier rempli, pas l'exemple)
+     - le dossier  emails/  avec welcome.fr.html et welcome.en.html
+
+4) PROTÉGER LA CONFIG
+   Ton .htaccess bloque déjà l'accès direct aux *-config.php (comme pour
+   mapo-notify-config.php). Vérifie que  mapo-mail-config.php  est bien couvert.
+
+5) TEST
+   Le mail de bienvenue part TOUT SEUL à la 1re activation d'un compte MAPO+
+   (après clic sur le lien d'activation). Pour tester : crée un compte neuf,
+   active-le, tu dois recevoir le mail brandé. (Il n'est envoyé qu'une fois par
+   compte — fanion welcomeSentAt côté Firestore.)
+
+--------------------------------------------------------------------
+SÉCURITÉ
+--------------------------------------------------------------------
+  - Le point d'entrée exige un jeton Firebase valide et n'envoie QU'À l'adresse
+    portée par ce jeton : impossible de spammer une adresse arbitraire.
+  - La clé Brevo reste côté serveur, jamais dans l'app ni dans le dépôt.
+  - Tant que mapo-mail-config.php est absent/non rempli, l'app continue sans
+    erreur (le mail est simplement ignoré).
+
+Pour ajouter d'autres mails brandés plus tard (reçus d'abonnement, etc.), on
+crée un nouveau gabarit  emails/<nom>.<langue>.html  et on l'ajoute à la
+whitelist  $ALLOWED_TEMPLATES  dans mapo-mail.php.

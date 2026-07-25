@@ -30,6 +30,7 @@
         <MiapoOrbe :size="17" :frozen="true" /> <span>{{ t('mia.fichesGenerate') }}</span>
       </button>
       <p class="foot"><Info :size="13" /> {{ t('mia.fichesFromCourseNote') }}</p>
+      <button type="button" class="btn btn-ghost btn-sm mescours-link" @click="ouvrirMesCours"><FolderOpen :size="14" /> <span>{{ t('mia.fichesManageCourses') }}</span></button>
       <p v-if="state === 'error'" class="err-line">{{ errorMsg }}</p>
     </div>
 
@@ -82,7 +83,7 @@ import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
 import { useAuthStore } from '../stores/auth'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
-import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
+import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info, FolderOpen } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
@@ -124,6 +125,10 @@ function onPickCourse() {
 onMounted(() => { if (ecoleConnectee.value && !cours.loaded) cours.load() })
 
 function pickFile() { fileInput.value?.click() }
+// Renvoie vers Paramètres → Mes cours (dépôt personnel centralisé).
+function ouvrirMesCours() {
+  try { window.dispatchEvent(new CustomEvent('open-miapo-settings', { detail: { tab: 'cours' } })) } catch { /* silent */ }
+}
 async function onFile(e) {
   const file = e.target.files && e.target.files[0]
   if (!file) return
