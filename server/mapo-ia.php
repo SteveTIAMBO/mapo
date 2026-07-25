@@ -3,9 +3,9 @@
  * MAPO — Génération d'appréciations de bulletin assistée par IA.
  *
  * Appelé par l'app école (même domaine → pas de CORS) depuis le bulletin :
- * le directeur clique « Générer avec l'IA », l'app envoie les données
- * chiffrées de l'élève (prénom, moyennes, rang, mention, matières) et le
- * proxy renvoie une appréciation rédigée en français.
+ * le directeur clique « Générer avec l'IA », l'app envoie les données de
+ * l'élève (moyennes, rang, mention, matières) et le proxy renvoie une
+ * appréciation rédigée en français.
  *
  * Sécurité :
  *   - Jeton Firebase vérifié (RS256 Google) pour les utilisateurs connectés.
@@ -14,6 +14,13 @@
  *   - La clé API vit dans mapo-ia-config.php (protégé par .htaccess). Absente
  *     ou non remplie → réponse "not_configured" → l'app bascule en simulation
  *     (appréciation générée localement, gratuite).
+ *
+ * Confidentialité (anonymisation avant l'IA) :
+ *   - Le PRÉNOM de l'élève n'est JAMAIS transmis au fournisseur IA : il est
+ *     remplacé par un jeton neutre (PRENOM_ELEVE) AVANT l'appel, puis
+ *     ré-injecté dans le texte renvoyé, côté serveur (voir deanonymize()).
+ *     Le modèle ne reçoit que des données pseudonymisées (moyennes, rang,
+ *     mention) — non rattachables à une personne nommée.
  *   - Aucune donnée n'est stockée : le proxy relaie puis oublie.
  */
 
@@ -86,11 +93,14 @@ $r = ($provider === 'anthropic' && !$image)
   : callOpenAICompat($system, $user, $maxTokens, $noReason, $image);
 
 if (!empty($r['ok'])) {
+  // Ré-injection du prénom réel : il n'a jamais été transmis au fournisseur IA
+  // (envoyé sous forme du jeton PRENOM_ELEVE) → on le restaure ici, côté serveur.
+  $text = deanonymize(trim($r['text']), $task, $data);
   // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
   if ($metered) { $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']); }
-  echo json_encode(['ok' => true, 'text' => trim($r['text']), 'provider' => $provider, 'tokens' => $tokens, 'cap' => $cap]);
+  echo json_encode(['ok' => true, 'text' => $text, 'provider' => $provider, 'tokens' => $tokens, 'cap' => $cap]);
 } else {
   echo json_encode(['ok' => false, 'error' => 'ia_echec', 'code' => $r['code'] ?? null, 'detail' => $r['detail'] ?? null]);
 }
@@ -631,7 +641,9 @@ function buildTutorQuizPrompts($d) {
 }
 
 function buildAppreciationPrompts($d) {
-  $prenom   = clean($d['prenom'] ?? 'L\'élève', 40);
+  // Confidentialité : le VRAI prénom n'est jamais envoyé au fournisseur IA. On
+  // met un jeton neutre (PRENOM_ELEVE) dans le prompt ; le prénom réel est
+  // ré-injecté côté serveur au retour (voir deanonymize()).
   $classe   = clean($d['classe'] ?? '', 30);
   $periode  = clean($d['periode'] ?? 'cette période', 40);
   $moyenne  = isset($d['moyenneGenerale']) && $d['moyenneGenerale'] !== null ? floatval($d['moyenneGenerale']) : null;
@@ -661,9 +673,11 @@ function buildAppreciationPrompts($d) {
     . "Rédige UNIQUEMENT l'appréciation : 2 à 4 phrases, un seul paragraphe, en français soigné, sans liste ni puce, sans titre, sans guillemets. "
     . "Situe le niveau global, valorise 1-2 points forts (matières au-dessus de la moyenne), signale 1-2 axes de progrès concrets (matières faibles), et termine par un encouragement adapté. "
     . "N'invente AUCUNE donnée chiffrée et ne recopie pas les notes une à une. {$tonInstr} "
-    . "Écris à la 3e personne en utilisant le prénom de l'élève.";
+    . "Le prénom de l'élève est remplacé par le jeton PRENOM_ELEVE (confidentialité) : écris à la 3e personne "
+    . "et emploie le jeton PRENOM_ELEVE TEL QUEL — sans le traduire, le modifier, ni le mettre entre guillemets — "
+    . "là où tu utiliserais normalement le prénom.";
 
-  $u = "Élève : {$prenom}" . ($classe ? " (classe de {$classe})" : '') . "\n";
+  $u = "Élève : PRENOM_ELEVE" . ($classe ? " (classe de {$classe})" : '') . "\n";
   $u .= "Période : {$periode}\n";
   if ($moyenne !== null) $u .= "Moyenne générale : " . number_format($moyenne, 2, '.', '') . "/20\n";
   if ($rang !== null && $effectif !== null) $u .= "Rang : {$rang}e sur {$effectif}\n";
@@ -678,6 +692,22 @@ function buildAppreciationPrompts($d) {
 function clean($s, $max) {
   $s = trim(preg_replace('/\s+/u', ' ', (string)$s));
   return mb_substr($s, 0, $max);
+}
+
+// Défense en profondeur (anonymisation) : le prompt envoyé au modèle ne
+// contient JAMAIS le prénom, uniquement le jeton neutre PRENOM_ELEVE. Ici on
+// remet, à la place du jeton, la valeur `prenom` reçue par le serveur.
+// NB : le front-end anonymise DÉJÀ (il envoie son propre jeton à la place du
+// prénom et fait la substitution finale côté navigateur) ; cette couche serveur
+// protège EN PLUS tout appelant qui n'anonymiserait pas. Tolère quelques
+// variantes de casse/accents/séparateur que le modèle pourrait produire ; si
+// l'IA a ignoré la consigne et écrit « l'élève », le texte reste correct.
+function deanonymize($text, $task, $d) {
+  if ($task !== 'appreciation') return $text;
+  $prenom = clean($d['prenom'] ?? '', 40);
+  if ($prenom === '') $prenom = "L'élève";
+  $variants = ['PRENOM_ELEVE', 'PRENOM ELEVE', 'PRENOM-ELEVE', 'PRÉNOM_ÉLÈVE', 'PRÉNOM ÉLÈVE', 'PRÉNOM-ÉLÈVE'];
+  return trim(str_ireplace($variants, $prenom, $text));
 }
 
 // ════════════════════════════════════════════════════════════════════
