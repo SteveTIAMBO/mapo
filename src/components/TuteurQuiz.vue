@@ -58,22 +58,27 @@
         <Lightbulb :size="18" />
         <div><strong>Indice</strong><p>{{ current.hint || 'Relis la question et élimine les réponses impossibles.' }}</p></div>
       </div>
-      <div v-if="phase === 'hinted' && (conceptText || conceptBusy)" class="tq-fb concept">
-        <MiapoOrbe :size="18" :frozen="true" />
-        <div><strong>MIAPO t'explique le concept</strong>
-          <p v-if="conceptBusy && !conceptText" class="tq-concept-load">MIAPO prépare l'explication…</p>
-          <p v-else>{{ conceptText }}</p>
-          <div v-if="conceptText && !conceptBusy && !conceptAsked" class="tq-concept-ack">
-            <span class="tq-ack-q">{{ ackLabels.understood }}</span>
-            <button type="button" class="tq-ack-btn yes" @click="conceptOui">{{ ackLabels.yes }}</button>
-            <button type="button" class="tq-ack-btn no" @click="conceptNon">{{ ackLabels.no }}</button>
-          </div>
-        </div>
-      </div>
       <div v-if="revealed" class="tq-fb" :class="firstTry ? 'ok' : 'expl'">
         <component :is="firstTry ? Check : BookOpen" :size="18" />
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
           <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p></div>
+      </div>
+      <!-- Aide facultative : seulement si l'apprenant a échoué. « Approfondir »
+           déclenche l'explication du concept ; « Répondre » ouvre le chat. -->
+      <div v-if="revealed && !firstTry" class="tq-deepen">
+        <button v-if="!conceptText && !conceptBusy" type="button" class="tq-appro-btn" @click="approfondir">
+          <Sparkles :size="15" /> <span>{{ ackLabels.deepen }}</span>
+        </button>
+        <div v-else class="tq-fb concept">
+          <MiapoOrbe :size="18" :frozen="true" />
+          <div><strong>MIAPO t'explique le concept</strong>
+            <p v-if="conceptBusy && !conceptText" class="tq-concept-load">MIAPO prépare l'explication…</p>
+            <p v-else>{{ conceptText }}</p>
+            <div v-if="conceptText && !conceptBusy" class="tq-concept-ack">
+              <button type="button" class="tq-ack-btn no" @click="conceptRepondre"><ArrowUpRight :size="14" /> <span>{{ ackLabels.answer }}</span></button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div v-if="voiceOn && revealed && !firstTry" class="tq-voice-help">
@@ -210,22 +215,20 @@ function jeNaiPasCompris() {
 // solution) et on MÉMORISE l'explication sur l'appareil (frugalité).
 const conceptText = ref('')
 const conceptBusy = ref(false)
-// L'apprenant a-t-il répondu au « As-tu compris ? » (Oui → on continue le quiz ;
-// Non → on ouvre le chat MIAPO pour approfondir le concept).
-const conceptAsked = ref(false)
+// Aide progressive : l'explication du concept ne se déclenche QUE si l'apprenant
+// clique « Approfondir » (après avoir échoué). L'explication peut contenir une
+// question ouverte → « Répondre » ouvre une nouvelle conversation où l'apprenant
+// y répond ; « Continuer » (bouton Question suivante) avance sans répondre.
 const ackLabels = computed(() => (locale.value.startsWith('en')
-  ? { understood: 'Did you understand?', yes: 'Yes, continue', no: 'No, go deeper' }
-  : { understood: 'As-tu compris ?', yes: 'Oui, je continue', no: 'Non, approfondir' }))
-function conceptOui() { conceptAsked.value = true }
-function conceptNon() {
-  conceptAsked.value = true
-  const c = current.value
-  const en = ttsLang().toLowerCase().startsWith('en')
-  const q = en
-    ? `I'm revising ${props.matiere} (level ${props.niveau || ''}) and I don't understand this concept: « ${c && c.q ? c.q : ''} ». Explain it to me differently, with a simple example, then check I understood. Do NOT give the answer to the exercise.`
-    : `Je révise ${props.matiere} (niveau ${props.niveau || ''}) et je ne comprends pas ce concept : « ${c && c.q ? c.q : ''} ». Explique-le-moi autrement, avec un exemple simple, puis vérifie que j'ai compris. Ne me donne pas la réponse de l'exercice.`
-  // fresh:true → nouvelle conversation dédiée au concept (contexte embarqué).
-  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: q, fresh: true } })) } catch { /* silent */ }
+  ? { deepen: 'Go deeper', answer: 'Answer MIAPO' }
+  : { deepen: 'Approfondir', answer: 'Répondre à MIAPO' }))
+function approfondir() { expliqueConcept() }
+function conceptRepondre() {
+  const seed = conceptText.value
+  if (!seed) return
+  // L'explication de MIAPO (avec sa question éventuelle) devient le 1er message
+  // d'un nouveau fil ; l'apprenant répond ensuite dans le chat.
+  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { fresh: true, seedMiapo: seed } })) } catch { /* silent */ }
 }
 const CONCEPT_KEY = 'mapo_miapo_concept_v2'
 const _normC = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180)
@@ -293,9 +296,9 @@ const flags = ref([])
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
 // Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
-watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; conceptAsked.value = false; if (mode.value === 'quiz') readQuestion() })
-// 1re erreur : l'écran montre l'indice ; MIAPO va plus loin et explique le CONCEPT.
-watch(phase, (p) => { if (p === 'hinted') expliqueConcept() })
+watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; if (mode.value === 'quiz') readQuestion() })
+// 1re erreur → indice seulement. L'explication du concept n'arrive que si
+// l'apprenant clique « Approfondir » après avoir vu la bonne réponse.
 // Révélation : bonne réponse → félicitation (+ enchaîne en mode session) ;
 // après erreurs → encourage + donne la réponse en expliquant, puis enchaîne.
 watch(revealed, (r) => {
@@ -467,6 +470,9 @@ onMounted(start)
 .tq-fb.concept { background: rgba(124,92,255,.07); color: #6b46ff; margin-top: 10px; }
 .tq-fb.concept strong { color: #5b34e6; }
 .tq-concept-load { opacity: .7; font-style: italic; }
+.tq-deepen { margin-top: 10px; }
+.tq-appro-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border-radius: 10px; border: 1.5px solid rgba(124,92,255,.4); background: rgba(124,92,255,.06); color: #5b34e6; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+.tq-appro-btn:hover { background: rgba(124,92,255,.12); border-color: #6b46ff; }
 .tq-concept-ack { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .tq-ack-q { font-size: 13px; font-weight: 700; color: #5b34e6; margin-right: 2px; }
 .tq-ack-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9px; border: 1.5px solid rgba(124,92,255,.35); background: #fff; color: #5b34e6; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }

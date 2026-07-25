@@ -884,9 +884,17 @@ function validateComm() {
 function onOpenEvent(e) {
   isOpen.value = true
   const d = (e && e.detail) || {}
-  // `fresh` : on repart d'une conversation vierge (ex. « Non, approfondir » du quiz).
+  // `fresh` : on repart d'une conversation vierge (ex. « Répondre » du quiz).
   if (d.fresh && isB2C.value) nouvelleConversation()
-  if (d.query && isB2C.value) nextTick(() => { submitB2C(String(d.query), { skipLocal: true }) })
+  // `seedMiapo` : dépose un message de MIAPO (ex. l'explication + sa question) en
+  // 1er tour ; l'apprenant répond ensuite. `query` : message envoyé AU nom de
+  // l'apprenant (lance directement une session guidée).
+  if (d.seedMiapo && isB2C.value) {
+    chatMsgs.value.push({ role: 'miapo', text: String(d.seedMiapo) })
+    nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
+  } else if (d.query && isB2C.value) {
+    nextTick(() => { submitB2C(String(d.query), { skipLocal: true }) })
+  }
 }
 function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
