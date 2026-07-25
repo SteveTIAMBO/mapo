@@ -21,7 +21,7 @@
               v-model="query"
               type="text"
               class="search-input"
-              placeholder="Rechercher un élève, une classe, un module..."
+              :placeholder="searchPlaceholder"
               @keydown.escape="close"
               @keydown.arrow-down.prevent="selectNext"
               @keydown.arrow-up.prevent="selectPrev"
@@ -52,14 +52,14 @@
             <template v-else>
               <!-- Modules category -->
               <div v-if="results.modules.length > 0" class="search-category">
-                <div class="category-header">Modules</div>
+                <div class="category-header">{{ modulesHeader }}</div>
                 <div class="category-items">
                   <button
                     v-for="(item, idx) in results.modules"
                     :key="`modules-${idx}`"
                     class="result-item"
                     :class="{ active: selectedIndex === getResultIndex('modules', idx) }"
-                    @click="navigateTo(item.path)"
+                    @click="onModule(item)"
                     @mouseenter="selectedIndex = getResultIndex('modules', idx)"
                   >
                     <component :is="item.icon" :size="18" class="result-icon" />
@@ -195,6 +195,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
   Search,
   X,
@@ -210,6 +211,16 @@ import {
   MessageSquare,
   Settings,
   BarChart3,
+  Home,
+  GraduationCap,
+  Layers,
+  TrendingUp,
+  CalendarCheck,
+  CalendarDays,
+  Compass,
+  Target,
+  Gauge,
+  Receipt,
 } from 'lucide-vue-next'
 import { useElevesStore } from '../../stores/eleves'
 import { usePersonnelStore } from '../../stores/personnel'
@@ -217,6 +228,7 @@ import { useClassesStore } from '../../stores/classes'
 import { useFacturationStore } from '../../stores/facturation'
 import { useDisciplineStore } from '../../stores/discipline'
 import { useAuthStore } from '../../stores/auth'
+import { useEnfantsAutonomesStore } from '../../stores/enfantsAutonomes'
 
 const props = defineProps({
   modelValue: {
@@ -228,6 +240,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const router = useRouter()
+const { t } = useI18n()
 const searchInput = ref(null)
 const query = ref('')
 const selectedIndex = ref(-1)
@@ -244,9 +257,50 @@ const classesStore = useClassesStore()
 const facturationStore = useFacturationStore()
 const disciplineStore = useDisciplineStore()
 const authStore = useAuthStore()
+const enfantsStore = useEnfantsAutonomesStore()
 
 // Check if user is a teacher
 const isTeacher = computed(() => authStore.isTeacher || false)
+
+// ── MAPO+ (B2C) : le même bouton loupe doit lister les fonctionnalités MAPO+
+// (Tuteur, Fiches, Planning…), PAS les modules de l'ERP scolaire (Élèves,
+// Facturation…). On cloisonne donc entièrement la palette selon le compte. ──
+const isB2C = computed(() => !!authStore.isB2C)
+const isApprenant = computed(() => enfantsStore.mode === 'apprenant')
+
+// Destinations MAPO+ = sections internes de ParentMiapoView (naviguées par
+// événement `miapo-goto`, pas par route). L'ordre suit le menu latéral.
+const miapoModules = computed(() => {
+  if (isApprenant.value) {
+    return [
+      { name: t('mia.secHome'), section: 'accueil', icon: Home },
+      { name: t('mia.secTutor'), section: 'tuteur', icon: GraduationCap },
+      { name: t('mia.secFiches'), section: 'fiches', icon: Layers },
+      { name: t('mia.secMyNotes'), section: 'enfants', icon: FileText },
+      { name: t('mia.secProgress'), section: 'progression', icon: TrendingUp },
+      { name: t('mia.secPlanning'), section: 'planning', icon: CalendarCheck },
+      { name: t('mia.secTimetable'), section: 'edt', icon: CalendarDays },
+      { name: t('mia.sec6c'), section: 'profil6c', icon: Target },
+      { name: t('mia.secOrientation'), section: 'orientation', icon: Compass },
+      { name: t('mia.secSettings'), section: 'profil', icon: Settings },
+    ]
+  }
+  return [
+    { name: t('mia.secHome'), section: 'accueil', icon: Home },
+    { name: t('mia.secMyChildren'), section: 'enfants', icon: Users },
+    { name: t('mia.secProgress'), section: 'progression', icon: TrendingUp },
+    { name: t('mia.secPlanning'), section: 'planning', icon: CalendarCheck },
+    { name: t('mia.secTimetable'), section: 'edt', icon: CalendarDays },
+    { name: t('mia.secUsage'), section: 'utilisation', icon: Gauge },
+    { name: t('mia.secBilling'), section: 'facturation', icon: Receipt },
+    { name: t('mia.secSettings'), section: 'profil', icon: Settings },
+  ]
+})
+
+const searchPlaceholder = computed(() =>
+  isB2C.value ? t('mia.searchPh') : 'Rechercher un élève, une classe, un module...',
+)
+const modulesHeader = computed(() => (isB2C.value ? t('mia.searchNav') : 'Modules'))
 
 // Module navigation entries
 const MODULES = [
@@ -266,6 +320,8 @@ const MODULES = [
 
 // Filter modules based on user role
 const accessibleModules = computed(() => {
+  // Compte MAPO+ : palette 100 % MAPO+ (aucun module ERP).
+  if (isB2C.value) return miapoModules.value
   if (!isTeacher.value) return MODULES
 
   // Teachers don't have access to Personnel and Parametres
@@ -275,6 +331,17 @@ const accessibleModules = computed(() => {
 // Search results computed
 const results = computed(() => {
   const q = query.value.toLowerCase().trim()
+
+  // MAPO+ : on ne montre QUE les destinations MAPO+, jamais les enregistrements
+  // ERP (élèves, personnel, paiements…). Sans requête → liste complète.
+  if (isB2C.value) {
+    return {
+      modules: q
+        ? miapoModules.value.filter(m => m.name.toLowerCase().includes(q))
+        : miapoModules.value,
+      eleves: [], classes: [], personnel: [], paiements: [], incidents: [],
+    }
+  }
 
   return {
     modules: q
@@ -359,6 +426,19 @@ const navigateTo = (path) => {
   close()
 }
 
+// MAPO+ : les sections ne sont pas des routes mais un état interne de
+// ParentMiapoView → on le prévient via un événement global.
+const gotoSection = (section) => {
+  try { window.dispatchEvent(new CustomEvent('miapo-goto', { detail: { section } })) } catch { /* silent */ }
+  close()
+}
+
+// Un module peut être une route ERP (path) ou une section MAPO+ (section).
+const onModule = (item) => {
+  if (item && item.section) gotoSection(item.section)
+  else if (item && item.path) navigateTo(item.path)
+}
+
 // Keyboard navigation
 const selectNext = () => {
   if (allResults.value.length === 0) return
@@ -377,7 +457,10 @@ const selectCurrent = () => {
   const result = allResults.value[selectedIndex.value]
 
   // Determine navigation path
-  if (result.path) {
+  if (result.section) {
+    // Section MAPO+
+    gotoSection(result.section)
+  } else if (result.path) {
     // Module
     navigateTo(result.path)
   } else if (result.matricule !== undefined) {

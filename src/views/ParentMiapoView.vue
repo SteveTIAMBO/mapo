@@ -971,6 +971,15 @@ function onB2CAction(e) {
     case 'notes': section.value = 'enfants'; return
   }
 }
+// Navigation depuis la palette de recherche MAPO+ (loupe / Ctrl+K). On ne bascule
+// que vers une section réellement présente dans le menu courant (sinon Accueil),
+// « profil » (Paramètres) restant toujours accessible même hors menu.
+function onGoto(e) {
+  const k = e && e.detail && e.detail.section
+  if (!k) return
+  if (k === 'profil') { section.value = 'profil'; return }
+  section.value = SECTIONS.value.some((s) => s.key === k) ? k : 'accueil'
+}
 
 // ── Export PDF du bilan de progression (impression navigateur → PDF) ──
 function exporterBilan() {
@@ -1725,6 +1734,7 @@ onMounted(async () => {
   window.addEventListener('miapo-toggle-menu', onToggleMenu)
   window.addEventListener('open-miapo-settings', onOpenSettings)
   window.addEventListener('miapo-b2c-action', onB2CAction)
+  window.addEventListener('miapo-goto', onGoto)
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
   // ── Suivi d'adoption MAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
@@ -1750,6 +1760,7 @@ onUnmounted(() => {
   window.removeEventListener('miapo-toggle-menu', onToggleMenu)
   window.removeEventListener('open-miapo-settings', onOpenSettings)
   window.removeEventListener('miapo-b2c-action', onB2CAction)
+  window.removeEventListener('miapo-goto', onGoto)
   window.removeEventListener('appinstalled', onAppInstalled)
 })
 </script>
@@ -1837,9 +1848,11 @@ onUnmounted(() => {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px;
   padding: 13px 26px;
-  background: rgba(255, 255, 255, 0.62);
-  backdrop-filter: saturate(180%) blur(16px);
-  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  /* Même teinte que le menu latéral (qui laisse voir --bg), mais légèrement
+     translucide pour laisser deviner le contenu qui défile en dessous. */
+  background: rgba(var(--bg-rgb, 238, 240, 246), 0.72);
+  backdrop-filter: saturate(150%) blur(16px);
+  -webkit-backdrop-filter: saturate(150%) blur(16px);
   border-bottom: 1px solid var(--bd, #e8e9ef);
 }
 .mtb-burger { display: none; border: none; background: none; color: #40444f; cursor: pointer; padding: 4px; margin: -2px 2px -2px -4px; }

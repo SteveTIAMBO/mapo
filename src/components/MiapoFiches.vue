@@ -5,11 +5,11 @@
       <div class="card-head"><Layers :size="18" /><h3>{{ t('mia.fichesTitle') }}</h3></div>
       <p class="muted">{{ t('mia.fichesHint') }}</p>
 
-      <select v-if="publishedCourses.length" v-model="pickedCourseId" class="input matiere-sel" @change="onPickCourse">
+      <select v-if="ecoleConnectee && publishedCourses.length" v-model="pickedCourseId" class="input matiere-sel" @change="onPickCourse">
         <option value="">{{ t('mia.fichesPickCourse') }}</option>
         <option v-for="c in publishedCourses" :key="c.id" :value="c.id">{{ c.label }}</option>
       </select>
-      <div v-if="publishedCourses.length" class="or-sep">{{ t('mia.fichesOr') }}</div>
+      <div v-if="ecoleConnectee && publishedCourses.length" class="or-sep">{{ t('mia.fichesOr') }}</div>
 
       <select v-model="matiere" class="input matiere-sel">
         <option value="">{{ t('mia.chooseSubject') }}</option>
@@ -80,6 +80,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
+import { useAuthStore } from '../stores/auth'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
@@ -88,6 +89,11 @@ const props = defineProps({ enfant: { type: Object, default: null } })
 const { t } = useI18n({ useScope: 'global' })
 const cours = useCoursStore()
 const tuteur = useTuteurStore()
+const auth = useAuthStore()
+// « Partir d'un cours publié par le professeur » ne concerne que les comptes
+// reliés à une école MAPO (schoolId présent). Sinon l'apprenant colle / importe
+// son propre cours.
+const ecoleConnectee = computed(() => !!auth.schoolId)
 
 const matiere = ref('')
 const courseText = ref('')
@@ -115,7 +121,7 @@ function onPickCourse() {
   courseText.value = [c.titre, c.contenu].filter(Boolean).join('\n').slice(0, 6000)
   if (c.matiere && matieresList.value.includes(c.matiere)) matiere.value = c.matiere
 }
-onMounted(() => { if (!cours.loaded) cours.load() })
+onMounted(() => { if (ecoleConnectee.value && !cours.loaded) cours.load() })
 
 function pickFile() { fileInput.value?.click() }
 async function onFile(e) {

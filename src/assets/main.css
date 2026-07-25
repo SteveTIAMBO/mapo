@@ -21,6 +21,9 @@
 
   /* Fond (surface neutre de repli ; le vrai fond macOS est sur body) */
   --bg: #EEF0F6;
+  /* Composantes RVB du fond → permet une barre supérieure de la MÊME teinte que
+     le menu latéral (qui laisse voir --bg), mais légèrement translucide. */
+  --bg-rgb: 238, 240, 246;
 
   /* Verre */
   --glass: rgba(255,255,255,.62);
