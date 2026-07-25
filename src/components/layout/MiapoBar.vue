@@ -21,7 +21,7 @@
 
     <transition name="scale-modal">
       <div v-if="isOpen" class="miapo-container">
-        <div class="miapo-modal">
+        <div class="miapo-modal" :class="{ b2c: isB2C }">
           <!-- En-tête -->
           <div class="miapo-head">
             <div class="miapo-brand">
@@ -57,17 +57,12 @@
             <span class="miapo-convo-wave"><i></i><i></i><i></i></span>{{ convoHint }}
           </div>
 
-          <!-- MAPO+ (B2C) : options du chat pédagogique (internet + esprit critique) -->
+          <!-- MAPO+ (B2C) : option « chercher aussi sur internet » (l'esprit critique est actif par défaut) -->
           <div v-if="isB2C" class="miapo-opts">
             <label class="miapo-toggle">
               <input type="checkbox" v-model="internet" />
               <span class="miapo-toggle-track"><span class="miapo-toggle-thumb" /></span>
               <Globe :size="13" /> {{ t('mia.chatInternet') }}
-            </label>
-            <label class="miapo-toggle" :title="t('mia.chatEspritCritiqueHint')">
-              <input type="checkbox" v-model="espritCritique" />
-              <span class="miapo-toggle-track"><span class="miapo-toggle-thumb" /></span>
-              <Brain :size="13" /> {{ t('mia.chatEspritCritique') }}
             </label>
           </div>
 
@@ -76,7 +71,8 @@
             <!-- MAPO+ (B2C) : chat pédagogique MIAPO ↔ apprenant -->
             <div v-if="isB2C" class="miapo-chat">
               <div v-if="!chatMsgs.length" class="miapo-examples">
-                <p class="miapo-examples-title">Essaie :</p>
+                <p class="miapo-welcome">{{ welcomeGreeting }}</p>
+                <p class="miapo-examples-title">{{ t('mia.tryLabel') }}</p>
                 <button
                   v-for="(ex, i) in exemples"
                   :key="i"
@@ -225,7 +221,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Brain, Mic, Square } from 'lucide-vue-next'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Square } from 'lucide-vue-next'
 import { createConversation, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
@@ -460,18 +456,22 @@ const bodyEl = ref(null)
 const chatMsgs = ref([]) // { role: 'user' | 'miapo', text }
 const chatThinking = ref(false)
 const internet = ref(false) // « chercher aussi sur internet » (sinon : cours de l'apprenant seulement)
-const espritCritique = ref(false) // Mode « esprit critique » : MIAPO guide sans donner la réponse (pilier 1 charte)
 const busy = computed(() => copilot.thinking || chatThinking.value)
 // Contexte de l'apprenant quand il est identifiable (compte enfant ou mode apprenant) :
-// on transmet son niveau et ses matières pour des réponses ciblées.
+// on transmet son niveau, ses matières et son prénom pour des réponses ciblées et chaleureuses.
 const learnerCtx = computed(() => {
   const list = enfantsStore.enfants || []
   const e = (enfantsStore.isCompteEnfant || enfantsStore.mode === 'apprenant') ? list[0] : null
-  if (!e) return { niveau: '', matieres: '' }
+  if (!e) return { niveau: '', matieres: '', prenom: '' }
   const mats = (Array.isArray(e.formationModules) && e.formationModules.length)
     ? e.formationModules
     : matieresPourNiveau(e.niveau, e.pays)
-  return { niveau: e.niveau || '', matieres: (mats || []).join(', ') }
+  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim() }
+})
+// Accueil personnalisé (client-side) : le prénom ne quitte pas le navigateur.
+const welcomeGreeting = computed(() => {
+  const p = learnerCtx.value.prenom
+  return p ? t('mia.welcomeNamed', { name: p }) : t('mia.welcome')
 })
 function scrollChatBottom() { const el = bodyEl.value; if (el) el.scrollTop = el.scrollHeight }
 
@@ -713,14 +713,19 @@ async function submitB2C(text) {
     return
   }
 
-  // 2) Sinon : chat pédagogique IA (socratique).
+  // 2) Sinon : chat pédagogique IA (socratique, esprit critique par défaut).
   const ctx = learnerCtx.value
-  const memCtx = (ctx.niveau || '') + '|' + (internet.value ? 'net' : '') + '|' + (espritCritique.value ? 'ec' : '') + '|' + (locale.value.startsWith('en') ? 'en' : 'fr')
+  const realPrenom = (ctx.prenom || '').trim()
+  const NAME_TOKEN = '[PRENOM]'
+  // Réinjecte le vrai prénom (resté sur l'appareil) à la place du jeton.
+  const withName = (s) => (realPrenom ? String(s).split(NAME_TOKEN).join(realPrenom) : String(s))
+  const memCtx = (ctx.niveau || '') + '|' + (internet.value ? 'net' : '') + '|' + (locale.value.startsWith('en') ? 'en' : 'fr')
   // MÉMOIRE LOCALE (frugalité) : question déjà posée → on réutilise la réponse
-  // mémorisée sur l'appareil, aucun appel IA.
+  // mémorisée sur l'appareil (stockée SOUS FORME DE JETON, donc indépendante du
+  // prénom), aucun appel IA.
   const cached = miapoCacheGet(text, memCtx)
   if (cached) {
-    chatMsgs.value.push({ role: 'miapo', text: cached })
+    chatMsgs.value.push({ role: 'miapo', text: withName(cached) })
     nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
     return
   }
@@ -738,15 +743,16 @@ async function submitB2C(text) {
     cours,
     historique: hist,
     internet: internet.value,
-    espritCritique: espritCritique.value,
+    prenom: realPrenom ? NAME_TOKEN : '',
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
   })
   chatThinking.value = false
-  const reply = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
-  chatMsgs.value.push({ role: 'miapo', text: reply })
+  const raw = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
+  chatMsgs.value.push({ role: 'miapo', text: withName(raw) })
   // On mémorise seulement une vraie réponse à une question autonome (pas les
   // suivis courts qui dépendent de l'historique, ni les erreurs/crédits épuisés).
-  if (r.ok && reply && miapoCacheEligible(text)) miapoCacheSet(text, memCtx, reply)
+  // On stocke la version JETON (raw) → réutilisable quel que soit le prénom.
+  if (r.ok && raw && miapoCacheEligible(text)) miapoCacheSet(text, memCtx, raw)
   nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
 }
 
@@ -987,6 +993,19 @@ onUnmounted(() => {
 .miapo-goview:hover { background: rgba(var(--pr-rgb),.14); }
 
 .miapo-body { padding: 0 16px 8px; overflow-y: auto; }
+
+/* MAPO+ (B2C) : disposition « chat » — messages en HAUT (défilement), saisie en BAS. */
+.miapo-modal.b2c { height: min(78vh, 640px); }
+.miapo-modal.b2c .miapo-head { order: 0; }
+.miapo-modal.b2c .miapo-body { order: 1; flex: 1 1 auto; min-height: 0; }
+.miapo-modal.b2c .miapo-opts { order: 2; padding-top: 8px; }
+.miapo-modal.b2c .miapo-input-row { order: 3; }
+.miapo-modal.b2c .miapo-convo-hint { order: 4; }
+.miapo-modal.b2c .miapo-foot { order: 5; }
+.miapo-welcome {
+  font-size: 15px; font-weight: 600; color: var(--tx);
+  margin: 6px 2px 14px; line-height: 1.45;
+}
 
 .miapo-thinking {
   display: flex; align-items: center; gap: 6px;
