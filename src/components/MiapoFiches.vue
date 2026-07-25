@@ -179,6 +179,11 @@ async function generer() {
   }
   resetCards()
   state.value = 'done'
+  // Archive la révision « fiches & cartes » dans l'Historique (toutes les
+  // révisions y figurent, quel que soit le format).
+  if (props.enfant?.id) {
+    try { tuteur.saveRevisionSession(props.enfant.id, { format: 'fiches', subjectName: matiere.value, fiche: fiche.value, cards: cards.value }) } catch { /* silent */ }
+  }
 }
 
 // ── Flashcards ──

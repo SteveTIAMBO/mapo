@@ -54,18 +54,22 @@
             </div>
           </template>
         </template>
-        <!-- Carré : app distincte de l'écosystème (s'ouvre à part) — bas du menu défilant. -->
+        <!-- Paramètres : dernier élément du menu (façon HUB). -->
+        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false">
+          <Settings :size="18" /><span>{{ t('mia.secSettings') }}</span>
+        </button>
+      </nav>
+      <!-- Pied FIXE (façon HUB) : Carré (app distincte, discret) + profil + déconnexion. -->
+      <div class="volet-bottom">
+        <MiapoInstall />
+        <!-- Carré : app distincte de l'écosystème — discret, juste au-dessus du profil (pas un item de menu). -->
         <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="volet-carre" :title="t('mia.carreOpen')">
           <span class="carre-badge sm"><span>C</span></span>
           <span class="volet-carre-name">Carré</span>
-          <ExternalLink :size="14" class="volet-carre-ext" />
+          <ExternalLink :size="13" class="volet-carre-ext" />
         </a>
-      </nav>
-      <!-- Pied FIXE (façon HUB) : bloc utilisateur (→ réglages) + déconnexion. -->
-      <div class="volet-bottom">
-        <MiapoInstall />
         <div class="volet-user-row">
-          <button type="button" class="volet-user" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false" :title="t('mia.secSettings')">
+          <button type="button" class="volet-user" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false" :title="t('mia.secSettings')">
             <span class="volet-user-av">{{ headerInitials }}</span>
             <span class="volet-user-tx"><strong>{{ greetName || t('mia.secProfile') }}</strong><small>{{ userRoleLabel }}</small></span>
           </button>
@@ -289,6 +293,7 @@
             <div v-if="isApprenant" class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.rtReviseTitle') }}</h3></div>
               <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.rtReviseHint') }}</p>
+              <button type="button" class="import-cta" @click="ouvrirMesCours"><FolderOpen :size="16" /> <span>{{ t('mia.rtImportCourses') }}</span></button>
               <div v-if="needsModules" class="modules-empty">
                 <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
               </div>
@@ -414,10 +419,10 @@
               <div v-for="s in histSessions" :key="s.id" class="hist-item">
                 <div class="hist-main">
                   <span class="hist-mat">{{ s.subjectName || s.subjectId }}</span>
-                  <span class="hist-meta">{{ histDate(s.date) }} · {{ s.correct }}/{{ s.total }}</span>
+                  <span class="hist-meta">{{ histDate(s.date) }} · {{ histFormatLabel(s) }}<template v-if="s.total"> · {{ s.correct }}/{{ s.total }}</template></span>
                 </div>
-                <span class="hist-score" :style="histScoreStyle(s.scorePercent)">{{ s.scorePercent }}%</span>
-                <button class="btn btn-outline btn-xs" @click="rejouerSession(s)"><RotateCcw :size="14" /> <span>{{ t('mia.histReplay') }}</span></button>
+                <span v-if="hasScore(s)" class="hist-score" :style="histScoreStyle(s.scorePercent)">{{ s.scorePercent }}%</span>
+                <button class="btn btn-outline btn-xs" @click="reprendreSession(s)"><RotateCcw :size="14" /> <span>{{ histActionLabel(s) }}</span></button>
               </div>
             </div>
             <p v-else class="muted small hist-empty">{{ t('mia.histEmpty') }}</p>
@@ -1371,6 +1376,8 @@ const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(revise
 const activeRedaction = ref('')
 // Changer de matière referme le widget de rédaction en cours.
 watch(reviseMatiere, () => { activeRedaction.value = '' })
+// Renvoie vers Paramètres → Mes cours (import de cours / documents à réviser).
+function ouvrirMesCours() { section.value = 'profil'; sousSection.value = 'cours'; menuOpen.value = false }
 function launchRevision(typeKey) {
   const m = reviseMatiere.value
   if (!isApprenant.value || !m) return
@@ -1385,6 +1392,10 @@ function launchRevision(typeKey) {
       // pédagogique guidée dans le chat MIAPO (comptée dans l'usage).
       const query = t('mia.rtSeed_' + typeKey, { subject: m, niveau })
       try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query } })) } catch { /* silent */ }
+      // Archive la session guidée dans l'Historique (rejouable via le chat).
+      if (activeEnfant.value?.id) {
+        try { tuteur.saveRevisionSession(activeEnfant.value.id, { format: 'chat', kind: typeKey, subjectName: m, seed: query }) } catch { /* silent */ }
+      }
     }
   }
 }
@@ -1416,6 +1427,23 @@ function rejouerSession(s) {
   quizMatiere.value = s.subjectName || s.subjectId || ''
   section.value = 'tuteur'
 }
+// Toutes les révisions sont archivées (quiz, session guidée, fiches, rédaction) :
+// on reprend chacune selon son format. Le quiz se rejoue SANS régénérer (0 token).
+function reprendreSession(s) {
+  if (!isApprenant.value || !s) return
+  const f = s.format || 'quiz'
+  if (f === 'quiz') return rejouerSession(s)
+  if (f === 'chat') { if (s.seed) { try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: s.seed } })) } catch { /* silent */ } } return }
+  if (f === 'fiches') { reviseMatiere.value = s.subjectName || ''; section.value = 'fiches'; return }
+  if (f === 'redaction') { reviseMatiere.value = s.subjectName || ''; activeRedaction.value = s.subjectName || ''; section.value = 'tuteur'; return }
+}
+function hasScore(s) { return (s && (s.format || 'quiz') === 'quiz' && s.scorePercent != null) }
+function histFormatLabel(s) {
+  const f = (s && s.format) || 'quiz'
+  if (f === 'chat' && s.kind) return t('mia.rt_' + s.kind)
+  return t('mia.histFmt_' + f)
+}
+function histActionLabel(s) { return ((s && s.format) || 'quiz') === 'quiz' ? t('mia.histReplay') : t('mia.histResume') }
 function histDate(iso) {
   try { return new Date(iso).toLocaleDateString(locale.value.startsWith('en') ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' }) } catch { return '' }
 }
@@ -2018,12 +2046,14 @@ onUnmounted(() => {
 .volet.collapsed .volet-user-tx { display: none; }
 .volet.collapsed .volet-user-row { flex-direction: column; gap: 8px; }
 /* Carré : app distincte de l'écosystème → séparée visuellement, en bas du volet */
+/* Carré : lien discret vers l'app sœur — PAS un item de menu (pied du volet,
+   au-dessus du profil). Sans bordure/fond, plus petit et estompé. */
 .volet-carre {
-  display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 9px 12px;
-  border: 1px solid var(--divider, #e5e7eb); border-radius: 10px; cursor: pointer;
-  text-decoration: none; color: var(--tx2, #4b5563); font-size: 13.5px; transition: .15s;
+  display: flex; align-items: center; gap: 9px; padding: 6px 8px; border-radius: 9px;
+  cursor: pointer; text-decoration: none; color: var(--tx3, #6b7280); font-size: 12.5px;
+  transition: background .15s, color .15s;
 }
-.volet-carre:hover { background: var(--input-bg, #f1f3f5); border-color: var(--tx3, #9ca3af); }
+.volet-carre:hover { background: var(--input-bg, #f1f3f5); color: var(--tx2, #4b5563); }
 .volet-carre-name { font-weight: 600; font-family: var(--font-display, inherit); }
 .volet-carre-ext { margin-left: auto; color: var(--tx3, #9ca3af); }
 .carre-badge {
@@ -2087,9 +2117,12 @@ onUnmounted(() => {
   .volet.collapsed .volet-collapse span,
   .volet.collapsed .nav-item span,
   .volet.collapsed .volet-logout span,
+  .volet.collapsed .volet-carre-name,
+  .volet.collapsed .volet-carre-ext,
   .volet.collapsed .volet-mode,
   .volet.collapsed .volet-child { display: none; }
   .volet.collapsed .nav-item,
+  .volet.collapsed .volet-carre,
   .volet.collapsed .volet-logout,
   .volet.collapsed .volet-collapse,
   .volet.collapsed .volet-brand { justify-content: center; }
@@ -2241,6 +2274,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .revise-pick { display: flex; gap: 10px; } .revise-pick .input { flex: 1; }
 /* Grille des types de révision (façon HUB : cartes cliquables + intitulé fondé
    sur la pratique pédagogique). */
+.import-cta { display: inline-flex; align-items: center; gap: 8px; margin: 2px 0 10px; padding: 9px 13px; border: 1px dashed var(--bd, #d3d8e0); border-radius: 11px; background: rgba(var(--pr-rgb,21,88,176),.04); color: var(--pr, #1558B0); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
+.import-cta:hover { background: rgba(var(--pr-rgb,21,88,176),.09); border-color: var(--pr); }
 .rt-q { margin: 14px 0 8px; font-weight: 700; color: var(--tx, #1f2937); font-size: 14.5px; }
 .rt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rt-card { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: inherit; transition: border-color .15s, box-shadow .15s, transform .06s; }
