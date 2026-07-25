@@ -272,7 +272,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -942,6 +942,7 @@ import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camer
 import { History, RotateCcw, FolderOpen } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
+import { sessionQuestions } from '../utils/ageProfil'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
 
@@ -1443,6 +1444,8 @@ function launchRevision(typeKey) {
 const quizThemes = ref('')
 // Questions rejouées depuis l'Historique (null = quiz normal généré par l'IA).
 const quizPreset = ref(null)
+// Longueur de session adaptée à l'âge de l'apprenant (plus « 10 » figé).
+const quizNombre = computed(() => sessionQuestions(activeEnfant.value))
 function goRevise(matiere, themes) {
   // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
   // matières, mais n'écrit jamais dans la progression de son enfant (sinon il

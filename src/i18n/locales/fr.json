@@ -107,6 +107,8 @@
     "personaLearnerHint": "Je suis l'élève, l'étudiant ou l'apprenant.",
     "levelQ": "Ton pays et ton niveau",
     "levelSub": "MAPO+ charge le bon programme : matières et types de notes.",
+    "ageLabel": "Âge (facultatif)",
+    "agePh": "ex. 12",
     "detailsQ": "Presque fini",
     "detailsSub": "Encore quelques infos et c'est parti.",
     "childName": "Prénom de l'enfant",

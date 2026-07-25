@@ -64,6 +64,12 @@
           <label class="mo-label">{{ t('mia.formationName') }}</label>
           <input v-model="formation" class="mo-input" :placeholder="t('mia.formationPlaceholder')" />
         </div>
+        <!-- Âge (facultatif) : cale la longueur des sessions sur le développement
+             cognitif (plus jeune = sessions plus courtes). -->
+        <div class="mo-field">
+          <label class="mo-label">{{ t('miaOnb.ageLabel') }}</label>
+          <input v-model="age" type="number" min="4" max="99" inputmode="numeric" class="mo-input" :placeholder="t('miaOnb.agePh')" />
+        </div>
       </div>
 
       <!-- Étape 3 : prénom + école -->
@@ -121,6 +127,7 @@ const pays = ref(_prefill.pays || paysParDefaut() || 'CM')
 // adulte (MBA, formation…) était placé en « 3ème » (secondaire) par défaut.
 const niveau = ref(_prefill.niveau || '')
 const formation = ref(_prefill.formation || '')
+const age = ref(_prefill.age || '')
 // Pour l'apprenant, on pré-remplit avec le nom du compte (souvent le sien).
 const firstName = ref(_prefill.firstName || (store.mode === 'apprenant' ? (auth.userFirstName || '') : ''))
 const ecole = ref('')
@@ -145,6 +152,7 @@ function finish() {
     firstName: firstName.value.trim(),
     niveau: niveau.value,
     pays: pays.value,
+    age: age.value ? String(age.value).trim() : '',
     ecole: isHC ? '' : ecole.value.trim(),
     formation: isHC ? formation.value.trim() : '',
   })

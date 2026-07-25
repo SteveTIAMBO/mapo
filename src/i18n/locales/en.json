@@ -107,6 +107,8 @@
     "personaLearnerHint": "I'm the pupil, student or learner.",
     "levelQ": "Your country and level",
     "levelSub": "MAPO+ loads the right programme: subjects and grade types.",
+    "ageLabel": "Age (optional)",
+    "agePh": "e.g. 12",
     "detailsQ": "Almost done",
     "detailsSub": "A few more details and you're set.",
     "childName": "Child's first name",

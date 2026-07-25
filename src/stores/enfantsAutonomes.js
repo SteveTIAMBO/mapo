@@ -391,7 +391,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, cycle, ecole, filiere, photoURL, formation, formationUrl, formationModules }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: localId('ea-'),
       firstName: (firstName || '').trim(),
@@ -400,6 +400,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       cycle: cycle || '',       // 'primaire' | 'secondaire' | 'superieur'
       niveau: niveau || '3ème', // la classe (SIL, 6ème, 2nde, 2e année…) OU « Formation (hors catalogue) »
       pays: pays || 'CM',
+      age: (age != null ? String(age) : '').trim(),  // âge (facultatif) → calibre la longueur des sessions
       ecole: (ecole || '').trim(),
       filiere: (filiere || '').trim(),                 // filière/spécialité (étudiant du supérieur)
       formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
