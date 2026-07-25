@@ -66,6 +66,7 @@
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ClipboardCheck, Plus, Check, X } from 'lucide-vue-next'
+import { useAuthStore } from '../stores/auth'
 
 const props = defineProps({
   enfantId: { type: String, default: 'me' },
@@ -76,8 +77,12 @@ const props = defineProps({
 defineEmits(['revise'])
 
 const { t, locale } = useI18n({ useScope: 'global' })
+const auth = useAuthStore()
 const KEY = () => 'mapo_b2c_devoirs_' + (props.enfantId || 'me')
-const load = () => { try { const r = localStorage.getItem(KEY()); return r ? JSON.parse(r) : seed() } catch { return [] } }
+// Le jeu d'exemples (devoirs fictifs) n'apparaît qu'en DÉMO. Un vrai compte
+// démarre AVEC UNE LISTE VIDE (sinon il voit des devoirs du secondaire qui ne
+// sont pas les siens).
+const load = () => { try { const r = localStorage.getItem(KEY()); if (r) return JSON.parse(r); return auth.isDemo ? seed() : [] } catch { return [] } }
 const save = () => { try { localStorage.setItem(KEY(), JSON.stringify(devoirs.value)) } catch { /* quota */ } }
 function seed() {
   const d = (n) => { const x = new Date(); x.setDate(x.getDate() + n); return x.toISOString().slice(0, 10) }

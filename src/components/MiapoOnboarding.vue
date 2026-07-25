@@ -47,6 +47,7 @@
         <div class="mo-field">
           <label class="mo-label">{{ t('mia.classLabel') }}</label>
           <select v-model="niveau" class="mo-input">
+            <option value="" disabled>{{ t('mia.chooseLevel') }}</option>
             <optgroup :label="t('mia.cyclePrimary')">
               <option v-for="n in niveauxPrimairePays(pays)" :key="n" :value="n">{{ n }}</option>
             </optgroup>
@@ -56,7 +57,7 @@
             <optgroup v-if="pays !== 'FR'" :label="t('mia.cycleHigher')">
               <option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option>
             </optgroup>
-            <option :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option>
+            <option :value="NIVEAU_HORS_CATALOGUE">{{ t('mia.higherOrOther') }}</option>
           </select>
         </div>
         <div v-if="niveau === NIVEAU_HORS_CATALOGUE" class="mo-field">
@@ -116,7 +117,9 @@ try { _prefill = JSON.parse(localStorage.getItem('mapo_signup_prefill') || '{}')
 const step = ref(_prefill.persona ? 1 : 0)
 const persona = ref(_prefill.persona || (store.mode === 'apprenant' ? 'apprenant' : 'parent'))
 const pays = ref(_prefill.pays || paysParDefaut() || 'CM')
-const niveau = ref(_prefill.niveau || '3ème')
+// Pas de niveau par défaut : l'utilisateur doit choisir explicitement. Sinon un
+// adulte (MBA, formation…) était placé en « 3ème » (secondaire) par défaut.
+const niveau = ref(_prefill.niveau || '')
 const formation = ref(_prefill.formation || '')
 // Pour l'apprenant, on pré-remplit avec le nom du compte (souvent le sien).
 const firstName = ref(_prefill.firstName || (store.mode === 'apprenant' ? (auth.userFirstName || '') : ''))
@@ -125,7 +128,7 @@ const error = ref('')
 
 const canNext = computed(() => {
   if (step.value === 0) return !!persona.value
-  if (step.value === 1) return niveau.value !== NIVEAU_HORS_CATALOGUE || !!formation.value.trim()
+  if (step.value === 1) return !!niveau.value && (niveau.value !== NIVEAU_HORS_CATALOGUE || !!formation.value.trim())
   return true
 })
 

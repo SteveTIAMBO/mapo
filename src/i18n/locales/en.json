@@ -4663,6 +4663,8 @@
     "welcome": "Hi! What would you like to work on today?",
     "welcomeNamed": "Hi {name}! What would you like to work on today?",
     "tryLabel": "Try:",
+    "chooseLevel": "Choose your level…",
+    "higherOrOther": "Higher ed / other program",
     "chatError": "Sorry, I couldn't answer. Please try again in a moment.",
     "chatOutOfCredits": "You've used all your AI credits. Upgrade to keep going.",
     "secConnectors": "Connectors",
