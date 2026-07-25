@@ -50,7 +50,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -124,7 +124,26 @@ function buildPrompts($task, $d) {
   if ($task === 'pedagogie') return buildPedagogiePrompts($d);
   if ($task === 'eval_reponse') return buildEvalReponsePrompts($d);
   if ($task === 'tuteur_chat') return buildTuteurChatPrompts($d);
+  if ($task === 'translate') return buildTranslatePrompts($d);
   return buildAppreciationPrompts($d);
+}
+
+// ── Traduction de libellés d'interface (2e langue d'accessibilité) ──────
+// Traduit une liste de courts libellés d'UI (menu, titres, boutons) vers une
+// langue cible. Renvoie un JSON {"t":[...]} dans le MÊME ORDRE. Non facturé.
+function buildTranslatePrompts($d) {
+  $texts = is_array($d['texts'] ?? null) ? array_slice(array_values($d['texts']), 0, 80) : [];
+  $texts = array_map(function ($s) { return clean((string) $s, 160); }, $texts);
+  $target = clean($d['target'] ?? '', 40);
+  $source = clean($d['source'] ?? 'French', 40);
+  $system = "You are a professional UI localizer for a school/tutoring mobile app. "
+    . "Each string of the given JSON array is a short UI label written in French or English. "
+    . "Translate each of them into {$target}. "
+    . "Keep each translation SHORT and natural for an app interface (menu items, section titles, buttons). "
+    . "Preserve placeholders such as {name}, {n}, {subject} EXACTLY as written. "
+    . "Return ONLY a compact JSON object of the form {\"t\":[\"...\",\"...\"]} with EXACTLY the same number of items, in the SAME ORDER, and nothing else.";
+  $u = json_encode($texts, JSON_UNESCAPED_UNICODE);
+  return [$system, $u, 1500, true, null];
 }
 
 // ── Assistant enseignant : prépare un cours / devoir / examen ──────────

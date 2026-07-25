@@ -724,11 +724,33 @@ export const useTuteurStore = defineStore('tuteur', () => {
     }
   }
 
+  // Traduction de libellés d'interface vers une 2e langue (accessibilité). NON
+  // décomptée (metered absent) : c'est un service d'inclusion, pas une révision.
+  async function translateUI(texts, target, source = 'French') {
+    if (!Array.isArray(texts) || !texts.length || !target) return []
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ task: 'translate', data: { texts, target, source } }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok && json.text) {
+        const o = parseJsonObject(json.text)
+        if (o && Array.isArray(o.t)) return o.t.map((s) => String(s == null ? '' : s))
+      }
+    } catch { /* silencieux */ }
+    return []
+  }
+
   return {
     generating, planning, lastMode, lastReason, revisionsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })
 

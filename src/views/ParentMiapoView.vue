@@ -38,7 +38,7 @@
           <!-- Bloc sans intitulé (Accueil) : items directs -->
           <template v-if="!grp.group">
             <button v-for="s in grp.items" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
-              <component :is="s.icon" :size="18" /><span>{{ s.label }}</span>
+              <component :is="s.icon" :size="18" /><span class="nav-lbl">{{ s.label }}<small v-if="lang2.enabled && lang2.tr(s.label)" class="nav-lbl2" dir="auto">{{ lang2.tr(s.label) }}</small></span>
             </button>
           </template>
           <!-- Bloc pliable (accordéon façon HUB / MAPO supérieur) -->
@@ -49,14 +49,14 @@
             </button>
             <div v-show="isGroupOpen(grp.group)" class="nav-group-items">
               <button v-for="s in grp.items" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
-                <component :is="s.icon" :size="18" /><span>{{ s.label }}</span>
+                <component :is="s.icon" :size="18" /><span class="nav-lbl">{{ s.label }}<small v-if="lang2.enabled && lang2.tr(s.label)" class="nav-lbl2" dir="auto">{{ lang2.tr(s.label) }}</small></span>
               </button>
             </div>
           </template>
         </template>
         <!-- Paramètres : dernier élément du menu (façon HUB). -->
         <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false">
-          <Settings :size="18" /><span>{{ t('mia.secSettings') }}</span>
+          <Settings :size="18" /><span class="nav-lbl">{{ t('mia.secSettings') }}<small v-if="lang2.enabled && lang2.tr(t('mia.secSettings'))" class="nav-lbl2" dir="auto">{{ lang2.tr(t('mia.secSettings')) }}</small></span>
         </button>
       </nav>
       <!-- Pied FIXE (façon HUB) : Carré (app distincte, discret) + profil + déconnexion. -->
@@ -552,6 +552,15 @@
                 <button type="button" class="lang-btn" :class="{ active: locale === 'fr' }" @click="setLangue('fr')">Français</button>
                 <button type="button" class="lang-btn" :class="{ active: locale === 'en' }" @click="setLangue('en')">English</button>
               </div>
+              <!-- Seconde langue (inclusion) : sous-titre traduit sous les libellés du menu. -->
+              <div class="lang2-block">
+                <h4 class="lang2-title">{{ t('mia.lang2Title') }}</h4>
+                <p class="muted small">{{ t('mia.lang2Hint') }}</p>
+                <select class="input lang2-select" :value="lang2.code" @change="lang2.setCode($event.target.value)">
+                  <option value="">{{ t('mia.lang2None') }}</option>
+                  <option v-for="l in lang2.LANGUES2" :key="l.code" :value="l.code">{{ l.native }}</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -870,6 +879,7 @@ import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
 import { useRelanceStore } from '../stores/relance'
 import { useAbonnementStore } from '../stores/abonnement'
 import { useConnecteursStore } from '../stores/connecteurs'
+import { useLangue2Store } from '../stores/langue2'
 import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
@@ -916,6 +926,7 @@ const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()
 const tuteur = useTuteurStore()
 const connecteurs = useConnecteursStore()
+const lang2 = useLangue2Store()
 const analytics = useMiapoAnalyticsStore()
 const relance = useRelanceStore()
 const enfants = computed(() => store.enfants)
@@ -2070,6 +2081,9 @@ onUnmounted(() => {
 .nav-item { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx2, #4b5563); text-align: left; width: 100%; }
 .nav-item:hover { background: var(--input-bg, #f1f3f5); }
 .nav-item.active { background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); font-weight: 600; }
+/* Libellé du menu avec seconde langue en sous-titre (accessibilité). */
+.nav-lbl { display: inline-flex; flex-direction: column; line-height: 1.12; min-width: 0; }
+.nav-lbl2 { font-size: 10.5px; font-weight: 500; color: var(--tx3, #9098a6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
 
 /* ───────── Main ───────── */
 .miapo-main { flex: 1; min-width: 0; max-width: 760px; display: flex; flex-direction: column; overflow: hidden; }
@@ -2179,6 +2193,9 @@ onUnmounted(() => {
 .lang-choices { display: flex; gap: 10px; margin-top: 6px; }
 .lang-btn { padding: 9px 18px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 10px; font-family: inherit; font-size: 14px; font-weight: 600; color: var(--tx); cursor: pointer; }
 .lang-btn.active { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb), .08); }
+.lang2-block { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--divider, rgba(17,24,39,.08)); }
+.lang2-title { margin: 0 0 4px; font-size: 14px; font-weight: 700; color: var(--tx, #1f2937); }
+.lang2-select { width: 100%; max-width: 320px; margin-top: 8px; }
 
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }
