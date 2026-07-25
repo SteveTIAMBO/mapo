@@ -4669,6 +4669,8 @@
     "grpTrack": "Suivi",
     "grpGuide": "Orientation",
     "grpAccount": "Compte",
+    "roleParent": "Parent",
+    "roleLearner": "Apprenant",
     "chatError": "Désolé, je n'ai pas pu répondre. Réessaie dans un instant.",
     "chatOutOfCredits": "Tu as utilisé tous tes crédits IA. Passe à une offre supérieure pour continuer.",
     "secConnectors": "Connecteurs",

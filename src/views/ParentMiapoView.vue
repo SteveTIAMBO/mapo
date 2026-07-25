@@ -54,21 +54,23 @@
             </div>
           </template>
         </template>
-      </nav>
-      <div class="volet-bottom">
-        <!-- Installer l'appli : condition des notifications gratuites (surtout sur iPhone) -->
-        <MiapoInstall />
-        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false">
-          <Settings :size="18" />
-          <span>{{ t('mia.secSettings') }}</span>
-        </button>
-        <button type="button" class="volet-logout" @click="logout"><LogOut :size="17" /> <span>{{ t('mia.logout') }}</span></button>
-        <!-- Carré : application distincte de l'écosystème EDUFREM (s'ouvre à part) -->
+        <!-- Carré : app distincte de l'écosystème (s'ouvre à part) — bas du menu défilant. -->
         <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="volet-carre" :title="t('mia.carreOpen')">
           <span class="carre-badge sm"><span>C</span></span>
           <span class="volet-carre-name">Carré</span>
           <ExternalLink :size="14" class="volet-carre-ext" />
         </a>
+      </nav>
+      <!-- Pied FIXE (façon HUB) : bloc utilisateur (→ réglages) + déconnexion. -->
+      <div class="volet-bottom">
+        <MiapoInstall />
+        <div class="volet-user-row">
+          <button type="button" class="volet-user" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false" :title="t('mia.secSettings')">
+            <span class="volet-user-av">{{ headerInitials }}</span>
+            <span class="volet-user-tx"><strong>{{ greetName || t('mia.secProfile') }}</strong><small>{{ userRoleLabel }}</small></span>
+          </button>
+          <button type="button" class="volet-logout" @click="logout" :title="t('mia.logout')"><LogOut :size="17" /></button>
+        </div>
       </div>
     </aside>
 
@@ -829,6 +831,15 @@ function onAppInstalled() { try { analytics.markInstalled() } catch { /* best-ef
 // Mode apprenant : MAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
 // profil unique = lui) plutôt que par un parent qui suit ses enfants. Même moteur.
 const isApprenant = computed(() => store.mode === 'apprenant')
+// Le « payeur » (parent, ou apprenant ADULTE inscrit lui-même = supérieur /
+// hors-catalogue) gère l'usage, la facturation et l'abonnement. Un enfant/mineur
+// (niveau scolaire) dont le profil est activé par le parent NE gère PAS ça.
+const isSelfPayer = computed(() => {
+  if (store.isCompteEnfant) return false
+  if (!isApprenant.value) return true // parent = payeur
+  const n = activeEnfant.value?.niveau || ''
+  return isNiveauSuperieur(n) || n === NIVEAU_HORS_CATALOGUE
+})
 function setMode(m) { store.setMode(m) }
 
 // Seules les classes qui passent un examen national ont des annales (pas 5ème, etc.).
@@ -844,15 +855,16 @@ const SECTIONS = computed(() => {
   const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass, group: 'orientation' }
   const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge, group: 'compte' }
   const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt, group: 'compte' }
-  // Facturation = réservée au PARENT (le payeur). L'élève/apprenant et le compte
-  // enfant ne gèrent pas la facturation (leur abonnement reste dans Paramètres).
+  // Bloc « Compte » (Utilisation + Facturation) = réservé au PAYEUR. Un enfant/
+  // mineur géré par le parent ne le voit pas (ni l'abonnement, cf. Paramètres).
+  const usageItems = isSelfPayer.value ? [usage] : []
   const billingItems = (store.isCompteEnfant || isApprenant.value) ? [] : [billing]
   if (!isApprenant.value) {
     return [
       home,
       { key: 'enfants', label: t('mia.secMyChildren'), icon: Users, group: 'suivi' },
       progress, planning, edt,
-      usage, ...billingItems,
+      ...usageItems, ...billingItems,
     ]
   }
   // Ordre regroupé (façon HUB) : Apprendre → Suivi → Orientation → Compte.
@@ -865,7 +877,7 @@ const SECTIONS = computed(() => {
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
     orient,
-    usage, ...billingItems,
+    ...usageItems, ...billingItems,
   ]
 })
 // Regroupe le menu par bloc (façon HUB) : les items sans groupe (Accueil) restent
@@ -881,29 +893,31 @@ const navGroups = computed(() => {
   }
   return out
 })
-// Accordéon du menu (façon MAPO supérieur) : chaque bloc se plie/déplie ; ouvert
-// par défaut, persisté par navigateur. En mode rail (replié) on ignore l'accordéon.
-const collapsedGroups = ref({})
-try { collapsedGroups.value = JSON.parse(localStorage.getItem('mapo_miapo_groups') || '{}') || {} } catch { collapsedGroups.value = {} }
-function isGroupOpen(g) { return voletCollapsed.value || !collapsedGroups.value[g] }
+// Accordéon EXCLUSIF (un seul bloc ouvert à la fois, façon HUB). Ouvrir un bloc
+// ferme le précédent. Défaut = 1er bloc groupé (« Apprendre »/Tuteur pour l'apprenant).
+// Persisté par navigateur ; en mode rail (replié) tous les items restent visibles.
+const defaultGroup = computed(() => navGroups.value.find((g) => g.group)?.group || '')
+const openGroup = ref(null) // null = pas encore choisi → on prend le défaut
+try { const s = localStorage.getItem('mapo_miapo_group'); if (s !== null) openGroup.value = s } catch { /* silent */ }
+function currentOpenGroup() { return openGroup.value === null ? defaultGroup.value : openGroup.value }
+function isGroupOpen(g) { return voletCollapsed.value || currentOpenGroup() === g }
 function toggleGroup(g) {
-  collapsedGroups.value = { ...collapsedGroups.value, [g]: !collapsedGroups.value[g] }
-  try { localStorage.setItem('mapo_miapo_groups', JSON.stringify(collapsedGroups.value)) } catch { /* silent */ }
+  openGroup.value = currentOpenGroup() === g ? '' : g
+  try { localStorage.setItem('mapo_miapo_group', openGroup.value) } catch { /* silent */ }
 }
 const section = ref('accueil')
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
 const sousMenus = computed(() => {
-  const items = [
-    { key: 'profil', label: t('mia.secProfile'), icon: Settings },
-    { key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard },
-    { key: 'langue', label: t('mia.secLanguage'), icon: Languages },
-    { key: 'notification', label: t('mia.notifTitle'), icon: Bell },
-    { key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 },
-    { key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility },
-  ]
+  const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
+  // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
+  if (isSelfPayer.value) items.push({ key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard })
+  items.push({ key: 'langue', label: t('mia.secLanguage'), icon: Languages })
+  items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
-  if (!isApprenant.value) items.splice(4, 0, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users })
+  if (!isApprenant.value) items.push({ key: 'enfants', label: t('mia.secMyChildren'), icon: Users })
+  items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
+  items.push({ key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility })
   return items
 })
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
@@ -1136,6 +1150,12 @@ const greeting = computed(() => {
 const greetName = computed(() => {
   if (isApprenant.value && activeEnfant.value) return activeEnfant.value.firstName || authStore.userFirstName || ''
   return authStore.userFirstName || ''
+})
+// Sous-titre du bloc utilisateur (pied du menu) : niveau pour l'apprenant, sinon « Parent ».
+const userRoleLabel = computed(() => {
+  if (!isApprenant.value) return t('mia.roleParent')
+  const e = activeEnfant.value
+  return (e && niveauLabel(e)) || t('mia.roleLearner')
 })
 const headerInitials = computed(() => {
   const n = greetName.value || authStore.userFirstName || 'M'
@@ -1772,8 +1792,19 @@ onUnmounted(() => {
 .volet.collapsed .nav-group-head { display: none; }
 /* Profil + Déconnexion groupés en bas du volet (Profil juste au-dessus). */
 .volet-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
-.volet-logout { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
-.volet-logout:hover { background: rgba(217,48,37,.07); color: #D93025; }
+/* Pied fixe façon HUB : bloc utilisateur (avatar + nom/rôle → réglages) + déconnexion. */
+.volet-user-row { display: flex; align-items: center; gap: 6px; }
+.volet-user { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 7px 8px; border: none; background: none; border-radius: 10px; cursor: pointer; text-align: left; font-family: inherit; }
+.volet-user:hover { background: var(--input-bg, #f1f3f5); }
+.volet-user.active { background: rgba(var(--pr-rgb,21,88,176),.10); }
+.volet-user-av { flex-shrink: 0; width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; font-size: 13px; font-weight: 800; }
+.volet-user-tx { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.volet-user-tx strong { font-size: 13.5px; font-weight: 700; color: var(--tx, #1f2937); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.volet-user-tx small { font-size: 11.5px; color: var(--tx3, #9098a6); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.volet-logout { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0; border: 1px solid var(--bd, #e5e7eb); background: none; border-radius: 10px; cursor: pointer; color: var(--tx3, #6b7280); }
+.volet-logout:hover { background: rgba(217,48,37,.07); color: #D93025; border-color: rgba(217,48,37,.3); }
+.volet.collapsed .volet-user-tx { display: none; }
+.volet.collapsed .volet-user-row { flex-direction: column; gap: 8px; }
 /* Carré : app distincte de l'écosystème → séparée visuellement, en bas du volet */
 .volet-carre {
   display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 9px 12px;
