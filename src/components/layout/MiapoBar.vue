@@ -57,12 +57,17 @@
             <span class="miapo-convo-wave"><i></i><i></i><i></i></span>{{ convoHint }}
           </div>
 
-          <!-- MAPO+ (B2C) : option « chercher aussi sur internet » (sinon MIAPO se limite aux cours de l'apprenant) -->
+          <!-- MAPO+ (B2C) : options du chat pédagogique (internet + esprit critique) -->
           <div v-if="isB2C" class="miapo-opts">
             <label class="miapo-toggle">
               <input type="checkbox" v-model="internet" />
               <span class="miapo-toggle-track"><span class="miapo-toggle-thumb" /></span>
               <Globe :size="13" /> {{ t('mia.chatInternet') }}
+            </label>
+            <label class="miapo-toggle" :title="t('mia.chatEspritCritiqueHint')">
+              <input type="checkbox" v-model="espritCritique" />
+              <span class="miapo-toggle-track"><span class="miapo-toggle-thumb" /></span>
+              <Brain :size="13" /> {{ t('mia.chatEspritCritique') }}
             </label>
           </div>
 
@@ -220,7 +225,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Square } from 'lucide-vue-next'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Brain, Mic, Square } from 'lucide-vue-next'
 import { createConversation, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
@@ -455,6 +460,7 @@ const bodyEl = ref(null)
 const chatMsgs = ref([]) // { role: 'user' | 'miapo', text }
 const chatThinking = ref(false)
 const internet = ref(false) // « chercher aussi sur internet » (sinon : cours de l'apprenant seulement)
+const espritCritique = ref(false) // Mode « esprit critique » : MIAPO guide sans donner la réponse (pilier 1 charte)
 const busy = computed(() => copilot.thinking || chatThinking.value)
 // Contexte de l'apprenant quand il est identifiable (compte enfant ou mode apprenant) :
 // on transmet son niveau et ses matières pour des réponses ciblées.
@@ -709,7 +715,7 @@ async function submitB2C(text) {
 
   // 2) Sinon : chat pédagogique IA (socratique).
   const ctx = learnerCtx.value
-  const memCtx = (ctx.niveau || '') + '|' + (internet.value ? 'net' : '') + '|' + (locale.value.startsWith('en') ? 'en' : 'fr')
+  const memCtx = (ctx.niveau || '') + '|' + (internet.value ? 'net' : '') + '|' + (espritCritique.value ? 'ec' : '') + '|' + (locale.value.startsWith('en') ? 'en' : 'fr')
   // MÉMOIRE LOCALE (frugalité) : question déjà posée → on réutilise la réponse
   // mémorisée sur l'appareil, aucun appel IA.
   const cached = miapoCacheGet(text, memCtx)
@@ -732,6 +738,7 @@ async function submitB2C(text) {
     cours,
     historique: hist,
     internet: internet.value,
+    espritCritique: espritCritique.value,
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
   })
   chatThinking.value = false
@@ -1007,7 +1014,7 @@ onUnmounted(() => {
 .miapo-example svg { color: var(--pr); flex-shrink: 0; }
 
 /* MAPO+ (B2C) : option internet + chat pédagogique */
-.miapo-opts { padding: 0 16px 10px; }
+.miapo-opts { padding: 0 16px 10px; display: flex; flex-wrap: wrap; gap: 8px 16px; }
 .miapo-toggle {
   display: inline-flex; align-items: center; gap: 7px;
   font-size: 12.5px; color: var(--tx2); cursor: pointer; user-select: none;

@@ -697,10 +697,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * Cultive la compréhension et l'esprit critique — n'écrit pas le devoir à la
    * place de l'apprenant. `internet` autorise les connaissances générales ;
    * sinon MIAPO se limite aux `cours` fournis.
-   * @param {{message:string, niveau?:string, matieres?:string, cours?:string, historique?:string, internet?:boolean, langue?:string}} opts
+   * @param {{message:string, niveau?:string, matieres?:string, cours?:string, historique?:string, internet?:boolean, espritCritique?:boolean, langue?:string}} opts
    * @returns {Promise<{ok, text?, reason?}>}
    */
-  async function chatTuteur({ message, niveau = '', matieres = '', cours = '', historique = '', internet = false, langue = 'fr' }) {
+  async function chatTuteur({ message, niveau = '', matieres = '', cours = '', historique = '', internet = false, espritCritique = false, langue = 'fr' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -708,7 +708,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, espritCritique, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)

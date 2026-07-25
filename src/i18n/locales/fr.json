@@ -4660,6 +4660,8 @@
     "brandSubParent": "Suivi & cours à la maison",
     "chatSub": "ton tuteur",
     "chatInternet": "Chercher aussi sur internet",
+    "chatEspritCritique": "Esprit critique",
+    "chatEspritCritiqueHint": "MIAPO te guide sans donner la réponse et t'invite à vérifier par toi-même.",
     "chatError": "Désolé, je n'ai pas pu répondre. Réessaie dans un instant.",
     "chatOutOfCredits": "Tu as utilisé tous tes crédits IA. Passe à une offre supérieure pour continuer.",
     "secConnectors": "Connecteurs",

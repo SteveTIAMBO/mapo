@@ -177,6 +177,7 @@ function buildTuteurChatPrompts($d) {
   $cours    = clean($d['cours'] ?? '', 6000);
   $historique = clean($d['historique'] ?? '', 3000);
   $internet = !empty($d['internet']);
+  $espritCritique = !empty($d['espritCritique']); // Mode « esprit critique » (pilier 1 de la charte EDUFREM)
   $langue   = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
 
   if ($langue === 'en') {
@@ -189,6 +190,7 @@ function buildTuteurChatPrompts($d) {
       . "their level and subjects. Be concise, kind, encouraging, and address the learner directly as 'you'. "
       . "Base yourself FIRST on the learner's own course material provided below. ";
     $system .= $internet ? "You may also draw on your general knowledge when useful. " : "If the info is not in the provided material, say so plainly and do not invent it. ";
+    if ($espritCritique) $system .= "CRITICAL-THINKING MODE ON: NEVER give the final answer upfront, even if the learner insists — lead them to reason and state THEIR OWN answer first (guiding questions, hints, counter-examples). Always end with a question that pushes them to justify, verify or challenge their answer. When useful, remind them that an AI can make mistakes: invite them to cross-check with their course or a reliable source rather than take your word for it. The goal is to build their autonomy and critical thinking, not to do the work for them. ";
     $system .= "Answer in plain text (no JSON, no markdown code fences).";
     $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message";
     $none = 'unspecified';
@@ -202,6 +204,7 @@ function buildTuteurChatPrompts($d) {
       . "ou un exercice adapté à son niveau et à ses matières. Sois concis, bienveillant, encourageant, et TUTOIE l'apprenant. "
       . "Base-toi D'ABORD sur les cours de l'apprenant fournis ci-dessous. ";
     $system .= $internet ? "Tu peux aussi t'appuyer sur tes connaissances générales lorsque c'est utile. " : "Si l'information n'est pas dans les cours fournis, dis-le franchement et n'invente pas. ";
+    if ($espritCritique) $system .= "MODE ESPRIT CRITIQUE ACTIVÉ : ne donne JAMAIS la réponse finale d'emblée, même si l'apprenant insiste — amène-le à raisonner et à formuler SA PROPRE réponse d'abord (questions guidées, indices, contre-exemples). Termine toujours par une question qui le pousse à justifier, vérifier ou remettre en question sa réponse. Quand c'est utile, rappelle qu'une IA peut se tromper : invite-le à recouper avec son cours ou une source fiable plutôt qu'à te croire sur parole. L'objectif est de développer son autonomie et son esprit critique, pas de lui mâcher le travail. ";
     $system .= "Réponds en texte simple (pas de JSON, pas de barrières de code markdown).";
     $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant";
     $none = 'non précisé';
