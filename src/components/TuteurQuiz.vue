@@ -63,6 +63,11 @@
         <div><strong>MIAPO t'explique le concept</strong>
           <p v-if="conceptBusy && !conceptText" class="tq-concept-load">MIAPO prépare l'explication…</p>
           <p v-else>{{ conceptText }}</p>
+          <div v-if="conceptText && !conceptBusy && !conceptAsked" class="tq-concept-ack">
+            <span class="tq-ack-q">{{ ackLabels.understood }}</span>
+            <button type="button" class="tq-ack-btn yes" @click="conceptOui">{{ ackLabels.yes }}</button>
+            <button type="button" class="tq-ack-btn no" @click="conceptNon">{{ ackLabels.no }}</button>
+          </div>
         </div>
       </div>
       <div v-if="revealed" class="tq-fb" :class="firstTry ? 'ok' : 'expl'">
@@ -205,7 +210,23 @@ function jeNaiPasCompris() {
 // solution) et on MÉMORISE l'explication sur l'appareil (frugalité).
 const conceptText = ref('')
 const conceptBusy = ref(false)
-const CONCEPT_KEY = 'mapo_miapo_concept_v1'
+// L'apprenant a-t-il répondu au « As-tu compris ? » (Oui → on continue le quiz ;
+// Non → on ouvre le chat MIAPO pour approfondir le concept).
+const conceptAsked = ref(false)
+const ackLabels = computed(() => (locale.value.startsWith('en')
+  ? { understood: 'Did you understand?', yes: 'Yes, continue', no: 'No, go deeper' }
+  : { understood: 'As-tu compris ?', yes: 'Oui, je continue', no: 'Non, approfondir' }))
+function conceptOui() { conceptAsked.value = true }
+function conceptNon() {
+  conceptAsked.value = true
+  const c = current.value
+  const en = ttsLang().toLowerCase().startsWith('en')
+  const q = en
+    ? `I'm revising ${props.matiere} (level ${props.niveau || ''}) and I don't understand this concept: « ${c && c.q ? c.q : ''} ». Explain it to me differently, with a simple example, then check I understood. Do NOT give the answer to the exercise.`
+    : `Je révise ${props.matiere} (niveau ${props.niveau || ''}) et je ne comprends pas ce concept : « ${c && c.q ? c.q : ''} ». Explique-le-moi autrement, avec un exemple simple, puis vérifie que j'ai compris. Ne me donne pas la réponse de l'exercice.`
+  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: q } })) } catch { /* silent */ }
+}
+const CONCEPT_KEY = 'mapo_miapo_concept_v2'
 const _normC = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180)
 function _conceptLoad() { try { return JSON.parse(localStorage.getItem(CONCEPT_KEY) || '{}') } catch { return {} } }
 function conceptGet(q) { const c = _conceptLoad(); return c[_normC(q)] || '' }
@@ -222,8 +243,8 @@ async function expliqueConcept() {
     conceptBusy.value = true
     const en = ttsLang().toLowerCase().startsWith('en')
     const prompt = en
-      ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. DO NOT give the answer or the correct option — only help understand the concept.`
-      : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.`
+      ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. Answer directly, with NO greeting or salutation (this is a mid-quiz hint, not a new conversation). DO NOT give the answer or the correct option — only help understand the concept.`
+      : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. Réponds directement, SANS aucune salutation (surtout pas de « Bonjour » : c'est une aide en plein quiz, pas une nouvelle conversation). NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.`
     try {
       const r = await tuteur.chatTuteur({ message: prompt, niveau: props.niveau, matieres: props.matiere, langue: en ? 'en' : 'fr' })
       txt = r && r.ok ? String(r.text || '').trim() : ''
@@ -271,7 +292,7 @@ const flags = ref([])
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
 // Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
-watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; if (mode.value === 'quiz') readQuestion() })
+watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; conceptAsked.value = false; if (mode.value === 'quiz') readQuestion() })
 // 1re erreur : l'écran montre l'indice ; MIAPO va plus loin et explique le CONCEPT.
 watch(phase, (p) => { if (p === 'hinted') expliqueConcept() })
 // Révélation : bonne réponse → félicitation (+ enchaîne en mode session) ;
@@ -445,6 +466,11 @@ onMounted(start)
 .tq-fb.concept { background: rgba(124,92,255,.07); color: #6b46ff; margin-top: 10px; }
 .tq-fb.concept strong { color: #5b34e6; }
 .tq-concept-load { opacity: .7; font-style: italic; }
+.tq-concept-ack { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tq-ack-q { font-size: 13px; font-weight: 700; color: #5b34e6; margin-right: 2px; }
+.tq-ack-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 9px; border: 1.5px solid rgba(124,92,255,.35); background: #fff; color: #5b34e6; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s, border-color .15s; }
+.tq-ack-btn.yes:hover { background: rgba(27,138,90,.10); border-color: #1B8A5A; color: #1B8A5A; }
+.tq-ack-btn.no:hover { background: rgba(124,92,255,.10); border-color: #6b46ff; }
 
 .tq-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 22px; }
 .tq-actions.center { justify-content: center; gap: 12px; }
