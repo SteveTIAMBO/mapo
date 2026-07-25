@@ -224,7 +224,8 @@ function conceptNon() {
   const q = en
     ? `I'm revising ${props.matiere} (level ${props.niveau || ''}) and I don't understand this concept: « ${c && c.q ? c.q : ''} ». Explain it to me differently, with a simple example, then check I understood. Do NOT give the answer to the exercise.`
     : `Je révise ${props.matiere} (niveau ${props.niveau || ''}) et je ne comprends pas ce concept : « ${c && c.q ? c.q : ''} ». Explique-le-moi autrement, avec un exemple simple, puis vérifie que j'ai compris. Ne me donne pas la réponse de l'exercice.`
-  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: q } })) } catch { /* silent */ }
+  // fresh:true → nouvelle conversation dédiée au concept (contexte embarqué).
+  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query: q, fresh: true } })) } catch { /* silent */ }
 }
 const CONCEPT_KEY = 'mapo_miapo_concept_v2'
 const _normC = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180)

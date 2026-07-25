@@ -14,19 +14,23 @@ import { useTuteurStore } from './tuteur'
 const CODE_KEY = 'mapo_b2c_langue2'
 const DICT_KEY = (code) => 'mapo_b2c_langue2_dict_' + code
 
-// Nom natif (affiché) + nom anglais (pour le prompt IA).
+// Nom natif (affiché) + nom anglais (pour le prompt IA). Ordonné par nombre de
+// locuteurs (les plus parlées d'abord : arabe, chinois, anglais, espagnol, hindi…).
 export const LANGUES2 = [
-  { code: 'uk', native: 'Українська', en: 'Ukrainian' },
   { code: 'ar', native: 'العربية', en: 'Arabic' },
+  { code: 'zh', native: '中文', en: 'Chinese (Simplified)' },
   { code: 'en', native: 'English', en: 'English' },
-  { code: 'fr', native: 'Français', en: 'French' },
   { code: 'es', native: 'Español', en: 'Spanish' },
+  { code: 'hi', native: 'हिन्दी', en: 'Hindi' },
+  { code: 'fr', native: 'Français', en: 'French' },
   { code: 'pt', native: 'Português', en: 'Portuguese' },
   { code: 'ru', native: 'Русский', en: 'Russian' },
+  { code: 'ur', native: 'اردو', en: 'Urdu' },
+  { code: 'bn', native: 'বাংলা', en: 'Bengali' },
+  { code: 'uk', native: 'Українська', en: 'Ukrainian' },
   { code: 'tr', native: 'Türkçe', en: 'Turkish' },
   { code: 'fa', native: 'دری', en: 'Dari' },
   { code: 'ro', native: 'Română', en: 'Romanian' },
-  { code: 'zh', native: '中文', en: 'Chinese (Simplified)' },
 ]
 
 export const useLangue2Store = defineStore('langue2', () => {

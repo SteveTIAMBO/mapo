@@ -29,7 +29,10 @@
               <span class="miapo-name">MIAPO</span>
               <span class="miapo-sub">{{ isB2C ? t('mia.chatSub') : 'votre copilote' }}</span>
             </div>
-            <button class="miapo-close" @click="close" aria-label="Fermer"><X :size="18" /></button>
+            <div class="miapo-head-actions">
+              <button v-if="isB2C && chatMsgs.length" type="button" class="miapo-new" @click="nouvelleConversation" :title="t('mia.chatNew')"><SquarePen :size="16" /> <span>{{ t('mia.chatNew') }}</span></button>
+              <button class="miapo-close" @click="close" aria-label="Fermer"><X :size="18" /></button>
+            </div>
           </div>
 
           <!-- Saisie -->
@@ -221,7 +224,7 @@
 <script setup>
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Square } from 'lucide-vue-next'
+import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, Mic, Square, SquarePen } from 'lucide-vue-next'
 import { createConversation, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
@@ -508,6 +511,15 @@ function close() {
   isOpen.value = false
   if (convoCtl.value) { try { convoCtl.value.stop() } catch { /* no-op */ } }
   setTimeout(reset, 200)
+}
+
+// Démarre une NOUVELLE conversation (efface le fil courant). Utilisé par le
+// bouton d'en-tête et par « Non, approfondir » du quiz (fil dédié au concept).
+function nouvelleConversation() {
+  chatMsgs.value = []
+  chatThinking.value = false
+  instruction.value = ''
+  nextTick(() => inputEl.value?.focus())
 }
 
 function runExample(ex) {
@@ -871,8 +883,10 @@ function validateComm() {
 // session pédagogique correspondante (comptée dans l'usage).
 function onOpenEvent(e) {
   isOpen.value = true
-  const q = e && e.detail && e.detail.query
-  if (q && isB2C.value) nextTick(() => { submitB2C(String(q), { skipLocal: true }) })
+  const d = (e && e.detail) || {}
+  // `fresh` : on repart d'une conversation vierge (ex. « Non, approfondir » du quiz).
+  if (d.fresh && isB2C.value) nouvelleConversation()
+  if (d.query && isB2C.value) nextTick(() => { submitB2C(String(d.query), { skipLocal: true }) })
 }
 function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
@@ -961,6 +975,9 @@ onUnmounted(() => {
 .miapo-spark.sm { width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0; }
 .miapo-name { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--tx); letter-spacing: .3px; }
 .miapo-sub { font-size: 12px; color: var(--tx3); }
+.miapo-head-actions { display: flex; align-items: center; gap: 6px; }
+.miapo-new { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 1px solid var(--bd, #e5e7eb); background: #fff; color: var(--tx2, #4b5563); border-radius: 9px; cursor: pointer; font-family: inherit; font-size: 12.5px; font-weight: 600; transition: background .15s, border-color .15s, color .15s; }
+.miapo-new:hover { border-color: var(--pr); color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.05); }
 .miapo-close {
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; border: none; background: transparent;

@@ -44,7 +44,7 @@
           <!-- Bloc pliable (accordéon façon HUB / MAPO supérieur) -->
           <template v-else>
             <button type="button" class="nav-group-head" @click="toggleGroup(grp.group)">
-              <span>{{ grp.label }}</span>
+              <DualText :text="grp.label" />
               <ChevronRight :size="14" class="nav-group-chev" :class="{ open: isGroupOpen(grp.group) }" />
             </button>
             <div v-show="isGroupOpen(grp.group)" class="nav-group-items">
@@ -124,7 +124,7 @@
 
           <!-- Rappels intelligents : devoirs à rendre + révision du jour -->
           <button v-if="rappels.hasAny" type="button" class="card rappel-card" @click="section = 'planning'">
-            <div class="rappel-head"><MiapoOrbe :size="16" :frozen="true" /><h3>{{ t('mia.remindTitle') }}</h3></div>
+            <div class="rappel-head"><MiapoOrbe :size="16" :frozen="true" /><h3><DualText :text="t('mia.remindTitle')" /></h3></div>
             <div class="rappel-lines">
               <span v-if="rappels.late" class="rappel-line late">{{ t('mia.remindOverdue', { n: rappels.late }) }}</span>
               <span v-if="rappels.due" class="rappel-line">{{ t('mia.remindDueToday', { n: rappels.due }) }}</span>
@@ -135,7 +135,7 @@
 
           <!-- Programme de révision jusqu'à l'examen (certification) -->
           <div v-if="planCertif" class="card certif-plan-card">
-            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.certifPlanTitle') }}</h3><span class="cp-jn">{{ t('mia.certifJn', { n: planCertif.jours }) }}</span></div>
+            <div class="card-head"><CalendarDays :size="18" /><h3><DualText :text="t('mia.certifPlanTitle')" /></h3><span class="cp-jn">{{ t('mia.certifJn', { n: planCertif.jours }) }}</span></div>
             <p class="muted small cp-hint">{{ t('mia.certifPlanHint', { n: planCertif.modules.length, s: planCertif.semaines, p: planCertif.parSemaine }) }}</p>
             <div class="cp-mods">
               <component :is="isApprenant ? 'button' : 'div'" v-for="m in planCertif.modules" :key="m.nom" class="cp-mod" :class="{ 'cp-static': !isApprenant, mastered: m.niveau >= 3 }" @click="isApprenant && goRevise(m.nom)">
@@ -158,13 +158,13 @@
           </div>
 
           <div v-if="hasEval" class="card radar-dash" role="button" tabindex="0" @click="section = 'profil6c'">
-            <div class="card-head"><Target :size="18" /><h3>{{ t('mia.profile6c') }}</h3></div>
+            <div class="card-head"><Target :size="18" /><h3><DualText :text="t('mia.profile6c')" /></h3></div>
             <Radar6C :scores="activeEnfant.comp6c || {}" />
           </div>
 
           <!-- Plan de cours généré par MIAPO (apprenant hors-catalogue) -->
           <div v-if="coursPlan.length" class="card cplan-card">
-            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myCoursePlan') }}</h3><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
+            <div class="card-head"><CalendarDays :size="18" /><h3><DualText :text="t('mia.myCoursePlan')" /></h3><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
             <div class="cplan-list">
               <div v-for="(p, i) in coursPlan" :key="i" class="cplan-step">
                 <div class="ps-head"><span class="ps-per">{{ p.periode }}</span><button v-if="p.module && isApprenant" class="ps-mod" @click="goRevise(p.module)"><Sparkles :size="12" /> {{ p.module }}</button><span v-else-if="p.module" class="ps-mod-static">{{ p.module }}</span></div>
@@ -220,7 +220,7 @@
 
           <!-- Lecture de copie -->
           <div class="card vision-card">
-            <div class="card-head"><Camera :size="18" /><h3>{{ t('mia.readExamCopy') }}</h3></div>
+            <div class="card-head"><Camera :size="18" /><h3><DualText :text="t('mia.readExamCopy')" /></h3></div>
             <div v-if="visionState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.visionPickHint') }}</p>
               <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" /></label>
@@ -242,7 +242,7 @@
 
           <!-- Lecture d'un bulletin (multi-matières → notes) -->
           <div class="card vision-card">
-            <div class="card-head"><Camera :size="18" /><h3>{{ t('mia.readReportCard') }}</h3></div>
+            <div class="card-head"><Camera :size="18" /><h3><DualText :text="t('mia.readReportCard')" /></h3></div>
             <div v-if="bulletinState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.bulletinPickHint') }}</p>
               <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseBulletinFile') }}</span><input type="file" accept="image/*,application/pdf" style="display:none" @change="onPickBulletin" /></label>
@@ -291,7 +291,7 @@
                  reposent sur des techniques validées (récupération, espacement,
                  auto-explication, entrelacement, production, double codage). -->
             <div v-if="isApprenant" class="card">
-              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.rtReviseTitle') }}</h3></div>
+              <div class="card-head"><GraduationCap :size="18" /><h3><DualText :text="t('mia.rtReviseTitle')" /></h3></div>
               <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.rtReviseHint') }}</p>
               <button type="button" class="import-cta" @click="ouvrirMesCours"><FolderOpen :size="16" /> <span>{{ t('mia.rtImportCourses') }}</span></button>
               <div v-if="needsModules" class="modules-empty">
@@ -317,7 +317,7 @@
             </div>
             <!-- Parent : désigner une matière à réviser (sans la lancer) -->
             <div v-else class="card">
-              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.requestRevision') }}</h3></div>
+              <div class="card-head"><GraduationCap :size="18" /><h3><DualText :text="t('mia.requestRevision')" /></h3></div>
               <p class="muted">{{ t('mia.requestRevisionHint', { name: activeEnfant.firstName }) }}</p>
               <div class="revise-pick">
                 <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
@@ -331,7 +331,7 @@
                  d'examen. « Générer le programme » ajoute des révisions espacées
                  à l'agenda en fonction de la date. -->
             <div class="card prepa-card">
-              <div class="card-head"><Trophy :size="18" /><h3>{{ t('mia.exTitle') }}</h3></div>
+              <div class="card-head"><Trophy :size="18" /><h3><DualText :text="t('mia.exTitle')" /></h3></div>
               <p class="muted">{{ t('mia.exHint') }}</p>
 
               <!-- Suggestion automatique (examen officiel du niveau/pays) -->
@@ -402,7 +402,7 @@
         <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
         <section v-else-if="section === 'historique'" class="sec">
           <div v-if="aReviser.length" class="card">
-            <div class="card-head"><Target :size="18" /><h3>{{ t('mia.histWeakTitle') }}</h3></div>
+            <div class="card-head"><Target :size="18" /><h3><DualText :text="t('mia.histWeakTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.histWeakHint') }}</p>
             <div class="weak-list">
               <button v-for="w in aReviser" :key="'h' + w.matiere" class="weak-item" @click="goRevise(w.matiere, w.themes)">
@@ -413,7 +413,7 @@
           </div>
 
           <div class="card">
-            <div class="card-head"><History :size="18" /><h3>{{ t('mia.histTitle') }}</h3></div>
+            <div class="card-head"><History :size="18" /><h3><DualText :text="t('mia.histTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.histHint') }}</p>
             <div v-if="histSessions.length" class="hist-list">
               <div v-for="s in histSessions" :key="s.id" class="hist-item">
@@ -433,7 +433,7 @@
         <section v-else-if="section === 'progression'" class="sec">
           <div class="card">
             <div class="card-head">
-              <TrendingUp :size="18" /><h3>{{ t('mia.levelBySubject') }}</h3>
+              <TrendingUp :size="18" /><h3><DualText :text="t('mia.levelBySubject')" /></h3>
               <button v-if="progression.length || activeEnfant.notes.length" type="button" class="pdf-btn" @click="exporterBilan">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
                 {{ t('mia.exportBilan') }}
@@ -451,7 +451,7 @@
           </div>
 
           <div v-if="activeEnfant.notes.length" class="card">
-            <div class="card-head"><FileText :size="18" /><h3>{{ t('mia.notesOverview') }}</h3></div>
+            <div class="card-head"><FileText :size="18" /><h3><DualText :text="t('mia.notesOverview')" /></h3></div>
             <div class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}</span><span class="nr-note" :class="noteClass(n.note)">{{ n.note }}/20</span>
@@ -476,7 +476,7 @@
         <!-- ========== EMPLOI DU TEMPS ========== -->
         <section v-else-if="section === 'edt'" class="sec">
           <div v-if="veilleMatieres.length" class="card veille-card">
-            <div class="card-head"><Sparkles :size="18" /><h3>{{ t('mia.edtVeilleTitle') }}</h3></div>
+            <div class="card-head"><Sparkles :size="18" /><h3><DualText :text="t('mia.edtVeilleTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.edtVeilleSub', { jour: demainLabel }) }}</p>
             <div class="chips">
               <component :is="isApprenant ? 'button' : 'span'" v-for="m in veilleMatieres" :key="m" class="chip chip-w" @click="isApprenant && goRevise(m)">{{ m }}</component>
@@ -484,7 +484,7 @@
           </div>
 
           <div class="card">
-            <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.edtTitle') }}</h3></div>
+            <div class="card-head"><CalendarDays :size="18" /><h3><DualText :text="t('mia.edtTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.edtHint') }}</p>
 
             <div class="edt-add">
@@ -534,7 +534,7 @@
         <section v-else-if="section === 'profil'" class="sec">
           <nav class="param-tabs">
             <button v-for="st in sousMenus" :key="st.key" type="button" class="param-tab" :class="{ active: sousSection === st.key }" @click="sousSection = st.key">
-              <component :is="st.icon" :size="16" /><span>{{ st.label }}</span>
+              <component :is="st.icon" :size="16" /><DualText :text="st.label" />
             </button>
           </nav>
 
@@ -546,7 +546,7 @@
           <!-- Sous-menu : Langue -->
           <div v-show="sousSection === 'langue'">
             <div class="card">
-              <div class="card-head"><Languages :size="18" /><h3>{{ t('mia.secLanguage') }}</h3></div>
+              <div class="card-head"><Languages :size="18" /><h3><DualText :text="t('mia.secLanguage')" /></h3></div>
               <p class="muted small">{{ t('mia.langHint') }}</p>
               <div class="lang-choices">
                 <button type="button" class="lang-btn" :class="{ active: locale === 'fr' }" @click="setLangue('fr')">Français</button>
@@ -571,7 +571,7 @@
             <template v-if="!isApprenant && activeEnfant">
               <MiapoRelanceWhatsApp v-if="abo.relanceWhatsappDispo" :enfant="activeEnfant" :default-phone="parentProfil.phone" />
               <div v-else class="card wa-upsell">
-                <div class="card-head"><MessageCircle :size="18" /><h3>{{ t('mia.waUpsellTitle') }}</h3></div>
+                <div class="card-head"><MessageCircle :size="18" /><h3><DualText :text="t('mia.waUpsellTitle')" /></h3></div>
                 <p class="muted small">{{ t('mia.waUpsellText') }}</p>
                 <button class="btn btn-primary btn-sm" @click="sousSection = 'abonnement'">{{ t('mia.waUpsellCta') }}</button>
               </div>
@@ -599,14 +599,14 @@
             <p class="muted small">{{ t('mia.connectorsHint') }}</p>
             <!-- Agenda iCal (Google / Outlook) -->
             <div class="card">
-              <div class="card-head"><CalendarDays :size="18" /><h3>{{ t('mia.myAgenda') }}</h3></div>
+              <div class="card-head"><CalendarDays :size="18" /><h3><DualText :text="t('mia.myAgenda')" /></h3></div>
               <p class="muted small">{{ t('mia.myAgendaSub') }}</p>
               <input class="input connector-input" v-model="agendaUrl" :placeholder="t('mia.calendarUrlPlaceholder')" />
               <button class="btn btn-outline btn-sm" type="button" @click="saveAgenda">{{ agendaSaved ? t('mia.connected') : t('mia.connect') }}</button>
             </div>
             <!-- Compte Carré : MIAPO pourra lire les notes de cours de l'apprenant -->
             <div class="card">
-              <div class="card-head"><span class="carre-badge"><span>C</span></span><h3>{{ t('mia.carreTitle') }}</h3></div>
+              <div class="card-head"><span class="carre-badge"><span>C</span></span><h3><DualText :text="t('mia.carreTitle')" /></h3></div>
               <p class="muted small">{{ t('mia.carreDesc') }}</p>
               <template v-if="connecteurs.carreConnected">
                 <div class="connector-state ok"><Check :size="15" /> {{ connecteurs.carrePreview ? t('mia.carrePreview') : t('mia.carreConnectedMsg') }}</div>
@@ -622,7 +622,7 @@
           <div v-show="sousSection === 'profil'" class="param-panel">
           <!-- Profil du PARENT (mode parent) — d'abord -->
           <div v-if="!isApprenant" class="card">
-            <div class="card-head"><Settings :size="18" /><h3>{{ t('mia.myParentProfile') }}</h3></div>
+            <div class="card-head"><Settings :size="18" /><h3><DualText :text="t('mia.myParentProfile')" /></h3></div>
             <div class="profil-photo">
               <span class="er-avatar pp-avatar av-m">
                 <img v-if="parentProfil.photoURL" :src="parentProfil.photoURL" alt="" />
@@ -781,7 +781,7 @@
     <!-- ───────── Rail droit : agenda de révision (desktop large) ───────── -->
     <aside class="miapo-aside" data-tour="agenda">
       <div class="aside-card">
-        <div class="aside-head"><CalendarDays :size="17" /><h3>{{ t('mia.weekAgenda') }}</h3></div>
+        <div class="aside-head"><CalendarDays :size="17" /><h3><DualText :text="t('mia.weekAgenda')" /></h3></div>
         <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
         <div v-if="serie > 0" class="agenda-serie"><Flame :size="13" /> {{ t('mia.seanceStreak', { n: serie }) }}</div>
         <div class="agenda-days">
@@ -905,6 +905,7 @@ import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoMesCours from '../components/MiapoMesCours.vue'
+import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
