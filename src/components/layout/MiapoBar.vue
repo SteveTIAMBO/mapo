@@ -688,13 +688,18 @@ function resolveB2C(text) {
 
 // MAPO+ (B2C) : chat pédagogique socratique. MIAPO cultive la compréhension
 // (n'écrit pas le devoir à la place de l'apprenant) et répond en texte libre.
-async function submitB2C(text) {
+async function submitB2C(text, opts = {}) {
+  const skipLocal = !!(opts && opts.skipLocal)
   chatMsgs.value.push({ role: 'user', text })
   instruction.value = ''
   nextTick(scrollChatBottom)
 
   // 1) Réponse INSTANTANÉE à partir des données de l'app (progrès, notes, EDT
   //    d'un enfant nommé…) ou OUVERTURE DIRECTE de la bonne vue — sans appel IA.
+  // Les révisions guidées (dictée, explique-moi, problèmes mêlés…) forcent
+  // skipLocal : on veut la session pédagogique IA, pas une navigation
+  // déclenchée par un mot-clé contenu dans la consigne.
+  if (!skipLocal) {
   const local = resolveB2C(text)
   if (local && local.answer) {
     // Réponse data affichée dans la conversation + (si pertinent) un bouton
@@ -712,6 +717,7 @@ async function submitB2C(text) {
     }, 850)
     return
   }
+  } // fin (!skipLocal)
 
   // 2) Sinon : chat pédagogique IA (socratique, esprit critique par défaut).
   const ctx = learnerCtx.value
@@ -856,8 +862,14 @@ function validateComm() {
   close()
 }
 
-// Ouverture via événement global + raccourci Ctrl+J
-function onOpenEvent() { isOpen.value = true }
+// Ouverture via événement global + raccourci Ctrl+J. Un `detail.query` (envoyé
+// par une carte « type de révision ») ouvre le chat ET lance directement la
+// session pédagogique correspondante (comptée dans l'usage).
+function onOpenEvent(e) {
+  isOpen.value = true
+  const q = e && e.detail && e.detail.query
+  if (q && isB2C.value) nextTick(() => { submitB2C(String(q), { skipLocal: true }) })
+}
 function onKeydown(e) {
   if ((e.ctrlKey || e.metaKey) && (e.key === 'j' || e.key === 'J')) {
     e.preventDefault()

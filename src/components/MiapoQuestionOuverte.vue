@@ -75,14 +75,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { PenLine, Sparkles, Loader2, Check, Lightbulb } from 'lucide-vue-next'
 
-const props = defineProps({ enfant: { type: Object, default: null } })
+// presetMatiere : quand la carte « Rédaction guidée » lance ce widget sur une
+// matière précise, on démarre directement la question (pas de sélecteur).
+const props = defineProps({ enfant: { type: Object, default: null }, presetMatiere: { type: String, default: '' } })
 defineEmits(['revise'])
 const { t } = useI18n({ useScope: 'global' })
 const cours = useCoursStore()
@@ -104,6 +106,10 @@ const noteStyle = computed(() => {
   return { color: c, backgroundColor: c + '1f' }
 })
 const fautesThemes = computed(() => (res.value?.langue.fautes || []).map((f) => f.correction).filter(Boolean))
+
+onMounted(() => {
+  if (props.presetMatiere) { matiere.value = props.presetMatiere; poser() }
+})
 
 async function poser() {
   if (!matiere.value) return

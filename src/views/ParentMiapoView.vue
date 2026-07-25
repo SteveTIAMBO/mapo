@@ -282,18 +282,32 @@
               <p v-if="!isApprenant" class="muted small wl-note">{{ t('mia.whatToWork', { name: activeEnfant.firstName }) }}</p>
             </div>
 
-            <!-- Apprenant : lancer une révision OU ajouter une matière à réviser -->
+            <!-- Apprenant : choisir une matière PUIS un TYPE de révision. Les types
+                 proposés dépendent de la matière (pas de dictée en maths…) et
+                 reposent sur des techniques validées (récupération, espacement,
+                 auto-explication, entrelacement, production, double codage). -->
             <div v-if="isApprenant" class="card">
-              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.privateLessonTitle') }}</h3></div>
-              <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.privateLessonHint') }}</p>
+              <div class="card-head"><GraduationCap :size="18" /><h3>{{ t('mia.rtReviseTitle') }}</h3></div>
+              <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.rtReviseHint') }}</p>
               <div v-if="needsModules" class="modules-empty">
                 <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
               </div>
-              <div v-else class="revise-pick">
-                <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
-                <button class="btn btn-outline" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
-                <button class="btn btn-primary" :disabled="!reviseMatiere" @click="goRevise(reviseMatiere)"><Sparkles :size="15" /> <span>{{ t('mia.start') }}</span></button>
-              </div>
+              <template v-else>
+                <div class="revise-pick">
+                  <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ t('mia.chooseModule') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
+                  <button class="btn btn-outline btn-sm" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
+                </div>
+                <template v-if="reviseMatiere">
+                  <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
+                  <div class="rt-grid">
+                    <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
+                      <span class="rt-ic"><component :is="RT_ICONS[rt.icon]" :size="18" /></span>
+                      <span class="rt-tx"><strong>{{ t('mia.rt_' + rt.key) }}</strong><small>{{ t('mia.rth_' + rt.key) }}</small></span>
+                    </button>
+                  </div>
+                  <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
+                </template>
+              </template>
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
             <!-- Parent : désigner une matière à réviser (sans la lancer) -->
@@ -306,9 +320,6 @@
               </div>
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
-
-            <!-- Question rédigée : au-delà du QCM, et MIAPO y lit aussi la langue -->
-            <MiapoQuestionOuverte v-if="isApprenant" :enfant="activeEnfant" @revise="onReviseFrancais" />
 
             <!-- Prépa examen -->
             <div class="card prepa-card">
@@ -807,7 +818,10 @@ import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
+import { typesForMatiere } from '../utils/revisionTypes'
+// Icônes des types de révision (clé → composant), pilotées par le catalogue.
+const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
 
 const router = useRouter()
 const route = useRoute()
@@ -1267,6 +1281,31 @@ watch(() => activeEnfant.value?.pays, (p) => abo.refreshDevise(p || ''), { immed
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')
+// Types de révision proposés pour la matière choisie — dépend de la matière
+// (pas de dictée en maths…). Logique fondée sur les sciences cognitives :
+// cf. src/utils/revisionTypes.js.
+const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(reviseMatiere.value) : []))
+// Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
+const activeRedaction = ref('')
+// Changer de matière referme le widget de rédaction en cours.
+watch(reviseMatiere, () => { activeRedaction.value = '' })
+function launchRevision(typeKey) {
+  const m = reviseMatiere.value
+  if (!isApprenant.value || !m) return
+  activeRedaction.value = ''
+  const niveau = activeEnfant.value?.niveau || ''
+  switch (typeKey) {
+    case 'quiz': goRevise(m); return                    // QCM de récupération
+    case 'flashcards': section.value = 'fiches'; return // fiche + cartes mémoire
+    case 'redaction': activeRedaction.value = m; return // production écrite corrigée
+    default: {
+      // explique-moi / problèmes mêlés / dictée / carte mentale → session
+      // pédagogique guidée dans le chat MIAPO (comptée dans l'usage).
+      const query = t('mia.rtSeed_' + typeKey, { subject: m, niveau })
+      try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { query } })) } catch { /* silent */ }
+    }
+  }
+}
 const quizThemes = ref('')
 function goRevise(matiere, themes) {
   // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
@@ -2038,6 +2077,18 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .wi-level { font-weight: 700; font-size: 12px; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); padding: 3px 9px; border-radius: 20px; }
 .wi-note { font-weight: 700; font-size: 13px; color: #D93025; background: rgba(217,48,37,.08); padding: 3px 9px; border-radius: 20px; }
 .revise-pick { display: flex; gap: 10px; } .revise-pick .input { flex: 1; }
+/* Grille des types de révision (façon HUB : cartes cliquables + intitulé fondé
+   sur la pratique pédagogique). */
+.rt-q { margin: 14px 0 8px; font-weight: 700; color: var(--tx, #1f2937); font-size: 14.5px; }
+.rt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.rt-card { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: inherit; transition: border-color .15s, box-shadow .15s, transform .06s; }
+.rt-card:hover { border-color: var(--pr); box-shadow: 0 3px 14px rgba(var(--pr-rgb,21,88,176),.10); }
+.rt-card:active { transform: translateY(1px); }
+.rt-ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); }
+.rt-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rt-tx strong { font-size: 14px; color: var(--tx, #1f2937); }
+.rt-tx small { font-size: 11.5px; line-height: 1.35; color: var(--tx3, #6b7280); }
+@media (max-width: 560px) { .rt-grid { grid-template-columns: 1fr; } }
 .modules-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 2px; }
 .modules-empty .muted { margin: 0; }
 
