@@ -321,26 +321,65 @@
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
             </div>
 
-            <!-- Prépa examen -->
+            <!-- Mes examens : l'élève choisit ses examens + échéances ; l'examen
+                 officiel du pays est proposé automatiquement pour une classe
+                 d'examen. « Générer le programme » ajoute des révisions espacées
+                 à l'agenda en fonction de la date. -->
             <div class="card prepa-card">
-              <div class="card-head"><Trophy :size="18" /><h3>{{ t('mia.prepareExam') }}</h3></div>
-              <div v-if="prepaState === 'idle'">
-                <p class="muted">{{ t('mia.prepaHint', { name: activeEnfant.firstName }) }}</p>
-                <button class="btn btn-outline" @click="getPrepa"><Trophy :size="16" /> <span>{{ t('mia.buildProgram') }}</span></button>
-              </div>
-              <div v-else-if="prepaState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.prepaLoading') }}</p></div>
-              <div v-else-if="prepaState === 'done' && prepaResult" class="prepa-result">
-                <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || t('mia.program') }}</span><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
-                <div class="prepa-plan">
-                  <div v-for="(s, i) in prepaResult.plan" :key="i" class="etape">
-                    <div class="etape-head"><span class="etape-num">{{ i + 1 }}</span><strong>{{ s.etape }}</strong></div>
-                    <p v-if="s.objectif" class="etape-obj">{{ s.objectif }}</p>
-                    <ul v-if="s.actions.length" class="etape-actions"><li v-for="(a, j) in s.actions" :key="j">{{ a }}</li></ul>
-                  </div>
+              <div class="card-head"><Trophy :size="18" /><h3>{{ t('mia.exTitle') }}</h3></div>
+              <p class="muted">{{ t('mia.exHint') }}</p>
+
+              <!-- Suggestion automatique (examen officiel du niveau/pays) -->
+              <div v-if="examOfficielSuggere" class="ex-suggest">
+                <div class="ex-suggest-tx">
+                  <strong>{{ t('mia.exOff_' + examOfficielSuggere.key) }}</strong>
+                  <small>{{ examSyncNote }} · {{ formatDateLong(examOfficielDate) }} · {{ jLabel(examOfficielDate) }}</small>
                 </div>
-                <button class="btn btn-ghost btn-sm" @click="prepaState = 'idle'">{{ t('mia.regenerate') }}</button>
+                <button class="btn btn-primary btn-sm" @click="ajouterExamenOfficiel"><Plus :size="15" /> <span>{{ t('mia.exAdd') }}</span></button>
               </div>
-              <div v-else-if="prepaState === 'error'" class="err"><p>{{ prepaError }}</p><button class="btn btn-outline btn-sm" @click="prepaState = 'idle'">{{ t('mia.retry') }}</button></div>
+
+              <!-- Liste des examens de l'élève -->
+              <div v-if="exams.length" class="ex-list">
+                <div v-for="ex in exams" :key="ex.id" class="ex-item">
+                  <div class="ex-item-row">
+                    <div class="ex-item-main">
+                      <span class="ex-name">{{ ex.label }}<span v-if="ex.official" class="ex-badge">{{ t('mia.exOfficialTag') }}</span></span>
+                      <span class="ex-meta">{{ formatDateLong(ex.date) }} · <b :class="jClass(ex.date)">{{ jLabel(ex.date) }}</b></span>
+                    </div>
+                    <div class="ex-item-actions">
+                      <button class="btn btn-primary btn-xs" @click="genererProgrammePour(ex)"><CalendarCheck :size="14" /> <span>{{ programmes[ex.id] ? t('mia.exRegen') : t('mia.exGen') }}</span></button>
+                      <button class="ex-del" :title="t('mia.remove')" @click="removeExam(ex.id)"><X :size="15" /></button>
+                    </div>
+                  </div>
+                  <p v-if="programmes[ex.id]" class="ex-done"><Check :size="13" /> <span>{{ t('mia.exGenerated', { n: programmes[ex.id] }) }}</span> <button class="ex-link" @click="section = 'planning'">{{ t('mia.exSeePlanning') }}</button></p>
+                </div>
+              </div>
+              <p v-else class="muted small">{{ t('mia.exEmpty') }}</p>
+
+              <!-- Ajouter un examen personnel -->
+              <div class="ex-add">
+                <input v-model="newExamLabel" class="input" :placeholder="t('mia.exLabelPh')" />
+                <input v-model="newExamDate" type="date" class="input ex-date-in" :min="todayISO" />
+                <button class="btn btn-outline btn-sm" :disabled="!newExamLabel.trim() || !newExamDate" @click="addExamManuel"><Plus :size="15" /> <span>{{ t('mia.add') }}</span></button>
+              </div>
+
+              <!-- Méthode détaillée par l'IA (optionnel) -->
+              <div class="ex-ai">
+                <button v-if="prepaState === 'idle'" class="btn btn-ghost btn-sm" @click="getPrepa"><Sparkles :size="15" /> <span>{{ t('mia.exMethodAI') }}</span></button>
+                <div v-else-if="prepaState === 'loading'" class="loading"><Loader2 :size="28" class="spin" /><p>{{ t('mia.prepaLoading') }}</p></div>
+                <div v-else-if="prepaState === 'done' && prepaResult" class="prepa-result">
+                  <div class="vr-head"><span class="vr-mat">{{ prepaResult.examen || t('mia.program') }}</span><span class="ia-badge"><MiapoOrbe :size="14" /> MIAPO</span></div>
+                  <div class="prepa-plan">
+                    <div v-for="(s, i) in prepaResult.plan" :key="i" class="etape">
+                      <div class="etape-head"><span class="etape-num">{{ i + 1 }}</span><strong>{{ s.etape }}</strong></div>
+                      <p v-if="s.objectif" class="etape-obj">{{ s.objectif }}</p>
+                      <ul v-if="s.actions.length" class="etape-actions"><li v-for="(a, j) in s.actions" :key="j">{{ a }}</li></ul>
+                    </div>
+                  </div>
+                  <button class="btn btn-ghost btn-xs" @click="prepaState = 'idle'">{{ t('mia.regenerate') }}</button>
+                </div>
+                <div v-else-if="prepaState === 'error'" class="err"><p>{{ prepaError }}</p><button class="btn btn-outline btn-xs" @click="prepaState = 'idle'">{{ t('mia.retry') }}</button></div>
+              </div>
             </div>
           </template>
         </section>
@@ -820,6 +859,7 @@ import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
+import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
 
@@ -1734,6 +1774,61 @@ async function getPrepa() {
   else { prepaError.value = res.reason || t('mia.prepaUnavailable'); prepaState.value = 'error' }
 }
 
+// ── Examens personnalisables + programme de révision ajouté à l'agenda ──────
+// L'élève choisit ses examens et leurs échéances. Pour une classe d'examen,
+// l'examen officiel du pays est proposé automatiquement (date prévisionnelle,
+// modifiable ; « synchronisée » si une école MAPO est reliée). « Générer le
+// programme » répartit des séances de révision ESPACÉES jusqu'à la date, ajoutées
+// à l'agenda (même clé que le Planning) → visibles dans Planning + rappels Accueil.
+const exams = ref([])
+const newExamLabel = ref('')
+const newExamDate = ref('')
+const programmes = ref({})            // { examId: nbSéances } après génération
+const todayISO = computed(() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+})
+function examsKey() { return 'mapo_b2c_exams_' + (activeEnfant.value?.id || 'me') }
+function loadExams() { try { const r = localStorage.getItem(examsKey()); exams.value = r ? JSON.parse(r) : [] } catch { exams.value = [] } }
+function saveExams() { try { localStorage.setItem(examsKey(), JSON.stringify(exams.value)) } catch { /* silent */ } }
+function agendaKey() { return 'mapo_b2c_devoirs_' + (activeEnfant.value?.id || 'me') }
+function readAgenda() { try { const r = localStorage.getItem(agendaKey()); return r ? JSON.parse(r) : [] } catch { return [] } }
+function writeAgenda(list) { try { localStorage.setItem(agendaKey(), JSON.stringify(list)) } catch { /* silent */ } }
+
+const examOfficiel = computed(() => { const e = activeEnfant.value; return e ? examenOfficielPour(e.niveau, e.pays) : null })
+const examOfficielDate = computed(() => { const eo = examOfficiel.value; return eo ? prochaineDateISO(eo.mois, eo.jour) : '' })
+const examOfficielSuggere = computed(() => (examOfficiel.value && !exams.value.some((x) => x.key === examOfficiel.value.key)) ? examOfficiel.value : null)
+// Pour l'instant la date vient du calendrier officiel (estimation) pour tout le
+// monde. Quand l'API examens de MAPO sera branchée, un compte relié à une école
+// (authStore.schoolId) affichera la date exacte « synchronisée ».
+const examSyncNote = computed(() => t('mia.exPrevisionnel'))
+
+function addExam(label, date, official = false, key = '') {
+  const l = String(label || '').trim()
+  if (!l || !date) return
+  exams.value = [...exams.value, { id: 'x' + Date.now().toString(36), label: l, date, official, key }]
+  saveExams()
+}
+function addExamManuel() { addExam(newExamLabel.value, newExamDate.value, false, ''); newExamLabel.value = ''; newExamDate.value = '' }
+function ajouterExamenOfficiel() { const eo = examOfficiel.value; if (eo) addExam(t('mia.exOff_' + eo.key), examOfficielDate.value, true, eo.key) }
+function removeExam(id) {
+  exams.value = exams.value.filter((e) => e.id !== id); saveExams()
+  writeAgenda(readAgenda().filter((d) => d.examId !== id))    // retire aussi son programme de l'agenda
+  const p = { ...programmes.value }; delete p[id]; programmes.value = p
+}
+function genererProgrammePour(ex) {
+  const prog = genererProgramme({ examId: ex.id, examLabel: ex.label, dateISO: ex.date, matieres: matieresList.value })
+  writeAgenda([...prog, ...readAgenda().filter((d) => d.examId !== ex.id)])   // idempotent : remplace l'ancien programme
+  programmes.value = { ...programmes.value, [ex.id]: prog.length }
+}
+function formatDateLong(iso) {
+  if (!iso) return ''
+  try { return new Date(iso + 'T00:00:00').toLocaleDateString(locale.value.startsWith('en') ? 'en-GB' : 'fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) } catch { return iso }
+}
+function jLabel(iso) { const j = joursAvant(iso); if (j === null) return ''; if (j < 0) return t('mia.exPast'); if (j === 0) return t('mia.exToday'); return 'J-' + j }
+function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 && j <= 14) ? 'ex-soon' : '' }
+watch(activeId, () => { loadExams(); programmes.value = {} }, { immediate: true })
+
 onMounted(async () => {
   await store.hydrate()
   // Session enfant en cours (téléphone confié) : on rouvre sur CET enfant,
@@ -2130,6 +2225,29 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .err p { color: #D93025; font-size: 14px; margin: 0 0 10px; }
 
 .prepa-card { background: rgba(232,149,58,.05); }
+/* ── Mes examens ── */
+.ex-suggest { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 11px 13px; margin: 4px 0 12px; border: 1px dashed rgba(232,149,58,.5); border-radius: 12px; background: rgba(232,149,58,.08); }
+.ex-suggest-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ex-suggest-tx strong { font-size: 14.5px; color: var(--tx, #1f2937); }
+.ex-suggest-tx small { font-size: 11.5px; color: var(--tx3, #6b7280); }
+.ex-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+.ex-item { border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 11px 13px; background: #fff; }
+.ex-item-row { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+.ex-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ex-name { font-size: 14px; font-weight: 700; color: var(--tx, #1f2937); display: inline-flex; align-items: center; gap: 8px; }
+.ex-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: #B87A00; background: rgba(232,149,10,.14); padding: 1px 7px; border-radius: 20px; }
+.ex-meta { font-size: 12px; color: var(--tx3, #6b7280); }
+.ex-meta b { color: var(--tx2, #4b5563); }
+.ex-meta b.ex-soon { color: #D93025; }
+.ex-item-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.ex-del { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 1px solid var(--bd, #e5e7eb); background: none; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; }
+.ex-del:hover { background: rgba(217,48,37,.07); color: #D93025; border-color: rgba(217,48,37,.3); }
+.ex-done { display: flex; align-items: center; gap: 6px; margin: 9px 0 0; font-size: 12.5px; color: #1B8A5A; font-weight: 600; }
+.ex-link { border: none; background: none; color: var(--pr); font: inherit; font-size: 12.5px; font-weight: 700; cursor: pointer; text-decoration: underline; padding: 0; margin-left: auto; }
+.ex-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.ex-add .input { flex: 1; min-width: 140px; }
+.ex-date-in { flex: 0 0 auto; max-width: 170px; }
+.ex-ai { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--divider, rgba(17,24,39,.08)); }
 .prepa-result { display: flex; flex-direction: column; gap: 12px; }
 .prepa-plan { display: flex; flex-direction: column; gap: 10px; }
 .etape { border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; }
