@@ -124,6 +124,9 @@ const props = defineProps({
   niveau: { type: String, default: '' },
   studentId: { type: String, default: '' },
   themes: { type: String, default: '' },
+  // Rejeu depuis l'historique : questions déjà générées → on les rejoue TELLES
+  // QUELLES, sans nouvel appel IA (0 token). null = quiz normal (généré).
+  presetQuestions: { type: Array, default: null },
   // Session vocale « live » : démarre directement en mode voix (MIAPO lit,
   // explique le concept sur une erreur, encourage, enchaîne).
   autoVoice: { type: Boolean, default: false },
@@ -290,6 +293,13 @@ onUnmounted(stopSpeaking)
 
 async function start() {
   mode.value = 'loading'
+  // Rejeu : on réutilise les questions archivées, aucun appel IA (économie de tokens).
+  if (props.presetQuestions && props.presetQuestions.length) {
+    if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
+    questions.value = props.presetQuestions
+    index.value = 0; flags.value = []; resetQ(); mode.value = 'quiz'
+    return
+  }
   // Récupère le suivi durable (Firestore) pour les vrais comptes avant de jouer.
   if (props.studentId) await tuteur.syncFromCloud(props.studentId)
   // Niveau de difficulté courant (adaptatif) pour cet élève + cette matière.
@@ -338,6 +348,21 @@ function finish() {
   lastResult.value = props.studentId
     ? tuteur.recordResult(props.studentId, subjectId.value, props.matiere, scorePercent.value)
     : null
+  // Archive la session (questions incluses) → rejouable depuis l'Historique sans
+  // régénérer (économie de tokens) et nourrit la priorisation des faiblesses.
+  if (props.studentId) {
+    try {
+      tuteur.saveRevisionSession(props.studentId, {
+        subjectId: subjectId.value,
+        subjectName: props.matiere,
+        mode: 'quiz',
+        scorePercent: scorePercent.value,
+        total: questions.value.length,
+        correct: correctCount.value,
+        questions: questions.value,
+      })
+    } catch (e) { /* archivage best-effort */ }
+  }
   mode.value = 'result'
 }
 

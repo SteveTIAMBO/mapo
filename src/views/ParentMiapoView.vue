@@ -268,7 +268,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" @quit="quizMatiere = ''; quizThemes = ''" @abonnement="quizMatiere = ''; quizThemes = ''; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; section = 'fiches' }" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -392,6 +392,36 @@
         <!-- ========== FICHES + FLASHCARDS ========== -->
         <section v-else-if="section === 'fiches'" class="sec">
           <MiapoFiches :enfant="activeEnfant" />
+        </section>
+
+        <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
+        <section v-else-if="section === 'historique'" class="sec">
+          <div v-if="aReviser.length" class="card">
+            <div class="card-head"><Target :size="18" /><h3>{{ t('mia.histWeakTitle') }}</h3></div>
+            <p class="muted small">{{ t('mia.histWeakHint') }}</p>
+            <div class="weak-list">
+              <button v-for="w in aReviser" :key="'h' + w.matiere" class="weak-item" @click="goRevise(w.matiere, w.themes)">
+                <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
+                <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><ChevronRight :size="18" /></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><History :size="18" /><h3>{{ t('mia.histTitle') }}</h3></div>
+            <p class="muted small">{{ t('mia.histHint') }}</p>
+            <div v-if="histSessions.length" class="hist-list">
+              <div v-for="s in histSessions" :key="s.id" class="hist-item">
+                <div class="hist-main">
+                  <span class="hist-mat">{{ s.subjectName || s.subjectId }}</span>
+                  <span class="hist-meta">{{ histDate(s.date) }} · {{ s.correct }}/{{ s.total }}</span>
+                </div>
+                <span class="hist-score" :style="histScoreStyle(s.scorePercent)">{{ s.scorePercent }}%</span>
+                <button class="btn btn-outline btn-xs" @click="rejouerSession(s)"><RotateCcw :size="14" /> <span>{{ t('mia.histReplay') }}</span></button>
+              </div>
+            </div>
+            <p v-else class="muted small hist-empty">{{ t('mia.histEmpty') }}</p>
+          </div>
         </section>
 
         <!-- ========== PROGRESSION ========== -->
@@ -858,6 +888,7 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
+import { History, RotateCcw } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
@@ -927,6 +958,7 @@ const SECTIONS = computed(() => {
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'fiches', label: t('mia.secFiches'), icon: Layers, group: 'apprendre' },
+    { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
@@ -1347,14 +1379,39 @@ function launchRevision(typeKey) {
   }
 }
 const quizThemes = ref('')
+// Questions rejouées depuis l'Historique (null = quiz normal généré par l'IA).
+const quizPreset = ref(null)
 function goRevise(matiere, themes) {
   // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
   // matières, mais n'écrit jamais dans la progression de son enfant (sinon il
   // fausserait la détection de niveau). Vaut aussi pour tout futur appelant.
   if (!isApprenant.value) return
+  quizPreset.value = null
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
   section.value = 'tuteur'
+}
+// ── Historique des révisions (rejouable sans régénérer → économie de tokens) ──
+// L'infra de journalisation/rejeu vit dans le store tuteur ; ici on l'affiche et
+// on rejoue une session archivée. revisionsVersion rend la liste réactive après
+// chaque quiz terminé.
+const histSessions = computed(() => {
+  void tuteur.revisionsVersion
+  return activeEnfant.value ? (tuteur.getRevisionHistory(activeEnfant.value.id) || []) : []
+})
+function rejouerSession(s) {
+  if (!isApprenant.value || !s || !Array.isArray(s.questions) || !s.questions.length) return
+  quizPreset.value = s.questions
+  quizThemes.value = ''
+  quizMatiere.value = s.subjectName || s.subjectId || ''
+  section.value = 'tuteur'
+}
+function histDate(iso) {
+  try { return new Date(iso).toLocaleDateString(locale.value.startsWith('en') ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'short' }) } catch { return '' }
+}
+function histScoreStyle(p) {
+  const c = p >= 80 ? '#1B8A5A' : p >= 50 ? '#B87A00' : '#D93025'
+  return { color: c, backgroundColor: c + '1f' }
 }
 // Lacune de langue repérée sur une réponse rédigée : on l'ajoute aux révisions
 // ciblées ET on lance le français — quelle que soit la matière d'origine.
@@ -1827,7 +1884,7 @@ function formatDateLong(iso) {
 }
 function jLabel(iso) { const j = joursAvant(iso); if (j === null) return ''; if (j < 0) return t('mia.exPast'); if (j === 0) return t('mia.exToday'); return 'J-' + j }
 function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 && j <= 14) ? 'ex-soon' : '' }
-watch(activeId, () => { loadExams(); programmes.value = {} }, { immediate: true })
+watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) tuteur.syncHistoryFromCloud(id) }, { immediate: true })
 
 onMounted(async () => {
   await store.hydrate()
@@ -2248,6 +2305,14 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .ex-add .input { flex: 1; min-width: 140px; }
 .ex-date-in { flex: 0 0 auto; max-width: 170px; }
 .ex-ai { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--divider, rgba(17,24,39,.08)); }
+/* ── Historique ── */
+.hist-list { display: flex; flex-direction: column; gap: 8px; }
+.hist-item { display: flex; align-items: center; gap: 12px; padding: 10px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; }
+.hist-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.hist-mat { font-size: 14px; font-weight: 700; color: var(--tx, #1f2937); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hist-meta { font-size: 12px; color: var(--tx3, #6b7280); }
+.hist-score { flex-shrink: 0; font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; }
+.hist-empty { padding: 6px 0 2px; }
 .prepa-result { display: flex; flex-direction: column; gap: 12px; }
 .prepa-plan { display: flex; flex-direction: column; gap: 10px; }
 .etape { border: 1px solid var(--bd); border-radius: 12px; padding: 13px 15px; }
