@@ -534,7 +534,9 @@ router.beforeEach(async (to) => {
       return { name: 'Home' }
     }
     if (!isLoggedIn) {
-      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierDiplome', 'CompteNonConfigure'])
+      // VerifierEmail doit rester atteignable juste après l'inscription, même si
+      // l'état d'auth n'est pas encore stabilisé (sinon on rebondit sur Home = login).
+      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierEmail', 'VerifierDiplome', 'CompteNonConfigure'])
       if (!publicMiapo.has(to.name)) return { name: 'Home' }
     }
     // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail
