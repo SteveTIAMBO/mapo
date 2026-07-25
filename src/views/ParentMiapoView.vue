@@ -34,10 +34,26 @@
       </div>
 
       <nav class="volet-nav" data-tour="menu">
-        <button v-for="s in SECTIONS" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
-          <component :is="s.icon" :size="18" />
-          <span>{{ s.label }}</span>
-        </button>
+        <template v-for="(grp, gi) in navGroups" :key="gi">
+          <!-- Bloc sans intitulé (Accueil) : items directs -->
+          <template v-if="!grp.group">
+            <button v-for="s in grp.items" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
+              <component :is="s.icon" :size="18" /><span>{{ s.label }}</span>
+            </button>
+          </template>
+          <!-- Bloc pliable (accordéon façon HUB / MAPO supérieur) -->
+          <template v-else>
+            <button type="button" class="nav-group-head" @click="toggleGroup(grp.group)">
+              <span>{{ grp.label }}</span>
+              <ChevronRight :size="14" class="nav-group-chev" :class="{ open: isGroupOpen(grp.group) }" />
+            </button>
+            <div v-show="isGroupOpen(grp.group)" class="nav-group-items">
+              <button v-for="s in grp.items" :key="s.key" class="nav-item" :class="{ active: section === s.key }" :data-tour="'nav-' + s.key" @click="section = s.key; menuOpen = false">
+                <component :is="s.icon" :size="18" /><span>{{ s.label }}</span>
+              </button>
+            </div>
+          </template>
+        </template>
       </nav>
       <div class="volet-bottom">
         <!-- Installer l'appli : condition des notifications gratuites (surtout sur iPhone) -->
@@ -821,39 +837,59 @@ function estClasseExamen(niveau) {
   return n === 'CM2' || n === '3ème' || /^(1ère|Tle)/.test(n)
 }
 const SECTIONS = computed(() => {
-  const home = { key: 'accueil', label: t('mia.secHome'), icon: Home }
-  const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp }
-  const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays }
-  const planning = { key: 'planning', label: t('mia.secPlanning'), icon: CalendarCheck }
-  const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass }
-  // Utilisation (jauge) + Facturation : accès direct au menu principal (payeurs).
-  const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge }
-  const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt }
+  const home = { key: 'accueil', label: t('mia.secHome'), icon: Home } // sans groupe (en tête)
+  const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp, group: 'suivi' }
+  const edt = { key: 'edt', label: t('mia.secTimetable'), icon: CalendarDays, group: 'suivi' }
+  const planning = { key: 'planning', label: t('mia.secPlanning'), icon: CalendarCheck, group: 'suivi' }
+  const orient = { key: 'orientation', label: t('mia.secOrientation'), icon: Compass, group: 'orientation' }
+  const usage = { key: 'utilisation', label: t('mia.secUsage'), icon: Gauge, group: 'compte' }
+  const billing = { key: 'facturation', label: t('mia.secBilling'), icon: Receipt, group: 'compte' }
   // Facturation = réservée au PARENT (le payeur). L'élève/apprenant et le compte
   // enfant ne gèrent pas la facturation (leur abonnement reste dans Paramètres).
   const billingItems = (store.isCompteEnfant || isApprenant.value) ? [] : [billing]
-  // Abonnement retiré du menu principal → vit dans les Paramètres (section « Profil »).
-  // Parent = SUIVI, menu allégé. Les outils de travail (tuteur, annales, fiches,
-  // profil 6C) appartiennent à l'apprenant : le parent ne s'en sert pas, et il ne
-  // doit de toute façon rien écrire dans la progression de son enfant.
-  // Pas d'Orientation côté parent : le profil 6C de l'enfant est déjà sur
-  // l'accueil. En revanche « Mes enfants » (les notes) reste central — c'est le
-  // module que le parent consulte le plus, surtout si l'enfant est rattaché à une école.
   if (!isApprenant.value) {
-    return [home, { key: 'enfants', label: t('mia.secMyChildren'), icon: Users }, progress, planning, edt, usage, ...billingItems]
+    return [
+      home,
+      { key: 'enfants', label: t('mia.secMyChildren'), icon: Users, group: 'suivi' },
+      progress, planning, edt,
+      usage, ...billingItems,
+    ]
   }
+  // Ordre regroupé (façon HUB) : Apprendre → Suivi → Orientation → Compte.
   return [
     home,
-    { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText },
-    { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap },
-    ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList }] : []),
-    { key: 'fiches', label: t('mia.secFiches'), icon: Layers },
+    { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
+    ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
+    { key: 'fiches', label: t('mia.secFiches'), icon: Layers, group: 'apprendre' },
+    { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
     progress, planning, edt,
-    { key: 'profil6c', label: t('mia.sec6c'), icon: Target },
+    { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
     orient,
     usage, ...billingItems,
   ]
 })
+// Regroupe le menu par bloc (façon HUB) : les items sans groupe (Accueil) restent
+// en tête ; les autres sont regroupés sous un intitulé pliable.
+const navGroups = computed(() => {
+  const labels = { apprendre: t('mia.grpLearn'), suivi: t('mia.grpTrack'), orientation: t('mia.grpGuide'), compte: t('mia.grpAccount') }
+  const out = []
+  for (const s of SECTIONS.value) {
+    const g = s.group || null
+    const last = out[out.length - 1]
+    if (last && last.group === g) last.items.push(s)
+    else out.push({ group: g, label: g ? labels[g] : '', items: [s] })
+  }
+  return out
+})
+// Accordéon du menu (façon MAPO supérieur) : chaque bloc se plie/déplie ; ouvert
+// par défaut, persisté par navigateur. En mode rail (replié) on ignore l'accordéon.
+const collapsedGroups = ref({})
+try { collapsedGroups.value = JSON.parse(localStorage.getItem('mapo_miapo_groups') || '{}') || {} } catch { collapsedGroups.value = {} }
+function isGroupOpen(g) { return voletCollapsed.value || !collapsedGroups.value[g] }
+function toggleGroup(g) {
+  collapsedGroups.value = { ...collapsedGroups.value, [g]: !collapsedGroups.value[g] }
+  try { localStorage.setItem('mapo_miapo_groups', JSON.stringify(collapsedGroups.value)) } catch { /* silent */ }
+}
 const section = ref('accueil')
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
@@ -1703,7 +1739,7 @@ onUnmounted(() => {
 
 /* ───────── Volet menu ───────── */
 /* Menu figé : il reste en place (sticky pleine hauteur), seul le contenu défile. */
-.volet { width: 224px; flex-shrink: 0; align-self: flex-start; border-right: 1px solid var(--bd, #e5e7eb); padding: 18px 14px; display: flex; flex-direction: column; gap: 16px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.volet { width: 224px; flex-shrink: 0; align-self: flex-start; border-right: 1px solid var(--bd, #e5e7eb); padding: 18px 14px; display: flex; flex-direction: column; gap: 14px; position: sticky; top: 0; height: 100vh; overflow: hidden; }
 .volet-brand { display: flex; align-items: center; gap: 10px; padding: 0 6px; }
 .volet-close { display: none; margin-left: auto; background: none; border: none; color: var(--tx3, #6b7280); cursor: pointer; padding: 4px; border-radius: 8px; }
 .volet-close:hover { background: rgba(0,0,0,.05); }
@@ -1719,7 +1755,21 @@ onUnmounted(() => {
 .child-select { width: 100%; padding: 9px 11px; border: 1px solid var(--bd); border-radius: 10px; font-family: inherit; font-size: 13.5px; background: #fff; color: var(--tx); }
 .child-single { font-size: 14px; font-weight: 600; color: var(--tx); padding: 4px 6px; } .child-single span { font-size: 12px; font-weight: 500; color: var(--tx3); background: var(--input-bg, #eef1f4); padding: 2px 8px; border-radius: 20px; margin-left: 4px; }
 
-.volet-nav { display: flex; flex-direction: column; gap: 3px; }
+/* Seul le milieu du menu défile : en-tête (marque + repli + enfant) et pied
+   (installer + réglages + déconnexion) restent fixes, façon HUB. */
+.volet-nav { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+/* Blocs pliables du menu (accordéon façon HUB / MAPO supérieur). */
+.nav-group-head {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  padding: 10px 12px 5px; margin-top: 3px; border: none; background: none; cursor: pointer;
+  font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--tx3, #9098a6); text-align: left;
+}
+.nav-group-head:hover { color: var(--tx2, #4b5563); }
+.nav-group-chev { transition: transform .18s; flex-shrink: 0; color: var(--tx3, #9098a6); }
+.nav-group-chev.open { transform: rotate(90deg); }
+.nav-group-items { display: flex; flex-direction: column; gap: 3px; }
+.volet.collapsed .nav-group-head { display: none; }
 /* Profil + Déconnexion groupés en bas du volet (Profil juste au-dessus). */
 .volet-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
 .volet-logout { display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: none; background: none; border-radius: 10px; cursor: pointer; font-size: 14px; font-family: inherit; color: var(--tx3, #6b7280); width: 100%; text-align: left; }
@@ -1756,9 +1806,9 @@ onUnmounted(() => {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px;
   padding: 13px 26px;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: saturate(180%) blur(12px);
-  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
   border-bottom: 1px solid var(--bd, #e8e9ef);
 }
 .mtb-burger { display: none; border: none; background: none; color: #40444f; cursor: pointer; padding: 4px; margin: -2px 2px -2px -4px; }
