@@ -109,6 +109,18 @@
         <span>{{ levelFb.text }}</span>
       </div>
 
+      <!-- Carte de révision rapide : concepts qui ont posé le plus de soucis. -->
+      <div v-if="recapMissed.length" class="tq-quickcard">
+        <div class="tq-qc-head"><Sparkles :size="16" /> <strong>{{ locale.startsWith('en') ? 'Quick revision card' : 'Carte de révision rapide' }}</strong></div>
+        <p class="tq-qc-sub">{{ locale.startsWith('en') ? 'Review these first:' : 'À revoir en priorité :' }}</p>
+        <ul class="tq-qc-list"><li v-for="(r, i) in recapMissed" :key="i">{{ r.point }}</li></ul>
+      </div>
+      <!-- Récapitulatif complet des concepts de la session (conservé dans l'historique). -->
+      <details v-if="recap.length" class="tq-recap">
+        <summary>{{ locale.startsWith('en') ? 'Concept recap' : 'Récapitulatif des concepts' }}</summary>
+        <ul><li v-for="(r, i) in recap" :key="i" :class="{ missed: r.missed }">{{ r.point }}</li></ul>
+      </details>
+
       <div class="tq-actions center">
         <button v-if="lastResult" class="btn-primary" @click="start">
           <ArrowUpRight v-if="lastResult.levelChange > 0" :size="16" /><RefreshCw v-else :size="16" />
@@ -370,6 +382,13 @@ function next() {
 
 const correctCount = computed(() => flags.value.filter(Boolean).length)
 const scorePercent = computed(() => questions.value.length ? Math.round(correctCount.value / questions.value.length * 100) : 0)
+// Récapitulatif des concepts de la session (0 token : issu des questions). Les
+// concepts ratés (pas trouvés du 1er coup) sont mis en avant → carte de révision
+// rapide, surtout au passage de niveau.
+const recap = computed(() => questions.value
+  .map((q, i) => ({ point: String((q && (q.explanation || q.q)) || '').trim(), missed: flags.value[i] !== true }))
+  .filter((r) => r.point))
+const recapMissed = computed(() => recap.value.filter((r) => r.missed))
 
 function finish() {
   lastResult.value = props.studentId
@@ -387,6 +406,7 @@ function finish() {
         total: questions.value.length,
         correct: correctCount.value,
         questions: questions.value,
+        recap: recap.value,
       })
     } catch (e) { /* archivage best-effort */ }
   }
@@ -498,6 +518,18 @@ onMounted(start)
 .tq-level-fb.up { background: rgba(27,138,90,.10); color: #1B8A5A; }
 .tq-level-fb.down { background: rgba(232,149,10,.10); color: #B87A00; }
 .tq-level-fb.stable { background: rgba(var(--pr-rgb),.07); color: var(--pr); }
+/* Carte de révision rapide (concepts ratés) + récap complet */
+.tq-quickcard { width: 100%; box-sizing: border-box; text-align: left; margin: 12px 0 4px; padding: 13px 15px; border: 1px solid rgba(232,149,10,.4); border-radius: 14px; background: rgba(232,149,10,.07); }
+.tq-qc-head { display: inline-flex; align-items: center; gap: 7px; color: #B87A00; }
+.tq-qc-head strong { font-size: 14px; }
+.tq-qc-sub { margin: 6px 0 6px; font-size: 12.5px; color: var(--tx2, #4b5563); font-weight: 600; }
+.tq-qc-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.tq-qc-list li { font-size: 13px; color: var(--tx, #1f2937); line-height: 1.4; }
+.tq-recap { width: 100%; box-sizing: border-box; text-align: left; margin: 6px 0 4px; }
+.tq-recap summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--tx2, #4b5563); padding: 6px 0; }
+.tq-recap ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.tq-recap li { font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.4; }
+.tq-recap li.missed { color: #B87A00; font-weight: 600; }
 
 @media (max-width: 420px) {
   .tq-choice { padding: 11px 13px; gap: 9px; font-size: 14px; }
