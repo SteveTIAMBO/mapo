@@ -34,14 +34,14 @@ const metiers = ref('')
 const saved = ref(false)
 
 function sync() {
-  interets.value = (props.enfant && props.enfant.interets) || ''
+  interets.value = (props.enfant && props.enfant.passions) || ''
   metiers.value = (props.enfant && props.enfant.metiersVises) || ''
 }
 watch(() => props.enfant && props.enfant.id, sync, { immediate: true })
 
 function save() {
   if (!props.enfant || !props.enfant.id) return
-  store.updateEnfant(props.enfant.id, { interets: interets.value.trim(), metiersVises: metiers.value.trim() })
+  store.updateEnfant(props.enfant.id, { passions: interets.value.trim(), metiersVises: metiers.value.trim() })
   saved.value = true
   setTimeout(() => { saved.value = false }, 2000)
 }

@@ -470,7 +470,7 @@ const learnerCtx = computed(() => {
   const mats = (Array.isArray(e.formationModules) && e.formationModules.length)
     ? e.formationModules
     : matieresPourNiveau(e.niveau, e.pays)
-  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim(), id: e.id || '', interets: (e.interets || '').trim() }
+  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim(), id: e.id || '', interets: (e.passions || '').trim() }
 })
 // Accueil personnalisé (client-side) : le prénom ne quitte pas le navigateur.
 const welcomeGreeting = computed(() => {

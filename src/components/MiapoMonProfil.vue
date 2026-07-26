@@ -47,7 +47,7 @@ const { t } = useI18n({ useScope: 'global' })
 
 const hasEval = computed(() => !!(props.enfant && props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6))
 const bilan = computed(() => (props.enfant && props.enfant.comp6cBilan) || null)
-const interets = computed(() => (props.enfant && props.enfant.interets) || '')
+const interets = computed(() => (props.enfant && props.enfant.passions) || '')
 const metiers = computed(() => (props.enfant && props.enfant.metiersVises) || '')
 
 function goto(tab) {
