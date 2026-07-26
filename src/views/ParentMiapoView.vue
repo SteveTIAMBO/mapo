@@ -1255,7 +1255,14 @@ function exporterProfil() {
   const bilan = e.comp6cBilan || null
   const hasEval = e.comp6c && Object.keys(e.comp6c).length >= 6
   const radar = hasEval ? radarSvgProfil(e.comp6c) : ''
-  const li = (arr) => (arr || []).map((x) => `<li>${esc(x)}</li>`).join('')
+  // forces/axes sont des OBJETS {competence, pourquoi[, comment]} → rendu correct.
+  const li = (arr) => (arr || []).map((x) => {
+    if (typeof x === 'string') return `<li>${esc(x)}</li>`
+    const c = esc(x.competence || ''); const p = x.pourquoi ? ` — ${esc(x.pourquoi)}` : ''
+    return `<li><strong>${c}</strong>${p}</li>`
+  }).join('')
+  // Logo EDUFREM / MAPO+ (inline SVG) pour l'en-tête du PDF.
+  const logoSvg = '<svg width="40" height="28" viewBox="0 0 70 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 40 V12 L23 31 L38 12 V40" stroke="#7c3aed" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M46 26 H64" stroke="#4C9FFF" stroke-width="5" stroke-linecap="round"/><path d="M55 17 V35" stroke="#4C9FFF" stroke-width="5" stroke-linecap="round"/></svg>'
   const badges = calculerBadges(e.id).filter((b) => b.earned)
   const badgesHtml = badges.length
     ? `<div class="badges">${badges.map((b) => `<span class="badge b-${b.tier}">🏅 ${esc(en ? b.en : b.fr)}</span>`).join('')}</div>`
@@ -1265,7 +1272,8 @@ function exporterProfil() {
   w.document.write(`<!doctype html><html lang="${locale.value}"><head><meta charset="utf-8"><title>${en ? 'My profile' : 'Mon profil'} — ${esc(e.firstName)}</title>
   <style>body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a2e;max-width:720px;margin:40px auto;padding:0 32px;line-height:1.55}
   .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #7c3aed;padding-bottom:14px;margin-bottom:22px}
-  .hd h2{margin:0;color:#7c3aed;font-size:22px;letter-spacing:.5px}.hd small{color:#666}
+  .hd-brand{display:flex;align-items:center;gap:12px}
+  .hd h2{margin:0;color:#7c3aed;font-size:20px;letter-spacing:.5px}.hd small{color:#666}
   h1{font-size:20px;margin:14px 0 6px}.who{color:#555;margin:0 0 20px}
   h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#7c3aed;margin:24px 0 10px;border-bottom:1px solid #eee;padding-bottom:5px}
   .radar{text-align:center;margin:8px 0 4px}
@@ -1277,7 +1285,7 @@ function exporterProfil() {
   .muted{color:#888;font-size:13px}.text{font-size:13.5px;white-space:pre-wrap}
   .foot{margin-top:38px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}</style></head>
   <body onload="window.print()">
-  <div class="hd"><div><h2>MAPO+</h2><small>${en ? 'Learner profile' : 'Profil de l\'apprenant'}</small></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
+  <div class="hd"><div class="hd-brand">${logoSvg}<div><h2>EDUFREM · MAPO+</h2><small>${en ? 'Learner profile' : 'Profil de l\'apprenant'}</small></div></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
   <h1>${en ? 'My profile' : 'Mon profil'}</h1>
   <p class="who">${esc(e.firstName)} ${esc(e.lastName || '')}${e.niveau ? ' · ' + esc(e.niveau) : ''}</p>
   ${radar ? `<h3>${en ? 'Competency radar' : 'Radar de compétences'}</h3><div class="radar">${radar}</div>` : ''}

@@ -13,12 +13,19 @@
         <div v-if="bilan" class="mp-bilan">
           <p v-if="bilan.synthese" class="mp-syn">{{ bilan.synthese }}</p>
           <div v-if="bilan.forces && bilan.forces.length" class="mp-block mp-forts">
-            <strong><ThumbsUp :size="14" /> {{ t('mia.mpStrengths') }}</strong>
-            <ul><li v-for="(f, i) in bilan.forces" :key="i">{{ f }}</li></ul>
+            <span class="mp-lab"><ThumbsUp :size="14" /> {{ t('mia.mpStrengths') }}</span>
+            <div v-for="(f, i) in bilan.forces" :key="i" class="mp-item">
+              <strong>{{ f.competence }}</strong>
+              <p v-if="f.pourquoi">{{ f.pourquoi }}</p>
+            </div>
           </div>
           <div v-if="bilan.axes && bilan.axes.length" class="mp-block mp-axes">
-            <strong><TrendingUp :size="14" /> {{ t('mia.mpToImprove') }}</strong>
-            <ul><li v-for="(a, i) in bilan.axes" :key="i">{{ a }}</li></ul>
+            <span class="mp-lab"><TrendingUp :size="14" /> {{ t('mia.mpToImprove') }}</span>
+            <div v-for="(a, i) in bilan.axes" :key="i" class="mp-item">
+              <strong>{{ a.competence }}</strong>
+              <p v-if="a.pourquoi">{{ a.pourquoi }}</p>
+              <ul v-if="a.comment && a.comment.length" class="mp-how"><li v-for="(c, j) in a.comment" :key="j">{{ c }}</li></ul>
+            </div>
           </div>
           <p v-if="bilan.conseil" class="mp-conseil"><Sparkles :size="14" /> {{ bilan.conseil }}</p>
         </div>
@@ -68,13 +75,17 @@ function goto(tab) {
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }
 .card-head h3 { margin: 0; font-size: 15.5px; color: var(--tx, #1f2937); }
 .muted { color: var(--tx3, #6b7280); font-size: 13.5px; margin: 0 0 12px; }
-.mp-bilan { margin: 14px 0 4px; display: flex; flex-direction: column; gap: 12px; }
-.mp-syn { font-size: 14px; color: var(--tx, #1f2937); line-height: 1.5; margin: 0; }
-.mp-block strong { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--tx2, #4b5563); }
-.mp-block ul { margin: 6px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
-.mp-block li { font-size: 13px; color: var(--tx2, #4b5563); line-height: 1.4; }
-.mp-forts strong { color: #1B8A5A; }
-.mp-axes strong { color: #B87A00; }
+.mp-bilan { margin: 14px 0 4px; display: flex; flex-direction: column; gap: 14px; }
+.mp-syn { font-size: 14px; color: var(--tx, #1f2937); line-height: 1.6; margin: 0; text-align: justify; }
+.mp-lab { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
+.mp-forts .mp-lab { color: #1B8A5A; }
+.mp-axes .mp-lab { color: #B87A00; }
+.mp-item { margin-bottom: 10px; }
+.mp-item:last-child { margin-bottom: 0; }
+.mp-item strong { display: block; font-size: 13.5px; font-weight: 700; color: var(--tx, #1f2937); margin-bottom: 2px; }
+.mp-item p { margin: 0; font-size: 13px; color: var(--tx2, #4b5563); line-height: 1.55; text-align: justify; }
+.mp-how { margin: 5px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 3px; }
+.mp-how li { font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.45; }
 .mp-conseil { display: flex; align-items: flex-start; gap: 7px; margin: 0; font-size: 13px; color: var(--pr); font-weight: 600; line-height: 1.45; }
 .mp-text { font-size: 13.5px; color: var(--tx, #1f2937); line-height: 1.55; white-space: pre-wrap; margin: 0 0 8px; }
 .mp-metiers { display: flex; align-items: center; gap: 6px; margin: 0 0 12px; font-size: 13px; color: var(--tx2, #4b5563); }
