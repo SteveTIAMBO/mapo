@@ -9,6 +9,9 @@
     <!-- 3e onboarding : formation hors-catalogue → école + lien + modules proposés -->
     <MiapoFormationSetup v-if="showFormationSetup && activeEnfant" :enfant="activeEnfant" @done="onFormationDone" @skip="onFormationSkip" />
 
+    <!-- Check-in « état de forme » à la connexion (1×/jour, apprenant) -->
+    <MiapoHumeur v-if="showHumeur && activeEnfant" :student-id="activeEnfant.id" @done="onHumeurDone" @skip="onHumeurSkip" />
+
     <!-- Fond sombre quand le menu coulissant est ouvert (mobile) -->
     <div v-if="menuOpen" class="volet-backdrop" @click="menuOpen = false"></div>
 
@@ -971,6 +974,8 @@ import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoMesCours from '../components/MiapoMesCours.vue'
 import MiapoInterets from '../components/MiapoInterets.vue'
+import MiapoHumeur from '../components/MiapoHumeur.vue'
+import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
@@ -1334,7 +1339,35 @@ function onTourDone() {
   showTour.value = false
   menuOpen.value = false
   try { localStorage.setItem(tourKey(), '1') } catch { /* stockage indisponible */ }
+  maybeAskHumeur()
 }
+
+// ── Humeur / état de forme (TOUS apprenants) : demandé UNE fois à la connexion
+// (throttle ~1×/jour), jamais en boucle. On ne l'affiche pas par-dessus
+// l'onboarding/la visite guidée. La valeur sert à corréler avec la qualité des
+// séances (temps, abandon) et, à terme, à adapter type/longueur des révisions. ──
+const showHumeur = ref(false)
+const humeurOffered = ref(false) // n'insiste pas dans la même session (surtout après « Plus tard »)
+function maybeAskHumeur() {
+  if (humeurOffered.value || showHumeur.value) return
+  if (!isApprenant.value || !activeEnfant.value) return
+  if (showTour.value || showOnboarding.value || showFormationSetup.value) return
+  if (humeurDemandeeAujourdhui(activeEnfant.value.id)) return
+  humeurOffered.value = true
+  showHumeur.value = true
+}
+// Quand tous les écrans d'accueil (onboarding / formation / visite) se ferment,
+// on propose le check-in — une seule fois par session.
+watch([showTour, showOnboarding, showFormationSetup], (v) => { if (v.every((x) => !x)) maybeAskHumeur() })
+const moodVersion = ref(0) // bump à chaque saisie d'humeur → recalcul des computeds
+function onHumeurDone() { showHumeur.value = false; moodVersion.value++ }
+function onHumeurSkip() { showHumeur.value = false }
+// Humeur basse du jour → séance plus courte (à ton rythme), sans jamais le dire.
+const humeurBasseAujourdhui = computed(() => {
+  void moodVersion.value // localStorage non réactif → dépendance explicite
+  const h = activeEnfant.value ? humeurDuJour(activeEnfant.value.id) : null
+  return !!(h && h.v <= 4)
+})
 // Le menu change selon le mode (parent allégé / apprenant complet) et le niveau
 // (annales). Si la section courante disparaît du menu, on revient à l'accueil
 // plutôt que d'afficher une page vide.
@@ -1504,7 +1537,11 @@ const quizThemes = ref('')
 // Questions rejouées depuis l'Historique (null = quiz normal généré par l'IA).
 const quizPreset = ref(null)
 // Longueur de session adaptée à l'âge de l'apprenant (plus « 10 » figé).
-const quizNombre = computed(() => sessionQuestions(activeEnfant.value))
+const quizNombre = computed(() => {
+  const base = sessionQuestions(activeEnfant.value)
+  // Forme basse aujourd'hui → séance plus courte (à ton rythme), sans l'afficher.
+  return humeurBasseAujourdhui.value ? Math.max(5, Math.round(base * 0.7)) : base
+})
 function goRevise(matiere, themes) {
   // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
   // matières, mais n'écrit jamais dans la progression de son enfant (sinon il
@@ -2120,6 +2157,8 @@ onMounted(async () => {
     sousSection.value = 'connecteurs'
     try { router.replace({ query: {} }) } catch { /* silent */ }
   }
+  // Utilisateur qui revient (aucun écran d'accueil ne s'ouvre) : check-in humeur.
+  maybeAskHumeur()
 })
 onUnmounted(() => {
   window.removeEventListener('miapo-toggle-menu', onToggleMenu)

@@ -5343,7 +5343,17 @@
     "histConvHint": "Pick up a discussion where you left off — nothing is regenerated.",
     "histConvEmpty": "No conversations yet. Ask MIAPO a question and it will show up here.",
     "histConvRelaunch": "Resume",
-    "histConvMsgs": "{n} messages"
+    "histConvMsgs": "{n} messages",
+    "humeurTitle": "How are you feeling today?",
+    "humeurHint": "It helps me adapt your session to how you feel today.",
+    "humeurSkip": "Later",
+    "humeurThanks": "Thanks, noted!",
+    "humeurLow": "Thanks for telling me. We'll take it gently today, at your pace.",
+    "humeurFace1": "Rough",
+    "humeurFace2": "Meh",
+    "humeurFace3": "Okay",
+    "humeurFace4": "Good",
+    "humeurFace5": "Great"
   },
   "cx": {
     "appTitle": "Complex workspace",

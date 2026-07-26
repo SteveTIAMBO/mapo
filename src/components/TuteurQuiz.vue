@@ -140,6 +140,7 @@ import { useTuteurStore } from '../stores/tuteur'
 import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
+import { enregistrerSeance } from '../utils/humeur'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -299,6 +300,9 @@ const letters = ['A', 'B', 'C', 'D']
 const mode = ref('loading')
 const questions = ref([])
 const index = ref(0)
+// Horodatage de début de séance (pour durée + temps moyen/question → signal de
+// forme, corrélé plus tard avec l'humeur ; jamais montré à l'apprenant).
+const startedAt = ref(0)
 const lastMode = computed(() => tuteur.lastMode)
 
 const subjectId = computed(() => 'auto-' + props.matiere)
@@ -333,7 +337,23 @@ watch(revealed, (r) => {
 })
 // Session vocale « live » : dès que le quiz est chargé, on démarre en mode voix.
 watch(mode, (m) => { if (m === 'quiz' && props.autoVoice && !voiceOn.value) { voiceOn.value = true; warmUpVoices(); readQuestion() } })
-onUnmounted(stopSpeaking)
+// Quitter en cours de quiz (bouton « Quitter » ou navigation) = ABANDON : on
+// journalise le signal (sans score → n'affecte jamais le niveau), pour corréler
+// plus tard avec la forme du jour. finish() remet startedAt à 0 → pas de faux abandon.
+onUnmounted(() => {
+  stopSpeaking()
+  if (mode.value === 'quiz' && startedAt.value && props.studentId) {
+    const durationMs = Date.now() - startedAt.value
+    const reached = index.value // questions atteintes avant d'abandonner
+    try {
+      enregistrerSeance(props.studentId, {
+        subject: props.matiere, scorePercent: null,
+        durationMs, avgMs: reached ? durationMs / reached : 0,
+        total: questions.value.length, reached, abandoned: true,
+      })
+    } catch { /* best-effort */ }
+  }
+})
 
 async function start() {
   mode.value = 'loading'
@@ -341,7 +361,7 @@ async function start() {
   if (props.presetQuestions && props.presetQuestions.length) {
     if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
     questions.value = props.presetQuestions
-    index.value = 0; flags.value = []; resetQ(); mode.value = 'quiz'
+    index.value = 0; flags.value = []; resetQ(); startedAt.value = Date.now(); mode.value = 'quiz'
     return
   }
   // Récupère le suivi durable (Firestore) pour les vrais comptes avant de jouer.
@@ -355,6 +375,7 @@ async function start() {
   index.value = 0
   flags.value = []
   resetQ()
+  startedAt.value = Date.now()
   mode.value = 'quiz'
 }
 
@@ -414,7 +435,18 @@ function finish() {
         recap: recap.value,
       })
     } catch (e) { /* archivage best-effort */ }
+    // Signal de forme (séance terminée) : durée, temps moyen/question, humeur.
+    const total = questions.value.length
+    const durationMs = startedAt.value ? Date.now() - startedAt.value : 0
+    try {
+      enregistrerSeance(props.studentId, {
+        subject: props.matiere, scorePercent: scorePercent.value,
+        durationMs, avgMs: total ? durationMs / total : 0,
+        total, reached: total, abandoned: false,
+      })
+    } catch { /* best-effort */ }
   }
+  startedAt.value = 0 // évite un double comptage en « abandon » au démontage
   mode.value = 'result'
 }
 

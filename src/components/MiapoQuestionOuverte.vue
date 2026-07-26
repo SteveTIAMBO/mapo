@@ -20,7 +20,7 @@
     <!-- Question posée : l'élève rédige -->
     <template v-else-if="etat === 'question'">
       <div class="qo-q">{{ question }}</div>
-      <textarea v-model="reponse" class="qo-input" rows="5" :placeholder="t('mia.qoPlaceholder')"></textarea>
+      <textarea v-model="reponse" class="qo-input" rows="5" :placeholder="t('mia.qoPlaceholder')" spellcheck="true" :lang="spellLang"></textarea>
       <div class="qo-row">
         <button class="btn btn-primary" :disabled="reponse.trim().length < 5 || busy" @click="corriger">
           <Loader2 v-if="busy" :size="15" class="spin" /><Check v-else :size="15" />
@@ -86,7 +86,9 @@ import { PenLine, Sparkles, Loader2, Check, Lightbulb } from 'lucide-vue-next'
 // matière précise, on démarre directement la question (pas de sélecteur).
 const props = defineProps({ enfant: { type: Object, default: null }, presetMatiere: { type: String, default: '' } })
 defineEmits(['revise'])
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
+// Correcteur natif du navigateur (souligné rouge) dans la zone de rédaction.
+const spellLang = computed(() => ((locale.value || 'fr').startsWith('en') ? 'en' : 'fr'))
 const cours = useCoursStore()
 const tuteur = useTuteurStore()
 

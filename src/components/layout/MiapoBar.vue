@@ -44,6 +44,9 @@
               class="miapo-input"
               :placeholder="placeholder"
               :disabled="busy || step === 'draft'"
+              spellcheck="true"
+              autocapitalize="sentences"
+              :lang="spellLang"
               @keydown.enter.prevent="submit"
               @keydown.escape="close"
             />
@@ -249,6 +252,9 @@ const enfantsStore = useEnfantsAutonomesStore()
 const connecteurs = useConnecteursStore()
 // MAPO+ (B2C) : chat pédagogique orienté « apprenant » ; MAPO (ERP) : copilote de gestion.
 const isB2C = computed(() => authStore.isB2C)
+// Langue du correcteur natif du navigateur (souligné rouge des fautes dans la
+// zone de saisie, comme un traitement de texte). Suit la langue de l'UI.
+const spellLang = computed(() => ((locale.value || 'fr').startsWith('en') ? 'en' : 'fr'))
 // MAPO+ (B2C) : exemples et invite orientés « apprenant » (pas la gestion d'école).
 // Exemples localisés (i18n) : suivent la langue de l'UI (correctif : ils restaient
 // en français en anglais). Clés indexées → résolues par t() (réactif à la locale).

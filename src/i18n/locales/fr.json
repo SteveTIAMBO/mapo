@@ -5343,7 +5343,17 @@
     "histConvHint": "Reprends une discussion là où tu t'étais arrêté — sans rien régénérer.",
     "histConvEmpty": "Aucune conversation pour l'instant. Pose une question à MIAPO, elle apparaîtra ici.",
     "histConvRelaunch": "Reprendre",
-    "histConvMsgs": "{n} messages"
+    "histConvMsgs": "{n} messages",
+    "humeurTitle": "Comment te sens-tu aujourd'hui ?",
+    "humeurHint": "Ça m'aide à adapter ta séance à ta forme du moment.",
+    "humeurSkip": "Plus tard",
+    "humeurThanks": "Merci, c'est noté !",
+    "humeurLow": "Merci de me l'avoir dit. On y va en douceur aujourd'hui, à ton rythme.",
+    "humeurFace1": "Pas la forme",
+    "humeurFace2": "Bof",
+    "humeurFace3": "Ça va",
+    "humeurFace4": "Bien",
+    "humeurFace5": "Au top"
   },
   "cx": {
     "appTitle": "Espace complexe",
