@@ -5336,7 +5336,14 @@
     "exERP6": "Draft an announcement for the cultural day on 11 February",
     "exERP7": "Write a biology exam paper for 3ème",
     "fabTitle": "Ask MIAPO (Ctrl+J)",
-    "fabAria": "Open MIAPO"
+    "fabAria": "Open MIAPO",
+    "histTabRevisions": "Revisions",
+    "histTabConversations": "Conversations",
+    "histConvTitle": "My conversations with MIAPO",
+    "histConvHint": "Pick up a discussion where you left off — nothing is regenerated.",
+    "histConvEmpty": "No conversations yet. Ask MIAPO a question and it will show up here.",
+    "histConvRelaunch": "Resume",
+    "histConvMsgs": "{n} messages"
   },
   "cx": {
     "appTitle": "Complex workspace",

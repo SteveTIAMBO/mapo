@@ -429,6 +429,13 @@
           </div>
 
           <template v-else>
+          <!-- Onglets : révisions (quiz/fiches/rédaction) vs conversations MIAPO -->
+          <div class="hist-tabs">
+            <button type="button" class="hist-tab" :class="{ on: histTab === 'revisions' }" @click="histTab = 'revisions'"><ListChecks :size="15" /> <DualText :text="t('mia.histTabRevisions')" /></button>
+            <button type="button" class="hist-tab" :class="{ on: histTab === 'conversations' }" @click="histTab = 'conversations'"><MessagesSquare :size="15" /> <DualText :text="t('mia.histTabConversations')" /></button>
+          </div>
+
+          <template v-if="histTab === 'revisions'">
           <div v-if="aReviser.length" class="card">
             <div class="card-head"><Target :size="18" /><h3><DualText :text="t('mia.histWeakTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.histWeakHint') }}</p>
@@ -454,6 +461,27 @@
               </div>
             </div>
             <p v-else class="muted small hist-empty">{{ t('mia.histEmpty') }}</p>
+          </div>
+          </template>
+
+          <!-- Conversations MIAPO archivées : relançables (0 token). -->
+          <div v-else class="card">
+            <div class="card-head"><MessagesSquare :size="18" /><h3><DualText :text="t('mia.histConvTitle')" /></h3></div>
+            <p class="muted small">{{ t('mia.histConvHint') }}</p>
+            <div v-if="histConversations.length" class="hist-list">
+              <div v-for="c in histConversations" :key="c.id" class="conv-item">
+                <button type="button" class="conv-main" @click="relancerConversation(c)">
+                  <span class="conv-title">{{ c.title || t('mia.histConvTitle') }}</span>
+                  <span class="conv-preview">{{ convPreview(c) }}</span>
+                  <span class="conv-meta">{{ histDate(c.date) }} · {{ t('mia.histConvMsgs', { n: (c.messages || []).length }) }}</span>
+                </button>
+                <div class="conv-actions">
+                  <button class="btn btn-outline btn-xs" @click="relancerConversation(c)"><RotateCcw :size="14" /> <span>{{ t('mia.histConvRelaunch') }}</span></button>
+                  <button class="conv-del" :title="t('mia.remove')" @click="supprimerConversation(c)"><Trash2 :size="15" /></button>
+                </div>
+              </div>
+            </div>
+            <p v-else class="muted small hist-empty">{{ t('mia.histConvEmpty') }}</p>
           </div>
           </template>
         </section>
@@ -1495,6 +1523,25 @@ const histSessions = computed(() => {
   void tuteur.revisionsVersion
   return activeEnfant.value ? (tuteur.getRevisionHistory(activeEnfant.value.id) || []) : []
 })
+// Onglet de l'Historique : révisions (quiz/fiches/rédaction) vs conversations MIAPO.
+const histTab = ref('revisions')
+const histConversations = computed(() => {
+  void tuteur.conversationsVersion
+  return activeEnfant.value ? (tuteur.getConversations(activeEnfant.value.id) || []) : []
+})
+// Relance une conversation archivée dans le chat MIAPO (0 token : fil restauré).
+function relancerConversation(c) {
+  try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { conversation: c } })) } catch { /* silent */ }
+}
+function supprimerConversation(c) {
+  if (activeEnfant.value && c && c.id) tuteur.deleteConversation(activeEnfant.value.id, c.id)
+}
+// Aperçu court d'une conversation (dernier message MIAPO, sinon 1er de l'apprenant).
+function convPreview(c) {
+  const msgs = Array.isArray(c?.messages) ? c.messages : []
+  const last = [...msgs].reverse().find((m) => (m.text || '').trim())
+  return last ? last.text.trim().slice(0, 90) : ''
+}
 function rejouerSession(s) {
   if (!isApprenant.value || !s || !Array.isArray(s.questions) || !s.questions.length) return
   quizPreset.value = s.questions
@@ -2011,7 +2058,7 @@ function formatDateLong(iso) {
 }
 function jLabel(iso) { const j = joursAvant(iso); if (j === null) return ''; if (j < 0) return t('mia.exPast'); if (j === 0) return t('mia.exToday'); return 'J-' + j }
 function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 && j <= 14) ? 'ex-soon' : '' }
-watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) tuteur.syncHistoryFromCloud(id) }, { immediate: true })
+watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id) } }, { immediate: true })
 
 onMounted(async () => {
   await store.hydrate()
@@ -2456,6 +2503,20 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .hist-meta { font-size: 12px; color: var(--tx3, #6b7280); }
 .hist-score { flex-shrink: 0; font-size: 12.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; }
 .hist-empty { padding: 6px 0 2px; }
+/* Onglets de l'Historique (révisions / conversations) */
+.hist-tabs { display: flex; gap: 6px; margin-bottom: 14px; background: var(--input-bg, #eef1f4); padding: 4px; border-radius: 12px; width: fit-content; }
+.hist-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 15px; border: none; background: none; border-radius: 9px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--tx3, #6b7280); cursor: pointer; transition: background .15s, color .15s; }
+.hist-tab.on { background: #fff; color: var(--pr); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+.hist-tab svg { flex-shrink: 0; }
+/* Conversations MIAPO archivées */
+.conv-item { display: flex; align-items: center; gap: 10px; padding: 10px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; }
+.conv-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; background: none; border: none; padding: 0; text-align: left; font-family: inherit; cursor: pointer; }
+.conv-title { font-size: 14px; font-weight: 700; color: var(--tx, #1f2937); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-preview { font-size: 12.5px; color: var(--tx2, #4b5563); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.conv-meta { font-size: 11.5px; color: var(--tx3, #9098a6); }
+.conv-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.conv-del { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--bd, #e5e7eb); background: none; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; }
+.conv-del:hover { background: rgba(217,48,37,.07); color: #D93025; border-color: rgba(217,48,37,.3); }
 /* Revoir (lecture seule) une fiche / rédaction archivée */
 .hr-fiche strong { display: block; font-size: 14.5px; color: var(--tx, #1f2937); margin-bottom: 6px; }
 .hr-doc { white-space: pre-wrap; font-size: 13.5px; color: var(--tx2, #4b5563); line-height: 1.5; margin: 0 0 12px; }

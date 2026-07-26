@@ -512,16 +512,34 @@ async function copyText(which) {
   } catch { /* clipboard indisponible */ }
 }
 
+// Conversation MIAPO courante : id d'archive (vide = pas encore enregistrée).
+// On enregistre/relit via le store tuteur pour la retrouver dans « Historique ».
+const currentConvId = ref('')
+function persistConversation() {
+  if (!isB2C.value || !chatMsgs.value.length) return
+  const sid = learnerCtx.value.id || 'me'
+  try {
+    const id = tuteur.saveConversation(sid, {
+      id: currentConvId.value || undefined,
+      messages: chatMsgs.value.map((m) => ({ role: m.role, text: m.text, action: m.action || null })),
+    })
+    if (id) currentConvId.value = id
+  } catch { /* best-effort : ne bloque jamais le chat */ }
+}
+
 function close() {
   isOpen.value = false
   if (convoCtl.value) { try { convoCtl.value.stop() } catch { /* no-op */ } }
+  persistConversation() // archive le fil courant (relançable depuis Historique)
   setTimeout(reset, 200)
 }
 
 // Démarre une NOUVELLE conversation (efface le fil courant). Utilisé par le
 // bouton d'en-tête et par « Non, approfondir » du quiz (fil dédié au concept).
 function nouvelleConversation() {
+  persistConversation()   // sauvegarde l'ancien fil avant de le vider
   chatMsgs.value = []
+  currentConvId.value = ''
   chatThinking.value = false
   instruction.value = ''
   nextTick(() => inputEl.value?.focus())
@@ -890,6 +908,17 @@ function validateComm() {
 function onOpenEvent(e) {
   isOpen.value = true
   const d = (e && e.detail) || {}
+  // `conversation` : relance une conversation archivée (depuis « Historique »).
+  // On sauvegarde le fil courant, puis on restaure le fil choisi (0 token).
+  if (d.conversation && isB2C.value) {
+    persistConversation()
+    const c = d.conversation
+    chatMsgs.value = (Array.isArray(c.messages) ? c.messages : []).map((m) => ({ role: m.role, text: m.text, action: m.action || null }))
+    currentConvId.value = c.id || ''
+    chatThinking.value = false
+    nextTick(() => { scrollChatBottom(); inputEl.value?.focus() })
+    return
+  }
   // `fresh` : on repart d'une conversation vierge (ex. « Répondre » du quiz).
   if (d.fresh && isB2C.value) nouvelleConversation()
   // `seedMiapo` : dépose un message de MIAPO (ex. l'explication + sa question) en

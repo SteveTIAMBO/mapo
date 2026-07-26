@@ -92,6 +92,10 @@ const REVISION_KEY = (sid) => `mapo_revisions_v1_${sid || 'demo'}`
 const HISTORY_KEY = (sid) => `mapo_revision_history_v1_${sid || 'demo'}`
 const HISTORY_MAX = 30
 function historyDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions', 'history_' + (studentId || 'self')) }
+// Historique des CONVERSATIONS MIAPO (relançables). Stockage séparé des révisions.
+const CONV_KEY = (sid) => `mapo_b2c_conversations_v1_${sid || 'demo'}`
+const CONV_MAX = 40
+function convDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions', 'conversations_' + (studentId || 'self')) }
 
 export const useTuteurStore = defineStore('tuteur', () => {
   const generating = ref(false)
@@ -286,6 +290,59 @@ export const useTuteurStore = defineStore('tuteur', () => {
         if (Array.isArray(l)) { try { localStorage.setItem(HISTORY_KEY(studentId), JSON.stringify(l.slice(0, HISTORY_MAX))) } catch { /* quota */ } }
       }
     } catch { /* offline / non autorisé : on garde l'historique local */ }
+  }
+
+  // ── Historique des CONVERSATIONS MIAPO (relançables sans régénérer) ──────────
+  const conversationsVersion = ref(0)
+  function loadConversations(studentId) {
+    try { return JSON.parse(localStorage.getItem(CONV_KEY(studentId)) || '[]') } catch { return [] }
+  }
+  /** Enregistre (ou met à jour) une conversation MIAPO. Si `id` fourni et déjà
+   *  présent, on remplace l'entrée (mise à jour au fil de l'échange) ; sinon on
+   *  crée. Ignore les conversations vides ou sans message d'apprenant. */
+  function saveConversation(studentId, conv) {
+    const msgs = Array.isArray(conv?.messages) ? conv.messages : []
+    if (!msgs.some((m) => m && m.role === 'user' && (m.text || '').trim())) return null
+    const list = loadConversations(studentId)
+    const id = conv.id || ('cv-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5))
+    // Titre = 1re question de l'apprenant (tronquée), sauf titre explicite.
+    const firstUser = msgs.find((m) => m.role === 'user' && (m.text || '').trim())
+    const title = (conv.title || (firstUser ? firstUser.text.trim() : '')).slice(0, 80)
+    const entry = { id, date: new Date().toISOString(), title, messages: msgs.slice(-40) }
+    const without = list.filter((c) => c.id !== id)
+    without.unshift(entry)
+    const capped = without.slice(0, CONV_MAX)
+    try { localStorage.setItem(CONV_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
+    conversationsVersion.value++
+    const uid = cloudUid()
+    if (uid) {
+      setDoc(convDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() })
+        .catch(() => { /* offline : cache Firestore réessaiera */ })
+    }
+    return id
+  }
+  function getConversations(studentId) { return loadConversations(studentId) }
+  function deleteConversation(studentId, id) {
+    const capped = loadConversations(studentId).filter((c) => c.id !== id)
+    try { localStorage.setItem(CONV_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
+    conversationsVersion.value++
+    const uid = cloudUid()
+    if (uid) { setDoc(convDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() }).catch(() => {}) }
+  }
+  /** Hydrate les conversations depuis Firestore (vrais comptes, multi-appareils). */
+  async function syncConversationsFromCloud(studentId) {
+    const uid = cloudUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(convDocRef(uid, studentId))
+      if (snap.exists()) {
+        const l = snap.data()?.list
+        if (Array.isArray(l)) {
+          try { localStorage.setItem(CONV_KEY(studentId), JSON.stringify(l.slice(0, CONV_MAX))) } catch { /* quota */ }
+          conversationsVersion.value++
+        }
+      }
+    } catch { /* offline / non autorisé : on garde le cache local */ }
   }
 
   /** Niveau de difficulté courant pour (élève, matière). Défaut : 1. */
@@ -747,9 +804,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   return {
-    generating, planning, lastMode, lastReason, revisionsVersion,
+    generating, planning, lastMode, lastReason, revisionsVersion, conversationsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
+    saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })

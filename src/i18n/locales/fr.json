@@ -5336,7 +5336,14 @@
     "exERP6": "Prépare une communication sur la journée culturelle du 11 février",
     "exERP7": "Rédige un sujet d'examen de SVT pour la 3ème",
     "fabTitle": "Demander à MIAPO (Ctrl+J)",
-    "fabAria": "Ouvrir MIAPO"
+    "fabAria": "Ouvrir MIAPO",
+    "histTabRevisions": "Révisions",
+    "histTabConversations": "Conversations",
+    "histConvTitle": "Mes conversations avec MIAPO",
+    "histConvHint": "Reprends une discussion là où tu t'étais arrêté — sans rien régénérer.",
+    "histConvEmpty": "Aucune conversation pour l'instant. Pose une question à MIAPO, elle apparaîtra ici.",
+    "histConvRelaunch": "Reprendre",
+    "histConvMsgs": "{n} messages"
   },
   "cx": {
     "appTitle": "Espace complexe",
