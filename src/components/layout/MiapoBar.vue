@@ -470,7 +470,7 @@ const learnerCtx = computed(() => {
   const mats = (Array.isArray(e.formationModules) && e.formationModules.length)
     ? e.formationModules
     : matieresPourNiveau(e.niveau, e.pays)
-  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim(), id: e.id || '' }
+  return { niveau: e.niveau || '', matieres: (mats || []).join(', '), prenom: (e.firstName || '').trim(), id: e.id || '', interets: (e.interets || '').trim() }
 })
 // Accueil personnalisé (client-side) : le prénom ne quitte pas le navigateur.
 const welcomeGreeting = computed(() => {
@@ -766,6 +766,7 @@ async function submitB2C(text, opts = {}) {
     historique: hist,
     internet: internet.value,
     prenom: realPrenom ? NAME_TOKEN : '',
+    interets: ctx.interets,
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
   })
   chatThinking.value = false

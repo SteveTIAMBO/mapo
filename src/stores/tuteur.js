@@ -700,7 +700,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @param {{message:string, niveau?:string, matieres?:string, cours?:string, historique?:string, internet?:boolean, prenom?:string, langue?:string}} opts
    * @returns {Promise<{ok, text?, reason?}>}
    */
-  async function chatTuteur({ message, niveau = '', matieres = '', cours = '', historique = '', internet = false, prenom = '', langue = 'fr' }) {
+  async function chatTuteur({ message, niveau = '', matieres = '', cours = '', historique = '', internet = false, prenom = '', interets = '', langue = 'fr' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -708,7 +708,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, prenom, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, prenom, interets, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)

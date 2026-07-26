@@ -272,7 +272,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.interets || ''" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -623,6 +623,11 @@
             <MiapoMesCours :enfant="activeEnfant" />
           </div>
 
+          <!-- Sous-menu : Centres d'intérêt — apprenant uniquement -->
+          <div v-if="isApprenant" v-show="sousSection === 'interets'" class="param-panel">
+            <MiapoInterets :enfant="activeEnfant" />
+          </div>
+
           <!-- Sous-menu : Connecteurs (agenda + compte Carré) -->
           <div v-show="sousSection === 'connecteurs'" class="param-panel">
             <p class="muted small">{{ t('mia.connectorsHint') }}</p>
@@ -934,12 +939,13 @@ import MiapoQuestionOuverte from '../components/MiapoQuestionOuverte.vue'
 import MiapoInstall from '../components/MiapoInstall.vue'
 import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoMesCours from '../components/MiapoMesCours.vue'
+import MiapoInterets from '../components/MiapoInterets.vue'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
@@ -1052,6 +1058,8 @@ const sousMenus = computed(() => {
   if (isSelfPayer.value) items.push({ key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard })
   // « Mes cours » (dépôt personnel importé) — apprenant uniquement.
   if (isApprenant.value) items.push({ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen })
+  // « Centres d'intérêt » — apprenant : nourrit les exemples concrets + l'orientation.
+  if (isApprenant.value) items.push({ key: 'interets', label: t('mia.secInterests'), icon: Heart })
   items.push({ key: 'langue', label: t('mia.secLanguage'), icon: Languages })
   items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.

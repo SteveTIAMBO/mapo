@@ -148,6 +148,8 @@ const props = defineProps({
   themes: { type: String, default: '' },
   // Longueur de session adaptée à l'âge (plus jeune = plus court). Cf. ageProfil.
   nombre: { type: Number, default: 10 },
+  // Centres d'intérêt de l'apprenant → exemples concrets dans les explications.
+  interets: { type: String, default: '' },
   // Rejeu depuis l'historique : questions déjà générées → on les rejoue TELLES
   // QUELLES, sans nouvel appel IA (0 token). null = quiz normal (généré).
   presetQuestions: { type: Array, default: null },
@@ -244,7 +246,7 @@ function conceptRepondre() {
   // d'un nouveau fil ; l'apprenant répond ensuite dans le chat.
   try { window.dispatchEvent(new CustomEvent('open-miapo', { detail: { fresh: true, seedMiapo: seed } })) } catch { /* silent */ }
 }
-const CONCEPT_KEY = 'mapo_miapo_concept_v2'
+const CONCEPT_KEY = 'mapo_miapo_concept_v3'
 const _normC = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().slice(0, 180)
 function _conceptLoad() { try { return JSON.parse(localStorage.getItem(CONCEPT_KEY) || '{}') } catch { return {} } }
 function conceptGet(q) { const c = _conceptLoad(); return c[_normC(q)] || '' }
@@ -260,9 +262,12 @@ async function expliqueConcept() {
   if (!txt) {
     conceptBusy.value = true
     const en = ttsLang().toLowerCase().startsWith('en')
+    const it = (props.interets || '').trim().slice(0, 220)
+    const exFr = it ? ` Quand c'est naturel, illustre avec UN exemple concret tiré de ce que l'apprenant aime (${it}).` : ''
+    const exEn = it ? ` When it feels natural, illustrate with ONE concrete example drawn from what the learner enjoys (${it}).` : ''
     const prompt = en
-      ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. Answer directly, with NO greeting or salutation (this is a mid-quiz hint, not a new conversation). DO NOT give the answer or the correct option — only help understand the concept.`
-      : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. Réponds directement, SANS aucune salutation (surtout pas de « Bonjour » : c'est une aide en plein quiz, pas une nouvelle conversation). NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.`
+      ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. Answer directly, with NO greeting or salutation (this is a mid-quiz hint, not a new conversation). DO NOT give the answer or the correct option — only help understand the concept.${exEn}`
+      : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. Réponds directement, SANS aucune salutation (surtout pas de « Bonjour » : c'est une aide en plein quiz, pas une nouvelle conversation). NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.${exFr}`
     try {
       const r = await tuteur.chatTuteur({ message: prompt, niveau: props.niveau, matieres: props.matiere, langue: en ? 'en' : 'fr' })
       txt = r && r.ok ? String(r.text || '').trim() : ''

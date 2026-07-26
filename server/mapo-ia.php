@@ -199,6 +199,8 @@ function buildTuteurChatPrompts($d) {
   // Prénom : reçu sous forme de jeton [PRENOM] (le vrai prénom ne quitte pas le
   // navigateur) ; MIAPO l'emploie tel quel, le client le remplace au retour.
   $prenom = clean($d['prenom'] ?? '', 40);
+  // Centres d'intérêt de l'apprenant → exemples concrets et parlants (motivation).
+  $interets = clean($d['interets'] ?? '', 500);
   $langue   = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
 
   if ($langue === 'en') {
@@ -213,6 +215,7 @@ function buildTuteurChatPrompts($d) {
     $system .= $internet ? "You may also draw on your general knowledge when useful. " : "If the info is not in the provided material, say so plainly and do not invent it. ";
     $system .= "CRITICAL THINKING (always): NEVER give the final answer upfront, even if the learner insists — lead them to reason and state THEIR OWN answer first (guiding questions, hints, counter-examples). End with a question that pushes them to justify, verify or challenge their answer. When useful, remind them that an AI can make mistakes: invite them to cross-check with their course or a reliable source rather than take your word for it. The goal is to build their autonomy and critical thinking, not to do the work for them. ";
     if ($prenom !== '') $system .= "The learner's first name is represented by the token {$prenom} — use it AS-IS (warm greeting, encouragement) where you'd naturally use their name, without overusing it. ";
+    if ($interets !== '') $system .= "When it helps, ANCHOR your examples in what the learner enjoys ({$interets}) to make concepts concrete and meaningful — without forcing it. ";
     $system .= "Answer in plain text (no JSON, no markdown code fences).";
     $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message";
     $none = 'unspecified';
@@ -228,6 +231,7 @@ function buildTuteurChatPrompts($d) {
     $system .= $internet ? "Tu peux aussi t'appuyer sur tes connaissances générales lorsque c'est utile. " : "Si l'information n'est pas dans les cours fournis, dis-le franchement et n'invente pas. ";
     $system .= "ESPRIT CRITIQUE (toujours) : ne donne JAMAIS la réponse finale d'emblée, même si l'apprenant insiste — amène-le à raisonner et à formuler SA PROPRE réponse d'abord (questions guidées, indices, contre-exemples). Termine par une question qui le pousse à justifier, vérifier ou remettre en question sa réponse. Quand c'est utile, rappelle qu'une IA peut se tromper : invite-le à recouper avec son cours ou une source fiable plutôt qu'à te croire sur parole. L'objectif est de développer son autonomie et son esprit critique, pas de lui mâcher le travail. ";
     if ($prenom !== '') $system .= "Le prénom de l'apprenant est représenté par le jeton {$prenom} — emploie-le TEL QUEL (salut chaleureux, encouragement) là où tu utiliserais naturellement son prénom, sans en abuser. ";
+    if ($interets !== '') $system .= "Quand c'est utile, ANCRE tes exemples dans ce que l'apprenant aime ({$interets}) pour rendre les concepts concrets et parlants — sans forcer. ";
     $system .= "Réponds en texte simple (pas de JSON, pas de barrières de code markdown).";
     $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant";
     $none = 'non précisé';
