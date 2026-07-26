@@ -668,6 +668,7 @@ function buildTutorQuizPrompts($d) {
   $niveau  = clean($d['niveau'] ?? '', 30);
   $count   = isset($d['nombre']) ? max(3, min(12, intval($d['nombre']))) : 10;
   $themes  = clean($d['themes'] ?? '', 6000);
+  $cours   = clean($d['cours'] ?? '', 8000); // cours importé par l'élève (source prioritaire)
   $diff    = isset($d['difficulte']) ? max(1, min(5, intval($d['difficulte']))) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
 
@@ -686,14 +687,17 @@ function buildTutorQuizPrompts($d) {
     . "Méthode socratique : pour chaque question, l'INDICE oriente la réflexion SANS donner la réponse ; l'EXPLICATION justifie la bonne réponse. "
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "
     . "Langue simple, phrases courtes (contexte bas débit, texte seul). Les questions doivent être factuellement exactes et avoir une seule bonne réponse. "
+    . "PRIORITÉ À LA SOURCE : si un COURS DE L'ÉLÈVE est fourni ci-dessous, tire les questions EN PRIORITÉ de son contenu (notions, exemples, formules qui y figurent) ; complète par le programme officiel seulement si nécessaire. Si AUCUN cours n'est fourni, appuie-toi sur le programme officiel (référentiel national/manuels validés). "
+    . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
-    . "Format EXACT : {\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
+    . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
     . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition.";
 
   $u = "Matière : {$matiere}\n";
   if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
   $u .= "Nombre de questions : {$count}\n";
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
+  if ($cours !== '') $u .= "\nCOURS DE L'ÉLÈVE (source PRIORITAIRE — tire les questions de ce contenu) :\n{$cours}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 
   // Assez de tokens pour un quiz complet de 10 questions (~514 tok/question

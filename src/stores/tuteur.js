@@ -113,7 +113,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @returns {Promise<{ok, questions, mode, reason}>}
    *   questions: [{ q, choices[4], answer, hint, explanation }]
    */
-  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1 }) {
+  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '' }) {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
@@ -131,13 +131,14 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (ex) effThemes = (themes ? themes + ' ; ' : '') + `Inspire-toi du niveau et du style de ces sujets de l'école : ${ex.slice(0, 1500)}`
     } catch (e) { /* silencieux */ }
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
-    // Uniquement pour une révision générique (pas de thème ni de perso imposés).
-    if (!effThemes) {
+    // Uniquement pour une révision générique (pas de thème NI de cours perso imposé :
+    // sinon on veut un quiz réellement tiré du cours de l'élève).
+    if (!effThemes && !cours) {
       const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre })
       if (fromBank) {
         generating.value = false
         lastMode.value = 'banque'
-        return { ok: true, questions: fromBank, mode: 'banque', reason: '' }
+        return { ok: true, questions: fromBank, mode: 'banque', reason: '', source: 'referentiel' }
       }
     }
     try {
@@ -149,7 +150,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -163,9 +164,13 @@ export const useTuteurStore = defineStore('tuteur', () => {
         const parsed = parseQuiz(json.text)
         if (parsed.length) {
           lastMode.value = 'ia'
-          // Alimente la banque partagée pour les prochains élèves (best-effort).
-          if (!effThemes) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
-          return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '' }
+          // Provenance des questions (cours de l'élève / référentiel / mix) pour le
+          // petit disclaimer affiché au lancement. Repli : cours fourni → 'cours'.
+          let source = cours ? 'cours' : 'referentiel'
+          try { const o = parseJsonObject(json.text); if (o && o.source) source = String(o.source) } catch { /* défaut */ }
+          // Alimente la banque partagée SEULEMENT pour un quiz générique (pas de cours perso).
+          if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
+          return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '', source }
         }
         lastReason.value = 'Réponse IA illisible, mode démonstration'
       } else {

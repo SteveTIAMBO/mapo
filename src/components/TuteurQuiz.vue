@@ -39,6 +39,9 @@
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
 
+      <!-- Disclaimer LÉGER : d'où viennent les exercices (mes cours / référentiel / mix) -->
+      <p v-if="sourceLabel && index === 0" class="tq-source"><BookOpen :size="13" /> {{ sourceLabel }}</p>
+
       <div class="tq-qrow">
         <h2 class="tq-q">{{ current.q }}</h2>
         <button type="button" class="tq-info" :class="{ on: showCourse }"
@@ -338,6 +341,15 @@ const startedAt = ref(0)
 // Source : cours perso importé de la matière (+ le point-clé/indice de la question).
 const showCourse = ref(false)
 const coursMatiere = computed(() => coursTexteMatiere(props.studentId, props.matiere, 4000))
+// Provenance des questions (disclaimer léger au lancement) : cours / référentiel / mix.
+const sourceRev = ref('')
+const sourceLabel = computed(() => {
+  const en = locale.value.startsWith('en')
+  if (sourceRev.value === 'cours') return en ? 'Questions based on your imported courses.' : 'Questions tirées de tes cours importés.'
+  if (sourceRev.value === 'mix') return en ? 'From your courses + the national curriculum.' : 'D\'après tes cours + le référentiel national.'
+  if (sourceRev.value === 'referentiel') return en ? 'Questions based on the national curriculum.' : 'Questions basées sur le référentiel national.'
+  return ''
+})
 const lastMode = computed(() => tuteur.lastMode)
 
 const subjectId = computed(() => 'auto-' + props.matiere)
@@ -396,6 +408,7 @@ onUnmounted(() => {
 
 async function start() {
   mode.value = 'loading'
+  sourceRev.value = '' // provenance (cours/référentiel/mix) — définie ci-dessous
   // Rejeu : on réutilise les questions archivées, aucun appel IA (économie de tokens).
   if (props.presetQuestions && props.presetQuestions.length) {
     if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
@@ -407,8 +420,10 @@ async function start() {
   if (props.studentId) await tuteur.syncFromCloud(props.studentId)
   // Niveau de difficulté courant (adaptatif) pour cet élève + cette matière.
   level.value = props.studentId ? tuteur.getLevel(props.studentId, subjectId.value) : 1
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value })
+  // Priorité aux cours importés de la matière ; sinon référentiel national (serveur).
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value })
   if (res && res.reason === 'credits_epuises') { mode.value = 'epuise'; return }
+  sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []
   if (!questions.value.length) { mode.value = 'result'; return }
   index.value = 0
@@ -582,7 +597,9 @@ onMounted(start)
 .tq-help-btn.accent { border-color: rgba(var(--pr-rgb),.4); color: var(--pr); background: rgba(var(--pr-rgb),.05); }
 .tq-progress { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 14px 0 18px; overflow: hidden; }
 .tq-fill { height: 100%; background: var(--pr); border-radius: 6px; transition: width .3s; }
-.tq-qrow { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 18px; }
+.tq-source { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 6px 11px; border-radius: 8px; background: rgba(var(--pr-rgb,21,88,176),.06); color: var(--tx3, #6b7280); font-size: 12px; line-height: 1.3; }
+.tq-source svg { color: var(--pr); flex-shrink: 0; }
+.tq-qrow { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 18px; }
 .tq-q { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0; color: var(--tx); flex: 1; min-width: 0; }
 .tq-info { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 1px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
 .tq-info:hover, .tq-info.on { background: rgba(var(--pr-rgb,21,88,176),.08); color: var(--pr); border-color: var(--pr); }
