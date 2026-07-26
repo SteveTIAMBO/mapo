@@ -471,6 +471,34 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
+   * Génère une DICTÉE (titre + phrases courtes) à énoncer à voix haute côté client.
+   * @returns {Promise<{ok, titre?:string, phrases?:string[], reason?}>}
+   */
+  async function genererDictee({ matiere = 'Français', niveau = '', cours = '', langue = 'fr' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, langue } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && json.ok && json.text) {
+        const o = parseJsonObject(json.text)
+        const phrases = o && Array.isArray(o.phrases) ? o.phrases.map((p) => String(p).trim()).filter(Boolean) : []
+        if (phrases.length) return { ok: true, titre: String((o && o.titre) || '').trim(), phrases }
+      }
+      return { ok: false, reason: (json && (json.detail || json.error)) || 'dictee_failed' }
+    } catch (e) {
+      return { ok: false, reason: 'network' }
+    }
+  }
+
+  /**
    * Transcrit en TEXTE une photo de cours (page de manuel / cahier) pour l'ajouter
    * au dépôt « Mes cours ». Le backend ignore les données personnelles (nom, n°) :
    * seule la matière pédagogique est restituée. L'image n'est pas conservée.
@@ -846,7 +874,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })
 

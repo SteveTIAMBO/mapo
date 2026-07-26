@@ -50,7 +50,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -110,6 +110,7 @@ if (!empty($r['ok'])) {
 // ════════════════════════════════════════════════════════════════════
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
+  if ($task === 'dictee') return buildDicteePrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'vision_cours') return buildVisionCoursPrompts($d);
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
@@ -706,6 +707,32 @@ function buildTutorQuizPrompts($d) {
   // observés ; 3600 ne laissait passer que ~7 questions → on monte à 5400).
   // Le parseur récupère quand même les questions complètes si jamais tronqué.
   return [$system, $u, 5400, false, null];
+}
+
+// ── Dictée : génère un court texte à DICTER (lu à voix haute côté client) ──
+// Renvoie un titre + des phrases courtes (une par item) adaptées au niveau, et le
+// texte COMPLET de référence pour la correction. Pas de correction ici : c'est
+// juste le contenu à énoncer. La correction réutilise la tâche eval_reponse.
+function buildDicteePrompts($d) {
+  $matiere = clean($d['matiere'] ?? 'Français', 50);
+  $niveau  = clean($d['niveau'] ?? '', 40);
+  $cours   = clean($d['cours'] ?? '', 4000);
+  $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  if ($langue === 'en') {
+    $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a SHORT text (4 to 7 sentences) "
+      . "suitable for the given level, with common spelling/grammar difficulties for that level (agreements, homophones, "
+      . "verb endings). Keep sentences short and clear. If the learner's course material is provided, base the vocabulary on it. "
+      . "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"phrases\":[\"sentence 1\",\"sentence 2\"]}.";
+  } else {
+    $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte COURT (4 à 7 phrases) "
+      . "adapté au niveau indiqué, avec les difficultés d'orthographe/grammaire typiques de ce niveau (accords, homophones, "
+      . "terminaisons de verbes). Phrases courtes et claires. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
+      . "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"phrases\":[\"phrase 1\",\"phrase 2\"]}.";
+  }
+  $u = "Matière : {$matiere}\n" . ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
+  if ($cours !== '') $u .= "Cours de l'apprenant (vocabulaire de référence) :\n{$cours}\n";
+  $u .= "\nGénère la dictée au format JSON demandé.";
+  return [$system, $u, 900, true, null];
 }
 
 function buildAppreciationPrompts($d) {

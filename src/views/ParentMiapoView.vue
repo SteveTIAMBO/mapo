@@ -312,6 +312,7 @@
                     </button>
                   </div>
                   <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
+                  <MiapoDictee v-if="activeDictee" :key="'dic-' + activeDictee" :enfant="activeEnfant" :matiere="activeDictee" @quit="activeDictee = ''" />
                 </template>
               </template>
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
@@ -990,6 +991,7 @@ import MiapoInterets from '../components/MiapoInterets.vue'
 import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
+import MiapoDictee from '../components/MiapoDictee.vue'
 import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
@@ -1603,8 +1605,10 @@ const pendingTheme = ref('')
 const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(reviseMatiere.value) : []))
 // Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
 const activeRedaction = ref('')
-// Changer de matière referme le widget de rédaction en cours.
-watch(reviseMatiere, () => { activeRedaction.value = '' })
+// Matière en cours de « Dictée » (module vocal dédié).
+const activeDictee = ref('')
+// Changer de matière referme les widgets rédaction/dictée en cours.
+watch(reviseMatiere, () => { activeRedaction.value = ''; activeDictee.value = '' })
 // Renvoie vers le menu « Cours » (import de cours / documents + Carré).
 function ouvrirMesCours() { section.value = 'cours'; menuOpen.value = false }
 // Option « + Importer un nouveau cours » du sélecteur de matière → ouvre Cours.
@@ -1615,12 +1619,14 @@ function launchRevision(typeKey) {
   const m = reviseMatiere.value
   if (!isApprenant.value || !m) return
   activeRedaction.value = ''
+  activeDictee.value = ''
   const niveau = activeEnfant.value?.niveau || ''
   const theme = pendingTheme.value; pendingTheme.value = '' // thème « quiz sur les fractions » consommé une seule fois
   switch (typeKey) {
     case 'quiz': goRevise(m, theme || undefined); return // QCM de récupération
     case 'flashcards': section.value = 'fiches'; return // fiche + cartes mémoire
     case 'redaction': activeRedaction.value = m; return // production écrite corrigée
+    case 'dictee': activeDictee.value = m; return // dictée VOCALE (module dédié)
     default: {
       // explique-moi / problèmes mêlés / dictée / carte mentale → session
       // pédagogique guidée dans le chat MIAPO (comptée dans l'usage).
