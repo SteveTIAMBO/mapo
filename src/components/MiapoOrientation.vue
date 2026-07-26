@@ -121,6 +121,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION, INTERETS_ORIENTATION, domaineMatchInterets, interetsLabels, INSERTION_FR, insertionFrParNom } from '../data/orientation'
+import { ageDe } from '../utils/ageProfil'
 import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target, TrendingUp } from 'lucide-vue-next'
@@ -233,6 +234,9 @@ async function getSuggestions() {
     forts, faibles,
     interets: interetsLabels(interets.value, locale.value === 'en'),
     candidats: topCandidats(),
+    passions: e.passions || '',
+    metiers: e.metiersVises || '',
+    age: ageDe(e),
     langue: locale.value === 'en' ? 'en' : 'fr',
   })
   if (res.ok && res.result && res.result.recommandations.length) {

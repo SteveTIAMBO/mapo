@@ -449,6 +449,10 @@ function buildOrientation6cPrompts($d) {
   if ($pays === '') $pays = 'Cameroun';
   $forts   = array_slice(array_filter(array_map(function ($s) { return clean($s, 40); }, (array) ($d['forts'] ?? []))), 0, 8);
   $faibles = array_slice(array_filter(array_map(function ($s) { return clean($s, 40); }, (array) ($d['faibles'] ?? []))), 0, 8);
+  // Profil élargi (texte libre) : passions/loisirs + métiers rêvés + âge → projection.
+  $passions = clean($d['passions'] ?? '', 500);
+  $metiers  = clean($d['metiers'] ?? '', 300);
+  $age      = intval($d['age'] ?? 0);
 
   // Profil 6C (scores /5) → texte
   $labels6c = [
@@ -484,6 +488,10 @@ function buildOrientation6cPrompts($d) {
     . "écoles fournis. Pour chaque domaine retenu, explique CONCRÈTEMENT en quoi il correspond (ou non) à son profil 6C ET à son "
     . "niveau scolaire, en citant les compétences fortes mobilisées. Classe-les du plus au moins adapté. Reste encourageant, honnête, "
     . "sans survendre, et rappelle que c'est une aide à la décision. "
+    . "Si des CENTRES D'INTÉRÊT et des MÉTIERS qui l'attirent sont fournis, sers-t'en pour personnaliser l'adéquation et la motivation. "
+    . "Tiens compte des TENDANCES DU MARCHÉ DE L'EMPLOI (rapport Future of Jobs 2025 du Forum économique mondial : forte croissance des métiers de la tech, des données et de l'IA, de l'analyse, de la transition écologique, ainsi que des compétences humaines comme l'adaptabilité ; déclin de certains postes administratifs et de saisie) pour éclairer les PERSPECTIVES d'avenir de chaque domaine — SANS inventer de métier ni d'école hors de la liste fournie. "
+    . "L'HORIZON de projection dépend de l'âge : plus l'élève est jeune, plus tu restes large et prudent (les métiers évolueront d'ici son entrée sur le marché). "
+    . "Dans le champ \"prudence\", précise TOUJOURS que ces pistes s'appuient sur des prédictions et l'état ACTUEL de l'emploi, que c'est un avis INDICATIF, et qu'il est recommandé de rencontrer un vrai conseiller d'orientation pour aller plus loin. "
     . "Réponds STRICTEMENT en JSON valide (sans markdown), au format EXACT : "
     . "{\"profil\":\"2 phrases sur son profil 6C\",\"recommandations\":[{\"domaine\":\"...\",\"adequation\":\"forte|moyenne\",\"pourquoi\":\"argumentaire lié à ses 6C et son niveau\",\"metiers_cles\":[\"...\"],\"etablissements_cles\":[\"...\"]}],\"conseil\":\"...\",\"prudence\":\"...\"}. "
     . "Donne 2 à 4 recommandations, classées.";
@@ -497,9 +505,12 @@ function buildOrientation6cPrompts($d) {
 
   $u  = "Pays visé : {$pays}\n";
   $u .= "Niveau scolaire : " . ($niveau !== '' ? $niveau : 'non précisé') . "\n";
-  if ($compLines) $u .= "Profil 6C (auto-évaluation) : " . implode(' · ', $compLines) . "\n";
+  if ($age > 0) $u .= "Âge : {$age} ans\n";
+  if ($compLines) $u .= "Profil de compétences (auto-évaluation) : " . implode(' · ', $compLines) . "\n";
   if ($forts)   $u .= "Matières fortes : " . implode(', ', $forts) . "\n";
   if ($faibles) $u .= "Matières faibles : " . implode(', ', $faibles) . "\n";
+  if ($passions !== '') $u .= "Centres d'intérêt / passions : {$passions}\n";
+  if ($metiers !== '')  $u .= "Métiers qui l'attirent : {$metiers}\n";
   $u .= "\nDomaines candidats (à argumenter, SANS rien ajouter d'autre) :" . ($candTxt !== '' ? $candTxt : ' (aucun)') . "\n";
   $u .= "\nProduis les recommandations argumentées au format JSON demandé.";
 
