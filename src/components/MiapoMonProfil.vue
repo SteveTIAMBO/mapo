@@ -27,7 +27,7 @@
               <ul v-if="a.comment && a.comment.length" class="mp-how"><li v-for="(c, j) in a.comment" :key="j">{{ c }}</li></ul>
             </div>
           </div>
-          <p v-if="bilan.conseil" class="mp-conseil"><Sparkles :size="14" /> {{ bilan.conseil }}</p>
+          <p v-if="bilan.conseil" class="mp-conseil"><MiapoOrbe :size="15" :frozen="true" /> {{ bilan.conseil }}</p>
         </div>
         <button class="btn btn-outline btn-sm mp-edit" @click="goto('competences')"><Sliders :size="15" /> <span>{{ t('mia.mpEditCompetences') }}</span></button>
       </template>
@@ -52,7 +52,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Radar6C from './Radar6C.vue'
-import { Target, Heart, Sliders, Sparkles, Compass, Pencil, ThumbsUp, TrendingUp, Download } from 'lucide-vue-next'
+import MiapoOrbe from './MiapoOrbe.vue'
+import { Target, Heart, Sliders, Compass, Pencil, ThumbsUp, TrendingUp, Download } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 defineEmits(['export'])

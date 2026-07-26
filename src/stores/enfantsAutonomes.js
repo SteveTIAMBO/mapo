@@ -3,6 +3,8 @@ import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore'
+import { enregistrerActivite } from '../utils/recompenses'
+import { addCoursPerso } from '../utils/coursPerso'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -391,7 +393,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, filiere, photoURL, formation, formationUrl, formationModules }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, ecoleReliee, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: localId('ea-'),
       firstName: (firstName || '').trim(),
@@ -402,6 +404,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       pays: pays || 'CM',
       age: (age != null ? String(age) : '').trim(),  // âge (facultatif) → calibre la longueur des sessions
       ecole: (ecole || '').trim(),
+      ecoleReliee: !!ecoleReliee,  // apprenant RÉELLEMENT rattaché à une école MAPO (cours profs, devoirs, examens)
       filiere: (filiere || '').trim(),                 // filière/spécialité (étudiant du supérieur)
       formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
       formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
@@ -628,12 +631,42 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   // sans saisie préalable. Démo uniquement, et seulement si aucun enfant.
   function seedDemoIfEmpty() {
     if (enfants.value.length) return
+    // Awa : apprenante B2C NON rattachée à une école (auto-inscription).
     const id = addEnfant({ firstName: 'Awa', lastName: 'Nkeng', gender: 'F', niveau: '5ème', pays: 'CM' })
     addNote(id, 'Mathématiques', 8)
     addNote(id, 'Français', 14)
     addNote(id, 'Anglais', 11)
     addNote(id, 'SVT', 9)
     setComp6c(id, { creativite: 4, esprit_critique: 3, communication: 4, cooperation: 4, courage: 3, confiance: 3 })
+    // Cours importés « tests » (comme si Awa les avait ajoutés) → tous les modules
+    // de révision fonctionnent, et le quiz peut tirer ses questions de ces cours.
+    try {
+      addCoursPerso(id, { matiere: 'Mathématiques', titre: 'Les fractions', contenu: "Une fraction a/b : a est le numérateur, b le dénominateur (b ≠ 0). Fractions équivalentes : on multiplie/divise numérateur et dénominateur par le même nombre (2/3 = 4/6). Pour additionner des fractions de même dénominateur, on ajoute les numérateurs : 1/5 + 2/5 = 3/5. Simplifier : diviser par le PGCD." })
+      addCoursPerso(id, { matiere: 'Français', titre: 'Le sujet du verbe', contenu: "Le sujet fait l'action du verbe. Pour le trouver, on pose la question « Qui est-ce qui… ? » ou « Qu'est-ce qui… ? » devant le verbe. Ex : « Les oiseaux chantent » → Qui est-ce qui chante ? → les oiseaux (sujet). Le sujet peut être un nom, un groupe nominal ou un pronom." })
+      addCoursPerso(id, { matiere: 'SVT', titre: 'La digestion', contenu: "La digestion transforme les aliments en nutriments assimilables. Elle commence dans la bouche (mastication + salive), se poursuit dans l'estomac (sucs gastriques) puis l'intestin grêle où les nutriments passent dans le sang. Les déchets sont évacués par le gros intestin." })
+    } catch { /* best-effort démo */ }
+    // Historique d'activité → badges/récompenses visibles (démo).
+    try { for (let i = 0; i < 12; i++) enregistrerActivite(id, { format: i % 3 === 0 ? 'chat' : 'quiz' }) } catch { /* best-effort */ }
+
+    // 2e enfant : RATTACHÉ à une école MAPO démo → montre la différence (cours des
+    // profs, devoirs par matière, examens à venir). ecoleReliee = true.
+    const id2 = addEnfant({ firstName: 'Junior', lastName: 'Nkeng', gender: 'M', niveau: '3ème', pays: 'CM', ecole: 'Collège Bilingue La Réussite', ecoleReliee: true })
+    addNote(id2, 'Mathématiques', 12)
+    addNote(id2, 'Français', 10)
+    addNote(id2, 'Physique-Chimie', 13)
+    addNote(id2, 'SVT', 11)
+    addNote(id2, 'Histoire-Géographie', 14)
+    setComp6c(id2, { creativite: 3, esprit_critique: 4, communication: 3, cooperation: 3, courage: 4, confiance: 4 })
+    try { for (let i = 0; i < 6; i++) enregistrerActivite(id2, { format: 'quiz' }) } catch { /* best-effort */ }
+    // Examens à venir (école reliée) : contrôle continu + compositions + BEPC blanc.
+    try {
+      const soon = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10) }
+      localStorage.setItem('mapo_b2c_exams_' + id2, JSON.stringify([
+        { id: 'xd1', label: 'Contrôle continu — Mathématiques', date: soon(8), official: false, key: '' },
+        { id: 'xd2', label: 'Composition du 2ᵉ trimestre', date: soon(23), official: false, key: '' },
+        { id: 'xd3', label: 'BEPC blanc', date: soon(46), official: false, key: '' },
+      ]))
+    } catch { /* best-effort */ }
   }
 
   // Démo : (re)pose un profil UNIQUE cohérent avec le point de vue choisi sur

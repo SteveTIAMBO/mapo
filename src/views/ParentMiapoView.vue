@@ -90,7 +90,7 @@
       <div class="miapo-scroll">
       <!-- Aucun enfant : accueil d'amorçage -->
       <div v-if="!enfants.length" class="card intro-card">
-        <div class="intro-icon"><Sparkles :size="26" /></div>
+        <div class="intro-icon"><MiapoOrbe :size="34" :frozen="true" /></div>
         <h2>{{ L.introTitle }}</h2>
         <p>{{ L.introText }}</p>
         <button class="btn btn-primary" @click="openAdd"><Plus :size="16" /> <span>{{ L.introBtn }}</span></button>
@@ -544,7 +544,7 @@
         <!-- ========== EMPLOI DU TEMPS ========== -->
         <section v-else-if="section === 'edt'" class="sec">
           <div v-if="veilleMatieres.length" class="card veille-card">
-            <div class="card-head"><Sparkles :size="18" /><h3><DualText :text="t('mia.edtVeilleTitle')" /></h3></div>
+            <div class="card-head"><MiapoOrbe :size="18" :frozen="true" /><h3><DualText :text="t('mia.edtVeilleTitle')" /></h3></div>
             <p class="muted small">{{ t('mia.edtVeilleSub', { jour: demainLabel }) }}</p>
             <div class="chips">
               <component :is="isApprenant ? 'button' : 'span'" v-for="m in veilleMatieres" :key="m" class="chip chip-w" @click="isApprenant && goRevise(m)">{{ m }}</component>
@@ -787,7 +787,7 @@
               <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
               <!-- Moteur de cours : MIAPO décompose la formation en modules + plan -->
               <div class="course-engine">
-                <div class="ce-head"><Sparkles :size="15" /><strong>{{ t('mia.courseEngineTitle') }}</strong></div>
+                <div class="ce-head"><MiapoOrbe :size="16" :frozen="true" /><strong>{{ t('mia.courseEngineTitle') }}</strong></div>
                 <p class="ce-hint">{{ t('mia.courseEngineHint') }}</p>
                 <textarea v-model="coursProgramme" class="input" rows="3" :placeholder="t('mia.coursePastePlaceholder')"></textarea>
                 <div class="ce-actions">
