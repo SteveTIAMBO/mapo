@@ -125,9 +125,9 @@ function onPickCourse() {
 onMounted(() => { if (ecoleConnectee.value && !cours.loaded) cours.load() })
 
 function pickFile() { fileInput.value?.click() }
-// Renvoie vers Paramètres → Mes cours (dépôt personnel centralisé).
+// Renvoie vers le menu « Cours » (dépôt personnel + Carré).
 function ouvrirMesCours() {
-  try { window.dispatchEvent(new CustomEvent('open-miapo-settings', { detail: { tab: 'cours' } })) } catch { /* silent */ }
+  try { window.dispatchEvent(new CustomEvent('miapo-goto', { detail: { section: 'cours' } })) } catch { /* silent */ }
 }
 async function onFile(e) {
   const file = e.target.files && e.target.files[0]

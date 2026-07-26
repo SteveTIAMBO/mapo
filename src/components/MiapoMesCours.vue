@@ -39,6 +39,22 @@
       <p v-else class="muted small">{{ t('mia.mcEmpty') }}</p>
       <p class="mc-priv"><ShieldCheck :size="13" /> {{ t('mia.mcPrivacy') }}</p>
     </div>
+
+    <!-- Carré : notes de cours comme source du sous-RAG (périmètre choisi). -->
+    <div class="card">
+      <div class="card-head"><span class="mc-carre-badge">C</span><h3>{{ t('mia.mcCarreTitle') }}</h3></div>
+      <template v-if="connecteurs.carreConnected">
+        <p class="muted">{{ t('mia.mcCarreOn') }}</p>
+        <label class="int-label">{{ t('mia.mcCarreScope') }}</label>
+        <input v-model="carreScope" class="input mc-scope" :placeholder="t('mia.mcCarreScopePh')" @change="saveScope" />
+        <p class="muted small mc-scope-note">{{ t('mia.mcCarreScopeNote') }}</p>
+        <button class="btn btn-ghost btn-sm" @click="connecteurs.disconnectCarre()">{{ t('mia.carreDisconnect') }}</button>
+      </template>
+      <template v-else>
+        <p class="muted">{{ t('mia.mcCarreOff') }}</p>
+        <button class="btn btn-outline btn-sm" @click="connecteurs.connectCarre()"><ExternalLink :size="15" /> <span>{{ t('mia.carreConnect') }}</span></button>
+      </template>
+    </div>
   </div>
 </template>
 
@@ -48,10 +64,17 @@ import { useI18n } from 'vue-i18n'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { listCoursPerso, addCoursPerso, removeCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
-import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck } from 'lucide-vue-next'
+import { useConnecteursStore } from '../stores/connecteurs'
+import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
+const connecteurs = useConnecteursStore()
+
+// Périmètre Carré (dossier / mot-clé) à synchroniser vers le sous-RAG.
+const carreScope = ref('')
+try { carreScope.value = localStorage.getItem('mapo_carre_scope') || '' } catch { /* silent */ }
+function saveScope() { try { localStorage.setItem('mapo_carre_scope', (carreScope.value || '').trim()) } catch { /* silent */ } }
 
 const enfantId = computed(() => props.enfant?.id || 'me')
 const niveau = computed(() => props.enfant?.niveau || '')
@@ -127,4 +150,8 @@ function fmt(iso) {
 .mc-del { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 1px solid var(--bd, #e5e7eb); background: none; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; }
 .mc-del:hover { background: rgba(217,48,37,.07); color: #D93025; border-color: rgba(217,48,37,.3); }
 .mc-priv { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 12px; color: var(--tx3, #6b7280); }
+.mc-carre-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 6px; background: #0f172a; color: #fff; font-weight: 800; font-size: 12px; }
+.int-label { display: block; font-size: 13px; font-weight: 700; color: var(--tx, #1f2937); margin: 10px 0 6px; }
+.mc-scope { width: 100%; max-width: 340px; }
+.mc-scope-note { margin: 6px 0 12px; }
 </style>

@@ -97,6 +97,9 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
   // Renvoie '' si non relié ou en cas d'erreur (MIAPO se rabat sur le reste).
   async function carreNotesText({ max = 3, q = '' } = {}) {
     if (!linked.value || !fbAuth.currentUser) return ''
+    // Périmètre de synchro choisi par l'apprenant (dossier/mot-clé) : évite
+    // d'aspirer des notes Carré sans rapport avec les cours. Cf. « Cours ».
+    if (!q) { try { q = localStorage.getItem('mapo_carre_scope') || '' } catch { q = '' } }
     try {
       const h = await authHeaders()
       const url = `${API}?action=notes&limit=${max}${q ? '&q=' + encodeURIComponent(q) : ''}`

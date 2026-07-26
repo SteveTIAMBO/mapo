@@ -399,6 +399,11 @@
           <MiapoFiches :enfant="activeEnfant" />
         </section>
 
+        <!-- ========== COURS (dépôt perso + Carré) ========== -->
+        <section v-else-if="section === 'cours'" class="sec">
+          <MiapoMesCours :enfant="activeEnfant" />
+        </section>
+
         <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
         <section v-else-if="section === 'historique'" class="sec">
           <!-- Revoir en lecture seule (0 token) une fiche ou une rédaction archivée -->
@@ -618,11 +623,6 @@
           <!-- Sous-menu : Accessibilité -->
           <div v-show="sousSection === 'accessibilite'">
             <MiapoAccessibilite />
-          </div>
-
-          <!-- Sous-menu : Mes cours (dépôt personnel importé) — apprenant uniquement -->
-          <div v-if="isApprenant" v-show="sousSection === 'cours'" class="param-panel">
-            <MiapoMesCours :enfant="activeEnfant" />
           </div>
 
           <!-- Sous-menu : Centres d'intérêt — apprenant uniquement -->
@@ -1023,6 +1023,7 @@ const SECTIONS = computed(() => {
   return [
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
+    { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
@@ -1064,8 +1065,6 @@ const sousMenus = computed(() => {
   const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
   // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
   if (isSelfPayer.value) items.push({ key: 'abonnement', label: t('mia.secSubscription'), icon: CreditCard })
-  // « Mes cours » (dépôt personnel importé) — apprenant uniquement.
-  if (isApprenant.value) items.push({ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen })
   // « Centres d'intérêt » — apprenant : nourrit les exemples concrets + l'orientation.
   if (isApprenant.value) items.push({ key: 'interets', label: t('mia.secInterests'), icon: Heart })
   // « Compétences » — apprenant : questionnaire (ex-6C) → radar + bilan MIAPO.
@@ -1436,8 +1435,8 @@ const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(revise
 const activeRedaction = ref('')
 // Changer de matière referme le widget de rédaction en cours.
 watch(reviseMatiere, () => { activeRedaction.value = '' })
-// Renvoie vers Paramètres → Mes cours (import de cours / documents à réviser).
-function ouvrirMesCours() { section.value = 'profil'; sousSection.value = 'cours'; menuOpen.value = false }
+// Renvoie vers le menu « Cours » (import de cours / documents + Carré).
+function ouvrirMesCours() { section.value = 'cours'; menuOpen.value = false }
 function launchRevision(typeKey) {
   const m = reviseMatiere.value
   if (!isApprenant.value || !m) return
