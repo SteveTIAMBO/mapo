@@ -94,7 +94,11 @@ const tuteur = useTuteurStore()
 // Questionnaire ADAPTÉ À L'ÂGE : moins d'items pour les plus jeunes (attention /
 // mémoire de travail plus limitées — cf. manifeste). 2 → 5 items par compétence.
 const nItems = computed(() => {
-  const b = bandeAge(props.enfant)
+  const e = props.enfant
+  // Supérieur / adulte en reconversion (hors catalogue) : mémoire de travail
+  // mature → questionnaire complet (5 items).
+  if (e && (e.cycle === 'superieur' || e.niveau === NIVEAU_HORS_CATALOGUE)) return 5
+  const b = bandeAge(e)
   return b === 'enfant' ? 2 : b === 'preado' ? 3 : b === 'ado' ? 4 : 5
 })
 const competences = computed(() => COMPETENCES_6C.map((c) => ({ ...c, items: (c.items || []).slice(0, nItems.value) })))

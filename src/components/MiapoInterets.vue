@@ -14,7 +14,7 @@
         <span v-if="saved" class="int-saved"><Check :size="14" /> {{ t('mia.interSaved') }}</span>
         <button class="btn btn-primary btn-sm" :disabled="!enfant" @click="save"><Check :size="15" /> <span>{{ t('mia.interSave') }}</span></button>
       </div>
-      <p class="int-note"><Sparkles :size="13" /> {{ t('mia.interNote') }}</p>
+      <p class="int-note">{{ t('mia.interNote') }}</p>
     </div>
   </div>
 </template>
@@ -23,7 +23,7 @@
 import { ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
-import { Heart, Check, Sparkles } from 'lucide-vue-next'
+import { Heart, Check } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t } = useI18n({ useScope: 'global' })

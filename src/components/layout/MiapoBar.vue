@@ -1101,11 +1101,13 @@ onUnmounted(() => {
 .miapo-msg.miapo .miapo-msg-text { background: var(--input-bg); color: var(--tx); border-radius: 14px 14px 14px 4px; }
 .miapo-msg-text {
   margin: 0; padding: 10px 13px; font-size: 14.5px; line-height: 1.5;
-  white-space: pre-wrap; word-break: break-word; max-width: 82%;
+  white-space: pre-wrap; word-break: break-word; max-width: 100%; box-sizing: border-box;
 }
 .miapo-msg-orb { flex-shrink: 0; margin-top: 2px; }
-.miapo-msg-body { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.miapo-msg-body { display: flex; flex-direction: column; gap: 7px; min-width: 0; max-width: 82%; }
+.miapo-msg.user { justify-content: flex-end; }
 .miapo-msg.user .miapo-msg-body { align-items: flex-end; }
+.miapo-msg.miapo .miapo-msg-body { flex: 0 1 auto; }
 .miapo-action-chip {
   display: inline-flex; align-items: center; gap: 6px; align-self: flex-start;
   padding: 7px 13px; border: 1px solid var(--pr); border-radius: 999px;
@@ -1237,7 +1239,7 @@ kbd {
   .miapo-container { padding: 56px 10px 0; }
   .miapo-fab { right: 16px; bottom: 16px; width: 54px; height: 54px; }
   .miapo-input { font-size: 16px; }        /* évite le zoom automatique d'iOS au focus (< 16px) */
-  .miapo-msg-text { max-width: 88%; }        /* bulles un peu plus larges sur petit écran */
+  .miapo-msg-body { max-width: 88%; }        /* bulles un peu plus larges sur petit écran */
   .miapo-modal { max-height: 84vh; }         /* un peu plus de hauteur utile sur téléphone */
 }
 </style>

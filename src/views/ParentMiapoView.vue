@@ -1187,7 +1187,14 @@ function saveAgenda() {
   agendaSaved.value = true
   setTimeout(() => { agendaSaved.value = false }, 2000)
 }
-const currentSection = computed(() => SECTIONS.value.find((s) => s.key === section.value) || SECTIONS.value[0])
+// Sections hors menu (atteignables mais absentes de la liste) → libellé d'en-tête.
+const currentSection = computed(() => {
+  const found = SECTIONS.value.find((s) => s.key === section.value)
+  if (found) return found
+  const off = { profil: t('mia.secSettings'), fiches: t('mia.secFiches') }
+  if (off[section.value]) return { key: section.value, label: off[section.value] }
+  return SECTIONS.value[0]
+})
 
 // Libellés selon le mode (parent vs apprenant)
 const L = computed(() => isApprenant.value ? {
