@@ -1,5 +1,10 @@
 <template>
   <div class="monprofil">
+    <!-- En-tête : export PDF du profil (radar + forces + à renforcer + badges) -->
+    <div class="mp-top">
+      <button class="btn btn-outline btn-sm" @click="$emit('export')"><Download :size="15" /> <span>{{ t('mia.mpExport') }}</span></button>
+    </div>
+
     <!-- Compétences -->
     <div class="card">
       <div class="card-head"><Target :size="18" /><h3>{{ t('mia.mpCompetences') }}</h3></div>
@@ -40,9 +45,10 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Radar6C from './Radar6C.vue'
-import { Target, Heart, Sliders, Sparkles, Compass, Pencil, ThumbsUp, TrendingUp } from 'lucide-vue-next'
+import { Target, Heart, Sliders, Sparkles, Compass, Pencil, ThumbsUp, TrendingUp, Download } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
+defineEmits(['export'])
 const { t } = useI18n({ useScope: 'global' })
 
 const hasEval = computed(() => !!(props.enfant && props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6))
@@ -57,6 +63,7 @@ function goto(tab) {
 
 <style scoped>
 .monprofil { display: flex; flex-direction: column; gap: 16px; }
+.mp-top { display: flex; justify-content: flex-end; }
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }
 .card-head h3 { margin: 0; font-size: 15.5px; color: var(--tx, #1f2937); }

@@ -5357,7 +5357,8 @@
     "humeurFace4": "Good",
     "humeurFace5": "Great",
     "secHelp": "Help & feedback",
-    "secRewards": "Rewards"
+    "secRewards": "Rewards",
+    "mpExport": "Export as PDF"
   },
   "cx": {
     "appTitle": "Complex workspace",

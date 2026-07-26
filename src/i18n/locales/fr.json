@@ -5357,7 +5357,8 @@
     "humeurFace4": "Bien",
     "humeurFace5": "Au top",
     "secHelp": "Aide & feedbacks",
-    "secRewards": "Récompenses"
+    "secRewards": "Récompenses",
+    "mpExport": "Exporter en PDF"
   },
   "cx": {
     "appTitle": "Espace complexe",

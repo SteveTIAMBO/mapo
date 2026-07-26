@@ -580,7 +580,7 @@
         <!-- « Mon profil » : récap visuel (compétences + intérêts + reco MIAPO).
              Le questionnaire de compétences vit désormais dans Paramètres. -->
         <section v-else-if="section === 'profil6c'" class="sec">
-          <MiapoMonProfil :enfant="activeEnfant" />
+          <MiapoMonProfil :enfant="activeEnfant" @export="exporterProfil" />
         </section>
 
         <section v-else-if="section === 'orientation'" class="sec">
@@ -998,6 +998,8 @@ import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
+import { calculerBadges } from '../utils/recompenses'
+import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
 
@@ -1217,6 +1219,72 @@ function exporterBilan() {
   ${rowsProg ? `<h3>${t('mia.levelBySubject')}</h3><table>${rowsProg}</table>` : ''}
   ${rowsRev ? `<h3>${t('mia.bilanToReview')}</h3><ul>${rowsRev}</ul>` : ''}
   ${rowsNotes ? `<h3>${t('mia.bilanNotes')}</h3><table>${rowsNotes}</table>` : ''}
+  <div class="foot">MAPO+ · EDUFREM — ${esc(dateStr)}</div>
+  </body></html>`)
+  w.document.close()
+}
+
+// ── Export PDF de « Mon profil » (radar 6C + forces/à renforcer + badges) ──
+function radarSvgProfil(scores) {
+  const cx = 150, cy = 116, R = 74
+  const ang = (i) => (-90 + i * 60) * Math.PI / 180
+  const sc = (i) => Math.max(0, Math.min(5, Number(scores?.[COMPETENCES_6C[i].key] || 0)))
+  const vtx = (i, s) => ({ x: cx + (s / 5) * R * Math.cos(ang(i)), y: cy + (s / 5) * R * Math.sin(ang(i)) })
+  const poly = (s) => COMPETENCES_6C.map((_, i) => { const p = vtx(i, s); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')
+  const rings = [1, 2, 3, 4, 5].map((r) => `<polygon points="${poly(r)}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`).join('')
+  const axes = COMPETENCES_6C.map((_, i) => { const p = vtx(i, 5); return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>` }).join('')
+  const area = `<polygon points="${COMPETENCES_6C.map((_, i) => { const p = vtx(i, sc(i)); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')}" fill="rgba(124,58,237,.16)" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>`
+  const en = locale.value.startsWith('en')
+  const labels = COMPETENCES_6C.map((c, i) => {
+    const a = ang(i), r = R + 18, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a) + 3.5
+    const cos = Math.cos(a), anchor = cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle'
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-size="9.5" font-weight="600" fill="#4b5563">${(en ? (c.label_en || c.label) : c.label)}</text>`
+  }).join('')
+  const dots = COMPETENCES_6C.map((_, i) => { const p = vtx(i, sc(i)); return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="#7c3aed"/>` }).join('')
+  return `<svg viewBox="-30 0 360 244" width="340" xmlns="http://www.w3.org/2000/svg">${rings}${axes}${area}${dots}${labels}</svg>`
+}
+function exporterProfil() {
+  const e = activeEnfant.value
+  if (!e) return
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+  const en = locale.value.startsWith('en')
+  const dateStr = new Date().toLocaleDateString(en ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+  const bilan = e.comp6cBilan || null
+  const hasEval = e.comp6c && Object.keys(e.comp6c).length >= 6
+  const radar = hasEval ? radarSvgProfil(e.comp6c) : ''
+  const li = (arr) => (arr || []).map((x) => `<li>${esc(x)}</li>`).join('')
+  const badges = calculerBadges(e.id).filter((b) => b.earned)
+  const badgesHtml = badges.length
+    ? `<div class="badges">${badges.map((b) => `<span class="badge b-${b.tier}">🏅 ${esc(en ? b.en : b.fr)}</span>`).join('')}</div>`
+    : `<p class="muted">${en ? 'No badge yet.' : 'Aucun badge pour l\'instant.'}</p>`
+  const w = window.open('', '_blank')
+  if (!w) return
+  w.document.write(`<!doctype html><html lang="${locale.value}"><head><meta charset="utf-8"><title>${en ? 'My profile' : 'Mon profil'} — ${esc(e.firstName)}</title>
+  <style>body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#1a1a2e;max-width:720px;margin:40px auto;padding:0 32px;line-height:1.55}
+  .hd{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #7c3aed;padding-bottom:14px;margin-bottom:22px}
+  .hd h2{margin:0;color:#7c3aed;font-size:22px;letter-spacing:.5px}.hd small{color:#666}
+  h1{font-size:20px;margin:14px 0 6px}.who{color:#555;margin:0 0 20px}
+  h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#7c3aed;margin:24px 0 10px;border-bottom:1px solid #eee;padding-bottom:5px}
+  .radar{text-align:center;margin:8px 0 4px}
+  ul{margin:0;padding-left:20px}li{margin:5px 0;font-size:14px}
+  .forces li{color:#1B8A5A}.axes li{color:#B87A00}
+  .syn{font-size:14px;margin:0 0 6px}.conseil{color:#7c3aed;font-weight:600;font-size:13.5px}
+  .badges{display:flex;flex-wrap:wrap;gap:8px}.badge{font-size:12.5px;font-weight:700;padding:5px 12px;border-radius:20px;border:1px solid #eee}
+  .b-bronze{background:#fbecd9;color:#8a4b1e}.b-silver{background:#eef0f3;color:#5b6270}.b-gold{background:#fdf0c8;color:#8a6a05}
+  .muted{color:#888;font-size:13px}.text{font-size:13.5px;white-space:pre-wrap}
+  .foot{margin-top:38px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}</style></head>
+  <body onload="window.print()">
+  <div class="hd"><div><h2>MAPO+</h2><small>${en ? 'Learner profile' : 'Profil de l\'apprenant'}</small></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
+  <h1>${en ? 'My profile' : 'Mon profil'}</h1>
+  <p class="who">${esc(e.firstName)} ${esc(e.lastName || '')}${e.niveau ? ' · ' + esc(e.niveau) : ''}</p>
+  ${radar ? `<h3>${en ? 'Competency radar' : 'Radar de compétences'}</h3><div class="radar">${radar}</div>` : ''}
+  ${bilan && bilan.synthese ? `<p class="syn">${esc(bilan.synthese)}</p>` : ''}
+  ${bilan && bilan.forces && bilan.forces.length ? `<h3>${en ? 'Strengths' : 'Points forts'}</h3><ul class="forces">${li(bilan.forces)}</ul>` : ''}
+  ${bilan && bilan.axes && bilan.axes.length ? `<h3>${en ? 'To strengthen' : 'À renforcer'}</h3><ul class="axes">${li(bilan.axes)}</ul>` : ''}
+  ${bilan && bilan.conseil ? `<p class="conseil">${esc(bilan.conseil)}</p>` : ''}
+  <h3>${en ? 'Badges' : 'Badges'}</h3>${badgesHtml}
+  ${e.passions ? `<h3>${en ? 'Interests' : 'Centres d\'intérêt'}</h3><p class="text">${esc(e.passions)}</p>` : ''}
+  ${e.metiersVises ? `<h3>${en ? 'Career ideas' : 'Métiers visés'}</h3><p class="text">${esc(e.metiersVises)}</p>` : ''}
   <div class="foot">MAPO+ · EDUFREM — ${esc(dateStr)}</div>
   </body></html>`)
   w.document.close()
