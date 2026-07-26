@@ -20,6 +20,9 @@
 
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
+      <button type="button" class="tq-back" @click="$emit('quit')">
+        <ChevronLeft :size="16" /> <span>{{ locale.startsWith('en') ? 'Back' : 'Retour' }}</span>
+      </button>
       <div class="tq-top">
         <div>
           <span class="tq-subject">{{ matiere }}</span>
@@ -87,7 +90,7 @@
            déclenche l'explication du concept ; « Répondre » ouvre le chat. -->
       <div v-if="revealed && !firstTry" class="tq-deepen">
         <button v-if="!conceptText && !conceptBusy" type="button" class="tq-appro-btn" @click="approfondir">
-          <Sparkles :size="15" /> <span>{{ ackLabels.deepen }}</span>
+          <MiapoOrbe :size="16" :frozen="true" /> <span>{{ ackLabels.deepen }}</span>
         </button>
         <div v-else class="tq-fb concept">
           <MiapoOrbe :size="18" :frozen="true" />
@@ -119,9 +122,13 @@
 
     <!-- Résultat -->
     <div v-else-if="mode === 'result'" class="tq-result">
-      <div class="tq-ring" :style="ringStyle"><span>{{ scorePercent }}%</span></div>
+      <!-- Paillettes de félicitation (quiz validé / 100 %) : renfort dopamine. -->
+      <div v-if="celebrate" class="tq-confetti" aria-hidden="true">
+        <i v-for="n in 14" :key="n" :style="confettiStyle(n)"></i>
+      </div>
+      <div class="tq-ring" :class="{ perfect: masteryPercent === 100 }" :style="ringStyle"><span>{{ masteryPercent }}%</span></div>
       <h2>{{ resultTitle }}</h2>
-      <p class="tq-sub">{{ correctCount }} bonne(s) réponse(s) sur {{ questions.length }} — {{ matiere }}</p>
+      <p class="tq-sub">{{ firstTryCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'first try' : 'du premier coup' }} · {{ correctCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'correct' : 'trouvées' }} — {{ matiere }}</p>
 
       <!-- Feedback de progression adaptative -->
       <div v-if="lastResult" class="tq-level-fb" :class="levelFb.tone">
@@ -131,15 +138,15 @@
 
       <!-- Carte de révision rapide : concepts qui ont posé le plus de soucis. -->
       <div v-if="recapMissed.length" class="tq-quickcard">
-        <div class="tq-qc-head"><Sparkles :size="16" /> <strong>{{ locale.startsWith('en') ? 'Quick revision card' : 'Carte de révision rapide' }}</strong></div>
+        <div class="tq-qc-head"><MiapoOrbe :size="16" :frozen="true" /> <strong>{{ locale.startsWith('en') ? 'Quick revision card' : 'Carte de révision rapide' }}</strong></div>
         <p class="tq-qc-sub">{{ locale.startsWith('en') ? 'Review these first:' : 'À revoir en priorité :' }}</p>
         <ul class="tq-qc-list"><li v-for="(r, i) in recapMissed" :key="i">{{ r.point }}</li></ul>
       </div>
-      <!-- Récapitulatif complet des concepts de la session (conservé dans l'historique). -->
-      <details v-if="recap.length" class="tq-recap">
-        <summary>{{ locale.startsWith('en') ? 'Concept recap' : 'Récapitulatif des concepts' }}</summary>
+      <!-- Récapitulatif complet des concepts : VISIBLE d'emblée (pas au clic). -->
+      <div v-if="recap.length" class="tq-recap-open">
+        <div class="tq-recap-head"><BookOpen :size="15" /> <strong>{{ locale.startsWith('en') ? 'Concepts recap' : 'Récapitulatif des concepts' }}</strong></div>
         <ul><li v-for="(r, i) in recap" :key="i" :class="{ missed: r.missed }">{{ r.point }}</li></ul>
-      </details>
+      </div>
 
       <!-- Mini-carte de feedback (throttlée ~1×/2 jours) : ressenti de difficulté. -->
       <div v-if="showFeedback" class="tq-feedback">
@@ -170,7 +177,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info } from 'lucide-vue-next'
+import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
@@ -539,7 +546,18 @@ function chooseFeedback(v) {
   feedbackGiven.value = true
 }
 
-const resultTitle = computed(() => scorePercent.value >= 80 ? 'Excellent !' : scorePercent.value >= 50 ? 'Bien joué !' : 'Courage, on progresse')
+const resultTitle = computed(() => masteryPercent.value >= 80 ? 'Excellent !' : masteryPercent.value >= 50 ? 'Bien joué !' : 'Courage, on progresse')
+// Quiz « validé » (≥ 80 % de maîtrise) ou parfait → paillettes de félicitation.
+const celebrate = computed(() => masteryPercent.value >= 80)
+// Paillettes CSS : position, couleur, délai et durée variés (déterministe par index).
+function confettiStyle(n) {
+  const colors = ['#E8950A', '#1B8A5A', '#7c3aed', '#1558B0', '#D93025', '#E8A90A']
+  const left = (n * 6.7) % 100
+  const delay = ((n * 137) % 60) / 100
+  const dur = 1.1 + ((n * 53) % 60) / 100
+  const rot = (n * 47) % 360
+  return { left: left + '%', background: colors[n % colors.length], animationDelay: delay + 's', animationDuration: dur + 's', transform: `rotate(${rot}deg)` }
+}
 
 // Feedback de progression adaptative affiché au résultat.
 const levelFb = computed(() => {
@@ -556,7 +574,7 @@ const levelFb = computed(() => {
   return { tone: 'stable', icon: Target, text: `Niveau ${r.level}/5 maintenu. Trouve les réponses du premier coup pour débloquer le niveau suivant.` }
 })
 const ringStyle = computed(() => {
-  const s = scorePercent.value
+  const s = masteryPercent.value
   const color = s >= 80 ? '#1B8A5A' : s >= 50 ? '#B87A00' : '#D93025'
   return { background: `conic-gradient(${color} ${s * 3.6}deg, rgba(0,0,0,.06) 0deg)` }
 })
@@ -597,6 +615,8 @@ onMounted(start)
 .tq-help-btn.accent { border-color: rgba(var(--pr-rgb),.4); color: var(--pr); background: rgba(var(--pr-rgb),.05); }
 .tq-progress { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 14px 0 18px; overflow: hidden; }
 .tq-fill { height: 100%; background: var(--pr); border-radius: 6px; transition: width .3s; }
+.tq-back { display: inline-flex; align-items: center; gap: 5px; align-self: flex-start; margin: 0 0 8px -4px; padding: 5px 10px; border: none; background: none; color: var(--tx3, #6b7280); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 8px; }
+.tq-back:hover { background: var(--input-bg, #f1f3f5); color: var(--tx, #1f2937); }
 .tq-source { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 6px 11px; border-radius: 8px; background: rgba(var(--pr-rgb,21,88,176),.06); color: var(--tx3, #6b7280); font-size: 12px; line-height: 1.3; }
 .tq-source svg { color: var(--pr); flex-shrink: 0; }
 .tq-qrow { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 18px; }
@@ -644,8 +664,14 @@ onMounted(start)
 .btn-ghost { background: none; border: none; color: var(--tx3); font-size: 14px; cursor: pointer; padding: 8px; }
 .btn-ghost:hover { color: var(--tx); }
 
-.tq-result { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 16px; gap: 6px; }
+.tq-result { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; padding: 24px 16px; gap: 6px; overflow: hidden; }
 .tq-ring { position: relative; width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
+.tq-ring.perfect { animation: ringPop .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes ringPop { 0% { transform: scale(.7); } 60% { transform: scale(1.12); } 100% { transform: scale(1); } }
+/* Paillettes de félicitation (tombent depuis le haut) */
+.tq-confetti { position: absolute; inset: 0; pointer-events: none; z-index: 3; overflow: hidden; }
+.tq-confetti i { position: absolute; top: -12px; width: 8px; height: 12px; border-radius: 2px; opacity: 0; animation-name: confettiFall; animation-timing-function: ease-in; animation-iteration-count: 1; }
+@keyframes confettiFall { 0% { opacity: 0; top: -12px; } 12% { opacity: 1; } 100% { opacity: 0; top: 100%; } }
 .tq-ring::before { content: ''; position: absolute; width: 94px; height: 94px; border-radius: 50%; background: #fff; }
 .tq-ring span { position: relative; font-size: 28px; font-weight: 700; color: var(--tx); }
 .tq-result h2 { font-size: 20px; margin: 4px 0 0; }
@@ -661,11 +687,12 @@ onMounted(start)
 .tq-qc-sub { margin: 6px 0 6px; font-size: 12.5px; color: var(--tx2, #4b5563); font-weight: 600; }
 .tq-qc-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .tq-qc-list li { font-size: 13px; color: var(--tx, #1f2937); line-height: 1.4; }
-.tq-recap { width: 100%; box-sizing: border-box; text-align: left; margin: 6px 0 4px; }
-.tq-recap summary { cursor: pointer; font-size: 13px; font-weight: 700; color: var(--tx2, #4b5563); padding: 6px 0; }
-.tq-recap ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.tq-recap li { font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.4; }
-.tq-recap li.missed { color: #B87A00; font-weight: 600; }
+.tq-recap-open { width: 100%; box-sizing: border-box; text-align: left; margin: 8px 0 4px; padding: 12px 14px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: var(--input-bg, #f8f9fb); }
+.tq-recap-head { display: flex; align-items: center; gap: 7px; color: var(--pr); font-size: 13px; margin-bottom: 6px; }
+.tq-recap-head strong { color: var(--tx, #1f2937); }
+.tq-recap-open ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.tq-recap-open li { font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.4; }
+.tq-recap-open li.missed { color: #B87A00; font-weight: 600; }
 /* Mini-feedback post-révision (ressenti de difficulté) */
 .tq-feedback { width: 100%; box-sizing: border-box; margin: 12px 0 2px; padding: 14px 15px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: var(--input-bg, #f6f7f9); }
 .tq-fbk-q { margin: 0 0 10px; font-size: 13.5px; font-weight: 600; color: var(--tx, #1f2937); text-align: center; }

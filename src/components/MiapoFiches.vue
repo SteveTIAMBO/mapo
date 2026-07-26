@@ -91,10 +91,12 @@ const { t } = useI18n({ useScope: 'global' })
 const cours = useCoursStore()
 const tuteur = useTuteurStore()
 const auth = useAuthStore()
-// « Partir d'un cours publié par le professeur » ne concerne que les comptes
-// reliés à une école MAPO (schoolId présent). Sinon l'apprenant colle / importe
-// son propre cours.
-const ecoleConnectee = computed(() => !!auth.schoolId)
+// « Partir d'un cours publié par le professeur » ne concerne que les apprenants
+// RÉELLEMENT reliés à une école MAPO. En B2C (MAPO+), le lien est PAR ENFANT
+// (l'apprenant en auto-inscription comme Awa n'a pas de cours de prof) ; en compte
+// école classique, c'est le schoolId du compte qui fait foi.
+const ecoleConnectee = computed(() =>
+  auth.isB2C ? !!(props.enfant && props.enfant.ecoleReliee) : !!auth.schoolId)
 
 const matiere = ref('')
 const courseText = ref('')
