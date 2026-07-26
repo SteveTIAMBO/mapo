@@ -541,8 +541,10 @@
           </div>
         </section>
 
+        <!-- « Mon profil » : récap visuel (compétences + intérêts + reco MIAPO).
+             Le questionnaire de compétences vit désormais dans Paramètres. -->
         <section v-else-if="section === 'profil6c'" class="sec">
-          <Miapo6C :enfant="activeEnfant" />
+          <MiapoMonProfil :enfant="activeEnfant" />
         </section>
 
         <section v-else-if="section === 'orientation'" class="sec">
@@ -626,6 +628,11 @@
           <!-- Sous-menu : Centres d'intérêt — apprenant uniquement -->
           <div v-if="isApprenant" v-show="sousSection === 'interets'" class="param-panel">
             <MiapoInterets :enfant="activeEnfant" />
+          </div>
+
+          <!-- Sous-menu : Compétences (questionnaire ex-6C) — apprenant uniquement -->
+          <div v-if="isApprenant" v-show="sousSection === 'competences'" class="param-panel">
+            <Miapo6C :enfant="activeEnfant" />
           </div>
 
           <!-- Sous-menu : Connecteurs (agenda + compte Carré) -->
@@ -918,6 +925,7 @@ import { isMiapoTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
+import MiapoMonProfil from '../components/MiapoMonProfil.vue'
 import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
@@ -1060,6 +1068,8 @@ const sousMenus = computed(() => {
   if (isApprenant.value) items.push({ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen })
   // « Centres d'intérêt » — apprenant : nourrit les exemples concrets + l'orientation.
   if (isApprenant.value) items.push({ key: 'interets', label: t('mia.secInterests'), icon: Heart })
+  // « Compétences » — apprenant : questionnaire (ex-6C) → radar + bilan MIAPO.
+  if (isApprenant.value) items.push({ key: 'competences', label: t('mia.secCompetences'), icon: Target })
   items.push({ key: 'langue', label: t('mia.secLanguage'), icon: Languages })
   items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.

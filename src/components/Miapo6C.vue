@@ -52,7 +52,7 @@
           <span class="q-count">{{ answeredCount }}/{{ totalItems }}</span>
         </div>
 
-        <div v-for="c in COMPETENCES_6C" :key="c.key" class="q-group">
+        <div v-for="c in competences" :key="c.key" class="q-group">
           <div class="q-gh"><span class="q-gh-dot"></span>{{ compLabel(c) }}</div>
           <div v-for="(it, idx) in c.items" :key="idx" class="q-item">
             <p class="q-text">{{ locale === 'en' ? it.en : it.fr }}</p>
@@ -79,6 +79,7 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { COMPETENCES_6C } from '../data/orientation'
+import { bandeAge } from '../utils/ageProfil'
 import { useEnfantsAutonomesStore, NIVEAU_HORS_CATALOGUE } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import Radar6C from './Radar6C.vue'
@@ -90,7 +91,14 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const store = useEnfantsAutonomesStore()
 const tuteur = useTuteurStore()
 
-const totalItems = COMPETENCES_6C.reduce((n, c) => n + (c.items ? c.items.length : 0), 0)
+// Questionnaire ADAPTÉ À L'ÂGE : moins d'items pour les plus jeunes (attention /
+// mémoire de travail plus limitées — cf. manifeste). 2 → 5 items par compétence.
+const nItems = computed(() => {
+  const b = bandeAge(props.enfant)
+  return b === 'enfant' ? 2 : b === 'preado' ? 3 : b === 'ado' ? 4 : 5
+})
+const competences = computed(() => COMPETENCES_6C.map((c) => ({ ...c, items: (c.items || []).slice(0, nItems.value) })))
+const totalItems = computed(() => competences.value.reduce((n, c) => n + c.items.length, 0))
 const answers = ref({})          // `${compKey}_${idx}` -> 1..5
 const editing = ref(false)
 const bilanState = ref('idle')   // idle | loading | error
@@ -99,7 +107,7 @@ const bilanError = ref('')
 const hasEval = computed(() => !!props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6)
 const bilan = computed(() => props.enfant.comp6cBilan || null)
 const answeredCount = computed(() => Object.keys(answers.value).length)
-const pct = computed(() => Math.round((answeredCount.value / totalItems) * 100))
+const pct = computed(() => Math.round((answeredCount.value / (totalItems.value || 1)) * 100))
 const doneAt = computed(() => props.enfant.comp6cAt ? new Date(props.enfant.comp6cAt).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR') : '')
 
 function compLabel(c) { return locale.value === 'en' ? (c.label_en || c.label) : c.label }
@@ -113,7 +121,7 @@ function persona() {
 }
 function computeScores() {
   const s = {}
-  for (const c of COMPETENCES_6C) {
+  for (const c of competences.value) {
     const vals = c.items.map((_, idx) => answers.value[c.key + '_' + idx]).filter((v) => typeof v === 'number')
     s[c.key] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 3
   }
@@ -121,7 +129,7 @@ function computeScores() {
 }
 
 async function submit() {
-  if (answeredCount.value < totalItems) return
+  if (answeredCount.value < totalItems.value) return
   const scores = computeScores()
   store.setComp6c(props.enfant.id, scores, { ...answers.value })
   editing.value = false
