@@ -5358,7 +5358,22 @@
     "humeurFace5": "Au top",
     "secHelp": "Aide & feedbacks",
     "secRewards": "Récompenses",
-    "mpExport": "Exporter en PDF"
+    "mpExport": "Exporter en PDF",
+    "oriDiscTitle": "Découvrir les métiers & parcours",
+    "oriDiscGate": "Complète ton profil (compétences + centres d'intérêt) pour débloquer la découverte des métiers.",
+    "oriDiscGateCta": "Compléter mon profil",
+    "oriDiscPick": "Choisis un métier pour voir le chemin depuis ta classe :",
+    "oriDiscPath": "Parcours",
+    "oriDiscSerie": "Série / voie conseillée",
+    "oriDiscDuration": "Durée",
+    "oriDiscWhere": "Où étudier",
+    "oriDiscAlt": "Alternatives proches",
+    "oriDiscFuture": "Métier d'avenir",
+    "oriDiscUpdated": "Données revues",
+    "oriDiscUncovered": "Parcours détaillé pas encore disponible pour ton pays — MIAPO peut quand même t'orienter ci-dessus.",
+    "oriDiscDisclaimer": "Repère pédagogique, pas un document officiel : les modalités (concours, capacités d'accueil) évoluent.",
+    "oriOffTitle": "Orientation scolaire",
+    "oriOffBody": "L'orientation par filières scolaires n'est pas adaptée à ton parcours « Autres ». Un module d'insertion professionnelle (CV, entretiens) arrive bientôt pour toi."
   },
   "cx": {
     "appTitle": "Espace complexe",

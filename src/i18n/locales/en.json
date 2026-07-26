@@ -5358,7 +5358,22 @@
     "humeurFace5": "Great",
     "secHelp": "Help & feedback",
     "secRewards": "Rewards",
-    "mpExport": "Export as PDF"
+    "mpExport": "Export as PDF",
+    "oriDiscTitle": "Explore careers & pathways",
+    "oriDiscGate": "Complete your profile (skills + interests) to unlock career discovery.",
+    "oriDiscGateCta": "Complete my profile",
+    "oriDiscPick": "Pick a career to see the path from your class:",
+    "oriDiscPath": "Pathway",
+    "oriDiscSerie": "Recommended track",
+    "oriDiscDuration": "Duration",
+    "oriDiscWhere": "Where to study",
+    "oriDiscAlt": "Close alternatives",
+    "oriDiscFuture": "Future-ready",
+    "oriDiscUpdated": "Data reviewed",
+    "oriDiscUncovered": "Detailed pathway not available for your country yet — MIAPO can still guide you above.",
+    "oriDiscDisclaimer": "A learning guide, not an official document: rules (entrance exams, capacity) change.",
+    "oriOffTitle": "School orientation",
+    "oriOffBody": "School-track orientation doesn't fit your \"Other\" path. A career-insertion module (CV, interviews) is coming soon for you."
   },
   "cx": {
     "appTitle": "Complex workspace",

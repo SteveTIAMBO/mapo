@@ -1,5 +1,12 @@
 <template>
   <div class="orient">
+    <!-- Parcours « Autres » : orientation scolaire désactivée -->
+    <div v-if="horsCatalogue" class="card orient-off">
+      <div class="step-head"><Compass :size="18" /><h3>{{ t('mia.oriOffTitle') }}</h3></div>
+      <p class="muted">{{ t('mia.oriOffBody') }}</p>
+    </div>
+
+    <template v-else>
     <!-- En-tête + rappel de la méthode (3 temps) -->
     <div class="orient-intro">
       <p class="muted">{{ tOri('oriIntro', { name: enfant.firstName }) }}</p>
@@ -114,6 +121,58 @@
         <p>{{ error }}</p><button class="btn btn-outline btn-sm" @click="state = 'idle'">{{ t('mia.retry') }}</button>
       </div>
     </div>
+
+    <!-- DÉCOUVRIR LES MÉTIERS & PARCOURS ÉDUCATIF (débloqué : profil complet) -->
+    <div class="card step-card metiers-card">
+      <div class="step-head"><Route :size="18" /><h3>{{ t('mia.oriDiscTitle') }}</h3></div>
+
+      <div v-if="!profilComplet" class="disc-gate">
+        <Info :size="16" />
+        <p>{{ t('mia.oriDiscGate') }}</p>
+        <button v-if="!hasEval" class="btn btn-primary btn-sm" @click="emit('eval')"><Target :size="15" /> <span>{{ t('mia.oriDiscGateCta') }}</span></button>
+      </div>
+
+      <template v-else>
+        <p class="muted small">{{ t('mia.oriDiscPick') }}</p>
+        <div class="metiers-chips">
+          <button v-for="m in metiersListe" :key="m.id" type="button" class="metier-chip" :class="{ on: metierSel === m.id }" @click="choisirMetier(m.id)">
+            <Zap v-if="m.avenir" :size="12" class="mc-zap" /> {{ m.label }}
+          </button>
+        </div>
+
+        <div v-if="metierSel && parcoursSel" class="parcours">
+          <div class="parcours-head">
+            <strong>{{ en2 ? parcoursSel.en : parcoursSel.fr }}</strong>
+            <span v-if="parcoursSel.avenir" class="avenir-badge"><Zap :size="12" /> {{ t('mia.oriDiscFuture') }}</span>
+          </div>
+          <div class="parcours-meta">
+            <span v-if="parcoursSel.serie" class="pm-item"><GraduationCap :size="13" /> {{ t('mia.oriDiscSerie') }} : <strong>{{ parcoursSel.serie }}</strong></span>
+            <span v-if="parcoursSel.duree" class="pm-item"><Clock :size="13" /> {{ t('mia.oriDiscDuration') }} : {{ parcoursSel.duree }}</span>
+          </div>
+          <ol class="parcours-steps">
+            <li v-for="(s, i) in parcoursSel.etapes" :key="i">{{ s }}</li>
+          </ol>
+          <p v-if="parcoursSel.note" class="parcours-note"><Info :size="13" /> {{ parcoursSel.note }}</p>
+          <div v-if="parcoursSel.ecoles && parcoursSel.ecoles.length" class="parcours-block">
+            <span class="reco-lab">{{ t('mia.oriDiscWhere') }}</span>
+            <div class="chips"><span v-for="(ec, j) in parcoursSel.ecoles" :key="j" class="chip chip-e">{{ ec }}</span></div>
+          </div>
+          <div v-if="parcoursSel.alternatives && parcoursSel.alternatives.length" class="parcours-block">
+            <span class="reco-lab">{{ t('mia.oriDiscAlt') }}</span>
+            <div class="chips"><button v-for="alt in parcoursSel.alternatives" :key="alt" type="button" class="chip chip-alt" @click="choisirMetier(alt)">{{ labelMetier(alt) }}</button></div>
+          </div>
+          <div class="parcours-foot">
+            <span class="maj"><CalendarClock :size="12" /> {{ t('mia.oriDiscUpdated') }} : {{ majParcours }}</span>
+          </div>
+        </div>
+        <div v-else-if="metierSel && !parcoursSel" class="disc-uncovered">
+          <Info :size="15" /> <p>{{ t('mia.oriDiscUncovered') }}</p>
+        </div>
+
+        <p class="disc-disclaimer">{{ t('mia.oriDiscDisclaimer') }}</p>
+      </template>
+    </div>
+    </template>
   </div>
 </template>
 
@@ -121,10 +180,11 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { COMPETENCES_6C, PAYS_ORIENTATION, ORIENTATION, INTERETS_ORIENTATION, domaineMatchInterets, interetsLabels, INSERTION_FR, insertionFrParNom } from '../data/orientation'
+import { listeMetiers, parcoursMetier, MAJ_PARCOURS, PARCOURS_PAYS } from '../data/parcours'
 import { ageDe } from '../utils/ageProfil'
-import { useEnfantsAutonomesStore, PAYS } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, PAYS, NIVEAU_HORS_CATALOGUE } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target, TrendingUp } from 'lucide-vue-next'
+import { Sparkles, Check, Compass, GraduationCap, Loader2, Lightbulb, Globe, MapPin, Plane, ArrowRight, Sliders, Info, Target, TrendingUp, Zap, Route, Clock, CalendarClock } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import Radar6C from './Radar6C.vue'
 
@@ -161,6 +221,25 @@ function toggleInteret(k) {
 }
 
 const hasEval = computed(() => !!props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6)
+// Parcours « Autres » (hors-catalogue) : l'orientation par filières scolaires ne
+// s'applique pas → on la désactive et on renvoie (à terme) vers l'insertion pro.
+const horsCatalogue = computed(() => props.enfant.niveau === NIVEAU_HORS_CATALOGUE)
+// Découverte des métiers débloquée seulement si le PROFIL est complet :
+// compétences évaluées ET au moins un centre d'intérêt (ou des passions saisies).
+const profilComplet = computed(() => hasEval.value && (interets.value.length > 0 || !!(props.enfant.passions || '').trim()))
+
+// ── Découverte métiers & PARCOURS ÉDUCATIF (sourcé, par pays) ─────────────
+const en2 = computed(() => locale.value.startsWith('en'))
+const metiersListe = computed(() => listeMetiers(en2.value))
+const metierSel = ref('')
+const paysApprenantCouvert = computed(() => !!PARCOURS_PAYS[props.enfant.pays])
+const parcoursSel = computed(() => (metierSel.value ? parcoursMetier(metierSel.value, props.enfant.pays) : null))
+const majParcours = MAJ_PARCOURS
+function labelMetier(id) {
+  const m = (metiersListe.value || []).find((x) => x.id === id)
+  return m ? m.label : id
+}
+function choisirMetier(id) { metierSel.value = metierSel.value === id ? '' : id }
 const sorted6c = computed(() => {
   const sv = props.enfant.comp6c || {}
   return COMPETENCES_6C.map((c) => ({ key: c.key, label: c.label, val: sv[c.key] || 0 })).sort((a, b) => b.val - a.val)
@@ -344,6 +423,42 @@ async function getSuggestions() {
 
 .reco-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .src-note { font-size: 12px; color: var(--tx3); }
+
+/* Orientation désactivée (parcours « Autres ») */
+.orient-off .step-head { color: var(--pr); }
+.orient-off .muted { font-size: 13.5px; line-height: 1.6; }
+
+/* Découverte métiers & parcours éducatif */
+.metiers-card { }
+.disc-gate { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; background: rgba(232,149,10,.08); border: 1px solid rgba(232,149,10,.22); }
+.disc-gate svg { color: #B87A00; flex-shrink: 0; }
+.disc-gate p { margin: 0; flex: 1; min-width: 180px; font-size: 13px; color: var(--tx2, #4b5563); line-height: 1.5; }
+.metiers-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.metier-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; padding: 7px 13px; border-radius: 20px; border: 1px solid var(--bd, #e5e7eb); background: #fff; color: var(--tx2, #4b5563); cursor: pointer; transition: all .12s; }
+.metier-chip:hover { border-color: var(--pr); }
+.metier-chip.on { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.08); color: var(--pr); font-weight: 600; }
+.mc-zap { color: #E8950A; }
+.parcours { margin-top: 14px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 14px 16px; background: var(--input-bg, #f8f9fb); }
+.parcours-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.parcours-head strong { font-size: 15.5px; color: var(--tx, #1f2937); }
+.avenir-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 700; color: #B87A00; background: rgba(232,149,10,.12); padding: 3px 9px; border-radius: 20px; }
+.parcours-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0; }
+.pm-item { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--tx2, #4b5563); }
+.pm-item svg { color: var(--pr); }
+.parcours-steps { margin: 8px 0 10px; padding-left: 20px; display: flex; flex-direction: column; gap: 7px; }
+.parcours-steps li { font-size: 13.5px; color: var(--tx, #1f2937); line-height: 1.4; }
+.parcours-steps li::marker { color: var(--pr); font-weight: 700; }
+.parcours-note { display: flex; align-items: flex-start; gap: 6px; margin: 0 0 10px; font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.5; }
+.parcours-note svg { color: var(--pr); flex-shrink: 0; margin-top: 2px; }
+.parcours-block { margin-top: 8px; }
+.chip-alt { cursor: pointer; border: none; font-family: inherit; color: #6d28d9; background: rgba(139,92,246,.10); }
+.chip-alt:hover { background: rgba(139,92,246,.2); }
+.parcours-foot { margin-top: 10px; }
+.maj { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--tx3, #9098a6); }
+.disc-uncovered { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: rgba(var(--pr-rgb,21,88,176),.06); }
+.disc-uncovered svg { color: var(--pr); flex-shrink: 0; margin-top: 1px; }
+.disc-uncovered p { margin: 0; font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.5; }
+.disc-disclaimer { margin: 12px 0 0; font-size: 11.5px; color: var(--tx3, #9098a6); font-style: italic; line-height: 1.5; }
 
 @media (max-width: 640px) {
   .card { padding: 15px 16px; }
