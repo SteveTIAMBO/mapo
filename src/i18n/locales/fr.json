@@ -5379,7 +5379,8 @@
     "mcNewSubjectPh": "Nom de la nouvelle matière",
     "mcPhoto": "Prendre en photo",
     "mcPhotoOk": "Cours transcrit depuis la photo.",
-    "mcPhotoUnreadable": "Photo illisible — réessaie avec plus de lumière/netteté."
+    "mcPhotoUnreadable": "Photo illisible — réessaie avec plus de lumière/netteté.",
+    "mpCompRef": "Compétences fondées sur des référentiels reconnus (OCDE Boussole 2030, Forum économique mondial 2025). Le radar met en avant tes forces."
   },
   "cx": {
     "appTitle": "Espace complexe",

@@ -5379,7 +5379,8 @@
     "mcNewSubjectPh": "New subject name",
     "mcPhoto": "Take a photo",
     "mcPhotoOk": "Course transcribed from the photo.",
-    "mcPhotoUnreadable": "Photo unreadable — try again with more light/sharpness."
+    "mcPhotoUnreadable": "Photo unreadable — try again with more light/sharpness.",
+    "mpCompRef": "Skills grounded in recognised frameworks (OECD Learning Compass 2030, World Economic Forum 2025). The radar highlights your strengths."
   },
   "cx": {
     "appTitle": "Complex workspace",

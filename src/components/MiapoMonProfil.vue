@@ -9,7 +9,8 @@
     <div class="card">
       <div class="card-head"><Target :size="18" /><h3>{{ t('mia.mpCompetences') }}</h3></div>
       <template v-if="hasEval">
-        <Radar6C :scores="enfant.comp6c || {}" />
+        <Radar6C :scores="enfant.comp6c || {}" :keys="strongKeys" />
+        <p class="mp-ref"><Info :size="12" /> {{ t('mia.mpCompRef') }}</p>
         <div v-if="bilan" class="mp-bilan">
           <p v-if="bilan.synthese" class="mp-syn">{{ bilan.synthese }}</p>
           <div v-if="bilan.forces && bilan.forces.length" class="mp-block mp-forts">
@@ -53,13 +54,22 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import Radar6C from './Radar6C.vue'
 import MiapoOrbe from './MiapoOrbe.vue'
-import { Target, Heart, Sliders, Compass, Pencil, ThumbsUp, TrendingUp, Download } from 'lucide-vue-next'
+import { Target, Heart, Sliders, Compass, Pencil, ThumbsUp, TrendingUp, Download, Info } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 defineEmits(['export'])
 const { t } = useI18n({ useScope: 'global' })
 
 const hasEval = computed(() => !!(props.enfant && props.enfant.comp6c && Object.keys(props.enfant.comp6c).length >= 6))
+// On N'AFFICHE QUE les compétences qui correspondent FORTEMENT au profil (score
+// élevé) : le radar présente les forces « signature » de l'apprenant (≥ 3, au
+// moins 4 axes pour rester lisible), pas les 10 indicateurs bruts.
+const strongKeys = computed(() => {
+  const entries = Object.entries(props.enfant?.comp6c || {}).map(([k, v]) => [k, Number(v) || 0]).filter(([, v]) => v > 0)
+  const strong = entries.filter(([, v]) => v >= 3).map(([k]) => k)
+  if (strong.length >= 4) return strong
+  return entries.sort((a, b) => b[1] - a[1]).slice(0, Math.max(4, strong.length)).map(([k]) => k)
+})
 const bilan = computed(() => (props.enfant && props.enfant.comp6cBilan) || null)
 const interets = computed(() => (props.enfant && props.enfant.passions) || '')
 const metiers = computed(() => (props.enfant && props.enfant.metiersVises) || '')
@@ -76,6 +86,8 @@ function goto(tab) {
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }
 .card-head h3 { margin: 0; font-size: 15.5px; color: var(--tx, #1f2937); }
 .muted { color: var(--tx3, #6b7280); font-size: 13.5px; margin: 0 0 12px; }
+.mp-ref { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 11.5px; color: var(--tx3, #9098a6); line-height: 1.5; }
+.mp-ref svg { flex-shrink: 0; margin-top: 1px; }
 .mp-bilan { margin: 14px 0 4px; display: flex; flex-direction: column; gap: 14px; }
 .mp-syn { font-size: 14px; color: var(--tx, #1f2937); line-height: 1.6; margin: 0; text-align: justify; }
 .mp-lab { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 8px; }
