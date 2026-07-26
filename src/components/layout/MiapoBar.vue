@@ -5,8 +5,8 @@
       <button
         v-if="!isOpen"
         class="miapo-fab"
-        title="Demander à MIAPO (Ctrl+J)"
-        aria-label="Ouvrir MIAPO"
+        :title="t('mia.fabTitle')"
+        :aria-label="t('mia.fabAria')"
         @click="isOpen = true"
       >
         <MiapoOrbe :size="56" />
@@ -74,7 +74,7 @@
             <!-- MAPO+ (B2C) : chat pédagogique MIAPO ↔ apprenant -->
             <div v-if="isB2C" class="miapo-chat">
               <div v-if="!chatMsgs.length" class="miapo-examples">
-                <p class="miapo-welcome">{{ welcomeGreeting }}</p>
+                <p class="miapo-welcome"><DualText :text="welcomeGreeting" /></p>
                 <p class="miapo-examples-title">{{ t('mia.tryLabel') }}</p>
                 <button
                   v-for="(ex, i) in exemples"
@@ -82,7 +82,7 @@
                   class="miapo-example"
                   @click="runExample(ex)"
                 >
-                  <CornerDownRight :size="14" /> {{ ex }}
+                  <CornerDownRight :size="14" /> <DualText :text="ex" />
                 </button>
               </div>
               <template v-else>
@@ -112,7 +112,7 @@
 
             <!-- Exemples (état initial) -->
             <div v-else-if="step === 'idle'" class="miapo-examples">
-              <p class="miapo-examples-title">Essayez :</p>
+              <p class="miapo-examples-title">{{ t('mia.tryLabel') }}</p>
               <button
                 v-for="(ex, i) in exemples"
                 :key="i"
@@ -228,7 +228,8 @@ import { Sparkles, X, ArrowUp, ArrowRight, CornerDownRight, ShieldCheck, Globe, 
 import { createConversation, isSpeechSupported, isRecognitionSupported } from '../../services/voice'
 import { useI18n } from 'vue-i18n'
 import MiapoOrbe from '../MiapoOrbe.vue'
-import { useMiapoCopilotStore, resolveNavigation, EXEMPLES, EXEMPLES_B2C } from '../../stores/miapoCopilot'
+import DualText from '../DualText.vue'
+import { useMiapoCopilotStore, resolveNavigation } from '../../stores/miapoCopilot'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
 import { useElevesStore } from '../../stores/eleves'
@@ -249,7 +250,11 @@ const connecteurs = useConnecteursStore()
 // MAPO+ (B2C) : chat pédagogique orienté « apprenant » ; MAPO (ERP) : copilote de gestion.
 const isB2C = computed(() => authStore.isB2C)
 // MAPO+ (B2C) : exemples et invite orientés « apprenant » (pas la gestion d'école).
-const exemples = computed(() => (authStore.isB2C ? EXEMPLES_B2C : EXEMPLES))
+// Exemples localisés (i18n) : suivent la langue de l'UI (correctif : ils restaient
+// en français en anglais). Clés indexées → résolues par t() (réactif à la locale).
+const EX_B2C_KEYS = ['mia.exB2C1', 'mia.exB2C2', 'mia.exB2C3', 'mia.exB2C4', 'mia.exB2C5']
+const EX_ERP_KEYS = ['mia.exERP1', 'mia.exERP2', 'mia.exERP3', 'mia.exERP4', 'mia.exERP5', 'mia.exERP6', 'mia.exERP7']
+const exemples = computed(() => (authStore.isB2C ? EX_B2C_KEYS : EX_ERP_KEYS).map((k) => t(k)))
 const personnelStore = usePersonnelStore()
 const classesStore = useClassesStore()
 const elevesStore = useElevesStore()

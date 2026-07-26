@@ -5322,7 +5322,21 @@
     "remindOverdue": "Overdue: {n}",
     "remindReviseToday": "Review today: {sujet}",
     "remindOpen": "Open my planner",
-    "remindAllDone": "All caught up — keep it up!"
+    "remindAllDone": "All caught up — keep it up!",
+    "exB2C1": "Explain the Pythagorean theorem to me",
+    "exB2C2": "Create a maths revision plan for me",
+    "exB2C3": "Help me understand my biology homework",
+    "exB2C4": "Prepare an exercise on fractions for me",
+    "exB2C5": "What are my weak points to revise?",
+    "exERP1": "Show students with overdue payments",
+    "exERP2": "Which subjects does Jean Kamga teach?",
+    "exERP3": "Details for student Mbarga François",
+    "exERP4": "Prepare a maths assignment on fractions for 5ème",
+    "exERP5": "Show the 3ème A class",
+    "exERP6": "Draft an announcement for the cultural day on 11 February",
+    "exERP7": "Write a biology exam paper for 3ème",
+    "fabTitle": "Ask MIAPO (Ctrl+J)",
+    "fabAria": "Open MIAPO"
   },
   "cx": {
     "appTitle": "Complex workspace",

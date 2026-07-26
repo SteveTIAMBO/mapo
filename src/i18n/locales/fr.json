@@ -5322,7 +5322,21 @@
     "remindOverdue": "En retard : {n}",
     "remindReviseToday": "À réviser aujourd’hui : {sujet}",
     "remindOpen": "Voir mon planning",
-    "remindAllDone": "Tout est à jour, continue comme ça !"
+    "remindAllDone": "Tout est à jour, continue comme ça !",
+    "exB2C1": "Explique-moi le théorème de Pythagore",
+    "exB2C2": "Crée-moi un programme de révision pour les maths",
+    "exB2C3": "Aide-moi à comprendre mon devoir de SVT",
+    "exB2C4": "Prépare-moi un exercice sur les fractions",
+    "exB2C5": "Quels sont mes points faibles à réviser ?",
+    "exERP1": "Affiche les élèves en retard de paiement",
+    "exERP2": "Quelles matières enseigne Jean Kamga ?",
+    "exERP3": "Informations de l'élève Mbarga François",
+    "exERP4": "Prépare un devoir de maths sur les fractions pour la 5ème",
+    "exERP5": "Montre la classe de 3ème A",
+    "exERP6": "Prépare une communication sur la journée culturelle du 11 février",
+    "exERP7": "Rédige un sujet d'examen de SVT pour la 3ème",
+    "fabTitle": "Demander à MIAPO (Ctrl+J)",
+    "fabAria": "Ouvrir MIAPO"
   },
   "cx": {
     "appTitle": "Espace complexe",

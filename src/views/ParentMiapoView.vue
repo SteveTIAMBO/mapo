@@ -178,7 +178,7 @@
         <!-- ========== MES ENFANTS ========== -->
         <section v-else-if="section === 'enfants'" class="sec">
           <div class="card">
-            <div class="card-head"><Users :size="18" /><h3>{{ isApprenant ? t('mia.myProfileTitle') : t('mia.profilesTitle') }}</h3></div>
+            <div class="card-head"><Users :size="18" /><h3><DualText :text="isApprenant ? t('mia.myProfileTitle') : t('mia.profilesTitle')" /></h3></div>
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
                 <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'">{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</span>
@@ -192,7 +192,7 @@
 
           <!-- Notes -->
           <div class="card">
-            <div class="card-head"><FileText :size="18" /><h3>{{ isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName }) }}</h3></div>
+            <div class="card-head"><FileText :size="18" /><h3><DualText :text="isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName })" /></h3></div>
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}<span v-if="n.type" class="nr-type">{{ n.type }}</span></span>
@@ -271,7 +271,7 @@
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
-              <div class="card-head"><Target :size="18" /><h3>{{ isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent') }}</h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
+              <div class="card-head"><Target :size="18" /><h3><DualText :text="isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent')" /></h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
               <div class="weak-list">
                 <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && goRevise(w.matiere, w.themes)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
@@ -698,7 +698,7 @@
 
           <!-- Profil de l'ENFANT rattaché (ou de l'apprenant lui-même) — en dessous -->
           <div class="card">
-            <div class="card-head"><Settings :size="18" /><h3>{{ isApprenant ? t('mia.myProfile') : t('mia.childProfileOf', { name: activeEnfant.firstName }) }}</h3></div>
+            <div class="card-head"><Settings :size="18" /><h3><DualText :text="isApprenant ? t('mia.myProfile') : t('mia.childProfileOf', { name: activeEnfant.firstName })" /></h3></div>
             <div class="profil-photo">
               <span class="er-avatar pp-avatar" :class="profil.gender === 'F' ? 'av-f' : 'av-m'">
                 <img v-if="profil.photoURL" :src="profil.photoURL" alt="" />
