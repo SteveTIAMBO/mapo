@@ -489,6 +489,11 @@
           </template>
         </section>
 
+        <!-- ========== RÉCOMPENSES (badges) ========== -->
+        <section v-else-if="section === 'recompenses'" class="sec">
+          <MiapoRecompenses :student-id="activeEnfant?.id || 'me'" />
+        </section>
+
         <!-- ========== PROGRESSION ========== -->
         <section v-else-if="section === 'progression'" class="sec">
           <div class="card">
@@ -981,6 +986,7 @@ import MiapoMesCours from '../components/MiapoMesCours.vue'
 import MiapoInterets from '../components/MiapoInterets.vue'
 import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
+import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
@@ -1061,6 +1067,7 @@ const SECTIONS = computed(() => {
     { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
+    { key: 'recompenses', label: t('mia.secRewards'), icon: Trophy, group: 'apprendre' },
     { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },

@@ -5356,7 +5356,8 @@
     "humeurFace3": "Okay",
     "humeurFace4": "Good",
     "humeurFace5": "Great",
-    "secHelp": "Help & feedback"
+    "secHelp": "Help & feedback",
+    "secRewards": "Rewards"
   },
   "cx": {
     "appTitle": "Complex workspace",

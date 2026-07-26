@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { isMiapoTenant } from '../utils/tenantContext'
+import { enregistrerActivite } from '../utils/recompenses'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
 import { useAbonnementStore } from './abonnement'
@@ -269,6 +270,8 @@ export const useTuteurStore = defineStore('tuteur', () => {
     list.unshift(entry)
     const capped = list.slice(0, HISTORY_MAX)
     try { localStorage.setItem(HISTORY_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
+    // Récompenses : chaque révision archivée compte (total + série de jours).
+    try { enregistrerActivite(studentId, { format: session?.format || session?.mode || 'quiz' }) } catch { /* best-effort */ }
     revisionsVersion.value++
     const uid = cloudUid()
     if (uid) {
