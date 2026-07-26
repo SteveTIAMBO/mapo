@@ -676,6 +676,7 @@ function buildTutorQuizPrompts($d) {
   $count   = isset($d['nombre']) ? max(3, min(12, intval($d['nombre']))) : 10;
   $themes  = clean($d['themes'] ?? '', 6000);
   $cours   = clean($d['cours'] ?? '', 8000); // cours importé par l'élève (source prioritaire)
+  $digest  = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact (privé) de l'apprenant
   // Difficulté ADAPTATIVE SANS PLAFOND : plus l'apprenant réussit, plus ça se corse.
   $diff    = isset($d['difficulte']) ? max(1, intval($d['difficulte'])) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
@@ -703,11 +704,15 @@ function buildTutorQuizPrompts($d) {
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
     . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
     . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition.";
+  // Sous-RAG perso : personnalise le CONTEXTE (exemples, ton) sans jamais toucher
+  // à la difficulté (pilotée par le niveau adaptatif) ni recopier le profil.
+  if ($digest !== '') $system .= " PERSONNALISATION : un PROFIL de l'apprenant est fourni ci-dessous (forces, centres d'intérêt, forme du jour…). ANCRE le contexte et les exemples des questions dans ses centres d'intérêt, et adapte le TON pour le motiver — MAIS conserve EXACTEMENT le niveau de difficulté demandé plus haut, et ne cite JAMAIS le profil dans le texte des questions.";
 
   $u = "Matière : {$matiere}\n";
   if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
   $u .= "Nombre de questions : {$count}\n";
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
+  if ($digest !== '') $u .= "Profil de l'apprenant (ancrer les exemples et le ton — NE PAS recopier dans les questions) : {$digest}\n";
   if ($cours !== '') $u .= "\nCOURS DE L'ÉLÈVE (source PRIORITAIRE — tire les questions de ce contenu) :\n{$cours}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 
@@ -725,19 +730,23 @@ function buildDicteePrompts($d) {
   $matiere = clean($d['matiere'] ?? 'Français', 50);
   $niveau  = clean($d['niveau'] ?? '', 40);
   $cours   = clean($d['cours'] ?? '', 4000);
+  $digest  = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact (privé) de l'apprenant
   $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
   if ($langue === 'en') {
     $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a SHORT text (4 to 7 sentences) "
       . "suitable for the given level, with common spelling/grammar difficulties for that level (agreements, homophones, "
       . "verb endings). Keep sentences short and clear. If the learner's course material is provided, base the vocabulary on it. "
       . "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"phrases\":[\"sentence 1\",\"sentence 2\"]}.";
+    if ($digest !== '') $system .= " If a learner PROFILE is provided below (interests, level, today's form), pick a THEME the learner enjoys for the text and adapt sentence length to their level — while KEEPING the target spelling/grammar difficulties. Never copy the profile into the text.";
   } else {
     $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte COURT (4 à 7 phrases) "
       . "adapté au niveau indiqué, avec les difficultés d'orthographe/grammaire typiques de ce niveau (accords, homophones, "
       . "terminaisons de verbes). Phrases courtes et claires. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
       . "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"phrases\":[\"phrase 1\",\"phrase 2\"]}.";
+    if ($digest !== '') $system .= " Si un PROFIL de l'apprenant est fourni ci-dessous (centres d'intérêt, niveau, forme du jour), choisis un THÈME de texte qui lui plaît et adapte la longueur des phrases à son niveau — en GARDANT les difficultés d'orthographe/grammaire visées. Ne recopie jamais le profil dans le texte.";
   }
   $u = "Matière : {$matiere}\n" . ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
+  if ($digest !== '') $u .= "Profil de l'apprenant (choisir un thème qui lui plaît — ne pas recopier) : {$digest}\n";
   if ($cours !== '') $u .= "Cours de l'apprenant (vocabulaire de référence) :\n{$cours}\n";
   $u .= "\nGénère la dictée au format JSON demandé.";
   return [$system, $u, 900, true, null];

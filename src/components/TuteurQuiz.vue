@@ -182,6 +182,8 @@ import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { coursTexteMatiere } from '../utils/coursPerso'
+import { digestApprenant } from '../utils/digestApprenant'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -203,6 +205,10 @@ const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
 const { locale } = useI18n({ useScope: 'global' })
 const tuteur = useTuteurStore()
+const enfantsStore = useEnfantsAutonomesStore()
+// Sous-RAG perso (v1) : digest compact de l'apprenant, calculé au lancement et
+// réutilisé pour la génération du quiz ET l'explication de concept (même profil).
+const learnerDigest = ref('')
 
 // ── Mode Voix (professeur particulier vocal) ─────────────────────────
 // MIAPO lit la question + les choix, écoute la réponse (ou clic), et sur une
@@ -311,7 +317,7 @@ async function expliqueConcept() {
       ? `Explain, like a teacher giving a lesson, the concept needed to answer this ${props.matiere} question (level ${props.niveau || ''}): « ${c.q} ». Keep it to 2-3 simple sentences. Answer directly, with NO greeting or salutation (this is a mid-quiz hint, not a new conversation). DO NOT give the answer or the correct option — only help understand the concept.${exEn}`
       : `Explique, comme un professeur qui fait cours, le concept nécessaire pour répondre à cette question de ${props.matiere} (niveau ${props.niveau || ''}) : « ${c.q} ». En 2-3 phrases simples et vulgarisées. Réponds directement, SANS aucune salutation (surtout pas de « Bonjour » : c'est une aide en plein quiz, pas une nouvelle conversation). NE DONNE PAS la réponse ni la bonne option — aide seulement à comprendre le concept.${exFr}`
     try {
-      const r = await tuteur.chatTuteur({ message: prompt, niveau: props.niveau, matieres: props.matiere, langue: en ? 'en' : 'fr' })
+      const r = await tuteur.chatTuteur({ message: prompt, niveau: props.niveau, matieres: props.matiere, digest: learnerDigest.value, langue: en ? 'en' : 'fr' })
       txt = r && r.ok ? String(r.text || '').trim() : ''
       if (txt) conceptSet(c.q, txt)
     } catch { /* réseau/crédits → repli sur l'indice */ }
@@ -427,8 +433,17 @@ async function start() {
   if (props.studentId) await tuteur.syncFromCloud(props.studentId)
   // Niveau de difficulté courant (adaptatif) pour cet élève + cette matière.
   level.value = props.studentId ? tuteur.getLevel(props.studentId, subjectId.value) : 1
+  // Sous-RAG perso : digest de l'apprenant (forces, forme du jour, centres
+  // d'intérêt…) → questions ancrées sur ce qu'il aime, ton adapté. Le niveau de
+  // DIFFICULTÉ reste piloté par `level` (maîtrise) ; le digest ne le change pas.
+  let digest = ''
+  try {
+    const e = props.studentId ? enfantsStore.getEnfant(props.studentId) : null
+    if (e) digest = digestApprenant(e, tuteur.getAllRevisionStates(props.studentId) || {})
+  } catch { /* best-effort */ }
+  learnerDigest.value = digest
   // Priorité aux cours importés de la matière ; sinon référentiel national (serveur).
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value })
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest })
   if (res && res.reason === 'credits_epuises') { mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []

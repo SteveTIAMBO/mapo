@@ -88,6 +88,7 @@ import { useI18n } from 'vue-i18n'
 import { Ear, ChevronLeft, Loader2, Check, Info, FileText, Smartphone, Camera, Play, Pause, RotateCcw, SkipBack, SkipForward } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
 import { coursTexteMatiere } from '../utils/coursPerso'
+import { digestApprenant } from '../utils/digestApprenant'
 import { speak, stopSpeaking, isSpeaking, isSpeechSupported, warmUpVoices } from '../services/voice'
 
 const props = defineProps({ enfant: { type: Object, default: null }, matiere: { type: String, default: 'Français' } })
@@ -120,7 +121,11 @@ async function choisirMode(m) {
   err.value = ''
   try { warmUpVoices() } catch { /* no-op */ }
   const cours = props.enfant?.id ? coursTexteMatiere(props.enfant.id, props.matiere, 2000) : ''
-  const r = await tuteur.genererDictee({ matiere: props.matiere, niveau: niveau.value, cours, langue: en.value ? 'en' : 'fr' })
+  // Sous-RAG perso : le digest (niveau, centres d'intérêt, forme du jour…) permet
+  // d'ancrer le thème/vocabulaire de la dictée sur ce que l'apprenant aime.
+  let digest = ''
+  try { if (props.enfant) digest = digestApprenant(props.enfant, tuteur.getAllRevisionStates(props.enfant.id) || {}) } catch { /* best-effort */ }
+  const r = await tuteur.genererDictee({ matiere: props.matiere, niveau: niveau.value, cours, digest, langue: en.value ? 'en' : 'fr' })
   if (r.ok && r.phrases.length) {
     titre.value = r.titre; phrases.value = r.phrases; idx.value = 0; spoken.value = false
     step.value = 'session'

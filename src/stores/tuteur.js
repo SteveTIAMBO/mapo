@@ -113,7 +113,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @returns {Promise<{ok, questions, mode, reason}>}
    *   questions: [{ q, choices[4], answer, hint, explanation }]
    */
-  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '' }) {
+  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '', digest = '' }) {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
@@ -141,6 +141,12 @@ export const useTuteurStore = defineStore('tuteur', () => {
         return { ok: true, questions: fromBank, mode: 'banque', reason: '', source: 'referentiel' }
       }
     }
+    // Confidentialité + frugalité : le digest (profil PRIVÉ de l'apprenant) ne
+    // personnalise QUE les quiz déjà privés (thème ciblé OU cours importé). Sur le
+    // parcours générique (ni thème ni cours), le quiz reste neutre — c'est LUI qui
+    // alimente la banque PARTAGÉE (appendBankQuiz) ; y injecter un profil personnel
+    // ferait fuiter les centres d'intérêt d'un élève dans les quiz des autres.
+    const digestEff = (effThemes || cours) ? digest : ''
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -150,7 +156,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -475,7 +481,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * Génère une DICTÉE (titre + phrases courtes) à énoncer à voix haute côté client.
    * @returns {Promise<{ok, titre?:string, phrases?:string[], reason?}>}
    */
-  async function genererDictee({ matiere = 'Français', niveau = '', cours = '', langue = 'fr' }) {
+  async function genererDictee({ matiere = 'Français', niveau = '', cours = '', digest = '', langue = 'fr' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -483,7 +489,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, digest, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)

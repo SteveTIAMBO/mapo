@@ -393,7 +393,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, ecoleReliee, filiere, photoURL, formation, formationUrl, formationModules }) {
+  function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, ecoleReliee, matricule, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: localId('ea-'),
       firstName: (firstName || '').trim(),
@@ -405,6 +405,12 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       age: (age != null ? String(age) : '').trim(),  // âge (facultatif) → calibre la longueur des sessions
       ecole: (ecole || '').trim(),
       ecoleReliee: !!ecoleReliee,  // apprenant RÉELLEMENT rattaché à une école MAPO (cours profs, devoirs, examens)
+      // Matricule national de l'élève (« carte scolaire » — plateforme obligatoire
+      // du secondaire au Cameroun). Il SUIT l'élève d'un établissement à l'autre :
+      // c'est la CLÉ D'IDENTITÉ qui permettra de relier ce compte MAPO+ au dossier
+      // MAPO de son école (cours des profs, devoirs, notes, bulletins — #124) sans
+      // ambiguïté ni doublon. Vide tant que l'école ne l'a pas fourni.
+      matricule: (matricule || '').trim(),
       filiere: (filiere || '').trim(),                 // filière/spécialité (étudiant du supérieur)
       formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
       formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
@@ -439,7 +445,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'matricule', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     if ('objectifNote' in patch) {
