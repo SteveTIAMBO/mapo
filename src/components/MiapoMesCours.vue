@@ -5,9 +5,11 @@
       <div class="card-head"><FolderOpen :size="18" /><h3>{{ t('mia.mcTitle') }}</h3></div>
       <p class="muted">{{ t('mia.mcHint') }}</p>
       <div class="mc-row">
-        <select v-model="matiere" class="input">
+        <input v-if="newSubjectMode" v-model="newSubject" class="input" :placeholder="t('mia.mcNewSubjectPh')" @keydown.enter.prevent />
+        <select v-else v-model="matiere" class="input" @change="onMatiereChange">
           <option value="">{{ t('mia.chooseSubject') }}</option>
           <option v-for="m in matieres" :key="m" :value="m">{{ m }}</option>
+          <option value="__new__">＋ {{ t('mia.mcNewSubject') }}</option>
         </select>
         <input v-model="titre" class="input" :placeholder="t('mia.mcTitlePh')" />
       </div>
@@ -17,6 +19,10 @@
           <Upload :size="14" /> <span>{{ importing ? t('mia.mcImporting') : t('mia.mcImport') }}</span>
         </button>
         <input ref="fileInput" type="file" accept=".pdf,.txt,text/plain,application/pdf" class="hidden-file" @change="onFile" />
+        <button class="btn btn-outline btn-sm" :disabled="importing" @click="pickPhoto">
+          <Camera :size="14" /> <span>{{ t('mia.mcPhoto') }}</span>
+        </button>
+        <input ref="photoInput" type="file" accept="image/*" capture="environment" class="hidden-file" @change="onPhoto" />
         <span v-if="info" class="muted small mc-info">{{ info }}</span>
         <button class="btn btn-primary btn-sm mc-save" :disabled="!contenu.trim()" @click="save">
           <Plus :size="14" /> <span>{{ t('mia.mcSave') }}</span>
@@ -72,11 +78,13 @@ import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { listCoursPerso, addCoursPerso, removeCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
 import { useConnecteursStore } from '../stores/connecteurs'
-import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink, Link2 } from 'lucide-vue-next'
+import { useTuteurStore } from '../stores/tuteur'
+import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink, Link2, Camera } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
 const connecteurs = useConnecteursStore()
+const tuteur = useTuteurStore()
 
 // Périmètre Carré (dossier / mot-clé) à synchroniser vers le sous-RAG.
 const carreScope = ref('')
@@ -88,6 +96,8 @@ const niveau = computed(() => props.enfant?.niveau || '')
 const matieres = computed(() => matieresPourNiveau(niveau.value))
 
 const matiere = ref('')
+const newSubjectMode = ref(false) // saisie d'une nouvelle matière (hors liste)
+const newSubject = ref('')
 const titre = ref('')
 const contenu = ref('')
 const importing = ref(false)
@@ -95,9 +105,48 @@ const info = ref('')
 const fileInput = ref(null)
 const docs = ref([])
 
+// « + Nouvelle matière » dans le sélecteur → bascule en saisie libre.
+function onMatiereChange() {
+  if (matiere.value === '__new__') { matiere.value = ''; newSubject.value = ''; newSubjectMode.value = true }
+}
+// Matière effective : saisie libre si mode « nouvelle matière », sinon sélection.
+const matiereEffective = computed(() => (newSubjectMode.value ? newSubject.value.trim() : matiere.value))
+
 function refresh() { docs.value = listCoursPerso(enfantId.value) }
 onMounted(refresh)
 watch(enfantId, refresh)
+
+const photoInput = ref(null)
+function pickPhoto() { photoInput.value?.click() }
+// Photo d'un cours → transcription IA en texte (l'image n'est pas conservée ;
+// les données personnelles sont ignorées côté serveur).
+async function onPhoto(e) {
+  const file = e.target.files && e.target.files[0]
+  if (!file) return
+  importing.value = true; info.value = ''
+  try {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader()
+      r.onload = () => resolve(r.result)
+      r.onerror = reject
+      r.readAsDataURL(file)
+    })
+    const res = await tuteur.transcrireCours({ imageDataUrl: dataUrl, niveau: niveau.value })
+    if (res.ok && res.texte) {
+      contenu.value = contenu.value ? (contenu.value + '\n\n' + res.texte) : res.texte
+      info.value = t('mia.mcPhotoOk')
+    } else if (res.reason === 'annule') {
+      info.value = ''
+    } else {
+      info.value = res.reason === 'illisible' ? t('mia.mcPhotoUnreadable') : t('mia.mcImportError')
+    }
+  } catch {
+    info.value = t('mia.mcImportError')
+  } finally {
+    importing.value = false
+    if (photoInput.value) photoInput.value.value = ''
+  }
+}
 
 function pickFile() { fileInput.value?.click() }
 async function onFile(e) {
@@ -123,8 +172,8 @@ async function onFile(e) {
 
 function save() {
   if (!contenu.value.trim()) return
-  addCoursPerso(enfantId.value, { matiere: matiere.value, titre: titre.value, contenu: contenu.value })
-  matiere.value = ''; titre.value = ''; contenu.value = ''; info.value = ''
+  addCoursPerso(enfantId.value, { matiere: matiereEffective.value, titre: titre.value, contenu: contenu.value })
+  matiere.value = ''; newSubject.value = ''; newSubjectMode.value = false; titre.value = ''; contenu.value = ''; info.value = ''
   refresh()
 }
 function del(id) { removeCoursPerso(enfantId.value, id); refresh() }

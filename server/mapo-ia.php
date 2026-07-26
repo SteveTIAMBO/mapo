@@ -50,7 +50,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -111,6 +111,7 @@ if (!empty($r['ok'])) {
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
+  if ($task === 'vision_cours') return buildVisionCoursPrompts($d);
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
   if ($task === 'vision_bulletin') return buildVisionBulletinPrompts($d);
   if ($task === 'vision_edt') return buildVisionEdtPrompts($d);
@@ -543,6 +544,26 @@ function buildVisionPrompts($d) {
   // reasoning_effort:none pour éviter que le « raisonnement » Gemini ne
   // consomme le budget et tronque le JSON ; 1100 tokens suffisent largement.
   return [$system, $u, 1100, true, $img];
+}
+
+// ── Vision : TRANSCRIT une photo de COURS (manuel / cahier) en texte ──
+// Restitue fidèlement le contenu pédagogique, SANS données personnelles
+// (nom d'élève, numéro) : c'est un cours, pas une copie. Sert « Mes cours ».
+function buildVisionCoursPrompts($d) {
+  $niveau = clean($d['niveau'] ?? '', 40);
+  $img = (string) ($d['image'] ?? '');
+  if ($img !== '' && strpos($img, 'data:') !== 0) {
+    $img = 'data:image/jpeg;base64,' . $img;
+  }
+  $system = "Tu transcris FIDÈLEMENT en texte le contenu pédagogique d'une photo "
+    . "(page de manuel, de cours ou de cahier). Restitue tel quel : titres, définitions, "
+    . "formules, listes, exemples — en texte clair et structuré (sauts de ligne conservés). "
+    . "N'invente RIEN, n'ajoute aucun commentaire ni correction. "
+    . "IMPORTANT : ne recopie AUCUNE donnée personnelle (nom d'élève, numéro, établissement) — ignore-les. "
+    . "Si la photo n'est pas un cours lisible, réponds EXACTEMENT : (illisible).";
+  $u = ($niveau !== '' ? "Niveau / classe : " . $niveau . "\n" : '')
+    . "Transcris en texte le cours visible sur la photo.";
+  return [$system, $u, 1600, true, $img];
 }
 
 // ── Vision : numérise un REGISTRE de classe (liste d'élèves) → JSON ────

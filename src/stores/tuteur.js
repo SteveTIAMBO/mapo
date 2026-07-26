@@ -466,6 +466,36 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
+   * Transcrit en TEXTE une photo de cours (page de manuel / cahier) pour l'ajouter
+   * au dépôt « Mes cours ». Le backend ignore les données personnelles (nom, n°) :
+   * seule la matière pédagogique est restituée. L'image n'est pas conservée.
+   * @returns {Promise<{ok, texte?:string, reason?}>}
+   */
+  async function transcrireCours({ imageDataUrl, niveau = '' }) {
+    if (typeof window !== 'undefined' && typeof window.confirm === 'function' &&
+        !window.confirm("La photo va être transcrite en texte par l'IA pour l'ajouter à tes cours. L'image n'est pas conservée. Confirmer l'envoi ?")) {
+      return { ok: false, reason: 'annule' }
+    }
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ metered: mtrB2C(), task: 'vision_cours', data: { image: imageDataUrl, niveau } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      const txt = json && json.ok && json.text ? String(json.text).trim() : ''
+      if (txt && !/^\(illisible\)$/i.test(txt)) return { ok: true, texte: txt }
+      return { ok: false, reason: txt ? 'illisible' : ((json && (json.detail || json.error)) || 'vision_failed') }
+    } catch (e) {
+      return { ok: false, reason: 'network' }
+    }
+  }
+
+  /**
    * Évalue une réponse RÉDIGÉE (question ouverte). Sépare le FOND (la matière)
    * de la FORME (orthographe/grammaire) : un devoir d'histoire renseigne aussi
    * sur le niveau de français, sans jamais pénaliser le fond pour des fautes.
@@ -811,7 +841,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })
 

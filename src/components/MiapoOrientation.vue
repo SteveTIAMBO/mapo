@@ -16,7 +16,7 @@
     <div class="card step-card">
       <div class="step-head">
         <span class="step-num">1</span>
-        <h3>{{ tOri('oriProfileOf', { name: enfant.firstName }) }} <span class="six-c">{{ t('mia.ori6cBadge') }}</span></h3>
+        <h3>{{ tOri('oriProfileOf', { name: enfant.firstName }) }}</h3>
         <span v-if="hasEval && !editing" class="done-pill"><Check :size="13" /> {{ t('mia.oriEvaluated') }}</span>
       </div>
 

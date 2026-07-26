@@ -291,14 +291,17 @@
             <div v-if="isApprenant" class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3><DualText :text="t('mia.rtReviseTitle')" /></h3></div>
               <p class="muted">{{ needsModules ? t('mia.noModulesTutorHint') : t('mia.rtReviseHint') }}</p>
-              <button type="button" class="import-cta" @click="ouvrirMesCours"><FolderOpen :size="16" /> <span>{{ t('mia.rtImportCourses') }}</span></button>
               <div v-if="needsModules" class="modules-empty">
                 <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
               </div>
               <template v-else>
                 <div class="revise-pick">
-                  <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ t('mia.chooseModule') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
-                  <button class="btn btn-outline btn-sm" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
+                  <select v-model="reviseMatiere" class="input" @change="onReviseMatiereChange">
+                    <option value="" disabled>{{ t('mia.chooseModule') }}</option>
+                    <option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option>
+                    <option value="__import__">＋ {{ t('mia.rtImportNewCourse') }}</option>
+                  </select>
+                  <button class="btn btn-outline btn-sm" :disabled="!reviseMatiere || reviseMatiere === '__import__'" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
                 </div>
                 <template v-if="reviseMatiere">
                   <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
@@ -1596,6 +1599,10 @@ const activeRedaction = ref('')
 watch(reviseMatiere, () => { activeRedaction.value = '' })
 // Renvoie vers le menu « Cours » (import de cours / documents + Carré).
 function ouvrirMesCours() { section.value = 'cours'; menuOpen.value = false }
+// Option « + Importer un nouveau cours » du sélecteur de matière → ouvre Cours.
+function onReviseMatiereChange() {
+  if (reviseMatiere.value === '__import__') { reviseMatiere.value = ''; ouvrirMesCours() }
+}
 function launchRevision(typeKey) {
   const m = reviseMatiere.value
   if (!isApprenant.value || !m) return
@@ -2731,7 +2738,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
     position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; height: 100dvh;
     width: 268px; max-width: 84vw;
     transform: translateX(-100%); transition: transform .26s ease;
-    z-index: 60; background: var(--card, #fff);
+    z-index: 60; background: #fff; /* opaque : le menu doit rester lisible (pas de translucide --card) */
     border-right: 1px solid var(--bd, #e5e7eb);
     box-shadow: 0 18px 44px rgba(0, 0, 0, .22); align-self: auto;
   }
