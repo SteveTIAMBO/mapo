@@ -637,7 +637,8 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     addNote(id, 'Français', 14)
     addNote(id, 'Anglais', 11)
     addNote(id, 'SVT', 9)
-    setComp6c(id, { creativite: 4, esprit_critique: 3, communication: 4, cooperation: 4, courage: 3, confiance: 3 })
+    // Profil sur le référentiel élargi à 10 compétences (WEF 2025 + OCDE 2030).
+    setComp6c(id, { creativite: 4, esprit_critique: 3, communication: 4, cooperation: 4, courage: 3, confiance: 3, resilience: 4, curiosite: 5, motivation: 3, responsabilite: 4 })
     // Cours importés « tests » (comme si Awa les avait ajoutés) → tous les modules
     // de révision fonctionnent, et le quiz peut tirer ses questions de ces cours.
     try {
@@ -647,26 +648,6 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* best-effort démo */ }
     // Historique d'activité → badges/récompenses visibles (démo).
     try { for (let i = 0; i < 12; i++) enregistrerActivite(id, { format: i % 3 === 0 ? 'chat' : 'quiz' }) } catch { /* best-effort */ }
-
-    // 2e enfant : RATTACHÉ à une école MAPO démo → montre la différence (cours des
-    // profs, devoirs par matière, examens à venir). ecoleReliee = true.
-    const id2 = addEnfant({ firstName: 'Junior', lastName: 'Nkeng', gender: 'M', niveau: '3ème', pays: 'CM', ecole: 'Collège Bilingue La Réussite', ecoleReliee: true })
-    addNote(id2, 'Mathématiques', 12)
-    addNote(id2, 'Français', 10)
-    addNote(id2, 'Physique-Chimie', 13)
-    addNote(id2, 'SVT', 11)
-    addNote(id2, 'Histoire-Géographie', 14)
-    setComp6c(id2, { creativite: 3, esprit_critique: 4, communication: 3, cooperation: 3, courage: 4, confiance: 4 })
-    try { for (let i = 0; i < 6; i++) enregistrerActivite(id2, { format: 'quiz' }) } catch { /* best-effort */ }
-    // Examens à venir (école reliée) : contrôle continu + compositions + BEPC blanc.
-    try {
-      const soon = (days) => { const d = new Date(); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10) }
-      localStorage.setItem('mapo_b2c_exams_' + id2, JSON.stringify([
-        { id: 'xd1', label: 'Contrôle continu — Mathématiques', date: soon(8), official: false, key: '' },
-        { id: 'xd2', label: 'Composition du 2ᵉ trimestre', date: soon(23), official: false, key: '' },
-        { id: 'xd3', label: 'BEPC blanc', date: soon(46), official: false, key: '' },
-      ]))
-    } catch { /* best-effort */ }
   }
 
   // Démo : (re)pose un profil UNIQUE cohérent avec le point de vue choisi sur

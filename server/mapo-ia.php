@@ -672,17 +672,21 @@ function buildTutorQuizPrompts($d) {
   $count   = isset($d['nombre']) ? max(3, min(12, intval($d['nombre']))) : 10;
   $themes  = clean($d['themes'] ?? '', 6000);
   $cours   = clean($d['cours'] ?? '', 8000); // cours importé par l'élève (source prioritaire)
-  $diff    = isset($d['difficulte']) ? max(1, min(5, intval($d['difficulte']))) : 1;
+  // Difficulté ADAPTATIVE SANS PLAFOND : plus l'apprenant réussit, plus ça se corse.
+  $diff    = isset($d['difficulte']) ? max(1, intval($d['difficulte'])) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
 
-  // Difficulté ADAPTATIVE : l'élève progresse, on monte le niveau d'exigence.
-  $diffDesc = [
+  $diffTable = [
     1 => "Niveau 1 (découverte) : questions simples sur les définitions et les bases, une seule notion par question.",
     2 => "Niveau 2 (application directe) : application d'une règle/formule connue sur des cas simples.",
     3 => "Niveau 3 (intermédiaire) : questions de compréhension qui combinent deux notions, distracteurs plausibles.",
     4 => "Niveau 4 (avancé) : raisonnement en plusieurs étapes, pièges classiques, exige de la rigueur.",
     5 => "Niveau 5 (expert) : problèmes exigeants type examen, analyse fine, distracteurs très proches de la bonne réponse.",
-  ][$diff];
+  ];
+  // Au-delà de 5 : on continue de monter l'exigence (type concours/olympiade).
+  $diffDesc = $diff <= 5 ? $diffTable[$diff]
+    : "Niveau {$diff} (expert confirmé, au-delà de l'examen) : problèmes très exigeants de type concours/olympiade, "
+    . "raisonnement en plusieurs étapes, cas limites et distracteurs extrêmement proches ; monte encore d'un cran l'exigence par rapport au niveau 5.";
 
   $system = "Tu es un tuteur pédagogique francophone bienveillant et rigoureux qui fait PROGRESSER l'élève dans la durée. {$contexte} "
     . "Tu crées un quiz de révision de {$count} questions à choix multiple sur la matière demandée, adapté au niveau de classe ET au niveau de difficulté indiqué. "

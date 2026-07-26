@@ -228,8 +228,9 @@ export const useTuteurStore = defineStore('tuteur', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  // Niveau de difficulté adaptatif : 1 (bases) → 5 (exigeant).
-  const MAX_LEVEL = 5
+  // Niveau de difficulté adaptatif : 1 (bases) → SANS PLAFOND. Plus l'apprenant
+  // révise et réussit, plus le challenge monte (la difficulté se corse à chaque cran).
+  const MAX_LEVEL = 0 // 0 = pas de plafond
 
   /** Enregistre le résultat d'un quiz et planifie la prochaine révision. */
   function recordResult(studentId, subjectId, subjectName, scorePercent) {
@@ -240,7 +241,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const mastery = Math.round(prev.attempts ? prev.mastery * 0.5 + scorePercent * 0.5 : scorePercent)
     // Difficulté ADAPTATIVE : on réussit bien → on monte ; on bute → on consolide.
     let level = prevLevel
-    if (scorePercent >= 80) level = Math.min(MAX_LEVEL, prevLevel + 1)
+    if (scorePercent >= 80) level = prevLevel + 1 // pas de plafond : le niveau monte tant qu'on réussit
     else if (scorePercent < 50) level = Math.max(1, prevLevel - 1)
     const levelChange = level - prevLevel // +1 monté, -1 redescendu, 0 stable
     // Intervalle selon le score : faible → revoir vite, fort → espacer

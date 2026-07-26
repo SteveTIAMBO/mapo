@@ -5180,7 +5180,7 @@
     "exSeePlanning": "Voir mon planning",
     "exEmpty": "Aucun examen pour l'instant. Ajoute-en un ci-dessous.",
     "exLabelPh": "Nom de l'examen (ex. Bac blanc)",
-    "exMethodAI": "Voir une méthode détaillée (IA)",
+    "exMethodAI": "Comment réviser cet examen ? (plan détaillé)",
     "exPast": "passé",
     "exToday": "aujourd'hui",
     "exOff_brevet": "Brevet (DNB)",
@@ -5380,7 +5380,8 @@
     "mcPhoto": "Prendre en photo",
     "mcPhotoOk": "Cours transcrit depuis la photo.",
     "mcPhotoUnreadable": "Photo illisible — réessaie avec plus de lumière/netteté.",
-    "mpCompRef": "Compétences fondées sur des référentiels reconnus (OCDE Boussole 2030, Forum économique mondial 2025). Le radar met en avant tes forces."
+    "mpCompRef": "Compétences fondées sur des référentiels reconnus (OCDE Boussole 2030, Forum économique mondial 2025). Le radar met en avant tes forces.",
+    "back": "Retour"
   },
   "cx": {
     "appTitle": "Espace complexe",

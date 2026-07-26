@@ -5180,7 +5180,7 @@
     "exSeePlanning": "See my planning",
     "exEmpty": "No exams yet. Add one below.",
     "exLabelPh": "Exam name (e.g. mock exam)",
-    "exMethodAI": "See a detailed method (AI)",
+    "exMethodAI": "How to revise for this exam? (detailed plan)",
     "exPast": "past",
     "exToday": "today",
     "exOff_brevet": "Brevet (DNB)",
@@ -5380,7 +5380,8 @@
     "mcPhoto": "Take a photo",
     "mcPhotoOk": "Course transcribed from the photo.",
     "mcPhotoUnreadable": "Photo unreadable — try again with more light/sharpness.",
-    "mpCompRef": "Skills grounded in recognised frameworks (OECD Learning Compass 2030, World Economic Forum 2025). The radar highlights your strengths."
+    "mpCompRef": "Skills grounded in recognised frameworks (OECD Learning Compass 2030, World Economic Forum 2025). The radar highlights your strengths.",
+    "back": "Back"
   },
   "cx": {
     "appTitle": "Complex workspace",

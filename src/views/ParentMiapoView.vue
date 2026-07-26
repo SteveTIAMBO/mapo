@@ -304,15 +304,22 @@
                   <button class="btn btn-outline btn-sm" :disabled="!reviseMatiere || reviseMatiere === '__import__'" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.addToMyReviews') }}</span></button>
                 </div>
                 <template v-if="reviseMatiere">
-                  <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
-                  <div class="rt-grid">
-                    <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
-                      <span class="rt-ic"><component :is="RT_ICONS[rt.icon]" :size="18" /></span>
-                      <span class="rt-tx"><strong>{{ t('mia.rt_' + rt.key) }}</strong><small>{{ t('mia.rth_' + rt.key) }}</small></span>
-                    </button>
+                  <!-- Choix du type de révision (masqué dès qu'un module est lancé) -->
+                  <template v-if="!activeRedaction && !activeDictee">
+                    <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
+                    <div class="rt-grid">
+                      <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
+                        <span class="rt-ic"><component :is="RT_ICONS[rt.icon]" :size="18" /></span>
+                        <span class="rt-tx"><strong>{{ t('mia.rt_' + rt.key) }}</strong><small>{{ t('mia.rth_' + rt.key) }}</small></span>
+                      </button>
+                    </div>
+                  </template>
+                  <!-- Module lancé : bouton retour au choix -->
+                  <div v-else class="rt-active">
+                    <button type="button" class="rt-back" @click="activeRedaction = ''; activeDictee = ''"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
+                    <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
+                    <MiapoDictee v-if="activeDictee" :key="'dic-' + activeDictee" :enfant="activeEnfant" :matiere="activeDictee" @quit="activeDictee = ''" />
                   </div>
-                  <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
-                  <MiapoDictee v-if="activeDictee" :key="'dic-' + activeDictee" :enfant="activeEnfant" :matiere="activeDictee" @quit="activeDictee = ''" />
                 </template>
               </template>
               <p v-if="revisionDemandee" class="muted small saved-ok">{{ t('mia.addedToReview', { subject: revisionDemandee }) }}</p>
@@ -398,6 +405,7 @@
 
         <!-- ========== FICHES + FLASHCARDS ========== -->
         <section v-else-if="section === 'fiches'" class="sec">
+          <button type="button" class="rt-back" @click="section = 'tuteur'"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
           <MiapoFiches :enfant="activeEnfant" />
         </section>
 
@@ -512,8 +520,8 @@
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
-                <span class="prog-dots"><span v-for="i in 5" :key="i" class="dot" :class="{ on: i <= p.level }"></span></span>
-                <span class="prog-lv">{{ t('mia.levShort', { n: p.level }) }}</span>
+                <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, (p.level % 5 || 5) * 20) + '%' }"></span></span>
+                <span class="prog-lv"><Flame :size="13" /> {{ t('mia.levelN', { n: p.level }) }}</span>
               </div>
             </div>
             <p v-else class="muted">{{ isApprenant ? t('mia.progEmptyLearner') : t('mia.progEmptyParent') }} <button class="lnk" @click="section = 'tuteur'">{{ t('mia.tutorWord') }}</button> {{ t('mia.progEmptyTail') }}</p>
@@ -997,7 +1005,7 @@ import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, LifeBuoy } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, LifeBuoy } from 'lucide-vue-next'
 import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
@@ -1047,6 +1055,15 @@ function estClasseExamen(niveau) {
   const n = niveau || ''
   return n === 'CM2' || n === '3ème' || /^(1ère|Tle)/.test(n)
 }
+// L'orientation (métiers & parcours) n'a de sens qu'À PARTIR DE LA 3ème : 3ème,
+// second cycle (2nde/1ère/Tle), supérieur, ou formation hors-catalogue. En dessous
+// (primaire, 6e/5e/4e) on ne l'affiche pas.
+function estClasseOrientation(e) {
+  if (!e) return false
+  if (e.cycle === 'superieur' || e.niveau === NIVEAU_HORS_CATALOGUE) return true
+  const n = String(e.niveau || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  return /(^|[^0-9])3e|3eme|seconde|2nde|2de|1ere|1re|premiere|terminale|\btle\b/.test(n)
+}
 const SECTIONS = computed(() => {
   const home = { key: 'accueil', label: t('mia.secHome'), icon: Home } // sans groupe (en tête)
   const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp, group: 'suivi' }
@@ -1078,7 +1095,7 @@ const SECTIONS = computed(() => {
     { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
-    orient,
+    ...(estClasseOrientation(activeEnfant.value) ? [orient] : []),
     ...usageItems, ...billingItems,
   ]
 })
@@ -1231,22 +1248,29 @@ function exporterBilan() {
 
 // ── Export PDF de « Mon profil » (radar 6C + forces/à renforcer + badges) ──
 function radarSvgProfil(scores) {
-  const cx = 150, cy = 116, R = 74
-  const ang = (i) => (-90 + i * 60) * Math.PI / 180
-  const sc = (i) => Math.max(0, Math.min(5, Number(scores?.[COMPETENCES_6C[i].key] || 0)))
+  const cx = 160, cy = 128, R = 78
+  // On n'affiche que les compétences FORTES (comme Mon profil) : évite un radar à
+  // 10 axes illisible. Angle DYNAMIQUE (360/N) → plus de superposition.
+  const entries = Object.entries(scores || {}).map(([k, v]) => [k, Number(v) || 0]).filter(([, v]) => v > 0)
+  let keys = entries.filter(([, v]) => v >= 3).map(([k]) => k)
+  if (keys.length < 4) keys = entries.sort((a, b) => b[1] - a[1]).slice(0, Math.max(4, keys.length)).map(([k]) => k)
+  const comps = COMPETENCES_6C.filter((c) => keys.includes(c.key))
+  const N = comps.length || 1
+  const ang = (i) => (-90 + i * (360 / N)) * Math.PI / 180
+  const sc = (i) => Math.max(0, Math.min(5, Number(scores?.[comps[i].key] || 0)))
   const vtx = (i, s) => ({ x: cx + (s / 5) * R * Math.cos(ang(i)), y: cy + (s / 5) * R * Math.sin(ang(i)) })
-  const poly = (s) => COMPETENCES_6C.map((_, i) => { const p = vtx(i, s); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')
+  const poly = (s) => comps.map((_, i) => { const p = vtx(i, s); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')
   const rings = [1, 2, 3, 4, 5].map((r) => `<polygon points="${poly(r)}" fill="none" stroke="#e5e7eb" stroke-width="1"/>`).join('')
-  const axes = COMPETENCES_6C.map((_, i) => { const p = vtx(i, 5); return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>` }).join('')
-  const area = `<polygon points="${COMPETENCES_6C.map((_, i) => { const p = vtx(i, sc(i)); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')}" fill="rgba(124,58,237,.16)" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>`
+  const axes = comps.map((_, i) => { const p = vtx(i, 5); return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="#e5e7eb" stroke-width="1"/>` }).join('')
+  const area = `<polygon points="${comps.map((_, i) => { const p = vtx(i, sc(i)); return `${p.x.toFixed(1)},${p.y.toFixed(1)}` }).join(' ')}" fill="rgba(124,58,237,.16)" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>`
   const en = locale.value.startsWith('en')
-  const labels = COMPETENCES_6C.map((c, i) => {
+  const labels = comps.map((c, i) => {
     const a = ang(i), r = R + 18, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a) + 3.5
     const cos = Math.cos(a), anchor = cos > 0.3 ? 'start' : cos < -0.3 ? 'end' : 'middle'
-    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-size="9.5" font-weight="600" fill="#4b5563">${(en ? (c.label_en || c.label) : c.label)}</text>`
+    return `<text x="${x.toFixed(1)}" y="${y.toFixed(1)}" text-anchor="${anchor}" font-size="9" font-weight="600" fill="#4b5563">${(en ? (c.label_en || c.label) : c.label)}</text>`
   }).join('')
-  const dots = COMPETENCES_6C.map((_, i) => { const p = vtx(i, sc(i)); return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="#7c3aed"/>` }).join('')
-  return `<svg viewBox="-30 0 360 244" width="340" xmlns="http://www.w3.org/2000/svg">${rings}${axes}${area}${dots}${labels}</svg>`
+  const dots = comps.map((_, i) => { const p = vtx(i, sc(i)); return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2" fill="#7c3aed"/>` }).join('')
+  return `<svg viewBox="-40 0 400 268" width="360" xmlns="http://www.w3.org/2000/svg">${rings}${axes}${area}${dots}${labels}</svg>`
 }
 function exporterProfil() {
   const e = activeEnfant.value
@@ -2576,14 +2600,19 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .rt-tx strong { font-size: 14px; color: var(--tx, #1f2937); }
 .rt-tx small { font-size: 11.5px; line-height: 1.35; color: var(--tx3, #6b7280); }
 @media (max-width: 560px) { .rt-grid { grid-template-columns: 1fr; } }
+.rt-active { margin-top: 12px; }
+.rt-back { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 12px -4px; padding: 5px 10px; border: none; background: none; color: var(--tx3, #6b7280); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 8px; }
+.rt-back:hover { background: var(--input-bg, #f1f3f5); color: var(--tx, #1f2937); }
 .modules-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 2px; }
 .modules-empty .muted { margin: 0; }
 
 .prog-list { display: flex; flex-direction: column; gap: 12px; }
 .prog-row { display: flex; align-items: center; gap: 12px; }
 .prog-mat { flex: 1; font-size: 14px; color: var(--tx); }
-.prog-dots { display: flex; gap: 5px; } .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--input-bg, #e6e9ee); } .dot.on { background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); }
-.prog-lv { font-size: 12px; font-weight: 700; color: var(--pr); width: 52px; text-align: right; }
+.prog-bar { flex: 0 0 90px; height: 8px; border-radius: 6px; background: var(--input-bg, #e6e9ee); overflow: hidden; }
+.prog-bar-fill { display: block; height: 100%; border-radius: 6px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); }
+.prog-lv { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--pr); min-width: 64px; justify-content: flex-end; }
+.prog-lv svg { color: #E8950A; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }

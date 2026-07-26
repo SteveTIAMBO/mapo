@@ -26,7 +26,7 @@
       <div class="tq-top">
         <div>
           <span class="tq-subject">{{ matiere }}</span>
-          <span v-if="studentId" class="tq-level" :title="`Difficulté adaptative — niveau ${level} sur 5`">Niveau {{ level }}/5</span>
+          <span v-if="studentId" class="tq-level" :title="`Difficulté adaptative — sans plafond`">Niveau {{ level }}</span>
           <span class="tq-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
         </div>
         <div class="tq-top-right">
@@ -564,14 +564,12 @@ const levelFb = computed(() => {
   const r = lastResult.value
   if (!r) return { tone: 'stable', icon: Target, text: '' }
   if (r.levelChange > 0) {
-    return r.level >= r.maxLevel
-      ? { tone: 'up', icon: Trophy, text: `Niveau maximum atteint (${r.level}/5) — tu maîtrises, bravo !` }
-      : { tone: 'up', icon: ArrowUpRight, text: `Niveau supérieur débloqué ! Tu passes au niveau ${r.level}/5.` }
+    return { tone: 'up', icon: ArrowUpRight, text: `Niveau supérieur débloqué ! Tu passes au niveau ${r.level}. Ça se corse — bravo !` }
   }
   if (r.levelChange < 0) {
-    return { tone: 'down', icon: TrendingDown, text: `On consolide : retour au niveau ${r.level}/5 pour bien ancrer les bases.` }
+    return { tone: 'down', icon: TrendingDown, text: `On consolide : retour au niveau ${r.level} pour bien ancrer les bases.` }
   }
-  return { tone: 'stable', icon: Target, text: `Niveau ${r.level}/5 maintenu. Trouve les réponses du premier coup pour débloquer le niveau suivant.` }
+  return { tone: 'stable', icon: Target, text: `Niveau ${r.level} maintenu. Trouve les réponses du premier coup pour monter d'un cran.` }
 })
 const ringStyle = computed(() => {
   const s = masteryPercent.value
