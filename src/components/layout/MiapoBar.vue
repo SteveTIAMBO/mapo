@@ -240,6 +240,7 @@ import { useAuthStore } from '../../stores/auth'
 import { useTuteurStore } from '../../stores/tuteur'
 import { useEnfantsAutonomesStore, matieresPourNiveau } from '../../stores/enfantsAutonomes'
 import { coursTexteTous } from '../../utils/coursPerso'
+import { digestApprenant } from '../../utils/digestApprenant'
 import { useConnecteursStore } from '../../stores/connecteurs'
 
 const router = useRouter()
@@ -787,6 +788,13 @@ async function submitB2C(text, opts = {}) {
   const perso = ctx.id ? coursTexteTous(ctx.id, 4000) : ''
   const carre = await connecteurs.carreNotesText().catch(() => '')
   const cours = [perso, carre].filter(Boolean).join('\n\n').slice(0, 6000)
+  // Sous-RAG perso (v1) : digest de l'apprenant (profil, niveaux, forces, forme…)
+  // → MIAPO adapte langage et pédagogie. Le vrai prénom n'y figure jamais.
+  let digest = ''
+  try {
+    const eDig = ctx.id ? enfantsStore.enfants.find((x) => x.id === ctx.id) : null
+    if (eDig) digest = digestApprenant(eDig, tuteur.getAllRevisionStates(ctx.id) || {})
+  } catch { /* best-effort */ }
   const r = await tuteur.chatTuteur({
     message: text,
     niveau: ctx.niveau,
@@ -796,6 +804,7 @@ async function submitB2C(text, opts = {}) {
     internet: internet.value,
     prenom: realPrenom ? NAME_TOKEN : '',
     interets: ctx.interets,
+    digest,
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
   })
   chatThinking.value = false

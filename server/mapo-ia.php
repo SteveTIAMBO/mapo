@@ -196,6 +196,7 @@ function buildTuteurChatPrompts($d) {
   $niveau   = clean($d['niveau'] ?? '', 40);
   $matieres = clean($d['matieres'] ?? '', 600);
   $cours    = clean($d['cours'] ?? '', 6000);
+  $digest   = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact de l'apprenant
   $historique = clean($d['historique'] ?? '', 3000);
   $internet = !empty($d['internet']);
   // Prénom : reçu sous forme de jeton [PRENOM] (le vrai prénom ne quitte pas le
@@ -219,8 +220,9 @@ function buildTuteurChatPrompts($d) {
     if ($prenom !== '') $system .= "The learner's first name is represented by the token {$prenom} — use it AS-IS, sparingly, for warmth/encouragement (NOT as a greeting), without overusing it. ";
     if ($interets !== '') $system .= "When it helps, ANCHOR your examples in what the learner enjoys ({$interets}) to make concepts concrete and meaningful — without forcing it. ";
     $system .= "IMPORTANT: greet (say 'Hello') ONLY on the very first message. If a 'Recent conversation' section appears below, NEVER greet again and do not write 'Hello' — continue straight to the substance. ";
+    $system .= "If a LEARNER PROFILE is provided below (strengths, subjects, today's form, recent difficulty…), ADAPT your language, examples, pace and pedagogy to it — WITHOUT quoting the profile back to the learner. ";
     $system .= "Answer in plain text (no JSON, no markdown code fences).";
-    $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message";
+    $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message"; $prof = 'Learner profile (adapt to it)';
     $none = 'unspecified';
   } else {
     $system = "Tu es MIAPO, un tuteur pédagogique bienveillant pour un apprenant (élève, étudiant ou adulte en formation). "
@@ -236,13 +238,15 @@ function buildTuteurChatPrompts($d) {
     if ($prenom !== '') $system .= "Le prénom de l'apprenant est représenté par le jeton {$prenom} — emploie-le TEL QUEL, avec parcimonie, pour la chaleur/l'encouragement (PAS comme une salutation), sans en abuser. ";
     if ($interets !== '') $system .= "Quand c'est utile, ANCRE tes exemples dans ce que l'apprenant aime ({$interets}) pour rendre les concepts concrets et parlants — sans forcer. ";
     $system .= "IMPORTANT : ne dis « Bonjour » qu'au TOUT PREMIER message. Si une section « Conversation récente » figure ci-dessous, NE RESALUE JAMAIS et n'écris pas « Bonjour » — enchaîne directement sur le fond. ";
+    $system .= "Si un PROFIL de l'apprenant est fourni ci-dessous (forces, matières, forme du jour, ressenti récent…), ADAPTE ton langage, tes exemples, ton rythme et ta pédagogie à ce profil — SANS le citer explicitement à l'apprenant. ";
     $system .= "Réponds en texte simple (pas de JSON, pas de barrières de code markdown).";
-    $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant";
+    $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant"; $prof = "Profil de l'apprenant (adapte-toi)";
     $none = 'non précisé';
   }
 
   $u  = "{$lvl} : " . ($niveau !== '' ? $niveau : $none) . "\n";
   if ($matieres !== '') $u .= "{$subj} : {$matieres}\n";
+  if ($digest !== '')   $u .= "{$prof} : {$digest}\n";
   if ($cours !== '')    $u .= "{$crs} :\n{$cours}\n";
   if ($historique !== '') $u .= "\n{$hist} :\n{$historique}\n";
   $u .= "\n{$msg} : \"{$message}\"";
