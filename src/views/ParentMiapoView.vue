@@ -2076,13 +2076,15 @@ onUnmounted(() => {
 .nav-group-head {
   display: flex; align-items: center; justify-content: space-between; width: 100%;
   padding: 10px 12px 5px; margin-top: 3px; border: none; background: none; cursor: pointer;
-  font-family: inherit; font-size: 11px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase; color: var(--tx3, #9098a6); text-align: left;
+  font-family: inherit; font-size: 11.5px; font-weight: 800; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--tx, #1f2937); text-align: left;
 }
-.nav-group-head:hover { color: var(--tx2, #4b5563); }
+.nav-group-head:hover { color: var(--pr, #1558B0); }
 .nav-group-chev { transition: transform .18s; flex-shrink: 0; color: var(--tx3, #9098a6); }
 .nav-group-chev.open { transform: rotate(90deg); }
 .nav-group-items { display: flex; flex-direction: column; gap: 3px; }
+/* Sous-menus légèrement indentés pour bien montrer la hiérarchie. */
+.nav-group-items .nav-item { padding-left: 22px; }
 .volet.collapsed .nav-group-head { display: none; }
 /* Profil + Déconnexion groupés en bas du volet (Profil juste au-dessus). */
 .volet-bottom { margin-top: auto; display: flex; flex-direction: column; gap: 3px; }
