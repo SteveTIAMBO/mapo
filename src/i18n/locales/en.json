@@ -144,7 +144,9 @@
     "settingsTitle": "Settings & subscription",
     "settingsBody": "Profile, language, notifications and your plan live here.",
     "finalTitle": "You're all set",
-    "finalBody": "You know the essentials. Happy studying with MIAPO!"
+    "finalBody": "You know the essentials. Happy studying with MIAPO!",
+    "helpTitle": "A problem or an idea?",
+    "helpBody": "In Settings → Help & feedback you'll find the guide, the FAQ, and above all a form to report a bug or suggest an improvement. Please use it — every message helps us make MIAPO better."
   },
   "miaForm": {
     "title": "Set up your programme",
@@ -5353,7 +5355,8 @@
     "humeurFace2": "Meh",
     "humeurFace3": "Okay",
     "humeurFace4": "Good",
-    "humeurFace5": "Great"
+    "humeurFace5": "Great",
+    "secHelp": "Help & feedback"
   },
   "cx": {
     "appTitle": "Complex workspace",

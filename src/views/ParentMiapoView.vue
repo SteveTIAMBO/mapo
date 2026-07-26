@@ -651,6 +651,11 @@
             <MiapoAccessibilite />
           </div>
 
+          <!-- Sous-menu : Aide & feedbacks (manuel, FAQ, bug, idée) -->
+          <div v-show="sousSection === 'aide'" class="param-panel">
+            <MiapoAide />
+          </div>
+
           <!-- Sous-menu : Centres d'intérêt — apprenant uniquement -->
           <div v-if="isApprenant" v-show="sousSection === 'interets'" class="param-panel">
             <MiapoInterets :enfant="activeEnfant" />
@@ -975,12 +980,13 @@ import MiapoPlanning from '../components/MiapoPlanning.vue'
 import MiapoMesCours from '../components/MiapoMesCours.vue'
 import MiapoInterets from '../components/MiapoInterets.vue'
 import MiapoHumeur from '../components/MiapoHumeur.vue'
+import MiapoAide from '../components/MiapoAide.vue'
 import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, LifeBuoy } from 'lucide-vue-next'
 import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
@@ -1104,6 +1110,8 @@ const sousMenus = computed(() => {
   if (!isApprenant.value) items.push({ key: 'enfants', label: t('mia.secMyChildren'), icon: Users })
   items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
   items.push({ key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility })
+  // « Aide & feedbacks » — manuel, FAQ, signalement de bug, demande de fonctionnalité.
+  items.push({ key: 'aide', label: t('mia.secHelp'), icon: LifeBuoy })
   return items
 })
 // Menu hamburger coulissant (mobile) — piloté par le bouton ⊞ de l'en-tête (AppLayout)
@@ -1310,6 +1318,8 @@ const tourSteps = computed(() => {
   }
   s.push({ target: '[data-tour=agenda]', title: t('miaTour.agendaTitle'), body: t('miaTour.agendaBody') })
   s.push({ target: '[data-tour=settings]', title: t('miaTour.settingsTitle'), body: t('miaTour.settingsBody') })
+  // IMPORTANT : on pointe l'apprenant vers Aide & feedbacks (manuel, FAQ, bug).
+  s.push({ target: '[data-tour=settings]', title: t('miaTour.helpTitle'), body: t('miaTour.helpBody') })
   s.push({ title: t('miaTour.finalTitle'), body: t('miaTour.finalBody') })
   return s
 })

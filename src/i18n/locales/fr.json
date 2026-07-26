@@ -144,7 +144,9 @@
     "settingsTitle": "Réglages & abonnement",
     "settingsBody": "Profil, langue, notifications et ton offre se trouvent ici.",
     "finalTitle": "À toi de jouer",
-    "finalBody": "Tu connais l'essentiel. Bonne révision avec MIAPO !"
+    "finalBody": "Tu connais l'essentiel. Bonne révision avec MIAPO !",
+    "helpTitle": "Un souci, une idée ?",
+    "helpBody": "Dans Paramètres → Aide & feedbacks, tu trouves le manuel, la FAQ, et surtout un formulaire pour nous signaler un bug ou proposer une amélioration. N'hésite pas : chaque retour nous aide à améliorer MIAPO."
   },
   "miaForm": {
     "title": "Configure ta formation",
@@ -5353,7 +5355,8 @@
     "humeurFace2": "Bof",
     "humeurFace3": "Ça va",
     "humeurFace4": "Bien",
-    "humeurFace5": "Au top"
+    "humeurFace5": "Au top",
+    "secHelp": "Aide & feedbacks"
   },
   "cx": {
     "appTitle": "Espace complexe",
