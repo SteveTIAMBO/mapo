@@ -59,15 +59,10 @@
           <Settings :size="18" /><span class="nav-lbl">{{ t('mia.secSettings') }}<small v-if="lang2.enabled && lang2.tr(t('mia.secSettings'))" class="nav-lbl2" dir="auto">{{ lang2.tr(t('mia.secSettings')) }}</small></span>
         </button>
       </nav>
-      <!-- Pied FIXE (façon HUB) : Carré (app distincte, discret) + profil + déconnexion. -->
+      <!-- Pied FIXE (façon HUB) : profil + déconnexion. Carré n'est plus ici :
+           il vit dans le menu « Cours » (carte Carré : relier + ouvrir l'app). -->
       <div class="volet-bottom">
         <MiapoInstall />
-        <!-- Carré : app distincte de l'écosystème — discret, juste au-dessus du profil (pas un item de menu). -->
-        <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="volet-carre" :title="t('mia.carreOpen')">
-          <span class="carre-badge sm"><span>C</span></span>
-          <span class="volet-carre-name">Carré</span>
-          <ExternalLink :size="13" class="volet-carre-ext" />
-        </a>
         <div class="volet-user-row">
           <button type="button" class="volet-user" :class="{ active: section === 'profil' }" @click="section = 'profil'; menuOpen = false" :title="t('mia.secSettings')">
             <span class="volet-user-av">{{ headerInitials }}</span>
@@ -826,7 +821,7 @@
         <p class="aside-sub">{{ t('mia.weekAgendaSub') }}</p>
         <div v-if="serie > 0" class="agenda-serie"><Flame :size="13" /> {{ t('mia.seanceStreak', { n: serie }) }}</div>
         <div class="agenda-days">
-          <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today, done: d.status === 'done' }">
+          <div v-for="d in planHebdo" :key="d.key" class="agenda-day" :class="{ today: d.today, done: d.status === 'done', past: d.past }">
             <div class="dy-date"><span class="dy-dow">{{ d.label }}</span><span class="dy-num">{{ d.date }}</span></div>
             <div class="dy-body">
               <button v-if="d.matiere && isApprenant" class="dy-exo" @click="goRevise(d.matiere)"><Sparkles :size="12" /> {{ d.matiere }}</button>
@@ -957,6 +952,7 @@ import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
+import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
 
@@ -1107,8 +1103,15 @@ function onB2CAction(e) {
   switch (action) {
     case 'quiz': {
       if (isApprenant.value) {
-        const m = b2cMatchMatiere(query)
-        if (m) { goRevise(m); return }       // lance directement le quiz sur la matière détectée
+        // Matière explicite (« quiz de maths ») OU inférée depuis un thème
+        // (« quiz sur les fractions » → Mathématiques). Le thème (« fractions »)
+        // est transmis pour cibler le quiz, sans fabriquer de fausse matière.
+        const theme = extractTheme(query)
+        const m = b2cMatchMatiere(query) || inferMatiereFromTopic(query, matieresList.value)
+        if (m) { goRevise(m, theme || undefined); return } // lance le quiz (ciblé sur le thème)
+        // Thème non rattachable à une matière connue : on ouvre le tuteur avec le
+        // thème pré-rempli, l'apprenant n'a plus qu'à choisir la matière.
+        pendingTheme.value = theme
         section.value = 'tuteur'
       } else section.value = 'enfants'
       return
@@ -1434,6 +1437,9 @@ watch(() => activeEnfant.value?.pays, (p) => abo.refreshDevise(p || ''), { immed
 
 const quizMatiere = ref('')
 const reviseMatiere = ref('')
+// Thème en attente (« quiz sur les fractions » sans matière rattachable) : appliqué
+// au prochain quiz lancé depuis le sélecteur, puis effacé.
+const pendingTheme = ref('')
 // Types de révision proposés pour la matière choisie — dépend de la matière
 // (pas de dictée en maths…). Logique fondée sur les sciences cognitives :
 // cf. src/utils/revisionTypes.js.
@@ -1449,8 +1455,9 @@ function launchRevision(typeKey) {
   if (!isApprenant.value || !m) return
   activeRedaction.value = ''
   const niveau = activeEnfant.value?.niveau || ''
+  const theme = pendingTheme.value; pendingTheme.value = '' // thème « quiz sur les fractions » consommé une seule fois
   switch (typeKey) {
-    case 'quiz': goRevise(m); return                    // QCM de récupération
+    case 'quiz': goRevise(m, theme || undefined); return // QCM de récupération
     case 'flashcards': section.value = 'fiches'; return // fiche + cartes mémoire
     case 'redaction': activeRedaction.value = m; return // production écrite corrigée
     default: {
@@ -1662,25 +1669,29 @@ const rappels = computed(() => {
   return { due, late, revision, hasAny: due > 0 || late > 0 }
 })
 
-// ── Agenda de révision de la semaine : le tuteur propose 1 sujet à réviser par
-// jour ouvré, à partir des points faibles de l'apprenant (week-end = repos). ──
-function _startOfWeek(d) { const x = new Date(d); const dow = (x.getDay() + 6) % 7; x.setDate(x.getDate() - dow); x.setHours(0, 0, 0, 0); return x }
+// ── Agenda de révision : fenêtre GLISSANTE centrée sur aujourd'hui — 3 jours
+// avant, aujourd'hui, 3 jours après (7 jours). Le tuteur propose 1 sujet à
+// réviser par jour ouvré, à partir des points faibles ; week-end = repos. ──
 function _sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate() }
 const planHebdo = computed(() => {
   const jours = [t('mia.dowMon'), t('mia.dowTue'), t('mia.dowWed'), t('mia.dowThu'), t('mia.dowFri'), t('mia.dowSat'), t('mia.dowSun')]
   const mats = (aReviser.value.length ? aReviser.value.map((w) => w.matiere) : matieresList.value).filter(Boolean)
-  const monday = _startOfWeek(new Date())
-  const today = new Date()
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const start = new Date(today); start.setDate(today.getDate() - 3) // 3 jours avant aujourd'hui
   const e = activeEnfant.value
   const out = []
   for (let i = 0; i < 7; i++) {
-    const dt = new Date(monday); dt.setDate(monday.getDate() + i)
-    const weekend = i >= 5
+    const dt = new Date(start); dt.setDate(start.getDate() + i)
+    const isoDow = (dt.getDay() + 6) % 7          // Lun=0 … Dim=6 (indépendant de la locale)
+    const weekend = isoDow >= 5                    // samedi / dimanche = repos
     const jour = jourISO(dt)
     const s = e ? store.getSeance(e.id, jour) : null
+    // Le sujet est rattaché au JOUR de la semaine (stable) et non à l'index de la
+    // fenêtre, pour ne pas « glisser » d'un jour à l'autre au fil du temps.
     out.push({
-      key: i, label: jours[i], date: dt.getDate(), today: _sameDay(dt, today), jour,
-      matiere: (!weekend && mats.length) ? mats[i % mats.length] : null,
+      key: jour, label: jours[isoDow], date: dt.getDate(),
+      today: _sameDay(dt, today), past: dt < today, jour,
+      matiere: (!weekend && mats.length) ? mats[isoDow % mats.length] : null,
       status: s ? s.status : 'todo',
     })
   }
@@ -2162,11 +2173,10 @@ onUnmounted(() => {
   position: sticky; top: 0; z-index: 20;
   display: flex; align-items: center; gap: 12px;
   padding: 13px 26px;
-  /* Même teinte que le menu latéral (qui laisse voir --bg), mais légèrement
-     translucide pour laisser deviner le contenu qui défile en dessous. */
-  background: rgba(var(--bg-rgb, 238, 240, 246), 0.72);
-  backdrop-filter: saturate(150%) blur(16px);
-  -webkit-backdrop-filter: saturate(150%) blur(16px);
+  /* EXACTEMENT la couleur du menu latéral : le volet est transparent et laisse
+     voir --bg ; l'en-tête (barre sœur, pas de contenu qui défile dessous) prend
+     donc le même --bg PLEIN, sans translucidité ni flou (design hub). */
+  background: var(--bg, #EEF0F6);
   border-bottom: 1px solid var(--bd, #e8e9ef);
 }
 .mtb-burger { display: none; border: none; background: none; color: #40444f; cursor: pointer; padding: 4px; margin: -2px 2px -2px -4px; }
@@ -2224,6 +2234,8 @@ onUnmounted(() => {
 .agenda-days { display: flex; flex-direction: column; gap: 5px; }
 .agenda-day { display: flex; gap: 11px; align-items: center; padding: 6px 7px; border-radius: 10px; }
 .agenda-day.today { background: rgba(var(--pr-rgb,21,88,176),.08); }
+/* Jours passés (fenêtre glissante) : estompés, en retrait visuel. */
+.agenda-day.past:not(.today) { opacity: .5; }
 .dy-date { display: flex; flex-direction: column; align-items: center; width: 32px; flex-shrink: 0; }
 .dy-dow { font-size: 10px; color: var(--tx3); text-transform: uppercase; letter-spacing: .03em; }
 .dy-num { font-size: 15px; font-weight: 700; color: var(--tx); line-height: 1.1; }

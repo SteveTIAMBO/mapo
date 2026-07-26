@@ -40,7 +40,8 @@
       <p class="mc-priv"><ShieldCheck :size="13" /> {{ t('mia.mcPrivacy') }}</p>
     </div>
 
-    <!-- Carré : notes de cours comme source du sous-RAG (périmètre choisi). -->
+    <!-- Carré : notes de cours comme source du sous-RAG (périmètre choisi).
+         L'app Carré (sœur de l'écosystème) s'ouvre depuis ici — plus dans le menu. -->
     <div class="card">
       <div class="card-head"><span class="mc-carre-badge">C</span><h3>{{ t('mia.mcCarreTitle') }}</h3></div>
       <template v-if="connecteurs.carreConnected">
@@ -48,11 +49,17 @@
         <label class="int-label">{{ t('mia.mcCarreScope') }}</label>
         <input v-model="carreScope" class="input mc-scope" :placeholder="t('mia.mcCarreScopePh')" @change="saveScope" />
         <p class="muted small mc-scope-note">{{ t('mia.mcCarreScopeNote') }}</p>
-        <button class="btn btn-ghost btn-sm" @click="connecteurs.disconnectCarre()">{{ t('mia.carreDisconnect') }}</button>
+        <div class="mc-carre-actions">
+          <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><ExternalLink :size="15" /> <span>{{ t('mia.carreOpen') }}</span></a>
+          <button class="btn btn-ghost btn-sm" @click="connecteurs.disconnectCarre()">{{ t('mia.carreDisconnect') }}</button>
+        </div>
       </template>
       <template v-else>
         <p class="muted">{{ t('mia.mcCarreOff') }}</p>
-        <button class="btn btn-outline btn-sm" @click="connecteurs.connectCarre()"><ExternalLink :size="15" /> <span>{{ t('mia.carreConnect') }}</span></button>
+        <div class="mc-carre-actions">
+          <button class="btn btn-primary btn-sm" @click="connecteurs.connectCarre()"><Link2 :size="15" /> <span>{{ t('mia.carreConnect') }}</span></button>
+          <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><ExternalLink :size="15" /> <span>{{ t('mia.carreOpen') }}</span></a>
+        </div>
       </template>
     </div>
   </div>
@@ -65,7 +72,7 @@ import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { listCoursPerso, addCoursPerso, removeCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
 import { useConnecteursStore } from '../stores/connecteurs'
-import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink } from 'lucide-vue-next'
+import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink, Link2 } from 'lucide-vue-next'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -154,4 +161,6 @@ function fmt(iso) {
 .int-label { display: block; font-size: 13px; font-weight: 700; color: var(--tx, #1f2937); margin: 10px 0 6px; }
 .mc-scope { width: 100%; max-width: 340px; }
 .mc-scope-note { margin: 6px 0 12px; }
+.mc-carre-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mc-carre-actions .btn { text-decoration: none; }
 </style>

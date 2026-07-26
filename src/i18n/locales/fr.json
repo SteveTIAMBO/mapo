@@ -67,7 +67,6 @@
       "complexe": "Complexe",
       "etudiant": "Étudiant"
     },
-    "forgotPassword": "Mot de passe oublié ?",
     "sendLink": "Envoyer le lien",
     "backToSignIn": "← Retour à la connexion",
     "roleParentHint": "Vous ajouterez le compte de votre enfant une fois connecté.",
@@ -4876,7 +4875,7 @@
     "collapseMenu": "Réduire le menu",
     "expandMenu": "Agrandir le menu",
     "weekAgenda": "Agenda de révision",
-    "weekAgendaSub": "Les révisions proposées par MIAPO cette semaine.",
+    "weekAgendaSub": "Autour d'aujourd'hui : les 3 jours avant et 3 jours après.",
     "restDay": "Repos",
     "myAgenda": "Mon agenda",
     "myAgendaSub": "Connectez Google Agenda ou Outlook pour voir vos rendez-vous ici.",
