@@ -86,3 +86,37 @@ export function enregistrerSeance(sid, rec) {
 export function historiqueSeances(sid) {
   try { return JSON.parse(localStorage.getItem(SKEY(sid)) || '[]') } catch { return [] }
 }
+
+// ── Mini-feedback post-révision (throttlé ~1× / 2 jours) ─────────────────────
+// Après une séance, on demande (rarement) le RESSENTI de difficulté de
+// l'apprenant : « trop facile / juste bien / trop dur ». Complète le score caché
+// par le point de vue subjectif, utile pour calibrer difficulté et longueur.
+const FKEY = (sid) => `mapo_b2c_feedback_v1_${sid || 'me'}`
+const FEEDBACK_THROTTLE_MS = 2 * 24 * 3600 * 1000 // 2 jours
+
+function loadFeedback(sid) {
+  try { return JSON.parse(localStorage.getItem(FKEY(sid)) || '{}') } catch { return {} }
+}
+// Peut-on montrer la carte de feedback ? (jamais montrée, ou > 2 jours).
+export function peutDemanderFeedback(sid) {
+  const f = loadFeedback(sid)
+  if (!f || !f.lastShownAt) return true
+  return (Date.now() - new Date(f.lastShownAt).getTime()) >= FEEDBACK_THROTTLE_MS
+}
+// Marque la carte comme montrée maintenant (démarre le throttle même si ignorée).
+export function marquerFeedbackMontre(sid) {
+  const f = loadFeedback(sid)
+  f.lastShownAt = new Date().toISOString()
+  try { localStorage.setItem(FKEY(sid), JSON.stringify(f)) } catch { /* quota */ }
+}
+// Enregistre le ressenti ('facile' | 'bien' | 'dur') + le sujet.
+export function enregistrerFeedback(sid, value, subject) {
+  const f = loadFeedback(sid)
+  f.lastShownAt = new Date().toISOString()
+  f.lastValue = value
+  f.log = Array.isArray(f.log) ? f.log : []
+  f.log.unshift({ v: value, subject: subject || '', at: f.lastShownAt })
+  f.log = f.log.slice(0, 60)
+  try { localStorage.setItem(FKEY(sid), JSON.stringify(f)) } catch { /* quota */ }
+}
+export function historiqueFeedback(sid) { return loadFeedback(sid).log || [] }

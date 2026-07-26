@@ -39,7 +39,24 @@
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
 
-      <h2 class="tq-q">{{ current.q }}</h2>
+      <div class="tq-qrow">
+        <h2 class="tq-q">{{ current.q }}</h2>
+        <button type="button" class="tq-info" :class="{ on: showCourse }"
+          :title="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
+          :aria-label="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
+          @click="showCourse = !showCourse">
+          <Info :size="17" />
+        </button>
+      </div>
+
+      <!-- Relire le cours (sans la réponse) : cours perso de la matière + point-clé -->
+      <div v-if="showCourse" class="tq-course">
+        <div class="tq-course-head"><BookOpen :size="15" /> <strong>{{ locale.startsWith('en') ? 'Review the lesson' : 'Relire le cours' }}</strong></div>
+        <p v-if="current.hint" class="tq-course-key">{{ current.hint }}</p>
+        <div v-if="coursMatiere" class="tq-course-body">{{ coursMatiere }}</div>
+        <p v-else class="tq-course-empty">{{ locale.startsWith('en') ? 'No lesson imported for this subject yet — import your courses to re-read them here.' : 'Aucun cours importé pour cette matière — importe tes cours pour les relire ici.' }}</p>
+      </div>
+
       <div class="tq-choices">
         <button v-for="(c, i) in current.choices" :key="i" class="tq-choice" :class="choiceClass(i)"
           :disabled="revealed || wrongSet.has(i)" @click="select(i)">
@@ -121,6 +138,19 @@
         <ul><li v-for="(r, i) in recap" :key="i" :class="{ missed: r.missed }">{{ r.point }}</li></ul>
       </details>
 
+      <!-- Mini-carte de feedback (throttlée ~1×/2 jours) : ressenti de difficulté. -->
+      <div v-if="showFeedback" class="tq-feedback">
+        <template v-if="!feedbackGiven">
+          <p class="tq-fbk-q">{{ locale.startsWith('en') ? 'How was this session for you?' : 'Comment as-tu trouvé cette séance ?' }}</p>
+          <div class="tq-fbk-opts">
+            <button v-for="o in feedbackOptions" :key="o.v" type="button" class="tq-fbk-btn" @click="chooseFeedback(o.v)">
+              <span class="tq-fbk-emo">{{ o.emo }}</span> <span>{{ o.label }}</span>
+            </button>
+          </div>
+        </template>
+        <p v-else class="tq-fbk-thanks"><Check :size="15" /> {{ locale.startsWith('en') ? 'Thanks, that helps me adjust!' : 'Merci, ça m\'aide à ajuster !' }}</p>
+      </div>
+
       <div class="tq-actions center">
         <button v-if="lastResult" class="btn-primary" @click="start">
           <ArrowUpRight v-if="lastResult.levelChange > 0" :size="16" /><RefreshCw v-else :size="16" />
@@ -137,10 +167,11 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw } from 'lucide-vue-next'
+import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
-import { enregistrerSeance } from '../utils/humeur'
+import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
+import { coursTexteMatiere } from '../utils/coursPerso'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -303,6 +334,10 @@ const index = ref(0)
 // Horodatage de début de séance (pour durée + temps moyen/question → signal de
 // forme, corrélé plus tard avec l'humeur ; jamais montré à l'apprenant).
 const startedAt = ref(0)
+// « i » par question : relire la section du cours SANS révéler la réponse.
+// Source : cours perso importé de la matière (+ le point-clé/indice de la question).
+const showCourse = ref(false)
+const coursMatiere = computed(() => coursTexteMatiere(props.studentId, props.matiere, 4000))
 const lastMode = computed(() => tuteur.lastMode)
 
 const subjectId = computed(() => 'auto-' + props.matiere)
@@ -314,12 +349,16 @@ const revealed = ref(false)
 const firstTry = ref(false)
 const attempts = ref(0)
 const wrongSet = ref(new Set())
-const flags = ref([])
+// Note GRADUÉE par question (cachée à l'apprenant) : 1er coup = 1 ; 2e coup = 0.5 ;
+// non trouvé = 0. Elle sert au score de MAÎTRISE qui pilote la progression
+// (montée/descente de niveau), sans jamais afficher le détail des points.
+const qGrade = ref(0)
+const grades = ref([])
 
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
 // Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
-watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; if (mode.value === 'quiz') readQuestion() })
+watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; showCourse.value = false; if (mode.value === 'quiz') readQuestion() })
 // 1re erreur → indice seulement. L'explication du concept n'arrive que si
 // l'apprenant clique « Approfondir » après avoir vu la bonne réponse.
 // Révélation : bonne réponse → félicitation (+ enchaîne en mode session) ;
@@ -361,7 +400,7 @@ async function start() {
   if (props.presetQuestions && props.presetQuestions.length) {
     if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
     questions.value = props.presetQuestions
-    index.value = 0; flags.value = []; resetQ(); startedAt.value = Date.now(); mode.value = 'quiz'
+    index.value = 0; grades.value = []; resetQ(); startedAt.value = Date.now(); mode.value = 'quiz'
     return
   }
   // Récupère le suivi durable (Firestore) pour les vrais comptes avant de jouer.
@@ -373,14 +412,14 @@ async function start() {
   questions.value = res.questions || []
   if (!questions.value.length) { mode.value = 'result'; return }
   index.value = 0
-  flags.value = []
+  grades.value = []
   resetQ()
   startedAt.value = Date.now()
   mode.value = 'quiz'
 }
 
 function resetQ() {
-  phase.value = 'answering'; revealed.value = false; firstTry.value = false
+  phase.value = 'answering'; revealed.value = false; firstTry.value = false; qGrade.value = 0
   attempts.value = 0; wrongSet.value = new Set()
 }
 
@@ -388,10 +427,12 @@ function select(i) {
   if (revealed.value) return
   if (i === current.value.answer) {
     revealed.value = true; phase.value = 'revealed'; firstTry.value = attempts.value === 0
+    // Trouvé : 1 point au 1er coup, 0.5 au 2e (note graduée cachée).
+    qGrade.value = attempts.value === 0 ? 1 : 0.5
   } else {
     attempts.value++
     const ws = new Set(wrongSet.value); ws.add(i); wrongSet.value = ws
-    if (attempts.value >= 2) { revealed.value = true; phase.value = 'revealed'; firstTry.value = false }
+    if (attempts.value >= 2) { revealed.value = true; phase.value = 'revealed'; firstTry.value = false; qGrade.value = 0 }
     else phase.value = 'hinted'
   }
 }
@@ -401,24 +442,36 @@ function choiceClass(i) {
   return ''
 }
 function next() {
-  flags.value[index.value] = firstTry.value
+  grades.value[index.value] = qGrade.value
   if (index.value + 1 < questions.value.length) { index.value++; resetQ() }
   else finish()
 }
 
-const correctCount = computed(() => flags.value.filter(Boolean).length)
+// AFFICHÉ : nombre de bonnes réponses (trouvées, même au 2e coup) sur le total,
+// et le % correspondant. On n'expose JAMAIS la pondération 1er/2e coup.
+const correctCount = computed(() => grades.value.filter((g) => g > 0).length)
 const scorePercent = computed(() => questions.value.length ? Math.round(correctCount.value / questions.value.length * 100) : 0)
+// CACHÉ : score de MAÎTRISE pondéré (1er coup = 1, 2e = 0.5, raté = 0). C'est LUI
+// qui pilote la progression (montée/descente de niveau) — jamais affiché.
+const masteryPercent = computed(() => {
+  const n = questions.value.length
+  if (!n) return 0
+  const sum = grades.value.reduce((a, g) => a + (Number(g) || 0), 0)
+  return Math.round(sum / n * 100)
+})
+const firstTryCount = computed(() => grades.value.filter((g) => g === 1).length)
 // Récapitulatif des concepts de la session (0 token : issu des questions). Les
-// concepts ratés (pas trouvés du 1er coup) sont mis en avant → carte de révision
-// rapide, surtout au passage de niveau.
+// concepts pas trouvés DU 1ER COUP sont mis en avant → carte de révision rapide.
 const recap = computed(() => questions.value
-  .map((q, i) => ({ point: String((q && (q.explanation || q.q)) || '').trim(), missed: flags.value[i] !== true }))
+  .map((q, i) => ({ point: String((q && (q.explanation || q.q)) || '').trim(), missed: (grades.value[i] || 0) < 1 }))
   .filter((r) => r.point))
 const recapMissed = computed(() => recap.value.filter((r) => r.missed))
 
 function finish() {
+  // La PROGRESSION est pilotée par le score de MAÎTRISE pondéré (caché), pas par
+  // le simple taux de bonnes réponses : trouver du 1er coup fait vraiment monter.
   lastResult.value = props.studentId
-    ? tuteur.recordResult(props.studentId, subjectId.value, props.matiere, scorePercent.value)
+    ? tuteur.recordResult(props.studentId, subjectId.value, props.matiere, masteryPercent.value)
     : null
   // Archive la session (questions incluses) → rejouable depuis l'Historique sans
   // régénérer (économie de tokens) et nourrit la priorisation des faiblesses.
@@ -428,7 +481,9 @@ function finish() {
         subjectId: subjectId.value,
         subjectName: props.matiere,
         mode: 'quiz',
-        scorePercent: scorePercent.value,
+        scorePercent: scorePercent.value, // AFFICHÉ : taux de bonnes réponses
+        mastery: masteryPercent.value,    // CACHÉ : maîtrise pondérée (progression)
+        firstTry: firstTryCount.value,
         total: questions.value.length,
         correct: correctCount.value,
         questions: questions.value,
@@ -436,18 +491,37 @@ function finish() {
       })
     } catch (e) { /* archivage best-effort */ }
     // Signal de forme (séance terminée) : durée, temps moyen/question, humeur.
+    // On journalise la MAÎTRISE (signal interne, jamais montré).
     const total = questions.value.length
     const durationMs = startedAt.value ? Date.now() - startedAt.value : 0
     try {
       enregistrerSeance(props.studentId, {
-        subject: props.matiere, scorePercent: scorePercent.value,
+        subject: props.matiere, scorePercent: masteryPercent.value,
         durationMs, avgMs: total ? durationMs / total : 0,
         total, reached: total, abandoned: false,
       })
     } catch { /* best-effort */ }
   }
   startedAt.value = 0 // évite un double comptage en « abandon » au démontage
+  // Mini-carte de feedback (throttlée ~1×/2 jours) : ressenti de difficulté.
+  if (props.studentId && peutDemanderFeedback(props.studentId)) {
+    showFeedback.value = true
+    feedbackGiven.value = false
+    marquerFeedbackMontre(props.studentId) // démarre le throttle même si ignorée
+  }
   mode.value = 'result'
+}
+// ── Mini-feedback post-révision (ressenti de difficulté) ──
+const showFeedback = ref(false)
+const feedbackGiven = ref(false)
+const feedbackOptions = computed(() => ([
+  { v: 'facile', label: locale.value.startsWith('en') ? 'Too easy' : 'Trop facile', emo: '😌' },
+  { v: 'bien', label: locale.value.startsWith('en') ? 'Just right' : 'Juste bien', emo: '👍' },
+  { v: 'dur', label: locale.value.startsWith('en') ? 'Too hard' : 'Trop dur', emo: '😅' },
+]))
+function chooseFeedback(v) {
+  try { enregistrerFeedback(props.studentId, v, props.matiere) } catch { /* best-effort */ }
+  feedbackGiven.value = true
 }
 
 const resultTitle = computed(() => scorePercent.value >= 80 ? 'Excellent !' : scorePercent.value >= 50 ? 'Bien joué !' : 'Courage, on progresse')
@@ -464,7 +538,7 @@ const levelFb = computed(() => {
   if (r.levelChange < 0) {
     return { tone: 'down', icon: TrendingDown, text: `On consolide : retour au niveau ${r.level}/5 pour bien ancrer les bases.` }
   }
-  return { tone: 'stable', icon: Target, text: `Niveau ${r.level}/5 maintenu. Vise 80% pour débloquer le niveau suivant.` }
+  return { tone: 'stable', icon: Target, text: `Niveau ${r.level}/5 maintenu. Trouve les réponses du premier coup pour débloquer le niveau suivant.` }
 })
 const ringStyle = computed(() => {
   const s = scorePercent.value
@@ -508,7 +582,15 @@ onMounted(start)
 .tq-help-btn.accent { border-color: rgba(var(--pr-rgb),.4); color: var(--pr); background: rgba(var(--pr-rgb),.05); }
 .tq-progress { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 14px 0 18px; overflow: hidden; }
 .tq-fill { height: 100%; background: var(--pr); border-radius: 6px; transition: width .3s; }
-.tq-q { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0 0 18px; color: var(--tx); }
+.tq-qrow { display: flex; align-items: flex-start; gap: 10px; margin: 0 0 18px; }
+.tq-q { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0; color: var(--tx); flex: 1; min-width: 0; }
+.tq-info { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 1px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+.tq-info:hover, .tq-info.on { background: rgba(var(--pr-rgb,21,88,176),.08); color: var(--pr); border-color: var(--pr); }
+.tq-course { margin: 0 0 16px; padding: 13px 15px; border: 1px solid rgba(var(--pr-rgb,21,88,176),.25); background: rgba(var(--pr-rgb,21,88,176),.04); border-radius: 12px; }
+.tq-course-head { display: flex; align-items: center; gap: 7px; color: var(--pr); font-size: 13.5px; margin-bottom: 8px; }
+.tq-course-key { margin: 0 0 8px; font-size: 13.5px; font-weight: 600; color: var(--tx, #1f2937); line-height: 1.5; }
+.tq-course-body { max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: var(--tx2, #4b5563); border-top: 1px dashed var(--bd, #e5e7eb); padding-top: 8px; }
+.tq-course-empty { margin: 0; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
 .tq-choices { display: flex; flex-direction: column; gap: 10px; }
 .tq-choice { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 15px; text-align: left; transition: all .15s; color: var(--tx); }
 .tq-choice:hover:not(:disabled) { border-color: var(--pr); background: rgba(var(--pr-rgb),.03); }
@@ -567,6 +649,14 @@ onMounted(start)
 .tq-recap ul { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
 .tq-recap li { font-size: 12.5px; color: var(--tx2, #4b5563); line-height: 1.4; }
 .tq-recap li.missed { color: #B87A00; font-weight: 600; }
+/* Mini-feedback post-révision (ressenti de difficulté) */
+.tq-feedback { width: 100%; box-sizing: border-box; margin: 12px 0 2px; padding: 14px 15px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: var(--input-bg, #f6f7f9); }
+.tq-fbk-q { margin: 0 0 10px; font-size: 13.5px; font-weight: 600; color: var(--tx, #1f2937); text-align: center; }
+.tq-fbk-opts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.tq-fbk-btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 14px; border: 1.5px solid var(--bd, #e5e7eb); background: #fff; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--tx2, #4b5563); cursor: pointer; transition: border-color .12s, background .12s, transform .12s; }
+.tq-fbk-btn:hover { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.05); transform: translateY(-2px); }
+.tq-fbk-emo { font-size: 16px; line-height: 1; }
+.tq-fbk-thanks { display: inline-flex; align-items: center; gap: 7px; margin: 0; justify-content: center; width: 100%; font-size: 13.5px; font-weight: 600; color: #1B8A5A; }
 
 @media (max-width: 420px) {
   .tq-choice { padding: 11px 13px; gap: 9px; font-size: 14px; }
