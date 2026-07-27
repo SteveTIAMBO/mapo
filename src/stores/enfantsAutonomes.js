@@ -411,6 +411,11 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // MAPO de son école (cours des profs, devoirs, notes, bulletins — #124) sans
       // ambiguïté ni doublon. Vide tant que l'école ne l'a pas fourni.
       matricule: (matricule || '').trim(),
+      // Lien école ↔ MAPO+ (#124) : rempli APRÈS avoir saisi le code d'autorisation
+      // délivré par l'école (le serveur scelle le lien de confiance). Contient
+      // { schoolId, eleveId, className, classId, matricule } → sert de contexte aux
+      // appels au pont serveur (devoirs, puis cours/notes/bulletins). null = non relié.
+      lienEcole: null,
       filiere: (filiere || '').trim(),                 // filière/spécialité (étudiant du supérieur)
       formation: (formation || '').trim(),             // nom libre de la formation (apprenant hors-catalogue)
       formationUrl: (formationUrl || '').trim(),       // URL du programme de la formation (Étape 2)
@@ -445,7 +450,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'matricule', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'matricule', 'ecoleReliee', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     if ('objectifNote' in patch) {
@@ -457,6 +462,37 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   function getEnfant(id) {
     return enfants.value.find((e) => e.id === id) || null
+  }
+
+  /**
+   * Scelle le lien école ↔ MAPO+ (#124) sur le profil, APRÈS validation du code
+   * par le pont serveur (mapo-lien.php → action redeem). `lien` =
+   * { schoolId, eleveId, className, classId, matricule, ecole? }. On marque
+   * l'apprenant « relié » : le module Devoirs (puis cours/notes) s'active alors,
+   * et les appels au pont utilisent ce contexte. Le lien de confiance vit CÔTÉ
+   * ÉCOLE (schools/{sid}/liens_mapoplus/{uid}) ; ici on ne garde que le contexte.
+   */
+  function lierEcole(enfantId, lien) {
+    const e = getEnfant(enfantId)
+    if (!e || !lien || !lien.schoolId || !lien.eleveId) return false
+    e.lienEcole = {
+      schoolId: String(lien.schoolId), eleveId: String(lien.eleveId),
+      className: String(lien.className || ''), classId: String(lien.classId || ''),
+      matricule: String(lien.matricule || e.matricule || ''),
+    }
+    e.ecoleReliee = true
+    if (lien.matricule) e.matricule = String(lien.matricule)
+    if (lien.ecole && !e.ecole) e.ecole = String(lien.ecole)
+    persist(enfantId)
+    return true
+  }
+  /** Défait le lien école (l'apprenant redevient purement B2C autonome). */
+  function delierEcole(enfantId) {
+    const e = getEnfant(enfantId)
+    if (!e) return
+    e.lienEcole = null
+    e.ecoleReliee = false
+    persist(enfantId)
   }
 
   /**
@@ -709,7 +745,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   return {
     enfants, mode, setMode, load, hydrate, isCompteEnfant,
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
-    addEnfant, updateEnfant, removeEnfant, getEnfant,
+    addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
     addNote, removeNote, faiblesses, objectifDe,
     setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,

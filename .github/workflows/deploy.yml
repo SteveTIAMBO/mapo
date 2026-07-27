@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p deploy_payload
           cp -R /tmp/mapo-build/* deploy_payload/
-          for f in mapo-ia.php mapo-pay.php mapo-pay-tranzak.php mapo-pay-stripe.php mapo-notify.php mapo-provision.php mapo-sign.php mapo-files.php mapo-feedback.php mapo-push.php mapo-push-lib.php mapo-push-cron.php mapo-offres-data.php mapo-credits-lib.php mapo-invoices-lib.php mapo-offres.php mapo-carre.php mapo-mail.php mapo-mail-config.example.php; do
+          for f in mapo-ia.php mapo-lien.php mapo-pay.php mapo-pay-tranzak.php mapo-pay-stripe.php mapo-notify.php mapo-provision.php mapo-sign.php mapo-files.php mapo-feedback.php mapo-push.php mapo-push-lib.php mapo-push-cron.php mapo-offres-data.php mapo-credits-lib.php mapo-invoices-lib.php mapo-offres.php mapo-carre.php mapo-mail.php mapo-mail-config.example.php; do
             [ -f "server/$f" ] && cp "server/$f" "deploy_payload/$f" || true
           done
           # Gabarits d'e-mail brandés (Brevo) : dossier emails/ à côté de mapo-mail.php.

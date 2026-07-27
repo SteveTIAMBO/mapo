@@ -8,6 +8,7 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  setDoc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
@@ -386,6 +387,37 @@ export const useElevesStore = defineStore('eleves', () => {
     } catch (error) { console.error('Erreur suppression élève:', error) }
   }
 
+  // ── Autoriser l'accès MAPO+ d'un élève (#124) ──────────────────────────
+  // Un directeur/admin « autorise » l'élève : on écrit une invitation à USAGE
+  // UNIQUE schools/{sid}/mapoplus_invites/{code}. Le parent/élève saisit ce code
+  // dans MAPO+ ; le pont serveur (mapo-lien.php) le vérifie et scelle le lien de
+  // confiance. Le code embarque le slug de l'école : « {schoolId}~{aléatoire} ».
+  const autoriserMapoPlus = async (eleveId, opts = {}) => {
+    const authStore = useAuthStore()
+    const el = eleves.value.find((e) => e.id === eleveId)
+    if (!el) return { ok: false, reason: 'eleve_introuvable' }
+    const sid = authStore.schoolId || (authStore.isDemo ? 'demo' : '')
+    if (!sid) return { ok: false, reason: 'non_ecole' }
+    // Alphabet sans caractères ambigus (0/O, 1/I/L) — code lu/recopié à la main.
+    const AL = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+    const rnd = Array.from({ length: 8 }, () => AL[Math.floor(Math.random() * AL.length)]).join('')
+    const code = `${sid}~${rnd}`
+    const invite = {
+      eleveId, className: el.className || '', classId: opts.classId || '',
+      matricule: el.matricule || '', firstName: el.firstName || '', lastName: el.lastName || '',
+      ecole: opts.ecole || '', used: false, createdAt: new Date().toISOString(),
+    }
+    // Démo : pas de vraie école → code illustratif, aucune écriture Firestore.
+    if (authStore.isDemo || !authStore.schoolId) return { ok: true, code, demo: true }
+    try {
+      await setDoc(doc(db, 'schools', authStore.schoolId, 'mapoplus_invites', code), invite)
+      return { ok: true, code }
+    } catch (error) {
+      console.error('Erreur autorisation MAPO+:', error)
+      return { ok: false, reason: 'ecriture' }
+    }
+  }
+
   // Générer un matricule unique
   const generateNextMatricule = () => {
     const year = new Date().getFullYear()
@@ -402,7 +434,7 @@ export const useElevesStore = defineStore('eleves', () => {
   return {
     eleves, loading, searchQuery, selectedClass, selectedStatus,
     filteredEleves, elevesStats, classesList,
-    loadEleves, addEleve, updateEleve, deleteEleve,
+    loadEleves, addEleve, updateEleve, deleteEleve, autoriserMapoPlus,
     generateNextMatricule, saveDemoEleves,
   }
 })
