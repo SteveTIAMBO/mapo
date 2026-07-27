@@ -406,6 +406,8 @@ export const useElevesStore = defineStore('eleves', () => {
       eleveId, className: el.className || '', classId: opts.classId || '',
       matricule: el.matricule || '', firstName: el.firstName || '', lastName: el.lastName || '',
       ecole: opts.ecole || '', used: false, createdAt: new Date().toISOString(),
+      // Le code expire au bout de 30 jours (le pont serveur refuse au-delà).
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
     }
     // Démo : pas de vraie école → code illustratif, aucune écriture Firestore.
     if (authStore.isDemo || !authStore.schoolId) return { ok: true, code, demo: true }

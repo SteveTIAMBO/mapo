@@ -400,6 +400,21 @@
           </div>
         </div>
 
+        <!-- Autoriser l'accès MAPO+ (tuteur maison) — direction uniquement (#124) -->
+        <div v-if="authStore.isDirecteur" class="mapoplus-authz">
+          <div class="mpz-head"><School :size="15" /> <strong>{{ t('eleves.mapoplusTitle') }}</strong></div>
+          <p class="mpz-txt">{{ t('eleves.mapoplusDesc') }}</p>
+          <button v-if="!mapoCode" class="btn btn-outline btn-sm" :disabled="mapoBusy" @click="genererCodeMapoPlus">
+            <Link2 :size="14" /> {{ mapoBusy ? t('eleves.mapoplusGen') : t('eleves.mapoplusAuth') }}
+          </button>
+          <div v-else class="mpz-code-row">
+            <code class="mpz-code">{{ mapoCode }}</code>
+            <button class="btn btn-outline btn-sm" @click="copierCodeMapoPlus"><Copy :size="14" /> {{ mapoCopied ? t('eleves.mapoplusCopied') : t('eleves.mapoplusCopy') }}</button>
+          </div>
+          <p v-if="mapoCode" class="mpz-hint">{{ t('eleves.mapoplusHint') }}</p>
+          <p v-if="mapoErr" class="mpz-err">{{ mapoErr }}</p>
+        </div>
+
         <div class="modal-actions">
           <button class="btn btn-outline" @click="closeDetail">{{ t('eleves.cancel') }}</button>
           <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="editFromDetail"><Pencil :size="15" /> {{ t('eleves.edit') }}</button>
@@ -416,7 +431,7 @@ import { useSchoolStore } from '../stores/school'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye } from 'lucide-vue-next'
+import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye, School, Link2, Copy } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
@@ -668,9 +683,30 @@ const saveEleve = async () => {
 
 const vulnLabel = (v) => { const k = 'eleves.vulns.' + v; const lbl = t(k); return lbl === k ? v : lbl }
 
-const openDetail = (eleve) => { detailEleve.value = eleve; showDetail.value = true }
-const closeDetail = () => { showDetail.value = false; detailEleve.value = null }
+// ── Autorisation MAPO+ (#124) : générer le code de liaison d'un élève ──
+const mapoCode = ref('')
+const mapoBusy = ref(false)
+const mapoErr = ref('')
+const mapoCopied = ref(false)
+const openDetail = (eleve) => { detailEleve.value = eleve; showDetail.value = true; mapoCode.value = ''; mapoErr.value = ''; mapoCopied.value = false }
+const closeDetail = () => { showDetail.value = false; detailEleve.value = null; mapoCode.value = ''; mapoErr.value = '' }
 const editFromDetail = () => { const e = detailEleve.value; closeDetail(); if (e) openEditModal(e) }
+
+async function genererCodeMapoPlus() {
+  const e = detailEleve.value
+  if (!e) return
+  mapoBusy.value = true; mapoErr.value = ''; mapoCopied.value = false
+  const classId = classesStore.classes.find((c) => c.name === e.className)?.id || ''
+  const ecole = schoolStore.schoolSettings?.name || schoolStore.schoolSettings?.schoolName || ''
+  const res = await elevesStore.autoriserMapoPlus(e.id, { classId, ecole })
+  mapoBusy.value = false
+  if (res && res.ok) mapoCode.value = res.code
+  else mapoErr.value = t('eleves.mapoplusErr')
+}
+async function copierCodeMapoPlus() {
+  if (!mapoCode.value) return
+  try { await navigator.clipboard.writeText(mapoCode.value); mapoCopied.value = true; setTimeout(() => { mapoCopied.value = false }, 1800) } catch { /* clipboard indispo : l'utilisateur copie à la main */ }
+}
 
 const openDeleteConfirm = (eleve) => { deletingEleve.value = eleve; showDeleteConfirm.value = true }
 const closeDeleteConfirm = () => { showDeleteConfirm.value = false; deletingEleve.value = null }
@@ -1164,4 +1200,12 @@ watch(() => route.query, applyMiapoQuery)
     min-width: 40px;
   }
 }
+/* Autorisation MAPO+ (liaison élève ↔ compte MAPO+ — #124) */
+.mapoplus-authz { margin: 8px 20px 0; padding: 14px 16px; border: 1px solid var(--border, #e5e7eb); border-radius: 12px; background: var(--bg-soft, #f8f9fb); }
+.mpz-head { display: flex; align-items: center; gap: 7px; color: var(--primary, #1558B0); font-size: 13.5px; margin-bottom: 6px; }
+.mpz-txt { margin: 0 0 10px; font-size: 12.5px; color: var(--text-secondary, #4b5563); line-height: 1.5; }
+.mpz-code-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.mpz-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 15px; font-weight: 700; letter-spacing: .5px; color: var(--text, #1f2937); background: #fff; border: 1px dashed var(--primary, #1558B0); border-radius: 8px; padding: 8px 12px; user-select: all; }
+.mpz-hint { margin: 8px 0 0; font-size: 12px; color: var(--text-secondary, #6b7280); }
+.mpz-err { margin: 8px 0 0; font-size: 12.5px; color: #D93025; }
 </style>

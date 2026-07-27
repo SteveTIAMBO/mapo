@@ -415,6 +415,11 @@
           <MiapoMesCours :enfant="activeEnfant" />
         </section>
 
+        <!-- ========== MON ÉCOLE (liaison MAPO ↔ MAPO+ : devoirs, puis cours/notes) ========== -->
+        <section v-else-if="section === 'ecole'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" />
+        </section>
+
         <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
         <section v-else-if="section === 'historique'" class="sec">
           <!-- Revoir en lecture seule (0 token) une fiche ou une rédaction archivée -->
@@ -1002,12 +1007,13 @@ import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
+import MiapoLienEcole from '../components/MiapoLienEcole.vue'
 import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, LifeBuoy } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
 import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
@@ -1082,6 +1088,7 @@ const SECTIONS = computed(() => {
     return [
       home,
       { key: 'enfants', label: t('mia.secMyChildren'), icon: Users, group: 'suivi' },
+      { key: 'ecole', label: t('mia.secSchool'), icon: School, group: 'suivi' },
       progress, planning, edt,
       ...usageItems, ...billingItems,
     ]
@@ -1091,6 +1098,7 @@ const SECTIONS = computed(() => {
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
     { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
+    { key: 'ecole', label: t('mia.secSchool'), icon: School, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'recompenses', label: t('mia.secRewards'), icon: Trophy, group: 'apprendre' },

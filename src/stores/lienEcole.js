@@ -46,5 +46,11 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'devoirs', schoolId })
   }
 
-  return { busy, redeemCode, fetchDevoirs }
+  /** Récupère les cours/ressources publiés par les profs de la classe de l'élève. */
+  async function fetchCours(schoolId) {
+    if (!schoolId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'cours', schoolId })
+  }
+
+  return { busy, redeemCode, fetchDevoirs, fetchCours }
 })

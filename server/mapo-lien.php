@@ -63,17 +63,37 @@ if (!$saToken) { http_response_code(503); echo json_encode(['error' => 'admin_in
 if ($action === 'redeem') {
   $code = trim((string)($body['code'] ?? ''));
   // Le code embarque le slug de l'école : « {schoolId}~{aléatoire} ».
-  if (!preg_match('/^([a-z0-9-]{2,40})~([A-Za-z0-9]{4,40})$/', $code, $m)) {
+  if (!preg_match('/^([a-z0-9-]{2,40})~([A-Za-z0-9]{8,40})$/', $code, $m)) {
     http_response_code(400); echo json_encode(['error' => 'code_invalide']); exit;
   }
   $schoolId = $m[1];
 
-  list($inv, $invCode) = fsGet("schools/{$schoolId}/mapoplus_invites/" . rawurlencode($code), $saToken);
+  $invPath = "schools/{$schoolId}/mapoplus_invites/" . rawurlencode($code);
+  list($inv, $invCode) = fsGet($invPath, $saToken);
   if ($invCode !== 200 || !$inv) { http_response_code(404); echo json_encode(['error' => 'code_introuvable']); exit; }
   $invF = fsDecodeFields($inv['fields'] ?? []);
+  $invUpdateTime = (string)($inv['updateTime'] ?? '');
   if (!empty($invF['used'])) { http_response_code(409); echo json_encode(['error' => 'code_deja_utilise']); exit; }
+  // Expiration (facultative) : une invite périmée est refusée.
+  $exp = (string)($invF['expiresAt'] ?? '');
+  if ($exp !== '') { $et = strtotime($exp); if ($et !== false && $et < time()) { http_response_code(410); echo json_encode(['error' => 'code_expire']); exit; } }
   $eleveId = (string)($invF['eleveId'] ?? '');
   if ($eleveId === '') { http_response_code(422); echo json_encode(['error' => 'invite_incomplete']); exit; }
+
+  $now = gmdate('Y-m-d\TH:i:s\Z');
+  // USAGE UNIQUE, atomique : on CONSOMME l'invite AVANT de sceller, avec une
+  // précondition sur l'updateTime → en cas de course (2 comptes, même code), un
+  // seul gagne. Fail-safe : si la précondition échoue on relit pour trancher
+  // (course perdue → refus) au lieu de casser la liaison.
+  $usedFields = fsEncodeFields(['used' => true, 'usedByUid' => $uid, 'usedAt' => $now]);
+  $consumed = fsPatch($invPath, $usedFields, $saToken, ['used', 'usedByUid', 'usedAt'], $invUpdateTime !== '' ? $invUpdateTime : null);
+  if ($consumed !== 200) {
+    list($inv2, $c2) = fsGet($invPath, $saToken);
+    $used2 = ($c2 === 200 && $inv2) ? !empty(fsDecodeFields($inv2['fields'] ?? [])['used']) : false;
+    if ($used2) { http_response_code(409); echo json_encode(['error' => 'code_deja_utilise']); exit; }
+    $consumed = fsPatch($invPath, $usedFields, $saToken, ['used', 'usedByUid', 'usedAt']);
+    if ($consumed !== 200) { http_response_code(502); echo json_encode(['error' => 'consommation_echec']); exit; }
+  }
 
   // Élève = source de vérité (nom, classe, matricule) — défensif si l'invite est partielle.
   list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
@@ -85,18 +105,16 @@ if ($action === 'redeem') {
   $lastName  = (string)($elF['lastName'] ?? $invF['lastName'] ?? '');
 
   // Sceller le lien de confiance (admin). Clé = uid → un compte, un élève.
-  $now = gmdate('Y-m-d\TH:i:s\Z');
   $linkFields = fsEncodeFields([
     'eleveId' => $eleveId, 'className' => $className, 'classId' => $classId,
     'matricule' => $matricule, 'linkedAt' => $now, 'code' => $code,
   ]);
   $wCode = fsPatch("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $linkFields, $saToken);
-  if ($wCode !== 200) { http_response_code(502); echo json_encode(['error' => 'lien_non_scelle', 'detail' => $wCode]); exit; }
-
-  // Marquer l'invite consommée (mise à jour ciblée, ne supprime pas les autres champs).
-  fsPatch("schools/{$schoolId}/mapoplus_invites/" . rawurlencode($code),
-    fsEncodeFields(['used' => true, 'usedByUid' => $uid, 'usedAt' => $now]),
-    $saToken, ['used', 'usedByUid', 'usedAt']);
+  if ($wCode !== 200) {
+    // Scellement échoué APRÈS consommation → on rend le code réutilisable (best-effort).
+    fsPatch($invPath, fsEncodeFields(['used' => false]), $saToken, ['used']);
+    http_response_code(502); echo json_encode(['error' => 'lien_non_scelle', 'detail' => $wCode]); exit;
+  }
 
   echo json_encode(['ok' => true, 'lien' => [
     'schoolId' => $schoolId, 'eleveId' => $eleveId, 'className' => $className,
@@ -116,10 +134,18 @@ if ($action === 'devoirs') {
   list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $saToken);
   if ($lkCode !== 200 || !$lk) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
   $lkF = fsDecodeFields($lk['fields'] ?? []);
-  $eleveId   = (string)($lkF['eleveId'] ?? '');
-  $className = (string)($lkF['className'] ?? '');
-  $classId   = (string)($lkF['classId'] ?? '');
-  if ($eleveId === '' || $className === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
+  $eleveId     = (string)($lkF['eleveId'] ?? '');
+  $linkClass   = (string)($lkF['className'] ?? '');
+  $linkClassId = (string)($lkF['classId'] ?? '');
+  if ($eleveId === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
+  // Classe COURANTE (l'élève a pu changer de classe depuis la liaison) : on relit
+  // sa fiche → jamais servir une classe qu'il a quittée. Repli sur le snapshot.
+  list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+  $className = ($elCode === 200 && $el) ? (string)(fsDecodeFields($el['fields'] ?? [])['className'] ?? '') : '';
+  if ($className === '') $className = $linkClass;
+  if ($className === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
+  // On ne se fie au classId (snapshot) QUE si la classe n'a pas changé.
+  $classId = ($className === $linkClass) ? $linkClassId : '';
 
   list($doc, $dCode) = fsGet("schools/{$schoolId}/devoirs-data/data", $saToken);
   if ($dCode !== 200 || !$doc) { echo json_encode(['ok' => true, 'className' => $className, 'devoirs' => []]); exit; }
@@ -158,6 +184,56 @@ if ($action === 'devoirs') {
   exit;
 }
 
+// ════════════════════════════════════════════════════════════════════
+if ($action === 'cours') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $saToken);
+  if ($lkCode !== 200 || !$lk) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  $lkF = fsDecodeFields($lk['fields'] ?? []);
+  $eleveId   = (string)($lkF['eleveId'] ?? '');
+  $linkClass = (string)($lkF['className'] ?? '');
+  // Classe COURANTE (voir action devoirs) : on relit la fiche élève.
+  $className = '';
+  if ($eleveId !== '') {
+    list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+    if ($elCode === 200 && $el) $className = (string)(fsDecodeFields($el['fields'] ?? [])['className'] ?? '');
+  }
+  if ($className === '') $className = $linkClass;
+  if ($className === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
+
+  list($doc, $dCode) = fsGet("schools/{$schoolId}/config/cours", $saToken);
+  if ($dCode !== 200 || !$doc) { echo json_encode(['ok' => true, 'className' => $className, 'cours' => []]); exit; }
+  $data = fsDecodeFields($doc['fields'] ?? []);
+  $items = is_array($data['items'] ?? null) ? $data['items'] : [];
+
+  $out = [];
+  foreach ($items as $c) {
+    if (!is_array($c)) continue;
+    // Uniquement des SUPPORTS DE COURS/RESSOURCES (jamais devoirs/examens ici),
+    // et seulement ceux de SA classe (ou publiés pour toutes les classes).
+    $type = (string)($c['type'] ?? 'cours');
+    if ($type !== 'cours' && $type !== 'ressource') continue;
+    $cl = (string)($c['classe'] ?? '');
+    if ($cl !== '' && $cl !== $className) continue;
+    // On NE renvoie JAMAIS le corrigé ni le binaire du fichier (poids + fuite).
+    $out[] = [
+      'id' => (string)($c['id'] ?? ''),
+      'matiere' => (string)($c['matiere'] ?? ''),
+      'titre' => (string)($c['titre'] ?? ''),
+      'contenu' => (string)($c['contenu'] ?? ''),
+      'type' => $type,
+      'auteur' => (string)($c['auteur'] ?? ''),
+      'fileName' => (string)($c['fileName'] ?? ''),
+      'fileExt' => (string)($c['fileExt'] ?? ''),
+      'hasFile' => !empty($c['fileId']) || !empty($c['fileData']) || !empty($c['url']),
+    ];
+  }
+  echo json_encode(['ok' => true, 'className' => $className, 'cours' => $out]);
+  exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'action_inconnue']);
 exit;
@@ -181,7 +257,11 @@ function verifyFirebaseUid() {
     || ($p['iss'] ?? '') !== 'https://securetoken.google.com/' . FIREBASE_PROJECT
     || ($p['exp'] ?? 0) < time()
     || empty($p['sub'])) return null;
-  $cacheFile = sys_get_temp_dir() . '/firebase_google_certs.json';
+  // Cache des clés publiques Google dans le dossier de l'APPLI (appartient à
+  // l'utilisateur), PAS dans le /tmp partagé : sur mutualisé, un voisin pourrait
+  // déposer un faux jeu de clés à un chemin /tmp prévisible et faire accepter des
+  // jetons forgés. Dossier non inscriptible → on re-télécharge (correct, plus lent).
+  $cacheFile = __DIR__ . '/mapo-certs-cache.json';
   $certs = null;
   if (file_exists($cacheFile) && time() - filemtime($cacheFile) < 3600) $certs = json_decode(file_get_contents($cacheFile), true);
   if (!$certs) {
@@ -244,14 +324,18 @@ function fsGet($path, $token) {
   if ($res === false) return [null, 0];
   return [json_decode($res, true), $code];
 }
-/** PATCH (create/update) un document. $maskFields = mise à jour ciblée. Renvoie httpCode. */
-function fsPatch($path, $fields, $token, $maskFields = null) {
+/**
+ * PATCH (create/update) un document. $maskFields = mise à jour ciblée.
+ * $precondUpdateTime (facultatif) = n'applique la mise à jour QUE si l'updateTime du
+ * document correspond (précondition atomique → un seul gagnant en cas de course).
+ * Renvoie httpCode.
+ */
+function fsPatch($path, $fields, $token, $maskFields = null, $precondUpdateTime = null) {
   $url = fsBaseUrl() . $path;
-  if (is_array($maskFields)) {
-    $q = [];
-    foreach ($maskFields as $f) $q[] = 'updateMask.fieldPaths=' . rawurlencode($f);
-    $url .= '?' . implode('&', $q);
-  }
+  $q = [];
+  if (is_array($maskFields)) foreach ($maskFields as $f) $q[] = 'updateMask.fieldPaths=' . rawurlencode($f);
+  if ($precondUpdateTime) $q[] = 'currentDocument.updateTime=' . rawurlencode($precondUpdateTime);
+  if ($q) $url .= '?' . implode('&', $q);
   $ch = curl_init($url);
   curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
