@@ -141,7 +141,10 @@ const left = ref([])           // colonne gauche (ordre original)
 const right = ref([])          // colonne droite (mélangée)
 const matched = ref(new Set()) // pairId réussis
 const selected = ref(null)     // { key, col, pairId } sélectionné (tap-to-match)
-const wrongKeys = ref(new Set())
+// Paires « fautées » : pairId dont la carte-PROMPT (colonne gauche) a été mal
+// associée au moins une fois. Une erreur ne pénalise QUE cette paire (pas de
+// « ricochet » sur la paire dont la carte de droite a été touchée par hasard).
+const erroredPairs = ref(new Set())
 const firstTryCount = ref(0)
 const errors = ref(0)
 const startedAt = ref(0)
@@ -166,7 +169,7 @@ function shuffle(arr) {
 
 async function start() {
   step.value = 'loading'; err.value = ''
-  selected.value = null; matched.value = new Set(); wrongKeys.value = new Set()
+  selected.value = null; matched.value = new Set(); erroredPairs.value = new Set()
   firstTryCount.value = 0; errors.value = 0; lastResult.value = null
   if (studentId.value) { try { await tuteur.syncFromCloud(studentId.value) } catch { /* offline */ } }
   level.value = studentId.value ? tuteur.getLevel(studentId.value, subjectId.value) : 1
@@ -242,12 +245,16 @@ function attempt(x, y) {
   if (x.col === y.col) return
   if (x.pairId === y.pairId) {
     matched.value = new Set(matched.value).add(x.pairId)
-    if (!wrongKeys.value.has(x.key) && !wrongKeys.value.has(y.key)) firstTryCount.value++
+    // 1er coup = la paire n'a jamais été fautée avant.
+    if (!erroredPairs.value.has(x.pairId)) firstTryCount.value++
     selected.value = null
     if (matched.value.size >= pairsList.value.length) finish()
   } else {
     errors.value++
-    const w = new Set(wrongKeys.value); w.add(x.key); w.add(y.key); wrongKeys.value = w
+    // On pénalise UNIQUEMENT la paire de la carte-prompt (colonne gauche 'a'),
+    // pas celle dont la carte de droite a été touchée par hasard.
+    const leftId = (x.col === 'a' ? x : y).pairId
+    const w = new Set(erroredPairs.value); w.add(leftId); erroredPairs.value = w
     flash([x.key, y.key]); selected.value = null
   }
 }
