@@ -51,6 +51,29 @@ if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json'
 // Logique pure (encode/décode Firestore + tranchage) — testée à part.
 require_once __DIR__ . '/mapo-lien-lib.php';
 
+// ── Diagnostic (public, sans donnée) : /mapo-lien.php?ping=1 ──────────
+// Permet de vérifier d'un coup d'œil, dans le navigateur, si la clé de compte de
+// service est bien en place et fonctionnelle. Ne renvoie AUCUNE donnée sensible
+// (booléens de configuration seulement), et surtout jamais le contenu de la clé.
+if (($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST') && (isset($_GET['ping']) || isset($_GET['diag']))) {
+  $present = file_exists(SA_KEY_FILE);
+  $tokenOk = false; $err = null;
+  if ($present) { list($tk, $err) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore'); $tokenOk = !!$tk; }
+  else { $err = 'sa_key_absente'; }
+  echo json_encode([
+    'ok' => true,
+    'service' => 'mapo-lien',
+    'sa_key_attendue' => basename(SA_KEY_FILE),
+    'dossier' => basename(__DIR__),
+    'sa_key_presente' => $present,
+    'sa_token_ok' => $tokenOk,
+    'projet' => FIREBASE_PROJECT,
+    'pret' => ($present && $tokenOk),
+    'detail' => $tokenOk ? null : $err,
+  ]);
+  exit;
+}
+
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $body['action'] ?? '';
 
