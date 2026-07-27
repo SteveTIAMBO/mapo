@@ -33,6 +33,11 @@ function legacyDocRef(uid) { return doc(db, 'users', uid, 'b2c', 'enfants') }
  */
 
 const KEY = (owner) => `mapo_enfants_autonomes_${owner || 'demo'}`
+// Version des données de DÉMO : à incrémenter dès que l'amorçage démo change
+// (profil élargi à 10 compétences, suppression du 2e enfant…) → purge auto de la
+// démo périmée dans le navigateur. N'affecte QUE la démo, jamais un vrai compte.
+const DEMO_VERSION = 3
+const DEMO_VERSION_KEY = (owner) => `mapo_ea_demo_version_${owner || 'demo'}`
 
 // Niveaux courants (secondaire Afrique francophone) — series pour le lycée.
 // Niveaux du primaire (Cameroun / Afrique francophone) et du secondaire.
@@ -340,8 +345,20 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
    */
   async function hydrate() {
     load() // local d'abord (affichage instantané, offline)
-    // Démo : amorcer un écolier cohérent pour que l'espace MAPO+ ne soit pas vide.
-    if (authStore.isDemo) seedDemoIfEmpty()
+    // Démo : amorcer un écolier cohérent. On PURGE d'abord une démo périmée (issue
+    // d'une version antérieure : ancien 2e enfant « Junior », profil 6 compétences au
+    // lieu de 10…) via un numéro de version — sinon seedDemoIfEmpty ne rafraîchit
+    // jamais des données démo déjà présentes.
+    if (authStore.isDemo) {
+      try {
+        if (localStorage.getItem(DEMO_VERSION_KEY(owner.value)) !== String(DEMO_VERSION)) {
+          enfants.value = []
+          localStorage.removeItem(KEY(owner.value))
+          localStorage.setItem(DEMO_VERSION_KEY(owner.value), String(DEMO_VERSION))
+        }
+      } catch { /* quota / privé : on continue */ }
+      seedDemoIfEmpty()
+    }
     const myUid = cloudUid()
     if (!myUid) return
     // Le pointeur `b2c/link` désigne le parent propriétaire. S'il porte un

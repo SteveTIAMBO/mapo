@@ -320,9 +320,8 @@ watch(() => props.enfant && props.enfant.id, () => { resetPanes(); tab.value = '
 .lie-loading p { margin: 0; font-size: 13.5px; color: var(--tx2, #4b5563); }
 .lie-empty { margin: 8px 0; font-size: 13.5px; color: var(--tx3, #6b7280); }
 .lie-list { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.lie-dev { border: 1px solid var(--bd, #e5e7eb); border-left: 3px solid var(--pr); border-radius: 12px; padding: 12px 14px; }
-.lie-dev.done { border-left-color: #1B8A5A; background: rgba(27,138,90,.03); }
-.lie-dev.late { border-left-color: #D93025; }
+.lie-dev { border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 12px 14px; }
+.lie-dev.done { background: rgba(27,138,90,.03); }
 .lie-dev-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .lie-dev-title { font-weight: 600; font-size: 14.5px; color: var(--tx, #1f2937); }
 .lie-dev-due { font-size: 12px; font-weight: 700; color: var(--tx3, #6b7280); white-space: nowrap; }

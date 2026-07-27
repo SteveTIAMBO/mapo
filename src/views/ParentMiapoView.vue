@@ -276,7 +276,7 @@
             <div v-if="aReviser.length" class="card">
               <div class="card-head"><Target :size="18" /><h3><DualText :text="isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent')" /></h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
               <div class="weak-list">
-                <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && goRevise(w.matiere, w.themes)">
+                <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && choisirAReviser(w)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
                   <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
                 </component>
@@ -1230,7 +1230,7 @@ function exporterBilan() {
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
   const dots = (n) => '●'.repeat(Math.max(0, n)) + '○'.repeat(Math.max(0, 5 - n))
   const dateStr = new Date().toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-  const rowsProg = (progression.value || []).map((p) => `<tr><td>${esc(p.matiere)}</td><td class="dots">${dots(p.level)}</td><td>${t('mia.bilanLevel')} ${p.level}/5</td></tr>`).join('')
+  const rowsProg = (progression.value || []).map((p) => `<tr><td>${esc(p.matiere)}</td><td class="dots">${dots(p.level)}</td><td>${t('mia.bilanLevel')} ${p.level}</td></tr>`).join('')
   const rowsRev = (aReviser.value || []).map((w) => `<li><strong>${esc(w.matiere)}</strong>${w.themes && w.themes.length ? ' — ' + esc(w.themes.join(', ')) : ''}</li>`).join('')
   const rowsNotes = (e.notes || []).map((n) => `<tr><td>${esc(n.matiere)}</td><td>${esc(n.note)}/20</td></tr>`).join('')
   const w = window.open('', '_blank')
@@ -1695,6 +1695,16 @@ function goRevise(matiere, themes) {
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
   section.value = 'tuteur'
+}
+// Clic sur une matière « à réviser » : on NE lance PAS un quiz d'office — on
+// sélectionne la matière pour proposer les TYPES de révision compatibles (le
+// thème éventuel est conservé pour le quiz si l'apprenant le choisit).
+function choisirAReviser(w) {
+  if (!isApprenant.value || !w) return
+  section.value = 'tuteur'
+  reviseMatiere.value = w.matiere
+  pendingTheme.value = Array.isArray(w.themes) && w.themes.length ? w.themes : ''
+  quizMatiere.value = '' // referme un éventuel quiz déjà ouvert → on montre les types
 }
 // ── Historique des révisions (rejouable sans régénérer → économie de tokens) ──
 // L'infra de journalisation/rejeu vit dans le store tuteur ; ici on l'affiche et

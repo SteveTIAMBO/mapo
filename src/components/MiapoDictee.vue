@@ -1,6 +1,5 @@
 <template>
   <div class="dictee">
-    <button type="button" class="dic-back" @click="$emit('quit')"><ChevronLeft :size="16" /> <span>{{ en ? 'Back' : 'Retour' }}</span></button>
 
     <!-- 1) Choix du mode -->
     <div v-if="step === 'choose'" class="card dic-choose">

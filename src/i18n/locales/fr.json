@@ -5136,7 +5136,7 @@
     "otherCopy": "Autre copie",
     "reviewPriorityLearner": "À réviser en priorité",
     "reviewSubjectsParent": "Matières à réviser",
-    "levelN": "Niveau {n}/5",
+    "levelN": "Niveau {n}",
     "whatToWork": "Ce que {name} doit travailler — {name} lance ses révisions de son côté.",
     "privateLessonTitle": "Cours particulier — réviser une matière",
     "privateLessonHint": "MIAPO génère un exercice adapté à ton niveau et t'accompagne pas à pas (méthode, indices, explication).",

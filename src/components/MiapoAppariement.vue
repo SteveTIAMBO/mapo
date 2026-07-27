@@ -1,7 +1,5 @@
 <template>
   <div class="appa">
-    <button type="button" class="appa-back" @click="$emit('quit')"><ChevronLeft :size="16" /> <span>{{ en ? 'Back' : 'Retour' }}</span></button>
-
     <!-- Chargement -->
     <div v-if="step === 'loading'" class="card appa-loading">
       <Loader2 :size="30" class="spin" /><p>{{ en ? 'MIAPO is preparing your matching game…' : 'MIAPO prépare ton jeu de paires…' }}</p>

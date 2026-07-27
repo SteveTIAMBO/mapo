@@ -534,10 +534,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
           : []
         if (paires.length >= 3) return { ok: true, titre: String((o && o.titre) || '').trim(), paires }
       }
-      return { ok: false, reason: (json && (json.detail || json.error)) || 'appariement_failed' }
-    } catch (e) {
-      return { ok: false, reason: 'network' }
-    }
+    } catch (e) { /* réseau / IA indispo → repli local ci-dessous */ }
+    // Repli hors-ligne / démo (comme buildLocalQuiz pour le quiz) : paires locales,
+    // pour que « Relie les paires » fonctionne TOUJOURS, même sans IA/crédits.
+    const n = Math.max(4, Math.min(8, 3 + (difficulte || 1)))
+    return { ok: true, titre: '', paires: buildLocalPairs(matiere, n, visuel), mode: 'simulation' }
   }
 
   /**
@@ -1146,4 +1147,32 @@ export function buildLocalQuiz(matiere, nombre = 5) {
     { q: 'Face à un exercice difficile, la meilleure attitude est :', choices: ['Abandonner', 'Reformuler l’énoncé et chercher un exemple', 'Deviner au hasard', 'Sauter la question'], answer: 1, hint: 'Comprendre la question est la 1re étape.', explanation: 'Reformuler l’énoncé et chercher un cas simple aide à débloquer.' },
     { q: 'Pour mémoriser durablement, il vaut mieux :', choices: ['Réviser une seule fois', 'Espacer les révisions dans le temps', 'Tout faire la nuit', 'Lire sans écrire'], answer: 1, hint: 'C’est le principe de la répétition espacée.', explanation: 'Revoir à intervalles croissants renforce la mémoire à long terme.' },
   ].slice(0, nombre)
+}
+
+// Banque de PAIRES locale (repli hors-ligne / démo de « Relie les paires »).
+const LOCAL_PAIRS = {
+  maths: [{ a: '7 × 8', b: '56' }, { a: '3²', b: '9' }, { a: 'Aire du rectangle', b: 'L × l' }, { a: 'Périmètre du carré', b: '4 × côté' }, { a: '½', b: '0,5' }, { a: 'PGCD(12, 18)', b: '6' }, { a: '10 %', b: 'un dixième' }, { a: 'Angle droit', b: '90°' }],
+  francais: [{ a: 'content', b: 'heureux' }, { a: 'rapide', b: 'vif' }, { a: 'triste', b: 'malheureux' }, { a: 'beau', b: 'joli' }, { a: 'la peur', b: 'la crainte' }, { a: 'une maison', b: 'une demeure' }, { a: 'malin', b: 'rusé' }, { a: 'calme', b: 'paisible' }],
+  anglais: [{ a: 'chat', b: 'cat' }, { a: 'chien', b: 'dog' }, { a: 'maison', b: 'house' }, { a: 'eau', b: 'water' }, { a: 'livre', b: 'book' }, { a: 'école', b: 'school' }, { a: 'ami', b: 'friend' }, { a: 'rouge', b: 'red' }],
+  svt: [{ a: 'cœur', b: 'pompe le sang' }, { a: 'poumons', b: 'la respiration' }, { a: 'estomac', b: 'la digestion' }, { a: 'racine', b: 'absorbe l’eau' }, { a: 'reins', b: 'filtrent le sang' }, { a: 'photosynthèse', b: 'la plante fabrique sa matière' }],
+  histoire: [{ a: 'Cameroun', b: 'Yaoundé' }, { a: 'Sénégal', b: 'Dakar' }, { a: 'Gabon', b: 'Libreville' }, { a: 'France', b: 'Paris' }, { a: 'Égypte', b: 'Le Caire' }, { a: 'Côte d’Ivoire', b: 'Yamoussoukro' }],
+}
+// Paires VISUELLES (primaire) : mot ↔ emoji.
+const LOCAL_PAIRS_EMOJI = [
+  { a: 'chat', b: '🐱' }, { a: 'chien', b: '🐶' }, { a: 'soleil', b: '☀️' }, { a: 'pomme', b: '🍎' },
+  { a: 'maison', b: '🏠' }, { a: 'voiture', b: '🚗' }, { a: 'ballon', b: '⚽' }, { a: 'fleur', b: '🌸' },
+  { a: 'poisson', b: '🐟' }, { a: 'étoile', b: '⭐' },
+]
+
+function shuffleLocal(arr) {
+  const a = arr.slice()
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
+  return a
+}
+
+export function buildLocalPairs(matiere, nombre = 6, visuel = false) {
+  if (visuel) return shuffleLocal(LOCAL_PAIRS_EMOJI).slice(0, Math.max(4, Math.min(8, nombre)))
+  const key = normalizeKey(matiere)
+  const bank = LOCAL_PAIRS[key] || LOCAL_PAIRS.francais
+  return shuffleLocal(bank).slice(0, Math.max(4, Math.min(8, nombre)))
 }
