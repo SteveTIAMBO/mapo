@@ -2,7 +2,10 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth as fbAuth } from '../firebase'
 import { useAuthStore } from './auth'
-import { DEMO_LINK_CODE, DEMO_LIEN, demoDevoirs, demoCours, demoBulletin, demoMessages } from '../data/demoEcoleLiee'
+import {
+  DEMO_LINK_CODE, DEMO_LIEN,
+  demoDevoirs, demoCours, demoBulletin, demoPeriodes, demoMessages, demoDestinataires,
+} from '../data/demoEcoleLiee'
 
 // Client du PONT de liaison école ↔ MAPO+ (#124). Toute la donnée école transite
 // par le serveur (mapo-lien.php), JAMAIS par un accès Firestore direct : le serveur
@@ -65,6 +68,13 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'devoirs', schoolId, eleveId })
   }
 
+  /** Rendre / soumettre un devoir en ligne (isDigital). */
+  async function submitDevoir(schoolId, eleveId, devoirId, text) {
+    if (isDemo()) return { ok: true, submission: { submittedAt: new Date().toISOString(), text: String(text || ''), grade: null, feedback: '' } }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'submit_devoir', schoolId, eleveId, devoirId, text: String(text || '') })
+  }
+
   /** Cours/ressources publiés par les profs de la classe de l'élève. */
   async function fetchCours(schoolId, eleveId) {
     if (isDemo()) return { ok: true, className: DEMO_LIEN.className, cours: demoCours() }
@@ -72,32 +82,60 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'cours', schoolId, eleveId })
   }
 
-  /** Bulletin de l'élève lié (notes, moyennes, rang, mention) — transféré du MAPO école. */
-  async function fetchNotes(schoolId, eleveId) {
-    if (isDemo()) return { ok: true, bulletin: demoBulletin() }
+  /** Moments de bulletin disponibles (séquences / trimestres). */
+  async function fetchPeriodes(schoolId, eleveId) {
+    if (isDemo()) return { ok: true, periodes: demoPeriodes() }
     if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'notes', schoolId, eleveId })
+    return call({ action: 'periodes', schoolId, eleveId })
   }
 
-  /** Fil de messagerie parent/élève ↔ école. */
+  /** Bulletin de l'élève lié pour un moment donné — transféré du MAPO école. */
+  async function fetchNotes(schoolId, eleveId, periodeId) {
+    if (isDemo()) return { ok: true, bulletin: demoBulletin(periodeId || 'seq1') }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'notes', schoolId, eleveId, periodeId: periodeId || '' })
+  }
+
+  /** Fil de messagerie parent/élève ↔ école (reçus + envoyés, groupés en fils). */
   async function fetchMessages(schoolId, eleveId) {
     if (isDemo()) { if (!demoThread.value) demoThread.value = demoMessages(); return { ok: true, messages: demoThread.value } }
     if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
     return call({ action: 'messages', schoolId, eleveId })
   }
 
-  /** Envoi d'un message à l'école. */
-  async function sendMessage(schoolId, eleveId, text) {
-    const t = String(text || '').trim()
-    if (!t) return { ok: false, reason: 'vide' }
+  /** Destinataires possibles d'un nouveau message (services + enseignants). */
+  async function fetchDestinataires(schoolId, eleveId) {
+    if (isDemo()) return { ok: true, destinataires: demoDestinataires() }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'destinataires', schoolId, eleveId })
+  }
+
+  /**
+   * Envoi d'un message à l'école. `payload` = { text, subject?, threadId?, to? } :
+   * un threadId → réponse dans un fil ; sinon → nouveau fil (objet + destinataire).
+   */
+  async function sendMessage(schoolId, eleveId, payload) {
+    const p = typeof payload === 'string' ? { text: payload } : (payload || {})
+    const text = String(p.text || '').trim()
+    if (!text) return { ok: false, reason: 'vide' }
     if (isDemo()) {
       if (!demoThread.value) demoThread.value = demoMessages()
-      demoThread.value = [...demoThread.value, { id: 'me-' + demoThread.value.length, from: 'moi', author: 'Vous', at: new Date().toISOString(), text: t }]
+      const threadId = p.threadId || ('t' + (demoThread.value.length + 1) + '-' + Math.floor(demoThread.value.length * 7 + 3))
+      const subject = p.subject || (p.threadId ? (demoThread.value.find((m) => m.threadId === p.threadId)?.subject || 'Message') : 'Message')
+      demoThread.value = [...demoThread.value, {
+        id: 'me-' + demoThread.value.length, threadId, subject,
+        from: 'moi', author: 'Vous', to: p.to || 'École', at: new Date().toISOString(), read: true, body: text,
+      }]
       return { ok: true }
     }
     if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'send_message', schoolId, eleveId, text: t })
+    return call({ action: 'send_message', schoolId, eleveId, text, subject: p.subject || '', threadId: p.threadId || '', to: p.to || '' })
   }
 
-  return { busy, redeemCode, fetchDevoirs, fetchCours, fetchNotes, fetchMessages, sendMessage }
+  return {
+    busy, redeemCode,
+    fetchDevoirs, submitDevoir, fetchCours,
+    fetchPeriodes, fetchNotes,
+    fetchMessages, fetchDestinataires, sendMessage,
+  }
 })

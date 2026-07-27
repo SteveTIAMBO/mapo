@@ -1,12 +1,14 @@
 <template>
   <div class="pl">
-    <div class="pl-tabs">
+    <!-- Reliée à MAPO : les devoirs à rendre viennent de « Mon école ». On masque
+         l'onglet personnel (redondant) et on ne garde que la vue « cette semaine ». -->
+    <div v-if="!linked" class="pl-tabs">
       <button :class="{ on: tab === 'devoirs' }" @click="tab = 'devoirs'">{{ t('mia.planHomework') }}</button>
       <button :class="{ on: tab === 'semaine' }" @click="tab = 'semaine'">{{ t('mia.planWeek') }}</button>
     </div>
 
     <!-- ===== Devoirs à rendre ===== -->
-    <div v-if="tab === 'devoirs'">
+    <div v-if="!linked && tab === 'devoirs'">
       <div class="card">
         <div class="card-head"><ClipboardCheck :size="18" /><h3>{{ t('mia.planHomework') }}</h3>
           <button v-if="canEdit" class="pl-add" @click="showAdd = !showAdd"><Plus :size="14" /> {{ t('mia.planAdd') }}</button>
@@ -63,7 +65,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ClipboardCheck, Plus, Check, X } from 'lucide-vue-next'
 import { useAuthStore } from '../stores/auth'
@@ -73,6 +75,8 @@ const props = defineProps({
   matieres: { type: Array, default: () => [] },
   aReviser: { type: Array, default: () => [] },
   canEdit: { type: Boolean, default: true },
+  // Élève relié à une école MAPO → onglet « devoirs à rendre » masqué (cf. « Mon école »).
+  linked: { type: Boolean, default: false },
 })
 defineEmits(['revise'])
 
@@ -93,7 +97,8 @@ function seed() {
   ]
 }
 
-const tab = ref('devoirs')
+const tab = ref(props.linked ? 'semaine' : 'devoirs')
+watch(() => props.linked, (v) => { if (v) tab.value = 'semaine' })
 const showAdd = ref(false)
 const devoirs = ref(load())
 // Persiste le jeu initial dès le montage pour que l'accueil (rappels) puisse le lire.

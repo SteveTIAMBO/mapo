@@ -1,7 +1,7 @@
 /**
  * Test — parcours de liaison en mode DÉMO (aucun serveur/clé requis).
  * Vérifie que le code démo relie Awa au Collège EDUFREM et que les 4 modules
- * (devoirs, cours, bulletin, messagerie) répondent, y compris l'envoi d'un message.
+ * (devoirs, cours, bulletins par période, messagerie reçus/envoyés) répondent.
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
@@ -29,38 +29,68 @@ describe('lienEcole — mode démo', () => {
     expect((await s.redeemCode('')).reason).toBe('code_vide')
   })
 
-  it('devoirs : liste non vide + un rendu noté', async () => {
+  it('devoirs : liste non vide, un rendu noté, un à faire en ligne', async () => {
     const s = useLienEcoleStore()
-    const r = await s.fetchDevoirs('edufrem-demo')
+    const r = await s.fetchDevoirs('edufrem-demo', 'demo-awa')
     expect(r.ok).toBe(true)
     expect(r.devoirs.length).toBeGreaterThan(0)
     expect(r.devoirs.some((d) => d.submission && d.submission.grade != null)).toBe(true)
+    // Au moins un devoir en ligne non encore rendu (cliquable → à faire).
+    expect(r.devoirs.some((d) => d.isDigital && !d.submission)).toBe(true)
   })
 
-  it('bulletin : matières + rang + mention', async () => {
+  it('rendre un devoir en ligne renvoie une soumission', async () => {
     const s = useLienEcoleStore()
-    const r = await s.fetchNotes('edufrem-demo')
+    const sub = await s.submitDevoir('edufrem-demo', 'demo-awa', 'dv4', 'family = famille')
+    expect(sub.ok).toBe(true)
+    expect(sub.submission.text).toContain('famille')
+  })
+
+  it('cours : au moins un PDF consultable + une carte-leçon', async () => {
+    const s = useLienEcoleStore()
+    const r = await s.fetchCours('edufrem-demo', 'demo-awa')
     expect(r.ok).toBe(true)
+    expect(r.cours.some((c) => c.fileData && c.fileViewable)).toBe(true)
+    expect(r.cours.some((c) => !c.hasFile && c.contenu)).toBe(true)
+  })
+
+  it('bulletins : plusieurs moments + format école (rang, mention, appréciation)', async () => {
+    const s = useLienEcoleStore()
+    const per = await s.fetchPeriodes('edufrem-demo', 'demo-awa')
+    expect(per.ok).toBe(true)
+    expect(per.periodes.length).toBeGreaterThan(1)
+    const r = await s.fetchNotes('edufrem-demo', 'demo-awa', 'trim1')
+    expect(r.ok).toBe(true)
+    expect(r.bulletin.periode).toBe('1er Trimestre')
     expect(r.bulletin.matieres.length).toBeGreaterThan(3)
     expect(r.bulletin.rang).toBeGreaterThan(0)
     expect(r.bulletin.moyenneGenerale).toBeGreaterThan(0)
+    expect(r.bulletin.directeur).toBeTruthy()
+    expect(r.bulletin.appreciationGenerale).toBeTruthy()
+    expect(r.bulletin.verifCode).toBeTruthy()
+    // Le trimestre expose 2 séquences (format complet).
+    expect(r.bulletin.sequences.length).toBe(2)
   })
 
-  it('cours : au moins un cours avec contenu', async () => {
+  it('messagerie : reçus + envoyés, et l\'envoi ajoute un message', async () => {
     const s = useLienEcoleStore()
-    const r = await s.fetchCours('edufrem-demo')
-    expect(r.ok).toBe(true)
-    expect(r.cours.some((c) => c.contenu)).toBe(true)
-  })
-
-  it('messagerie : lecture puis envoi ajoute le message', async () => {
-    const s = useLienEcoleStore()
-    const before = (await s.fetchMessages('edufrem-demo', 'demo-awa')).messages.length
-    const sent = await s.sendMessage('edufrem-demo', 'demo-awa', 'Bonjour, merci pour le suivi.')
+    const before = (await s.fetchMessages('edufrem-demo', 'demo-awa')).messages
+    expect(before.some((m) => m.from === 'ecole')).toBe(true)
+    expect(before.some((m) => m.from === 'moi')).toBe(true)
+    const sent = await s.sendMessage('edufrem-demo', 'demo-awa', { text: 'Bonjour, merci pour le suivi.', subject: 'Suivi', to: 'Administration' })
     expect(sent.ok).toBe(true)
-    const after = await s.fetchMessages('edufrem-demo')
-    expect(after.messages.length).toBe(before + 1)
-    expect(after.messages[after.messages.length - 1].text).toContain('Bonjour')
-    expect(after.messages[after.messages.length - 1].from).toBe('moi')
+    const after = (await s.fetchMessages('edufrem-demo', 'demo-awa')).messages
+    expect(after.length).toBe(before.length + 1)
+    const last = after[after.length - 1]
+    expect(last.body).toContain('Bonjour')
+    expect(last.from).toBe('moi')
+  })
+
+  it('destinataires : services + enseignants disponibles', async () => {
+    const s = useLienEcoleStore()
+    const r = await s.fetchDestinataires('edufrem-demo', 'demo-awa')
+    expect(r.ok).toBe(true)
+    expect(r.destinataires.length).toBeGreaterThan(2)
+    expect(r.destinataires.some((d) => d.type === 'enseignant')).toBe(true)
   })
 })

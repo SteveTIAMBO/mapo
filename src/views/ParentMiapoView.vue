@@ -150,7 +150,7 @@
           </div>
 
           <div class="stat-grid">
-            <div class="stat" role="button" tabindex="0" @click="section = 'enfants'" @keyup.enter="section = 'enfants'"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
+            <div class="stat" role="button" tabindex="0" :title="t('mia.avgOf20Hint')" @click="section = noteStatTarget" @keyup.enter="section = noteStatTarget"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">{{ t('mia.toReview') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'profil6c'" @keyup.enter="section = 'profil6c'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
           </div>
@@ -193,8 +193,16 @@
           </div>
           <!-- Co-parent + compte enfant : déplacés dans Paramètres → « Mes enfants ». -->
 
-          <!-- Notes -->
-          <div class="card">
+          <!-- École reliée → les notes viennent du bulletin de l'école : on masque
+               la saisie manuelle (redondante) et on pointe vers « Mon école ». -->
+          <div v-if="ecoleLieActive" class="card ecole-notes-ptr" role="button" tabindex="0" @click="section = 'ecole_bulletins'" @keyup.enter="section = 'ecole_bulletins'">
+            <div class="card-head"><FileText :size="18" /><h3><DualText :text="t('mia.ecBulletins')" /></h3></div>
+            <p class="muted">{{ t('mia.notesFromSchool') }}</p>
+            <span class="rappel-cta">{{ t('mia.ecBulletins') }} <ChevronRight :size="14" /></span>
+          </div>
+
+          <!-- Notes (saisie manuelle : uniquement si l'école n'est pas reliée) -->
+          <div v-else class="card">
             <div class="card-head"><FileText :size="18" /><h3><DualText :text="isApprenant ? t('mia.yourNotes') : t('mia.notesOf', { name: activeEnfant.firstName })" /></h3></div>
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
@@ -415,9 +423,23 @@
           <MiapoMesCours :enfant="activeEnfant" />
         </section>
 
-        <!-- ========== MON ÉCOLE (liaison MAPO ↔ MAPO+ : devoirs, puis cours/notes) ========== -->
+        <!-- ========== MON ÉCOLE — non reliée : saisie du code de liaison ========== -->
         <section v-else-if="section === 'ecole'" class="sec">
           <MiapoLienEcole :enfant="activeEnfant" />
+        </section>
+
+        <!-- ========== MON ÉCOLE — reliée : un module par entrée de menu ========== -->
+        <section v-else-if="section === 'ecole_devoirs'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" module="devoirs" />
+        </section>
+        <section v-else-if="section === 'ecole_cours'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" module="cours" />
+        </section>
+        <section v-else-if="section === 'ecole_bulletins'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" module="notes" />
+        </section>
+        <section v-else-if="section === 'ecole_messages'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" module="messages" />
         </section>
 
         <!-- ========== HISTORIQUE (rejouable, priorité aux faiblesses) ========== -->
@@ -550,6 +572,7 @@
             :matieres="matieresList"
             :a-reviser="aReviser"
             :can-edit="isApprenant"
+            :linked="ecoleLieActive"
             @revise="(m) => isApprenant && goRevise(m)"
           />
         </section>
@@ -1072,6 +1095,11 @@ function estClasseOrientation(e) {
   const n = String(e.niveau || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   return /(^|[^0-9])3e|3eme|seconde|2nde|2de|1ere|1re|premiere|terminale|\btle\b/.test(n)
 }
+// Élève relié à une école MAPO (accessible au template : Planning, accueil…).
+const ecoleLieActive = computed(() => !!(activeEnfant.value && activeEnfant.value.ecoleReliee))
+// La tuile « Moyenne des notes » de l'accueil ouvre le bon module de notes :
+// le bulletin de l'école si relié, sinon les notes saisies (« Mes notes »).
+const noteStatTarget = computed(() => (ecoleLieActive.value ? 'ecole_bulletins' : 'enfants'))
 const SECTIONS = computed(() => {
   const home = { key: 'accueil', label: t('mia.secHome'), icon: Home } // sans groupe (en tête)
   const progress = { key: 'progression', label: t('mia.secProgress'), icon: TrendingUp, group: 'suivi' }
@@ -1084,25 +1112,40 @@ const SECTIONS = computed(() => {
   // mineur géré par le parent ne le voit pas (ni l'abonnement, cf. Paramètres).
   const usageItems = isSelfPayer.value ? [usage] : []
   const billingItems = (store.isCompteEnfant || isApprenant.value) ? [] : [billing]
+  // ── Section « Mon école » (liaison MAPO) ──────────────────────────────
+  // Reliée → un GROUPE dédié (Devoirs / Cours / Bulletins / Messagerie), au même
+  // niveau qu'Apprendre/Suivi. Non reliée → une seule entrée pour saisir le code.
+  // Reliée, les modules MANUELS redondants s'effacent (Mes notes de l'élève).
+  const ecoleLie = !!(activeEnfant.value && activeEnfant.value.ecoleReliee)
+  const ecoleGroup = ecoleLie ? [
+    { key: 'ecole_devoirs', label: t('mia.ecDevoirs'), icon: ClipboardList, group: 'ecole' },
+    { key: 'ecole_cours', label: t('mia.ecCours'), icon: FolderOpen, group: 'ecole' },
+    { key: 'ecole_bulletins', label: t('mia.ecBulletins'), icon: FileText, group: 'ecole' },
+    { key: 'ecole_messages', label: t('mia.ecMessages'), icon: MessageCircle, group: 'ecole' },
+  ] : []
+  const ecoleEntry = (grp) => (ecoleLie ? [] : [{ key: 'ecole', label: t('mia.secSchool'), icon: School, group: grp }])
   if (!isApprenant.value) {
     return [
       home,
       { key: 'enfants', label: t('mia.secMyChildren'), icon: Users, group: 'suivi' },
-      { key: 'ecole', label: t('mia.secSchool'), icon: School, group: 'suivi' },
+      ...ecoleEntry('suivi'),
       progress, planning, edt,
+      ...ecoleGroup,
       ...usageItems, ...billingItems,
     ]
   }
-  // Ordre regroupé (façon HUB) : Apprendre → Suivi → Orientation → Compte.
+  // Ordre regroupé (façon HUB) : Apprendre → Mon école → Suivi → Orientation → Compte.
   return [
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
     { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
-    { key: 'ecole', label: t('mia.secSchool'), icon: School, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'recompenses', label: t('mia.secRewards'), icon: Trophy, group: 'apprendre' },
-    { key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' },
+    ...ecoleEntry('apprendre'),
+    ...ecoleGroup,
+    // « Mes notes » manuelles masquées quand l'école est reliée (le bulletin école prend le relais).
+    ...(ecoleLie ? [] : [{ key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' }]),
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
     ...(estClasseOrientation(activeEnfant.value) ? [orient] : []),
@@ -1112,7 +1155,7 @@ const SECTIONS = computed(() => {
 // Regroupe le menu par bloc (façon HUB) : les items sans groupe (Accueil) restent
 // en tête ; les autres sont regroupés sous un intitulé pliable.
 const navGroups = computed(() => {
-  const labels = { apprendre: t('mia.grpLearn'), suivi: t('mia.grpTrack'), orientation: t('mia.grpGuide'), compte: t('mia.grpAccount') }
+  const labels = { apprendre: t('mia.grpLearn'), ecole: t('mia.grpSchool'), suivi: t('mia.grpTrack'), orientation: t('mia.grpGuide'), compte: t('mia.grpAccount') }
   const out = []
   for (const s of SECTIONS.value) {
     const g = s.group || null
@@ -2531,6 +2574,9 @@ onUnmounted(() => {
 .rappel-line.late { color: #D93025; font-weight: 600; }
 .rappel-line.rev { color: var(--tx2, var(--tx3)); }
 .rappel-cta { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--pr); }
+.ecole-notes-ptr { cursor: pointer; }
+.ecole-notes-ptr:hover { border-color: var(--pr); }
+.ecole-notes-ptr .rappel-cta { margin-top: 8px; }
 .obj-chip { margin-left: auto; font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; color: var(--pr); background: rgba(var(--pr-rgb), .10); }
 .muted { color: var(--tx3, #6b7280); font-size: 14px; margin: 0 0 14px; } .small { font-size: 13px; }
 .lnk { background: none; border: none; color: var(--pr); cursor: pointer; font: inherit; padding: 0; text-decoration: underline; }

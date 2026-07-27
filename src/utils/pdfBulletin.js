@@ -37,6 +37,8 @@ export function generateBulletinPDF(opts) {
     directeurName = '', profPrincipalName = '',
     directeurDate = '', profPrincipalDate = '',
     directeurSignature = null,
+    // « Diplôme vérifiable » : QR + code + URL de vérification (facultatif).
+    verifQrDataUrl = null, verifCode = '', verifUrlText = '',
   } = opts
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
@@ -271,6 +273,25 @@ export function generateBulletinPDF(opts) {
       doc.setTextColor(100, 100, 100)
       doc.text(directeurDate, sigRightX + 2, y)
     }
+  }
+
+  // ── « Diplôme vérifiable » : QR + code (bas-gauche) ──
+  if (verifQrDataUrl || verifCode) {
+    const qrSize = 22
+    const qrY = pageH - 34
+    if (verifQrDataUrl) {
+      try { doc.addImage(verifQrDataUrl, 'PNG', margin, qrY, qrSize, qrSize) } catch (e) { /* ignore */ }
+    }
+    const tx = margin + (verifQrDataUrl ? qrSize + 4 : 0)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    doc.setTextColor(21, 88, 176)
+    doc.text('Diplôme vérifiable', tx, qrY + 5)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(7.5)
+    doc.setTextColor(60, 60, 60)
+    if (verifCode) doc.text('Code : ' + verifCode, tx, qrY + 10)
+    if (verifUrlText) doc.text('Vérifiez sur ' + verifUrlText, tx, qrY + 14.5)
   }
 
   // ── Footer ──

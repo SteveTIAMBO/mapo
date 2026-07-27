@@ -5,6 +5,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore'
 import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso } from '../utils/coursPerso'
+import { DEMO_LIEN } from '../data/demoEcoleLiee'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -36,7 +37,7 @@ const KEY = (owner) => `mapo_enfants_autonomes_${owner || 'demo'}`
 // Version des données de DÉMO : à incrémenter dès que l'amorçage démo change
 // (profil élargi à 10 compétences, suppression du 2e enfant…) → purge auto de la
 // démo périmée dans le navigateur. N'affecte QUE la démo, jamais un vrai compte.
-const DEMO_VERSION = 3
+const DEMO_VERSION = 4
 const DEMO_VERSION_KEY = (owner) => `mapo_ea_demo_version_${owner || 'demo'}`
 
 // Niveaux courants (secondaire Afrique francophone) — series pour le lycée.
@@ -690,7 +691,9 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   // sans saisie préalable. Démo uniquement, et seulement si aucun enfant.
   function seedDemoIfEmpty() {
     if (enfants.value.length) return
-    // Awa : apprenante B2C NON rattachée à une école (auto-inscription).
+    // Awa : apprenante B2C reliée à une école MAPO (Collège EDUFREM) pour que la
+    // démo montre d'emblée la section « Mon école » (devoirs, cours, bulletins,
+    // messagerie). On peut la délier pour retrouver le parcours de saisie du code.
     const id = addEnfant({ firstName: 'Awa', lastName: 'Nkeng', gender: 'F', niveau: '5ème', pays: 'CM' })
     addNote(id, 'Mathématiques', 8)
     addNote(id, 'Français', 14)
@@ -707,6 +710,8 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     } catch { /* best-effort démo */ }
     // Historique d'activité → badges/récompenses visibles (démo).
     try { for (let i = 0; i < 12; i++) enregistrerActivite(id, { format: i % 3 === 0 ? 'chat' : 'quiz' }) } catch { /* best-effort */ }
+    // Liaison école (démo) → section « Mon école » active dès l'entrée.
+    try { lierEcole(id, { ...DEMO_LIEN }) } catch { /* best-effort démo */ }
   }
 
   // Démo : (re)pose un profil UNIQUE cohérent avec le point de vue choisi sur
