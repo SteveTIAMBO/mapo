@@ -1117,11 +1117,19 @@ const SECTIONS = computed(() => {
   // niveau qu'Apprendre/Suivi. Non reliée → une seule entrée pour saisir le code.
   // Reliée, les modules MANUELS redondants s'effacent (Mes notes de l'élève).
   const ecoleLie = !!(activeEnfant.value && activeEnfant.value.ecoleReliee)
+  // Messagerie « Mon école » : réservée au RESPONSABLE qui échange avec l'école —
+  // le parent, ou un apprenant AUTO-INSCRIT (adulte/étudiant qui a activé lui-même
+  // la liaison). Un enfant onboardé par son parent (compte enfant, ou vue apprenant
+  // d'un mineur géré par le parent) n'y a PAS accès : c'est le parent qui communique.
+  // Même frontière que « le payeur » : isSelfPayer (parent | apprenant auto-inscrit).
+  const messagerieEcole = isSelfPayer.value
+    ? [{ key: 'ecole_messages', label: t('mia.ecMessages'), icon: MessageCircle, group: 'ecole' }]
+    : []
   const ecoleGroup = ecoleLie ? [
     { key: 'ecole_devoirs', label: t('mia.ecDevoirs'), icon: ClipboardList, group: 'ecole' },
     { key: 'ecole_cours', label: t('mia.ecCours'), icon: FolderOpen, group: 'ecole' },
     { key: 'ecole_bulletins', label: t('mia.ecBulletins'), icon: FileText, group: 'ecole' },
-    { key: 'ecole_messages', label: t('mia.ecMessages'), icon: MessageCircle, group: 'ecole' },
+    ...messagerieEcole,
   ] : []
   const ecoleEntry = (grp) => (ecoleLie ? [] : [{ key: 'ecole', label: t('mia.secSchool'), icon: School, group: grp }])
   if (!isApprenant.value) {
