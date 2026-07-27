@@ -305,7 +305,7 @@
                 </div>
                 <template v-if="reviseMatiere">
                   <!-- Choix du type de révision (masqué dès qu'un module est lancé) -->
-                  <template v-if="!activeRedaction && !activeDictee">
+                  <template v-if="!activeRedaction && !activeDictee && !activeAppariement">
                     <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
                     <div class="rt-grid">
                       <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
@@ -316,9 +316,10 @@
                   </template>
                   <!-- Module lancé : bouton retour au choix -->
                   <div v-else class="rt-active">
-                    <button type="button" class="rt-back" @click="activeRedaction = ''; activeDictee = ''"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
+                    <button type="button" class="rt-back" @click="activeRedaction = ''; activeDictee = ''; activeAppariement = ''"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
                     <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
                     <MiapoDictee v-if="activeDictee" :key="'dic-' + activeDictee" :enfant="activeEnfant" :matiere="activeDictee" @quit="activeDictee = ''" />
+                    <MiapoAppariement v-if="activeAppariement" :key="'appa-' + activeAppariement" :enfant="activeEnfant" :matiere="activeAppariement" @quit="activeAppariement = ''" />
                   </div>
                 </template>
               </template>
@@ -1000,12 +1001,13 @@ import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import MiapoDictee from '../components/MiapoDictee.vue'
+import MiapoAppariement from '../components/MiapoAppariement.vue'
 import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, LifeBuoy } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, LifeBuoy } from 'lucide-vue-next'
 import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
@@ -1014,7 +1016,7 @@ import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges } from '../utils/recompenses'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
-const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network }
+const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network, Puzzle }
 
 const router = useRouter()
 const route = useRoute()
@@ -1631,8 +1633,10 @@ const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(revise
 const activeRedaction = ref('')
 // Matière en cours de « Dictée » (module vocal dédié).
 const activeDictee = ref('')
-// Changer de matière referme les widgets rédaction/dictée en cours.
-watch(reviseMatiere, () => { activeRedaction.value = ''; activeDictee.value = '' })
+// Matière en cours d'« Appariement » (jeu de paires à relier).
+const activeAppariement = ref('')
+// Changer de matière referme les widgets rédaction/dictée/appariement en cours.
+watch(reviseMatiere, () => { activeRedaction.value = ''; activeDictee.value = ''; activeAppariement.value = '' })
 // Renvoie vers le menu « Cours » (import de cours / documents + Carré).
 function ouvrirMesCours() { section.value = 'cours'; menuOpen.value = false }
 // Option « + Importer un nouveau cours » du sélecteur de matière → ouvre Cours.
@@ -1644,6 +1648,7 @@ function launchRevision(typeKey) {
   if (!isApprenant.value || !m) return
   activeRedaction.value = ''
   activeDictee.value = ''
+  activeAppariement.value = ''
   const niveau = activeEnfant.value?.niveau || ''
   const theme = pendingTheme.value; pendingTheme.value = '' // thème « quiz sur les fractions » consommé une seule fois
   switch (typeKey) {
@@ -1651,6 +1656,7 @@ function launchRevision(typeKey) {
     case 'flashcards': section.value = 'fiches'; return // fiche + cartes mémoire
     case 'redaction': activeRedaction.value = m; return // production écrite corrigée
     case 'dictee': activeDictee.value = m; return // dictée VOCALE (module dédié)
+    case 'appariement': activeAppariement.value = m; return // jeu de paires à relier (module dédié)
     default: {
       // explique-moi / problèmes mêlés / dictée / carte mentale → session
       // pédagogique guidée dans le chat MIAPO (comptée dans l'usage).

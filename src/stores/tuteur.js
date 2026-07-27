@@ -506,6 +506,41 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
+   * Génère un exercice d'APPARIEMENT (paires à relier) : titre + liste de paires
+   * { a, b }. En mode `visuel` (jeune apprenant / primaire), b est un emoji qui
+   * illustre le mot a (double codage, coût nul). La correction est côté client
+   * (l'apprenant relie a↔b) : aucune bonne réponse cachée à protéger.
+   * @returns {Promise<{ok, titre?:string, paires?:Array<{a,b}>, reason?}>}
+   */
+  async function genererAppariement({ matiere = 'Culture générale', niveau = '', difficulte = 1, cours = '', digest = '', visuel = false, langue = 'fr' }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ metered: mtrB2C(), task: 'appariement', data: { matiere, niveau, difficulte, cours, digest, visuel, langue } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && json.ok && json.text) {
+        const o = parseJsonObject(json.text)
+        const paires = o && Array.isArray(o.paires)
+          ? o.paires
+              .map((p) => ({ a: String((p && p.a) || '').trim(), b: String((p && p.b) || '').trim() }))
+              .filter((p) => p.a && p.b)
+          : []
+        if (paires.length >= 3) return { ok: true, titre: String((o && o.titre) || '').trim(), paires }
+      }
+      return { ok: false, reason: (json && (json.detail || json.error)) || 'appariement_failed' }
+    } catch (e) {
+      return { ok: false, reason: 'network' }
+    }
+  }
+
+  /**
    * Transcrit en TEXTE une photo de cours (page de manuel / cahier) pour l'ajouter
    * au dépôt « Mes cours ». Le backend ignore les données personnelles (nom, n°) :
    * seule la matière pédagogique est restituée. L'image n'est pas conservée.
@@ -881,7 +916,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })
 

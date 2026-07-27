@@ -1,14 +1,43 @@
 // MAPO+ — Sous-RAG PAR APPRENANT, v1 : le « digest apprenant ».
 //
-// Plutôt qu'un vrai RAG vectoriel (coûteux, serveur), on agrège TOUS les signaux
-// déjà collectés côté client (profil, niveau, compétences, notes, niveaux de
-// révision, points faibles, cours importés, forme du jour, ressenti de difficulté)
-// en un RÉSUMÉ COMPACT injecté dans les prompts MIAPO. Résultat : au fil des
-// connexions, MIAPO « connaît » de mieux en mieux l'apprenant et adapte son
-// langage et sa pédagogie — pour un coût quasi nul. (v2 = vecteur serveur par uid.)
+// ─────────────────────────────────────────────────────────────────────────────
+//  CHARTE IA EDUFREM (embarquée dans le code, pas seulement affichée).
+//  Ce module est la mise en œuvre concrète de nos engagements sur l'IA dans
+//  l'éducation. Chaque principe ci-dessous est APPLIQUÉ ici, vérifiable en lisant
+//  le code — pas du marketing. Toute évolution doit respecter ces cinq principes.
+// ─────────────────────────────────────────────────────────────────────────────
 //
-// PRIVÉ : ce digest ne quitte pas le contexte de CET apprenant (comme les cours
-// perso) ; il ne remonte jamais dans le RAG général.
+//  1. FRUGALITÉ (« bien faire avec peu »). Plutôt qu'un RAG vectoriel serveur
+//     (coûteux, gourmand), on AGRÈGE des signaux DÉJÀ collectés côté client
+//     (profil, niveau, compétences, notes, niveaux de révision, points faibles,
+//     cours importés, forme du jour, ressenti de difficulté, régularité) en un
+//     RÉSUMÉ COMPACT (capé à 1400 caractères) injecté dans les prompts. Coût quasi
+//     nul, fonctionne en bas débit. Corollaire de frugalité côté quiz : un exercice
+//     GÉNÉRIQUE (sans thème ni cours perso) N'EST PAS personnalisé — il reste neutre
+//     et alimente une banque PARTAGÉE réutilisée par tous (0 token régénéré). On ne
+//     dépense de l'IA que là où ça sert vraiment l'apprenant.
+//
+//  2. PERSONNALISATION UTILE. Le digest sert à ADAPTER le langage, les exemples
+//     (ancrés dans ce que l'apprenant aime), le rythme et la pédagogie — pour que
+//     MIAPO « connaisse » de mieux en mieux l'apprenant au fil des connexions.
+//     C'est de l'adaptation, jamais du profilage commercial.
+//
+//  3. INTÉGRITÉ PÉDAGOGIQUE (pas de complaisance). La personnalisation NE BAISSE
+//     JAMAIS l'exigence : la DIFFICULTÉ reste pilotée par la MAÎTRISE réelle
+//     (niveau adaptatif), pas par l'humeur ni par une envie de faire plaisir. Une
+//     « forme basse » adoucit le TON et raccourcit la séance, jamais le niveau.
+//
+//  4. CONFIDENTIALITÉ. Ce digest ne quitte pas le contexte de CET apprenant
+//     (comme les cours perso) ; il ne remonte JAMAIS dans le RAG général ni dans
+//     la banque partagée. Il ne contient pas le vrai prénom (jeton côté serveur) —
+//     seulement des signaux d'apprentissage utiles à l'adaptation.
+//
+//  5. TRANSPARENCE. L'apprenant voit d'où viennent ses exercices (ses cours /
+//     référentiel national / mix) et se voit rappeler qu'une IA peut se tromper.
+//     Rien n'est caché, rien n'est « magique ».
+//
+//  Feuille de route : v1 = ce « digest » (résumé injecté) ; v2 = vecteur serveur
+//  par uid, dans le strict respect des mêmes cinq principes.
 
 import { humeurDuJour, historiqueFeedback } from './humeur'
 import { statsRecompenses, serieActuelle } from './recompenses'

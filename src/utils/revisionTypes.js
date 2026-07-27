@@ -47,6 +47,9 @@ export const REVISION_TYPES = [
   { key: 'quiz', engine: 'quiz', icon: 'ListChecks', technique: 'retrieval', always: true },
   // Récupération espacée — cartes recto/verso, toutes matières.
   { key: 'flashcards', engine: 'fiches', icon: 'Layers', technique: 'spaced', always: true },
+  // Appariement — récupération par ASSOCIATION (paires à relier) + double codage
+  // en mode visuel (emoji) pour les jeunes : vocabulaire, symboles, définitions.
+  { key: 'appariement', engine: 'match', icon: 'Puzzle', technique: 'paired-associate', needs: ['langue', 'conceptuel', 'scientifique'] },
   // Auto-explication (méthode Feynman) — expliquer avec ses mots, toutes matières.
   { key: 'explain', engine: 'chat', icon: 'MessagesSquare', technique: 'self-explanation', always: true },
   // Entrelacement — alterner types de problèmes : discrimination (maths/sciences).

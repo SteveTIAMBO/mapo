@@ -111,6 +111,7 @@ if (!empty($r['ok'])) {
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'dictee') return buildDicteePrompts($d);
+  if ($task === 'appariement') return buildAppariementPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'vision_cours') return buildVisionCoursPrompts($d);
   if ($task === 'vision_registre') return buildVisionRegistrePrompts($d);
@@ -750,6 +751,60 @@ function buildDicteePrompts($d) {
   if ($cours !== '') $u .= "Cours de l'apprenant (vocabulaire de référence) :\n{$cours}\n";
   $u .= "\nGénère la dictée au format JSON demandé.";
   return [$system, $u, 900, true, null];
+}
+
+// ── Appariement : génère des PAIRES à relier (jeu de matching) ──────────────
+// Récupération par association (paired-associate) + double codage en mode visuel.
+// Renvoie un titre + une liste de paires {a, b}. En mode VISUEL (jeune apprenant),
+// b est UN emoji qui illustre le mot a (double codage, coût nul). La correction se
+// fait côté client (l'apprenant relie a↔b), aucune bonne réponse à cacher ici.
+function buildAppariementPrompts($d) {
+  $matiere = clean($d['matiere'] ?? 'Culture générale', 50);
+  $niveau  = clean($d['niveau'] ?? '', 40);
+  $cours   = clean($d['cours'] ?? '', 6000);
+  $digest  = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact (privé)
+  $visuel  = !empty($d['visuel']);            // mode image/emoji (primaire)
+  $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  // Nombre de paires : croît AVEC la difficulté (sans plafond réel, borné à 8 pour
+  // que l'écran reste jouable au doigt). Plus l'apprenant progresse, plus il y a
+  // de paires et plus les associations sont fines.
+  $diff  = isset($d['difficulte']) ? max(1, intval($d['difficulte'])) : 1;
+  $count = max(4, min(8, 3 + $diff));
+
+  if ($langue === 'en') {
+    $diffDesc = $diff <= 2 ? "obvious, well-known associations (basics)."
+      : ($diff <= 4 ? "finer associations, items that are close and must be told apart."
+      : "expert level: subtle associations, near-identical-looking items, no easy guess.");
+    $system = "You are a caring teacher preparing a MATCHING exercise (pairs to connect) for a learner. "
+      . "Produce {$count} PAIRS, each linking a left item (a) to its ONE correct right match (b), fit for the subject and level. "
+      . "Depending on the subject: word↔definition, term↔symbol, word↔translation, date↔event, cause↔effect, etc. "
+      . "Pairs must be UNAMBIGUOUS (exactly one correct match per item) and factually correct. Difficulty: {$diffDesc} ";
+    if ($visuel) $system .= "VISUAL MODE (young learner): 'a' is a simple CONCRETE word, 'b' is ONE single emoji that depicts it "
+      . "(e.g. {\"a\":\"cat\",\"b\":\"\xF0\x9F\x90\xB1\"}, {\"a\":\"sun\",\"b\":\"\xE2\x98\x80\xEF\xB8\x8F\"}). Use only concrete nouns depictable by a common emoji. ";
+    if ($cours !== '') $system .= "If the learner's course is given below, draw the pairs FIRST from its content. ";
+    if ($digest !== '') $system .= "If a learner PROFILE is given, anchor the items in their interests and adapt the tone — WITHOUT changing the difficulty above, and never copy the profile. ";
+    $system .= "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"paires\":[{\"a\":\"...\",\"b\":\"...\"}]}.";
+  } else {
+    $diffDesc = $diff <= 2 ? "associations évidentes et bien connues (bases)."
+      : ($diff <= 4 ? "associations plus fines, avec des éléments proches à bien distinguer."
+      : "niveau expert : associations subtiles, éléments d'apparence très proche, aucune réponse évidente.");
+    $system = "Tu es un enseignant bienveillant qui prépare un exercice d'APPARIEMENT (paires à relier) pour un apprenant. "
+      . "Produis {$count} PAIRES, chacune reliant un élément de gauche (a) à SON unique correspondant de droite (b), adaptées à la matière et au niveau. "
+      . "Selon la matière : mot↔définition, terme↔symbole, mot↔traduction, date↔évènement, cause↔conséquence, etc. "
+      . "Les paires doivent être NON AMBIGUËS (une seule bonne association par élément) et factuellement exactes. Difficulté : {$diffDesc} ";
+    if ($visuel) $system .= "MODE VISUEL (jeune apprenant) : 'a' est un mot simple et CONCRET, 'b' est UN seul emoji qui l'illustre "
+      . "(ex. {\"a\":\"chat\",\"b\":\"\xF0\x9F\x90\xB1\"}, {\"a\":\"soleil\",\"b\":\"\xE2\x98\x80\xEF\xB8\x8F\"}). N'utilise que des noms concrets illustrables par un emoji courant. ";
+    if ($cours !== '') $system .= "Si le cours de l'apprenant est fourni ci-dessous, tire les paires EN PRIORITÉ de son contenu. ";
+    if ($digest !== '') $system .= "Si un PROFIL de l'apprenant est fourni, ancre les éléments dans ses centres d'intérêt et adapte le ton — SANS changer la difficulté ci-dessus, et sans jamais recopier le profil. ";
+    $system .= "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"paires\":[{\"a\":\"...\",\"b\":\"...\"}]}.";
+  }
+
+  $u = "Matière : {$matiere}\n" . ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
+  $u .= "Nombre de paires : {$count}\n";
+  if ($digest !== '') $u .= "Profil de l'apprenant (ancrer les exemples — ne pas recopier) : {$digest}\n";
+  if ($cours !== '') $u .= "\nCours de l'apprenant (source prioritaire) :\n{$cours}\n";
+  $u .= "\nGénère l'appariement au format JSON demandé.";
+  return [$system, $u, 1400, true, null];
 }
 
 function buildAppreciationPrompts($d) {
