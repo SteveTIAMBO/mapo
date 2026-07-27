@@ -56,36 +56,38 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'redeem', code: c })
   }
 
+  // Un parent peut relier PLUSIEURS enfants : `eleveId` désigne lequel. Le serveur
+  // n'accorde l'accès que si un lien (uid__eleveId) a été scellé (non falsifiable).
   /** Devoirs de la classe de l'élève lié (+ ses propres rendus). */
-  async function fetchDevoirs(schoolId) {
+  async function fetchDevoirs(schoolId, eleveId) {
     if (isDemo()) return { ok: true, className: DEMO_LIEN.className, devoirs: demoDevoirs() }
-    if (!schoolId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'devoirs', schoolId })
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'devoirs', schoolId, eleveId })
   }
 
   /** Cours/ressources publiés par les profs de la classe de l'élève. */
-  async function fetchCours(schoolId) {
+  async function fetchCours(schoolId, eleveId) {
     if (isDemo()) return { ok: true, className: DEMO_LIEN.className, cours: demoCours() }
-    if (!schoolId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'cours', schoolId })
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'cours', schoolId, eleveId })
   }
 
   /** Bulletin de l'élève lié (notes, moyennes, rang, mention) — transféré du MAPO école. */
-  async function fetchNotes(schoolId) {
+  async function fetchNotes(schoolId, eleveId) {
     if (isDemo()) return { ok: true, bulletin: demoBulletin() }
-    if (!schoolId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'notes', schoolId })
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'notes', schoolId, eleveId })
   }
 
   /** Fil de messagerie parent/élève ↔ école. */
-  async function fetchMessages(schoolId) {
+  async function fetchMessages(schoolId, eleveId) {
     if (isDemo()) { if (!demoThread.value) demoThread.value = demoMessages(); return { ok: true, messages: demoThread.value } }
-    if (!schoolId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'messages', schoolId })
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'messages', schoolId, eleveId })
   }
 
   /** Envoi d'un message à l'école. */
-  async function sendMessage(schoolId, text) {
+  async function sendMessage(schoolId, eleveId, text) {
     const t = String(text || '').trim()
     if (!t) return { ok: false, reason: 'vide' }
     if (isDemo()) {
@@ -93,8 +95,8 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
       demoThread.value = [...demoThread.value, { id: 'me-' + demoThread.value.length, from: 'moi', author: 'Vous', at: new Date().toISOString(), text: t }]
       return { ok: true }
     }
-    if (!schoolId) return { ok: false, reason: 'non_relie' }
-    return call({ action: 'send_message', schoolId, text: t })
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'send_message', schoolId, eleveId, text: t })
   }
 
   return { busy, redeemCode, fetchDevoirs, fetchCours, fetchNotes, fetchMessages, sendMessage }

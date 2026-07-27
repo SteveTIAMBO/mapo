@@ -107,12 +107,13 @@ if ($action === 'redeem') {
   $firstName = (string)($elF['firstName'] ?? $invF['firstName'] ?? '');
   $lastName  = (string)($elF['lastName'] ?? $invF['lastName'] ?? '');
 
-  // Sceller le lien de confiance (admin). Clé = uid → un compte, un élève.
+  // Sceller le lien de confiance (admin). Clé = uid__eleveId → un compte PEUT relier
+  // PLUSIEURS enfants (cas du parent). Chaque (compte, élève) est un doc distinct.
   $linkFields = fsEncodeFields([
     'eleveId' => $eleveId, 'className' => $className, 'classId' => $classId,
     'matricule' => $matricule, 'linkedAt' => $now, 'code' => $code,
   ]);
-  $wCode = fsPatch("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $linkFields, $saToken);
+  $wCode = fsPatch("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $linkFields, $saToken);
   if ($wCode !== 200) {
     // Scellement échoué APRÈS consommation → on rend le code réutilisable (best-effort).
     fsPatch($invPath, fsEncodeFields(['used' => false]), $saToken, ['used']);
@@ -132,15 +133,16 @@ if ($action === 'devoirs') {
   $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
   if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
 
-  // Le lien fait foi : eleveId/className viennent du serveur, JAMAIS du client
-  // (sinon on pourrait réclamer les devoirs d'un autre).
-  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $saToken);
+  // L'enfant ciblé est indiqué par le client, mais l'accès n'est accordé QUE si un
+  // lien de confiance (uid__eleveId) a été scellé par redeem (le client ne peut pas
+  // le forger). Un parent ne peut donc voir QUE les enfants qu'il a reliés.
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $saToken);
   if ($lkCode !== 200 || !$lk) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
   $lkF = fsDecodeFields($lk['fields'] ?? []);
-  $eleveId     = (string)($lkF['eleveId'] ?? '');
   $linkClass   = (string)($lkF['className'] ?? '');
   $linkClassId = (string)($lkF['classId'] ?? '');
-  if ($eleveId === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
   // Classe COURANTE (l'élève a pu changer de classe depuis la liaison) : on relit
   // sa fiche → jamais servir une classe qu'il a quittée. Repli sur le snapshot.
   list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
@@ -167,17 +169,15 @@ if ($action === 'cours') {
   $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
   if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
 
-  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid), $saToken);
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $saToken);
   if ($lkCode !== 200 || !$lk) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
   $lkF = fsDecodeFields($lk['fields'] ?? []);
-  $eleveId   = (string)($lkF['eleveId'] ?? '');
   $linkClass = (string)($lkF['className'] ?? '');
   // Classe COURANTE (voir action devoirs) : on relit la fiche élève.
-  $className = '';
-  if ($eleveId !== '') {
-    list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
-    if ($elCode === 200 && $el) $className = (string)(fsDecodeFields($el['fields'] ?? [])['className'] ?? '');
-  }
+  list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+  $className = ($elCode === 200 && $el) ? (string)(fsDecodeFields($el['fields'] ?? [])['className'] ?? '') : '';
   if ($className === '') $className = $linkClass;
   if ($className === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
 

@@ -166,6 +166,7 @@ const msg = ref({ list: [], busy: false, err: '', loaded: false })
 const relie = computed(() => !!(props.enfant && props.enfant.ecoleReliee && props.enfant.lienEcole))
 const lienInfo = computed(() => props.enfant?.lienEcole || {})
 const sid = computed(() => lienInfo.value.schoolId)
+const eid = computed(() => lienInfo.value.eleveId)
 
 const tabs = computed(() => [
   { key: 'devoirs', icon: ClipboardList, label: en.value ? 'Homework' : 'Devoirs' },
@@ -214,25 +215,25 @@ async function loadTab(k) {
   if (!relie.value) return
   if (k === 'devoirs' && !dev.value.loaded && !dev.value.busy) {
     dev.value.busy = true
-    const r = await lien.fetchDevoirs(sid.value)
+    const r = await lien.fetchDevoirs(sid.value, eid.value)
     dev.value.busy = false; dev.value.loaded = true
     if (r && r.ok) dev.value.list = (r.devoirs || []).slice().sort((a, b) => String(a.dueDate || '').localeCompare(String(b.dueDate || '')))
     else dev.value.err = msgTxt(r && r.reason)
   } else if (k === 'cours' && !crs.value.loaded && !crs.value.busy) {
     crs.value.busy = true
-    const r = await lien.fetchCours(sid.value)
+    const r = await lien.fetchCours(sid.value, eid.value)
     crs.value.busy = false; crs.value.loaded = true
     if (r && r.ok) crs.value.list = r.cours || []
     else crs.value.err = msgTxt(r && r.reason)
   } else if (k === 'notes' && !nt.value.loaded && !nt.value.busy) {
     nt.value.busy = true
-    const r = await lien.fetchNotes(sid.value)
+    const r = await lien.fetchNotes(sid.value, eid.value)
     nt.value.busy = false; nt.value.loaded = true
     if (r && r.ok) nt.value.bulletin = r.bulletin || null
     else nt.value.err = msgTxt(r && r.reason)
   } else if (k === 'messages' && !msg.value.loaded && !msg.value.busy) {
     msg.value.busy = true
-    const r = await lien.fetchMessages(sid.value)
+    const r = await lien.fetchMessages(sid.value, eid.value)
     msg.value.busy = false; msg.value.loaded = true
     if (r && r.ok) msg.value.list = r.messages || []
     else msg.value.err = msgTxt(r && r.reason)
@@ -251,7 +252,7 @@ async function envoyer() {
   const t = draft.value.trim()
   if (!t || sending.value) return
   sending.value = true
-  const r = await lien.sendMessage(sid.value, t)
+  const r = await lien.sendMessage(sid.value, eid.value, t)
   sending.value = false
   if (r && r.ok) {
     draft.value = ''

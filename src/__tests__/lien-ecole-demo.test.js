@@ -55,8 +55,8 @@ describe('lienEcole — mode démo', () => {
 
   it('messagerie : lecture puis envoi ajoute le message', async () => {
     const s = useLienEcoleStore()
-    const before = (await s.fetchMessages('edufrem-demo')).messages.length
-    const sent = await s.sendMessage('edufrem-demo', 'Bonjour, merci pour le suivi.')
+    const before = (await s.fetchMessages('edufrem-demo', 'demo-awa')).messages.length
+    const sent = await s.sendMessage('edufrem-demo', 'demo-awa', 'Bonjour, merci pour le suivi.')
     expect(sent.ok).toBe(true)
     const after = await s.fetchMessages('edufrem-demo')
     expect(after.messages.length).toBe(before + 1)
