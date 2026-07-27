@@ -48,6 +48,9 @@ if (is_file($cfg)) require_once $cfg;
 if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem');
 if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json');
 
+// Logique pure (encode/décode Firestore + tranchage) — testée à part.
+require_once __DIR__ . '/mapo-lien-lib.php';
+
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $body['action'] ?? '';
 
@@ -153,33 +156,8 @@ if ($action === 'devoirs') {
   $all = is_array($data['devoirs'] ?? null) ? $data['devoirs'] : [];
   $subs = is_array($data['submissions'] ?? null) ? $data['submissions'] : [];
 
-  $out = [];
-  foreach ($all as $d) {
-    if (!is_array($d)) continue;
-    $dClass = (string)($d['className'] ?? '');
-    $dClassId = (string)($d['classId'] ?? '');
-    // Tranche de SA classe uniquement (par nom OU par id de classe).
-    if (!(($dClass !== '' && $dClass === $className) || ($dClassId !== '' && $classId !== '' && $dClassId === $classId))) continue;
-    $did = (string)($d['id'] ?? '');
-    $sub = ($did !== '' && isset($subs[$did . '_' . $eleveId]) && is_array($subs[$did . '_' . $eleveId])) ? $subs[$did . '_' . $eleveId] : null;
-    $out[] = [
-      'id' => $did,
-      'title' => (string)($d['title'] ?? ''),
-      'description' => (string)($d['description'] ?? ''),
-      'subjectName' => (string)($d['subjectName'] ?? ''),
-      'type' => (string)($d['type'] ?? ''),
-      'isDigital' => !empty($d['isDigital']),
-      'dueDate' => (string)($d['dueDate'] ?? ''),
-      'createdAt' => (string)($d['createdAt'] ?? ''),
-      // On ne renvoie QUE le rendu de CET élève (jamais ceux des autres).
-      'submission' => $sub ? [
-        'submittedAt' => (string)($sub['submittedAt'] ?? ''),
-        'grade' => isset($sub['grade']) ? $sub['grade'] : null,
-        'feedback' => (string)($sub['feedback'] ?? ''),
-        'gradedAt' => (string)($sub['gradedAt'] ?? ''),
-      ] : null,
-    ];
-  }
+  // Tranchage (logique testée dans mapo-lien-lib.php) : sa classe + son seul rendu.
+  $out = sliceDevoirs($all, $subs, $className, $classId, $eleveId);
   echo json_encode(['ok' => true, 'className' => $className, 'devoirs' => $out]);
   exit;
 }
@@ -208,28 +186,8 @@ if ($action === 'cours') {
   $data = fsDecodeFields($doc['fields'] ?? []);
   $items = is_array($data['items'] ?? null) ? $data['items'] : [];
 
-  $out = [];
-  foreach ($items as $c) {
-    if (!is_array($c)) continue;
-    // Uniquement des SUPPORTS DE COURS/RESSOURCES (jamais devoirs/examens ici),
-    // et seulement ceux de SA classe (ou publiés pour toutes les classes).
-    $type = (string)($c['type'] ?? 'cours');
-    if ($type !== 'cours' && $type !== 'ressource') continue;
-    $cl = (string)($c['classe'] ?? '');
-    if ($cl !== '' && $cl !== $className) continue;
-    // On NE renvoie JAMAIS le corrigé ni le binaire du fichier (poids + fuite).
-    $out[] = [
-      'id' => (string)($c['id'] ?? ''),
-      'matiere' => (string)($c['matiere'] ?? ''),
-      'titre' => (string)($c['titre'] ?? ''),
-      'contenu' => (string)($c['contenu'] ?? ''),
-      'type' => $type,
-      'auteur' => (string)($c['auteur'] ?? ''),
-      'fileName' => (string)($c['fileName'] ?? ''),
-      'fileExt' => (string)($c['fileExt'] ?? ''),
-      'hasFile' => !empty($c['fileId']) || !empty($c['fileData']) || !empty($c['url']),
-    ];
-  }
+  // Tranchage (testé) : cours/ressources de sa classe ; corrigé et binaire exclus.
+  $out = sliceCours($items, $className);
   echo json_encode(['ok' => true, 'className' => $className, 'cours' => $out]);
   exit;
 }
@@ -350,42 +308,5 @@ function fsPatch($path, $fields, $token, $maskFields = null, $precondUpdateTime 
   return $res === false ? 0 : $code;
 }
 
-// ── Encodage / décodage des « valeurs typées » Firestore REST ──
-function fsEncodeValue($v) {
-  if (is_bool($v)) return ['booleanValue' => $v];
-  if (is_int($v)) return ['integerValue' => (string)$v];
-  if (is_float($v)) return ['doubleValue' => $v];
-  if (is_null($v)) return ['nullValue' => null];
-  if (is_array($v)) {
-    $isList = array_keys($v) === range(0, count($v) - 1);
-    if ($isList) return ['arrayValue' => ['values' => array_map('fsEncodeValue', $v)]];
-    return ['mapValue' => ['fields' => fsEncodeFields($v)]];
-  }
-  return ['stringValue' => (string)$v];
-}
-function fsEncodeFields($assoc) {
-  $out = [];
-  foreach ($assoc as $k => $v) $out[$k] = fsEncodeValue($v);
-  return $out;
-}
-function fsDecodeValue($v) {
-  if (!is_array($v)) return null;
-  if (array_key_exists('nullValue', $v)) return null;
-  if (isset($v['stringValue'])) return $v['stringValue'];
-  if (isset($v['booleanValue'])) return (bool)$v['booleanValue'];
-  if (isset($v['integerValue'])) return (int)$v['integerValue'];
-  if (isset($v['doubleValue'])) return (float)$v['doubleValue'];
-  if (isset($v['timestampValue'])) return $v['timestampValue'];
-  if (isset($v['referenceValue'])) return $v['referenceValue'];
-  if (isset($v['mapValue'])) return fsDecodeFields($v['mapValue']['fields'] ?? []);
-  if (isset($v['arrayValue'])) {
-    $vals = $v['arrayValue']['values'] ?? [];
-    return array_map('fsDecodeValue', is_array($vals) ? $vals : []);
-  }
-  return null;
-}
-function fsDecodeFields($fields) {
-  $out = [];
-  if (is_array($fields)) foreach ($fields as $k => $v) $out[$k] = fsDecodeValue($v);
-  return $out;
-}
+// L'encodage/décodage des valeurs typées Firestore + le tranchage (sliceDevoirs,
+// sliceCours) vivent dans mapo-lien-lib.php (requis en tête) — logique pure, testée.
