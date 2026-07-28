@@ -40,7 +40,6 @@ if ($origin && preg_match('#^https://([a-z0-9-]+\.)?app-edufrem\.com$#', $origin
   header('Access-Control-Allow-Headers: Content-Type, Authorization');
 }
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error' => 'method_not_allowed']); exit; }
 
 // Config (best-effort) : FIREBASE_PROJECT non secret → défaut si absent.
 $cfg = __DIR__ . '/mapo-lien-config.php';
@@ -52,13 +51,17 @@ if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json'
 require_once __DIR__ . '/mapo-lien-lib.php';
 
 // ── Diagnostic (public, sans donnée) : /mapo-lien.php?ping=1 ──────────
-// Permet de vérifier d'un coup d'œil, dans le navigateur, si la clé de compte de
-// service est bien en place et fonctionnelle. Ne renvoie AUCUNE donnée sensible
-// (booléens de configuration seulement), et surtout jamais le contenu de la clé.
+// Permet de vérifier d'un coup d'œil, dans le navigateur (en GET), si la clé de
+// compte de service est bien en place et fonctionnelle. Ne renvoie AUCUNE donnée
+// sensible (booléens de configuration seulement), jamais le contenu de la clé.
+// IMPORTANT : placé AVANT le garde « POST uniquement » ci-dessous, sinon un GET
+// navigateur serait rejeté (405) et ne joindrait jamais ce diagnostic.
 if (($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POST') && (isset($_GET['ping']) || isset($_GET['diag']))) {
   $present = file_exists(SA_KEY_FILE);
+  $readable = $present && is_readable(SA_KEY_FILE);
   $tokenOk = false; $err = null;
-  if ($present) { list($tk, $err) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore'); $tokenOk = !!$tk; }
+  if ($readable) { list($tk, $err) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore'); $tokenOk = !!$tk; }
+  else if ($present) { $err = 'sa_key_non_lisible'; }
   else { $err = 'sa_key_absente'; }
   echo json_encode([
     'ok' => true,
@@ -66,13 +69,17 @@ if (($_SERVER['REQUEST_METHOD'] === 'GET' || $_SERVER['REQUEST_METHOD'] === 'POS
     'sa_key_attendue' => basename(SA_KEY_FILE),
     'dossier' => basename(__DIR__),
     'sa_key_presente' => $present,
+    'sa_key_lisible' => $readable,
     'sa_token_ok' => $tokenOk,
     'projet' => FIREBASE_PROJECT,
-    'pret' => ($present && $tokenOk),
+    'pret' => ($present && $readable && $tokenOk),
     'detail' => $tokenOk ? null : $err,
   ]);
   exit;
 }
+
+// Toutes les VRAIES actions du pont exigent POST (le diagnostic GET est traité ci-dessus).
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_encode(['error' => 'method_not_allowed']); exit; }
 
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $body['action'] ?? '';
