@@ -222,6 +222,169 @@ if ($action === 'cours') {
   exit;
 }
 
+// ════════════════════════════════════════════════════════════════════
+//  Rendre un devoir EN LIGNE (isDigital) : écrit SA seule soumission.
+if ($action === 'submit_devoir') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  $devoirId = trim((string)($body['devoirId'] ?? ''));
+  if ($eleveId === '' || $devoirId === '') { http_response_code(400); echo json_encode(['error' => 'parametres_manquants']); exit; }
+  $text = (string)($body['text'] ?? '');
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  list($doc, $dCode) = fsGet("schools/{$schoolId}/devoirs-data/data", $saToken);
+  if ($dCode !== 200 || !$doc) { http_response_code(404); echo json_encode(['error' => 'devoir_introuvable']); exit; }
+  $data = fsDecodeFields($doc['fields'] ?? []);
+  $all = is_array($data['devoirs'] ?? null) ? $data['devoirs'] : [];
+  $found = null;
+  foreach ($all as $d) { if (is_array($d) && (string)($d['id'] ?? '') === $devoirId) { $found = $d; break; } }
+  if (!$found) { http_response_code(404); echo json_encode(['error' => 'devoir_introuvable']); exit; }
+  // Le devoir doit appartenir à SA classe courante et être « en ligne ».
+  $dClass = (string)($found['className'] ?? ''); $dClassId = (string)($found['classId'] ?? '');
+  $okClass = ($dClass !== '' && $dClass === $ln['className']) || ($dClassId !== '' && $ln['classId'] !== '' && $dClassId === $ln['classId']);
+  if (!$okClass) { http_response_code(403); echo json_encode(['error' => 'devoir_hors_classe']); exit; }
+  if (empty($found['isDigital'])) { http_response_code(400); echo json_encode(['error' => 'devoir_non_en_ligne']); exit; }
+  // Écrit UNIQUEMENT sa soumission, en fusion ciblée (préserve une note déjà mise).
+  $key = $devoirId . '_' . $eleveId;
+  $now = gmdate('Y-m-d\TH:i:s\Z');
+  $fields = fsEncodeFields(['submissions' => [$key => ['submittedAt' => $now, 'content' => $text, 'attachmentName' => '']]]);
+  $q = '`' . str_replace('`', '', $key) . '`';
+  $mask = ['submissions.' . $q . '.submittedAt', 'submissions.' . $q . '.content', 'submissions.' . $q . '.attachmentName'];
+  $code = fsPatch("schools/{$schoolId}/devoirs-data/data", $fields, $saToken, $mask);
+  if ($code >= 200 && $code < 300) echo json_encode(['ok' => true, 'submission' => ['submittedAt' => $now, 'text' => $text, 'grade' => null, 'feedback' => '']]);
+  else { http_response_code(502); echo json_encode(['error' => 'rendu_echec', 'detail' => $code]); }
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Destinataires possibles d'un message (services de l'école).
+if ($action === 'destinataires') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '' || !bridgeLink($schoolId, $uid, $eleveId, $saToken)) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  list($rDoc, $rCode) = fsGet("schools/{$schoolId}", $saToken);
+  $root = ($rCode === 200 && $rDoc) ? fsDecodeFields($rDoc['fields'] ?? []) : [];
+  echo json_encode(['ok' => true, 'destinataires' => bridgeServices($root)]);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Envoyer un message à l'école (apparaît dans la vraie messagerie MAPO).
+if ($action === 'send_message') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  $text = trim((string)($body['text'] ?? ''));
+  if ($eleveId === '' || $text === '') { http_response_code(400); echo json_encode(['error' => 'parametres_manquants']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  list($rDoc, $rCode) = fsGet("schools/{$schoolId}", $saToken);
+  $root = ($rCode === 200 && $rDoc) ? fsDecodeFields($rDoc['fields'] ?? []) : [];
+  $services = bridgeServices($root);
+  $to = (string)($body['to'] ?? '');
+  $svcKey = '';
+  foreach ($services as $s) { if ($s['id'] === $to || $s['label'] === $to) { $svcKey = $s['id']; break; } }
+  if ($svcKey === '') $svcKey = $services[0]['id'] ?? 'direction';
+  $subject = trim((string)($body['subject'] ?? '')); if ($subject === '') $subject = 'Message';
+  $threadId = trim((string)($body['threadId'] ?? ''));
+  if ($threadId === '') $threadId = 'thread-mapoplus-' . substr(sha1($uid . $eleveId . microtime(true)), 0, 12);
+  $now = gmdate('Y-m-d\TH:i:s\Z');
+  $childName = trim($ln['firstName'] . ' ' . $ln['lastName']);
+  $fields = fsEncodeFields([
+    'threadId' => $threadId, 'parentMessageId' => null, 'type' => 'general',
+    'subject' => $subject, 'body' => $text,
+    'recipientType' => 'service', 'recipientValue' => $svcKey, 'recipientId' => null,
+    'recipientName' => null, 'recipientRole' => null,
+    'senderId' => $uid, 'senderName' => 'Parent · ' . ($childName !== '' ? $childName : 'MAPO+'), 'senderRole' => 'parent',
+    'sentAt' => $now, 'readBy' => [$uid], 'pinned' => false, 'status' => 'sent',
+    'parentCopyFor' => $eleveId,
+  ]);
+  $code = fsCreate("schools/{$schoolId}/messages", $fields, $saToken);
+  if ($code >= 200 && $code < 300) echo json_encode(['ok' => true]);
+  else { http_response_code(502); echo json_encode(['error' => 'envoi_echec', 'detail' => $code]); }
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Messagerie : messages reçus (école) + envoyés (moi) de CE lien uniquement.
+if ($action === 'messages') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  $className = $ln['className'];
+  list($docs) = fsList("schools/{$schoolId}/messages", $saToken, 500);
+  $out = [];
+  foreach ($docs as $doc) {
+    $f = fsDecodeFields($doc['fields'] ?? []);
+    if ((string)($f['status'] ?? '') !== 'sent') continue;
+    $senderId = (string)($f['senderId'] ?? '');
+    $rtype = (string)($f['recipientType'] ?? ''); $rval = (string)($f['recipientValue'] ?? '');
+    $rid = (string)($f['recipientId'] ?? ''); $pcopy = (string)($f['parentCopyFor'] ?? '');
+    $mine = ($senderId === $uid);
+    // Ne servir QUE : mes envois, les diffusions (toute l'école / ma classe), un
+    // message individuel qui m'est adressé, ou une copie liée À MON enfant.
+    $forMe = $mine || $rtype === 'all' || ($rtype === 'class' && $rval === $className)
+      || ($rtype === 'individual' && $rid === $uid) || ($pcopy !== '' && $pcopy === $eleveId);
+    if (!$forMe) continue;
+    $name = (string)($doc['name'] ?? ''); $id = $name !== '' ? substr($name, strrpos($name, '/') + 1) : uniqid();
+    $readBy = is_array($f['readBy'] ?? null) ? $f['readBy'] : [];
+    $out[] = [
+      'id' => $id, 'threadId' => (string)($f['threadId'] ?? $id), 'subject' => (string)($f['subject'] ?? ''),
+      'from' => $mine ? 'moi' : 'ecole',
+      'author' => $mine ? 'Vous' : (string)($f['senderName'] ?? 'École'),
+      'to' => $mine ? (string)($f['recipientName'] ?? $rval) : 'Vous',
+      'at' => (string)($f['sentAt'] ?? ''), 'read' => in_array($uid, $readBy, true),
+      'body' => (string)($f['body'] ?? ''),
+    ];
+  }
+  usort($out, function ($a, $b) { return strcmp((string)$a['at'], (string)$b['at']); });
+  echo json_encode(['ok' => true, 'messages' => $out]);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Bulletins : moments disponibles (signés) + bulletin d'une période.
+//  Le bulletin n'est exposé QUE s'il a été validé/signé côté école (miroir de
+//  ParentNotesView). Rang & moyennes de classe = nombres agrégés (aucune fuite).
+if ($action === 'periodes' || $action === 'notes') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+
+  list($ctx, $http, $errc) = loadBulletinContext($schoolId, $uid, $eleveId, $saToken);
+  if (!$ctx) { http_response_code($http); echo json_encode(['error' => $errc]); exit; }
+
+  $periodes = bl_availablePeriodes($ctx['sigs'], $ctx['notes'], $ctx['classId'], $eleveId, $ctx['subjects']);
+  if ($action === 'periodes') { echo json_encode(['ok' => true, 'periodes' => $periodes]); exit; }
+
+  // action « notes » : bulletin d'une période (défaut = 1re disponible).
+  $periodeId = trim((string)($body['periodeId'] ?? ''));
+  $avail = array_map(function ($p) { return $p['id']; }, $periodes);
+  if ($periodeId === '' && count($avail)) $periodeId = $avail[0];
+  if ($periodeId === '' || !in_array($periodeId, $avail, true)) { echo json_encode(['ok' => true, 'bulletin' => null]); exit; }
+
+  // Appréciation du conseil (texte libre) + date de validation = signature de la période
+  // (le trimestre parent pour une séquence).
+  $sigPeriod = in_array($periodeId, ['S1','S2','S3','S4','S5','S6'], true) ? bl_trimOfSeq($periodeId) : $periodeId;
+  $mentionText = $sigPeriod !== 'annual' && $sigPeriod !== '' ? (string)($ctx['mentions'][$ctx['classId'] . '_' . $sigPeriod . '_' . $eleveId] ?? '') : '';
+  $sigKey = $ctx['classId'] . '_' . $sigPeriod . '_' . $eleveId;
+  $dateVal = (isset($ctx['sigs'][$sigKey]) && is_array($ctx['sigs'][$sigKey])) ? (string)($ctx['sigs'][$sigKey]['signedAt'] ?? '') : '';
+
+  $bulletin = bl_buildBulletin($ctx['notes'], $ctx['subjects'], $periodeId, [
+    'classId' => $ctx['classId'], 'className' => $ctx['className'], 'eleveId' => $eleveId, 'matricule' => $ctx['matricule'],
+    'classmateIds' => $ctx['classmateIds'], 'identity' => $ctx['identity'], 'thresholds' => $ctx['thresholds'],
+    'mentionText' => $mentionText, 'dateValidation' => $dateVal,
+  ]);
+  echo json_encode(['ok' => true, 'bulletin' => $bulletin]);
+  exit;
+}
+
 http_response_code(400);
 echo json_encode(['error' => 'action_inconnue']);
 exit;
@@ -298,6 +461,54 @@ function getGoogleAccessToken($scope) {
 function fsBaseUrl() {
   return 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT . '/databases/(default)/documents/';
 }
+/** Liste (une page) les documents d'une (sous-)collection. Renvoie [documents[], httpCode]. */
+function fsList($collectionPath, $token, $pageSize = 300) {
+  $ch = curl_init(fsBaseUrl() . $collectionPath . '?pageSize=' . (int)$pageSize);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token],
+    CURLOPT_TIMEOUT => 12, CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if ($res === false) return [[], 0];
+  $j = json_decode($res, true);
+  return [is_array($j['documents'] ?? null) ? $j['documents'] : [], $code];
+}
+/**
+ * runQuery : liste les documents d'une sous-collection filtrés par UN champ = valeur
+ * (égalité simple → pas d'index composite requis). Renvoie [ [docId => fields], httpCode ].
+ * Ne sélectionne QUE $selectField (+ le nom) pour limiter la charge.
+ */
+function fsRunQuery($parentPath, $collectionId, $whereField, $whereValue, $token, $selectField = null) {
+  $sq = [
+    'from' => [['collectionId' => $collectionId]],
+    'where' => ['fieldFilter' => ['field' => ['fieldPath' => $whereField], 'op' => 'EQUAL', 'value' => ['stringValue' => $whereValue]]],
+  ];
+  if ($selectField) $sq['select'] = ['fields' => [['fieldPath' => $selectField]]];
+  $url = fsBaseUrl() . ($parentPath !== '' ? rtrim($parentPath, '/') . ':runQuery' : ':runQuery');
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    CURLOPT_POSTFIELDS => json_encode(['structuredQuery' => $sq]),
+    CURLOPT_TIMEOUT => 12, CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  if ($res === false) return [[], 0];
+  $rows = json_decode($res, true);
+  $out = [];
+  if (is_array($rows)) foreach ($rows as $r) {
+    if (empty($r['document']['name'])) continue;
+    $name = $r['document']['name'];
+    $id = substr($name, strrpos($name, '/') + 1);
+    $out[$id] = fsDecodeFields($r['document']['fields'] ?? []);
+  }
+  return [$out, $code];
+}
 /** GET un document Firestore (admin). Renvoie [data|null, httpCode]. */
 function fsGet($path, $token) {
   $ch = curl_init(fsBaseUrl() . $path);
@@ -336,6 +547,115 @@ function fsPatch($path, $fields, $token, $maskFields = null, $precondUpdateTime 
   $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
   curl_close($ch);
   return $res === false ? 0 : $code;
+}
+
+/** Crée un document (id auto) dans une collection. Renvoie httpCode. */
+function fsCreate($collectionPath, $fields, $token) {
+  $ch = curl_init(fsBaseUrl() . $collectionPath);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true, CURLOPT_POST => true,
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    CURLOPT_POSTFIELDS => json_encode(['fields' => $fields]),
+    CURLOPT_TIMEOUT => 10, CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return $res === false ? 0 : $code;
+}
+/**
+ * Vérifie le lien de confiance (uid__eleveId) et renvoie le contexte élève
+ * { className, classId, firstName, lastName, matricule } ou null si non relié.
+ * classId n'est retenu (snapshot) QUE si la classe courante n'a pas changé.
+ */
+function bridgeLink($schoolId, $uid, $eleveId, $saToken) {
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $saToken);
+  if ($lkCode !== 200 || !$lk) return null;
+  $lkF = fsDecodeFields($lk['fields'] ?? []);
+  list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+  $elF = ($elCode === 200 && $el) ? fsDecodeFields($el['fields'] ?? []) : [];
+  $className = (string)($elF['className'] ?? ''); if ($className === '') $className = (string)($lkF['className'] ?? '');
+  $classId = ($className === (string)($lkF['className'] ?? '')) ? (string)($lkF['classId'] ?? '') : '';
+  return [
+    'className' => $className, 'classId' => $classId,
+    'firstName' => (string)($elF['firstName'] ?? ''), 'lastName' => (string)($elF['lastName'] ?? ''),
+    'matricule' => (string)($elF['matricule'] ?? ($lkF['matricule'] ?? '')),
+  ];
+}
+/** Services de messagerie de l'école (doc racine `services`, sinon défauts MAPO). */
+function bridgeServices($root) {
+  $out = [];
+  $svc = is_array($root['services'] ?? null) ? $root['services'] : null;
+  if ($svc) { foreach ($svc as $s) { if (!is_array($s)) continue; $k = (string)($s['key'] ?? ''); if ($k === '') continue; $out[] = ['id' => $k, 'type' => 'service', 'label' => (string)($s['label'] ?? $k)]; } }
+  if (!count($out)) {
+    foreach ([['direction','Direction'],['pedagogie','Pédagogie'],['comptabilite','Comptabilité'],['secretariat','Secrétariat'],['discipline','Vie scolaire / Discipline']] as $d)
+      $out[] = ['id' => $d[0], 'type' => 'service', 'label' => $d[1]];
+  }
+  return $out;
+}
+
+/**
+ * Charge le contexte bulletin d'un élève lié (après vérif du lien) : classe COURANTE,
+ * classId/niveau/prof principal, matières, matriciel de notes + signatures + mentions,
+ * identité école + seuils, et la liste des camarades inscrits (pour le rang).
+ * Renvoie [ctx|null, httpCode, errorCode]. Les données brutes restent internes.
+ */
+function loadBulletinContext($schoolId, $uid, $eleveId, $saToken) {
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $saToken);
+  if ($lkCode !== 200 || !$lk) return [null, 403, 'non_relie'];
+  $lkF = fsDecodeFields($lk['fields'] ?? []);
+  $linkClass = (string)($lkF['className'] ?? '');
+  $linkClassId = (string)($lkF['classId'] ?? '');
+  $matricule = (string)($lkF['matricule'] ?? '');
+  list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+  $elF = ($elCode === 200 && $el) ? fsDecodeFields($el['fields'] ?? []) : [];
+  $className = (string)($elF['className'] ?? ''); if ($className === '') $className = $linkClass;
+  if ($className === '') return [null, 422, 'lien_incomplet'];
+  if ($matricule === '') $matricule = (string)($elF['matricule'] ?? '');
+  $firstName = (string)($elF['firstName'] ?? ''); $lastName = (string)($elF['lastName'] ?? '');
+  // Classes → classId, niveau, prof principal (match par nom).
+  list($classes) = fsList("schools/{$schoolId}/classes", $saToken);
+  $classId = ''; $level = ''; $profP = '';
+  foreach ($classes as $c) {
+    $cf = fsDecodeFields($c['fields'] ?? []);
+    if ((string)($cf['name'] ?? '') === $className) { $classId = (string)($cf['id'] ?? ''); $level = (string)($cf['level'] ?? ''); $profP = (string)($cf['homeroomTeacher'] ?? ''); break; }
+  }
+  if ($classId === '') $classId = ($className === $linkClass) ? $linkClassId : '';
+  if ($classId === '') return [null, 422, 'classe_introuvable'];
+  list($nDoc, $nCode) = fsGet("schools/{$schoolId}/notes/data", $saToken);
+  $nData = ($nCode === 200 && $nDoc) ? fsDecodeFields($nDoc['fields'] ?? []) : [];
+  $notes = is_array($nData['notes'] ?? null) ? $nData['notes'] : [];
+  $sigs = is_array($nData['dirSignatures'] ?? null) ? $nData['dirSignatures'] : [];
+  $mentions = is_array($nData['mentions'] ?? null) ? $nData['mentions'] : [];
+  list($sDoc, $sCode) = fsGet("schools/{$schoolId}/config/subjects", $saToken);
+  $subjectsConfig = [];
+  if ($sCode === 200 && $sDoc) { $sf = fsDecodeFields($sDoc['fields'] ?? []); $subjectsConfig = is_array($sf['subjects'] ?? null) ? $sf['subjects'] : []; }
+  $subjects = bl_subjectsForClass($subjectsConfig, $level, $notes, $classId);
+  list($rDoc, $rCode) = fsGet("schools/{$schoolId}", $saToken);
+  $root = ($rCode === 200 && $rDoc) ? fsDecodeFields($rDoc['fields'] ?? []) : [];
+  $identity = [
+    'ecole' => (string)($root['schoolName'] ?? ($root['name'] ?? '')),
+    'quartier' => (string)($root['address'] ?? ($root['quartier'] ?? '')),
+    'ville' => (string)($root['city'] ?? ''), 'tel' => (string)($root['phone'] ?? ''),
+    'email' => (string)($root['email'] ?? ''), 'anneeScolaire' => (string)($root['academicYear'] ?? ''),
+    'directeur' => (string)($root['directorName'] ?? ''), 'profPrincipal' => $profP,
+  ];
+  $thresholds = [
+    'felicitations' => isset($root['mentionFelicitations']) ? (float)$root['mentionFelicitations'] : 16,
+    'tableau' => isset($root['mentionTableau']) ? (float)$root['mentionTableau'] : 14,
+    'encouragement' => isset($root['mentionEncouragement']) ? (float)$root['mentionEncouragement'] : 12,
+  ];
+  list($mates) = fsRunQuery("schools/{$schoolId}", 'eleves', 'className', $className, $saToken, 'status');
+  $classmateIds = [];
+  foreach ($mates as $id => $f) { $st = (string)($f['status'] ?? ''); if ($st === 'transfere' || $st === 'abandon') continue; $classmateIds[] = $id; }
+  if (!in_array($eleveId, $classmateIds, true)) $classmateIds[] = $eleveId;
+  return [[
+    'className' => $className, 'classId' => $classId, 'level' => $level,
+    'matricule' => $matricule, 'firstName' => $firstName, 'lastName' => $lastName,
+    'notes' => $notes, 'sigs' => $sigs, 'mentions' => $mentions,
+    'subjects' => $subjects, 'identity' => $identity, 'thresholds' => $thresholds,
+    'classmateIds' => $classmateIds,
+  ], 200, null];
 }
 
 // L'encodage/décodage des valeurs typées Firestore + le tranchage (sliceDevoirs,
