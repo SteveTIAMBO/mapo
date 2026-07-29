@@ -218,14 +218,16 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   let memoryFallback = false
 
   const owner = computed(() => {
+    // Clé du cache LOCAL par COMPTE : on se cale sur l'UID Firebase (unique et stable
+    // par compte, source de vérité côté cloud aussi). SURTOUT PAS l'e-mail : un e-mail
+    // supprimé puis recréé — ou recyclé par une autre personne — donne un NOUVEAU
+    // compte (uid différent) qui, s'il était indexé par e-mail, hériterait de l'ancien
+    // profil resté en localStorage (bug « nouveau compte, ancien profil MBA »). Les
+    // repères e-mail/téléphone ne servent que de repli hors Firebase (rare).
+    if (authStore.user?.uid && !authStore.isDemo) return 'uid-' + authStore.user.uid
     const p = authStore.userProfile
     if (p?.email) return p.email
     if (p?.phone) return p.phone
-    // Compte réel authentifié dont le profil n'est pas encore chargé : on se cale
-    // sur l'uid, JAMAIS sur 'demo-parent'. Ce seau de repli est adjacent aux
-    // données de démo ; un vrai compte ne doit jamais y lire/écrire (source du
-    // mélange démo ↔ production). Seule une session démo utilise un seau démo.
-    if (authStore.user?.uid && !authStore.isDemo) return 'uid-' + authStore.user.uid
     return 'demo-parent'
   })
 

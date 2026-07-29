@@ -18,7 +18,13 @@ import { detectDevise, guichetPour } from '../utils/devise'
 export const useAbonnementStore = defineStore('abonnement', () => {
   const authStore = useAuthStore()
   const isDemo = computed(() => authStore.isDemo)
-  const owner = computed(() => authStore.userProfile?.email || authStore.userProfile?.phone || 'demo')
+  // Cache local par COMPTE : indexé sur l'UID (cf. enfantsAutonomes) — jamais sur
+  // l'e-mail, sinon un e-mail recréé/recyclé hériterait de l'ancien cache d'abonnement.
+  // L'état fait autorité côté serveur (/mapo-offres.php) : ce cache n'est qu'un repli.
+  const owner = computed(() => {
+    if (authStore.user?.uid && !authStore.isDemo) return 'uid-' + authStore.user.uid
+    return authStore.userProfile?.email || authStore.userProfile?.phone || 'demo'
+  })
   const KEY = (o) => `mapo_abo_${o || 'demo'}`
 
   const offresServeur = ref(null)

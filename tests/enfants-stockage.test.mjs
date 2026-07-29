@@ -59,10 +59,17 @@ export async function getDocs(ref) {
 export async function setDoc(ref, data) { journal.push({ op: 'set', path: ref.path }); cloud.set(ref.path, data) }
 export async function deleteDoc(ref) { journal.push({ op: 'del', path: ref.path }); cloud.delete(ref.path) }
 `)
+// Bouchons des utilitaires importés par le store (hors périmètre de ce test).
+writeFileSync(join(dir, 'recompenses.js'), `export function enregistrerActivite() {}\n`)
+writeFileSync(join(dir, 'coursperso.js'), `export function addCoursPerso() {}\n`)
+writeFileSync(join(dir, 'demoecole.js'), `export const DEMO_LIEN = { schoolId: 'demo', eleveId: 'demo', className: '', classId: '', matricule: '', ecole: '' }\n`)
 writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfantsAutonomes.js'), 'utf8')
   .replace("from '../firebase'", "from './firebase.js'")
   .replace("from 'firebase/firestore'", "from './firestore.js'")
-  .replace("from './auth'", "from './authstub.js'"))
+  .replace("from './auth'", "from './authstub.js'")
+  .replace("from '../utils/recompenses'", "from './recompenses.js'")
+  .replace("from '../utils/coursPerso'", "from './coursperso.js'")
+  .replace("from '../data/demoEcoleLiee'", "from './demoecole.js'"))
 
 global.localStorage = {
   _d: {},

@@ -14,7 +14,9 @@ import { useAuthStore } from './auth'
 export const useFacturationMiapoStore = defineStore('facturationMiapo', () => {
   const authStore = useAuthStore()
   const factures = ref([])
-  const KEY = () => `mapo_factures_${authStore.userProfile?.email || authStore.userProfile?.phone || 'demo'}`
+  // Cache/démo indexé par COMPTE : UID d'abord (jamais l'e-mail seul, cf. abonnement).
+  const ownerKey = () => ((authStore.user?.uid && !authStore.isDemo) ? ('uid-' + authStore.user.uid) : (authStore.userProfile?.email || authStore.userProfile?.phone || 'demo'))
+  const KEY = () => `mapo_factures_${ownerKey()}`
 
   async function tok() { try { return auth.currentUser ? await auth.currentUser.getIdToken() : null } catch { return null } }
 
