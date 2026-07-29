@@ -82,10 +82,12 @@
                     <span class="lie-chip">{{ hasViewableFile(c) ? (c.fileExt || 'PDF').toUpperCase() : (en ? 'Lesson card' : 'Carte-leçon') }}</span>
                   </p>
                 </div>
-                <ChevronRight :size="18" class="lie-dev-arrow" />
+                <Loader2 v-if="coursFileLoading === c.id" :size="18" class="spin lie-dev-arrow" />
+                <ChevronRight v-else :size="18" class="lie-dev-arrow" />
               </li>
             </ul>
           </div>
+          <p v-if="coursFileErr" class="lie-err"><Info :size="14" /> {{ coursFileErr }}</p>
           <p class="lie-priv"><FolderOpen :size="13" /> {{ en ? 'This is your school course library: a PDF filed by the teacher, or a lesson card created in MAPO.' : "C'est votre bibliothèque de cours de l'école : un PDF déposé par le prof, ou une carte-leçon créée dans MAPO." }}</p>
         </template>
       </div>
@@ -191,6 +193,8 @@ const submitErr = ref('')
 // Consultation cours
 const carteActive = ref(null)
 const fichierActif = ref(null)
+const coursFileLoading = ref('')
+const coursFileErr = ref('')
 
 const relie = computed(() => !!(props.enfant && props.enfant.ecoleReliee && props.enfant.lienEcole))
 const lienInfo = computed(() => props.enfant?.lienEcole || {})
@@ -210,7 +214,8 @@ const coursParMatiere = computed(() => {
   for (const c of crs.value.list) { const m = c.matiere || (en.value ? 'Other' : 'Autres'); (out[m] = out[m] || []).push(c) }
   return out
 })
-function hasViewableFile(c) { return !!(c && (c.fileData || c.fileId) && (c.fileViewable || c.fileExt === 'pdf')) }
+// Démo : fichier en data URL. Réel : le pont sait le streamer (hasFile + fileViewable).
+function hasViewableFile(c) { return !!c && (!!c.fileData || (!!c.hasFile && !!c.fileViewable)) }
 
 function msgTxt(reason) {
   const M = {
@@ -283,9 +288,23 @@ async function rendreDevoir() {
 }
 
 // ── Cours ──
-function openCours(c) {
-  if (hasViewableFile(c)) fichierActif.value = { ...c, fileName: c.fileName || (c.titre + '.' + (c.fileExt || 'pdf')) }
-  else carteActive.value = c
+async function openCours(c) {
+  coursFileErr.value = ''
+  // Démo (ou fichier déjà en data URL) → visionneuse directe.
+  if (c.fileData) { fichierActif.value = { ...c, fileName: c.fileName || (c.titre + '.' + (c.fileExt || 'pdf')) }; return }
+  // Réel : fichier du prof streamé par le pont (jeton en en-tête, id fichier jamais exposé).
+  if (c.hasFile && c.fileViewable) {
+    if (coursFileLoading.value) return
+    coursFileLoading.value = c.id
+    const r = await lien.fetchCoursFileUrl(sid.value, eid.value, c.id)
+    coursFileLoading.value = ''
+    if (r && r.ok) { fichierActif.value = { ...c, fileData: r.url, fileName: c.fileName || (c.titre + '.' + (c.fileExt || 'pdf')) }; return }
+    if (c.contenu) { carteActive.value = c; return } // repli sur le texte de la leçon
+    coursFileErr.value = en.value ? 'Could not open this file.' : "Impossible d'ouvrir ce fichier."
+    return
+  }
+  // Carte-leçon (texte, pas de fichier).
+  carteActive.value = c
 }
 
 function delier() {

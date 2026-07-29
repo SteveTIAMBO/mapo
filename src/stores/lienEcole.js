@@ -82,6 +82,31 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'cours', schoolId, eleveId })
   }
 
+  /**
+   * URL (blob objectURL) d'un fichier de cours streamé par le pont (jeton dans
+   * l'en-tête, l'id du fichier reste côté serveur). À révoquer après usage.
+   */
+  async function fetchCoursFileUrl(schoolId, eleveId, coursId) {
+    if (isDemo()) return { ok: false, reason: 'demo' }
+    if (!schoolId || !eleveId || !coursId) return { ok: false, reason: 'non_relie' }
+    const user = fbAuth.currentUser
+    if (!user) return { ok: false, reason: 'non_connecte' }
+    try {
+      const token = await user.getIdToken().catch(() => null)
+      if (!token) return { ok: false, reason: 'non_connecte' }
+      const res = await fetch(LIEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ action: 'cours-file', schoolId, eleveId, coursId }),
+      })
+      if (!res.ok) return { ok: false, reason: 'http_' + res.status }
+      const blob = await res.blob()
+      return { ok: true, url: URL.createObjectURL(blob) }
+    } catch {
+      return { ok: false, reason: 'reseau' }
+    }
+  }
+
   /** Moments de bulletin disponibles (séquences / trimestres). */
   async function fetchPeriodes(schoolId, eleveId) {
     if (isDemo()) return { ok: true, periodes: demoPeriodes() }
@@ -134,7 +159,7 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
 
   return {
     busy, redeemCode,
-    fetchDevoirs, submitDevoir, fetchCours,
+    fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl,
     fetchPeriodes, fetchNotes,
     fetchMessages, fetchDestinataires, sendMessage,
   }

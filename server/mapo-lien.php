@@ -223,6 +223,44 @@ if ($action === 'cours') {
 }
 
 // ════════════════════════════════════════════════════════════════════
+//  Streaming d'un fichier de cours (PDF du prof) : autorisé PAR le pont, l'id
+//  du fichier ne sort JAMAIS côté client. Sortie BINAIRE (pas JSON).
+if ($action === 'cours-file') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  $coursId = trim((string)($body['coursId'] ?? ''));
+  if ($eleveId === '' || $coursId === '') { http_response_code(400); echo json_encode(['error' => 'parametres_manquants']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  list($doc, $dCode) = fsGet("schools/{$schoolId}/config/cours", $saToken);
+  if ($dCode !== 200 || !$doc) { http_response_code(404); echo json_encode(['error' => 'cours_introuvable']); exit; }
+  $items = fsDecodeFields($doc['fields'] ?? [])['items'] ?? [];
+  $found = null;
+  foreach ((is_array($items) ? $items : []) as $c) { if (is_array($c) && (string)($c['id'] ?? '') === $coursId) { $found = $c; break; } }
+  if (!$found) { http_response_code(404); echo json_encode(['error' => 'cours_introuvable']); exit; }
+  // Même portée que sliceCours : cours/ressource de SA classe (ou toutes classes).
+  $type = (string)($found['type'] ?? 'cours'); $cl = (string)($found['classe'] ?? '');
+  if (($type !== 'cours' && $type !== 'ressource') || ($cl !== '' && $cl !== $ln['className'])) { http_response_code(403); echo json_encode(['error' => 'cours_hors_classe']); exit; }
+  $fileId = preg_replace('/[^a-f0-9]/', '', (string)($found['fileId'] ?? ''));
+  $ext = strtolower(preg_replace('/[^a-z0-9]/', '', (string)($found['fileExt'] ?? '')));
+  if ($fileId === '') { http_response_code(404); echo json_encode(['error' => 'fichier_absent']); exit; }
+  // Fichiers déposés par mapo-files.php dans le MÊME dossier (uploads/). On sert le
+  // PDF (original ou converti) pour l'affichage in-app.
+  $dir = __DIR__ . '/uploads';
+  $path = $dir . '/' . $fileId . '.pdf';
+  if (!is_file($path) && $ext !== '') $path = $dir . '/' . $fileId . '.' . $ext;
+  if (!is_file($path)) { http_response_code(404); echo json_encode(['error' => 'fichier_absent']); exit; }
+  $isPdf = strtolower(substr($path, -4)) === '.pdf';
+  header('Content-Type: ' . ($isPdf ? 'application/pdf' : 'application/octet-stream'));
+  header('Content-Disposition: inline; filename="cours.' . ($isPdf ? 'pdf' : $ext) . '"');
+  header('Content-Length: ' . filesize($path));
+  header('Cache-Control: private, max-age=300');
+  readfile($path);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
 //  Rendre un devoir EN LIGNE (isDigital) : écrit SA seule soumission.
 if ($action === 'submit_devoir') {
   $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));

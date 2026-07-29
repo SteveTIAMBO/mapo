@@ -108,6 +108,9 @@ function sliceCours($items, $className) {
       'fileName' => (string)($c['fileName'] ?? ''),
       'fileExt' => (string)($c['fileExt'] ?? ''),
       'hasFile' => !empty($c['fileId']) || !empty($c['fileData']) || !empty($c['url']),
+      // Consultable in-app (PDF, ou PPT converti) SANS exposer le fichier lui-même :
+      // le client le récupérera via l'action « cours-file » du pont.
+      'fileViewable' => (($c['fileExt'] ?? '') === 'pdf') || !empty($c['fileViewable']),
     ];
   }
   return $out;
