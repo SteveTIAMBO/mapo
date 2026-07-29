@@ -150,12 +150,38 @@
             <ChevronRight :size="18" class="insight-arrow" />
           </div>
 
-          <div class="stat-grid">
-            <div v-if="isApprenant" class="stat" role="button" tabindex="0" :title="t('mia.lastBadgeHint')" @click="section = 'recompenses'" @keyup.enter="section = 'recompenses'">
-              <span class="stat-v stat-badge"><Trophy :size="24" :style="{ color: dernierBadge ? badgeTierColor(dernierBadge.tier) : '#c7ccd6' }" /></span>
-              <span class="stat-l">{{ dernierBadge ? (locale.startsWith('en') ? dernierBadge.en : dernierBadge.fr) : t('mia.noBadgeYet') }}</span>
+          <!-- Élève : module « Ma progression » (habitude → action → récompense) -->
+          <div v-if="isApprenant" class="card progress-card">
+            <div class="pc-head"><TrendingUp :size="17" /><strong>{{ t('mia.myProgress') }}</strong></div>
+            <div class="pc-pods">
+              <button type="button" class="pc-pod pc-serie-pod" @click="section = 'recompenses'">
+                <span class="pc-serie"><Flame :size="22" class="pc-flame" /> {{ serieJours }}</span>
+                <span class="pc-pod-l">{{ serieJours > 0 ? t('mia.streakDays') : t('mia.streakStart') }}</span>
+              </button>
+              <button type="button" class="pc-pod pc-goal" :class="{ done: objectifDuJourFait }" @click="section = 'tuteur'">
+                <span class="pc-goal-ic"><Check v-if="objectifDuJourFait" :size="20" /><MiapoOrbe v-else :size="22" /></span>
+                <span class="pc-goal-tx"><strong>{{ t('mia.dailyGoal') }}</strong><small>{{ objectifDuJourFait ? t('mia.dailyGoalDone') : t('mia.dailyGoalTodo') }}</small></span>
+                <ChevronRight v-if="!objectifDuJourFait" :size="16" class="pc-goal-arrow" />
+              </button>
             </div>
-            <div v-else class="stat" role="button" tabindex="0" :title="t('mia.avgOf20Hint')" @click="section = noteStatTarget" @keyup.enter="section = noteStatTarget"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
+            <button type="button" class="pc-badge" @click="section = 'recompenses'">
+              <template v-if="prochainBadge">
+                <span class="pc-medal" :style="{ background: `linear-gradient(160deg, ${badgeGrad(prochainBadge)[0]}, ${badgeGrad(prochainBadge)[1]})` }"><component :is="badgeIcon(prochainBadge)" :size="18" /></span>
+                <span class="pc-badge-tx">
+                  <span class="pc-badge-top"><strong>{{ t('mia.nextBadge') }}</strong><span class="pc-badge-reste">{{ prochainBadge.metric === 'streak' ? t('mia.badgeRemainStreak', { n: prochainBadge.reste, name: (locale.startsWith('en') ? prochainBadge.en : prochainBadge.fr) }) : t('mia.badgeRemainRev', { n: prochainBadge.reste, name: (locale.startsWith('en') ? prochainBadge.en : prochainBadge.fr) }) }}</span></span>
+                  <span class="pc-bar"><span class="pc-bar-fill" :style="{ width: Math.round(prochainBadge.progress * 100) + '%' }"></span></span>
+                </span>
+              </template>
+              <template v-else>
+                <span class="pc-medal pc-medal-all"><Trophy :size="18" /></span>
+                <span class="pc-badge-tx"><strong>{{ t('mia.allBadges') }}</strong></span>
+              </template>
+            </button>
+          </div>
+
+          <!-- Parent : tuiles synthétiques (moyenne, à réviser, profil 6C) -->
+          <div v-else class="stat-grid">
+            <div class="stat" role="button" tabindex="0" :title="t('mia.avgOf20Hint')" @click="section = noteStatTarget" @keyup.enter="section = noteStatTarget"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">{{ t('mia.toReview') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'profil6c'" @keyup.enter="section = 'profil6c'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
           </div>
@@ -1042,12 +1068,13 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen, Heart } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
+import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network, Puzzle }
@@ -2041,17 +2068,37 @@ const progression = computed(() => {
 
 // Badge le plus « fort » déjà obtenu (icône + libellé). Remplace la « moyenne des
 // notes » sur l'accueil APPRENANT : un jalon franchi motive plus qu'une moyenne.
-const dernierBadge = computed(() => {
+// ── Accueil élève : module « Ma progression » (habitude + objectif + jalon) ──
+// Remplace des tuiles-chiffres passives par la boucle d'engagement : série de
+// jours (habitude), objectif du jour (action), prochain badge (récompense).
+const BADGE_ICONS = { Sparkles, BookOpen, Layers, Medal, Trophy, Crown, Flame }
+const BADGE_GRAD = { bronze: ['#E8A66A', '#B06A2C'], silver: ['#D6DAE2', '#9AA0AB'], gold: ['#F6D25B', '#E19A0C'] }
+function badgeIcon(b) { return BADGE_ICONS[b && b.icon] || Sparkles }
+function badgeGrad(b) { return BADGE_GRAD[b && b.tier] || BADGE_GRAD.bronze }
+
+const serieJours = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return 0
+  void tuteur.revisionsVersion // recalcul après chaque révision (localStorage non réactif)
+  return serieActuelle(e.id)
+})
+const objectifDuJourFait = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return false
+  void tuteur.revisionsVersion
+  return statsRecompenses(e.id).lastDay === dayKey()
+})
+// Prochain badge à débloquer : le plus proche (progression décroissante).
+const prochainBadge = computed(() => {
   const e = activeEnfant.value
   if (!e) return null
-  void tuteur.revisionsVersion // recalcul après chaque révision (localStorage non réactif)
-  const earned = calculerBadges(e.id).filter((b) => b.earned)
-  if (!earned.length) return null
-  const rank = { gold: 3, silver: 2, bronze: 1 }
-  earned.sort((a, b) => (rank[b.tier] - rank[a.tier]) || (b.target - a.target))
-  return earned[0]
+  void tuteur.revisionsVersion
+  const locked = calculerBadges(e.id).filter((b) => !b.earned)
+  if (!locked.length) return null
+  locked.sort((a, b) => b.progress - a.progress)
+  const b = locked[0]
+  return { ...b, reste: Math.max(1, b.target - b.current) }
 })
-function badgeTierColor(tier) { return tier === 'gold' ? '#D4A017' : tier === 'silver' ? '#8A94A6' : '#C77B3B' }
 
 // « Points de vigilance » MIAPO : UN signal priorisé et ACTIONNABLE (carte cliquable).
 // Apprenant : devoirs en retard → matières faibles → inactivité → devoirs du jour →
@@ -2643,7 +2690,36 @@ onUnmounted(() => {
 .insight-body { flex: 1; min-width: 0; }
 .insight-arrow { color: var(--pr); flex-shrink: 0; opacity: .7; }
 .insight-card strong { color: var(--pr); } .insight-card p { margin: 4px 0 0; font-size: 14px; color: var(--tx); line-height: 1.5; }
-.stat-badge { display: flex; align-items: center; justify-content: center; height: 30px; }
+
+/* Module « Ma progression » (accueil élève) */
+.progress-card { display: flex; flex-direction: column; gap: 12px; }
+.pc-head { display: flex; align-items: center; gap: 8px; color: var(--pr); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.pc-pods { display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px; }
+.pc-pod { display: flex; align-items: center; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; padding: 14px; background: #fff; cursor: pointer; font: inherit; text-align: left; transition: border-color .15s, box-shadow .15s, transform .15s; }
+.pc-pod:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); transform: translateY(-1px); }
+.pc-serie-pod { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 2px; }
+.pc-serie { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-display, inherit); font-size: 26px; font-weight: 800; color: var(--tx, #1f2937); line-height: 1; }
+.pc-flame { color: #E8950A; }
+.pc-pod-l { font-size: 11.5px; color: var(--tx3, #6b7280); text-transform: uppercase; letter-spacing: .03em; }
+.pc-goal { gap: 11px; }
+.pc-goal-ic { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; background: rgba(var(--pr-rgb,21,88,176),.08); color: var(--pr); }
+.pc-goal.done .pc-goal-ic { background: rgba(27,138,90,.12); color: #1B8A5A; }
+.pc-goal-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.pc-goal-tx strong { font-size: 13.5px; color: var(--tx, #1f2937); }
+.pc-goal-tx small { font-size: 12px; color: var(--tx3, #6b7280); }
+.pc-goal.done .pc-goal-tx small { color: #1B8A5A; font-weight: 600; }
+.pc-goal-arrow { color: var(--pr); flex-shrink: 0; opacity: .7; }
+.pc-badge { display: flex; align-items: center; gap: 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; padding: 12px 14px; background: #fff; cursor: pointer; font: inherit; text-align: left; width: 100%; transition: border-color .15s, box-shadow .15s; }
+.pc-badge:hover { border-color: var(--pr); box-shadow: 0 4px 14px rgba(0,0,0,.06); }
+.pc-medal { width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.pc-medal-all { background: linear-gradient(160deg, #F6D25B, #E19A0C); }
+.pc-badge-tx { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+.pc-badge-top { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.pc-badge-top strong { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--tx3, #6b7280); }
+.pc-badge-reste { font-size: 13px; color: var(--tx, #1f2937); font-weight: 600; }
+.pc-bar { display: block; height: 6px; border-radius: 100px; background: #eceef2; overflow: hidden; }
+.pc-bar-fill { display: block; height: 100%; border-radius: 100px; background: linear-gradient(90deg, var(--pr, #1558b0), #3b82f6); transition: width .4s ease; }
+@media (max-width: 420px) { .pc-pods { grid-template-columns: 1fr; } }
 
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
