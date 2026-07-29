@@ -144,13 +144,18 @@
             </div>
           </div>
 
-          <div class="card insight-card">
+          <div class="card insight-card" role="button" tabindex="0" @click="vigilanceTop && vigilanceTop.go()" @keyup.enter="vigilanceTop && vigilanceTop.go()">
             <div class="insight-icon"><MiapoOrbe :size="30" /></div>
-            <div><strong>{{ t('mia.watchPoints') }}</strong><p>{{ insight }}</p></div>
+            <div class="insight-body"><strong>{{ t('mia.watchPoints') }}</strong><p>{{ vigilanceTop && vigilanceTop.text }}</p></div>
+            <ChevronRight :size="18" class="insight-arrow" />
           </div>
 
           <div class="stat-grid">
-            <div class="stat" role="button" tabindex="0" :title="t('mia.avgOf20Hint')" @click="section = noteStatTarget" @keyup.enter="section = noteStatTarget"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
+            <div v-if="isApprenant" class="stat" role="button" tabindex="0" :title="t('mia.lastBadgeHint')" @click="section = 'recompenses'" @keyup.enter="section = 'recompenses'">
+              <span class="stat-v stat-badge"><Trophy :size="24" :style="{ color: dernierBadge ? badgeTierColor(dernierBadge.tier) : '#c7ccd6' }" /></span>
+              <span class="stat-l">{{ dernierBadge ? (locale.startsWith('en') ? dernierBadge.en : dernierBadge.fr) : t('mia.noBadgeYet') }}</span>
+            </div>
+            <div v-else class="stat" role="button" tabindex="0" :title="t('mia.avgOf20Hint')" @click="section = noteStatTarget" @keyup.enter="section = noteStatTarget"><span class="stat-v">{{ moyenne ?? '—' }}</span><span class="stat-l">{{ t('mia.avgOf20') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'tuteur'" @keyup.enter="section = 'tuteur'"><span class="stat-v" :class="{ warn: aReviser.length }">{{ aReviser.length }}</span><span class="stat-l">{{ t('mia.toReview') }}</span></div>
             <div class="stat" role="button" tabindex="0" @click="section = 'profil6c'" @keyup.enter="section = 'profil6c'"><span class="stat-v">{{ hasEval ? t('mia.done') : '—' }}</span><span class="stat-l">{{ t('mia.profile6c') }}</span></div>
           </div>
@@ -1042,7 +1047,7 @@ import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
-import { calculerBadges } from '../utils/recompenses'
+import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network, Puzzle }
@@ -2034,22 +2039,56 @@ const progression = computed(() => {
   return [...mats].map((m) => ({ matiere: m, level: levelFor(m) })).sort((a, b) => b.level - a.level)
 })
 
-const insight = computed(() => {
+// Badge le plus « fort » déjà obtenu (icône + libellé). Remplace la « moyenne des
+// notes » sur l'accueil APPRENANT : un jalon franchi motive plus qu'une moyenne.
+const dernierBadge = computed(() => {
   const e = activeEnfant.value
-  if (!e) return ''
+  if (!e) return null
+  void tuteur.revisionsVersion // recalcul après chaque révision (localStorage non réactif)
+  const earned = calculerBadges(e.id).filter((b) => b.earned)
+  if (!earned.length) return null
+  const rank = { gold: 3, silver: 2, bronze: 1 }
+  earned.sort((a, b) => (rank[b.tier] - rank[a.tier]) || (b.target - a.target))
+  return earned[0]
+})
+function badgeTierColor(tier) { return tier === 'gold' ? '#D4A017' : tier === 'silver' ? '#8A94A6' : '#C77B3B' }
+
+// « Points de vigilance » MIAPO : UN signal priorisé et ACTIONNABLE (carte cliquable).
+// Apprenant : devoirs en retard → matières faibles → inactivité → devoirs du jour →
+// humeur basse → tout va bien. Parent : faiblesses → retard → RAS. `go()` route vers
+// l'action utile (réviser la matière faible, ouvrir le planning, etc.).
+const vigilanceTop = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return null
+  void tuteur.revisionsVersion; void section.value // dépendances (progression + planning localStorage)
   const ap = isApprenant.value
-  if (!e.notes.length) return ap
-    ? t('mia.insightNoNotesLearner', { level: niveauLabel(e) })
-    : t('mia.insightNoNotesParent', { name: e.firstName, level: niveauLabel(e) })
-  const f = faiblesses.value
-  if (!f.length) return ap
-    ? t('mia.insightGoodLearner')
-    : t('mia.insightGoodParent', { name: e.firstName })
-  const noms = f.slice(0, 2).map((x) => x.matiere)
-  const m = noms.length === 2 ? t('mia.andJoin', { a: noms[0], b: noms[1] }) : noms[0]
-  return ap
-    ? t('mia.insightWeakLearner', { subjects: m })
-    : t('mia.insightWeakParent', { subjects: m, name: e.firstName })
+  const weak = () => {
+    const f = faiblesses.value
+    if (!f.length) return null
+    const noms = f.slice(0, 2).map((x) => x.matiere)
+    const m = noms.length === 2 ? t('mia.andJoin', { a: noms[0], b: noms[1] }) : noms[0]
+    return {
+      text: ap ? t('mia.insightWeakLearner', { subjects: m }) : t('mia.insightWeakParent', { subjects: m, name: e.firstName }),
+      go: () => (ap ? choisirAReviser({ matiere: f[0].matiere, themes: f[0].themes || [] }) : (section.value = 'enfants')),
+    }
+  }
+  if (!e.notes.length && !faiblesses.value.length) {
+    return {
+      text: ap ? t('mia.insightNoNotesLearner', { level: niveauLabel(e) }) : t('mia.insightNoNotesParent', { name: e.firstName, level: niveauLabel(e) }),
+      go: () => (ap ? (section.value = 'tuteur') : (section.value = 'enfants')),
+    }
+  }
+  if (ap) {
+    if (rappels.value.late > 0) return { text: t('mia.vigLate', { n: rappels.value.late }), go: () => (section.value = 'planning') }
+    const w = weak(); if (w) return w
+    if ((statsRecompenses(e.id).total || 0) > 0 && serieActuelle(e.id) === 0) return { text: t('mia.vigInactive'), go: () => (section.value = 'tuteur') }
+    if (rappels.value.due > 0) return { text: t('mia.vigDue', { n: rappels.value.due }), go: () => (section.value = 'planning') }
+    if (humeurBasseAujourdhui.value) return { text: t('mia.vigMood'), go: () => (section.value = 'tuteur') }
+    return { text: t('mia.insightGoodLearner'), go: () => (section.value = 'tuteur') }
+  }
+  const w = weak(); if (w) return w
+  if (rappels.value.late > 0) return { text: t('mia.vigLate', { n: rappels.value.late }), go: () => (section.value = 'planning') }
+  return { text: t('mia.insightGoodParent', { name: e.firstName }), go: () => (section.value = 'enfants') }
 })
 
 function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
@@ -2598,9 +2637,13 @@ onUnmounted(() => {
 .av-m { background: linear-gradient(135deg, var(--pr, #1558B0), #3b82f6); } .av-f { background: linear-gradient(135deg, #8B5CF6, #c084fc); }
 .child-info h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; } .child-meta { font-size: 13px; color: var(--tx2); display: flex; gap: 8px; } .sep { color: var(--bd); }
 
-.insight-card { display: flex; gap: 14px; align-items: flex-start; background: rgba(var(--pr-rgb,21,88,176),.05); border-color: rgba(var(--pr-rgb,21,88,176),.15); }
+.insight-card { display: flex; gap: 14px; align-items: center; background: rgba(var(--pr-rgb,21,88,176),.05); border-color: rgba(var(--pr-rgb,21,88,176),.15); cursor: pointer; text-align: left; width: 100%; transition: border-color .15s, box-shadow .15s; }
+.insight-card:hover { border-color: rgba(var(--pr-rgb,21,88,176),.35); box-shadow: 0 2px 10px rgba(var(--pr-rgb,21,88,176),.08); }
 .insight-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.insight-body { flex: 1; min-width: 0; }
+.insight-arrow { color: var(--pr); flex-shrink: 0; opacity: .7; }
 .insight-card strong { color: var(--pr); } .insight-card p { margin: 4px 0 0; font-size: 14px; color: var(--tx); line-height: 1.5; }
+.stat-badge { display: flex; align-items: center; justify-content: center; height: 30px; }
 
 .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 .stat { background: #fff; border: 1px solid var(--bd); border-radius: 14px; padding: 16px; text-align: center; cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
