@@ -506,13 +506,13 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
-   * Génère un exercice d'APPARIEMENT (paires à relier) : titre + liste de paires
-   * { a, b }. En mode `visuel` (jeune apprenant / primaire), b est un emoji qui
-   * illustre le mot a (double codage, coût nul). La correction est côté client
-   * (l'apprenant relie a↔b) : aucune bonne réponse cachée à protéger.
-   * @returns {Promise<{ok, titre?:string, paires?:Array<{a,b}>, reason?}>}
+   * Corrige une DICTÉE : compare la copie de l'apprenant au texte de référence et
+   * renvoie une note + TOUTES les fautes réelles, chacune avec l'extrait EXACT écrit
+   * par l'apprenant (pour surligner dans sa copie), la correction, le POURQUOI (la
+   * règle) et un type. Distincte de evaluerReponse (qui juge le FOND d'une réponse).
+   * @returns {Promise<{ok, correction?:{note,bilan,fautes:Array<{extrait,correction,pourquoi,type}>}, reason?}>}
    */
-  async function genererAppariement({ matiere = 'Culture générale', niveau = '', difficulte = 1, cours = '', digest = '', visuel = false, langue = 'fr' }) {
+  async function corrigerDictee({ reference = '', reponse = '', niveau = '', langue = 'fr' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -520,7 +520,48 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'appariement', data: { matiere, niveau, difficulte, cours, digest, visuel, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee_correction', data: { reference, reponse, niveau, langue } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && json.ok && json.text) {
+        const o = parseJsonObject(json.text)
+        if (o) {
+          const fautes = Array.isArray(o.fautes)
+            ? o.fautes.map((f) => ({
+              extrait: String((f && f.extrait) || '').trim(),
+              correction: String((f && f.correction) || '').trim(),
+              pourquoi: String((f && f.pourquoi) || '').trim(),
+              type: String((f && f.type) || '').trim().toLowerCase(),
+            })).filter((f) => f.extrait && f.correction).slice(0, 20)
+            : []
+          return { ok: true, correction: { note: clampNote10(o.note), bilan: String(o.bilan || '').trim(), fautes } }
+        }
+      }
+      return { ok: false, reason: (json && (json.detail || json.error)) || 'correction_failed' }
+    } catch (e) {
+      return { ok: false, reason: 'network' }
+    }
+  }
+
+  /**
+   * Génère un exercice d'APPARIEMENT (paires à relier) : titre + liste de paires
+   * { a, b }. En mode `visuel` (jeune apprenant / primaire), b est un emoji qui
+   * illustre le mot a (double codage, coût nul). La correction est côté client
+   * (l'apprenant relie a↔b) : aucune bonne réponse cachée à protéger.
+   * @returns {Promise<{ok, titre?:string, paires?:Array<{a,b}>, reason?}>}
+   */
+  async function genererAppariement({ matiere = 'Culture générale', niveau = '', difficulte = 1, cours = '', digest = '', visuel = false, langue = 'fr', exclure = [] }) {
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        // exclure : termes déjà vus dans la session → l'IA renouvelle le vocabulaire à chaque tour.
+        body: JSON.stringify({ metered: mtrB2C(), task: 'appariement', data: { matiere, niveau, difficulte, cours, digest, visuel, langue, exclure: Array.isArray(exclure) ? exclure.slice(-40) : [] } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -917,7 +958,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
 })
 

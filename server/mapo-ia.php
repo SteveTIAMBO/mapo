@@ -50,7 +50,7 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'dictee_correction', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -111,6 +111,7 @@ if (!empty($r['ok'])) {
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
   if ($task === 'dictee') return buildDicteePrompts($d);
+  if ($task === 'dictee_correction') return buildDicteeCorrectionPrompts($d);
   if ($task === 'appariement') return buildAppariementPrompts($d);
   if ($task === 'vision_copie') return buildVisionPrompts($d);
   if ($task === 'vision_cours') return buildVisionCoursPrompts($d);
@@ -222,6 +223,7 @@ function buildTuteurChatPrompts($d) {
     if ($interets !== '') $system .= "When it helps, ANCHOR your examples in what the learner enjoys ({$interets}) to make concepts concrete and meaningful — without forcing it. ";
     $system .= "IMPORTANT: greet (say 'Hello') ONLY on the very first message. If a 'Recent conversation' section appears below, NEVER greet again and do not write 'Hello' — continue straight to the substance. ";
     $system .= "If a LEARNER PROFILE is provided below (strengths, subjects, today's form, recent difficulty…), ADAPT your language, examples, pace and pedagogy to it — WITHOUT quoting the profile back to the learner. ";
+    $system .= "YOU ARE A TEXT TUTOR: you cannot open a quiz, an exercise or any app screen yourself. NEVER announce that you are launching or starting a quiz/exercise (e.g. do NOT say 'let's start a quiz' or 'launching a quiz'). To practise with a quiz, INVITE the learner to tap the 'Quiz' revision type themselves. When an explanation exchange is going well, either DEEPEN it (a tougher check, the next notion) or give a SHORT synthesis of what was learned — never end the dialogue abruptly with a single flat sentence. ";
     $system .= "Answer in plain text (no JSON, no markdown code fences).";
     $lvl = 'Learner level'; $subj = 'Subjects/modules'; $crs = 'Learner course material'; $hist = 'Recent conversation'; $msg = "Learner's message"; $prof = 'Learner profile (adapt to it)';
     $none = 'unspecified';
@@ -240,6 +242,7 @@ function buildTuteurChatPrompts($d) {
     if ($interets !== '') $system .= "Quand c'est utile, ANCRE tes exemples dans ce que l'apprenant aime ({$interets}) pour rendre les concepts concrets et parlants — sans forcer. ";
     $system .= "IMPORTANT : ne dis « Bonjour » qu'au TOUT PREMIER message. Si une section « Conversation récente » figure ci-dessous, NE RESALUE JAMAIS et n'écris pas « Bonjour » — enchaîne directement sur le fond. ";
     $system .= "Si un PROFIL de l'apprenant est fourni ci-dessous (forces, matières, forme du jour, ressenti récent…), ADAPTE ton langage, tes exemples, ton rythme et ta pédagogie à ce profil — SANS le citer explicitement à l'apprenant. ";
+    $system .= "TU ES UN TUTEUR TEXTE : tu ne peux PAS ouvrir de quiz, d'exercice ni aucun écran de l'application toi-même. N'annonce JAMAIS que tu lances ou démarres un quiz/exercice (par ex. ne dis PAS « On lance un quiz » ni « je lance un quiz »). Pour s'entraîner avec un quiz, INVITE l'apprenant à toucher lui-même le type de révision « Quiz ». Quand un échange d'explication se passe bien, soit APPROFONDIS (une vérification plus exigeante, la notion suivante), soit fais une COURTE synthèse de ce qui a été appris — ne clôture jamais le dialogue brutalement par une seule phrase sèche. ";
     $system .= "Réponds en texte simple (pas de JSON, pas de barrières de code markdown).";
     $lvl = "Niveau de l'apprenant"; $subj = 'Matières/modules'; $crs = "Cours de l'apprenant"; $hist = 'Conversation récente'; $msg = "Message de l'apprenant"; $prof = "Profil de l'apprenant (adapte-toi)";
     $none = 'non précisé';
@@ -734,15 +737,17 @@ function buildDicteePrompts($d) {
   $digest  = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact (privé) de l'apprenant
   $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
   if ($langue === 'en') {
-    $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a SHORT text (4 to 7 sentences) "
-      . "suitable for the given level, with common spelling/grammar difficulties for that level (agreements, homophones, "
-      . "verb endings). Keep sentences short and clear. If the learner's course material is provided, base the vocabulary on it. "
+    $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a text whose LENGTH fits the level: "
+      . "about 4-5 sentences for primary school, 6-8 for middle school, 8-10 for high school or adults — pick the count from the given level. "
+      . "Include the common spelling/grammar difficulties for that level (agreements, homophones, "
+      . "verb endings). Keep sentences clear, and let them grow a little longer for higher levels. If the learner's course material is provided, base the vocabulary on it. "
       . "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"phrases\":[\"sentence 1\",\"sentence 2\"]}.";
     if ($digest !== '') $system .= " If a learner PROFILE is provided below (interests, level, today's form), pick a THEME the learner enjoys for the text and adapt sentence length to their level — while KEEPING the target spelling/grammar difficulties. Never copy the profile into the text.";
   } else {
-    $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte COURT (4 à 7 phrases) "
-      . "adapté au niveau indiqué, avec les difficultés d'orthographe/grammaire typiques de ce niveau (accords, homophones, "
-      . "terminaisons de verbes). Phrases courtes et claires. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
+    $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte dont la LONGUEUR est adaptée au niveau : "
+      . "environ 4-5 phrases au primaire, 6-8 au collège, 8-10 au lycée ou pour un adulte — choisis le nombre selon le niveau indiqué. "
+      . "Inclus les difficultés d'orthographe/grammaire typiques de ce niveau (accords, homophones, "
+      . "terminaisons de verbes). Phrases claires, un peu plus longues aux niveaux élevés. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
       . "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"phrases\":[\"phrase 1\",\"phrase 2\"]}.";
     if ($digest !== '') $system .= " Si un PROFIL de l'apprenant est fourni ci-dessous (centres d'intérêt, niveau, forme du jour), choisis un THÈME de texte qui lui plaît et adapte la longueur des phrases à son niveau — en GARDANT les difficultés d'orthographe/grammaire visées. Ne recopie jamais le profil dans le texte.";
   }
@@ -750,7 +755,47 @@ function buildDicteePrompts($d) {
   if ($digest !== '') $u .= "Profil de l'apprenant (choisir un thème qui lui plaît — ne pas recopier) : {$digest}\n";
   if ($cours !== '') $u .= "Cours de l'apprenant (vocabulaire de référence) :\n{$cours}\n";
   $u .= "\nGénère la dictée au format JSON demandé.";
-  return [$system, $u, 900, true, null];
+  return [$system, $u, 1400, true, null];
+}
+
+// ── Correction de dictée : compare la copie de l'apprenant au texte de référence.
+// Renvoie une note + TOUTES les fautes réelles, chacune avec l'extrait EXACT écrit
+// par l'apprenant (pour le surlignage côté client), la correction, le POURQUOI
+// (la règle) et un type. Distincte de eval_reponse (qui juge le fond d'une réponse
+// rédigée) : ici il n'y a pas de « fond », seulement l'orthographe/grammaire.
+function buildDicteeCorrectionPrompts($d) {
+  $niveau    = clean($d['niveau'] ?? '', 40);
+  $reference = clean($d['reference'] ?? '', 4000);
+  $reponse   = clean($d['reponse'] ?? '', 4000);
+  $langue    = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+
+  if ($langue === 'en') {
+    $system = "You are a caring, precise teacher correcting a learner's DICTATION. You are given the REFERENCE text and the LEARNER'S copy. "
+      . "Compare them and list EVERY REAL error the learner made (spelling, agreement, verb ending, homophone, punctuation, missing capital, omitted/added word). "
+      . "Do NOT invent errors and do NOT stop early: report them ALL (up to ~15). If there is no error, return an empty list. "
+      . "For EACH error: \"extrait\" = the wrong fragment EXACTLY as the LEARNER wrote it (verbatim, so it can be found in their copy — never the correct form); "
+      . "\"correction\" = the correct form; \"pourquoi\" = a short, clear explanation of the RULE (why it is wrong), understandable at the learner's level; "
+      . "\"type\" = one of \"orthographe\",\"accord\",\"conjugaison\",\"homophone\",\"ponctuation\",\"majuscule\",\"oubli\". "
+      . "Also give \"note\" (orthographic accuracy out of 10) and a short encouraging \"bilan\" (1-2 sentences). "
+      . "Reply STRICTLY as valid JSON, no text or markdown around it, EXACT format: "
+      . "{\"note\":0,\"bilan\":\"...\",\"fautes\":[{\"extrait\":\"...\",\"correction\":\"...\",\"pourquoi\":\"...\",\"type\":\"...\"}]}.";
+  } else {
+    $system = "Tu es un enseignant bienveillant et précis qui corrige la DICTÉE d'un apprenant. On te donne le texte de RÉFÉRENCE et la COPIE de l'apprenant. "
+      . "Compare-les et relève CHAQUE faute RÉELLE commise par l'apprenant (orthographe, accord, terminaison de verbe, homophone, ponctuation, majuscule manquante, mot oublié ou ajouté). "
+      . "N'invente AUCUNE faute et ne t'arrête pas trop tôt : relève-les TOUTES (jusqu'à ~15). S'il n'y a aucune faute, renvoie une liste vide. "
+      . "Pour CHAQUE faute : \"extrait\" = le fragment fautif EXACTEMENT tel que l'APPRENANT l'a écrit (mot pour mot, pour qu'on le retrouve dans sa copie — jamais la forme correcte) ; "
+      . "\"correction\" = la forme correcte ; \"pourquoi\" = une explication COURTE et claire de la RÈGLE (pourquoi c'est faux), compréhensible à son niveau ; "
+      . "\"type\" = l'un de \"orthographe\",\"accord\",\"conjugaison\",\"homophone\",\"ponctuation\",\"majuscule\",\"oubli\". "
+      . "Donne aussi \"note\" (exactitude orthographique sur 10) et un court \"bilan\" encourageant (1-2 phrases). "
+      . "Réponds STRICTEMENT en JSON valide, sans texte ni markdown autour, au format EXACT : "
+      . "{\"note\":0,\"bilan\":\"...\",\"fautes\":[{\"extrait\":\"...\",\"correction\":\"...\",\"pourquoi\":\"...\",\"type\":\"...\"}]}.";
+  }
+
+  $u  = ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
+  $u .= "\nTEXTE DE RÉFÉRENCE (la bonne version) :\n" . ($reference !== '' ? $reference : '(vide)') . "\n";
+  $u .= "\nCOPIE DE L'APPRENANT (à corriger) :\n" . ($reponse !== '' ? $reponse : '(vide)') . "\n";
+  $u .= "\nCorrige au format JSON demandé.";
+  return [$system, $u, 1600, true, null];
 }
 
 // ── Appariement : génère des PAIRES à relier (jeu de matching) ──────────────
@@ -770,6 +815,14 @@ function buildAppariementPrompts($d) {
   // de paires et plus les associations sont fines.
   $diff  = isset($d['difficulte']) ? max(1, intval($d['difficulte'])) : 1;
   $count = max(4, min(8, 3 + $diff));
+  // Termes déjà vus dans la session (colonne gauche des tours précédents) : on les
+  // envoie pour que chaque niveau apporte du vocabulaire NEUF (sinon l'IA, à niveau
+  // et matière constants, ressert les mêmes associations « évidentes »).
+  $exclure = '';
+  if (!empty($d['exclure']) && is_array($d['exclure'])) {
+    $ex = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 60); }, $d['exclure']))), 0, 40);
+    $exclure = implode(' | ', $ex);
+  }
 
   if ($langue === 'en') {
     $diffDesc = $diff <= 2 ? "obvious, well-known associations (basics)."
@@ -783,6 +836,7 @@ function buildAppariementPrompts($d) {
       . "(e.g. {\"a\":\"cat\",\"b\":\"\xF0\x9F\x90\xB1\"}, {\"a\":\"sun\",\"b\":\"\xE2\x98\x80\xEF\xB8\x8F\"}). Use only concrete nouns depictable by a common emoji. ";
     if ($cours !== '') $system .= "If the learner's course is given below, draw the pairs FIRST from its content. ";
     if ($digest !== '') $system .= "If a learner PROFILE is given, anchor the items in their interests and adapt the tone — WITHOUT changing the difficulty above, and never copy the profile. ";
+    if ($exclure !== '') $system .= "This is a NEW round for the same learner: the left items listed under 'Already used' have ALREADY been played — do NOT reuse them or trivial variants; introduce DIFFERENT, FRESH items so every level brings new vocabulary. ";
     $system .= "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"paires\":[{\"a\":\"...\",\"b\":\"...\"}]}.";
   } else {
     $diffDesc = $diff <= 2 ? "associations évidentes et bien connues (bases)."
@@ -796,12 +850,14 @@ function buildAppariementPrompts($d) {
       . "(ex. {\"a\":\"chat\",\"b\":\"\xF0\x9F\x90\xB1\"}, {\"a\":\"soleil\",\"b\":\"\xE2\x98\x80\xEF\xB8\x8F\"}). N'utilise que des noms concrets illustrables par un emoji courant. ";
     if ($cours !== '') $system .= "Si le cours de l'apprenant est fourni ci-dessous, tire les paires EN PRIORITÉ de son contenu. ";
     if ($digest !== '') $system .= "Si un PROFIL de l'apprenant est fourni, ancre les éléments dans ses centres d'intérêt et adapte le ton — SANS changer la difficulté ci-dessus, et sans jamais recopier le profil. ";
+    if ($exclure !== '') $system .= "C'est un NOUVEAU tour pour le même apprenant : les éléments listés sous « Déjà vus » ont DÉJÀ été joués — ne les reprends pas (ni de simples variantes) ; propose des éléments DIFFÉRENTS et INÉDITS pour que chaque niveau apporte du vocabulaire neuf. ";
     $system .= "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"paires\":[{\"a\":\"...\",\"b\":\"...\"}]}.";
   }
 
   $u = "Matière : {$matiere}\n" . ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
   $u .= "Nombre de paires : {$count}\n";
   if ($digest !== '') $u .= "Profil de l'apprenant (ancrer les exemples — ne pas recopier) : {$digest}\n";
+  if ($exclure !== '') $u .= "Déjà vus (à NE PAS reprendre) : {$exclure}\n";
   if ($cours !== '') $u .= "\nCours de l'apprenant (source prioritaire) :\n{$cours}\n";
   $u .= "\nGénère l'appariement au format JSON demandé.";
   return [$system, $u, 1400, true, null];

@@ -61,13 +61,32 @@
     <div v-else-if="step === 'result'" class="card dic-result">
       <div class="card-head"><Check :size="18" /><h3>{{ en ? 'Your result' : 'Ton résultat' }}</h3></div>
       <div v-if="correction" class="dic-corr">
-        <div v-if="correction.note != null" class="dic-note" :style="noteStyle">{{ correction.note }}/10</div>
-        <p v-if="correction.verdict" class="dic-verdict">{{ correction.verdict }}</p>
-        <div v-if="correction.langue && correction.langue.fautes && correction.langue.fautes.length" class="dic-fautes">
-          <strong>{{ en ? 'To watch out for:' : 'À surveiller :' }}</strong>
-          <ul><li v-for="(f, i) in correction.langue.fautes" :key="i"><s class="dic-wrong">{{ f.extrait }}</s> → <b class="dic-right">{{ f.correction }}</b></li></ul>
+        <div class="dic-corr-top">
+          <div v-if="correction.note != null" class="dic-note" :style="noteStyle">{{ correction.note }}/10</div>
+          <p v-if="correction.bilan" class="dic-verdict">{{ correction.bilan }}</p>
         </div>
-        <p v-if="correction.explication" class="dic-expl">{{ correction.explication }}</p>
+
+        <!-- Copie de l'apprenant : fautes surlignées à l'endroit exact -->
+        <div class="dic-copie">
+          <strong>{{ en ? 'Your copy' : 'Ta copie' }}</strong>
+          <p class="dic-copie-tx"><template v-for="(s, i) in copieSegments" :key="i"><mark v-if="s.wrong" class="dic-hl"><s>{{ s.text }}</s><sup>{{ s.i + 1 }}</sup></mark><span v-else>{{ s.text }}</span></template></p>
+        </div>
+
+        <!-- Détail : chaque faute + le POURQUOI -->
+        <div v-if="correction.fautes && correction.fautes.length" class="dic-errs">
+          <strong>{{ en ? 'Corrections' : 'Les corrections' }}</strong>
+          <ol>
+            <li v-for="(f, i) in correction.fautes" :key="i" class="dic-err-item">
+              <div class="dic-err-line">
+                <span class="dic-err-n">{{ i + 1 }}</span>
+                <s class="dic-wrong">{{ f.extrait }}</s> <ArrowRight :size="13" class="dic-err-arr" /> <b class="dic-right">{{ f.correction }}</b>
+                <span v-if="typeLabel(f.type)" class="dic-type">{{ typeLabel(f.type) }}</span>
+              </div>
+              <p v-if="f.pourquoi" class="dic-why">{{ f.pourquoi }}</p>
+            </li>
+          </ol>
+        </div>
+        <p v-else class="dic-noerr"><Check :size="16" /> {{ en ? 'No mistake — great job!' : 'Aucune faute — bravo !' }}</p>
       </div>
       <div class="dic-ref">
         <strong>{{ en ? 'Reference text' : 'Texte de référence' }}</strong>
@@ -84,7 +103,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Ear, ChevronLeft, Loader2, Check, Info, FileText, Smartphone, Camera, Play, Pause, RotateCcw, SkipBack, SkipForward } from 'lucide-vue-next'
+import { Ear, ChevronLeft, Loader2, Check, Info, FileText, Smartphone, Camera, Play, Pause, RotateCcw, SkipBack, SkipForward, ArrowRight } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
@@ -106,7 +125,8 @@ const spoken = ref(false)   // la phrase courante a été lue au moins une fois
 const speaking = ref(false)
 const saisie = ref('')
 const correcting = ref(false)
-const correction = ref(null)
+const correction = ref(null)   // { note, bilan, fautes:[{extrait,correction,pourquoi,type}] }
+const copieEleve = ref('')     // texte soumis par l'apprenant (pour le surlignage)
 const err = ref('')
 const photoInput = ref(null)
 
@@ -171,19 +191,59 @@ async function onPhoto(e) {
 async function corriger(texteEleve) {
   correcting.value = true; err.value = ''
   stopSpeaking(); speaking.value = false
-  const q = (en.value ? 'Dictation — reference text: ' : 'Dictée — texte de référence : ') + texteReference.value
-  const r = await tuteur.evaluerReponse({ question: q, reponse: texteEleve, matiere: props.matiere, niveau: niveau.value })
+  copieEleve.value = texteEleve
+  const r = await tuteur.corrigerDictee({ reference: texteReference.value, reponse: texteEleve, niveau: niveau.value, langue: en.value ? 'en' : 'fr' })
   correcting.value = false
-  if (r.ok && r.eval) { correction.value = r.eval; step.value = 'result' }
+  if (r.ok && r.correction) { correction.value = r.correction; step.value = 'result' }
   else { err.value = r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : (en.value ? 'Correction unavailable.' : 'Correction indisponible.') }
 }
-function recommencer() { correction.value = null; saisie.value = ''; step.value = 'choose' }
+function recommencer() { correction.value = null; copieEleve.value = ''; saisie.value = ''; step.value = 'choose' }
 
 const noteStyle = computed(() => {
   const n = correction.value?.note
   const c = n == null ? '#6b7280' : n >= 8 ? '#1B8A5A' : n >= 5 ? '#B87A00' : '#D93025'
   return { color: c, borderColor: c }
 })
+
+// Découpe la copie de l'apprenant en segments : les fragments fautifs (extrait de
+// chaque faute) sont marqués pour être surlignés à l'endroit EXACT. Best-effort :
+// si un extrait n'est pas retrouvé mot pour mot, il reste listé dans le détail.
+const copieSegments = computed(() => {
+  const txt = copieEleve.value
+  const fautes = (correction.value && correction.value.fautes) || []
+  if (!txt) return []
+  if (!fautes.length) return [{ text: txt, wrong: false }]
+  const marks = [] // { start, end, i }
+  const ordered = fautes.map((f, i) => ({ f, i })).sort((a, b) => (b.f.extrait || '').length - (a.f.extrait || '').length)
+  for (const { f, i } of ordered) {
+    const ex = f.extrait
+    if (!ex) continue
+    let from = 0
+    while (from <= txt.length - ex.length) {
+      const pos = txt.indexOf(ex, from)
+      if (pos < 0) break
+      const overlap = marks.some((m) => pos < m.end && (pos + ex.length) > m.start)
+      if (!overlap) { marks.push({ start: pos, end: pos + ex.length, i }); break }
+      from = pos + 1
+    }
+  }
+  marks.sort((a, b) => a.start - b.start)
+  const segs = []
+  let cur = 0
+  for (const m of marks) {
+    if (m.start > cur) segs.push({ text: txt.slice(cur, m.start), wrong: false })
+    segs.push({ text: txt.slice(m.start, m.end), wrong: true, i: m.i })
+    cur = m.end
+  }
+  if (cur < txt.length) segs.push({ text: txt.slice(cur), wrong: false })
+  return segs
+})
+
+function typeLabel(tp) {
+  const fr = { orthographe: 'Orthographe', accord: 'Accord', conjugaison: 'Conjugaison', homophone: 'Homophone', ponctuation: 'Ponctuation', majuscule: 'Majuscule', oubli: 'Oubli' }
+  const enm = { orthographe: 'Spelling', accord: 'Agreement', conjugaison: 'Conjugation', homophone: 'Homophone', ponctuation: 'Punctuation', majuscule: 'Capital', oubli: 'Omission' }
+  return (en.value ? enm : fr)[tp] || ''
+}
 
 onUnmounted(() => { try { stopSpeaking() } catch { /* no-op */ } })
 </script>
@@ -222,14 +282,25 @@ onUnmounted(() => { try { stopSpeaking() } catch { /* no-op */ } })
 .dic-paper svg { color: var(--pr); flex-shrink: 0; }
 .dic-actions { display: flex; align-items: center; gap: 10px; justify-content: flex-end; margin-top: 14px; flex-wrap: wrap; }
 .dic-hidden { display: none; }
-.dic-corr { display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
-.dic-note { font-size: 22px; font-weight: 800; border: 2px solid; border-radius: 12px; padding: 6px 14px; }
-.dic-verdict { margin: 0; font-size: 14px; font-weight: 600; color: var(--tx, #1f2937); }
-.dic-fautes { font-size: 13px; color: var(--tx2, #4b5563); }
-.dic-fautes ul { margin: 6px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
-.dic-wrong { color: #D93025; }
+.dic-corr { display: flex; flex-direction: column; gap: 14px; align-items: stretch; width: 100%; }
+.dic-corr-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dic-note { font-size: 22px; font-weight: 800; border: 2px solid; border-radius: 12px; padding: 6px 14px; flex-shrink: 0; }
+.dic-verdict { margin: 0; font-size: 14px; font-weight: 600; color: var(--tx, #1f2937); flex: 1; min-width: 160px; }
+.dic-copie { padding: 12px 14px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; }
+.dic-copie > strong, .dic-errs > strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--tx3, #6b7280); margin-bottom: 8px; }
+.dic-copie-tx { margin: 0; font-size: 15px; line-height: 1.9; color: var(--tx, #1f2937); white-space: pre-wrap; }
+.dic-hl { background: rgba(217,48,37,.12); border-radius: 4px; padding: 0 2px; color: #D93025; text-decoration: none; }
+.dic-hl s { text-decoration-color: #D93025; }
+.dic-hl sup { font-size: 10px; font-weight: 800; margin-left: 1px; }
+.dic-errs ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; }
+.dic-err-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 14px; }
+.dic-err-n { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; background: rgba(217,48,37,.12); color: #D93025; font-size: 11.5px; font-weight: 800; flex-shrink: 0; }
+.dic-err-arr { color: var(--tx3, #9ca3af); flex-shrink: 0; }
+.dic-wrong { color: #D93025; text-decoration: line-through; }
 .dic-right { color: #1B8A5A; font-weight: 700; }
-.dic-expl { margin: 0; font-size: 13px; color: var(--tx2, #4b5563); line-height: 1.55; text-align: justify; }
+.dic-type { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); padding: 2px 8px; border-radius: 20px; }
+.dic-why { margin: 4px 0 0 26px; font-size: 13px; color: var(--tx2, #4b5563); line-height: 1.5; }
+.dic-noerr { display: inline-flex; align-items: center; gap: 7px; margin: 0; font-size: 14px; font-weight: 600; color: #1B8A5A; }
 .dic-ref { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: var(--input-bg, #f6f7f9); }
 .dic-ref strong { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .03em; color: var(--tx3, #6b7280); margin-bottom: 6px; }
 .dic-ref p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--tx, #1f2937); }

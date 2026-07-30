@@ -147,6 +147,11 @@ const firstTryCount = ref(0)
 const errors = ref(0)
 const startedAt = ref(0)
 const lastResult = ref(null)
+// Termes (colonne gauche) déjà vus dans CETTE session : envoyés en exclusion à
+// chaque tour pour que la montée de niveau apporte du vocabulaire NEUF (et pas
+// les mêmes mots + quelques paires en plus). Persistant tant que le module reste
+// ouvert ; réinitialisé si l'apprenant quitte puis rouvre l'appariement.
+const seenTerms = ref([])
 
 // ── Glisser (pointer events : souris + tactile) ──────────────────────────────
 const press = ref(null)        // source en cours d'appui { key, col, pairId, x, y }
@@ -175,7 +180,7 @@ async function start() {
   // Sous-RAG perso : ancre les paires sur ce que l'apprenant aime (sans changer la difficulté).
   let digest = ''
   try { if (props.enfant) digest = digestApprenant(props.enfant, tuteur.getAllRevisionStates(studentId.value) || {}) } catch { /* best-effort */ }
-  const r = await tuteur.genererAppariement({ matiere: props.matiere, niveau: niveau.value, difficulte: level.value, cours, digest, visuel: visuel.value, langue: en.value ? 'en' : 'fr' })
+  const r = await tuteur.genererAppariement({ matiere: props.matiere, niveau: niveau.value, difficulte: level.value, cours, digest, visuel: visuel.value, langue: en.value ? 'en' : 'fr', exclure: seenTerms.value })
   if (r.reason === 'credits_epuises') { step.value = 'epuise'; return }
   if (!r.ok || !r.paires || r.paires.length < 3) {
     err.value = en.value ? 'Could not prepare the exercise.' : 'Impossible de préparer l\'exercice.'
@@ -184,6 +189,8 @@ async function start() {
   titre.value = r.titre || ''
   const prs = r.paires.map((p, i) => ({ pairId: 'p' + i, a: p.a, b: p.b, emoji: visuel.value }))
   pairsList.value = prs
+  // Mémorise les termes de gauche pour ne pas les redemander au tour suivant.
+  seenTerms.value = [...seenTerms.value, ...prs.map((p) => p.a)].slice(-40)
   left.value = prs.map((p) => ({ key: 'L' + p.pairId, col: 'a', pairId: p.pairId, text: p.a, emoji: false }))
   right.value = shuffle(prs.map((p) => ({ key: 'R' + p.pairId, col: 'b', pairId: p.pairId, text: p.b, emoji: p.emoji })))
   startedAt.value = Date.now()
@@ -204,7 +211,8 @@ function onDown(card, ev) {
 function onMove(ev) {
   if (!press.value) return
   const dx = ev.clientX - press.value.x, dy = ev.clientY - press.value.y
-  if (!dragging.value && Math.hypot(dx, dy) > 6) dragging.value = true
+  // Seuil relevé (10px) : un clic un peu tremblant ne doit PAS passer pour un glisser.
+  if (!dragging.value && Math.hypot(dx, dy) > 10) dragging.value = true
   if (dragging.value) {
     dragX.value = ev.clientX; dragY.value = ev.clientY
     const el = document.elementFromPoint(ev.clientX, ev.clientY)
@@ -219,16 +227,22 @@ function onUp() {
   const p = press.value; press.value = null
   const wasDragging = dragging.value; const hk = hoverKey.value
   dragging.value = false; hoverKey.value = ''
-  if (!p || !wasDragging) return // simple tap → géré par @click
+  if (!p) return
+  if (!wasDragging) return // simple tap → géré par @click
+  dragEndAt = Date.now() // un vrai glisser a eu lieu → neutralise le @click natif qui suit
   const target = hk ? cardByKey(hk) : null
-  // On ignore un dépôt sur une carte déjà résolue (pas de faux « raté »).
-  if (target && !matched.value.has(target.pairId)) attempt(p, target)
+  // Dépôt valide (autre colonne, non résolu) → tentative ; sinon on RETOMBE sur une
+  // simple sélection de la carte de départ (un glisser avorté ne doit jamais rester
+  // « sans effet » à l'écran — c'était la cause du « mon clic n'a rien fait »).
+  if (target && target.col !== p.col && !matched.value.has(target.pairId)) attempt(p, target)
+  else tapSelect({ key: p.key, col: p.col, pairId: p.pairId })
 }
-// Tap-to-match : @click ne se déclenche pas après un vrai glisser (pointerup hors
-// cible n'émet pas de click natif s'il y a eu drag ; sécurité via `justDragged`).
-let justDragged = false
+// Tap-to-match. Après un vrai glisser, le navigateur peut émettre un `click` :
+// on l'ignore s'il suit de près un pointerup de glisser (sinon il annulerait la
+// sélection qu'on vient de poser).
+let dragEndAt = 0
 function onClickCard(card) {
-  if (justDragged) { justDragged = false; return }
+  if (Date.now() - dragEndAt < 250) return
   tapSelect({ key: card.key, col: card.col, pairId: card.pairId })
 }
 function tapSelect(c) {
@@ -366,7 +380,7 @@ onUnmounted(() => {
 .appa-card:disabled { cursor: default; }
 .appa-tx { line-height: 1.35; }
 .appa-emoji { font-size: 30px; line-height: 1; }
-.appa-card.is-selected { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.07); box-shadow: 0 0 0 3px rgba(var(--pr-rgb,21,88,176),.12); }
+.appa-card.is-selected { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.14); box-shadow: 0 0 0 3px rgba(var(--pr-rgb,21,88,176),.38); transform: scale(1.03); font-weight: 600; z-index: 1; }
 .appa-card.is-hover { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); transform: scale(1.02); }
 .appa-card.is-matched { border-color: #1B8A5A; background: rgba(27,138,90,.08); color: #1B8A5A; opacity: .9; }
 .appa-card.is-matched .appa-emoji { filter: none; }
