@@ -54,16 +54,24 @@ export const REVISION_TYPES = [
   { key: 'explain', engine: 'chat', icon: 'MessagesSquare', technique: 'self-explanation', always: true },
   // Entrelacement — alterner types de problèmes : discrimination (maths/sciences).
   { key: 'interleave', engine: 'chat', icon: 'Shuffle', technique: 'interleaving', needs: ['scientifique'] },
-  // Dictée — production orthographique sous récupération (langues).
-  { key: 'dictee', engine: 'chat', icon: 'Ear', technique: 'production', needs: ['langue'] },
+  // Dictée — production orthographique sous récupération (langues). N'a de sens
+  // qu'à l'école (primaire → lycée) : exclue dans l'enseignement supérieur.
+  { key: 'dictee', engine: 'chat', icon: 'Ear', technique: 'production', needs: ['langue'], excludeSuperieur: true },
   // Rédaction / dissertation — élaboration + production écrite (matières rédactionnelles).
   { key: 'redaction', engine: 'written', icon: 'PenLine', technique: 'elaboration', needs: ['redactionnel'] },
   // Carte mentale — double codage (verbal + visuel) : matières à concepts/processus.
   { key: 'mindmap', engine: 'chat', icon: 'Network', technique: 'dual-coding', needs: ['conceptuel'] },
 ]
 
-// Types applicables à une matière, dans l'ordre du catalogue.
-export function typesForMatiere(matiere) {
+// Types applicables à une matière ET au niveau de l'apprenant, dans l'ordre du
+// catalogue. La matière filtre par famille (pas de dictée en maths…) ; le niveau
+// retire les types qui n'ont pas de sens à ce stade (pas de dictée au supérieur).
+// @param {{superieur?:boolean}} opts
+export function typesForMatiere(matiere, opts = {}) {
   const tags = matiereTags(matiere)
-  return REVISION_TYPES.filter((tpe) => tpe.always || (tpe.needs || []).some((n) => tags.includes(n)))
+  const sup = !!(opts && opts.superieur)
+  return REVISION_TYPES.filter((tpe) => {
+    if (sup && tpe.excludeSuperieur) return false
+    return tpe.always || (tpe.needs || []).some((n) => tags.includes(n))
+  })
 }

@@ -5,6 +5,12 @@
     <div v-if="step === 'choose'" class="card dic-choose">
       <div class="card-head"><Ear :size="18" /><h3>{{ en ? 'Dictation' : 'Dictée' }} — {{ matiere }}</h3></div>
       <p class="muted">{{ en ? 'MIAPO reads the text aloud. How do you want to write?' : 'MIAPO lit le texte à voix haute. Comment veux-tu écrire ?' }}</p>
+      <div class="dic-len">
+        <span class="dic-len-lbl">{{ en ? 'Length' : 'Longueur' }}</span>
+        <div class="dic-len-opts">
+          <button v-for="o in longueurs" :key="o.v" type="button" class="dic-len-btn" :class="{ active: longueur === o.v }" @click="longueur = o.v">{{ o.label }}</button>
+        </div>
+      </div>
       <div class="dic-modes">
         <button type="button" class="dic-mode" @click="choisirMode('appli')">
           <Smartphone :size="22" /><strong>{{ en ? 'On the app' : 'Sur l\'appli' }}</strong><small>{{ en ? 'Type as you listen' : 'Tu écris en écoutant' }}</small>
@@ -118,6 +124,7 @@ const voiceOk = isSpeechSupported()
 
 const step = ref('choose')
 const mode = ref('appli') // 'appli' | 'feuille'
+const longueur = ref('moyenne') // 'courte' | 'moyenne' | 'longue' — choisie par l'apprenant (la difficulté vient du niveau)
 const titre = ref('')
 const phrases = ref([])
 const idx = ref(0)
@@ -133,6 +140,11 @@ const photoInput = ref(null)
 const niveau = computed(() => props.enfant?.niveau || '')
 const texteReference = computed(() => phrases.value.join(' '))
 const ttsLang = computed(() => (en.value ? 'en-US' : 'fr-FR'))
+const longueurs = computed(() => ([
+  { v: 'courte', label: en.value ? 'Short' : 'Courte' },
+  { v: 'moyenne', label: en.value ? 'Medium' : 'Moyenne' },
+  { v: 'longue', label: en.value ? 'Long' : 'Longue' },
+]))
 
 async function choisirMode(m) {
   mode.value = m
@@ -144,7 +156,7 @@ async function choisirMode(m) {
   // d'ancrer le thème/vocabulaire de la dictée sur ce que l'apprenant aime.
   let digest = ''
   try { if (props.enfant) digest = digestApprenant(props.enfant, tuteur.getAllRevisionStates(props.enfant.id) || {}) } catch { /* best-effort */ }
-  const r = await tuteur.genererDictee({ matiere: props.matiere, niveau: niveau.value, cours, digest, langue: en.value ? 'en' : 'fr' })
+  const r = await tuteur.genererDictee({ matiere: props.matiere, niveau: niveau.value, cours, digest, langue: en.value ? 'en' : 'fr', longueur: longueur.value })
   if (r.ok && r.phrases.length) {
     titre.value = r.titre; phrases.value = r.phrases; idx.value = 0; spoken.value = false
     step.value = 'session'
@@ -256,6 +268,12 @@ onUnmounted(() => { try { stopSpeaking() } catch { /* no-op */ } })
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; color: var(--pr); }
 .card-head h3 { margin: 0; font-size: 15.5px; color: var(--tx, #1f2937); }
 .muted { color: var(--tx3, #6b7280); font-size: 13.5px; margin: 0 0 14px; }
+.dic-len { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; flex-wrap: wrap; }
+.dic-len-lbl { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--tx3, #6b7280); }
+.dic-len-opts { display: inline-flex; gap: 6px; }
+.dic-len-btn { padding: 6px 14px; border: 1.5px solid var(--bd, #e5e7eb); background: #fff; border-radius: 999px; font-family: inherit; font-size: 13px; font-weight: 600; color: var(--tx2, #4b5563); cursor: pointer; transition: border-color .12s, background .12s, color .12s; }
+.dic-len-btn:hover { border-color: var(--pr); }
+.dic-len-btn.active { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr); }
 .dic-modes { display: flex; gap: 12px; flex-wrap: wrap; }
 .dic-mode { flex: 1; min-width: 140px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 14px; border: 1.5px solid var(--bd, #e5e7eb); border-radius: 14px; background: #fff; cursor: pointer; color: var(--pr); transition: border-color .12s, transform .12s; }
 .dic-mode:hover { border-color: var(--pr); transform: translateY(-2px); }

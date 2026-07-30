@@ -736,20 +736,23 @@ function buildDicteePrompts($d) {
   $cours   = clean($d['cours'] ?? '', 4000);
   $digest  = clean($d['digest'] ?? '', 1500); // sous-RAG perso : profil compact (privé) de l'apprenant
   $langue  = (($d['langue'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  // Longueur CHOISIE par l'apprenant (la difficulté, elle, reste pilotée par le
+  // niveau/la progression — pas par la longueur).
+  $longueur = in_array(($d['longueur'] ?? 'moyenne'), ['courte', 'moyenne', 'longue'], true) ? $d['longueur'] : 'moyenne';
   if ($langue === 'en') {
-    $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a text whose LENGTH fits the level: "
-      . "about 4-5 sentences for primary school, 6-8 for middle school, 8-10 for high school or adults — pick the count from the given level. "
-      . "Include the common spelling/grammar difficulties for that level (agreements, homophones, "
-      . "verb endings). Keep sentences clear, and let them grow a little longer for higher levels. If the learner's course material is provided, base the vocabulary on it. "
+    $longEn = $longueur === 'courte' ? '4 to 5 sentences' : ($longueur === 'longue' ? '10 to 12 sentences' : '7 to 8 sentences');
+    $system = "You are a caring teacher preparing a DICTATION for a learner. Produce a text of {$longEn} — the learner chose this length. "
+      . "Adapt the DIFFICULTY — vocabulary, agreements, homophones, verb endings — to the given LEVEL, NOT to the length. "
+      . "Keep sentences clear. If the learner's course material is provided, base the vocabulary on it. "
       . "Reply STRICTLY as valid JSON, no text around it: {\"titre\":\"...\",\"phrases\":[\"sentence 1\",\"sentence 2\"]}.";
-    if ($digest !== '') $system .= " If a learner PROFILE is provided below (interests, level, today's form), pick a THEME the learner enjoys for the text and adapt sentence length to their level — while KEEPING the target spelling/grammar difficulties. Never copy the profile into the text.";
+    if ($digest !== '') $system .= " If a learner PROFILE is provided below (interests, level, today's form), pick a THEME the learner enjoys for the text — while KEEPING the target spelling/grammar difficulties for their level. Never copy the profile into the text.";
   } else {
-    $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte dont la LONGUEUR est adaptée au niveau : "
-      . "environ 4-5 phrases au primaire, 6-8 au collège, 8-10 au lycée ou pour un adulte — choisis le nombre selon le niveau indiqué. "
-      . "Inclus les difficultés d'orthographe/grammaire typiques de ce niveau (accords, homophones, "
-      . "terminaisons de verbes). Phrases claires, un peu plus longues aux niveaux élevés. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
+    $longFr = $longueur === 'courte' ? '4 à 5 phrases' : ($longueur === 'longue' ? '10 à 12 phrases' : '7 à 8 phrases');
+    $system = "Tu es un enseignant bienveillant qui prépare une DICTÉE pour un apprenant. Produis un texte de {$longFr} — c'est l'apprenant qui a choisi cette longueur. "
+      . "Adapte la DIFFICULTÉ — vocabulaire, accords, homophones, terminaisons de verbes — au NIVEAU indiqué, PAS à la longueur. "
+      . "Phrases claires. Si un cours de l'apprenant est fourni, appuie le vocabulaire dessus. "
       . "Réponds STRICTEMENT en JSON valide, sans texte autour : {\"titre\":\"...\",\"phrases\":[\"phrase 1\",\"phrase 2\"]}.";
-    if ($digest !== '') $system .= " Si un PROFIL de l'apprenant est fourni ci-dessous (centres d'intérêt, niveau, forme du jour), choisis un THÈME de texte qui lui plaît et adapte la longueur des phrases à son niveau — en GARDANT les difficultés d'orthographe/grammaire visées. Ne recopie jamais le profil dans le texte.";
+    if ($digest !== '') $system .= " Si un PROFIL de l'apprenant est fourni ci-dessous (centres d'intérêt, niveau, forme du jour), choisis un THÈME de texte qui lui plaît — en GARDANT les difficultés d'orthographe/grammaire visées pour son niveau. Ne recopie jamais le profil dans le texte.";
   }
   $u = "Matière : {$matiere}\n" . ($niveau !== '' ? "Niveau / classe : {$niveau}\n" : '');
   if ($digest !== '') $u .= "Profil de l'apprenant (choisir un thème qui lui plaît — ne pas recopier) : {$digest}\n";

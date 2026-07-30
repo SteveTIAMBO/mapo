@@ -1719,7 +1719,14 @@ const pendingTheme = ref('')
 // Types de révision proposés pour la matière choisie — dépend de la matière
 // (pas de dictée en maths…). Logique fondée sur les sciences cognitives :
 // cf. src/utils/revisionTypes.js.
-const reviseTypes = computed(() => (reviseMatiere.value ? typesForMatiere(reviseMatiere.value) : []))
+const reviseTypes = computed(() => {
+  if (!reviseMatiere.value) return []
+  const e = activeEnfant.value
+  // Supérieur (ou formation adulte hors-catalogue) : on retire les types propres à
+  // l'école, comme la dictée. La difficulté des autres types reste pilotée par le niveau.
+  const superieur = !!(e && (e.cycle === 'superieur' || isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE))
+  return typesForMatiere(reviseMatiere.value, { superieur })
+})
 // Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
 const activeRedaction = ref('')
 // Matière en cours de « Dictée » (module vocal dédié).

@@ -481,7 +481,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * Génère une DICTÉE (titre + phrases courtes) à énoncer à voix haute côté client.
    * @returns {Promise<{ok, titre?:string, phrases?:string[], reason?}>}
    */
-  async function genererDictee({ matiere = 'Français', niveau = '', cours = '', digest = '', langue = 'fr' }) {
+  async function genererDictee({ matiere = 'Français', niveau = '', cours = '', digest = '', langue = 'fr', longueur = 'moyenne' }) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -489,7 +489,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, digest, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, digest, langue, longueur } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
