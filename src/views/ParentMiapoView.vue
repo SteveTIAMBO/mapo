@@ -596,6 +596,31 @@
             <p v-else class="muted">{{ isApprenant ? t('mia.progEmptyLearner') : t('mia.progEmptyParent') }} <button class="lnk" @click="section = 'tuteur'">{{ t('mia.tutorWord') }}</button> {{ t('mia.progEmptyTail') }}</p>
           </div>
 
+          <!-- Courbe Elo par matière (progression réelle dans la durée) -->
+          <div v-if="suiviCourbes.length" class="card">
+            <div class="card-head"><TrendingUp :size="18" /><h3><DualText :text="t('mia.eloCurveTitle')" /></h3></div>
+            <div class="courbe-list">
+              <div v-for="c in suiviCourbes" :key="c.matiere" class="courbe-row">
+                <span class="courbe-mat">{{ c.matiere }}</span>
+                <svg class="courbe-spark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><polyline :points="c.path" fill="none" :stroke="c.monte ? '#1B8A5A' : '#D93025'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" /></svg>
+                <span class="courbe-elo">{{ c.elo }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Où tu butes le plus (activités bloquantes) -->
+          <div v-if="activitesBloquantes.length" class="card">
+            <div class="card-head"><Target :size="18" /><h3><DualText :text="t('mia.bloquantesTitle')" /></h3></div>
+            <p class="muted small">{{ t('mia.bloquantesHint') }}</p>
+            <div class="bloq-list">
+              <component :is="isApprenant ? 'button' : 'div'" v-for="b in activitesBloquantes" :key="b.matiere" class="bloq-row" :class="{ 'bloq-static': !isApprenant }" @click="isApprenant && choisirAReviser({ matiere: b.matiere, themes: [] })">
+                <span class="bloq-mat">{{ b.matiere }}</span>
+                <span class="bloq-pct">{{ b.recent }}%</span>
+                <ChevronRight v-if="isApprenant" :size="16" />
+              </component>
+            </div>
+          </div>
+
           <div v-if="activeEnfant.notes.length" class="card">
             <div class="card-head"><FileText :size="18" /><h3><DualText :text="t('mia.notesOverview')" /></h3></div>
             <div class="notes-list">
@@ -2140,6 +2165,38 @@ async function remonterSuiviEcole() {
   _dernierPushSuivi = now
   try { await lienEcole.pushSuivi(lien.schoolId, lien.eleveId, suivi) } catch { /* best-effort */ }
 }
+// ── Suivi (P2c) : courbe Elo par matière + « où tu butes le plus » ──────────
+// Sparkline SVG (polyline) à partir de l'historique Elo déjà stocké (elo.js).
+function sparkPath(vals, w = 100, h = 22) {
+  if (!Array.isArray(vals) || vals.length < 2) return ''
+  const min = Math.min(...vals), max = Math.max(...vals), span = (max - min) || 1
+  const step = w / (vals.length - 1)
+  return vals.map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`).join(' ')
+}
+const suiviCourbes = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return []
+  void tuteur.revisionsVersion
+  const st = statsElo(e.id)
+  return Object.keys(st).map((m) => {
+    const h = Array.isArray(st[m].history) ? st[m].history : []
+    if (h.length < 2) return null
+    const elos = h.map((x) => x.elo)
+    return { matiere: m, elo: st[m].elo, path: sparkPath(elos), monte: elos[elos.length - 1] >= elos[0] }
+  }).filter(Boolean).sort((a, b) => b.elo - a.elo)
+})
+// « Où tu butes le plus » : matières à faible réussite récente EN RÉVISION (≠ notes).
+const activitesBloquantes = computed(() => {
+  const e = activeEnfant.value
+  if (!e || !isApprenant.value) return []
+  void tuteur.revisionsVersion
+  const st = statsElo(e.id)
+  return Object.keys(st).map((m) => {
+    const h = Array.isArray(st[m].history) ? st[m].history.slice(-3) : []
+    if (!h.length) return null
+    return { matiere: m, recent: Math.round(h.reduce((a, x) => a + (x.score || 0), 0) / h.length) }
+  }).filter((r) => r && r.recent < 60).sort((a, b) => a.recent - b.recent).slice(0, 3)
+})
 const hasEval = computed(() => !!activeEnfant.value?.comp6c && Object.keys(activeEnfant.value.comp6c).length >= 6)
 const moyenne = computed(() => {
   const ns = activeEnfant.value?.notes || []
@@ -2930,6 +2987,18 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .seq-conseil-arr { color: var(--pr); flex-shrink: 0; opacity: .7; }
 .suivi-ecole { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #1B8A5A; background: rgba(27,138,90,.08); padding: 7px 11px; border-radius: 10px; margin: 0 0 12px; }
 .suivi-ecole svg { flex-shrink: 0; }
+.courbe-list { display: flex; flex-direction: column; gap: 12px; }
+.courbe-row { display: flex; align-items: center; gap: 12px; }
+.courbe-mat { flex: 0 0 32%; font-size: 14px; color: var(--tx, #1f2937); }
+.courbe-spark { flex: 1; height: 24px; min-width: 0; }
+.courbe-elo { font-size: 13px; font-weight: 800; color: var(--tx2, #4b5563); min-width: 44px; text-align: right; }
+.bloq-list { display: flex; flex-direction: column; gap: 8px; }
+.bloq-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; cursor: pointer; font: inherit; }
+.bloq-row.bloq-static { cursor: default; }
+.bloq-row:not(.bloq-static):hover { border-color: var(--pr); }
+.bloq-mat { flex: 1; font-size: 14px; color: var(--tx, #1f2937); }
+.bloq-pct { font-size: 13px; font-weight: 800; color: #D93025; }
+.bloq-row svg { color: var(--pr); flex-shrink: 0; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
