@@ -380,12 +380,15 @@ onUnmounted(() => {
 .appa-card:disabled { cursor: default; }
 .appa-tx { line-height: 1.35; }
 .appa-emoji { font-size: 30px; line-height: 1; }
-.appa-card.is-selected { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.14); box-shadow: 0 0 0 3px rgba(var(--pr-rgb,21,88,176),.38); transform: scale(1.03); font-weight: 600; z-index: 1; }
-.appa-card.is-hover { border-color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); transform: scale(1.02); }
-.appa-card.is-matched { border-color: #1B8A5A; background: rgba(27,138,90,.08); color: #1B8A5A; opacity: .9; }
+/* !important : un style de thème global `[class*="-card"]` force background/box-shadow
+   sur tout ce qui contient « -card » (dont appa-card) — on doit donc l'emporter pour
+   que la sélection (bleu), la réussite (vert) et l'erreur (rouge) restent visibles. */
+.appa-card.is-selected { border-color: var(--pr) !important; background: rgba(var(--pr-rgb,21,88,176),.16) !important; box-shadow: 0 0 0 3px rgba(var(--pr-rgb,21,88,176),.45) !important; transform: scale(1.03); font-weight: 600; z-index: 1; }
+.appa-card.is-hover { border-color: var(--pr) !important; background: rgba(var(--pr-rgb,21,88,176),.12) !important; box-shadow: 0 0 0 3px rgba(var(--pr-rgb,21,88,176),.30) !important; transform: scale(1.02); }
+.appa-card.is-matched { border-color: #1B8A5A !important; background: rgba(27,138,90,.12) !important; box-shadow: none !important; color: #1B8A5A; opacity: .9; }
 .appa-card.is-matched .appa-emoji { filter: none; }
 .appa-ok { color: #1B8A5A; flex-shrink: 0; }
-.appa-card.is-wrong { border-color: #D93025; background: rgba(217,48,37,.06); animation: appaShake .4s; }
+.appa-card.is-wrong { border-color: #D93025 !important; background: rgba(217,48,37,.10) !important; box-shadow: none !important; animation: appaShake .4s; }
 @keyframes appaShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-6px); } 40% { transform: translateX(6px); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
 .appa-quit { align-self: center; margin-top: 14px; }
 .appa-ghost { position: fixed; z-index: 9999; transform: translate(-50%, -50%); padding: 10px 14px; border-radius: 12px; background: var(--pr); color: #fff; font-family: inherit; font-size: 14.5px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,.25); pointer-events: none; max-width: 200px; text-align: center; }
