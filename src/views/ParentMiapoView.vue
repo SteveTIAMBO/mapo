@@ -1181,7 +1181,9 @@ const SECTIONS = computed(() => {
   return [
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
-    { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
+    // « Mes cours » (import perso) masqué quand l'école est reliée : les cours
+    // proviennent de l'établissement et n'apparaissent QUE dans « Mon école ».
+    ...(ecoleLie ? [] : [{ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' }]),
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'recompenses', label: t('mia.secRewards'), icon: Trophy, group: 'apprendre' },
