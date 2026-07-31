@@ -85,7 +85,10 @@
         <span class="mtb-hi">{{ greeting }}<template v-if="greetName">, {{ greetName }}</template></span>
         <span class="mtb-spacer"></span>
         <button type="button" class="mtb-ic" @click="openSearch" :title="t('header.search')"><Search :size="18" /></button>
-        <button type="button" class="mtb-ic mtb-avatar" @click="section = 'profil'" :title="t('mia.secSettings')"><span class="mtb-initials">{{ headerInitials }}</span></button>
+        <span class="mtb-conn" :class="enLigne ? 'is-online' : 'is-offline'" :title="enLigne ? t('mia.online') : t('mia.offlineHint')">
+          <span class="mtb-dot"></span>
+          <span class="mtb-conn-tx">{{ enLigne ? t('mia.online') : t('mia.offline') }}</span>
+        </span>
       </header>
       <div class="miapo-scroll">
       <!-- Aucun enfant : accueil d'amorçage -->
@@ -113,7 +116,7 @@
         <!-- ========== ACCUEIL ========== -->
         <section v-if="section === 'accueil'" class="sec">
           <div class="card child-card">
-            <div class="child-avatar" :class="activeEnfant.gender === 'F' ? 'av-f' : 'av-m'">{{ initials }}</div>
+            <div class="child-avatar" :class="activeEnfant.gender === 'F' ? 'av-f' : 'av-m'"><img v-if="activeEnfant.photoURL" :src="activeEnfant.photoURL" alt="" class="av-img" /><template v-else>{{ initials }}</template></div>
             <div class="child-info">
               <h2>{{ activeEnfant.firstName }} {{ activeEnfant.lastName }}</h2>
               <div class="child-meta"><span>{{ niveauLabel(activeEnfant) }}</span><span class="sep">·</span><span>{{ paysLabel(activeEnfant.pays) }}</span></div>
@@ -215,7 +218,7 @@
             <div class="card-head"><Users :size="18" /><h3><DualText :text="isApprenant ? t('mia.myProfileTitle') : t('mia.profilesTitle')" /></h3></div>
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
-                <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'">{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</span>
+                <span class="er-avatar" :class="e.gender === 'F' ? 'av-f' : 'av-m'"><img v-if="e.photoURL" :src="e.photoURL" alt="" class="av-img" /><template v-else>{{ (e.firstName[0] || '') + (e.lastName[0] || '') }}</template></span>
                 <span class="er-info"><strong>{{ e.firstName }} {{ e.lastName }}</strong><small>{{ niveauLabel(e) }} · {{ paysLabel(e.pays) }}</small></span>
                 <Trash2 v-if="e.id === activeId" :size="16" class="er-del" @click.stop="confirmRemove" />
               </button>
@@ -1021,7 +1024,7 @@ import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_PRIMAIRE_FR, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -1618,6 +1621,14 @@ const headerInitials = computed(() => {
 })
 function openSearch() { try { window.dispatchEvent(new CustomEvent('open-global-search')) } catch { /* silent */ } }
 
+// État de connexion (indicateur barre du haut). MAPO+ est une PWA + Firestore
+// persistentLocalCache : une fois l'app ouverte et l'apprenant connecté, on peut
+// continuer à réviser hors ligne. L'indicateur le signale simplement.
+const enLigne = ref(typeof navigator !== 'undefined' ? navigator.onLine : true)
+function _majEnLigne() { enLigne.value = typeof navigator !== 'undefined' ? navigator.onLine : true }
+onMounted(() => { window.addEventListener('online', _majEnLigne); window.addEventListener('offline', _majEnLigne) })
+onUnmounted(() => { window.removeEventListener('online', _majEnLigne); window.removeEventListener('offline', _majEnLigne) })
+
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
 const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
@@ -1635,12 +1646,38 @@ function syncProfil() {
     certifId: e.certifId || '', organisme: e.organisme || '', certifDate: e.certifDate || '',
   }
 }
-function onPickPhoto(ev) {
+// Redimensionne la photo en VIGNETTE (canvas) avant stockage : une photo de
+// téléphone brute (2–5 Mo) dépasse la limite Firestore (1 Mo/doc) et ne serait
+// jamais persistée — d'où « la photo ne s'applique nulle part ». ~256px JPEG ≈ 15–30 Ko.
+function fileToThumbnail(file, max = 256, quality = 0.82) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const src = String(reader.result || '')
+      const img = new Image()
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, max / Math.max(img.width || 1, img.height || 1))
+          const w = Math.max(1, Math.round((img.width || 1) * scale))
+          const h = Math.max(1, Math.round((img.height || 1) * scale))
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          resolve(canvas.toDataURL('image/jpeg', quality))
+        } catch { resolve(src) }
+      }
+      img.onerror = () => resolve(src)
+      img.src = src
+    }
+    reader.onerror = () => resolve('')
+    reader.readAsDataURL(file)
+  })
+}
+async function onPickPhoto(ev) {
   const f = ev.target.files && ev.target.files[0]
   if (!f) return
-  const reader = new FileReader()
-  reader.onload = () => { profil.value.photoURL = String(reader.result || '') }
-  reader.readAsDataURL(f)
+  const url = await fileToThumbnail(f)
+  if (url) profil.value.photoURL = url
 }
 function saveProfil() {
   if (!activeEnfant.value) return
@@ -1684,12 +1721,11 @@ function syncParentProfil() {
   const p = authStore.userProfile || {}
   parentProfil.value = { firstName: p.firstName || '', lastName: p.lastName || '', email: p.email || '', phone: p.phone || '', photoURL: p.photoURL || '', typeCompte: p.typeCompte || 'particulier', raisonSociale: p.raisonSociale || '', adresseFact: p.adresseFact || '', tva: p.tva || '' }
 }
-function onPickParentPhoto(ev) {
+async function onPickParentPhoto(ev) {
   const f = ev.target.files && ev.target.files[0]
   if (!f) return
-  const reader = new FileReader()
-  reader.onload = () => { parentProfil.value.photoURL = String(reader.result || '') }
-  reader.readAsDataURL(f)
+  const url = await fileToThumbnail(f)
+  if (url) parentProfil.value.photoURL = url
 }
 function saveParentProfil() {
   authStore.updateProfile({
@@ -1722,10 +1758,14 @@ const pendingTheme = ref('')
 const reviseTypes = computed(() => {
   if (!reviseMatiere.value) return []
   const e = activeEnfant.value
-  // Supérieur (ou formation adulte hors-catalogue) : on retire les types propres à
-  // l'école, comme la dictée. La difficulté des autres types reste pilotée par le niveau.
+  // Filtrage développemental (sciences cognitives) :
+  //  • supérieur / formation adulte → pas de dictée (compétence scolaire) ;
+  //  • primaire → pas de dissertation, ni problèmes mêlés (interleaving), ni carte
+  //    mentale (trop abstraits) ; on garde récupération (quiz), espacement
+  //    (flashcards), double codage (appariement visuel) et dictée.
   const superieur = !!(e && (e.cycle === 'superieur' || isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE))
-  return typesForMatiere(reviseMatiere.value, { superieur })
+  const primaire = !!(e && (e.cycle === 'primaire' || NIVEAUX_PRIMAIRE.includes(e.niveau) || NIVEAUX_PRIMAIRE_FR.includes(e.niveau)))
+  return typesForMatiere(reviseMatiere.value, { superieur, primaire })
 })
 // Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
 const activeRedaction = ref('')
@@ -2120,7 +2160,13 @@ const vigilanceTop = computed(() => {
     const f = faiblesses.value
     if (!f.length) return null
     const noms = f.slice(0, 2).map((x) => x.matiere)
-    const m = noms.length === 2 ? t('mia.andJoin', { a: noms[0], b: noms[1] }) : noms[0]
+    // Au-delà de 2 points faibles, on signale le RESTE (« et N autres matières »)
+    // pour que la carte réagisse quand on relève la note cible (plus de matières
+    // deviennent fragiles), au lieu de rester figée sur les 2 plus faibles.
+    const extra = f.length - noms.length
+    const m = extra > 0
+      ? t('mia.subjectsPlus', { list: noms.join(', '), n: extra })
+      : (noms.length === 2 ? t('mia.andJoin', { a: noms[0], b: noms[1] }) : noms[0])
     return {
       text: ap ? t('mia.insightWeakLearner', { subjects: m }) : t('mia.insightWeakParent', { subjects: m, name: e.firstName }),
       go: () => (ap ? choisirAReviser({ matiere: f[0].matiere, themes: f[0].themes || [] }) : (section.value = 'enfants')),
@@ -2572,8 +2618,17 @@ onUnmounted(() => {
   background: #fff; color: #4a4f5a; cursor: pointer; transition: background 0.15s, border-color 0.15s; flex-shrink: 0;
 }
 .mtb-ic:hover { background: #f4f2fb; border-color: #d9d3ee; }
-.mtb-avatar { border: none; background: linear-gradient(135deg, #8b5cf6, #6d28d9); color: #fff; }
-.mtb-initials { font-size: 13px; font-weight: 800; }
+/* Indicateur de connexion (remplace l'avatar) */
+.mtb-conn { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 999px; border: 1px solid var(--bd, #e8e9ef); background: #fff; flex-shrink: 0; user-select: none; }
+.mtb-conn .mtb-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.mtb-conn-tx { font-size: 12.5px; font-weight: 700; }
+.mtb-conn.is-online { border-color: rgba(27,138,90,.25); }
+.mtb-conn.is-online .mtb-dot { background: #1B8A5A; box-shadow: 0 0 0 3px rgba(27,138,90,.15); }
+.mtb-conn.is-online .mtb-conn-tx { color: #1B8A5A; }
+.mtb-conn.is-offline { border-color: rgba(184,122,0,.30); background: rgba(232,149,10,.06); }
+.mtb-conn.is-offline .mtb-dot { background: #B87A00; }
+.mtb-conn.is-offline .mtb-conn-tx { color: #B87A00; }
+@media (max-width: 480px) { .mtb-conn-tx { display: none; } .mtb-conn { padding: 9px; } }
 .miapo-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 20px 26px 28px; }
 
 /* ── Bureau (≥769px) : menu latéral FIXE et entièrement visible ; seule la zone
@@ -2687,7 +2742,8 @@ onUnmounted(() => {
 .intro-card h2 { font-size: 20px; margin: 0; } .intro-card p { color: var(--tx2); font-size: 14px; line-height: 1.6; margin: 0 0 10px; }
 
 .child-card { display: flex; align-items: center; gap: 16px; }
-.child-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; }
+.child-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; color: #fff; flex-shrink: 0; overflow: hidden; }
+.av-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .av-m { background: linear-gradient(135deg, var(--pr, #1558B0), #3b82f6); } .av-f { background: linear-gradient(135deg, #8B5CF6, #c084fc); }
 .child-info h2 { font-size: 18px; font-weight: 600; margin: 0 0 4px; } .child-meta { font-size: 13px; color: var(--tx2); display: flex; gap: 8px; } .sep { color: var(--bd); }
 

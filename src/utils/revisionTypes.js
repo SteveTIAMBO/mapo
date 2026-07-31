@@ -53,25 +53,30 @@ export const REVISION_TYPES = [
   // Auto-explication (méthode Feynman) — expliquer avec ses mots, toutes matières.
   { key: 'explain', engine: 'chat', icon: 'MessagesSquare', technique: 'self-explanation', always: true },
   // Entrelacement — alterner types de problèmes : discrimination (maths/sciences).
-  { key: 'interleave', engine: 'chat', icon: 'Shuffle', technique: 'interleaving', needs: ['scientifique'] },
+  // Technique exigeante (comparer des méthodes) : dès le collège, pas au primaire.
+  { key: 'interleave', engine: 'chat', icon: 'Shuffle', technique: 'interleaving', needs: ['scientifique'], excludePrimaire: true },
   // Dictée — production orthographique sous récupération (langues). N'a de sens
   // qu'à l'école (primaire → lycée) : exclue dans l'enseignement supérieur.
   { key: 'dictee', engine: 'chat', icon: 'Ear', technique: 'production', needs: ['langue'], excludeSuperieur: true },
   // Rédaction / dissertation — élaboration + production écrite (matières rédactionnelles).
-  { key: 'redaction', engine: 'written', icon: 'PenLine', technique: 'elaboration', needs: ['redactionnel'] },
+  // La dissertation guidée est une compétence du secondaire+ : pas au primaire.
+  { key: 'redaction', engine: 'written', icon: 'PenLine', technique: 'elaboration', needs: ['redactionnel'], excludePrimaire: true },
   // Carte mentale — double codage (verbal + visuel) : matières à concepts/processus.
-  { key: 'mindmap', engine: 'chat', icon: 'Network', technique: 'dual-coding', needs: ['conceptuel'] },
+  // Cartographie conceptuelle abstraite : dès le collège, pas au primaire.
+  { key: 'mindmap', engine: 'chat', icon: 'Network', technique: 'dual-coding', needs: ['conceptuel'], excludePrimaire: true },
 ]
 
 // Types applicables à une matière ET au niveau de l'apprenant, dans l'ordre du
 // catalogue. La matière filtre par famille (pas de dictée en maths…) ; le niveau
 // retire les types qui n'ont pas de sens à ce stade (pas de dictée au supérieur).
-// @param {{superieur?:boolean}} opts
+// @param {{superieur?:boolean, primaire?:boolean}} opts
 export function typesForMatiere(matiere, opts = {}) {
   const tags = matiereTags(matiere)
   const sup = !!(opts && opts.superieur)
+  const prim = !!(opts && opts.primaire)
   return REVISION_TYPES.filter((tpe) => {
     if (sup && tpe.excludeSuperieur) return false
+    if (prim && tpe.excludePrimaire) return false
     return tpe.always || (tpe.needs || []).some((n) => tags.includes(n))
   })
 }
