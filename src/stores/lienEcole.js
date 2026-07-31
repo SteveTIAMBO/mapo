@@ -157,10 +157,21 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'send_message', schoolId, eleveId, text, subject: p.subject || '', threadId: p.threadId || '', to: p.to || '' })
   }
 
+  /**
+   * Remonte un INSTANTANÉ du suivi MIAPO+ (Elo par matière) vers l'école reliée,
+   * pour que les enseignants voient la progression de révision de l'élève. Le
+   * serveur ne l'accepte que sous le document de CET élève à SON école (bridgeLink).
+   */
+  async function pushSuivi(schoolId, eleveId, suivi) {
+    if (isDemo()) return { ok: true }
+    if (!schoolId || !eleveId || !Array.isArray(suivi) || !suivi.length) return { ok: false, reason: 'rien_a_pousser' }
+    return call({ action: 'push_suivi', schoolId, eleveId, suivi })
+  }
+
   return {
     busy, redeemCode,
     fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl,
     fetchPeriodes, fetchNotes,
-    fetchMessages, fetchDestinataires, sendMessage,
+    fetchMessages, fetchDestinataires, sendMessage, pushSuivi,
   }
 })

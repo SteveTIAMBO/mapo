@@ -296,6 +296,45 @@ if ($action === 'submit_devoir') {
 }
 
 // ════════════════════════════════════════════════════════════════════
+//  Remontée du SUIVI MIAPO+ vers l'école (élève relié). L'apprenant pousse un
+//  INSTANTANÉ de sa progression (Elo par matière) que ses enseignants pourront
+//  consulter. Écrit UNIQUEMENT sous SON propre document, à SON école reliée
+//  (garanti par bridgeLink) — même modèle de confiance que submit_devoir.
+if ($action === 'push_suivi') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'parametres_manquants']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  // Assainit l'instantané : liste bornée, valeurs typées et clampées.
+  $src = is_array($body['suivi'] ?? null) ? $body['suivi'] : [];
+  $matieres = [];
+  foreach (array_slice(array_values($src), 0, 40) as $m) {
+    if (!is_array($m)) continue;
+    $nom = trim((string)($m['matiere'] ?? ''));
+    if ($nom === '') continue;
+    $nom = function_exists('mb_substr') ? mb_substr($nom, 0, 60) : substr($nom, 0, 60);
+    $elo = max(0, min(4000, (int)round((float)($m['elo'] ?? 1000))));
+    $att = max(0, (int)($m['attempts'] ?? 0));
+    $tend = max(-2000, min(2000, (int)round((float)($m['tendance'] ?? 0))));
+    $base = (isset($m['base']) && $m['base'] !== null) ? max(0, min(4000, (int)round((float)$m['base']))) : null;
+    $matieres[] = ['matiere' => $nom, 'elo' => $elo, 'attempts' => $att, 'tendance' => $tend, 'base' => $base];
+  }
+  if (!count($matieres)) { echo json_encode(['ok' => true, 'skipped' => 'vide']); exit; }
+  $now = gmdate('Y-m-d\TH:i:s\Z');
+  $fields = fsEncodeFields([
+    'eleveId' => $eleveId, 'className' => $ln['className'],
+    'firstName' => $ln['firstName'], 'lastName' => $ln['lastName'],
+    'source' => 'miapo+', 'updatedAt' => $now, 'matieres' => $matieres,
+  ]);
+  $code = fsPatch("schools/{$schoolId}/miapo_suivi/" . rawurlencode($eleveId), $fields, $saToken);
+  if ($code >= 200 && $code < 300) echo json_encode(['ok' => true, 'updatedAt' => $now, 'count' => count($matieres)]);
+  else { http_response_code(502); echo json_encode(['error' => 'push_echec', 'detail' => $code]); }
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
 //  Destinataires possibles d'un message (services de l'école).
 if ($action === 'destinataires') {
   $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));

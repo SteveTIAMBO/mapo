@@ -584,6 +584,7 @@
               </button>
             </div>
             <p class="muted">{{ t('mia.levelRises', { name: activeEnfant.firstName }) }}</p>
+            <p v-if="ecoleLieActive && isApprenant" class="suivi-ecole"><Link2 :size="13" /> {{ t('mia.suiviPartageEcole') }}</p>
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
@@ -1083,8 +1084,9 @@ import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } fr
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
-import { statsElo, tendanceElo } from '../utils/elo'
+import { statsElo, tendanceElo, suiviApprenant } from '../utils/elo'
 import { prochaineRevision } from '../utils/sequenceur'
+import { useLienEcoleStore } from '../stores/lienEcole'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
@@ -1100,6 +1102,7 @@ async function logout() { await authStore.logout(); router.push(isMiapoTenant() 
 const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()
 const tuteur = useTuteurStore()
+const lienEcole = useLienEcoleStore()
 const connecteurs = useConnecteursStore()
 const lang2 = useLangue2Store()
 const analytics = useMiapoAnalyticsStore()
@@ -2118,7 +2121,25 @@ watch(() => tuteur.revisionsVersion, () => {
   const k = jourISO(new Date())
   const d = planHebdo.value.find((x) => x.jour === k)
   if (d && d.matiere && d.status !== 'done') store.setSeance(e.id, k, d.matiere, 'done')
+  remonterSuiviEcole() // le cas échéant : remonte le suivi à l'école reliée
 })
+// Remontée du suivi MIAPO+ vers l'école (élève relié), après une révision, bridée
+// à ~1×/5 min pour ne pas multiplier les écritures. Best-effort : n'impacte jamais
+// l'expérience de révision. Le serveur (mapo-lien) n'accepte que le suivi de CET
+// élève à SON école (bridgeLink).
+let _dernierPushSuivi = 0
+async function remonterSuiviEcole() {
+  const e = activeEnfant.value
+  if (!e || !isApprenant.value) return
+  const lien = e.lienEcole
+  if (!lien || !lien.schoolId || !lien.eleveId) return
+  const now = Date.now()
+  if (now - _dernierPushSuivi < 5 * 60 * 1000) return
+  const suivi = suiviApprenant(e.id)
+  if (!suivi.length) return
+  _dernierPushSuivi = now
+  try { await lienEcole.pushSuivi(lien.schoolId, lien.eleveId, suivi) } catch { /* best-effort */ }
+}
 const hasEval = computed(() => !!activeEnfant.value?.comp6c && Object.keys(activeEnfant.value.comp6c).length >= 6)
 const moyenne = computed(() => {
   const ns = activeEnfant.value?.notes || []
@@ -2907,6 +2928,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .seq-conseil-tx { flex: 1; min-width: 0; font-size: 14px; color: var(--tx, #1f2937); }
 .seq-conseil-tx strong { color: var(--pr); font-weight: 700; }
 .seq-conseil-arr { color: var(--pr); flex-shrink: 0; opacity: .7; }
+.suivi-ecole { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #1B8A5A; background: rgba(27,138,90,.08); padding: 7px 11px; border-radius: 10px; margin: 0 0 12px; }
+.suivi-ecole svg { flex-shrink: 0; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }

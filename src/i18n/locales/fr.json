@@ -5326,6 +5326,7 @@
     "seqR_due": "prévu aujourd'hui",
     "seqR_zpd": "au bon niveau de défi",
     "seqR_entretien": "à entretenir",
+    "suiviPartageEcole": "Ce suivi est partagé avec ton école : tes enseignants voient ta progression de révision.",
     "vigLate": "Tu as {n} devoir(s) en retard. Termine-les pour rester à jour.",
     "vigDue": "{n} révision(s) prévue(s) aujourd'hui. C'est le moment de t'y mettre !",
     "vigInactive": "Ta série de révisions s'est interrompue. Reprends dès aujourd'hui pour la relancer.",

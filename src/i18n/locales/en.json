@@ -5326,6 +5326,7 @@
     "seqR_due": "planned today",
     "seqR_zpd": "the right challenge level",
     "seqR_entretien": "to keep sharp",
+    "suiviPartageEcole": "This progress is shared with your school: your teachers can see your revision progress.",
     "vigLate": "You have {n} overdue task(s). Finish them to stay on track.",
     "vigDue": "{n} revision(s) planned today. Now's the time to get started!",
     "vigInactive": "Your revision streak has paused. Start again today to relaunch it.",
