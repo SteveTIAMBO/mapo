@@ -337,6 +337,11 @@
                 <button class="btn btn-primary btn-sm" @click="openFormationSetup"><Sparkles :size="15" /> <span>{{ t('mia.createModules') }}</span></button>
               </div>
               <template v-else>
+                <button v-if="conseilRevision && !reviseMatiere" type="button" class="seq-conseil" @click="reviseMatiere = conseilRevision.matiere">
+                  <MiapoOrbe :size="20" />
+                  <span class="seq-conseil-tx"><strong>{{ t('mia.seqConseil') }}</strong> {{ conseilRevision.matiere }} — {{ t('mia.seqR_' + conseilRevision.raison) }}</span>
+                  <ChevronRight :size="16" class="seq-conseil-arr" />
+                </button>
                 <div class="revise-pick">
                   <select v-model="reviseMatiere" class="input" @change="onReviseMatiereChange">
                     <option value="" disabled>{{ t('mia.chooseModule') }}</option>
@@ -1079,6 +1084,7 @@ import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
 import { statsElo, tendanceElo } from '../utils/elo'
+import { prochaineRevision } from '../utils/sequenceur'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
@@ -1770,6 +1776,17 @@ const reviseTypes = computed(() => {
   const superieur = !!(e && (e.cycle === 'superieur' || isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE))
   const primaire = !!(e && (e.cycle === 'primaire' || NIVEAUX_PRIMAIRE.includes(e.niveau) || NIVEAUX_PRIMAIRE_FR.includes(e.niveau)))
   return typesForMatiere(reviseMatiere.value, { superieur, primaire })
+})
+// Séquenceur « progrès d'apprentissage » (P2b) : la matière que MIAPO conseille de
+// réviser ensuite (ZPD + progrès + points faibles + exploration). Aide l'apprenant
+// à choisir quand rien n'est encore sélectionné. cf. src/utils/sequenceur.js.
+const conseilRevision = computed(() => {
+  if (!isApprenant.value) return null
+  const e = activeEnfant.value
+  if (!e) return null
+  void tuteur.revisionsVersion // réactif après chaque révision (Elo/faiblesses à jour)
+  const faibs = faiblesses.value.map((f) => f.matiere)
+  return prochaineRevision(e.id, matieresList.value, { faiblesses: faibs })
 })
 // Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
 const activeRedaction = ref('')
@@ -2885,6 +2902,11 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .prog-lv svg { color: #E8950A; }
 .prog-elo { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--tx2, #4b5563); background: var(--input-bg, #f1f3f5); padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
 .prog-elo .pe-up { color: #1B8A5A; } .prog-elo .pe-down { color: #D93025; }
+.seq-conseil { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-bottom: 12px; padding: 11px 14px; border: 1px solid rgba(var(--pr-rgb,21,88,176),.28); border-radius: 12px; background: rgba(var(--pr-rgb,21,88,176),.05); cursor: pointer; font: inherit; transition: border-color .15s, box-shadow .15s; }
+.seq-conseil:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb,21,88,176),.08); }
+.seq-conseil-tx { flex: 1; min-width: 0; font-size: 14px; color: var(--tx, #1f2937); }
+.seq-conseil-tx strong { color: var(--pr); font-weight: 700; }
+.seq-conseil-arr { color: var(--pr); flex-shrink: 0; opacity: .7; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
