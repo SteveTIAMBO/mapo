@@ -75,6 +75,18 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 
 ## P2 — Incréments APRÈS les 3 betas (parking — ne pas démarrer maintenant)
 
+### 🟢 Personnalisation adaptative MIAPO+ (inspiré MIA Seconde / Flowers-Inria) — **GREENLIT dev par Steve 2026-07-31**
+> Exception assumée à la règle de parking : Steve a validé le démarrage du dev côté **MAPO+**.
+> Fond scientifique : étude Flowers/Inria (équipe Oudeyer) — séquençage IA « progrès d'apprentissage » (ZPDES) = **+17,4 %** de réussite/activité vs **+2,1 %** pour des playlists faites main (35 000 élèves). Voir docs livrés : *Charte de sourcing & provenance v1* + *Inspiration MIA Seconde → priorités*.
+> Moat : **IA qui séquence + contenu enseignant validé + liaison école.**
+>
+> - **[MAPO+] P2a — ELO propre (élève × matière) + éval initiale** *(EN COURS)* : vrai Elo par apprenant/matière, mis à jour à chaque révision (K-factor élevé au début = éval du niveau de base, puis stabilisé), + historique pour la courbe. Socle de tout le reste. Extension de `recordResult`/`getLevel` (tuteur store).
+> - **[MAPO+] P2b — Séquenceur « progrès d'apprentissage »** : choisit la prochaine activité en visant la ZPD (~70 % de réussite) + objectifs à fort progrès + exploration. Bandit léger. Le cœur (+17 %). ⟵ **précise/remplace** le parking « Apprentissage adaptatif par STYLE » (on garde format+difficulté+répétition espacée, on ajoute le séquençage LP).
+> - **[MAPO+] P2c — Suivi apprenant/parent** : courbe Elo, radar couverture×réussite, activités bloquantes. **➜ remonte AUSSI vers l'école le cas échéant** (élève relié) ⟵ **rejoint** le parking « Suivi enseignant anonyme » + « SSO école→MIAPO+ ». Alimente aussi le **radar 6C** (parking 6C).
+> - **[MAPO] Réception du suivi côté école** : le pont mapo-lien fait remonter la progression MIAPO+ des élèves reliés → l'enseignant voit l'activité de révision. Puis **P5 analytics enseignant** (trajectoires classe, goulots).
+> - **[MAPO+] P3 — Calibrage difficulté du contenu par les enseignants** (Elo initial par exercice) + **banque hors-ligne étiquetée par provenance** (charte) — démarre avec le **réseau enseignants « contributeurs fondateurs bénévoles reconnus »** (validation + calibrage ; reconnaissance/attribution, pas de rému au départ).
+> - **[transversal] Mesure d'impact** : suivre notre propre « +% de réussite » (comme l'étude) = preuve pour le commercial + boussole produit.
+
 - MIAPO+ **personas** : mode apprenant (élève/étudiant autonome) vs parent.
 - Boucle **Carré → MIAPO+** : cours capté → test de compréhension → programme de
   remédiation sourcé (le moat).
@@ -120,3 +132,8 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
   l'édition Primaire (Steve, à raison). Le classeur **accompagne** chaque édition. Ordre
   P0 corrigé : créer l'édition **Primaire** d'abord (priorité), puis son classeur ;
   Secondaire (édition existante) → classeur prêt rapidement ; Supérieur ensuite.
+- 2026-07-31 : après l'étude MIA Seconde (Flowers/Inria) apportée par Steve, lancement du
+  chantier **Personnalisation adaptative MIAPO+** (Elo → séquenceur → suivi → remontée
+  école). Steve **greenlit le dev côté MAPO+** (exception au parking) et acte que le
+  **suivi alimentera aussi l'école** de l'apprenant relié. Réseau enseignants = modèle
+  **bénévoles reconnus comme co-constructeurs**. Démarrage : **P2a (Elo propre)**.

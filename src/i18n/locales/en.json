@@ -5318,6 +5318,7 @@
     "online": "Online",
     "offline": "Offline",
     "offlineHint": "Offline — you can keep revising; your work will sync when the network is back.",
+    "eloHint": "Mastery level (Elo): it rises as you succeed at harder revisions.",
     "vigLate": "You have {n} overdue task(s). Finish them to stay on track.",
     "vigDue": "{n} revision(s) planned today. Now's the time to get started!",
     "vigInactive": "Your revision streak has paused. Start again today to relaunch it.",

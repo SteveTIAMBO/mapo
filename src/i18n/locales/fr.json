@@ -5318,6 +5318,7 @@
     "online": "En ligne",
     "offline": "Hors ligne",
     "offlineHint": "Hors ligne — tu peux continuer à réviser, tes révisions se synchroniseront au retour du réseau.",
+    "eloHint": "Niveau de maîtrise (Elo) : il monte quand tu réussis des révisions plus difficiles.",
     "vigLate": "Tu as {n} devoir(s) en retard. Termine-les pour rester à jour.",
     "vigDue": "{n} révision(s) prévue(s) aujourd'hui. C'est le moment de t'y mettre !",
     "vigInactive": "Ta série de révisions s'est interrompue. Reprends dès aujourd'hui pour la relancer.",

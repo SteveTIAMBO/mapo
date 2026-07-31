@@ -583,6 +583,7 @@
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
                 <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, (p.level % 5 || 5) * 20) + '%' }"></span></span>
+                <span v-if="p.elo" class="prog-elo" :title="t('mia.eloHint')"><span class="prog-elo-v">{{ p.elo }}</span><TrendingUp v-if="p.eloTrend > 0" :size="12" class="pe-up" /><TrendingDown v-else-if="p.eloTrend < 0" :size="12" class="pe-down" /></span>
                 <span class="prog-lv"><Flame :size="13" /> {{ t('mia.levelN', { n: p.level }) }}</span>
               </div>
             </div>
@@ -1071,12 +1072,13 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
+import { statsElo, tendanceElo } from '../utils/elo'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
@@ -2112,7 +2114,13 @@ const progression = computed(() => {
   if (!e) return []
   const mats = new Set(e.notes.map((n) => n.matiere))
   for (const m of matieresList.value) { if (tuteur.getLevel(e.id, 'auto-' + m) > 1) mats.add(m) }
-  return [...mats].map((m) => ({ matiere: m, level: levelFor(m) })).sort((a, b) => b.level - a.level)
+  const eloMap = statsElo(e.id)
+  return [...mats].map((m) => {
+    const st = eloMap[m]
+    // Elo = niveau de maîtrise RÉEL (au-delà de la difficulté jouée) ; affiché
+    // seulement quand l'apprenant a effectivement révisé la matière (sinon = repère neutre).
+    return { matiere: m, level: levelFor(m), elo: st && st.attempts ? st.elo : null, eloTrend: st && st.attempts ? tendanceElo(e.id, m) : 0 }
+  }).sort((a, b) => b.level - a.level)
 })
 
 // Badge le plus « fort » déjà obtenu (icône + libellé). Remplace la « moyenne des
@@ -2875,6 +2883,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .prog-bar-fill { display: block; height: 100%; border-radius: 6px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); }
 .prog-lv { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--pr); min-width: 64px; justify-content: flex-end; }
 .prog-lv svg { color: #E8950A; }
+.prog-elo { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--tx2, #4b5563); background: var(--input-bg, #f1f3f5); padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
+.prog-elo .pe-up { color: #1B8A5A; } .prog-elo .pe-down { color: #D93025; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }

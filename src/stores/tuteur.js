@@ -4,6 +4,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { isMiapoTenant } from '../utils/tenantContext'
 import { enregistrerActivite } from '../utils/recompenses'
+import { enregistrerResultatElo } from '../utils/elo'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
 import { useAbonnementStore } from './abonnement'
@@ -263,6 +264,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
       due,
     }
     saveRevisions(studentId, data)
+    // ELO propre (par matière) : le score reflète le niveau RÉEL atteint, au-delà
+    // de la difficulté jouée (= `prevLevel`, le niveau affronté cette séance).
+    // Best-effort : ne doit jamais casser l'enregistrement du résultat.
+    try { enregistrerResultatElo(studentId, subjectName, scorePercent, prevLevel) } catch { /* best-effort */ }
     // Suivi d'adoption MAPO+ (B2C) : on ne compte QUE dans le tenant MAPO+,
     // pas les quiz des élèves d'école. Best-effort (n'impacte jamais le quiz).
     if (isMiapoTenant()) {
