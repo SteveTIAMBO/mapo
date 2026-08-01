@@ -20,6 +20,32 @@
       </div>
     </div>
 
+    <!-- Révision autonome (MIAPO+) : ce que les élèves reliés travaillent seuls -->
+    <div class="card" v-if="autonomie.length">
+      <div class="card-head"><Home :size="18" /><h3>{{ t('revsuivi.autoTitle', { n: autonomie.length }) }}</h3></div>
+      <p class="adapt-intro">{{ t('revsuivi.autoIntro') }}</p>
+      <div class="auto-list">
+        <div v-for="s in autonomie" :key="s.id" class="auto-row">
+          <div class="sr-avatar" :class="s.gender === 'F' ? 'av-f' : 'av-m'">{{ s.initials }}</div>
+          <div class="auto-main">
+            <div class="sr-top">
+              <span class="sr-name">{{ s.lastName }} {{ s.firstName }}</span>
+              <span class="sr-class">{{ s.className }}</span>
+            </div>
+            <div class="auto-mats">
+              <span v-for="m in s.matieres" :key="m.matiere" class="elo-chip" :class="trendClass(m.tendance)">
+                <span class="elo-mat">{{ m.matiere }}</span>
+                <component :is="trendIcon(m.tendance)" :size="13" class="elo-tr" />
+                <span class="elo-n">{{ m.attempts > 1 ? t('revsuivi.sessionsMany', { n: m.attempts }) : t('revsuivi.sessionsOne', { n: m.attempts }) }}</span>
+              </span>
+            </div>
+          </div>
+          <div class="sr-meta"><span class="sr-last">{{ t('revsuivi.lastRevision', { label: s.lastLabel }) }}</span></div>
+        </div>
+      </div>
+      <p class="auto-foot"><Info :size="13" /> {{ t('revsuivi.autoFoot') }}</p>
+    </div>
+
     <!-- Rollup par matière -->
     <div class="card" v-if="subjectRollup.length">
       <div class="card-head"><AlertTriangle :size="18" /><h3>{{ t('revsuivi.weakestSubjects') }}</h3></div>
@@ -105,8 +131,9 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useNotesStore } from '../stores/notes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, AlertTriangle, Users, Info, Loader2, X } from 'lucide-vue-next'
+import { Sparkles, AlertTriangle, Users, Info, Loader2, X, Home, TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
 import { useCoursStore } from '../stores/cours'
+import { useMiapoSuiviStore } from '../stores/miapoSuivi'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
@@ -115,6 +142,7 @@ const classesStore = useClassesStore()
 const notesStore = useNotesStore()
 const tuteur = useTuteurStore()
 const coursStore = useCoursStore()
+const miapoSuivi = useMiapoSuiviStore()
 
 const classFilter = ref('')
 // Remédiation MIAPO : à partir des matières en difficulté, prépare une séance ciblée.
@@ -193,6 +221,19 @@ function weakFor(eleve) {
       if (v.lastReviewed && (!lastIso || v.lastReviewed > lastIso)) lastIso = v.lastReviewed
       if (typeof v.mastery === 'number' && v.mastery < WEAK_MASTERY && !weak.find((w) => w.name === v.name)) {
         weak.push({ name: v.name, value: `${v.mastery}%`, sort: v.mastery / 5 })
+      }
+    }
+  }
+  // Overlay MIAPO+ : révision autonome remontée par l'élève relié. Une matière dont
+  // le niveau (Elo) BAISSE nettement — hors phase de calibrage — est un signal de
+  // fragilité, même si la note du carnet reste correcte.
+  const ms = miapoSuivi.byEleveId[eleve.id]
+  if (ms) {
+    if (ms.updatedAt && (!lastIso || ms.updatedAt > lastIso)) lastIso = ms.updatedAt
+    for (const m of ms.matieres) {
+      if (m.derniereActivite && (!lastIso || m.derniereActivite > lastIso)) lastIso = m.derniereActivite
+      if (!m.enCalibrage && m.tendance <= -20 && !weak.find((w) => w.name === m.matiere)) {
+        weak.push({ name: m.matiere, value: t('revsuivi.eloDown'), sort: 5 + m.tendance / 20 })
       }
     }
   }
@@ -279,6 +320,38 @@ const insight = computed(() => {
   return n > 1 ? t('revsuivi.insightMany', { n, subject: matiere }) : t('revsuivi.insightOne', { n, subject: matiere })
 })
 
+// ── Révision autonome (MIAPO+) ────────────────────────────────────────────
+// Ce que l'école GAGNE en visibilité : les élèves reliés qui révisent seuls à la
+// maison, avec MIAPO+. On montre la TENDANCE (progresse / stable / recule) et le
+// volume de séances par matière — la direction du travail autonome, pas un score
+// brut illisible pour l'enseignant.
+function trendIcon(tr) { return tr >= 15 ? TrendingUp : (tr <= -15 ? TrendingDown : Minus) }
+function trendClass(tr) { return tr >= 15 ? 'up' : (tr <= -15 ? 'down' : 'flat') }
+
+const autonomie = computed(() => {
+  if (!loaded.value) return []
+  const byId = {}
+  for (const e of inscrits.value) byId[e.id] = e
+  const list = []
+  for (const s of miapoSuivi.suivi) {
+    const e = byId[s.eleveId]
+    const mats = [...s.matieres].sort((a, b) => b.attempts - a.attempts).slice(0, 5)
+    if (!mats.length) continue
+    let lastIso = s.updatedAt
+    for (const m of mats) if (m.derniereActivite && (!lastIso || m.derniereActivite > lastIso)) lastIso = m.derniereActivite
+    const fn = s.firstName || e?.firstName || ''
+    const ln = s.lastName || e?.lastName || ''
+    list.push({
+      id: s.eleveId, firstName: fn, lastName: ln,
+      className: s.className || e?.className || '', gender: e?.gender || '',
+      initials: `${fn[0] || ''}${ln[0] || ''}`.toUpperCase(),
+      matieres: mats, sessions: mats.reduce((n, m) => n + m.attempts, 0), lastLabel: fmtDate(lastIso),
+    })
+  }
+  const filtered = classFilter.value ? list.filter((s) => s.className === classFilter.value) : list
+  return filtered.sort((a, b) => b.sessions - a.sessions)
+})
+
 onMounted(async () => {
   // Chargements légers (déjà en cache la plupart du temps) : on n'attend QUE
   // ceux-ci pour afficher l'écran. allSettled → jamais bloqué par un rejet.
@@ -289,6 +362,9 @@ onMounted(async () => {
   ])
   states.value = tuteur.getAllRevisionStates(inscrits.value.map((e) => e.id))
   loaded.value = true
+  // Suivi MIAPO+ remonté par les élèves reliés (lecture Firestore côté école, ou
+  // échantillon en démo). En arrière-plan : la réactivité rafraîchit l'écran.
+  Promise.resolve(miapoSuivi.load(inscrits.value)).catch(() => {})
   // Les notes (lourdes pour 900+ élèves) se chargent en arrière-plan : elles
   // affineront la liste réelle quand elles seront prêtes, sans bloquer l'affichage.
   Promise.resolve(notesStore.loadNotes?.()).catch(() => {})
@@ -336,6 +412,27 @@ onMounted(async () => {
 
 .empty { text-align: center; color: var(--tx3); padding: 28px 16px; font-size: 14px; }
 .foot-note { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tx3); margin: 0; }
+
+/* Révision autonome (MIAPO+) */
+.auto-list { display: flex; flex-direction: column; }
+.auto-row { display: flex; align-items: center; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--divider, #eee); }
+.auto-row:last-child { border-bottom: none; }
+.auto-main { flex: 1; min-width: 0; }
+.auto-mats { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.elo-chip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 600; border: 1px solid transparent;
+}
+.elo-chip .elo-mat { color: var(--tx); }
+.elo-chip .elo-n { font-weight: 500; color: var(--tx3); }
+.elo-chip .elo-tr { flex-shrink: 0; }
+.elo-chip.up { background: rgba(22,163,74,.08); border-color: rgba(22,163,74,.18); }
+.elo-chip.up .elo-tr { color: #16A34A; }
+.elo-chip.down { background: rgba(217,48,37,.07); border-color: rgba(217,48,37,.16); }
+.elo-chip.down .elo-tr { color: #D93025; }
+.elo-chip.flat { background: var(--input-bg, #f1f3f5); }
+.elo-chip.flat .elo-tr { color: var(--tx3); }
+.auto-foot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tx3); margin: 14px 0 0; }
 
 /* Adapter le prochain cours (remédiation) */
 .adapt-intro { margin: -4px 0 14px; font-size: 13.5px; color: var(--tx2); line-height: 1.5; }

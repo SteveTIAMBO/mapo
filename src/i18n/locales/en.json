@@ -1466,7 +1466,13 @@
     "insightNone": "No struggling students detected for now. Keep encouraging use of the Tutor.",
     "insightOne": "{n} student needs support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
     "insightMany": "{n} students need support, especially in {subject}. Targeted support (homework, remediation session) would help them progress.",
-    "and": "and"
+    "and": "and",
+    "autoTitle": "Independent revision — MIAPO+ ({n})",
+    "autoIntro": "These linked students revise on their own, at home, with MIAPO+. Here is the trend of their work by subject (improving, steady or slipping) and the number of sessions — a subject that is slipping deserves support, even if the grade still looks fine.",
+    "autoFoot": "The trend reflects the student's most recent sessions. This overview updates on its own as they revise.",
+    "sessionsOne": "{n} session",
+    "sessionsMany": "{n} sessions",
+    "eloDown": "slipping"
   },
   "wv": {
     "title": "Welcome to MAPO",
