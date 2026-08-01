@@ -939,6 +939,20 @@ function deanonymize($text, $task, $d) {
 // ════════════════════════════════════════════════════════════════════
 //  Appels fournisseurs
 // ════════════════════════════════════════════════════════════════════
+// ── EXIGENCE « NO-TRAINING » (bloquant pré-lancement #38) ────────────
+// Les données envoyées ici — dont les copies/cours photographiés par un mineur —
+// ne doivent JAMAIS servir à entraîner un modèle. Il n'existe PAS d'en-tête par
+// requête pour l'imposer : la garantie dépend du fournisseur ET du palier
+// configurés dans mapo-ia-config.php (IA_API_KEY / IA_OPENAI_BASE / IA_MODEL) :
+//   • API Anthropic (api.anthropic.com)  → pas d'entraînement sur les données
+//     d'API par défaut (conditions commerciales). ✅
+//   • API OpenAI (api.openai.com)        → données d'API non utilisées pour
+//     l'entraînement par défaut (depuis mars 2023). ✅
+//   • API Gemini via base compat OpenAI  → conforme sur palier PAYANT ; le
+//     palier GRATUIT peut réutiliser les données pour « améliorer les produits ».
+//     ❌ ne pas pointer IA_OPENAI_BASE vers un Gemini gratuit.
+// Le code n'active AUCUN partage de données ; ne jamais ajouter d'option qui
+// enverrait ces contenus vers un service qui entraîne dessus.
 function callAnthropic($system, $user, $maxTokens = 260) {
   $payload = json_encode([
     'model'      => defined('IA_MODEL') ? IA_MODEL : 'claude-haiku-4-5-20251001',
