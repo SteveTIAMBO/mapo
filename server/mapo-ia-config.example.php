@@ -28,19 +28,31 @@ define('IA_API_KEY', 'A_REMPLIR');                      // clé du fournisseur c
 // reason = tâches à raisonnement (quiz, orientation, bilan compétences, prépa examen, plan de cours)
 // vision = lecture de photos (copie, cours, bulletin, emploi du temps)
 // Non défini → retombe sur IA_MODEL (donc pas de régression).
-// ⚠️ gemini-2.5-flash sera retiré (2026) : ne plus le cibler. Vérifier la liste de
-// modèles À JOUR du fournisseur choisi avant de figer ces identifiants.
+// ⚠️ gemini-2.5-flash EST en cours de retrait (2026, y compris sur l'API AI Studio
+// utilisée ici) → ne plus le cibler. Confirmer les identifiants EXACTS dans la
+// liste de modèles À JOUR du fournisseur choisi avant de figer.
+
+// ── OPTION A (RECOMMANDÉE) — OpenAI : propre PAR DÉFAUT (pas de piège de palier),
+//    frugal, gère la vision, aucun surcoût de plomberie. IA_PROVIDER='openai'.
 define('IA_MODEL',        'gpt-5-mini');   // défaut global
 define('IA_MODEL_MINI',   'gpt-5-mini');   // le moins cher (clean)
 define('IA_MODEL_REASON', 'gpt-5-mini');   // idem — le code active déjà le raisonnement pour ces tâches
 define('IA_MODEL_VISION', 'gpt-5-mini');   // multimodal le moins cher
 
-// ── Équivalent Anthropic (si IA_PROVIDER='anthropic' — la vision resterait à
-//    router vers un multimodal propre, à voir avec Claude vision) :
+// ── OPTION B — Anthropic (propre par défaut). Vision à router vers Claude (voir code).
 // define('IA_MODEL',        'claude-haiku-4-5');
 // define('IA_MODEL_MINI',   'claude-haiku-4-5');
 // define('IA_MODEL_REASON', 'claude-sonnet-4-5');   // seulement si la qualité l'exige
 // define('IA_MODEL_VISION', 'claude-haiku-4-5');
+
+// ── OPTION C — Rester sur Gemini (3.x). ⚠️ N'est « propre » que sur palier PAYANT
+//    + Zero Data Retention activé, ET les tâches de raisonnement exigent la
+//    « circulation des thought signatures » (plomberie à ajouter côté code).
+//    Cible frugale = 3.5 Flash Lite. IA_OPENAI_BASE reste l'endpoint Gemini compat.
+// define('IA_MODEL',        'gemini-3.5-flash-lite');
+// define('IA_MODEL_MINI',   'gemini-3.5-flash-lite');
+// define('IA_MODEL_REASON', 'gemini-3.5-flash');
+// define('IA_MODEL_VISION', 'gemini-3.5-flash-lite');
 
 // ════════════════════════════════════════════════════════════════════
 //  3) Plafonds démo (facultatif)
