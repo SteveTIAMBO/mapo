@@ -1067,9 +1067,12 @@ function callOpenAICompat($system, $user, $maxTokens = 260, $noReason = true, $i
       ['role' => 'user', 'content' => $userContent],
     ],
   ];
-  // Coupe le "raisonnement"/thinking quand inutile (ex. appréciation courte)
-  // → moins de tokens facturés. Pour le quiz, on garde le raisonnement (exactitude).
-  if ($noReason) $payloadArr['reasoning_effort'] = 'none';
+  // Coupe le "raisonnement"/thinking quand inutile (ex. appréciation courte) → moins
+  // de tokens. ⚠️ MAIS reasoning_effort='none' est NON STANDARD : Gemini 3.5 Flash-Lite
+  // l'accepte (2xx) puis renvoie un CONTENU VIDE → toutes les tâches légères cassées.
+  // On ne l'envoie donc QUE vers un endpoint OpenAI (où il est valide et frugal) ;
+  // pour Gemini on l'omet (Flash-Lite pense déjà très peu par défaut → reste frugal).
+  if ($noReason && strpos($base, 'openai.com') !== false) $payloadArr['reasoning_effort'] = 'none';
   $payload = json_encode($payloadArr);
   $ch = curl_init($base . '/chat/completions');
   curl_setopt_array($ch, [
