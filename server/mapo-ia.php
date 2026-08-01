@@ -51,6 +51,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['diag'])) {
     $base = defined('IA_OPENAI_BASE') ? IA_OPENAI_BASE : 'https://api.openai.com/v1';
     $out['vision_base_host'] = parse_url($base, PHP_URL_HOST);   // les photos partent TOUJOURS par ce host
     $out['model'] = defined('IA_MODEL') ? IA_MODEL : null;
+    $out['models'] = [                                            // par palier (frugalité) ; null = retombe sur IA_MODEL
+      'mini'   => defined('IA_MODEL_MINI') ? IA_MODEL_MINI : null,
+      'reason' => defined('IA_MODEL_REASON') ? IA_MODEL_REASON : null,
+      'vision' => defined('IA_MODEL_VISION') ? IA_MODEL_VISION : null,
+    ];
   }
   echo json_encode($out); exit;
 }
@@ -107,11 +112,14 @@ list($system, $user, $maxTokens, $noReason, $image) = buildPrompts($task, $data)
 
 // ── 4. Appeler le fournisseur ─────────────────────────────────────────
 $provider = defined('IA_PROVIDER') ? IA_PROVIDER : 'anthropic';
-// La vision (copie d'examen) passe toujours par le fournisseur multimodal
-// (Gemini via compat OpenAI). Anthropic gère le texte seul ici.
+// Frugalité : chaque tâche prend le modèle le PLUS ÉCONOME encore adéquat
+// (palier mini / raisonnement / vision → modèle configurable, défaut IA_MODEL).
+$model = modelForTask($task);
+// La vision (copie d'examen) passe toujours par le fournisseur multimodal.
+// Anthropic gère le texte seul ici.
 $r = ($provider === 'anthropic' && !$image)
-  ? callAnthropic($system, $user, $maxTokens)
-  : callOpenAICompat($system, $user, $maxTokens, $noReason, $image);
+  ? callAnthropic($system, $user, $maxTokens, $model)
+  : callOpenAICompat($system, $user, $maxTokens, $noReason, $image, $model);
 
 if (!empty($r['ok'])) {
   // Ré-injection du prénom réel : il n'a jamais été transmis au fournisseur IA
@@ -974,9 +982,28 @@ function deanonymize($text, $task, $d) {
 //     ❌ ne pas pointer IA_OPENAI_BASE vers un Gemini gratuit.
 // Le code n'active AUCUN partage de données ; ne jamais ajouter d'option qui
 // enverrait ces contenus vers un service qui entraîne dessus.
-function callAnthropic($system, $user, $maxTokens = 260) {
+// Palier de modèle par tâche → viser le modèle le PLUS ÉCONOME encore adéquat.
+// Configurable via IA_MODEL_MINI / IA_MODEL_REASON / IA_MODEL_VISION dans
+// mapo-ia-config.php ; à défaut on retombe sur IA_MODEL (aucune régression tant
+// que la config ne précise rien). « propre » (no-training) = choix du fournisseur
+// (IA_PROVIDER / IA_OPENAI_BASE), « économe » = ce palier de modèle.
+function tierForTask($task) {
+  static $vision = ['vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt'];
+  static $reason = ['tutor_quiz', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'eval_reponse'];
+  if (in_array($task, $vision, true)) return 'vision';
+  if (in_array($task, $reason, true)) return 'reason';
+  return 'mini';
+}
+function modelForTask($task) {
+  $map = ['mini' => 'IA_MODEL_MINI', 'reason' => 'IA_MODEL_REASON', 'vision' => 'IA_MODEL_VISION'];
+  $c = $map[tierForTask($task)];
+  if (defined($c) && constant($c)) return constant($c);
+  return defined('IA_MODEL') ? IA_MODEL : null;
+}
+
+function callAnthropic($system, $user, $maxTokens = 260, $model = null) {
   $payload = json_encode([
-    'model'      => defined('IA_MODEL') ? IA_MODEL : 'claude-haiku-4-5-20251001',
+    'model'      => $model ?: (defined('IA_MODEL') ? IA_MODEL : 'claude-haiku-4-5-20251001'),
     'max_tokens' => intval($maxTokens),
     'system'     => $system,
     'messages'   => [['role' => 'user', 'content' => $user]],
@@ -1005,7 +1032,7 @@ function callAnthropic($system, $user, $maxTokens = 260) {
   return ['ok' => false, 'code' => $code, 'detail' => $j['error']['message'] ?? 'reponse_inattendue'];
 }
 
-function callOpenAICompat($system, $user, $maxTokens = 260, $noReason = true, $image = null) {
+function callOpenAICompat($system, $user, $maxTokens = 260, $noReason = true, $image = null, $model = null) {
   $base = defined('IA_OPENAI_BASE') ? rtrim(IA_OPENAI_BASE, '/') : 'https://api.openai.com/v1';
   // Contenu utilisateur : texte seul, ou multimodal (texte + image) pour la vision.
   $userContent = $image
@@ -1015,7 +1042,7 @@ function callOpenAICompat($system, $user, $maxTokens = 260, $noReason = true, $i
       ]
     : $user;
   $payloadArr = [
-    'model'       => defined('IA_MODEL') ? IA_MODEL : 'gpt-4o-mini',
+    'model'       => $model ?: (defined('IA_MODEL') ? IA_MODEL : 'gpt-4o-mini'),
     'max_tokens'  => intval($maxTokens),
     'temperature' => 0.6,
     'messages'    => [
