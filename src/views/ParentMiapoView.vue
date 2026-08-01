@@ -588,7 +588,7 @@
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
-                <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, (p.level % 5 || 5) * 20) + '%' }"></span></span>
+                <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, p.level * 20) + '%' }"></span></span>
                 <span v-if="p.trend" class="prog-trend" :class="p.trend" :title="t('mia.trendHint')">
                   <TrendingUp v-if="p.trend === 'up'" :size="12" />
                   <TrendingDown v-else-if="p.trend === 'down'" :size="12" />
@@ -1114,7 +1114,7 @@ import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } fr
 import { sessionQuestions } from '../utils/ageProfil'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
-import { statsElo, tendanceElo, suiviApprenant } from '../utils/elo'
+import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo'
 import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
 import { dayKey } from '../utils/humeur'
@@ -2229,6 +2229,15 @@ const progression = computed(() => {
     return { matiere: m, level: levelFor(m), hasElo: attempts > 0, trend }
   }).sort((a, b) => b.level - a.level)
 })
+// DÉMO uniquement : amorce des tendances Elo lisibles (progresse / stable / à
+// renforcer) sur les matières de l'apprenant, pour que « Ma progression » soit
+// parlante d'emblée sans jouer 30 quiz. Non destructif ; on rafraîchit les vues.
+watch(() => activeEnfant.value?.id, (id) => {
+  if (!id || !authStore.isDemo) return
+  const e = activeEnfant.value
+  const mats = [...new Set((e?.notes || []).slice().sort((a, b) => (b.note || 0) - (a.note || 0)).map((n) => n.matiere))].slice(0, 3)
+  if (seedDemoElo(id, mats)) tuteur.revisionsVersion++
+}, { immediate: true })
 
 // Badge le plus « fort » déjà obtenu (icône + libellé). Remplace la « moyenne des
 // notes » sur l'accueil APPRENANT : un jalon franchi motive plus qu'une moyenne.

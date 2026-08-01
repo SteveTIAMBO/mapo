@@ -103,4 +103,37 @@ export function suiviApprenant(sid) {
   }).sort((a, b) => b.attempts - a.attempts)
 }
 
+/**
+ * DÉMO UNIQUEMENT — amorce un historique Elo varié (progresse / stable / à
+ * renforcer) pour les matières fournies, afin que « Ma progression » montre
+ * d'emblée des tendances lisibles sans jouer des dizaines de quiz. Non destructif :
+ * ne touche PAS une matière déjà travaillée (on préserve le vrai jeu). Les matières
+ * doivent être passées de la plus forte (→ progresse) à la plus fragile (→ à
+ * renforcer). Renvoie true si quelque chose a été ajouté (→ rafraîchir les vues).
+ */
+export function seedDemoElo(sid, matieres) {
+  if (!sid || !Array.isArray(matieres) || !matieres.length) return false
+  const s = statsElo(sid)
+  const profils = [
+    { deltas: [0, 16, 12, 20, 15, 24], scores: [58, 66, 72, 78, 82, 88] }, // progresse
+    { deltas: [0, -5, 6, -3, 4, -2], scores: [64, 61, 67, 63, 66, 62] },   // stable
+    { deltas: [0, -14, -10, -18, -12, -20], scores: [52, 46, 43, 40, 44, 38] }, // à renforcer
+  ]
+  const now = Date.now()
+  let added = false
+  matieres.slice(0, 3).forEach((m, idx) => {
+    if (!m || s[m]) return // matière déjà travaillée → on ne l'écrase pas
+    const p = profils[idx] || profils[1]
+    let elo = ELO_DEPART
+    const history = p.deltas.map((d, i) => {
+      elo = clamp(elo + d)
+      return { at: new Date(now - (p.deltas.length - i) * 86400000).toISOString(), elo, niveau: 1 + Math.floor(i / 2), score: p.scores[i] }
+    })
+    s[m] = { elo, attempts: p.deltas.length, history, base: history[Math.min(CALIBRAGE - 1, history.length - 1)].elo, maj: new Date(now).toISOString() }
+    added = true
+  })
+  if (added) save(sid, s)
+  return added
+}
+
 export const ELO_CONST = { ELO_DEPART, ELO_MIN, ELO_MAX, CALIBRAGE }

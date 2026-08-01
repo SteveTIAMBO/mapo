@@ -5223,7 +5223,7 @@
     "regenerate": "Régénérer",
     "retry": "Réessayer",
     "levelBySubject": "Niveau par matière",
-    "levelRises": "Le niveau monte (1 → 5) quand {name} réussit les révisions. C'est le suivi dans la durée.",
+    "levelRises": "Le niveau monte à chaque révision réussie de {name}, sans plafond. C'est le suivi dans la durée.",
     "levShort": "Niv. {n}",
     "progEmptyLearner": "Lance des révisions dans",
     "progEmptyParent": "Demandez des révisions dans",

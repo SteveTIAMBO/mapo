@@ -5223,7 +5223,7 @@
     "regenerate": "Regenerate",
     "retry": "Try again",
     "levelBySubject": "Level by subject",
-    "levelRises": "The level rises (1 → 5) when {name} passes revisions. That's the long-term tracking.",
+    "levelRises": "The level rises with every revision {name} passes — no ceiling. That's the long-term tracking.",
     "levShort": "Lv. {n}",
     "progEmptyLearner": "Start revisions in",
     "progEmptyParent": "Request revisions in",
