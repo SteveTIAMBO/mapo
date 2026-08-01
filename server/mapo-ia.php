@@ -34,6 +34,27 @@ if (preg_match('#^https://([a-z0-9-]+\.)?app-edufrem\.com$#', $origin)) {
   header('Access-Control-Allow-Headers: Content-Type, Authorization');
 }
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
+
+// ── Diagnostic NON secret (GET ?diag=1) ───────────────────────────────
+// Renseigne QUELS fournisseurs reçoivent les données (bloquant no-training #38)
+// SANS jamais exposer la clé : celle-ci voyage dans l'en-tête Authorization, pas
+// dans l'URL de base. On ne renvoie que le fournisseur texte, le HOST de la base
+// vision (où partent les PHOTOS) et le modèle — tous non secrets.
+if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['diag'])) {
+  header('Content-Type: application/json');
+  $cfg = __DIR__ . '/mapo-ia-config.php';
+  $out = ['ok' => true, 'service' => 'mapo-ia', 'configured' => false];
+  if (file_exists($cfg)) {
+    require $cfg;
+    $out['configured'] = defined('IA_API_KEY') && IA_API_KEY !== '' && strpos(IA_API_KEY, 'A_REMPLIR') !== 0;
+    $out['text_provider'] = defined('IA_PROVIDER') ? IA_PROVIDER : 'anthropic';
+    $base = defined('IA_OPENAI_BASE') ? IA_OPENAI_BASE : 'https://api.openai.com/v1';
+    $out['vision_base_host'] = parse_url($base, PHP_URL_HOST);   // les photos partent TOUJOURS par ce host
+    $out['model'] = defined('IA_MODEL') ? IA_MODEL : null;
+  }
+  echo json_encode($out); exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   http_response_code(405); echo json_encode(['ok' => false, 'error' => 'method_not_allowed']); exit;
 }
