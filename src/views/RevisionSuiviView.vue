@@ -46,6 +46,24 @@
       <p class="auto-foot"><Info :size="13" /> {{ t('revsuivi.autoFoot') }}</p>
     </div>
 
+    <!-- P5 · Trajectoire de la classe (élan / goulots) à partir du suivi MIAPO+ -->
+    <div class="card" v-if="classeTrajectoire.length">
+      <div class="card-head"><Activity :size="18" /><h3>{{ t('revsuivi.trajTitle') }}</h3></div>
+      <p class="adapt-intro">{{ t('revsuivi.trajIntro') }}</p>
+      <div class="traj-list">
+        <div v-for="a in classeTrajectoire" :key="a.matiere" class="traj-row">
+          <span class="traj-mat">{{ a.matiere }}</span>
+          <span class="traj-bar" :title="t('revsuivi.trajBarTitle', { up: a.up, stable: a.stable, down: a.down })">
+            <span v-if="a.up" class="tb up" :style="{ width: pct(a.up, a.cnt) + '%' }"></span>
+            <span v-if="a.stable" class="tb stable" :style="{ width: pct(a.stable, a.cnt) + '%' }"></span>
+            <span v-if="a.down" class="tb down" :style="{ width: pct(a.down, a.cnt) + '%' }"></span>
+          </span>
+          <span class="traj-tag" :class="a.etat">{{ t('revsuivi.traj_' + a.etat) }}</span>
+        </div>
+      </div>
+      <p class="auto-foot"><Info :size="13" /> {{ t('revsuivi.trajFoot') }}</p>
+    </div>
+
     <!-- Rollup par matière -->
     <div class="card" v-if="subjectRollup.length">
       <div class="card-head"><AlertTriangle :size="18" /><h3>{{ t('revsuivi.weakestSubjects') }}</h3></div>
@@ -131,7 +149,7 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useNotesStore } from '../stores/notes'
 import { useTuteurStore } from '../stores/tuteur'
-import { Sparkles, AlertTriangle, Users, Info, Loader2, X, Home, TrendingUp, TrendingDown, Minus } from 'lucide-vue-next'
+import { Sparkles, AlertTriangle, Users, Info, Loader2, X, Home, TrendingUp, TrendingDown, Minus, Activity } from 'lucide-vue-next'
 import { useCoursStore } from '../stores/cours'
 import { useMiapoSuiviStore } from '../stores/miapoSuivi'
 
@@ -352,6 +370,34 @@ const autonomie = computed(() => {
   return filtered.sort((a, b) => b.sessions - a.sessions)
 })
 
+// ── P5 · Trajectoire de la classe (goulots) ───────────────────────────────
+// On agrège le suivi autonome MIAPO+ par MATIÈRE (au niveau classe) : combien
+// d'élèves progressent / stagnent / reculent. Les GOULOTS (beaucoup d'élèves qui
+// reculent) remontent en tête → l'enseignant voit où la classe bute collectivement,
+// au-delà du cas par cas. Données réelles remontées ; échantillon en démo.
+function pct(part, total) { return total ? Math.round((part / total) * 100) : 0 }
+
+const classeTrajectoire = computed(() => {
+  if (!loaded.value) return []
+  const byId = {}
+  for (const e of inscrits.value) byId[e.id] = e
+  const agg = {}
+  for (const s of miapoSuivi.suivi) {
+    const cls = s.className || byId[s.eleveId]?.className || ''
+    if (classFilter.value && cls !== classFilter.value) continue
+    for (const m of s.matieres) {
+      const a = agg[m.matiere] || (agg[m.matiere] = { matiere: m.matiere, up: 0, stable: 0, down: 0, sum: 0, cnt: 0 })
+      a.cnt++; a.sum += m.tendance
+      if (m.tendance >= 15) a.up++
+      else if (m.tendance <= -15) a.down++
+      else a.stable++
+    }
+  }
+  return Object.values(agg)
+    .map((a) => ({ ...a, mean: Math.round(a.sum / a.cnt), etat: a.down > a.up ? 'goulot' : (a.up > a.down ? 'elan' : 'stable') }))
+    .sort((x, y) => (y.down - x.down) || (x.mean - y.mean))
+})
+
 onMounted(async () => {
   // Chargements légers (déjà en cache la plupart du temps) : on n'attend QUE
   // ceux-ci pour afficher l'écran. allSettled → jamais bloqué par un rejet.
@@ -433,6 +479,21 @@ onMounted(async () => {
 .elo-chip.flat { background: var(--input-bg, #f1f3f5); }
 .elo-chip.flat .elo-tr { color: var(--tx3); }
 .auto-foot { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--tx3); margin: 14px 0 0; }
+
+/* P5 · Trajectoire de la classe */
+.traj-list { display: flex; flex-direction: column; gap: 12px; }
+.traj-row { display: grid; grid-template-columns: 150px 1fr 92px; align-items: center; gap: 12px; }
+.traj-mat { font-size: 13px; font-weight: 600; color: var(--tx); }
+.traj-bar { display: flex; height: 9px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,.05); }
+.traj-bar .tb { display: block; height: 100%; }
+.traj-bar .tb.up { background: #16A34A; }
+.traj-bar .tb.stable { background: #cbd5e1; }
+.traj-bar .tb.down { background: #D93025; }
+.traj-tag { font-size: 11.5px; font-weight: 700; text-align: right; }
+.traj-tag.goulot { color: #C0392B; }
+.traj-tag.elan { color: #147A4A; }
+.traj-tag.stable { color: var(--tx3); }
+@media (max-width: 640px) { .traj-row { grid-template-columns: 96px 1fr 68px; gap: 8px; } }
 
 /* Adapter le prochain cours (remédiation) */
 .adapt-intro { margin: -4px 0 14px; font-size: 13.5px; color: var(--tx2); line-height: 1.5; }

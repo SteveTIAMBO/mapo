@@ -589,7 +589,12 @@
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
                 <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, (p.level % 5 || 5) * 20) + '%' }"></span></span>
-                <span v-if="p.elo" class="prog-elo" :title="t('mia.eloHint')"><span class="prog-elo-v">{{ p.elo }}</span><TrendingUp v-if="p.eloTrend > 0" :size="12" class="pe-up" /><TrendingDown v-else-if="p.eloTrend < 0" :size="12" class="pe-down" /></span>
+                <span v-if="p.trend" class="prog-trend" :class="p.trend" :title="t('mia.trendHint')">
+                  <TrendingUp v-if="p.trend === 'up'" :size="12" />
+                  <TrendingDown v-else-if="p.trend === 'down'" :size="12" />
+                  <Minus v-else :size="12" />
+                  <span>{{ t('mia.trend_' + p.trend) }}</span>
+                </span>
                 <span class="prog-lv"><Flame :size="13" /> {{ t('mia.levelN', { n: p.level }) }}</span>
               </div>
             </div>
@@ -602,8 +607,8 @@
             <div class="courbe-list">
               <div v-for="c in suiviCourbes" :key="c.matiere" class="courbe-row">
                 <span class="courbe-mat">{{ c.matiere }}</span>
-                <svg class="courbe-spark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><polyline :points="c.path" fill="none" :stroke="c.monte ? '#1B8A5A' : '#D93025'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" /></svg>
-                <span class="courbe-elo">{{ c.elo }}</span>
+                <svg class="courbe-spark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><polyline :points="c.path" fill="none" :stroke="c.trend === 'down' ? '#D93025' : (c.trend === 'up' ? '#1B8A5A' : '#9aa0a6')" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke" /></svg>
+                <span class="courbe-trend" :class="c.trend">{{ t('mia.trend_' + c.trend) }}</span>
               </div>
             </div>
           </div>
@@ -1103,7 +1108,7 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
@@ -2182,8 +2187,10 @@ const suiviCourbes = computed(() => {
     const h = Array.isArray(st[m].history) ? st[m].history : []
     if (h.length < 2) return null
     const elos = h.map((x) => x.elo)
-    return { matiere: m, elo: st[m].elo, path: sparkPath(elos), monte: elos[elos.length - 1] >= elos[0] }
-  }).filter(Boolean).sort((a, b) => b.elo - a.elo)
+    const delta = elos[elos.length - 1] - elos[0]
+    const trend = delta >= 15 ? 'up' : (delta <= -15 ? 'down' : 'stable')
+    return { matiere: m, eloRank: st[m].elo, path: sparkPath(elos), trend }
+  }).filter(Boolean).sort((a, b) => b.eloRank - a.eloRank)
 })
 // « Où tu butes le plus » : matières à faible réussite récente EN RÉVISION (≠ notes).
 const activitesBloquantes = computed(() => {
@@ -2212,9 +2219,14 @@ const progression = computed(() => {
   const eloMap = statsElo(e.id)
   return [...mats].map((m) => {
     const st = eloMap[m]
-    // Elo = niveau de maîtrise RÉEL (au-delà de la difficulté jouée) ; affiché
-    // seulement quand l'apprenant a effectivement révisé la matière (sinon = repère neutre).
-    return { matiere: m, level: levelFor(m), elo: st && st.attempts ? st.elo : null, eloTrend: st && st.attempts ? tendanceElo(e.id, m) : 0 }
+    // On NE MONTRE PAS l'Elo brut à l'apprenant (un « 1024 » ne veut rien dire pour lui).
+    // On garde l'Elo comme moteur interne et on n'expose que du SENS : le niveau (déjà
+    // lisible) + une tendance récente (en progrès / stable / à renforcer), une fois qu'il
+    // a assez révisé pour qu'elle soit fiable.
+    const attempts = st && st.attempts ? st.attempts : 0
+    const tr = attempts ? tendanceElo(e.id, m) : 0
+    const trend = attempts >= 3 ? (tr >= 15 ? 'up' : (tr <= -15 ? 'down' : 'stable')) : null
+    return { matiere: m, level: levelFor(m), hasElo: attempts > 0, trend }
   }).sort((a, b) => b.level - a.level)
 })
 
@@ -2978,8 +2990,11 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .prog-bar-fill { display: block; height: 100%; border-radius: 6px; background: linear-gradient(135deg, var(--pr, #1558B0), #7c3aed); }
 .prog-lv { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--pr); min-width: 64px; justify-content: flex-end; }
 .prog-lv svg { color: #E8950A; }
-.prog-elo { display: inline-flex; align-items: center; gap: 3px; font-size: 12px; font-weight: 700; color: var(--tx2, #4b5563); background: var(--input-bg, #f1f3f5); padding: 2px 8px; border-radius: 20px; flex-shrink: 0; }
-.prog-elo .pe-up { color: #1B8A5A; } .prog-elo .pe-down { color: #D93025; }
+.prog-trend { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px; flex-shrink: 0; border: 1px solid transparent; }
+.prog-trend svg { flex-shrink: 0; }
+.prog-trend.up { color: #147A4A; background: rgba(27,138,90,.10); border-color: rgba(27,138,90,.18); }
+.prog-trend.down { color: #C0392B; background: rgba(217,48,37,.08); border-color: rgba(217,48,37,.16); }
+.prog-trend.stable { color: var(--tx2, #4b5563); background: var(--input-bg, #f1f3f5); }
 .seq-conseil { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; margin-bottom: 12px; padding: 11px 14px; border: 1px solid rgba(var(--pr-rgb,21,88,176),.28); border-radius: 12px; background: rgba(var(--pr-rgb,21,88,176),.05); cursor: pointer; font: inherit; transition: border-color .15s, box-shadow .15s; }
 .seq-conseil:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb,21,88,176),.08); }
 .seq-conseil-tx { flex: 1; min-width: 0; font-size: 14px; color: var(--tx, #1f2937); }
@@ -2991,7 +3006,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .courbe-row { display: flex; align-items: center; gap: 12px; }
 .courbe-mat { flex: 0 0 32%; font-size: 14px; color: var(--tx, #1f2937); }
 .courbe-spark { flex: 1; height: 24px; min-width: 0; }
-.courbe-elo { font-size: 13px; font-weight: 800; color: var(--tx2, #4b5563); min-width: 44px; text-align: right; }
+.courbe-trend { font-size: 11.5px; font-weight: 700; min-width: 78px; text-align: right; }
+.courbe-trend.up { color: #147A4A; } .courbe-trend.down { color: #C0392B; } .courbe-trend.stable { color: var(--tx3, #6b7280); }
 .bloq-list { display: flex; flex-direction: column; gap: 8px; }
 .bloq-row { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; background: #fff; cursor: pointer; font: inherit; }
 .bloq-row.bloq-static { cursor: default; }
