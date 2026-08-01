@@ -32,27 +32,23 @@ define('IA_API_KEY', 'A_REMPLIR');                      // clé du fournisseur c
 // utilisée ici) → ne plus le cibler. Confirmer les identifiants EXACTS dans la
 // liste de modèles À JOUR du fournisseur choisi avant de figer.
 
-// ── OPTION A (RECOMMANDÉE) — OpenAI : propre PAR DÉFAUT (pas de piège de palier),
-//    frugal, gère la vision, aucun surcoût de plomberie. IA_PROVIDER='openai'.
-define('IA_MODEL',        'gpt-5-mini');   // défaut global
-define('IA_MODEL_MINI',   'gpt-5-mini');   // le moins cher (clean)
-define('IA_MODEL_REASON', 'gpt-5-mini');   // idem — le code active déjà le raisonnement pour ces tâches
-define('IA_MODEL_VISION', 'gpt-5-mini');   // multimodal le moins cher
+// ── OPTION CHOISIE — GEMINI (on reste sur Google). IA_PROVIDER='openai' +
+//    IA_OPENAI_BASE = endpoint Gemini compat (inchangé, déjà en place).
+//    ⚠️ CLEAN (pas d'entraînement) UNIQUEMENT sur palier PAYANT + Zero Data
+//    Retention activé — réglages Google, côté Steve. Les « thought signatures »
+//    Gemini 3 ne concernent PAS notre usage (appels en un seul coup) → aucun code.
+//    Frugalité : texte simple sur Flash-Lite (le moins cher), raisonnement +
+//    vision sur Flash (OCR fiable des copies). Identifiants confirmés (déc. 2026).
+define('IA_MODEL',        'gemini-3.5-flash-lite');  // défaut global (le moins cher)
+define('IA_MODEL_MINI',   'gemini-3.5-flash-lite');  // appréciation, traduction, chat, correction dictée
+define('IA_MODEL_REASON', 'gemini-3.5-flash');       // quiz, orientation, bilan, prépa examen, plan
+define('IA_MODEL_VISION', 'gemini-3.5-flash');       // photos (copie/cours/bulletin) : multimodal + OCR
+// Astuce durabilité : les alias « gemini-flash-lite-latest » / « gemini-flash-latest »
+// évitent de re-migrer à chaque version (vérifier qu'ils résolvent avant de figer).
 
-// ── OPTION B — Anthropic (propre par défaut). Vision à router vers Claude (voir code).
-// define('IA_MODEL',        'claude-haiku-4-5');
-// define('IA_MODEL_MINI',   'claude-haiku-4-5');
-// define('IA_MODEL_REASON', 'claude-sonnet-4-5');   // seulement si la qualité l'exige
-// define('IA_MODEL_VISION', 'claude-haiku-4-5');
-
-// ── OPTION C — Rester sur Gemini (3.x). ⚠️ N'est « propre » que sur palier PAYANT
-//    + Zero Data Retention activé, ET les tâches de raisonnement exigent la
-//    « circulation des thought signatures » (plomberie à ajouter côté code).
-//    Cible frugale = 3.5 Flash Lite. IA_OPENAI_BASE reste l'endpoint Gemini compat.
-// define('IA_MODEL',        'gemini-3.5-flash-lite');
-// define('IA_MODEL_MINI',   'gemini-3.5-flash-lite');
-// define('IA_MODEL_REASON', 'gemini-3.5-flash');
-// define('IA_MODEL_VISION', 'gemini-3.5-flash-lite');
+// ── Alternatives (non retenues) :
+// OpenAI  : IA_PROVIDER='openai', base 'https://api.openai.com/v1', modèles 'gpt-5-mini' (propre par défaut).
+// Anthropic : IA_PROVIDER='anthropic', modèles 'claude-haiku-4-5' (vision à router côté code).
 
 // ════════════════════════════════════════════════════════════════════
 //  3) Plafonds démo (facultatif)
