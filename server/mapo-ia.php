@@ -1003,18 +1003,17 @@ function tierForTask($task) {
 // Frugalité : Flash-Lite PARTOUT (le plus économe des Gemini 3.x ; gère texte,
 // raisonnement « thinking » et vision). Si l'OCR des copies manuscrites déçoit,
 // bump SEULEMENT 'vision' vers 'gemini-3.5-flash'.
-const MODELES_DEFAUT = [
-  'mini'   => 'gemini-3.5-flash-lite',
-  'reason' => 'gemini-3.5-flash-lite',
-  'vision' => 'gemini-3.5-flash-lite',
-];
+// NB : tableau LOCAL (pas une const globale) — modelForTask est appelée AVANT le
+// point de déclaration dans le fichier ; un const global ne serait pas encore
+// défini (les fonctions sont hoistées, pas les const) → 500. Le local est sûr.
 function modelForTask($task) {
   $tier = tierForTask($task);
   // 1) Override explicite en config (IA_MODEL_MINI/REASON/VISION), si un jour posé.
   $c = ['mini' => 'IA_MODEL_MINI', 'reason' => 'IA_MODEL_REASON', 'vision' => 'IA_MODEL_VISION'][$tier];
   if (defined($c) && constant($c)) return constant($c);
   // 2) Défaut côté code (frugal).
-  if (!empty(MODELES_DEFAUT[$tier])) return MODELES_DEFAUT[$tier];
+  $defauts = ['mini' => 'gemini-3.5-flash-lite', 'reason' => 'gemini-3.5-flash-lite', 'vision' => 'gemini-3.5-flash-lite'];
+  if (!empty($defauts[$tier])) return $defauts[$tier];
   // 3) Dernier repli : IA_MODEL de la config.
   return defined('IA_MODEL') ? IA_MODEL : null;
 }
