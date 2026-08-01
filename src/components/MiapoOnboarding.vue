@@ -36,8 +36,8 @@
 
       <!-- Étape 2 : pays + niveau -->
       <div v-else-if="step === 1" class="mo-step">
-        <h1 class="mo-title">{{ t('miaOnb.levelQ') }}</h1>
-        <p class="mo-sub">{{ t('miaOnb.levelSub') }}</p>
+        <h1 class="mo-title">{{ persona === 'parent' ? t('miaOnb.levelQParent') : t('miaOnb.levelQ') }}</h1>
+        <p class="mo-sub">{{ persona === 'parent' ? t('miaOnb.levelSubParent') : t('miaOnb.levelSub') }}</p>
         <div class="mo-field">
           <label class="mo-label">{{ t('login.countryLabel') }}</label>
           <select v-model="pays" class="mo-input">
@@ -67,7 +67,7 @@
         <!-- Âge (facultatif) : cale la longueur des sessions sur le développement
              cognitif (plus jeune = sessions plus courtes). -->
         <div class="mo-field">
-          <label class="mo-label">{{ t('miaOnb.ageLabel') }}</label>
+          <label class="mo-label">{{ persona === 'parent' ? t('miaOnb.ageLabelParent') : t('miaOnb.ageLabel') }}</label>
           <input v-model="age" type="number" min="4" max="99" inputmode="numeric" class="mo-input" :placeholder="t('miaOnb.agePh')" />
         </div>
       </div>
@@ -75,13 +75,13 @@
       <!-- Étape 3 : prénom + école -->
       <div v-else class="mo-step">
         <h1 class="mo-title">{{ t('miaOnb.detailsQ') }}</h1>
-        <p class="mo-sub">{{ t('miaOnb.detailsSub') }}</p>
+        <p class="mo-sub">{{ persona === 'parent' ? t('miaOnb.detailsSubParent') : t('miaOnb.detailsSub') }}</p>
         <div class="mo-field">
           <label class="mo-label">{{ persona === 'apprenant' ? t('miaOnb.learnerName') : t('miaOnb.childName') }}</label>
           <input v-model="firstName" class="mo-input" autocomplete="off" :placeholder="t('login.namePlaceholder')" />
         </div>
         <div v-if="niveau !== NIVEAU_HORS_CATALOGUE" class="mo-field">
-          <label class="mo-label">{{ t('mia.school') }} <span class="mo-opt">{{ t('mia.optional') }}</span></label>
+          <label class="mo-label">{{ persona === 'parent' ? t('miaOnb.schoolParent') : t('mia.school') }} <span class="mo-opt">{{ t('mia.optional') }}</span></label>
           <input v-model="ecole" class="mo-input" :placeholder="t('mia.schoolPlaceholder')" />
         </div>
         <p v-if="error" class="mo-error">{{ error }}</p>
