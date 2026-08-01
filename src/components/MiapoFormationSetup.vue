@@ -26,19 +26,22 @@
         <textarea v-model="texte" class="fs-input" rows="2" :placeholder="t('miaForm.pastePlaceholder')"></textarea>
       </div>
 
-      <button type="button" class="fs-btn propose" :disabled="!formation.trim() || loading" @click="propose">
-        <span v-if="loading" class="fs-spin"></span>
-        <span>{{ loading ? t('miaForm.proposing') : t('miaForm.propose') }}</span>
-      </button>
-      <p v-if="error" class="fs-err">{{ error }}</p>
-
-      <div v-if="modules.trim() || proposed" class="fs-field fs-modules">
-        <label class="fs-label">{{ t('miaForm.modules') }} <span class="fs-opt">{{ t('miaForm.modulesHint') }}</span></label>
+      <!-- Matières : SOIT saisie manuelle (toujours visible), SOIT proposition IA.
+           Les deux ne sont pas cumulatives — l'une OU l'autre suffit à valider. -->
+      <div class="fs-field fs-modules">
+        <label class="fs-label">{{ t('miaForm.modules') }} <span class="fs-opt">{{ t('miaForm.modulesManualHint') }}</span></label>
         <textarea v-model="modules" class="fs-input" rows="3" :placeholder="t('miaForm.modulesPlaceholder')"></textarea>
         <div v-if="moduleChips.length" class="fs-chips">
           <span v-for="(m, i) in moduleChips" :key="i" class="fs-chip">{{ m }}</span>
         </div>
       </div>
+
+      <div class="fs-or"><span>{{ t('miaForm.or') }}</span></div>
+      <button type="button" class="fs-btn propose" :disabled="!formation.trim() || loading" @click="propose">
+        <span v-if="loading" class="fs-spin"></span>
+        <span>{{ loading ? t('miaForm.proposing') : t('miaForm.proposeOptional') }}</span>
+      </button>
+      <p v-if="error" class="fs-err">{{ error }}</p>
 
       <div class="fs-nav">
         <button type="button" class="fs-btn ghost" @click="skip">{{ t('miaForm.later') }}</button>
@@ -134,6 +137,8 @@ function skip() { emit('skip') }
 .fs-sub { font-size: 13.8px; color: #626878; margin: 0 0 18px; line-height: 1.5; }
 .fs-field { margin-bottom: 13px; }
 .fs-modules { margin-top: 4px; }
+.fs-or { display: flex; align-items: center; text-align: center; gap: 10px; margin: 12px 0 10px; color: #9aa0ad; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.fs-or::before, .fs-or::after { content: ''; flex: 1; height: 1px; background: #e5e7eb; }
 .fs-label { display: block; font-size: 13px; font-weight: 600; color: #565b68; margin-bottom: 6px; }
 .fs-opt { font-weight: 500; color: #9aa0ad; }
 .fs-input {

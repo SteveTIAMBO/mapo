@@ -165,6 +165,9 @@
     "proposeFail": "I couldn't suggest modules. Add them manually below.",
     "modules": "My modules",
     "modulesHint": "comma-separated — edit freely",
+    "modulesManualHint": "type them yourself, comma-separated",
+    "proposeOptional": "Let MIAPO suggest them from my program",
+    "or": "or",
     "modulesPlaceholder": "e.g. Accounting, Marketing, Business law…",
     "validate": "Confirm",
     "later": "Later"
@@ -5164,6 +5167,7 @@
     "rtReviseHint": "Pick a subject: MIAPO suggests revision methods suited to it, grounded in cognitive-science research.",
     "rtImportCourses": "Import my courses / a document to revise",
     "rtChooseType": "How do you want to revise {subject}?",
+    "quizTimerOpt": "Timed quiz — 10 s per question",
     "rt_quiz": "Flash quiz",
     "rt_flashcards": "Memory cards",
     "rt_appariement": "Match the pairs",

@@ -314,7 +314,7 @@
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
           <div v-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.passions || ''" :preset-questions="quizPreset" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.passions || ''" :preset-questions="quizPreset" :timer-seconds="quizTimer" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -356,6 +356,7 @@
                   <!-- Choix du type de révision (masqué dès qu'un module est lancé) -->
                   <template v-if="!activeRedaction && !activeDictee && !activeAppariement">
                     <p class="rt-q">{{ t('mia.rtChooseType', { subject: reviseMatiere }) }}</p>
+                    <label class="rt-timer"><input type="checkbox" :checked="quizTimer > 0" @change="quizTimer = quizTimer > 0 ? 0 : 10" /><Timer :size="14" /> <span>{{ t('mia.quizTimerOpt') }}</span></label>
                     <div class="rt-grid">
                       <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
                         <span class="rt-ic"><component :is="RT_ICONS[rt.icon]" :size="18" /></span>
@@ -540,7 +541,7 @@
                   <span class="hist-mat">{{ s.subjectName || s.subjectId }}</span>
                   <span class="hist-meta">{{ histDate(s.date) }} · {{ histFormatLabel(s) }}<template v-if="s.total"> · {{ s.correct }}/{{ s.total }}</template></span>
                 </div>
-                <span v-if="hasScore(s)" class="hist-score" :style="histScoreStyle(s.scorePercent)">{{ s.scorePercent }}%</span>
+                <span v-if="hasScore(s)" class="hist-score" :style="histScoreStyle(histScore(s))">{{ histScore(s) }}%</span>
                 <button class="btn btn-outline btn-xs" @click="reprendreSession(s)"><RotateCcw :size="14" /> <span>{{ histActionLabel(s) }}</span></button>
               </div>
             </div>
@@ -1110,7 +1111,7 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus, ShieldCheck } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus, ShieldCheck, Timer } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
@@ -1793,6 +1794,7 @@ watch([() => section.value, activeId], () => { if (section.value === 'profil') {
 watch(() => activeEnfant.value?.pays, (p) => abo.refreshDevise(p || ''), { immediate: true })
 
 const quizMatiere = ref('')
+const quizTimer = ref(0) // minuteur/question choisi avant lancement (0 = off, 10 = 10 s)
 const reviseMatiere = ref('')
 // Thème en attente (« quiz sur les fractions » sans matière rattachable) : appliqué
 // au prochain quiz lancé depuis le sélecteur, puis effacé.
@@ -1939,7 +1941,11 @@ function reprendreSession(s) {
   // fiches / rédaction → revoir le contenu archivé, sans nouvel appel IA.
   histReview.value = s
 }
-function hasScore(s) { return (s && (s.format || 'quiz') === 'quiz' && s.scorePercent != null) }
+function hasScore(s) { return (s && (s.format || 'quiz') === 'quiz' && (s.mastery != null || s.scorePercent != null)) }
+// Historique : on affiche LE MÊME nombre que l'écran de résultat du quiz — la
+// maîtrise (pondérée 1er coup), pas le simple taux de bonnes réponses. Sinon un
+// quiz fini à 76 % ressortait à 100 % ici. Repli scorePercent pour anciennes séances.
+function histScore(s) { return (s && s.mastery != null) ? s.mastery : (s && s.scorePercent) }
 function histFormatLabel(s) {
   const f = (s && s.format) || 'quiz'
   if (f === 'chat' && s.kind) return t('mia.rt_' + s.kind)
@@ -2979,6 +2985,9 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .import-cta { display: inline-flex; align-items: center; gap: 8px; margin: 2px 0 10px; padding: 9px 13px; border: 1px dashed var(--bd, #d3d8e0); border-radius: 11px; background: rgba(var(--pr-rgb,21,88,176),.04); color: var(--pr, #1558B0); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s, border-color .15s; }
 .import-cta:hover { background: rgba(var(--pr-rgb,21,88,176),.09); border-color: var(--pr); }
 .rt-q { margin: 14px 0 8px; font-weight: 700; color: var(--tx, #1f2937); font-size: 14.5px; }
+.rt-timer { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 12px; padding: 7px 12px; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; background: var(--input-bg, #f7f8fa); font-size: 13px; font-weight: 600; color: var(--tx2, #4b5563); cursor: pointer; user-select: none; }
+.rt-timer input { width: 15px; height: 15px; accent-color: var(--pr); cursor: pointer; }
+.rt-timer svg { color: var(--pr); }
 .rt-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .rt-card { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: inherit; transition: border-color .15s, box-shadow .15s, transform .06s; }
 .rt-card:hover { border-color: var(--pr); box-shadow: 0 3px 14px rgba(var(--pr-rgb,21,88,176),.10); }

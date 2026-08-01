@@ -41,6 +41,7 @@
         </div>
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
+      <div v-if="timerSeconds > 0 && !revealed" class="tq-timer" :class="{ low: timeLeft <= 3 }"><Timer :size="14" /> <span>{{ timeLeft }}s</span></div>
 
       <!-- Disclaimer LÉGER : d'où viennent les exercices (mes cours / référentiel / mix) -->
       <p v-if="sourceLabel && index === 0" class="tq-source"><BookOpen :size="13" /> {{ sourceLabel }}</p>
@@ -55,12 +56,17 @@
         </button>
       </div>
 
-      <!-- Relire le cours (sans la réponse) : cours perso de la matière + point-clé -->
+      <!-- Aide « i » : l'indice PROPRE À CETTE QUESTION d'abord (il change à chaque
+           question) ; le cours complet (identique) reste en repli, sur demande. -->
       <div v-if="showCourse" class="tq-course">
-        <div class="tq-course-head"><BookOpen :size="15" /> <strong>{{ locale.startsWith('en') ? 'Review the lesson' : 'Relire le cours' }}</strong></div>
+        <div class="tq-course-head"><Lightbulb :size="15" /> <strong>{{ locale.startsWith('en') ? 'Hint for this question' : 'Indice pour cette question' }}</strong></div>
         <p v-if="current.hint" class="tq-course-key">{{ current.hint }}</p>
-        <div v-if="coursMatiere" class="tq-course-body">{{ coursMatiere }}</div>
-        <p v-else class="tq-course-empty">{{ locale.startsWith('en') ? 'No lesson imported for this subject yet — import your courses to re-read them here.' : 'Aucun cours importé pour cette matière — importe tes cours pour les relire ici.' }}</p>
+        <p v-else class="tq-course-key tq-course-fallback">{{ locale.startsWith('en') ? 'Re-read the question and rule out the impossible answers.' : 'Relis la question et élimine les réponses impossibles.' }}</p>
+        <button v-if="coursMatiere" type="button" class="tq-course-more" @click="showFullCourse = !showFullCourse">
+          <BookOpen :size="13" /> <span>{{ showFullCourse ? (locale.startsWith('en') ? 'Hide the lesson' : 'Masquer le cours') : (locale.startsWith('en') ? 'Re-read the whole lesson' : 'Relire tout le cours') }}</span>
+        </button>
+        <div v-if="coursMatiere && showFullCourse" class="tq-course-body">{{ coursMatiere }}</div>
+        <p v-else-if="!coursMatiere && !current.hint" class="tq-course-empty">{{ locale.startsWith('en') ? 'No lesson imported for this subject yet — import your courses to re-read them here.' : 'Aucun cours importé pour cette matière — importe tes cours pour les relire ici.' }}</p>
       </div>
 
       <div class="tq-choices">
@@ -177,7 +183,7 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info } from 'lucide-vue-next'
+import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
@@ -200,6 +206,9 @@ const props = defineProps({
   // Session vocale « live » : démarre directement en mode voix (MIAPO lit,
   // explique le concept sur une erreur, encourage, enchaîne).
   autoVoice: { type: Boolean, default: false },
+  // Minuteur par question (0 = désactivé). Choisi AVANT le lancement. À échéance,
+  // la question compte comme non trouvée (la réponse est révélée) et on avance.
+  timerSeconds: { type: Number, default: 0 },
 })
 const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
@@ -353,7 +362,28 @@ const startedAt = ref(0)
 // « i » par question : relire la section du cours SANS révéler la réponse.
 // Source : cours perso importé de la matière (+ le point-clé/indice de la question).
 const showCourse = ref(false)
+const showFullCourse = ref(false) // cours complet (identique) replié par défaut → l'« i » montre l'indice PROPRE à la question
 const coursMatiere = computed(() => coursTexteMatiere(props.studentId, props.matiere, 4000))
+
+// ── Minuteur par question (option choisie avant le lancement) ─────────
+const timeLeft = ref(0)
+let timerId = null
+function clearTimer() { if (timerId) { clearInterval(timerId); timerId = null } }
+function startTimer() {
+  clearTimer()
+  if (!props.timerSeconds || props.timerSeconds <= 0 || mode.value !== 'quiz') return
+  timeLeft.value = props.timerSeconds
+  timerId = setInterval(() => {
+    timeLeft.value -= 1
+    if (timeLeft.value <= 0) { clearTimer(); onTimeout() }
+  }, 1000)
+}
+function onTimeout() {
+  if (revealed.value) return
+  // Temps écoulé → question NON trouvée (comme un échec) : on révèle la réponse.
+  revealed.value = true; phase.value = 'revealed'; firstTry.value = false; qGrade.value = 0
+  if (voiceOn.value) readExplanation(false)
+}
 // Provenance des questions (disclaimer léger au lancement) : cours / référentiel / mix.
 const sourceRev = ref('')
 const sourceLabel = computed(() => {
@@ -383,7 +413,9 @@ const grades = ref([])
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
 // Vocalisation pilotée par l'état du quiz (découplée de la logique de jeu).
-watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; showCourse.value = false; if (mode.value === 'quiz') readQuestion() })
+watch(index, () => { notUnderstood.value = 0; conceptText.value = ''; showCourse.value = false; showFullCourse.value = false; if (mode.value === 'quiz') { readQuestion(); startTimer() } })
+// Le minuteur s'arrête dès que la réponse est révélée (trouvée, 2e échec, ou temps écoulé).
+watch(revealed, (r) => { if (r) clearTimer() })
 // 1re erreur → indice seulement. L'explication du concept n'arrive que si
 // l'apprenant clique « Approfondir » après avoir vu la bonne réponse.
 // Révélation : bonne réponse → félicitation (+ enchaîne en mode session) ;
@@ -400,12 +432,13 @@ watch(revealed, (r) => {
   }
 })
 // Session vocale « live » : dès que le quiz est chargé, on démarre en mode voix.
-watch(mode, (m) => { if (m === 'quiz' && props.autoVoice && !voiceOn.value) { voiceOn.value = true; warmUpVoices(); readQuestion() } })
+watch(mode, (m) => { if (m === 'quiz') startTimer(); if (m === 'quiz' && props.autoVoice && !voiceOn.value) { voiceOn.value = true; warmUpVoices(); readQuestion() } })
 // Quitter en cours de quiz (bouton « Quitter » ou navigation) = ABANDON : on
 // journalise le signal (sans score → n'affecte jamais le niveau), pour corréler
 // plus tard avec la forme du jour. finish() remet startedAt à 0 → pas de faux abandon.
 onUnmounted(() => {
   stopSpeaking()
+  clearTimer()
   if (mode.value === 'quiz' && startedAt.value && props.studentId) {
     const durationMs = Date.now() - startedAt.value
     const reached = index.value // questions atteintes avant d'abandonner
@@ -505,6 +538,7 @@ const recap = computed(() => questions.value
 const recapMissed = computed(() => recap.value.filter((r) => r.missed))
 
 function finish() {
+  clearTimer()
   // La PROGRESSION est pilotée par le score de MAÎTRISE pondéré (caché), pas par
   // le simple taux de bonnes réponses : trouver du 1er coup fait vraiment monter.
   lastResult.value = props.studentId
@@ -639,7 +673,12 @@ onMounted(start)
 .tq-course { margin: 0 0 16px; padding: 13px 15px; border: 1px solid rgba(var(--pr-rgb,21,88,176),.25); background: rgba(var(--pr-rgb,21,88,176),.04); border-radius: 12px; }
 .tq-course-head { display: flex; align-items: center; gap: 7px; color: var(--pr); font-size: 13.5px; margin-bottom: 8px; }
 .tq-course-key { margin: 0 0 8px; font-size: 13.5px; font-weight: 600; color: var(--tx, #1f2937); line-height: 1.5; }
-.tq-course-body { max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: var(--tx2, #4b5563); border-top: 1px dashed var(--bd, #e5e7eb); padding-top: 8px; }
+.tq-course-body { max-height: 220px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: var(--tx2, #4b5563); border-top: 1px dashed var(--bd, #e5e7eb); padding-top: 8px; margin-top: 8px; }
+.tq-course-fallback { color: var(--tx3, #6b7280); font-weight: 500; }
+.tq-course-more { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; padding: 5px 10px; border: 1px solid rgba(var(--pr-rgb,21,88,176),.3); background: #fff; color: var(--pr); border-radius: 8px; font-family: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.tq-course-more:hover { background: rgba(var(--pr-rgb,21,88,176),.06); }
+.tq-timer { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: -6px 0 12px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 800; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); }
+.tq-timer.low { color: #D93025; background: rgba(217,48,37,.10); animation: tqpulse 1s ease-in-out infinite; }
 .tq-course-empty { margin: 0; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
 .tq-choices { display: flex; flex-direction: column; gap: 10px; }
 .tq-choice { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 15px; text-align: left; transition: all .15s; color: var(--tx); }

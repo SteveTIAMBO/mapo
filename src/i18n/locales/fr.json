@@ -165,6 +165,9 @@
     "proposeFail": "Je n'ai pas réussi à proposer de modules. Ajoute-les à la main ci-dessous.",
     "modules": "Mes modules",
     "modulesHint": "séparés par des virgules — modifie librement",
+    "modulesManualHint": "saisis-les toi-même, séparées par des virgules",
+    "proposeOptional": "Laisser MIAPO les proposer à partir de ma formation",
+    "or": "ou",
     "modulesPlaceholder": "Ex. Comptabilité, Marketing, Droit des affaires…",
     "validate": "Valider",
     "later": "Plus tard"
@@ -5164,6 +5167,7 @@
     "rtReviseHint": "Choisis une matière : MIAPO propose des méthodes de révision adaptées, fondées sur la recherche en sciences cognitives.",
     "rtImportCourses": "Importer mes cours / un document à réviser",
     "rtChooseType": "Comment réviser {subject} ?",
+    "quizTimerOpt": "Quiz chronométré — 10 s par question",
     "rt_quiz": "Quiz éclair",
     "rt_flashcards": "Cartes mémoire",
     "rt_appariement": "Relie les paires",
