@@ -51,10 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['diag'])) {
     $base = defined('IA_OPENAI_BASE') ? IA_OPENAI_BASE : 'https://api.openai.com/v1';
     $out['vision_base_host'] = parse_url($base, PHP_URL_HOST);   // les photos partent TOUJOURS par ce host
     $out['model'] = defined('IA_MODEL') ? IA_MODEL : null;
-    $out['models'] = [                                            // par palier (frugalité) ; null = retombe sur IA_MODEL
+    $out['models'] = [                                            // override config par palier (null = pas d'override)
       'mini'   => defined('IA_MODEL_MINI') ? IA_MODEL_MINI : null,
       'reason' => defined('IA_MODEL_REASON') ? IA_MODEL_REASON : null,
       'vision' => defined('IA_MODEL_VISION') ? IA_MODEL_VISION : null,
+    ];
+    $out['effective'] = [                                         // modèle RÉELLEMENT utilisé par palier
+      'mini'   => modelForTask('appreciation'),
+      'reason' => modelForTask('tutor_quiz'),
+      'vision' => modelForTask('vision_copie'),
     ];
   }
   echo json_encode($out); exit;
@@ -994,10 +999,23 @@ function tierForTask($task) {
   if (in_array($task, $reason, true)) return 'reason';
   return 'mini';
 }
+// Défaut CÔTÉ CODE (modifiable ici sans toucher la clé) — migration hors Gemini 2.5.
+// Frugalité : Flash-Lite PARTOUT (le plus économe des Gemini 3.x ; gère texte,
+// raisonnement « thinking » et vision). Si l'OCR des copies manuscrites déçoit,
+// bump SEULEMENT 'vision' vers 'gemini-3.5-flash'.
+const MODELES_DEFAUT = [
+  'mini'   => 'gemini-3.5-flash-lite',
+  'reason' => 'gemini-3.5-flash-lite',
+  'vision' => 'gemini-3.5-flash-lite',
+];
 function modelForTask($task) {
-  $map = ['mini' => 'IA_MODEL_MINI', 'reason' => 'IA_MODEL_REASON', 'vision' => 'IA_MODEL_VISION'];
-  $c = $map[tierForTask($task)];
+  $tier = tierForTask($task);
+  // 1) Override explicite en config (IA_MODEL_MINI/REASON/VISION), si un jour posé.
+  $c = ['mini' => 'IA_MODEL_MINI', 'reason' => 'IA_MODEL_REASON', 'vision' => 'IA_MODEL_VISION'][$tier];
   if (defined($c) && constant($c)) return constant($c);
+  // 2) Défaut côté code (frugal).
+  if (!empty(MODELES_DEFAUT[$tier])) return MODELES_DEFAUT[$tier];
+  // 3) Dernier repli : IA_MODEL de la config.
   return defined('IA_MODEL') ? IA_MODEL : null;
 }
 
