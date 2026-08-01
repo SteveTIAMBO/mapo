@@ -60,6 +60,7 @@
           <input ref="photoInput" type="file" accept="image/*" capture="environment" class="dic-hidden" @change="onPhoto" />
         </template>
       </div>
+      <p v-if="mode !== 'appli'" class="dic-privacy"><Info :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
       <p v-if="err" class="dic-err">{{ err }}</p>
     </div>
 
@@ -112,6 +113,7 @@ import { useI18n } from 'vue-i18n'
 import { Ear, ChevronLeft, Loader2, Check, Info, FileText, Smartphone, Camera, Play, Pause, RotateCcw, SkipBack, SkipForward, ArrowRight } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
 import { coursTexteMatiere } from '../utils/coursPerso'
+import { fileToCleanImageUrl } from '../utils/image'
 import { digestApprenant } from '../utils/digestApprenant'
 import { speak, stopSpeaking, isSpeaking, isSpeechSupported, warmUpVoices } from '../services/voice'
 
@@ -194,7 +196,8 @@ async function onPhoto(e) {
   if (!file) return
   correcting.value = true; err.value = ''
   try {
-    const dataUrl = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(file) })
+    // Photo nettoyée avant envoi (canvas → EXIF/GPS retirés).
+    const dataUrl = await fileToCleanImageUrl(file)
     const tr = await tuteur.transcrireCours({ imageDataUrl: dataUrl, niveau: niveau.value })
     if (tr.ok && tr.texte) { await corriger(tr.texte) } else { err.value = en.value ? 'Could not read the photo.' : 'Photo illisible.' ; correcting.value = false }
   } catch { err.value = en.value ? 'Error.' : 'Erreur.'; correcting.value = false }
@@ -281,6 +284,8 @@ onUnmounted(() => { try { stopSpeaking() } catch { /* no-op */ } })
 .dic-mode small { font-size: 12px; color: var(--tx3, #6b7280); }
 .dic-warn, .dic-err { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #B87A00; margin: 12px 0 0; }
 .dic-err { color: #D93025; }
+.dic-privacy { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--tx3, #6b7280); margin: 10px 0 0; }
+.dic-privacy svg { flex-shrink: 0; margin-top: 1px; color: #1B8A5A; }
 .dic-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 30px; text-align: center; }
 .dic-loading p { margin: 0; font-size: 14px; color: var(--tx2, #4b5563); }
 .spin { animation: spin .9s linear infinite; color: var(--pr); }

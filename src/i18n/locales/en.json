@@ -5443,6 +5443,7 @@
     "mcNewSubject": "New subject",
     "mcNewSubjectPh": "New subject name",
     "mcPhoto": "Take a photo",
+    "photoPrivacyNote": "The photo is only used to generate your revision: it isn't kept, and its location data is removed before sending. Avoid showing a name, face or address.",
     "mcPhotoOk": "Course transcribed from the photo.",
     "mcPhotoUnreadable": "Photo unreadable — try again with more light/sharpness.",
     "mpCompRef": "Skills grounded in recognised frameworks (OECD Learning Compass 2030, World Economic Forum 2025). The radar highlights your strengths.",

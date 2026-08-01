@@ -5443,6 +5443,7 @@
     "mcNewSubject": "Nouvelle matière",
     "mcNewSubjectPh": "Nom de la nouvelle matière",
     "mcPhoto": "Prendre en photo",
+    "photoPrivacyNote": "La photo sert seulement à générer ta révision : elle n'est pas conservée et sa localisation est retirée avant l'envoi. Évite d'y montrer un nom, un visage ou une adresse.",
     "mcPhotoOk": "Cours transcrit depuis la photo.",
     "mcPhotoUnreadable": "Photo illisible — réessaie avec plus de lumière/netteté.",
     "mpCompRef": "Compétences fondées sur des référentiels reconnus (OCDE Boussole 2030, Forum économique mondial 2025). Le radar met en avant tes forces.",

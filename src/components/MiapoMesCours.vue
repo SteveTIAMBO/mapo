@@ -28,6 +28,7 @@
           <Plus :size="14" /> <span>{{ t('mia.mcSave') }}</span>
         </button>
       </div>
+      <p class="mc-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
     </div>
 
     <!-- Mes cours enregistrés -->
@@ -77,6 +78,7 @@ import { useI18n } from 'vue-i18n'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { listCoursPerso, addCoursPerso, removeCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
+import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useTuteurStore } from '../stores/tuteur'
 import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink, Link2, Camera } from 'lucide-vue-next'
@@ -125,12 +127,9 @@ async function onPhoto(e) {
   if (!file) return
   importing.value = true; info.value = ''
   try {
-    const dataUrl = await new Promise((resolve, reject) => {
-      const r = new FileReader()
-      r.onload = () => resolve(r.result)
-      r.onerror = reject
-      r.readAsDataURL(file)
-    })
+    // Photo nettoyée AVANT envoi : le ré-encodage canvas retire les métadonnées
+    // EXIF (GPS, appareil, date) — on n'envoie que les pixels du cours.
+    const dataUrl = await fileToCleanImageUrl(file)
     const res = await tuteur.transcrireCours({ imageDataUrl: dataUrl, niveau: niveau.value })
     if (res.ok && res.texte) {
       contenu.value = contenu.value ? (contenu.value + '\n\n' + res.texte) : res.texte
@@ -195,6 +194,8 @@ function fmt(iso) {
 .course-input { width: 100%; box-sizing: border-box; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; padding: 11px 13px; font-family: inherit; font-size: 13.5px; resize: vertical; }
 .mc-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
 .mc-info { flex: 1; min-width: 120px; }
+.mc-privacy { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--tx3, #6b7280); margin: 8px 0 0; }
+.mc-privacy svg { flex-shrink: 0; margin-top: 1px; color: #1B8A5A; }
 .mc-save { margin-left: auto; }
 .hidden-file { display: none; }
 .mc-list { display: flex; flex-direction: column; gap: 8px; }

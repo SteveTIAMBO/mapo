@@ -264,6 +264,7 @@
             <div v-if="visionState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.visionPickHint') }}</p>
               <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" /></label>
+              <p class="vision-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
             </div>
             <div v-else-if="visionState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.visionLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="visionState === 'done' && visionResult" class="vision-result">
@@ -286,6 +287,7 @@
             <div v-if="bulletinState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.bulletinPickHint') }}</p>
               <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseBulletinFile') }}</span><input type="file" accept="image/*,application/pdf" style="display:none" @change="onPickBulletin" /></label>
+              <p class="vision-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
             </div>
             <div v-else-if="bulletinState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.bulletinLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="bulletinState === 'done'" class="vision-result">
@@ -1108,7 +1110,7 @@ import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
 import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
-import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus } from 'lucide-vue-next'
+import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus, ShieldCheck } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
@@ -3026,6 +3028,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .bloq-row svg { color: var(--pr); flex-shrink: 0; }
 
 .vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
+.vision-privacy { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--tx3, #6b7280); margin: 10px 0 0; }
+.vision-privacy svg { flex-shrink: 0; margin-top: 1px; color: #1B8A5A; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
 .spin { animation: spin .9s linear infinite; color: var(--pr); } @keyframes spin { to { transform: rotate(360deg); } }
 .vision-result { display: flex; flex-direction: column; gap: 12px; }
