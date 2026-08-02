@@ -1149,6 +1149,21 @@ function onAppInstalled() { try { analytics.markInstalled() } catch { /* best-ef
 // Mode apprenant : MAPO+ vu par l'apprenant lui-même (langage 1re/2e personne,
 // profil unique = lui) plutôt que par un parent qui suit ses enfants. Même moteur.
 const isApprenant = computed(() => store.mode === 'apprenant')
+// Édition MAPO+ « propre » — 3 structures distinctes, UNE seule source de vérité :
+//   • 'parent' : gère des enfants (n'a pas d'école à lui) ;
+//   • 'enfant' : apprenant SCOLARISÉ (K-12) → « Mon école » a du sens ;
+//   • 'adulte' : apprenant autonome (MBA / formation / supérieur / hors-catalogue)
+//                → PAS de « Mon école » (c'est un portail établissement K-12).
+// On gate la nav, les sections et l'école SUR CETTE édition, plus sur des drapeaux
+// isApprenant/niveau éparpillés (cf. « Mon école pas détachée proprement »).
+const editionMiapo = computed(() => {
+  if (!isApprenant.value) return 'parent'
+  const e = activeEnfant.value
+  const adulte = !!(e && (isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE))
+  return adulte ? 'adulte' : 'enfant'
+})
+// « Mon école » (liaison MAPO K-12) ne s'applique JAMAIS à l'apprenant adulte.
+const ecoleApplicable = computed(() => editionMiapo.value !== 'adulte')
 // Le « payeur » (parent, ou apprenant ADULTE inscrit lui-même = supérieur /
 // hors-catalogue) gère l'usage, la facturation et l'abonnement. Un enfant/mineur
 // (niveau scolaire) dont le profil est activé par le parent NE gère PAS ça.
@@ -1175,7 +1190,7 @@ function estClasseOrientation(e) {
   return /(^|[^0-9])3e|3eme|seconde|2nde|2de|1ere|1re|premiere|terminale|\btle\b/.test(n)
 }
 // Élève relié à une école MAPO (accessible au template : Planning, accueil…).
-const ecoleLieActive = computed(() => !!(activeEnfant.value && activeEnfant.value.ecoleReliee))
+const ecoleLieActive = computed(() => ecoleApplicable.value && !!(activeEnfant.value && activeEnfant.value.ecoleReliee))
 // La tuile « Moyenne des notes » de l'accueil ouvre le bon module de notes :
 // le bulletin de l'école si relié, sinon les notes saisies (« Mes notes »).
 const noteStatTarget = computed(() => (ecoleLieActive.value ? 'ecole_bulletins' : 'enfants'))
@@ -1195,7 +1210,7 @@ const SECTIONS = computed(() => {
   // Reliée → un GROUPE dédié (Devoirs / Cours / Bulletins / Messagerie), au même
   // niveau qu'Apprendre/Suivi. Non reliée → une seule entrée pour saisir le code.
   // Reliée, les modules MANUELS redondants s'effacent (Mes notes de l'élève).
-  const ecoleLie = !!(activeEnfant.value && activeEnfant.value.ecoleReliee)
+  const ecoleLie = ecoleLieActive.value // édition-aware : jamais pour l'apprenant adulte
   // Messagerie « Mon école » : réservée au RESPONSABLE qui échange avec l'école —
   // le parent, ou un apprenant AUTO-INSCRIT (adulte/étudiant qui a activé lui-même
   // la liaison). Un enfant onboardé par son parent (compte enfant, ou vue apprenant
@@ -1210,7 +1225,9 @@ const SECTIONS = computed(() => {
     { key: 'ecole_bulletins', label: t('mia.ecBulletins'), icon: FileText, group: 'ecole' },
     ...messagerieEcole,
   ] : []
-  const ecoleEntry = (grp) => (ecoleLie ? [] : [{ key: 'ecole', label: t('mia.secSchool'), icon: School, group: grp }])
+  // Entrée « Mon école » (saisir le code) : proposée seulement là où l'école a du
+  // sens (parent/enfant K-12) et pas encore reliée. Jamais pour l'apprenant adulte.
+  const ecoleEntry = (grp) => ((!ecoleApplicable.value || ecoleLie) ? [] : [{ key: 'ecole', label: t('mia.secSchool'), icon: School, group: grp }])
   if (!isApprenant.value) {
     return [
       home,
