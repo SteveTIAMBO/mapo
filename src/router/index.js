@@ -107,6 +107,15 @@ const routes = [
     meta: { requiresAuth: false, title: 'Activer mon compte' }
   },
   {
+    // Lien magique « famille » : le parent partage ce lien (WhatsApp) à son
+    // enfant ; à l'ouverture, le compte enfant est créé et connecté sans
+    // inscription ni mot de passe (cf. mapo-famille.php + enfantsComptes).
+    path: '/rejoindre',
+    name: 'Rejoindre',
+    component: () => import('../views/RejoindreView.vue'),
+    meta: { requiresAuth: false, title: 'Rejoindre mon espace' }
+  },
+  {
     // Retour du flux OAuth « Se connecter avec Carré ».
     path: '/oauth/carre/callback',
     name: 'CarreCallback',
@@ -536,7 +545,7 @@ router.beforeEach(async (to) => {
     if (!isLoggedIn) {
       // VerifierEmail doit rester atteignable juste après l'inscription, même si
       // l'état d'auth n'est pas encore stabilisé (sinon on rebondit sur Home = login).
-      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierEmail', 'VerifierDiplome', 'CompteNonConfigure'])
+      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierEmail', 'Rejoindre', 'VerifierDiplome', 'CompteNonConfigure'])
       if (!publicMiapo.has(to.name)) return { name: 'Home' }
     }
     // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail

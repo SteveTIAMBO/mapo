@@ -501,6 +501,11 @@ export const useAuthStore = defineStore('auth', () => {
   async function ensureEmailVerified() {
     const u = auth.currentUser
     if (!u) return true            // pas de compte Firebase (démo…) : géré ailleurs
+    // Compte SANS e-mail = compte enfant provisionné par lien magique famille
+    // (signInWithCustomToken, cf. mapo-famille.php) ou compte anonyme : la
+    // vérification d'e-mail n'a pas de sens. Seuls les comptes e-mail/mot de
+    // passe (u.email non vide) sont soumis à l'activation.
+    if (!u.email) return true
     if (u.emailVerified) return true
     try { await u.reload() } catch { /* hors-ligne : on reste bloqué, normal */ }
     if (auth.currentUser && auth.currentUser.emailVerified) {

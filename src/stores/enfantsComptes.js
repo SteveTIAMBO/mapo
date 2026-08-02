@@ -2,8 +2,13 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { db, auth } from '../firebase'
 import { doc, getDoc, setDoc, deleteDoc, collection, getDocs } from 'firebase/firestore'
+import { signInWithCustomToken } from 'firebase/auth'
 import { useAuthStore } from './auth'
 import { inviteCode } from './coParents'
+
+// Proxy serveur qui forge un jeton personnalisé Firebase pour un compte enfant
+// à partir d'un code d'invitation valide (lien magique famille). Même origine.
+const FAMILLE_URL = '/mapo-famille.php'
 
 /**
  * Store « comptes enfants » — l'enfant a SON PROPRE compte MAPO+.
@@ -100,6 +105,54 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
     } finally { busy.value = false }
   }
 
+  /**
+   * Enfant : rejoint son espace via le LIEN MAGIQUE (aucune inscription).
+   * Le serveur forge un jeton personnalisé si le code est valide ; on connecte
+   * l'enfant (signInWithCustomToken) puis on scelle le rattachement via le flux
+   * existant `redeemInvite` (mêmes documents, mêmes règles Firestore).
+   *
+   * ⚠️ Remplace la session courante : à n'utiliser que sur l'appareil de
+   * l'ENFANT (l'écran d'accueil du lien confirme avant d'appeler).
+   */
+  async function joinViaLink(rawCode) {
+    const c = String(rawCode || '').trim().toUpperCase()
+    if (!c) return { ok: false, reason: 'empty' }
+    busy.value = true
+    try {
+      // 1. Le serveur vérifie le code et forge un jeton personnalisé.
+      let data
+      try {
+        const res = await fetch(FAMILLE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'join_child', code: c }),
+        })
+        data = await res.json().catch(() => null)
+        if (!res.ok || !data || !data.ok || !data.token) {
+          return { ok: false, reason: (data && data.error) || 'server' }
+        }
+      } catch {
+        return { ok: false, reason: 'network' }
+      }
+      // 2. Connexion enfant SANS mot de passe (remplace la session courante).
+      try {
+        await signInWithCustomToken(auth, data.token)
+      } catch (e) {
+        return { ok: false, reason: 'signin', detail: e && (e.code || e.message) }
+      }
+      // 3. Sceller le rattachement (preuve d'accès + pointeur `b2c/link`).
+      const rr = await redeemInvite(c)
+      // « self » = le propriétaire a cliqué son propre lien : sans objet ici
+      // (l'UID enfant forgé n'est jamais celui du parent), on ignore.
+      if (!rr.ok && rr.reason !== 'self') {
+        return { ok: true, prenom: data.prenom || '', childUid: data.childUid, sealWarn: rr.reason }
+      }
+      return { ok: true, prenom: data.prenom || rr.prenom || '', childUid: data.childUid }
+    } finally {
+      busy.value = false
+    }
+  }
+
   /** Enfant : suis-je rattaché à un profil ? */
   async function loadMyLink() {
     const uid = myUid()
@@ -112,5 +165,5 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
     } catch { ownerUid.value = null; monEnfantId.value = null }
   }
 
-  return { busy, comptes, ownerUid, monEnfantId, createInvite, loadComptes, removeCompte, redeemInvite, loadMyLink }
+  return { busy, comptes, ownerUid, monEnfantId, createInvite, loadComptes, removeCompte, redeemInvite, joinViaLink, loadMyLink }
 })
