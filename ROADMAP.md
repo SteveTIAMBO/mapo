@@ -87,6 +87,11 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
 > - **[MAPO+] P3 — Calibrage difficulté du contenu par les enseignants** (Elo initial par exercice) + **banque hors-ligne étiquetée par provenance** (charte) — démarre avec le **réseau enseignants « contributeurs fondateurs bénévoles reconnus »** (validation + calibrage ; reconnaissance/attribution, pas de rému au départ).
 > - **[transversal] Mesure d'impact** : suivre notre propre « +% de réussite » (comme l'étude) = preuve pour le commercial + boussole produit.
 
+### 🟠 Architecture MAPO+ « propre » (structurant — GREENLIT dev par Steve 2026-08) — CONCEVOIR AVANT DE CODER
+> Deux chantiers structurants, à modéliser proprement **par secteur géographique × niveau scolaire × utilisateur** :
+> - **[MAPO+] Modèle « famille »** : le parent crée SON compte (infos parent seules) ; module « Mes enfants » → ajouter un enfant → **provisionnement serveur d'un vrai compte enfant** (email+mdp choisis par le parent, `emailVerified=true` → pas d'activation) + **lien magique** partageable (WhatsApp). Compte enfant relié (`parentUid`) : le parent voit le suivi, suggère des révisions, règle l'objectif (matière/global) ; « Passer le téléphone à Awa ». Migration depuis « enfants = profils locaux ». (Contrainte : le mécanisme est du code produit ; aucun identifiant saisi par l'assistant.)
+> - **[MAPO+] Notation multi-régime** : **France collège = évaluation par compétences** (4 niveaux de maîtrise — insuffisante/fragile/satisfaisante/très bonne — codés couleur, LSU/socle) ; **lycée FR = notes** ; **Afrique = notes**. Abstraction `evalMode ∈ {notes, competences}` résolue par (pays × niveau), surchargeable. Un **niveau d'acquisition interne commun** alimente le moteur (faiblesses, Elo, séquenceur) ; import + affichage + objectif s'adaptent au mode. Pas de `if pays==FR` éparpillés.
+
 - MIAPO+ **personas** : mode apprenant (élève/étudiant autonome) vs parent.
 - Boucle **Carré → MIAPO+** : cours capté → test de compréhension → programme de
   remédiation sourcé (le moat).
