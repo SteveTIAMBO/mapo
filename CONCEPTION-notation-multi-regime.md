@@ -63,12 +63,27 @@ baremePour({ pays, niveau, surcharge }) → 'note20' | 'paliers3' | 'paliers4'
 
 Une seule fonction, une seule table :
 
-| Pays | Niveau | Barème par défaut |
-|---|---|---|
-| CM (et Afrique en général) | primaire | `paliers3` si l'école est en APC, sinon `note20` |
-| CM | secondaire, supérieur | `note20` |
-| FR | primaire, collège | `paliers4` **en second affichage**, `note20` en principal |
-| FR | lycée, supérieur | `note20` |
+| Pays | Niveau | Barème | Source |
+|---|---|---|---|
+| CM | primaire | `note20` + paliers APC en complément | MINEDUB, déjà en production dans MAPO |
+| CM | secondaire, supérieur | `note20` | idem |
+| **CI** | **primaire** | **`note10`** | circulaire n° 266 (DPFC/MENA) : passage des classes intermédiaires à **5 sur 10** |
+| CI | secondaire, supérieur | `note20` | CM2 → 6e : moyenne de 10 sur 20 |
+| **SN** | **primaire** | **`note10`** | notation de 0 à 10 du CI au CM2 ; 0 à 20 à partir de la 6e |
+| SN | secondaire, supérieur | `note20` | idem |
+| FR | primaire, collège | `note20` + 4 niveaux de maîtrise en complément | LSU maintenu après la réforme DNB 2026 |
+| FR | lycée, supérieur | `note20` | |
+| GA | tous | `note20` **à confirmer** | modèle français, barème non sourcé |
+
+**Le vrai piège, découvert en vérifiant : l'échelle n'est pas toujours sur 20.**
+Un 8 saisi pour un élève de CM1 sénégalais ou ivoirien est une **réussite** (8/10) ;
+le même 8 interprété sur 20 serait un échec, et MAPO+ enverrait l'enfant réviser une
+matière qu'il maîtrise. C'est exactement le genre d'erreur qu'un modèle « tout le
+monde sur 20 » produit en silence. Le barème porte donc son maximum, et un test le
+verrouille.
+
+Les lignes que je n'ai pas pu sourcer portent `aVerifier` : on applique /20 par
+défaut, mais on ne prétend pas que c'est vérifié, et la surcharge reste accessible.
 
 La **surcharge** l'emporte toujours : par apprenant dans MAPO+, par école dans MAPO.
 Une famille qui préfère voir des paliers doit pouvoir le demander, et inversement.
