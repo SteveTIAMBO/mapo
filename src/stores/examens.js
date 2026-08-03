@@ -14,12 +14,64 @@ import { demoKey } from '../utils/demoScope'
  * Démo : persistance localStorage + jeu de données réaliste auto-généré.
  */
 
-export const EXAM_TYPES = [
-  { key: 'cep', label: 'CEP', niveau: 'CM2', cycle: 'primaire', desc: 'Certificat d\'études primaires (fin du primaire)' },
-  { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: 'Brevet d\'études du premier cycle' },
-  { key: 'probatoire', label: 'Probatoire', niveau: '1ere', cycle: 'lycee', desc: 'Avant le baccalauréat' },
-  { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
-]
+/**
+ * Examens nationaux, PAR PAYS.
+ *
+ * Ce module s'appelle « Examens nationaux » : lui faire afficher un Probatoire à
+ * une école sénégalaise, où cet examen n'existe pas, disqualifie le produit en
+ * démo. Chaque liste vient donc du ministère concerné, pas d'une généralisation
+ * du cas camerounais.
+ *
+ * Sources : Cameroun (MINEDUC/MINESEC) ; Sénégal — CFEE, BFEM, Baccalauréat,
+ * organisés par le ministère de l'Éducation nationale et l'Office du bac ;
+ * Côte d'Ivoire — CEPE, BEPC, Baccalauréat (DECO, men-deco.org) ; RD Congo —
+ * ENAFEP, TENASOSP, EXETAT (edu-nc.gouv.cd) ; France — DNB et Baccalauréat.
+ */
+export const EXAM_TYPES_PAR_PAYS = {
+  CM: [
+    { key: 'cep', label: 'CEP', niveau: 'CM2', cycle: 'primaire', desc: "Certificat d'études primaires (fin du primaire)" },
+    { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: "Brevet d'études du premier cycle" },
+    { key: 'probatoire', label: 'Probatoire', niveau: '1ere', cycle: 'lycee', desc: 'Avant le baccalauréat' },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
+  ],
+  SN: [
+    { key: 'cfee', label: 'CFEE', niveau: 'CM2', cycle: 'primaire', desc: "Certificat de fin d'études élémentaires" },
+    { key: 'bfem', label: 'BFEM', niveau: '3e', cycle: 'college', desc: "Brevet de fin d'études moyennes" },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
+  ],
+  CI: [
+    { key: 'cepe', label: 'CEPE', niveau: 'CM2', cycle: 'primaire', desc: "Certificat d'études primaires élémentaires" },
+    { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: "Brevet d'études du premier cycle" },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
+  ],
+  CD: [
+    { key: 'enafep', label: 'ENAFEP', niveau: '6e primaire', cycle: 'primaire', desc: 'Évaluation nationale de fin d’études primaires' },
+    { key: 'tenasosp', label: 'TENASOSP', niveau: '8e année', cycle: 'college', desc: "Test national de fin d'études du cycle terminal" },
+    { key: 'exetat', label: "EXETAT", niveau: '4e humanités', cycle: 'lycee', desc: "Examen d'État (fin des humanités)" },
+  ],
+  FR: [
+    { key: 'dnb', label: 'DNB', niveau: '3e', cycle: 'college', desc: 'Diplôme national du brevet' },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Terminale', cycle: 'lycee', desc: 'Fin du secondaire' },
+  ],
+  GA: [
+    { key: 'cep', label: 'CEP', niveau: 'CM2', cycle: 'primaire', desc: "Certificat d'études primaires" },
+    { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: "Brevet d'études du premier cycle" },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
+  ],
+}
+
+/** Examens du pays d'une école. Pays inconnu → Cameroun (marché historique). */
+export function examTypesPays(pays) {
+  return EXAM_TYPES_PAR_PAYS[pays] || EXAM_TYPES_PAR_PAYS.CM
+}
+
+// Compatibilité : les appelants qui n'ont pas de contexte pays gardent la liste
+// camerounaise. `examTypesPays` est ce qu'il faut utiliser dans les écrans.
+export const EXAM_TYPES = EXAM_TYPES_PAR_PAYS.CM
+
+// Tous les types, tous pays confondus — pour retrouver un examen enregistré même
+// si l'école a changé de pays entre-temps (sinon son historique devient illisible).
+export const EXAM_TYPES_TOUS = Object.values(EXAM_TYPES_PAR_PAYS).flat()
 
 export const RESULT_STATUS = [
   { value: 'inscrit', label: 'Inscrit', color: '#8E8E93' },
@@ -60,7 +112,9 @@ export const useExamensStore = defineStore('examens', () => {
     [...exams.value].sort((a, b) => (b.annee || '').localeCompare(a.annee || '') || a.label.localeCompare(b.label))
   )
 
-  function getType(key) { return EXAM_TYPES.find(t => t.key === key) }
+  // Recherche dans TOUS les pays : un examen déjà enregistré doit rester
+  // lisible même si l'école change de pays dans ses paramètres.
+  function getType(key) { return EXAM_TYPES_TOUS.find(t => t.key === key) }
 
   function addExam({ type, annee }) {
     const t = getType(type)

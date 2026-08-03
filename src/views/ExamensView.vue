@@ -185,7 +185,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useExamensStore, EXAM_TYPES, RESULT_STATUS, MENTIONS } from '../stores/examens'
+import { useExamensStore, examTypesPays, RESULT_STATUS, MENTIONS } from '../stores/examens'
 import { useElevesStore } from '../stores/eleves'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
@@ -209,7 +209,9 @@ const schoolAcronym = computed(() => {
 const emitting = ref(false)
 const emitFeedback = ref('')
 
-const types = EXAM_TYPES
+// Les examens dépendent du PAYS de l'école : un CEP camerounais n'a rien à
+// faire dans une école de Dakar ou de Kinshasa.
+const types = computed(() => examTypesPays(schoolStore.schoolSettings?.country))
 const statuses = RESULT_STATUS
 const mentions = MENTIONS
 
