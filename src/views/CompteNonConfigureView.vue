@@ -44,7 +44,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { isMiapoTenant } from '../utils/tenantContext'
+import { isMapoPlusTenant } from '../utils/tenantContext'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -54,7 +54,7 @@ const email = computed(() => authStore.user?.email || t('cnc.unknown'))
 
 async function seDeconnecter() {
   await authStore.logout()
-  router.push(isMiapoTenant() ? '/' : '/login')
+  router.push(isMapoPlusTenant() ? '/' : '/login')
 }
 </script>
 

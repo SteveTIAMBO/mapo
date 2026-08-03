@@ -37,7 +37,9 @@ rend les éditions complètes et utilisables pour onboarder de vraies écoles.
   Twilio livre mal le +237).
 - **MIAPO+ B2C** (app multi-sections, orientation 6C, banque d'exercices) ✅ déployé →
   publier la **règle Firestore `quizBank`** (économie de tokens).
-- **MIAPO+ standalone** ✅ déployé + vérifié live 2026-06-27 (`miapo.app-edufrem.com`,
+- **MIAPO+ standalone** ✅ déployé + vérifié live 2026-06-27 (hôte d'alors :
+  `miapo.app-edufrem.com`, **retiré le 2026-08-03** au profit de
+  `mapoplus.app-edufrem.com` — seul hôte MAPO+ officiel),
   accueil dédié Parent/Élève, tenant confiné). RESTE : (a) **branding interne** —
   une fois entré, la sidebar/header dit encore « MAPO » → rebrander MIAPO+ sur le
   tenant miapo ; (b) **SSO école→MIAPO+** (provisionner parent+enfant liés à l'école

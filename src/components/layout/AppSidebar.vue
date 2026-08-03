@@ -7,9 +7,9 @@
 
     <!-- Logo -->
     <div class="sidebar-logo">
-      <div class="logo-mark" :class="{ 'is-mplus': isMiapoTenant() }">{{ isMiapoTenant() ? 'M+' : 'M' }}</div>
+      <div class="logo-mark" :class="{ 'is-mplus': isMapoPlusTenant() }">{{ isMapoPlusTenant() ? 'M+' : 'M' }}</div>
       <transition name="fade">
-        <span v-if="!collapsed || mobileOpen" class="logo-text">{{ isMiapoTenant() ? 'MAPO+' : 'MAPO' }}</span>
+        <span v-if="!collapsed || mobileOpen" class="logo-text">{{ isMapoPlusTenant() ? 'MAPO+' : 'MAPO' }}</span>
       </transition>
     </div>
 
@@ -127,7 +127,7 @@ import { useAuthStore } from '../../stores/auth'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { useSchoolStore } from '../../stores/school'
-import { isMiapoTenant } from '../../utils/tenantContext'
+import { isMapoPlusTenant } from '../../utils/tenantContext'
 import {
   LayoutDashboard,
   Users,
@@ -352,7 +352,7 @@ const getInitials = (name) => {
 const handleLogout = async () => {
   await authStore.logout()
   // Sur l'instance MAPO+, on revient à l'accueil MAPO+ (et non au login MAPO).
-  await router.push(isMiapoTenant() ? '/' : '/login')
+  await router.push(isMapoPlusTenant() ? '/' : '/login')
 }
 
 // Accordéon : AUCUN thème ouvert par défaut (tout fermé au chargement).

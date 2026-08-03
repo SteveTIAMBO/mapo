@@ -32,7 +32,8 @@ function readOverride() {
     if (!v) return null
     if (v === 'admin' || v === 'megaAdmin') return { mode: 'megaAdmin', source: 'override' }
     if (v === 'preview' || v === 'vitrine') return { mode: 'preview', source: 'override' }
-    if (v === 'miapo') return { mode: 'miapo', source: 'override' }
+    // 'miapo' toléré : ancien nom de ce tenant, encore dans des favoris.
+    if (v === 'mapoplus' || v === 'miapo') return { mode: 'mapoplus', source: 'override' }
     if (v.startsWith('school:')) {
       const sid = v.slice(7).trim()
       if (sid) return { mode: 'school', schoolId: sid, source: 'override' }
@@ -62,7 +63,12 @@ function detect() {
   if (host.endsWith('.' + ROOT_DOMAIN)) {
     const sub = host.slice(0, -('.' + ROOT_DOMAIN).length).split('.')[0]
     if (sub === 'adminmapo' || sub === 'admin') return { mode: 'megaAdmin', source: 'host' }
-    if (sub === 'miapo' || sub === 'mapoplus') return { mode: 'miapo', source: 'host' }
+    // L'app grand public s'appelle MAPO+ (MIAPO, lui, est l'IA embarquée DANS
+    // MAPO — ce n'est pas un nom de produit ni de tenant). Un seul hôte donc :
+    // mapoplus. L'ancien hôte miapo est retiré, et redirigé par le script en
+    // ligne d'index.html avant même l'évaluation des modules — il n'a plus à
+    // être reconnu ici.
+    if (sub === 'mapoplus') return { mode: 'mapoplus', source: 'host' }
     if (sub) return { mode: 'school', schoolId: sub, source: 'host' }
   }
 
@@ -90,8 +96,8 @@ export function isPreviewTenant() {
 }
 
 /** Instance MAPO+ autonome (mapoplus.app-edufrem.com) : produit B2C séparé. */
-export function isMiapoTenant() {
-  return tenant.mode === 'miapo'
+export function isMapoPlusTenant() {
+  return tenant.mode === 'mapoplus'
 }
 
 /** schoolId imposé par le sous-domaine, ou null. */

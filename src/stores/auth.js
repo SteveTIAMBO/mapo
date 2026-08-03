@@ -18,7 +18,7 @@ import {
   doc, getDoc, setDoc, updateDoc,
   collection, query, where, getDocs, serverTimestamp
 } from 'firebase/firestore'
-import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
+import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { identifierToEmail } from '../utils/identifier'
 import { currentLang } from '../i18n'
 
@@ -449,7 +449,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function markActivated() {
     const u = auth.currentUser
-    if (!isMiapoTenant() || !u || !u.emailVerified) return
+    if (!isMapoPlusTenant() || !u || !u.emailVerified) return
     try {
       const ref = doc(db, 'mapoplus_users', u.uid)
       // Bienvenue brandé (Brevo) : UNE SEULE fois, à la 1re activation. On lit le

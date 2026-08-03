@@ -3,7 +3,7 @@ import { useAuthStore } from '../stores/auth'
 import { usePermissionsStore } from '../stores/permissions'
 import { useEditionStore } from '../stores/edition'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
-import { getTenant, isMiapoTenant } from '../utils/tenantContext'
+import { getTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { i18n } from '../i18n'
 
 // Titres d'onglet (document.title) FR/EN : la valeur meta.title reste en FR
@@ -524,7 +524,7 @@ router.beforeEach(async (to) => {
   // un compte déjà connecté est renvoyé vers son espace. Sur les autres tenants,
   // on reproduit l'ancien comportement de la racine (→ dashboard / accueil).
   if (to.name === 'Home') {
-    if (tenant.mode === 'miapo') {
+    if (tenant.mode === 'mapoplus') {
       if (isLoggedIn) return { name: 'ParentMiapo' }
       return true
     }
@@ -538,7 +538,7 @@ router.beforeEach(async (to) => {
   // reste dans l'expérience famille (espaces parent + élève + tuteur). La
   // vitrine multi-éditions (Welcome) et l'enseignement supérieur ne
   // s'appliquent pas à cette instance → on renvoie vers l'accueil MAPO+.
-  if (tenant.mode === 'miapo') {
+  if (tenant.mode === 'mapoplus') {
     if (to.name === 'Welcome' || to.name === 'Superieur') {
       return { name: 'Home' }
     }
@@ -709,7 +709,7 @@ router.beforeEach(async (to) => {
 router.afterEach((to) => {
   // Le tenant MAPO+ standalone s'affiche MAPO+, pas MAPO.
   const title = localizedTitle(to.meta.title)
-  if (isMiapoTenant()) {
+  if (isMapoPlusTenant()) {
     document.title = title && to.meta.title !== 'MAPO+'
       ? `${title} — MAPO+`
       : i18n.global.t('rt.taglineMiapo')

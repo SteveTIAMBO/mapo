@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
-import { isMiapoTenant } from '../utils/tenantContext'
+import { isMapoPlusTenant } from '../utils/tenantContext'
 import { enregistrerActivite } from '../utils/recompenses'
 import { enregistrerResultatElo } from '../utils/elo'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
@@ -270,7 +270,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     try { enregistrerResultatElo(studentId, subjectName, scorePercent, prevLevel) } catch { /* best-effort */ }
     // Suivi d'adoption MAPO+ (B2C) : on ne compte QUE dans le tenant MAPO+,
     // pas les quiz des élèves d'école. Best-effort (n'impacte jamais le quiz).
-    if (isMiapoTenant()) {
+    if (isMapoPlusTenant()) {
       try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }
     }
     return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL }

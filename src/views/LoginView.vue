@@ -306,7 +306,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
 import { useEnfantsAutonomesStore, setPaysParDefaut, paysParDefaut, niveauxSecondairePays, NIVEAUX_SUPERIEUR, NIVEAU_HORS_CATALOGUE } from '../stores/enfantsAutonomes'
-import { isSchoolTenant, isMiapoTenant } from '../utils/tenantContext'
+import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -316,7 +316,7 @@ const editionStore = useEditionStore()
 const miapoStore = useEnfantsAutonomesStore()
 // MAPO+ standalone : à l'inscription, on demande si le compte est celui d'un
 // parent (qui suit un enfant) ou de l'apprenant lui-même (étudiant/adulte).
-const isMiapoMode = isMiapoTenant()
+const isMiapoMode = isMapoPlusTenant()
 const signupRole = ref('parent') // 'parent' | 'apprenant'
 // Pays capturé DÈS l'inscription : détermine la devise (FCFA / €) et le
 // référentiel (Cameroun / France…) — indispensable pour que l'outil soit
@@ -345,7 +345,7 @@ const niveauOptions = computed(() => {
 // MAPO+ standalone (mapoplus.app-edufrem.com), on masque les profils de
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
 // (la démo MAPO+ s'entre par les cartes Parent / Élève de l'accueil).
-const isSchoolTenantMode = isSchoolTenant() || isMiapoTenant()
+const isSchoolTenantMode = isSchoolTenant() || isMapoPlusTenant()
 
 function changerVersion() {
   editionStore.clearEdition()

@@ -9,8 +9,8 @@ self.addEventListener('push', (event) => {
   const title = data.title || 'MAPO+'
   const options = {
     body: data.body || '',
-    icon: data.icon || '/icon-miapo-192.png',
-    badge: '/icon-miapo-192.png',
+    icon: data.icon || '/icon-mapoplus-192.png',
+    badge: '/icon-mapoplus-192.png',
     // Regrouper par enfant : une nouvelle notif remplace la précédente du même
     // apprenant plutôt que d'en empiler cinq. `renotify` = ré-alerter quand même
     // (sinon le rappel du jour remplacerait celui de la veille EN SILENCE si

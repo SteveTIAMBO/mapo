@@ -25,21 +25,12 @@
   RewriteEngine On
   RewriteBase /
 
-  # miapo.app-edufrem.com est RETIRÉ au profit de mapoplus.app-edufrem.com
-  # (2026-08-03). Redirection permanente plutôt que suppression du sous-domaine :
-  # les liens magiques famille déjà partagés sur WhatsApp pointent dessus
-  # (/rejoindre?c=…) et continuent de fonctionner, chemin et query préservés.
-  # Le sous-domaine doit donc RESTER pointé sur ce docroot.
-  #
-  # ⚠️ VÉRIFIÉ EN PROD LE 03/08 : cette règle NE SE DÉCLENCHE PAS. Les deux hôtes
-  # partagent ce docroot mais Apache ne voit pas `miapo.app-edufrem.com` dans
-  # %{HTTP_HOST} (front applicatif devant LWS). La redirection qui fonctionne
-  # réellement est APPLICATIVE (src/main.js). On garde la règle, inerte, au cas
-  # où l'hôte remonterait ; ne pas la « corriger » à l'aveugle : ce fichier est
-  # partagé par mapo, mapoplus, adminmapo et tous les sous-domaines écoles.
-  RewriteCond %{HTTP_HOST} ^miapo\.app-edufrem\.com$ [NC]
-  RewriteRule ^(.*)$ https://mapoplus.app-edufrem.com/$1 [R=301,L]
-
+  # ⚠️ Ne PAS tenter de redirection par hôte ici. Essayé le 2026-08-03 pour
+  # retirer miapo.app-edufrem.com : la règle ne se déclenche jamais, Apache ne
+  # voit pas le sous-domaine attendu dans %{HTTP_HOST} (front applicatif devant
+  # LWS). Et ce fichier est partagé par mapo, mapoplus, adminmapo et TOUS les
+  # sous-domaines écoles — une erreur ici les coupe tous d'un coup. La
+  # redirection de l'hôte retiré se fait dans le script en ligne d'index.html.
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

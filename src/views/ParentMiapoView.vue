@@ -1099,7 +1099,7 @@ import { useRelanceStore } from '../stores/relance'
 import { useAbonnementStore } from '../stores/abonnement'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useLangue2Store } from '../stores/langue2'
-import { isMiapoTenant } from '../utils/tenantContext'
+import { isMapoPlusTenant } from '../utils/tenantContext'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
@@ -1157,7 +1157,7 @@ const route = useRoute()
 const { t, locale } = useI18n({ useScope: 'global' })
 function setLangue(l) { setLang(l) }
 const authStore = useAuthStore()
-async function logout() { await authStore.logout(); router.push(isMiapoTenant() ? '/' : '/login') }
+async function logout() { await authStore.logout(); router.push(isMapoPlusTenant() ? '/' : '/login') }
 
 const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()
