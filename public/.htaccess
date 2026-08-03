@@ -25,12 +25,13 @@
   RewriteEngine On
   RewriteBase /
 
-  # ⚠️ Ne PAS tenter de redirection par hôte ici. Essayé le 2026-08-03 pour
-  # retirer miapo.app-edufrem.com : la règle ne se déclenche jamais, Apache ne
-  # voit pas le sous-domaine attendu dans %{HTTP_HOST} (front applicatif devant
-  # LWS). Et ce fichier est partagé par mapo, mapoplus, adminmapo et TOUS les
-  # sous-domaines écoles — une erreur ici les coupe tous d'un coup. La
-  # redirection de l'hôte retiré se fait dans le script en ligne d'index.html.
+  # ⚠️ Ne PAS tenter de redirection par hôte ici. Essayé le 2026-08-03 : la règle
+  # ne se déclenche jamais, Apache ne voit pas le sous-domaine attendu dans
+  # %{HTTP_HOST} (front applicatif devant LWS). Et ce fichier est partagé par
+  # mapo, mapoplus, adminmapo et TOUS les sous-domaines écoles — une erreur ici
+  # les coupe tous d'un coup. Pour retirer un hôte, le supprimer dans cPanel
+  # (Domaines → Gérer → Remove Domain) : cPanel garantit alors explicitement de
+  # NE PAS toucher au répertoire, ce qui est vital ici puisqu'ils le partagent.
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

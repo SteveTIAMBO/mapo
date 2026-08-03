@@ -2,16 +2,6 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <!-- Hôte retiré : miapo.app-edufrem.com → mapoplus.app-edufrem.com (2026-08-03).
-         En TÊTE du head et en script classique : il part avant tout le reste, donc
-         avant la détection de tenant, qui ne connaît plus « miapo » et le prendrait
-         sinon pour le sous-domaine d'une école. Chemin, query et fragment conservés.
-         À supprimer le jour où le sous-domaine sera retiré du serveur. -->
-    <script>
-      if (location.hostname === 'miapo.app-edufrem.com') {
-        location.replace('https://mapoplus.app-edufrem.com' + location.pathname + location.search + location.hash)
-      }
-    </script>
     <link rel="icon" type="image/svg+xml" href="/favicon-mapoplus.svg" />
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -34,17 +24,6 @@
   </head>
   <body>
     <div id="app"></div>
-    <!-- Hôte retiré : miapo.app-edufrem.com → mapoplus.app-edufrem.com.
-         Script en ligne et non dans main.js pour partir AVANT l'évaluation des
-         modules : la détection de tenant ne connaît plus « miapo », donc on ne
-         doit jamais lui laisser le temps de traiter cet hôte comme une école.
-         Chemin, query et fragment conservés. À supprimer le jour où le
-         sous-domaine sera retiré du serveur. -->
-    <script>
-      if (location.hostname === 'miapo.app-edufrem.com') {
-        location.replace('https://mapoplus.app-edufrem.com' + location.pathname + location.search + location.hash)
-      }
-    </script>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
