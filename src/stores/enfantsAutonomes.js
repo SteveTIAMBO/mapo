@@ -6,7 +6,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/fi
 import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso } from '../utils/coursPerso'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
-import { baremePour, versAcquisition, maxDe } from '../data/baremes'
+import { baremePour, versAcquisition, maxDe, paliersDe } from '../data/baremes'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -554,8 +554,17 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (!e) return
     if (note === '' || note === null || note === undefined || !matiere) return
     const bareme = baremeDe(e)
-    const n = Math.max(0, Math.min(maxSaisie(e), Number(note)))
-    if (Number.isNaN(n)) return
+    // En barème par paliers, la « note » est un CODE (A, ECA, MS…), pas un nombre.
+    const paliers = paliersDe(bareme)
+    let n
+    if (paliers) {
+      const code = String(note).toUpperCase()
+      if (!paliers.some((p) => p.code === code)) return
+      n = code
+    } else {
+      n = Math.max(0, Math.min(maxSaisie(e), Number(note)))
+      if (Number.isNaN(n)) return
+    }
     // La note garde le barème utilisé à la SAISIE : un 8/10 du primaire reste
     // 80 % même après un passage au secondaire, qui bascule l'enfant sur 20.
     // remplace la note existante de la matière, sinon ajoute (type = devoir/séquence/trimestre…)
@@ -659,6 +668,11 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   // choisi. Cf. data/baremes.js — c'est là que vivent les régimes et leurs sources.
   function baremeDe(e) {
     return baremePour({ pays: e && e.pays, niveau: e && e.niveau, surcharge: e && e.bareme }).bareme
+  }
+  /** Barème d'APPOINT, affiché à côté de la note (APC au primaire camerounais,
+   *  4 niveaux de maîtrise au collège français). null s'il n'y en a pas. */
+  function complementDe(e) {
+    return baremePour({ pays: e && e.pays, niveau: e && e.niveau, surcharge: e && e.bareme }).complement
   }
   /** Maximum saisissable pour cet apprenant (20, 10… ; 20 par défaut). */
   function maxSaisie(e) {
@@ -856,7 +870,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
     addNote, removeNote, faiblesses, objectifDe, setObjectifMatiere,
-    baremeDe, maxSaisie, acquisitionNote, acquisitionCible,
+    baremeDe, complementDe, maxSaisie, acquisitionNote, acquisitionCible,
     setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,

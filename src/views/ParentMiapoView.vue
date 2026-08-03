@@ -245,7 +245,11 @@
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}<span v-if="n.type" class="nr-type">{{ n.type }}</span></span>
-                <span class="nr-note" :class="noteClass(n.note)">{{ n.note }}{{ suffixeBareme }}</span>
+                <span class="nr-note" :class="noteClass(n.note)">
+                  <template v-if="paliersActifs">{{ palierPrincipal(n.note)?.short || n.note }}</template>
+                  <template v-else>{{ n.note }}{{ suffixeBareme }}</template>
+                </span>
+                <span v-if="palierComplement(n)" class="nr-pal" :style="{ color: palierComplement(n).color, backgroundColor: palierComplement(n).color + '1f' }" :title="palierComplement(n).label">{{ palierComplement(n).short }}</span>
                 <button class="btn btn-ghost btn-xs" @click="store.removeNote(activeEnfant.id, n.id)"><X :size="14" /></button>
               </div>
             </div>
@@ -257,7 +261,11 @@
             <div v-else class="add-note">
               <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.moduleOrSubject') : t('mia.subjectPlaceholder') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
               <select v-if="newMatiere" v-model="newType" class="input"><option value="">{{ t('mia.noteTypeOptional') }}</option><option v-for="ty in typesNote" :key="ty" :value="ty">{{ ty }}</option></select>
-              <input v-model.number="newNote" type="number" min="0" :max="maxNote" step="0.5" class="input note-input" :placeholder="suffixeBareme" />
+              <select v-if="paliersActifs" v-model="newNote" class="input note-input">
+                <option :value="null" disabled>{{ t('mia.scaleLevel') }}</option>
+                <option v-for="p in paliersActifs" :key="p.code" :value="p.code">{{ p.label }}</option>
+              </select>
+              <input v-else v-model.number="newNote" type="number" min="0" :max="maxNote" step="0.5" class="input note-input" :placeholder="suffixeBareme" />
               <button class="btn btn-primary btn-sm" :disabled="!canAddNote" @click="addNote"><Plus :size="15" /></button>
             </div>
           </div>
@@ -958,6 +966,13 @@
             </template>
             <div class="form-row">
               <div class="form-group">
+                <label class="form-label">{{ t('mia.scale') }}</label>
+                <select v-model="profil.bareme" class="input">
+                  <option v-for="o in BAREME_OPTIONS" :key="o.key" :value="o.key">{{ t(o.labelKey) }}</option>
+                </select>
+                <small class="muted small">{{ t('mia.scaleHint') }}</small>
+              </div>
+              <div class="form-group">
                 <label class="form-label">{{ t('mia.targetGrade') }}</label>
                 <input v-model.number="profil.objectifNote" type="number" min="0" :max="maxNote" step="0.5" class="input" />
                 <small class="muted small">{{ t('mia.targetGradeHint') }}</small>
@@ -1100,6 +1115,7 @@ import { useAbonnementStore } from '../stores/abonnement'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useLangue2Store } from '../stores/langue2'
 import { isMapoPlusTenant } from '../utils/tenantContext'
+import { paliersDe, depuisAcquisition } from '../data/baremes'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
@@ -1720,12 +1736,39 @@ onMounted(() => { window.addEventListener('online', _majEnLigne); window.addEven
 onUnmounted(() => { window.removeEventListener('online', _majEnLigne); window.removeEventListener('offline', _majEnLigne) })
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, bareme: '', catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
 const objectif = computed(() => store.objectifDe(activeEnfant.value))
 // Barème de l'apprenant : le primaire sénégalais et ivoirien note sur 10, pas 20.
 const maxNote = computed(() => store.maxSaisie(activeEnfant.value))
-const suffixeBareme = computed(() => '/' + maxNote.value)
+const suffixeBareme = computed(() => (paliersActifs.value ? '' : '/' + maxNote.value))
+// Barème par paliers ? Alors la « note » est un code (A, ECA, MS…) et la saisie
+// devient une liste de choix. Sinon, un nombre.
+const paliersActifs = computed(() => paliersDe(store.baremeDe(activeEnfant.value)))
+// Barème d'appoint : le palier affiché À CÔTÉ de la note (APC au primaire
+// camerounais, 4 niveaux de maîtrise au collège français).
+const complementActif = computed(() => store.complementDe(activeEnfant.value))
+/** Palier correspondant à une note enregistrée, dans le barème d'appoint. */
+function palierComplement(n) {
+  if (!complementActif.value) return null
+  const a = store.acquisitionNote(n)
+  if (a == null) return null
+  const code = depuisAcquisition(a, complementActif.value)
+  const p = (paliersDe(complementActif.value) || []).find((x) => x.code === code)
+  return p || null
+}
+/** Palier d'une note quand le barème PRINCIPAL est par paliers. */
+function palierPrincipal(valeur) {
+  return (paliersActifs.value || []).find((p) => p.code === String(valeur).toUpperCase()) || null
+}
+// Choix du barème dans le profil ('' = déduit du pays et du niveau).
+const BAREME_OPTIONS = [
+  { key: '', labelKey: 'mia.scaleAuto' },
+  { key: 'note20', labelKey: 'mia.scale20' },
+  { key: 'note10', labelKey: 'mia.scale10' },
+  { key: 'paliers3', labelKey: 'mia.scaleApc' },
+  { key: 'paliers4', labelKey: 'mia.scaleMastery' },
+]
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value
@@ -1735,6 +1778,7 @@ function syncProfil() {
     cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
     ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
     objectifNote: store.objectifDe(e),
+    bareme: e.bareme || '',
     catEcole: e.catEcole || '', catFormation: e.catFormation || '',
     certifId: e.certifId || '', organisme: e.organisme || '', certifDate: e.certifDate || '',
   }
@@ -2095,7 +2139,10 @@ const newMatiere = ref('')
 const newNote = ref(null)
 const newType = ref('')
 const typesNote = computed(() => typesNotePays(activeEnfant.value?.pays))
-const canAddNote = computed(() => newMatiere.value && newNote.value !== null && newNote.value !== '' && !Number.isNaN(Number(newNote.value)))
+const canAddNote = computed(() => {
+  if (!newMatiere.value || newNote.value === null || newNote.value === '') return false
+  return paliersActifs.value ? !!palierPrincipal(newNote.value) : !Number.isNaN(Number(newNote.value))
+})
 
 function paysLabel(code) { return PAYS.find((p) => p.code === code)?.label || code }
 // Affiche le NOM de la formation pour un apprenant hors-catalogue (sinon la classe).
@@ -2103,7 +2150,16 @@ function niveauLabel(e) {
   if (!e) return ''
   return e.niveau === NIVEAU_HORS_CATALOGUE ? (e.formation || NIVEAU_HORS_CATALOGUE) : e.niveau
 }
-function noteClass(n) { const o = objectif.value; return n < o ? 'low' : n < o + 2 ? 'mid' : 'ok' }
+// Couleur d'une note : en ACQUISITION, sinon un palier ('A') ou un 8/10 serait
+// comparé à un objectif exprimé sur une autre échelle.
+function noteClass(valeur) {
+  const e = activeEnfant.value
+  if (!e) return 'ok'
+  const a = store.acquisitionNote({ note: valeur, bareme: store.baremeDe(e) })
+  const cible = store.acquisitionCible(e)
+  if (a == null || cible == null) return 'ok'
+  return a < cible ? 'low' : a < cible + 0.1 ? 'mid' : 'ok'
+}
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
 
 // Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
@@ -3039,6 +3095,8 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .nr-note.low, .vr-note.low { color: #D93025; background: rgba(217,48,37,.08); }
 .nr-note.mid, .vr-note.mid { color: #B87A00; background: rgba(232,149,10,.10); }
 .nr-note.ok, .vr-note.ok { color: #1B8A5A; background: rgba(27,138,90,.10); }
+/* Palier d'appoint affiché à côté de la note (APC, niveaux de maîtrise) */
+.nr-pal { font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 20px; letter-spacing: .02em; }
 .add-note { display: flex; gap: 10px; align-items: center; }
 .add-note .input { flex: 1; } .note-input { max-width: 84px; flex: 0 0 auto; }
 .input { padding: 10px 12px; border: 1px solid var(--bd); border-radius: 10px; font-family: inherit; font-size: 14px; background: #fff; color: var(--tx); }
