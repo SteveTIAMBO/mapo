@@ -7,6 +7,8 @@
  * bulletins ; à confirmer avec les écoles pilotes.
  */
 
+import { versAcquisition, depuisAcquisition } from './baremes'
+
 // ── Niveaux (sous-système francophone) — 6 ans, 3 niveaux APC ──────────
 export const NIVEAUX_PRIMAIRE = [
   { code: 'SIL', label: 'SIL', apc: 'Niveau 1', age: 6 },
@@ -59,20 +61,20 @@ export const GRADING_MODES = [
   { key: 'apc', label: 'Compétences (APC)', desc: 'Paliers Acquis / En cours / Non acquis (officiel).' },
 ]
 
-// Paliers APC officiels (ordre du plus au moins maîtrisé)
-export const APC_PALIERS = [
-  { code: 'A', label: 'Acquis', short: 'A', color: '#1B8A5A' },
-  { code: 'ECA', label: "En cours d'acquisition", short: 'ECA', color: '#B87A00' },
-  { code: 'NA', label: 'Non acquis', short: 'NA', color: '#D93025' },
-]
+// Paliers APC officiels (ordre du plus au moins maîtrisé).
+// SOURCE UNIQUE : `data/baremes.js`, partagé avec MAPO+. On ré-exporte ici pour
+// ne casser aucun appelant, mais la définition ne vit plus en double — deux
+// copies des mêmes seuils, c'est deux copies qui finissent par diverger.
+export { PALIERS_APC as APC_PALIERS } from './baremes'
 
-// Conversion indicative note /20 → palier APC (repère, ajustable par l'école)
+// Conversion note /20 → palier APC (repère, ajustable par l'école).
+// Délègue au module commun : `data/baremes.js` verrouille par test que cette
+// conversion est identique, demi-point par demi-point, à ce qu'elle a toujours
+// été — aucun bulletin primaire ne change de palier.
 export function noteToPalier(note) {
   const n = Number(note)
-  if (Number.isNaN(n)) return null
-  if (n >= 12) return 'A'
-  if (n >= 7) return 'ECA'
-  return 'NA'
+  if (note === '' || note === null || note === undefined || Number.isNaN(n)) return null
+  return depuisAcquisition(versAcquisition(n, 'note20'), 'paliers3')
 }
 
 // ── Examens de fin de primaire ─────────────────────────────────────────

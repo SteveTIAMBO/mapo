@@ -53,6 +53,9 @@ describe('barèmes — conversions', () => {
 describe('barèmes — compatibilité avec l’APC déjà en production', () => {
   // Le bulletin du primaire camerounais est en prod. Si ces seuils bougent, des
   // bulletins existants changent de palier : c'est le test qui l'interdit.
+  // NB : depuis que `primaire.js` délègue au module commun, ce premier test
+  // vérifie surtout la cohérence du branchement. Ce sont les seuils ÉCRITS EN
+  // DUR du test suivant (12 et 7) qui gardent la valeur historique.
   it('reproduit exactement noteToPalier de data/primaire.js', () => {
     for (let n = 0; n <= 20; n += 0.5) {
       const attendu = noteToPalier(n)
