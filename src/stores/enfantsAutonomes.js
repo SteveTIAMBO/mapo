@@ -76,7 +76,46 @@ export function niveauxSecondairePays(pays) {
 // 5e-6e). Secondaire : 2 ans de cycle d'orientation (7e, 8e) puis 4 ans
 // d'humanités (pédagogique, littéraire, scientifique…).
 export const NIVEAUX_PRIMAIRE_CD = ['1re primaire', '2e primaire', '3e primaire', '4e primaire', '5e primaire', '6e primaire']
-export const NIVEAUX_SECONDAIRE_CD = ['7e', '8e', '1re humanités', '2e humanités', '3e humanités', '4e humanités']
+// Le ministère nomme les classes en DOUBLE : « 7ème année de l'Éducation de Base
+// (1ère secondaire) », puis « 1ère année des Humanités (3ème secondaire) »… On
+// affiche les deux, sinon un parent congolais ne reconnaît pas la classe de son
+// enfant selon l'école qui lui parle.
+export const NIVEAUX_SECONDAIRE_CD = [
+  '7e année (1re secondaire)', '8e année (2e secondaire)',
+  '1re humanités (3e secondaire)', '2e humanités (4e secondaire)',
+  '3e humanités (5e secondaire)', '4e humanités (6e secondaire)',
+]
+
+// ── Référentiel RD Congo (MEPST / Ministère de l'Éducation nationale et de la
+// Nouvelle Citoyenneté). Programmes nationaux publiés par le ministère :
+// edu-nc.gouv.cd/national-programmes.
+//
+// Primaire : français, mathématiques, éveil (sciences/histoire/géographie),
+// langues nationales, éducation civique et morale, EPS, arts. L'informatique a
+// son propre programme national au primaire.
+export const MATIERES_PRIMAIRE_CD = [
+  'Français', 'Mathématiques', 'Éveil (sciences, histoire, géographie)',
+  'Langues nationales', 'Éducation civique et morale',
+  'Éducation physique et sport', 'Arts plastiques et musique', 'Informatique',
+]
+// Éducation de base, 7e et 8e année (1re et 2e secondaire). Les sciences y sont
+// organisées en Domaine d'Apprentissage des Sciences : mathématiques, SVT, et
+// sciences physiques/technologie/TIC — c'est le découpage des programmes officiels.
+export const MATIERES_BASE_CD = [
+  'Français', 'Mathématiques', 'Sciences de la vie et de la Terre (SVT)',
+  'Sciences physiques, technologie et TIC', 'Histoire', 'Géographie',
+  'Éducation civique et morale', 'Anglais', 'Langues nationales',
+  'Éducation physique et sport',
+]
+// Humanités (3e à 6e secondaire), tronc général. Les options (scientifique,
+// pédagogique, commerciale et gestion, technique…) ajoutent leurs branches
+// propres : à sourcer option par option, on ne les invente pas ici.
+export const MATIERES_HUMANITES_CD = [
+  'Français', 'Mathématiques', 'Sciences de la vie et de la Terre (SVT)',
+  'Sciences physiques, technologie et TIC', 'Histoire', 'Géographie',
+  'Éducation civique et morale', 'Anglais', 'Philosophie', 'Économie',
+  'Informatique', 'Éducation physique et sport',
+]
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
@@ -191,6 +230,12 @@ function matieresFR(niveau) {
 // Cameroun : primaire APC, 1er cycle 6e-3e, séries A/C/D (philo 1ère/Tle). France : matieresFR().
 export function matieresPourNiveau(niveau, pays) {
   if (pays === 'FR') return matieresFR(niveau)
+  if (pays === 'CD') {
+    if (NIVEAUX_PRIMAIRE_CD.includes(niveau)) return MATIERES_PRIMAIRE_CD
+    if (/^(7e|8e) /.test(String(niveau))) return MATIERES_BASE_CD
+    if (/humanités/i.test(String(niveau))) return MATIERES_HUMANITES_CD
+    return MATIERES_HUMANITES_CD
+  }
   if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
   if (NIVEAUX_PREMIER_CYCLE.includes(niveau)) return MATIERES_SECONDAIRE_1ER_CYCLE
   if (typeof niveau === 'string') {

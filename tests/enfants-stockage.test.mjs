@@ -217,5 +217,18 @@ ok('barème : après passage au secondaire, la barre repasse sur 20', s.maxSaisi
 const mathsSN = s.getEnfant(idSN).notes.find((n) => n.matiere === 'Mathématiques')
 ok('barème : le 8/10 du primaire vaut TOUJOURS 80 %, pas 40 %', s.acquisitionNote(mathsSN) === 0.8, mathsSN)
 
+// ── 9. Référentiel RD Congo ───────────────────────────────────────────
+// Un parent de Kinshasa ne doit pas se voir proposer « 2nde C » ni « SVT »
+// sous un nom camerounais : les listes viennent des programmes du ministère.
+const mod = await import(join(dir, 'store.js'))
+const matCD = mod.matieresPourNiveau
+ok('RDC : le primaire a son propre référentiel', matCD('3e primaire', 'CD').includes('Éveil (sciences, histoire, géographie)'), matCD('3e primaire', 'CD'))
+ok("RDC : l'éducation de base (7e/8e) suit le découpage du ministère", matCD('7e année (1re secondaire)', 'CD').includes('Sciences physiques, technologie et TIC'), matCD('7e année (1re secondaire)', 'CD'))
+ok('RDC : les humanités ont philosophie et économie', ['Philosophie', 'Économie'].every((m) => matCD('3e humanités (5e secondaire)', 'CD').includes(m)), matCD('3e humanités (5e secondaire)', 'CD'))
+ok('RDC : les langues nationales sont au programme', matCD('2e primaire', 'CD').includes('Langues nationales'), matCD('2e primaire', 'CD'))
+ok("RDC : on ne sert PAS le référentiel camerounais", !matCD('1re primaire', 'CD').includes('Éducation à la citoyenneté et à la morale (ECM)'), matCD('1re primaire', 'CD'))
+ok('RDC : les niveaux portent la double nomenclature du ministère', mod.NIVEAUX_SECONDAIRE_CD[0] === '7e année (1re secondaire)', mod.NIVEAUX_SECONDAIRE_CD)
+ok('Cameroun : son référentiel est intact', matCD('CM1', 'CM').includes('Éducation à la citoyenneté et à la morale (ECM)'), matCD('CM1', 'CM'))
+
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)
