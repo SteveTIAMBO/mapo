@@ -225,7 +225,11 @@
             </div>
             <button v-if="!isApprenant" class="btn btn-outline btn-sm add-child" @click="openAdd"><Plus :size="15" /> <span>{{ t('mia.addChild') }}</span></button>
           </div>
-          <!-- Co-parent + compte enfant : déplacés dans Paramètres → « Mes enfants ». -->
+
+          <!-- Compte de l'enfant / lien magique : la suite immédiate de « ajouter
+               un enfant », donc ici et pas dans les réglages. Le co-parent, lui,
+               reste un réglage de compte (Paramètres → Co-parent). -->
+          <MiapoEnfantCompte v-if="!isApprenant" />
 
           <!-- École reliée → les notes viennent du bulletin de l'école : on masque
                la saisie manuelle (redondante) et on pointe vers « Mon école ». -->
@@ -761,9 +765,11 @@
           </div>
 
           <!-- Sous-menu : Mes enfants (gestion : co-parent, compte enfant) — parent uniquement -->
-          <div v-if="!isApprenant" v-show="sousSection === 'enfants'" class="param-panel">
+          <!-- Le compte enfant / lien magique a rejoint le module « Mes enfants »
+               (c'est la suite immédiate de l'ajout d'un enfant). Ne reste ici que
+               le co-parent, qui est bien un réglage de compte. -->
+          <div v-if="!isApprenant" v-show="sousSection === 'coparent'" class="param-panel">
             <MiapoCoParent />
-            <MiapoEnfantCompte />
           </div>
 
           <!-- Sous-menu : Accessibilité -->
@@ -1318,7 +1324,7 @@ const sousMenus = computed(() => {
   items.push({ key: 'langue', label: t('mia.secLanguage'), icon: Languages })
   items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
-  if (!isApprenant.value) items.push({ key: 'enfants', label: t('mia.secMyChildren'), icon: Users })
+  if (!isApprenant.value) items.push({ key: 'coparent', label: t('mia.coParentTitle'), icon: Users })
   items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
   items.push({ key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility })
   // « Aide & feedbacks » — manuel, FAQ, signalement de bug, demande de fonctionnalité.
