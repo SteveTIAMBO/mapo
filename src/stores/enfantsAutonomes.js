@@ -445,6 +445,10 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // est proposée à la révision. 10 par défaut, modifiable dans le profil —
       // viser 10 en CM2 et 14 en Terminale n'a pas le même sens.
       objectifNote: 10,
+      // Objectifs PAR MATIÈRE : { 'Mathématiques': 14, … }. Surcharge l'objectif
+      // global pour cette matière seulement — viser 14 en maths et 10 en sport
+      // est la demande normale d'une famille. Vide = tout suit le global.
+      objectifs: {},
       // Séances de révision : { 'AAAA-MM-JJ': { matiere, status, at } }
       // status ∈ 'done' | 'skipped'. Une journée sans entrée = simplement pas
       // encore faite (ou jour de repos) — ce qui ne casse pas la série.
@@ -582,8 +586,9 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function faiblesses(enfantId) {
     const e = getEnfant(enfantId)
     if (!e) return []
-    const seuil = objectifDe(e)
-    return [...e.notes].filter((n) => n.note < seuil).sort((a, b) => a.note - b.note)
+    // Seuil PAR MATIÈRE : une note de 11 est un échec en maths si la famille y
+    // vise 14, et une réussite en sport si l'objectif global est 10.
+    return [...e.notes].filter((n) => n.note < objectifDe(e, n.matiere)).sort((a, b) => a.note - b.note)
   }
 
   // ── Séances de révision (agenda actionnable) ──────────────────────────
@@ -628,22 +633,57 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return jours.length ? jours[jours.length - 1] : ''
   }
 
-  /** Objectif de note de l'enfant (sur 20). 10 par défaut. */
-  function objectifDe(e) {
+  /**
+   * Objectif de note de l'enfant (sur 20). 10 par défaut.
+   * Avec `matiere`, renvoie la surcharge de cette matière si elle existe.
+   * C'est LE point unique où se décide « en dessous de quoi on révise » :
+   * la notation multi-régime (compétences FR collège) n'aura que cette
+   * fonction et `faiblesses` à faire évoluer, pas les 12 écrans appelants.
+   */
+  function objectifDe(e, matiere) {
+    if (matiere && e && e.objectifs) {
+      const o = Number(e.objectifs[matiere])
+      if (Number.isFinite(o) && o > 0) return o
+    }
     const v = Number(e && e.objectifNote)
     return Number.isFinite(v) && v > 0 ? v : 10
   }
 
+  /**
+   * Fixe (ou retire, avec `valeur` vide/null) l'objectif d'UNE matière.
+   * On ne stocke pas une valeur égale au global : ça éviterait une surcharge
+   * fantôme qui ne suivrait plus le global si la famille le change ensuite.
+   */
+  function setObjectifMatiere(enfantId, matiere, valeur) {
+    const e = getEnfant(enfantId)
+    if (!e || !matiere) return
+    if (!e.objectifs) e.objectifs = {}
+    const v = Number(valeur)
+    if (valeur === '' || valeur == null || !Number.isFinite(v) || v <= 0 || v === objectifDe(e)) {
+      delete e.objectifs[matiere]
+    } else {
+      e.objectifs[matiere] = Math.max(0, Math.min(20, v))
+    }
+    persist(enfantId)
+  }
+
   // Révisions ciblées : faiblesses détectées par la lecture d'une copie (photo).
   // Alimentent « À réviser » et ciblent les notions du quiz (champ themes).
-  function addRevisionCiblee(enfantId, matiere, themes) {
+  // `origine` : 'copie' (faiblesse lue sur une photo de copie, défaut historique)
+  // ou 'parent' (le parent DEMANDE cette révision). L'enfant doit voir la
+  // différence : « ton parent te propose » n'est pas « MIAPO a repéré ».
+  function addRevisionCiblee(enfantId, matiere, themes, origine) {
     const e = getEnfant(enfantId)
     if (!e || !matiere) return
     if (!Array.isArray(e.revisions)) e.revisions = []
     const list = Array.isArray(themes) ? themes.map((t) => String(t).trim()).filter(Boolean) : []
     const existing = e.revisions.find((r) => r.matiere === matiere)
-    if (existing) existing.themes = [...new Set([...(existing.themes || []), ...list])]
-    else e.revisions.push({ id: localId('rv-'), matiere, themes: list })
+    if (existing) {
+      existing.themes = [...new Set([...(existing.themes || []), ...list])]
+      if (origine === 'parent') existing.origine = 'parent'
+    } else {
+      e.revisions.push({ id: localId('rv-'), matiere, themes: list, origine: origine === 'parent' ? 'parent' : 'copie' })
+    }
     persist(enfantId)
   }
   function removeRevision(enfantId, id) {
@@ -770,7 +810,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     enfants, mode, setMode, load, hydrate, isCompteEnfant,
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
-    addNote, removeNote, faiblesses, objectifDe,
+    addNote, removeNote, faiblesses, objectifDe, setObjectifMatiere,
     setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,

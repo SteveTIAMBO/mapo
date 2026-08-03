@@ -68,9 +68,10 @@ export function digestApprenant(enfant, revisionStates = {}) {
   // Matières fortes / faibles (notes) + objectif
   const notes = Array.isArray(enfant.notes) ? enfant.notes : []
   if (notes.length) {
-    const obj = enfant.objectifNote || 10
+    // Objectif par matière quand la famille en a fixé un, sinon le global.
+    const obj = (m) => Number(enfant.objectifs?.[m]) || enfant.objectifNote || 10
     const fortes = notes.filter((n) => n.note >= 12).map((n) => n.matiere)
-    const faibles = notes.filter((n) => n.note < obj).map((n) => n.matiere)
+    const faibles = notes.filter((n) => n.note < obj(n.matiere)).map((n) => n.matiere)
     if (fortes.length) parts.push('Matières à l\'aise : ' + [...new Set(fortes)].slice(0, 4).join(', '))
     if (faibles.length) parts.push('Matières à travailler : ' + [...new Set(faibles)].slice(0, 4).join(', '))
   }

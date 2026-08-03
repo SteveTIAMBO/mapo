@@ -321,7 +321,7 @@
               <div class="card-head"><Target :size="18" /><h3><DualText :text="isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent')" /></h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
               <div class="weak-list">
                 <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && choisirAReviser(w)">
-                  <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small></span>
+                  <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small><small v-if="w.parent" class="wi-from">{{ isApprenant ? t('mia.askedByParent') : t('mia.askedByYou') }}</small></span>
                   <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
                 </component>
               </div>
@@ -958,6 +958,27 @@
               </div>
               <div v-if="!isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
               <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
+            </div>
+            <!-- Objectif PAR MATIÈRE : viser 14 en maths et 10 partout ailleurs.
+                 Sans surcharge, la matière suit l'objectif global ci-dessus. -->
+            <div v-if="matieresList.length" class="form-group objm">
+              <label class="form-label">{{ t('mia.targetBySubject') }} <span class="muted small">{{ t('mia.optional') }}</span></label>
+              <ul v-if="objectifsMatiere.length" class="objm-list">
+                <li v-for="o in objectifsMatiere" :key="o.matiere" class="objm-item">
+                  <span class="objm-n">{{ o.matiere }}</span>
+                  <span class="objm-v">{{ o.valeur }}/20</span>
+                  <button type="button" class="objm-x" :aria-label="t('mia.remove')" @click="retirerObjectifMatiere(o.matiere)"><X :size="14" /></button>
+                </li>
+              </ul>
+              <div class="objm-add">
+                <select v-model="objmMatiere" class="input">
+                  <option value="" disabled>{{ t('mia.chooseSubject') }}</option>
+                  <option v-for="m in matieresList" :key="'om' + m" :value="m">{{ m }}</option>
+                </select>
+                <input v-model.number="objmValeur" type="number" min="0" max="20" step="0.5" class="input objm-inp" :placeholder="String(profil.objectifNote)" />
+                <button type="button" class="btn btn-outline btn-sm" :disabled="!objmMatiere || !objmValeur" @click="ajouterObjectifMatiere"><Plus :size="15" /> <span>{{ t('mia.add') }}</span></button>
+              </div>
+              <small class="muted small">{{ t('mia.targetBySubjectHint') }}</small>
             </div>
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
@@ -1742,6 +1763,26 @@ async function onPickPhoto(ev) {
   const url = await fileToThumbnail(f)
   if (url) profil.value.photoURL = url
 }
+// ── Objectifs par matière (surcharges de l'objectif global) ──────────────
+// Appliqués immédiatement (pas au « Enregistrer ») : ce sont des lignes qu'on
+// ajoute/retire une par une, comme des étiquettes, pas un champ de formulaire.
+const objmMatiere = ref('')
+const objmValeur = ref(null)
+const objectifsMatiere = computed(() => {
+  const o = (activeEnfant.value && activeEnfant.value.objectifs) || {}
+  return Object.keys(o).sort((a, b) => a.localeCompare(b)).map((m) => ({ matiere: m, valeur: o[m] }))
+})
+function ajouterObjectifMatiere() {
+  if (!activeEnfant.value || !objmMatiere.value) return
+  store.setObjectifMatiere(activeEnfant.value.id, objmMatiere.value, objmValeur.value)
+  objmMatiere.value = ''
+  objmValeur.value = null
+}
+function retirerObjectifMatiere(m) {
+  if (!activeEnfant.value) return
+  store.setObjectifMatiere(activeEnfant.value.id, m, null)
+}
+
 function saveProfil() {
   if (!activeEnfant.value) return
   store.updateEnfant(activeEnfant.value.id, { ...profil.value })
@@ -1995,7 +2036,9 @@ function onReviseFrancais(matiere, themes) {
 const revisionDemandee = ref('')
 function demanderRevision() {
   if (!reviseMatiere.value || !activeEnfant.value) return
-  store.addRevisionCiblee(activeEnfant.value.id, reviseMatiere.value, [])
+  // Le même bouton sert à l'apprenant (« ajouter à mes révisions ») et au
+  // parent (« demander »). Seul le second est une SUGGESTION à afficher comme telle.
+  store.addRevisionCiblee(activeEnfant.value.id, reviseMatiere.value, [], isApprenant.value ? 'copie' : 'parent')
   revisionDemandee.value = reviseMatiere.value
   reviseMatiere.value = ''
 }
@@ -2093,7 +2136,9 @@ const aReviser = computed(() => {
   for (const r of (e.revisions || [])) {
     const ex = map.get(r.matiere)
     if (ex) { ex.themes = [...new Set([...ex.themes, ...(r.themes || [])])]; ex.source = 'note+copie' }
-    else map.set(r.matiere, { matiere: r.matiere, note: null, themes: r.themes || [], source: 'copie' })
+    else map.set(r.matiere, { matiere: r.matiere, note: null, themes: r.themes || [], source: r.origine === 'parent' ? 'parent' : 'copie' })
+    const cur = map.get(r.matiere)
+    if (r.origine === 'parent') cur.parent = true
   }
   return [...map.values()]
 })
@@ -2993,6 +3038,17 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .weak-item { display: flex; align-items: center; justify-content: space-between; padding: 13px 15px; border: 1px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; }
 .weak-item:hover { border-color: var(--pr); box-shadow: 0 2px 10px rgba(var(--pr-rgb,21,88,176),.08); }
 .wi-name { font-weight: 600; font-size: 15px; color: var(--tx); }
+.wi-from { display: block; font-weight: 500; font-size: 12px; color: var(--pr); margin-top: 2px; }
+/* Objectifs par matière (profil) */
+.objm-list { list-style: none; margin: 6px 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.objm-item { display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px; border-radius: 20px; background: rgba(var(--pr-rgb,21,88,176),.08); font-size: 13px; }
+.objm-n { font-weight: 600; color: var(--tx); }
+.objm-v { font-weight: 700; color: var(--pr); }
+.objm-x { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; color: var(--tx3, #9ca3af); cursor: pointer; }
+.objm-x:hover { background: rgba(0,0,0,.06); color: var(--tx); }
+.objm-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.objm-add .input { flex: 1 1 160px; min-width: 0; }
+.objm-inp { flex: 0 0 92px; }
 .wi-right { display: flex; align-items: center; gap: 10px; color: var(--tx3); }
 .wi-level { font-weight: 700; font-size: 12px; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); padding: 3px 9px; border-radius: 20px; }
 .wi-note { font-weight: 700; font-size: 13px; color: #D93025; background: rgba(217,48,37,.08); padding: 3px 9px; border-radius: 20px; }

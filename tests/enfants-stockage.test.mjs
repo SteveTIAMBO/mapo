@@ -150,5 +150,35 @@ ok("compte enfant : n'écrase PAS le document groupé de la fratrie", !ecrits.in
 ok('compte enfant : écrit bien son propre profil', ecrits.includes('users/UID_PARENT/b2c/enfant_ea-A'), ecrits)
 ok('compte enfant : ne touche pas le profil du frère', !ecrits.includes('users/UID_PARENT/b2c/enfant_ea-B'), ecrits)
 
+// ── 6. Objectif PAR MATIÈRE : surcharge le global, sinon on le suit ───
+// C'est le seuil qui décide de « à réviser » : s'il se trompe de matière,
+// l'enfant révise ce qu'il maîtrise et laisse tomber ce qui coince.
+fs.reset({})
+auth.currentUser = { uid: 'UID_PARENT' }
+s = frais()
+const idO = s.addEnfant({ firstName: 'Awa', niveau: '5ème', pays: 'CM' })
+s.updateEnfant(idO, { objectifNote: 10 })
+s.addNote(idO, 'Mathématiques', 12)
+s.addNote(idO, 'Sport', 12)
+ok('objectif : sans surcharge, 12 ≥ 10 → aucune faiblesse', s.faiblesses(idO).length === 0, s.faiblesses(idO))
+s.setObjectifMatiere(idO, 'Mathématiques', 14)
+let f6 = s.faiblesses(idO)
+ok('objectif par matière : 12 < 14 → maths devient une faiblesse', f6.length === 1 && f6[0].matiere === 'Mathématiques', f6)
+s.setObjectifMatiere(idO, 'Sport', 10)
+ok("objectif par matière : une valeur égale au global n'est pas stockée", !('Sport' in (s.getEnfant(idO).objectifs || {})), s.getEnfant(idO).objectifs)
+s.setObjectifMatiere(idO, 'Mathématiques', null)
+ok('objectif par matière : retrait → on resuit le global', s.faiblesses(idO).length === 0, s.faiblesses(idO))
+s.setObjectifMatiere(idO, 'Mathématiques', 99)
+ok('objectif par matière : borné à 20', s.getEnfant(idO).objectifs['Mathématiques'] === 20, s.getEnfant(idO).objectifs)
+
+// ── 7. Origine d'une révision ciblée : parent vs copie ────────────────
+s.addRevisionCiblee(idO, 'Histoire', ['Révolution'])
+ok("révision : origine 'copie' par défaut", s.getEnfant(idO).revisions.find((r) => r.matiere === 'Histoire').origine === 'copie', s.getEnfant(idO).revisions)
+s.addRevisionCiblee(idO, 'Anglais', [], 'parent')
+ok("révision : origine 'parent' quand le parent la demande", s.getEnfant(idO).revisions.find((r) => r.matiere === 'Anglais').origine === 'parent', s.getEnfant(idO).revisions)
+s.addRevisionCiblee(idO, 'Histoire', ['Empire'], 'parent')
+const rh = s.getEnfant(idO).revisions.find((r) => r.matiere === 'Histoire')
+ok('révision : une demande du parent sur une matière déjà là la marque parent', rh.origine === 'parent' && rh.themes.length === 2, rh)
+
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)
