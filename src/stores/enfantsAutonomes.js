@@ -6,6 +6,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/fi
 import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso } from '../utils/coursPerso'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
+import { baremePour, versAcquisition, maxDe } from '../data/baremes'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -444,11 +445,16 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // Objectif de note (sur 20) choisi par la famille : toute note EN DESSOUS
       // est proposée à la révision. 10 par défaut, modifiable dans le profil —
       // viser 10 en CM2 et 14 en Terminale n'a pas le même sens.
-      objectifNote: 10,
+      // `null` = pas encore choisi → `objectifDe` prend la moitié de l'échelle.
+      // Surtout pas 10 en dur : sur une échelle de 10 (primaire sénégalais et
+      // ivoirien) cela exigerait la note maximale, et TOUT deviendrait une faiblesse.
+      objectifNote: null,
       // Objectifs PAR MATIÈRE : { 'Mathématiques': 14, … }. Surcharge l'objectif
       // global pour cette matière seulement — viser 14 en maths et 10 en sport
       // est la demande normale d'une famille. Vide = tout suit le global.
       objectifs: {},
+      // Surcharge du barème ('' = déduit du pays et du niveau, cf. data/baremes.js).
+      bareme: '',
       // Séances de révision : { 'AAAA-MM-JJ': { matiere, status, at } }
       // status ∈ 'done' | 'skipped'. Une journée sans entrée = simplement pas
       // encore faite (ou jour de repos) — ce qui ne casse pas la série.
@@ -474,12 +480,13 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function updateEnfant(id, patch) {
     const e = getEnfant(id)
     if (!e || !patch) return
-    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'matricule', 'ecoleReliee', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises']) {
+    for (const k of ['firstName', 'lastName', 'gender', 'cycle', 'niveau', 'pays', 'age', 'ecole', 'matricule', 'ecoleReliee', 'filiere', 'formation', 'formationUrl', 'formationModules', 'photoURL', 'certifId', 'organisme', 'certifDate', 'passions', 'metiersVises', 'bareme']) {
       if (k in patch) e[k] = typeof patch[k] === 'string' ? patch[k].trim?.() ?? patch[k] : patch[k]
     }
     if ('objectifNote' in patch) {
       const v = Number(patch.objectifNote)
-      e.objectifNote = Number.isFinite(v) ? Math.max(0, Math.min(20, v)) : 10
+      const max = maxSaisie(e)
+      e.objectifNote = Number.isFinite(v) ? Math.max(0, Math.min(max, v)) : max / 2
     }
     persist(id)
   }
@@ -545,12 +552,16 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function addNote(enfantId, matiere, note, type) {
     const e = getEnfant(enfantId)
     if (!e) return
-    const n = Math.max(0, Math.min(20, Number(note)))
-    if (Number.isNaN(n) || !matiere) return
+    if (note === '' || note === null || note === undefined || !matiere) return
+    const bareme = baremeDe(e)
+    const n = Math.max(0, Math.min(maxSaisie(e), Number(note)))
+    if (Number.isNaN(n)) return
+    // La note garde le barème utilisé à la SAISIE : un 8/10 du primaire reste
+    // 80 % même après un passage au secondaire, qui bascule l'enfant sur 20.
     // remplace la note existante de la matière, sinon ajoute (type = devoir/séquence/trimestre…)
     const existing = e.notes.find((x) => x.matiere === matiere)
-    if (existing) { existing.note = n; if (type !== undefined) existing.type = type }
-    else e.notes.push({ id: localId('n-'), matiere, note: n, type: type || '' })
+    if (existing) { existing.note = n; existing.bareme = bareme; if (type !== undefined) existing.type = type }
+    else e.notes.push({ id: localId('n-'), matiere, note: n, type: type || '', bareme })
     persist(enfantId)
   }
 
@@ -586,9 +597,18 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function faiblesses(enfantId) {
     const e = getEnfant(enfantId)
     if (!e) return []
-    // Seuil PAR MATIÈRE : une note de 11 est un échec en maths si la famille y
-    // vise 14, et une réussite en sport si l'objectif global est 10.
-    return [...e.notes].filter((n) => n.note < objectifDe(e, n.matiere)).sort((a, b) => a.note - b.note)
+    // Comparaison en ACQUISITION, jamais en points bruts : une note et un
+    // objectif peuvent être exprimés dans deux barèmes différents (un 8/10 saisi
+    // au primaire face à un objectif sur 20 après passage au secondaire).
+    // Seuil PAR MATIÈRE aussi : 11 est un échec en maths si la famille y vise 14,
+    // et une réussite en sport si l'objectif global est 10.
+    return [...e.notes]
+      .filter((n) => {
+        const a = acquisitionNote(n)
+        const cible = acquisitionCible(e, n.matiere)
+        return a != null && cible != null && a < cible
+      })
+      .sort((a, b) => acquisitionNote(a) - acquisitionNote(b))
   }
 
   // ── Séances de révision (agenda actionnable) ──────────────────────────
@@ -633,12 +653,37 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return jours.length ? jours[jours.length - 1] : ''
   }
 
+  // ── Barème de l'apprenant ────────────────────────────────────────────
+  // Le pays et le niveau décident du barème réel (le primaire sénégalais et
+  // ivoirien note sur 10, pas sur 20) ; `e.bareme` le surcharge si la famille a
+  // choisi. Cf. data/baremes.js — c'est là que vivent les régimes et leurs sources.
+  function baremeDe(e) {
+    return baremePour({ pays: e && e.pays, niveau: e && e.niveau, surcharge: e && e.bareme }).bareme
+  }
+  /** Maximum saisissable pour cet apprenant (20, 10… ; 20 par défaut). */
+  function maxSaisie(e) {
+    const m = maxDe(baremeDe(e))
+    return m == null ? 20 : m
+  }
   /**
-   * Objectif de note de l'enfant (sur 20). 10 par défaut.
+   * Acquisition (0..1) d'une note enregistrée. La note porte le barème EN
+   * VIGUEUR AU MOMENT DE LA SAISIE : un 8/10 saisi au primaire reste 80 % même
+   * si l'enfant passe au secondaire et bascule sur 20. Les notes d'avant cette
+   * livraison n'ont pas de barème → /20, ce qui est ce qu'elles valaient.
+   */
+  function acquisitionNote(n) {
+    return versAcquisition(n && n.note, (n && n.bareme) || 'note20')
+  }
+  /** Acquisition visée pour une matière (le seuil « en dessous, on révise »). */
+  function acquisitionCible(e, matiere) {
+    return versAcquisition(objectifDe(e, matiere), baremeDe(e))
+  }
+
+  /**
+   * Objectif de note de l'enfant, exprimé DANS SON BARÈME.
+   * Par défaut la moitié de l'échelle (10 sur 20, 5 sur 10).
    * Avec `matiere`, renvoie la surcharge de cette matière si elle existe.
-   * C'est LE point unique où se décide « en dessous de quoi on révise » :
-   * la notation multi-régime (compétences FR collège) n'aura que cette
-   * fonction et `faiblesses` à faire évoluer, pas les 12 écrans appelants.
+   * C'est LE point unique où se décide « en dessous de quoi on révise ».
    */
   function objectifDe(e, matiere) {
     if (matiere && e && e.objectifs) {
@@ -646,7 +691,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       if (Number.isFinite(o) && o > 0) return o
     }
     const v = Number(e && e.objectifNote)
-    return Number.isFinite(v) && v > 0 ? v : 10
+    return Number.isFinite(v) && v > 0 ? v : maxSaisie(e) / 2
   }
 
   /**
@@ -662,7 +707,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (valeur === '' || valeur == null || !Number.isFinite(v) || v <= 0 || v === objectifDe(e)) {
       delete e.objectifs[matiere]
     } else {
-      e.objectifs[matiere] = Math.max(0, Math.min(20, v))
+      e.objectifs[matiere] = Math.max(0, Math.min(maxSaisie(e), v))
     }
     persist(enfantId)
   }
@@ -811,6 +856,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
     addNote, removeNote, faiblesses, objectifDe, setObjectifMatiere,
+    baremeDe, maxSaisie, acquisitionNote, acquisitionCible,
     setSeance, getSeance, serieRevision,
     addCreneau, removeCreneau, setEdt,
     addRevisionCiblee, removeRevision,

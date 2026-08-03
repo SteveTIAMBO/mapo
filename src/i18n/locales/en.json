@@ -5064,7 +5064,7 @@
     "targetBySubjectHint": "Without its own target, a subject follows the overall target above.",
     "askedByParent": "Asked by your parent",
     "askedByYou": "You asked for this",
-    "targetChip": "Target {n}/20",
+    "targetChipScale": "Target {n}/{max}",
     "coParentTitle": "Co-parent",
     "coParentHint": "Invite the other parent: they'll see the same schooling and can follow the child with you.",
     "coParentInvite": "Invite the other parent",

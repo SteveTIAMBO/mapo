@@ -245,7 +245,7 @@
             <div v-if="activeEnfant.notes.length" class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
                 <span class="nr-mat">{{ n.matiere }}<span v-if="n.type" class="nr-type">{{ n.type }}</span></span>
-                <span class="nr-note" :class="noteClass(n.note)">{{ n.note }}/20</span>
+                <span class="nr-note" :class="noteClass(n.note)">{{ n.note }}{{ suffixeBareme }}</span>
                 <button class="btn btn-ghost btn-xs" @click="store.removeNote(activeEnfant.id, n.id)"><X :size="14" /></button>
               </div>
             </div>
@@ -257,7 +257,7 @@
             <div v-else class="add-note">
               <select v-model="newMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.moduleOrSubject') : t('mia.subjectPlaceholder') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
               <select v-if="newMatiere" v-model="newType" class="input"><option value="">{{ t('mia.noteTypeOptional') }}</option><option v-for="ty in typesNote" :key="ty" :value="ty">{{ ty }}</option></select>
-              <input v-model.number="newNote" type="number" min="0" max="20" step="0.5" class="input note-input" placeholder="/20" />
+              <input v-model.number="newNote" type="number" min="0" :max="maxNote" step="0.5" class="input note-input" :placeholder="suffixeBareme" />
               <button class="btn btn-primary btn-sm" :disabled="!canAddNote" @click="addNote"><Plus :size="15" /></button>
             </div>
           </div>
@@ -272,7 +272,7 @@
             </div>
             <div v-else-if="visionState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.visionLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="visionState === 'done' && visionResult" class="vision-result">
-              <div class="vr-head"><span class="vr-mat">{{ visionResult.matiere || t('mia.copyAnalyzed') }}</span><span v-if="visionResult.note !== null" class="vr-note" :class="noteClass(visionResult.note)">{{ visionResult.note }}/20</span></div>
+              <div class="vr-head"><span class="vr-mat">{{ visionResult.matiere || t('mia.copyAnalyzed') }}</span><span v-if="visionResult.note !== null" class="vr-note" :class="noteClass(visionResult.note)">{{ visionResult.note }}{{ suffixeBareme }}</span></div>
               <div v-if="visionResult.points_faibles.length" class="vr-weak"><span class="reco-lab">{{ t('mia.weakPoints') }}</span><div class="chips"><span v-for="(p, i) in visionResult.points_faibles" :key="i" class="chip chip-w">{{ p }}</span></div></div>
               <p v-if="visionResult.conseil" class="reco-conseil"><Lightbulb :size="15" /> {{ visionResult.conseil }}</p>
               <div class="vr-actions">
@@ -301,7 +301,7 @@
                 <div class="bull-list">
                   <div v-for="(r, i) in bulletinRows" :key="i" class="bull-row">
                     <input v-model="r.matiere" class="input bull-mat" />
-                    <input v-model.number="r.note" type="number" min="0" max="20" step="0.5" class="input note-input" />
+                    <input v-model.number="r.note" type="number" min="0" :max="maxNote" step="0.5" class="input note-input" />
                     <button class="btn btn-ghost btn-xs" @click="bulletinRows.splice(i, 1)"><X :size="14" /></button>
                   </div>
                 </div>
@@ -322,11 +322,11 @@
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
-              <div class="card-head"><Target :size="18" /><h3><DualText :text="isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent')" /></h3><span class="obj-chip">{{ t('mia.targetChip', { n: objectif }) }}</span></div>
+              <div class="card-head"><Target :size="18" /><h3><DualText :text="isApprenant ? t('mia.reviewPriorityLearner') : t('mia.reviewSubjectsParent')" /></h3><span class="obj-chip">{{ t('mia.targetChipScale', { n: objectif, max: maxNote }) }}</span></div>
               <div class="weak-list">
                 <component :is="isApprenant ? 'button' : 'div'" v-for="w in aReviser" :key="w.matiere" class="weak-item" :class="{ 'weak-static': !isApprenant }" @click="isApprenant && choisirAReviser(w)">
                   <span class="wi-name">{{ w.matiere }}<small v-if="w.themes.length" class="wi-themes"> · {{ w.themes.slice(0, 2).join(', ') }}</small><small v-if="w.parent" class="wi-from">{{ isApprenant ? t('mia.askedByParent') : t('mia.askedByYou') }}</small></span>
-                  <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}/20</span><ChevronRight v-if="isApprenant" :size="18" /></span>
+                  <span class="wi-right"><span class="wi-level">{{ t('mia.levelN', { n: levelFor(w.matiere) }) }}</span><span v-if="w.note !== null" class="wi-note">{{ w.note }}{{ suffixeBareme }}</span><ChevronRight v-if="isApprenant" :size="18" /></span>
                 </component>
               </div>
               <p v-if="!isApprenant" class="muted small wl-note">{{ t('mia.whatToWork', { name: activeEnfant.firstName }) }}</p>
@@ -637,7 +637,7 @@
             <div class="card-head"><FileText :size="18" /><h3><DualText :text="t('mia.notesOverview')" /></h3></div>
             <div class="notes-list">
               <div v-for="n in activeEnfant.notes" :key="n.id" class="note-row">
-                <span class="nr-mat">{{ n.matiere }}</span><span class="nr-note" :class="noteClass(n.note)">{{ n.note }}/20</span>
+                <span class="nr-mat">{{ n.matiere }}</span><span class="nr-note" :class="noteClass(n.note)">{{ n.note }}{{ suffixeBareme }}</span>
               </div>
             </div>
           </div>
@@ -959,7 +959,7 @@
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">{{ t('mia.targetGrade') }}</label>
-                <input v-model.number="profil.objectifNote" type="number" min="0" max="20" step="0.5" class="input" />
+                <input v-model.number="profil.objectifNote" type="number" min="0" :max="maxNote" step="0.5" class="input" />
                 <small class="muted small">{{ t('mia.targetGradeHint') }}</small>
               </div>
               <div v-if="!isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
@@ -972,7 +972,7 @@
               <ul v-if="objectifsMatiere.length" class="objm-list">
                 <li v-for="o in objectifsMatiere" :key="o.matiere" class="objm-item">
                   <span class="objm-n">{{ o.matiere }}</span>
-                  <span class="objm-v">{{ o.valeur }}/20</span>
+                  <span class="objm-v">{{ o.valeur }}{{ suffixeBareme }}</span>
                   <button type="button" class="objm-x" :aria-label="t('mia.remove')" @click="retirerObjectifMatiere(o.matiere)"><X :size="14" /></button>
                 </li>
               </ul>
@@ -981,7 +981,7 @@
                   <option value="" disabled>{{ t('mia.chooseSubject') }}</option>
                   <option v-for="m in matieresList" :key="'om' + m" :value="m">{{ m }}</option>
                 </select>
-                <input v-model.number="objmValeur" type="number" min="0" max="20" step="0.5" class="input objm-inp" :placeholder="String(profil.objectifNote)" />
+                <input v-model.number="objmValeur" type="number" min="0" :max="maxNote" step="0.5" class="input objm-inp" :placeholder="String(profil.objectifNote)" />
                 <button type="button" class="btn btn-outline btn-sm" :disabled="!objmMatiere || !objmValeur" @click="ajouterObjectifMatiere"><Plus :size="15" /> <span>{{ t('mia.add') }}</span></button>
               </div>
               <small class="muted small">{{ t('mia.targetBySubjectHint') }}</small>
@@ -1408,7 +1408,7 @@ function exporterBilan() {
   const dateStr = new Date().toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
   const rowsProg = (progression.value || []).map((p) => `<tr><td>${esc(p.matiere)}</td><td class="dots">${dots(p.level)}</td><td>${t('mia.bilanLevel')} ${p.level}</td></tr>`).join('')
   const rowsRev = (aReviser.value || []).map((w) => `<li><strong>${esc(w.matiere)}</strong>${w.themes && w.themes.length ? ' — ' + esc(w.themes.join(', ')) : ''}</li>`).join('')
-  const rowsNotes = (e.notes || []).map((n) => `<tr><td>${esc(n.matiere)}</td><td>${esc(n.note)}/20</td></tr>`).join('')
+  const rowsNotes = (e.notes || []).map((n) => `<tr><td>${esc(n.matiere)}</td><td>${esc(n.note)}${suffixeBareme.value}</td></tr>`).join('')
   const w = window.open('', '_blank')
   if (!w) return
   w.document.write(`<!doctype html><html lang="${locale.value}"><head><meta charset="utf-8"><title>${t('mia.bilanTitle')} — ${esc(e.firstName)}</title>
@@ -1723,6 +1723,9 @@ onUnmounted(() => { window.removeEventListener('online', _majEnLigne); window.re
 const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
 const objectif = computed(() => store.objectifDe(activeEnfant.value))
+// Barème de l'apprenant : le primaire sénégalais et ivoirien note sur 10, pas 20.
+const maxNote = computed(() => store.maxSaisie(activeEnfant.value))
+const suffixeBareme = computed(() => '/' + maxNote.value)
 const profilSaved = ref(false)
 function syncProfil() {
   const e = activeEnfant.value

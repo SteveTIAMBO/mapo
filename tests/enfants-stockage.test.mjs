@@ -69,6 +69,9 @@ writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfan
   .replace("from './auth'", "from './authstub.js'")
   .replace("from '../utils/recompenses'", "from './recompenses.js'")
   .replace("from '../utils/coursPerso'", "from './coursperso.js'")
+  // Barèmes : on importe le VRAI module (sans dépendance) plutôt qu'un bouchon —
+  // c'est justement la conversion note ↔ acquisition qu'on veut voir à l'œuvre.
+  .replace("from '../data/baremes'", `from '${join(racine, 'src/data/baremes.js')}'`)
   .replace("from '../data/demoEcoleLiee'", "from './demoecole.js'"))
 
 global.localStorage = {
@@ -179,6 +182,40 @@ ok("révision : origine 'parent' quand le parent la demande", s.getEnfant(idO).r
 s.addRevisionCiblee(idO, 'Histoire', ['Empire'], 'parent')
 const rh = s.getEnfant(idO).revisions.find((r) => r.matiere === 'Histoire')
 ok('révision : une demande du parent sur une matière déjà là la marque parent', rh.origine === 'parent' && rh.themes.length === 2, rh)
+
+// ── 8. Barème résolu par le pays et le niveau ─────────────────────────
+// Le cœur du multi-régime : au primaire, le Sénégal et la Côte d'Ivoire notent
+// sur 10. Confondre un 8/10 avec un 8/20 enverrait réviser un enfant qui réussit.
+fs.reset({})
+s = frais()
+const idSN = s.addEnfant({ firstName: 'Fatou', niveau: 'CM1', pays: 'SN' })
+ok('barème : primaire sénégalais sur 10', s.maxSaisie(s.getEnfant(idSN)) === 10, s.baremeDe(s.getEnfant(idSN)))
+s.addNote(idSN, 'Mathématiques', 8)
+ok('barème : la note porte le barème de la saisie', s.getEnfant(idSN).notes[0].bareme === 'note10', s.getEnfant(idSN).notes[0])
+ok("barème : 8 sur 10 n'est PAS une faiblesse (objectif = moitié de l'échelle)", s.faiblesses(idSN).length === 0, s.faiblesses(idSN))
+s.addNote(idSN, 'Français', 3)
+ok('barème : 3 sur 10 en est une', s.faiblesses(idSN).map((n) => n.matiere).join() === 'Français', s.faiblesses(idSN))
+ok('barème : une note hors échelle est bornée au maximum du pays', (s.addNote(idSN, 'Anglais', 18), s.getEnfant(idSN).notes.find((n) => n.matiere === 'Anglais').note) === 10, s.getEnfant(idSN).notes)
+
+const idCM = s.addEnfant({ firstName: 'Awa', niveau: '5ème', pays: 'CM' })
+ok('barème : secondaire camerounais sur 20', s.maxSaisie(s.getEnfant(idCM)) === 20, s.baremeDe(s.getEnfant(idCM)))
+s.addNote(idCM, 'Mathématiques', 8)
+ok('barème : 8 sur 20 EST une faiblesse', s.faiblesses(idCM).length === 1, s.faiblesses(idCM))
+
+// Une note d'avant cette livraison n'a pas de barème : elle vaut /20, ce qu'elle valait.
+const eLegacy = s.getEnfant(idCM)
+eLegacy.notes = [{ id: 'n-old', matiere: 'Histoire', note: 8 }]
+ok('barème : une note héritée sans barème reste lue sur 20', s.faiblesses(idCM).length === 1, s.faiblesses(idCM))
+
+// La surcharge l'emporte sur la table des pays.
+s.updateEnfant(idSN, { bareme: 'note20' })
+ok('barème : la surcharge famille prime sur le pays', s.maxSaisie(s.getEnfant(idSN)) === 20, s.baremeDe(s.getEnfant(idSN)))
+
+// Un passage au secondaire ne doit pas réinterpréter les notes du primaire.
+s.updateEnfant(idSN, { bareme: '', niveau: '6ème' })
+ok('barème : après passage au secondaire, la barre repasse sur 20', s.maxSaisie(s.getEnfant(idSN)) === 20, s.baremeDe(s.getEnfant(idSN)))
+const mathsSN = s.getEnfant(idSN).notes.find((n) => n.matiere === 'Mathématiques')
+ok('barème : le 8/10 du primaire vaut TOUJOURS 80 %, pas 40 %', s.acquisitionNote(mathsSN) === 0.8, mathsSN)
 
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)

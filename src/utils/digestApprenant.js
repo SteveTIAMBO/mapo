@@ -45,6 +45,8 @@ import { listCoursPerso } from './coursPerso'
 
 // `enfant` : objet apprenant. `revisionStates` : { subjectId: {name, level, mastery} }
 // (via tuteur.getAllRevisionStates). Renvoie un texte court (capé) ou ''.
+import { baremePour, versAcquisition, maxDe } from '../data/baremes'
+
 export function digestApprenant(enfant, revisionStates = {}) {
   if (!enfant) return ''
   const id = enfant.id || 'me'
@@ -68,10 +70,17 @@ export function digestApprenant(enfant, revisionStates = {}) {
   // Matières fortes / faibles (notes) + objectif
   const notes = Array.isArray(enfant.notes) ? enfant.notes : []
   if (notes.length) {
-    // Objectif par matière quand la famille en a fixé un, sinon le global.
-    const obj = (m) => Number(enfant.objectifs?.[m]) || enfant.objectifNote || 10
-    const fortes = notes.filter((n) => n.note >= 12).map((n) => n.matiere)
-    const faibles = notes.filter((n) => n.note < obj(n.matiere)).map((n) => n.matiere)
+    // On raisonne en ACQUISITION (0..1), jamais en points bruts : la note peut
+    // être sur 10 (primaire sénégalais, ivoirien) et l'objectif sur 20.
+    const bareme = baremePour({ pays: enfant.pays, niveau: enfant.niveau, surcharge: enfant.bareme }).bareme
+    const max = maxDe(bareme) || 20
+    const cible = (m) => {
+      const v = Number(enfant.objectifs?.[m]) || Number(enfant.objectifNote) || max / 2
+      return versAcquisition(v, bareme)
+    }
+    const acq = (n) => versAcquisition(n.note, n.bareme || 'note20')
+    const fortes = notes.filter((n) => acq(n) >= 0.6).map((n) => n.matiere)
+    const faibles = notes.filter((n) => acq(n) != null && acq(n) < cible(n.matiere)).map((n) => n.matiere)
     if (fortes.length) parts.push('Matières à l\'aise : ' + [...new Set(fortes)].slice(0, 4).join(', '))
     if (faibles.length) parts.push('Matières à travailler : ' + [...new Set(faibles)].slice(0, 4).join(', '))
   }

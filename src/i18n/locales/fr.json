@@ -5064,7 +5064,7 @@
     "targetBySubjectHint": "Sans objectif propre, une matière suit l'objectif global ci-dessus.",
     "askedByParent": "Demandé par ton parent",
     "askedByYou": "Vous l'avez demandé",
-    "targetChip": "Objectif {n}/20",
+    "targetChipScale": "Objectif {n}/{max}",
     "coParentTitle": "Co-parent",
     "coParentHint": "Invite l'autre parent : il verra la même scolarité et pourra suivre l'enfant avec toi.",
     "coParentInvite": "Inviter l'autre parent",
