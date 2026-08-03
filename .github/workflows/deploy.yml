@@ -45,7 +45,13 @@ jobs:
       - name: Assembler le paquet
         run: |
           mkdir -p deploy_payload
-          cp -R /tmp/mapo-build/* deploy_payload/
+          # `/.` et non `/*` : le glob du shell IGNORE les fichiers cachés, si
+          # bien que `.htaccess` n'a jamais été déployé (protection des configs,
+          # fallback SPA, en-têtes de cache, redirection d'hôte) — le fichier
+          # servi était une copie manuelle, silencieusement désynchronisée du
+          # dépôt. Constaté le 2026-08-03 : la redirection miapo→mapoplus ajoutée
+          # au dépôt ne partait pas.
+          cp -R /tmp/mapo-build/. deploy_payload/
           for f in mapo-ia.php mapo-lien.php mapo-lien-lib.php mapo-famille.php mapo-pay.php mapo-pay-tranzak.php mapo-pay-stripe.php mapo-notify.php mapo-provision.php mapo-sign.php mapo-files.php mapo-feedback.php mapo-push.php mapo-push-lib.php mapo-push-cron.php mapo-offres-data.php mapo-credits-lib.php mapo-invoices-lib.php mapo-offres.php mapo-carre.php mapo-mail.php mapo-mail-config.example.php; do
             [ -f "server/$f" ] && cp "server/$f" "deploy_payload/$f" || true
           done

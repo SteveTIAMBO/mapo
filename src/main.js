@@ -9,6 +9,23 @@ import { getTenant } from './utils/tenantContext'
 import { i18n, setLang } from './i18n'
 import './assets/main.css'
 
+// ── Retrait de miapo.app-edufrem.com ────────────────────────────────────────
+// L'hôte officiel MAPO+ est mapoplus.app-edufrem.com. On redirige plutôt que de
+// supprimer le sous-domaine : les liens magiques famille déjà partagés sur
+// WhatsApp pointent sur miapo (/rejoindre?c=…) et doivent continuer de marcher,
+// d'où la conservation du chemin ET de la query.
+//
+// Pourquoi ici et pas dans .htaccess : la règle 301 y a bien été déposée, mais
+// elle ne se déclenche PAS en production — les deux hôtes partagent le docroot
+// /mapo et Apache n'y voit pas `miapo.app-edufrem.com` dans %{HTTP_HOST} (front
+// applicatif devant LWS). Expérimenter sur ce .htaccess reviendrait à risquer
+// mapo.app-edufrem.com et TOUS les sous-domaines écoles qui en dépendent. La
+// redirection applicative, elle, est contenue et vérifiable. La règle Apache est
+// laissée en place (inerte) au cas où l'hôte remonterait un jour.
+if (typeof window !== 'undefined' && window.location.hostname === 'miapo.app-edufrem.com') {
+  window.location.replace('https://mapoplus.app-edufrem.com' + window.location.pathname + window.location.search + window.location.hash)
+}
+
 // ── Correctif d'affichage des nombres ───────────────────────────────────────
 // fr-FR (toLocaleString / Intl.NumberFormat) sépare les milliers par une espace
 // FINE INSÉCABLE (U+202F) qui, selon la police/le rendu (et les PDF), s'affiche
