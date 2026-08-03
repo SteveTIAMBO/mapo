@@ -5535,5 +5535,33 @@
     "paiements": "Paiements",
     "revisions": "Révisions",
     "miapo": "MAPO+"
+  },
+  "rgpd": {
+    "title": "Vos données personnelles",
+    "intro": "MAPO+ conserve des données concernant votre enfant. Voici lesquelles, et pourquoi.",
+    "dataChild": "Profil de l'enfant (prénom, nom, classe, pays, âge et photo si vous en ajoutez une)",
+    "whyChild": "adapter les révisions à son niveau et lui parler comme à quelqu'un de son âge.",
+    "dataGrades": "Notes, résultats de quiz et profil de compétences",
+    "whyGrades": "repérer ce qui coince et proposer la bonne révision.",
+    "dataAccount": "Compte parent (adresse e-mail, pays, offre choisie)",
+    "whyAccount": "vous connecter, vous écrire, et gérer votre abonnement.",
+    "dataUsage": "Usage de l'application (révisions faites, dates)",
+    "whyUsage": "mesurer si MAPO+ aide vraiment, et suivre la progression.",
+    "retention": "Ces données sont conservées tant que votre compte existe. Vous pouvez les récupérer ou les supprimer à tout moment, ci-dessous.",
+    "contact": "Une question sur vos données ? Écrivez à contact@edufrem.com.",
+    "exportTitle": "Récupérer mes données",
+    "exportHint": "Téléchargez un fichier contenant tout ce que MAPO+ détient sur votre compte et vos enfants. Il est lisible et réutilisable ailleurs.",
+    "exportCta": "Télécharger mes données",
+    "exportDone": "Fichier téléchargé.",
+    "deleteTitle": "Supprimer mon compte",
+    "deleteHint": "Supprime définitivement votre compte, les profils de vos enfants, leurs notes et leur progression. Cette action est irréversible : pensez à télécharger vos données avant.",
+    "deleteCta": "Supprimer mon compte",
+    "deleteWord": "SUPPRIMER",
+    "deleteConfirmHint": "Pour confirmer, recopiez le mot {mot}.",
+    "deleteConfirmCta": "Supprimer définitivement",
+    "cancel": "Annuler",
+    "errRecentLogin": "Par sécurité, reconnectez-vous puis relancez la suppression.",
+    "errNotSignedIn": "Vous n'êtes pas connecté.",
+    "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact@edufrem.com."
   }
 }

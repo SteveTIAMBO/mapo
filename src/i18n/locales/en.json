@@ -5535,5 +5535,33 @@
     "paiements": "Payments",
     "revisions": "Revision",
     "miapo": "MAPO+"
+  },
+  "rgpd": {
+    "title": "Your personal data",
+    "intro": "MAPO+ stores data about your child. Here is what, and why.",
+    "dataChild": "Child profile (first name, surname, year group, country, age and photo if you add one)",
+    "whyChild": "to match revision to their level and speak to them their age.",
+    "dataGrades": "Grades, quiz results and competency profile",
+    "whyGrades": "to spot what is not working and suggest the right revision.",
+    "dataAccount": "Parent account (email address, country, chosen plan)",
+    "whyAccount": "to sign you in, write to you, and manage your subscription.",
+    "dataUsage": "App usage (revisions completed, dates)",
+    "whyUsage": "to measure whether MAPO+ actually helps, and track progress.",
+    "retention": "This data is kept for as long as your account exists. You can retrieve or delete it at any time, below.",
+    "contact": "A question about your data? Write to contact@edufrem.com.",
+    "exportTitle": "Get my data",
+    "exportHint": "Download a file containing everything MAPO+ holds about your account and your children. It is readable and reusable elsewhere.",
+    "exportCta": "Download my data",
+    "exportDone": "File downloaded.",
+    "deleteTitle": "Delete my account",
+    "deleteHint": "Permanently deletes your account, your children profiles, their grades and their progress. This cannot be undone: download your data first.",
+    "deleteCta": "Delete my account",
+    "deleteWord": "DELETE",
+    "deleteConfirmHint": "To confirm, type the word {mot}.",
+    "deleteConfirmCta": "Delete permanently",
+    "cancel": "Cancel",
+    "errRecentLogin": "For security, sign in again then retry the deletion.",
+    "errNotSignedIn": "You are not signed in.",
+    "errGeneric": "The deletion did not complete. Try again, or write to contact@edufrem.com."
   }
 }

@@ -785,6 +785,11 @@
             <MiapoAccessibilite />
           </div>
 
+          <!-- Sous-menu : Données personnelles (RGPD : accès, portabilité, effacement) -->
+          <div v-show="sousSection === 'donnees'" class="param-panel">
+            <MiapoConfidentialite />
+          </div>
+
           <!-- Sous-menu : Aide & feedbacks (manuel, FAQ, bug, idée) -->
           <div v-show="sousSection === 'aide'" class="param-panel">
             <MiapoAide />
@@ -1126,6 +1131,7 @@ import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
+import MiapoConfidentialite from '../components/MiapoConfidentialite.vue'
 import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'
@@ -1345,6 +1351,7 @@ const sousMenus = computed(() => {
   items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
   items.push({ key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility })
   // « Aide & feedbacks » — manuel, FAQ, signalement de bug, demande de fonctionnalité.
+  items.push({ key: 'donnees', label: t('rgpd.title'), icon: ShieldCheck })
   items.push({ key: 'aide', label: t('mia.secHelp'), icon: LifeBuoy })
   return items
 })
