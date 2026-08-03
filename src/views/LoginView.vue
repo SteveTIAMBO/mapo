@@ -342,7 +342,7 @@ const niveauOptions = computed(() => {
 })
 
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
-// MAPO+ standalone (miapo.app-edufrem.com), on masque les profils de
+// MAPO+ standalone (mapoplus.app-edufrem.com), on masque les profils de
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
 // (la démo MAPO+ s'entre par les cartes Parent / Élève de l'accueil).
 const isSchoolTenantMode = isSchoolTenant() || isMiapoTenant()

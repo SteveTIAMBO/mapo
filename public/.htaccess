@@ -24,6 +24,15 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # miapo.app-edufrem.com est RETIRÉ au profit de mapoplus.app-edufrem.com
+  # (2026-08-03). Redirection permanente plutôt que suppression du sous-domaine :
+  # les liens magiques famille déjà partagés sur WhatsApp pointent dessus
+  # (/rejoindre?c=…) et continuent de fonctionner, chemin et query préservés.
+  # Le sous-domaine doit donc RESTER pointé sur ce docroot.
+  RewriteCond %{HTTP_HOST} ^miapo\.app-edufrem\.com$ [NC]
+  RewriteRule ^(.*)$ https://mapoplus.app-edufrem.com/$1 [R=301,L]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d

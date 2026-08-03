@@ -533,7 +533,7 @@ router.beforeEach(async (to) => {
     return { path: '/dashboard' }
   }
 
-  // ── Tenant MAPO+ standalone (miapo.app-edufrem.com) ──────────────
+  // ── Tenant MAPO+ standalone (mapoplus.app-edufrem.com) ──────────────
   // Produit B2C dédié : on entre par l'accueil MAPO+ (Parent / Enfant) puis on
   // reste dans l'expérience famille (espaces parent + élève + tuteur). La
   // vitrine multi-éditions (Welcome) et l'enseignement supérieur ne

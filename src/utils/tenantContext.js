@@ -89,7 +89,7 @@ export function isPreviewTenant() {
   return tenant.mode === 'preview'
 }
 
-/** Instance MAPO+ autonome (miapo.app-edufrem.com) : produit B2C séparé. */
+/** Instance MAPO+ autonome (mapoplus.app-edufrem.com) : produit B2C séparé. */
 export function isMiapoTenant() {
   return tenant.mode === 'miapo'
 }

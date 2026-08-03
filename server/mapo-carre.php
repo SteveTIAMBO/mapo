@@ -49,14 +49,16 @@ if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem');
 
 // ── Client OAuth Carré (valeurs publiques) ────────────────────────────
 define('CARRE_CLIENT_ID', 'mapo-plus');
-// Redirect host-aware : fonctionne depuis miapo ET mapoplus (les deux callbacks
-// sont enregistrés côté Carré). On se base sur l'hôte de la requête, restreint à
+// Redirect host-aware. L'hôte officiel MAPO+ est mapoplus.app-edufrem.com ;
+// miapo est retiré (301 dans .htaccess) et ne peut donc plus atteindre ce
+// fichier — on le garde en liste blanche le temps de la transition, au cas où
+// la redirection serait levée. On se base sur l'hôte de la requête, restreint à
 // une liste blanche pour ne jamais renvoyer vers un hôte arbitraire. L'hôte est
 // constant pendant tout un flux OAuth (start + callback), donc le redirect_uri
 // reste identique à l'échange du jeton.
-$__carre_host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : 'miapo.app-edufrem.com';
-if (!in_array($__carre_host, ['miapo.app-edufrem.com', 'mapoplus.app-edufrem.com'], true)) {
-    $__carre_host = 'miapo.app-edufrem.com';
+$__carre_host = isset($_SERVER['HTTP_HOST']) ? strtolower(preg_replace('/:\d+$/', '', $_SERVER['HTTP_HOST'])) : 'mapoplus.app-edufrem.com';
+if (!in_array($__carre_host, ['mapoplus.app-edufrem.com', 'miapo.app-edufrem.com'], true)) {
+    $__carre_host = 'mapoplus.app-edufrem.com';
 }
 define('CARRE_REDIRECT', 'https://' . $__carre_host . '/oauth/carre/callback');
 define('CARRE_SCOPE', 'notes.read');

@@ -9,7 +9,7 @@
  *
  * Déclenchement (au choix) :
  *   - CLI (recommandé) :  php /home/.../mapo/mapo-push-cron.php
- *   - HTTP :              curl "https://miapo.app-edufrem.com/mapo-push-cron.php?key=SECRET"
+ *   - HTTP :              curl "https://mapoplus.app-edufrem.com/mapo-push-cron.php?key=SECRET"
  * En HTTP, ?key doit valoir $PUSH_CRON_SECRET (mapo-push-config.php).
  *
  * Pas de base de données ni de compte de service : le registre est un simple

@@ -27,7 +27,7 @@ $SECRET = defined('MONITOR_SECRET') ? MONITOR_SECRET : '';
 $ALERT  = defined('MONITOR_ALERT_EMAIL') ? MONITOR_ALERT_EMAIL : 'contact@edufrem.com';
 $APPS   = defined('MONITOR_APPS') ? MONITOR_APPS : [
   ['name' => 'MAPO',   'url' => 'https://mapo.app-edufrem.com',        'spa' => true],
-  ['name' => 'MIAPO+', 'url' => 'https://miapo.app-edufrem.com/miapo', 'spa' => true],
+  ['name' => 'MAPO+',  'url' => 'https://mapoplus.app-edufrem.com', 'spa' => true],
   ['name' => 'NOVA',   'url' => 'https://nova.app-edufrem.com',        'spa' => true],
   ['name' => 'ARIS',   'url' => 'https://aris.app-edufrem.com',        'spa' => true],
   ['name' => 'MOBI',   'url' => 'https://mobi.app-edufrem.com',        'spa' => true],
