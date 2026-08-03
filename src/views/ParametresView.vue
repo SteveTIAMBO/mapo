@@ -115,6 +115,7 @@
                 <select v-model="form.currency" class="input">
                   <option value="XAF">{{ t('param.curXAF') }}</option>
                   <option value="XOF">{{ t('param.curXOF') }}</option>
+                  <option value="CDF">{{ t('param.curCDF') }}</option>
                   <option value="EUR">{{ t('param.curEUR') }}</option>
                   <option value="USD">{{ t('param.curUSD') }}</option>
                   <option value="GHS">{{ t('param.curGHS') }}</option>
