@@ -5065,6 +5065,8 @@
     "scaleAuto": "Automatic (by country)",
     "scale20": "Out of 20",
     "scale10": "Out of 10",
+    "scalePercent": "Percentage (out of 100)",
+    "scaleUnverified": "Scale not confirmed for this country: please check and adjust if needed.",
     "scaleApc": "Competencies (Achieved / In progress / Not achieved)",
     "scaleMastery": "Mastery levels (core curriculum)",
     "scaleLevel": "Level…",

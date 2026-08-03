@@ -93,6 +93,20 @@ describe('barèmes — régimes par pays', () => {
     expect(baremePour({ pays: 'GA', niveau: '3ème' })).toMatchObject({ bareme: 'note20', aVerifier: true })
   })
 
+  it('RD Congo : pourcentage, signalé à vérifier', () => {
+    // La structure scolaire est sourcée, le barème ne l'est pas : on applique
+    // l'usage (pourcentage) mais l'interface le dit au lieu de le taire.
+    expect(baremePour({ pays: 'CD', niveau: '3e humanités' })).toMatchObject({ bareme: 'pourcent', aVerifier: true })
+    expect(maxDe('pourcent')).toBe(100)
+  })
+
+  it('RD Congo : 65 % est une réussite, pas un échec', () => {
+    // Le même piège que le /10 sénégalais, en pire : 65 lu sur 20 serait borné
+    // à 20 et interprété comme la note maximale.
+    expect(versAcquisition(65, 'pourcent')).toBe(0.65)
+    expect(depuisAcquisition(0.65, 'pourcent')).toBe(65)
+  })
+
   it('pays inconnu : /20 et signalé à vérifier, jamais d’erreur', () => {
     expect(baremePour({ pays: 'autre', niveau: '5ème' })).toMatchObject({ bareme: 'note20', aVerifier: true })
     expect(baremePour({}).bareme).toBe('note20')

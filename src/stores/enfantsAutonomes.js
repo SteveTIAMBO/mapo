@@ -60,8 +60,23 @@ export function isNiveauSuperieur(niveau) { return NIVEAUX_SUPERIEUR.includes(ni
 // Réforme du lycée 2019 : plus de séries A/C/D, mais 2nde / 1re / Terminale.
 export const NIVEAUX_PRIMAIRE_FR = ['CP', 'CE1', 'CE2', 'CM1', 'CM2']
 export const NIVEAUX_SECONDAIRE_FR = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale']
-export function niveauxPrimairePays(pays) { return pays === 'FR' ? NIVEAUX_PRIMAIRE_FR : NIVEAUX_PRIMAIRE }
-export function niveauxSecondairePays(pays) { return pays === 'FR' ? NIVEAUX_SECONDAIRE_FR : NIVEAUX_SECONDAIRE }
+export function niveauxPrimairePays(pays) {
+  if (pays === 'FR') return NIVEAUX_PRIMAIRE_FR
+  if (pays === 'CD') return NIVEAUX_PRIMAIRE_CD
+  return NIVEAUX_PRIMAIRE
+}
+export function niveauxSecondairePays(pays) {
+  if (pays === 'FR') return NIVEAUX_SECONDAIRE_FR
+  if (pays === 'CD') return NIVEAUX_SECONDAIRE_CD
+  return NIVEAUX_SECONDAIRE
+}
+
+// ── RD Congo ──
+// Primaire de 6 ans en trois degrés (élémentaire 1re-2e, moyen 3e-4e, terminal
+// 5e-6e). Secondaire : 2 ans de cycle d'orientation (7e, 8e) puis 4 ans
+// d'humanités (pédagogique, littéraire, scientifique…).
+export const NIVEAUX_PRIMAIRE_CD = ['1re primaire', '2e primaire', '3e primaire', '4e primaire', '5e primaire', '6e primaire']
+export const NIVEAUX_SECONDAIRE_CD = ['7e', '8e', '1re humanités', '2e humanités', '3e humanités', '4e humanités']
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
@@ -81,6 +96,7 @@ export const PAYS = [
   { code: 'SN', label: 'Sénégal' },
   { code: 'CI', label: "Côte d'Ivoire" },
   { code: 'GA', label: 'Gabon' },
+  { code: 'CD', label: 'RD Congo' },
   { code: 'FR', label: 'France' },
   { code: 'autre', label: 'Autre' },
 ]

@@ -58,6 +58,9 @@ export const PALIERS_MAITRISE_FR = [
 export const BAREMES = {
   note20: { type: 'numerique', max: 20 },
   note10: { type: 'numerique', max: 10 },
+  // RD Congo : les bulletins raisonnent en POURCENTAGE (maxima par branche puis
+  // pourcentage global, réussite à 50 %). Voir la note `aVerifier` sur CD.
+  pourcent: { type: 'numerique', max: 100 },
   paliers3: { type: 'paliers', paliers: PALIERS_APC },
   paliers4: { type: 'paliers', paliers: PALIERS_MAITRISE_FR },
 }
@@ -120,6 +123,15 @@ export const REGIMES = {
   },
   GA: {
     defaut: { bareme: 'note20', aVerifier: true },
+  },
+  CD: {
+    // RD Congo. Structure SOURCÉE : primaire de 6 ans en trois degrés
+    // (élémentaire, moyen, terminal), puis 2 ans de cycle d'orientation et
+    // 4 ans d'humanités. BARÈME NON SOURCÉ : les bulletins congolais
+    // fonctionnent en pourcentage (réussite à 50 %) d'après l'usage, mais je
+    // n'ai pas trouvé de texte officiel fixant le barème → `aVerifier`, et
+    // l'interface le DIT à l'utilisateur au lieu de le supposer en silence.
+    defaut: { bareme: 'pourcent', aVerifier: true },
   },
 }
 

@@ -5065,6 +5065,8 @@
     "scaleAuto": "Automatique (selon le pays)",
     "scale20": "Note sur 20",
     "scale10": "Note sur 10",
+    "scalePercent": "Pourcentage (sur 100)",
+    "scaleUnverified": "Barème non confirmé pour ce pays : vérifiez-le et corrigez-le si besoin.",
     "scaleApc": "Compétences (Acquis / En cours / Non acquis)",
     "scaleMastery": "Niveaux de maîtrise (socle)",
     "scaleLevel": "Niveau…",

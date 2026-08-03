@@ -971,6 +971,7 @@
                   <option v-for="o in BAREME_OPTIONS" :key="o.key" :value="o.key">{{ t(o.labelKey) }}</option>
                 </select>
                 <small class="muted small">{{ t('mia.scaleHint') }}</small>
+                <small v-if="baremeAVerifier" class="muted small scale-warn">{{ t('mia.scaleUnverified') }}</small>
               </div>
               <div class="form-group">
                 <label class="form-label">{{ t('mia.targetGrade') }}</label>
@@ -1115,7 +1116,7 @@ import { useAbonnementStore } from '../stores/abonnement'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useLangue2Store } from '../stores/langue2'
 import { isMapoPlusTenant } from '../utils/tenantContext'
-import { paliersDe, depuisAcquisition } from '../data/baremes'
+import { paliersDe, depuisAcquisition, baremePour } from '../data/baremes'
 import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
@@ -1748,6 +1749,13 @@ const paliersActifs = computed(() => paliersDe(store.baremeDe(activeEnfant.value
 // Barème d'appoint : le palier affiché À CÔTÉ de la note (APC au primaire
 // camerounais, 4 niveaux de maîtrise au collège français).
 const complementActif = computed(() => store.complementDe(activeEnfant.value))
+// Notre table de régimes n'est pas sourcée pour ce pays : on le DIT, plutôt que
+// de faire passer une supposition pour une règle officielle.
+const baremeAVerifier = computed(() => {
+  const e = activeEnfant.value
+  if (!e || e.bareme) return false
+  return baremePour({ pays: e.pays, niveau: e.niveau }).aVerifier
+})
 /** Palier correspondant à une note enregistrée, dans le barème d'appoint. */
 function palierComplement(n) {
   if (!complementActif.value) return null
@@ -1766,6 +1774,7 @@ const BAREME_OPTIONS = [
   { key: '', labelKey: 'mia.scaleAuto' },
   { key: 'note20', labelKey: 'mia.scale20' },
   { key: 'note10', labelKey: 'mia.scale10' },
+  { key: 'pourcent', labelKey: 'mia.scalePercent' },
   { key: 'paliers3', labelKey: 'mia.scaleApc' },
   { key: 'paliers4', labelKey: 'mia.scaleMastery' },
 ]
@@ -3096,6 +3105,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .nr-note.mid, .vr-note.mid { color: #B87A00; background: rgba(232,149,10,.10); }
 .nr-note.ok, .vr-note.ok { color: #1B8A5A; background: rgba(27,138,90,.10); }
 /* Palier d'appoint affiché à côté de la note (APC, niveaux de maîtrise) */
+.scale-warn { display: block; color: #B87A00; margin-top: 2px; }
 .nr-pal { font-weight: 700; font-size: 11px; padding: 2px 7px; border-radius: 20px; letter-spacing: .02em; }
 .add-note { display: flex; gap: 10px; align-items: center; }
 .add-note .input { flex: 1; } .note-input { max-width: 84px; flex: 0 0 auto; }
