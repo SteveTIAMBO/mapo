@@ -4,6 +4,7 @@ import { usePermissionsStore } from '../stores/permissions'
 import { useEditionStore } from '../stores/edition'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 import { getTenant, isMapoPlusTenant } from '../utils/tenantContext'
+import { deciderAccesMapoPlus } from './accesMapoPlus'
 import { i18n } from '../i18n'
 
 // Titres d'onglet (document.title) FR/EN : la valeur meta.title reste en FR
@@ -539,26 +540,17 @@ router.beforeEach(async (to) => {
   // vitrine multi-éditions (Welcome) et l'enseignement supérieur ne
   // s'appliquent pas à cette instance → on renvoie vers l'accueil MAPO+.
   if (tenant.mode === 'mapoplus') {
-    if (to.name === 'Welcome' || to.name === 'Superieur') {
-      return { name: 'Home' }
-    }
-    if (!isLoggedIn) {
-      // VerifierEmail doit rester atteignable juste après l'inscription, même si
-      // l'état d'auth n'est pas encore stabilisé (sinon on rebondit sur Home = login).
-      const publicMiapo = new Set(['Home', 'Demo', 'Login', 'VerifierEmail', 'Rejoindre', 'VerifierDiplome', 'CompteNonConfigure'])
-      if (!publicMiapo.has(to.name)) return { name: 'Home' }
-    }
-    // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail
-    // confirmé. Tant que l'activation n'est pas faite → écran d'activation.
-    if (isFirebaseUser) {
-      const verified = await authStore.accesDebloque()
-      if (!verified) {
-        const verifyAllowed = new Set(['VerifierEmail', 'Demo', 'VerifierDiplome', 'CompteNonConfigure'])
-        if (!verifyAllowed.has(to.name)) return { name: 'VerifierEmail' }
-      } else if (to.name === 'VerifierEmail') {
-        return { name: 'ParentMiapo' }
-      }
-    }
+    // La décision vit dans `accesMapoPlus.js`, une fonction PURE et testée.
+    // Elle était auparavant écrite ici, mêlée aux stores : intestable, donc
+    // jamais testée — et cassée deux fois en une journée sans que rien ne le
+    // signale. Ne pas réintroduire cette logique en ligne.
+    const decision = deciderAccesMapoPlus({
+      routeName: to.name,
+      isLoggedIn,
+      isFirebaseUser,
+      accesDebloque: isFirebaseUser ? await authStore.accesDebloque() : true,
+    })
+    if (decision) return decision
   }
 
   // ── Directeur de COMPLEXE : espace « groupe » consolidé sur plusieurs écoles ──

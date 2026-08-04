@@ -136,7 +136,15 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
       }
       // 2. Connexion enfant SANS mot de passe (remplace la session courante).
       try {
-        await signInWithCustomToken(auth, data.token)
+        const cred = await signInWithCustomToken(auth, data.token)
+        // On pose TOUT DE SUITE l'utilisateur dans le store, sans attendre
+        // `onAuthStateChanged`. Sans cela, la vue naviguait vers l'espace avant
+        // que le store ait vu la nouvelle session : le garde ne trouvait
+        // personne de connecté et renvoyait vers l'accueil — l'enfant tombait
+        // sur l'écran de connexion, et le lien semblait ne rien faire.
+        const authStore = useAuthStore()
+        authStore.user = cred.user
+        authStore.isDemo = false
       } catch (e) {
         return { ok: false, reason: 'signin', detail: e && (e.code || e.message) }
       }
