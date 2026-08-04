@@ -61,6 +61,12 @@ $lang = (($body['lang'] ?? 'fr') === 'en') ? 'en' : 'fr';
 $prenom = trim((string)($body['prenom'] ?? ''));
 $prenom = $prenom === '' ? ($lang === 'en' ? 'there' : '') : mb_substr($prenom, 0, 60);
 $appBase = defined('APP_BASE_URL') && APP_BASE_URL !== '' ? rtrim(APP_BASE_URL, '/') : 'https://mapoplus.app-edufrem.com';
+// Garde-fou : miapo.app-edufrem.com a été SUPPRIMÉ du serveur le 2026-08-03.
+// Si la config le désigne encore, le bouton de chaque e-mail de bienvenue
+// mènerait à une page d'erreur — le tout premier geste de chaque nouveau
+// testeur. On corrige ici plutôt que de dépendre d'un fichier de config qu'on
+// oubliera de mettre à jour.
+$appBase = str_replace('miapo.app-edufrem.com', 'mapoplus.app-edufrem.com', $appBase);
 $ctaUrl = $appBase . '/mon-espace';
 
 // Objets par gabarit / langue.
