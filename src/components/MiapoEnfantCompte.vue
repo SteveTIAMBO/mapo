@@ -75,8 +75,11 @@ onMounted(() => { if (!isDemo) eco.loadComptes() })
 
 // Lien magique partageable : le code voyage dans ?c= (pas le prénom — donnée
 // personnelle inutile dans une URL ; le serveur renvoie le prénom au clic).
+// On partage /inviter (servi par mapo-invite.php) et non /rejoindre : l'aperçu
+// WhatsApp est construit par un robot qui ne lit pas le JavaScript, il lui faut
+// donc de vraies balises côté serveur. Le PHP redirige ensuite vers /rejoindre.
 const shareLink = computed(() => (code.value
-  ? `${window.location.origin}/rejoindre?c=${encodeURIComponent(code.value)}`
+  ? `${window.location.origin}/inviter?c=${encodeURIComponent(code.value)}`
   : ''))
 const waHref = computed(() => {
   const msg = t('mia.enfantCompteWaMsg', { name: codePrenom.value || '', link: shareLink.value })

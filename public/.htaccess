@@ -32,6 +32,13 @@
   # les coupe tous d'un coup. Pour retirer un hôte, le supprimer dans cPanel
   # (Domaines → Gérer → Remove Domain) : cPanel garantit alors explicitement de
   # NE PAS toucher au répertoire, ce qui est vital ici puisqu'ils le partagent.
+
+  # Lien magique famille partagé sur WhatsApp : /inviter?c=CODE est servi par
+  # un PHP qui porte les balises d'aperçu MAPO+ (un robot de messagerie n'exécute
+  # pas le JavaScript, il ne verrait sinon que celles de l'ERP MAPO), puis
+  # redirige vers la vraie page /rejoindre de l'application.
+  RewriteRule ^inviter/?$ /mapo-invite.php [L,QSA]
+
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
