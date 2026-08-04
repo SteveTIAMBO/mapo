@@ -68,6 +68,7 @@ export function niveauxPrimairePays(pays) {
 export function niveauxSecondairePays(pays) {
   if (pays === 'FR') return NIVEAUX_SECONDAIRE_FR
   if (pays === 'CD') return NIVEAUX_SECONDAIRE_CD
+  if (pays === 'SN') return NIVEAUX_SECONDAIRE_SN
   return NIVEAUX_SECONDAIRE
 }
 
@@ -116,6 +117,53 @@ export const MATIERES_HUMANITES_CD = [
   'Éducation civique et morale', 'Anglais', 'Philosophie', 'Économie',
   'Informatique', 'Éducation physique et sport',
 ]
+
+// ── Sénégal ──
+// Moyen : 6e → 3e (sanction BFEM). Secondaire général : 2nde → Terminale, avec
+// des SÉRIES qui ne ressemblent pas à celles du Cameroun — imposer A/C/D à une
+// école de Dakar l'empêche simplement de déclarer ses classes.
+// Source : CAOSP (Centre académique de l'orientation scolaire et
+// professionnelle, caosp-pikine.gouv.sn), « Les séries de l'enseignement général ».
+export const NIVEAUX_SECONDAIRE_SN = [
+  '6e', '5e', '4e', '3e',
+  '2nde L', '2nde S',
+  "1re L1a", "1re L1b", "1re L'1", '1re L2', '1re S1', '1re S2', '1re S3',
+  'Tle L1a', 'Tle L1b', "Tle L'1", 'Tle L2', 'Tle S1', 'Tle S2', 'Tle S3',
+]
+
+// Tronc commun du moyen sénégalais (6e-3e).
+export const MATIERES_MOYEN_SN = [
+  'Français', 'Anglais', 'Mathématiques', 'Sciences physiques', 'SVT',
+  'Histoire-Géographie', 'Éducation physique et sportive (EPS)',
+]
+// Matières DOMINANTES de chaque série, telles que le CAOSP les décrit (ce sont
+// elles qui portent les forts coefficients). On y ajoute le tronc commun, sans
+// lequel la liste serait inutilisable au quotidien. Les coefficients eux-mêmes
+// ne sont pas modélisés ici — MAPO+ ne pondère pas encore les matières.
+const DOMINANTES_SN = {
+  L1a: ['Français', 'Philosophie', 'Latin ou Arabe classique', 'Grec'],
+  L1b: ['Français', 'Philosophie', 'Latin ou Arabe classique', 'Deuxième langue vivante (LV2)'],
+  "L'1": ['Français', 'Philosophie', 'Anglais (LV1)', 'Deuxième langue vivante (LV2)'],
+  L2: ['Philosophie', 'Histoire-Géographie', 'Français', 'Anglais (LV1)', 'Économie générale'],
+  S1: ['Mathématiques', 'Sciences physiques'],
+  S2: ['SVT', 'Sciences physiques', 'Mathématiques'],
+  S3: ['Mathématiques', 'Sciences physiques', 'SVT'],
+}
+const COMMUN_LYCEE_SN = ['Français', 'Anglais (LV1)', 'Histoire-Géographie', 'Mathématiques', 'Éducation physique et sportive (EPS)']
+
+/** Matières d'un niveau sénégalais. Série reconnue par le suffixe du niveau. */
+export function matieresSN(niveau) {
+  const n = String(niveau || '')
+  if (['6e', '5e', '4e', '3e'].includes(n)) return MATIERES_MOYEN_SN
+  // La seconde n'est pas encore différenciée en série : L ou S seulement.
+  if (/^2nde/.test(n)) {
+    const base = /S$/.test(n) ? ['Mathématiques', 'Sciences physiques', 'SVT'] : ['Français', 'Philosophie', 'Histoire-Géographie']
+    return [...new Set([...base, ...COMMUN_LYCEE_SN])]
+  }
+  const serie = Object.keys(DOMINANTES_SN).find((k) => n.endsWith(' ' + k))
+  if (serie) return [...new Set([...DOMINANTES_SN[serie], ...COMMUN_LYCEE_SN])]
+  return MATIERES_MOYEN_SN
+}
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
 // (MBA, BTS, certif, MOOC, prépa concours, langue, permis…). Quand l'apprenant
@@ -230,6 +278,10 @@ function matieresFR(niveau) {
 // Cameroun : primaire APC, 1er cycle 6e-3e, séries A/C/D (philo 1ère/Tle). France : matieresFR().
 export function matieresPourNiveau(niveau, pays) {
   if (pays === 'FR') return matieresFR(niveau)
+  if (pays === 'SN') {
+    if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
+    return matieresSN(niveau)
+  }
   if (pays === 'CD') {
     if (NIVEAUX_PRIMAIRE_CD.includes(niveau)) return MATIERES_PRIMAIRE_CD
     if (/^(7e|8e) /.test(String(niveau))) return MATIERES_BASE_CD

@@ -230,5 +230,17 @@ ok("RDC : on ne sert PAS le référentiel camerounais", !matCD('1re primaire', '
 ok('RDC : les niveaux portent la double nomenclature du ministère', mod.NIVEAUX_SECONDAIRE_CD[0] === '7e année (1re secondaire)', mod.NIVEAUX_SECONDAIRE_CD)
 ok('Cameroun : son référentiel est intact', matCD('CM1', 'CM').includes('Éducation à la citoyenneté et à la morale (ECM)'), matCD('CM1', 'CM'))
 
+// ── 10. Référentiel Sénégal ───────────────────────────────────────────
+// Une école de Dakar ne doit plus se voir imposer les séries camerounaises.
+ok('SN : les séries sont sénégalaises, pas A/C/D', mod.niveauxSecondairePays('SN').includes('Tle S1') && !mod.niveauxSecondairePays('SN').includes('Tle C'), mod.niveauxSecondairePays('SN'))
+ok('SN : le moyen va de la 6e à la 3e', ['6e', '5e', '4e', '3e'].every((n) => mod.niveauxSecondairePays('SN').includes(n)), mod.niveauxSecondairePays('SN'))
+ok('SN : S1 (sciences exactes) = maths + sciences physiques', ['Mathématiques', 'Sciences physiques'].every((m) => matCD('Tle S1', 'SN').includes(m)), matCD('Tle S1', 'SN'))
+ok('SN : S2 (sciences expérimentales) a la SVT', matCD('Tle S2', 'SN').includes('SVT'), matCD('Tle S2', 'SN'))
+ok('SN : L2 (sciences humaines) a philosophie et économie générale', ['Philosophie', 'Économie générale'].every((m) => matCD('Tle L2', 'SN').includes(m)), matCD('Tle L2', 'SN'))
+ok("SN : L1a a le grec et le latin, L'1 non", matCD('1re L1a', 'SN').includes('Grec') && !matCD("1re L'1", 'SN').includes('Grec'), matCD('1re L1a', 'SN'))
+ok('SN : la seconde n\'est pas encore différenciée en série', matCD('2nde S', 'SN').includes('Mathématiques') && matCD('2nde L', 'SN').includes('Philosophie'), matCD('2nde L', 'SN'))
+ok('SN : aucune matière en double dans une liste', (() => { const l = matCD('Tle L2', 'SN'); return l.length === new Set(l).size })(), matCD('Tle L2', 'SN'))
+ok('Cameroun : ses séries A/C/D sont intactes', mod.niveauxSecondairePays('CM').includes('Tle C'), mod.niveauxSecondairePays('CM'))
+
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)
