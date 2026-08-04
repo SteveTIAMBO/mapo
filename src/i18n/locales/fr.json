@@ -5568,7 +5568,7 @@
     "dataUsage": "Usage de l'application (révisions faites, dates)",
     "whyUsage": "mesurer si MAPO+ aide vraiment, et suivre la progression.",
     "retention": "Ces données sont conservées tant que votre compte existe. Vous pouvez les récupérer ou les supprimer à tout moment, ci-dessous.",
-    "contact": "Une question sur vos données ? Écrivez à contact@edufrem.com.",
+    "contact": "Une question sur vos données ? Écrivez à contact{'@'}edufrem.com.",
     "exportTitle": "Récupérer mes données",
     "exportHint": "Téléchargez un fichier contenant tout ce que MAPO+ détient sur votre compte et vos enfants. Il est lisible et réutilisable ailleurs.",
     "exportCta": "Télécharger mes données",
@@ -5582,7 +5582,7 @@
     "cancel": "Annuler",
     "errRecentLogin": "Par sécurité, reconnectez-vous puis relancez la suppression.",
     "errNotSignedIn": "Vous n'êtes pas connecté.",
-    "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact@edufrem.com."
+    "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact{'@'}edufrem.com."
   },
   "ident": {
     "title": "Choisis ton identifiant",

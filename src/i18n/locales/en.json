@@ -5568,7 +5568,7 @@
     "dataUsage": "App usage (revisions completed, dates)",
     "whyUsage": "to measure whether MAPO+ actually helps, and track progress.",
     "retention": "This data is kept for as long as your account exists. You can retrieve or delete it at any time, below.",
-    "contact": "A question about your data? Write to contact@edufrem.com.",
+    "contact": "A question about your data? Write to contact{'@'}edufrem.com.",
     "exportTitle": "Get my data",
     "exportHint": "Download a file containing everything MAPO+ holds about your account and your children. It is readable and reusable elsewhere.",
     "exportCta": "Download my data",
@@ -5582,7 +5582,7 @@
     "cancel": "Cancel",
     "errRecentLogin": "For security, sign in again then retry the deletion.",
     "errNotSignedIn": "You are not signed in.",
-    "errGeneric": "The deletion did not complete. Try again, or write to contact@edufrem.com."
+    "errGeneric": "The deletion did not complete. Try again, or write to contact{'@'}edufrem.com."
   },
   "ident": {
     "title": "Choose your login",
