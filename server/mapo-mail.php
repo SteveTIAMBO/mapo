@@ -51,7 +51,10 @@ if (!$claims || $toEmail === '' || !filter_var($toEmail, FILTER_VALIDATE_EMAIL))
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 
 // Whitelist stricte des gabarits et langues (anti path-traversal).
-$ALLOWED_TEMPLATES = ['welcome'];
+// `welcome` reste accepté (anciens appels) ; les deux variantes disent au
+// destinataire ce qu'il doit faire ENSUITE, ce qui n'est pas la même chose pour
+// un parent (ajouter son enfant) et pour un apprenant (lancer sa révision).
+$ALLOWED_TEMPLATES = ['welcome', 'welcome-parent', 'welcome-apprenant'];
 $template = in_array(($body['template'] ?? ''), $ALLOWED_TEMPLATES, true) ? $body['template'] : 'welcome';
 $lang = (($body['lang'] ?? 'fr') === 'en') ? 'en' : 'fr';
 
@@ -63,11 +66,21 @@ $ctaUrl = $appBase . '/mon-espace';
 // Objets par gabarit / langue.
 $SUBJECTS = [
   'welcome' => ['fr' => 'Bienvenue sur MAPO+ 🎓', 'en' => 'Welcome to MAPO+ 🎓'],
+  'welcome-parent' => ['fr' => 'Bienvenue sur MAPO+ — ajoutez votre enfant', 'en' => 'Welcome to MAPO+ — add your child'],
+  'welcome-apprenant' => ['fr' => 'Bienvenue sur MAPO+ 🎓', 'en' => 'Welcome to MAPO+ 🎓'],
 ];
 $PREHEADERS = [
   'welcome' => [
     'fr' => "Ton espace MAPO+ est prêt — MIAPO t'accompagne dès maintenant.",
     'en' => 'Your MAPO+ space is ready — MIAPO is with you from now on.',
+  ],
+  'welcome-parent' => [
+    'fr' => "Votre espace est prêt — ajoutez votre enfant pour commencer.",
+    'en' => 'Your space is ready — add your child to get started.',
+  ],
+  'welcome-apprenant' => [
+    'fr' => "Ton espace MAPO+ est prêt — commence par une première révision.",
+    'en' => 'Your MAPO+ space is ready — start with a first revision.',
   ],
 ];
 $subject = $SUBJECTS[$template][$lang] ?? 'MAPO+';

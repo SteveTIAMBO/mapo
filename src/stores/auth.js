@@ -457,7 +457,16 @@ export const useAuthStore = defineStore('auth', () => {
       // (reconnexion, nouvel appareil…). Le fanion welcomeSentAt fait foi ;
       // en cas d'erreur de lecture on suppose « déjà envoyé » (jamais de spam).
       let already = true
-      try { const snap = await getDoc(ref); already = !!(snap.exists() && snap.data()?.welcomeSentAt) } catch { already = true }
+      // Le persona (parent / apprenant) a été enregistré à l'inscription : on le
+      // relit ICI, dans la lecture qu'on faisait déjà, plutôt que d'ajouter un
+      // aller-retour réseau juste pour choisir un gabarit d'e-mail.
+      let persona = ''
+      try {
+        const snap = await getDoc(ref)
+        const d = snap.exists() ? snap.data() : null
+        already = !!(d && d.welcomeSentAt)
+        persona = (d && d.persona) || ''
+      } catch { already = true }
       await setDoc(ref, {
         uid: u.uid,
         email: u.email || '',
@@ -468,14 +477,14 @@ export const useAuthStore = defineStore('auth', () => {
         lastSeenAt: serverTimestamp(),
         ...(already ? {} : { welcomeSentAt: serverTimestamp() }),
       }, { merge: true })
-      if (!already) sendWelcomeEmail() // best-effort, ne bloque jamais l'activation
+      if (!already) sendWelcomeEmail(persona) // best-effort, ne bloque jamais l'activation
     } catch (e) { console.warn('[mapoplus_users] activation ignorée:', e && e.code) }
   }
 
   // Envoi best-effort du mail de bienvenue brandé via /mapo-mail.php (Brevo).
   // Totalement silencieux si l'endpoint n'est pas déployé/configuré : l'activation
   // du compte ne dépend jamais de l'e-mail.
-  async function sendWelcomeEmail() {
+  async function sendWelcomeEmail(persona) {
     try {
       const u = auth.currentUser
       if (!u) return
@@ -487,7 +496,11 @@ export const useAuthStore = defineStore('auth', () => {
       await fetch('/mapo-mail.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-        body: JSON.stringify({ template: 'welcome', lang, prenom }),
+        // Un parent et un apprenant n'ont pas la même étape suivante : l'un doit
+        // ajouter son enfant, l'autre lancer sa première révision. Leur envoyer
+        // le même e-mail, c'est perdre le premier geste — celui qui décide si la
+        // personne revient. Repli sur `welcome` si le persona est inconnu.
+        body: JSON.stringify({ template: persona === 'apprenant' ? 'welcome-apprenant' : (persona === 'parent' ? 'welcome-parent' : 'welcome'), lang, prenom }),
       })
     } catch (e) { /* endpoint absent / non configuré : sans gravité */ }
   }
