@@ -242,5 +242,12 @@ ok('SN : la seconde n\'est pas encore différenciée en série', matCD('2nde S',
 ok('SN : aucune matière en double dans une liste', (() => { const l = matCD('Tle L2', 'SN'); return l.length === new Set(l).size })(), matCD('Tle L2', 'SN'))
 ok('Cameroun : ses séries A/C/D sont intactes', mod.niveauxSecondairePays('CM').includes('Tle C'), mod.niveauxSecondairePays('CM'))
 
+// ── 11. Référentiel Côte d'Ivoire ─────────────────────────────────────
+ok('CI : A1 et A2 sont distinctes (le Cameroun n\'a qu\'une série A)', ['Tle A1', 'Tle A2'].every((n) => mod.niveauxSecondairePays('CI').includes(n)), mod.niveauxSecondairePays('CI'))
+ok("CI : l'EDHC ivoirienne, pas l'ECM camerounaise", matCD('Tle D', 'CI').includes('EDHC') && !matCD('Tle D', 'CI').some((m) => /citoyenneté et à la morale/.test(m)), matCD('Tle D', 'CI'))
+ok('CI : A1 est la série des langues vivantes', matCD('Tle A1', 'CI').includes('Espagnol'), matCD('Tle A1', 'CI'))
+ok('CI : D met la SVT en avant', matCD('Tle D', 'CI').includes('SVT'), matCD('Tle D', 'CI'))
+ok('Gabon : faute de source, il garde la liste camerounaise', mod.niveauxSecondairePays('GA').includes('Tle C'), mod.niveauxSecondairePays('GA'))
+
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)

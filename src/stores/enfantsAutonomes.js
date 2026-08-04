@@ -69,6 +69,10 @@ export function niveauxSecondairePays(pays) {
   if (pays === 'FR') return NIVEAUX_SECONDAIRE_FR
   if (pays === 'CD') return NIVEAUX_SECONDAIRE_CD
   if (pays === 'SN') return NIVEAUX_SECONDAIRE_SN
+  if (pays === 'CI') return NIVEAUX_SECONDAIRE_CI
+  // Gabon : structure calquée sur le modèle français hérité, mais je n'ai
+  // trouvé aucune source officielle sur ses séries → on sert la liste
+  // camerounaise plutôt que d'inventer, et l'audit le signale.
   return NIVEAUX_SECONDAIRE
 }
 
@@ -163,6 +167,41 @@ export function matieresSN(niveau) {
   const serie = Object.keys(DOMINANTES_SN).find((k) => n.endsWith(' ' + k))
   if (serie) return [...new Set([...DOMINANTES_SN[serie], ...COMMUN_LYCEE_SN])]
   return MATIERES_MOYEN_SN
+}
+
+// ── Côte d'Ivoire ──
+// Seconde A (littéraire) ou C (scientifique), puis séries A1, A2, C et D.
+// Proches des séries camerounaises mais PAS identiques : la Côte d'Ivoire
+// distingue A1 (langues vivantes) et A2 (humanités et sciences sociales) là où
+// le Cameroun n'a qu'une série A. Baccalauréat délivré par la DECO (MENA).
+export const NIVEAUX_SECONDAIRE_CI = [
+  '6e', '5e', '4e', '3e',
+  '2nde A', '2nde C',
+  '1re A1', '1re A2', '1re C', '1re D',
+  'Tle A1', 'Tle A2', 'Tle C', 'Tle D',
+]
+
+// EDHC (Éducation aux Droits de l'Homme et à la Citoyenneté) est la matière
+// civique ivoirienne — ce n'est pas l'ECM camerounaise, ni l'EMC française.
+const COMMUN_CI = ['Français', 'Anglais', 'Histoire-Géographie', 'Mathématiques', 'EDHC', 'Éducation physique et sportive (EPS)']
+const DOMINANTES_CI = {
+  A1: ['Français', 'Philosophie', 'Anglais', 'Espagnol'],
+  A2: ['Philosophie', 'Histoire-Géographie', 'Français', 'Anglais'],
+  C: ['Mathématiques', 'Physique-Chimie', 'SVT'],
+  D: ['SVT', 'Physique-Chimie', 'Mathématiques'],
+}
+
+/** Matières d'un niveau ivoirien. */
+export function matieresCI(niveau) {
+  const n = String(niveau || '')
+  if (['6e', '5e', '4e', '3e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
+  if (/^2nde/.test(n)) {
+    const base = /C$/.test(n) ? ['Mathématiques', 'Physique-Chimie', 'SVT'] : ['Français', 'Philosophie', 'Espagnol']
+    return [...new Set([...base, ...COMMUN_CI])]
+  }
+  const serie = Object.keys(DOMINANTES_CI).find((k) => n.endsWith(' ' + k))
+  if (serie) return [...new Set([...DOMINANTES_CI[serie], ...COMMUN_CI])]
+  return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
 }
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
@@ -281,6 +320,10 @@ export function matieresPourNiveau(niveau, pays) {
   if (pays === 'SN') {
     if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
     return matieresSN(niveau)
+  }
+  if (pays === 'CI') {
+    if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
+    return matieresCI(niveau)
   }
   if (pays === 'CD') {
     if (NIVEAUX_PRIMAIRE_CD.includes(niveau)) return MATIERES_PRIMAIRE_CD
