@@ -167,7 +167,18 @@
     "finalTitle": "À toi de jouer",
     "finalBody": "Tu connais l'essentiel. Bonne révision avec MIAPO !",
     "helpTitle": "Un souci, une idée ?",
-    "helpBody": "Dans Paramètres → Aide & feedbacks, tu trouves le manuel, la FAQ, et surtout un formulaire pour nous signaler un bug ou proposer une amélioration. N'hésite pas : chaque retour nous aide à améliorer MIAPO."
+    "helpBody": "Dans Paramètres → Aide & feedbacks, tu trouves le manuel, la FAQ, et surtout un formulaire pour nous signaler un bug ou proposer une amélioration. N'hésite pas : chaque retour nous aide à améliorer MIAPO.",
+    "welcomeBodyParent": "En 30 secondes, voici comment suivre votre enfant.",
+    "menuTitleParent": "Le menu",
+    "menuBodyParent": "Vous naviguez entre les espaces ici. Chaque entrée ouvre une fonctionnalité.",
+    "childrenBodyParent": "Ajoutez les notes, lisez un bulletin ou une copie en photo, et suivez chaque enfant.",
+    "progressTitleParent": "Sa progression",
+    "planningTitleParent": "Son planning",
+    "agendaTitleParent": "L'agenda de la semaine",
+    "agendaBodyParent": "Ses séances jour par jour. Vous voyez d'un coup d'œil ce qui a été fait.",
+    "settingsBodyParent": "Profil, langue, notifications et votre offre se trouvent ici.",
+    "helpBodyParent": "Dans Paramètres → Aide & feedbacks, vous trouvez le manuel, la FAQ, et un formulaire pour nous signaler un bug ou proposer une idée.",
+    "finalBodyParent": "Vous connaissez l'essentiel. Il ne reste qu'à laisser MIAPO travailler avec votre enfant."
   },
   "miaForm": {
     "title": "Configure ta formation",

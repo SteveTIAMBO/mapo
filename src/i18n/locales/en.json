@@ -167,7 +167,18 @@
     "finalTitle": "You're all set",
     "finalBody": "You know the essentials. Happy studying with MIAPO!",
     "helpTitle": "A problem or an idea?",
-    "helpBody": "In Settings → Help & feedback you'll find the guide, the FAQ, and above all a form to report a bug or suggest an improvement. Please use it — every message helps us make MIAPO better."
+    "helpBody": "In Settings → Help & feedback you'll find the guide, the FAQ, and above all a form to report a bug or suggest an improvement. Please use it — every message helps us make MIAPO better.",
+    "welcomeBodyParent": "In 30 seconds, here is how to follow your child.",
+    "menuTitleParent": "The menu",
+    "menuBodyParent": "You move between spaces here. Each entry opens a feature.",
+    "childrenBodyParent": "Add grades, read a report or a photographed paper, and follow each child.",
+    "progressTitleParent": "Their progress",
+    "planningTitleParent": "Their planner",
+    "agendaTitleParent": "The week ahead",
+    "agendaBodyParent": "Their sessions day by day. You can see at a glance what has been done.",
+    "settingsBodyParent": "Profile, language, notifications and your plan are here.",
+    "helpBodyParent": "Under Settings → Help & feedback you will find the manual, the FAQ, and a form to report a bug or suggest an idea.",
+    "finalBodyParent": "You know the essentials. Now let MIAPO get to work with your child."
   },
   "miaForm": {
     "title": "Set up your programme",

@@ -1631,23 +1631,30 @@ const tourLabels = computed(() => ({
   skip: t('miaTour.skip'), prev: t('miaTour.prev'), next: t('miaTour.next'), done: t('miaTour.done'),
 }))
 const tourSteps = computed(() => {
-  const s = [{ title: t('miaTour.welcomeTitle'), body: t('miaTour.welcomeBody') }]
-  s.push({ target: '[data-tour=menu]', title: t('miaTour.menuTitle'), body: t('miaTour.menuBody') })
-  if (isApprenant.value) {
+  // Le parent et l'apprenant ne visitent pas le même produit. Les étapes
+  // BRANCHÉES l'étaient déjà, mais les textes COMMUNS parlaient à l'apprenant :
+  // un parent lisait « ton planning », « tes séances », « bonne révision » — pour
+  // des séances qui ne sont pas les siennes. D'où un jeu de clés `*Parent`, au
+  // vouvoiement, cohérent avec l'e-mail de bienvenue.
+  const ap = isApprenant.value
+  const k = (base) => (ap ? t('miaTour.' + base) : t('miaTour.' + base + 'Parent'))
+  const s = [{ title: t('miaTour.welcomeTitle'), body: k('welcomeBody') }]
+  s.push({ target: '[data-tour=menu]', title: k('menuTitle'), body: k('menuBody') })
+  if (ap) {
     s.push({ target: '[data-tour=nav-tuteur]', title: t('miaTour.tutorTitle'), body: t('miaTour.tutorBody') })
     s.push({ target: '[data-tour=nav-fiches]', title: t('miaTour.fichesTitle'), body: t('miaTour.fichesBody') })
     s.push({ target: '[data-tour=nav-progression]', title: t('miaTour.progressTitle'), body: t('miaTour.progressBodyLearner') })
     s.push({ target: '[data-tour=nav-planning]', title: t('miaTour.planningTitle'), body: t('miaTour.planningBody') })
   } else {
-    s.push({ target: '[data-tour=nav-enfants]', title: t('miaTour.childrenTitle'), body: t('miaTour.childrenBody') })
-    s.push({ target: '[data-tour=nav-progression]', title: t('miaTour.progressTitle'), body: t('miaTour.progressBodyParent') })
-    s.push({ target: '[data-tour=nav-planning]', title: t('miaTour.planningTitle'), body: t('miaTour.planningBodyParent') })
+    s.push({ target: '[data-tour=nav-enfants]', title: t('miaTour.childrenTitle'), body: t('miaTour.childrenBodyParent') })
+    s.push({ target: '[data-tour=nav-progression]', title: t('miaTour.progressTitleParent'), body: t('miaTour.progressBodyParent') })
+    s.push({ target: '[data-tour=nav-planning]', title: t('miaTour.planningTitleParent'), body: t('miaTour.planningBodyParent') })
   }
-  s.push({ target: '[data-tour=agenda]', title: t('miaTour.agendaTitle'), body: t('miaTour.agendaBody') })
-  s.push({ target: '[data-tour=settings]', title: t('miaTour.settingsTitle'), body: t('miaTour.settingsBody') })
-  // IMPORTANT : on pointe l'apprenant vers Aide & feedbacks (manuel, FAQ, bug).
-  s.push({ target: '[data-tour=settings]', title: t('miaTour.helpTitle'), body: t('miaTour.helpBody') })
-  s.push({ title: t('miaTour.finalTitle'), body: t('miaTour.finalBody') })
+  s.push({ target: '[data-tour=agenda]', title: k('agendaTitle'), body: k('agendaBody') })
+  s.push({ target: '[data-tour=settings]', title: t('miaTour.settingsTitle'), body: k('settingsBody') })
+  // IMPORTANT : on pointe vers Aide & feedbacks (manuel, FAQ, bug).
+  s.push({ target: '[data-tour=settings]', title: t('miaTour.helpTitle'), body: k('helpBody') })
+  s.push({ title: t('miaTour.finalTitle'), body: k('finalBody') })
   return s
 })
 function tourKey() { return 'mapo_miapo_tour_v1_' + (authStore.user?.uid || 'anon') }
