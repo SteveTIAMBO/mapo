@@ -16,6 +16,37 @@
 // Domaine réservé aux identifiants téléphone (non routable, jamais d'envoi).
 export const PHONE_EMAIL_DOMAIN = 'phone.mapo-edufrem.app'
 
+// Domaine réservé aux PSEUDOS d'enfants. Un enfant connecté par lien magique
+// n'a pas d'e-mail — et n'en aura pas : on ne demande pas son adresse à un
+// mineur. Pour qu'il puisse revenir sans redemander un lien à son parent, il
+// choisit un pseudo + un mot de passe, transformés en identifiant interne.
+export const PSEUDO_EMAIL_DOMAIN = 'enfant.mapo-edufrem.app'
+
+/** Pseudo « Awa 2013 » → identifiant interne « awa2013@enfant.mapo-edufrem.app ». */
+export function pseudoToEmail(input) {
+  return `${normalizePseudo(input)}@${PSEUDO_EMAIL_DOMAIN}`
+}
+
+/** Pseudo normalisé : minuscules, sans accents ni espaces. */
+export function normalizePseudo(input) {
+  return (input || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9._-]/g, '')
+}
+
+/** Un pseudo est-il utilisable ? (3 caractères utiles minimum) */
+export function isPseudoValide(input) {
+  return normalizePseudo(input).length >= 3
+}
+
+/**
+ * E-mail SYNTHÉTIQUE (téléphone ou pseudo) : interne, jamais routable, donc
+ * aucune activation par e-mail ne peut ni ne doit être demandée dessus.
+ */
+export function isSyntheticEmail(email) {
+  return isPhoneEmail(email) || (typeof email === 'string' && email.endsWith('@' + PSEUDO_EMAIL_DOMAIN))
+}
+
 /** L'entrée ressemble-t-elle à un numéro de téléphone (et non un email) ? */
 export function isPhoneIdentifier(input) {
   const s = (input || '').trim()
@@ -55,5 +86,9 @@ export function emailToPhone(email) {
 export function identifierToEmail(input) {
   const s = (input || '').trim()
   if (isPhoneIdentifier(s)) return phoneToEmail(s)
+  // Ni e-mail ni téléphone → pseudo d'enfant. Sans cette branche, un enfant qui
+  // saisit « awa2013 » à la connexion enverrait une chaîne que Firebase rejette
+  // comme e-mail invalide, sans qu'il comprenne pourquoi.
+  if (s && !s.includes('@')) return pseudoToEmail(s)
   return s.toLowerCase()
 }

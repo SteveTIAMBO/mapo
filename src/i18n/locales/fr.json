@@ -5581,5 +5581,24 @@
     "errRecentLogin": "Par sécurité, reconnectez-vous puis relancez la suppression.",
     "errNotSignedIn": "Vous n'êtes pas connecté.",
     "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact@edufrem.com."
+  },
+  "ident": {
+    "title": "Choisis ton identifiant",
+    "hint": "Pour revenir sans redemander un lien à ton parent, choisis un identifiant et un mot de passe. Tu t'en serviras pour te connecter.",
+    "pseudo": "Ton identifiant",
+    "pseudoPlaceholder": "awa2013",
+    "preview": "Tu te connecteras avec : {p}",
+    "password": "Ton mot de passe",
+    "passwordHint": "6 caractères minimum. Ne le partage avec personne.",
+    "save": "Enregistrer",
+    "ok": "C'est fait. La prochaine fois, connecte-toi avec {p} et ton mot de passe.",
+    "doneTitle": "Ton identifiant",
+    "doneHint": "Tu te connectes avec {p} et ton mot de passe.",
+    "err_pseudo_court": "Choisis un identifiant un peu plus long (3 caractères minimum).",
+    "err_pseudo_pris": "L'identifiant {p} est déjà pris. Essaie-en un autre.",
+    "err_mdp_court": "Le mot de passe doit faire au moins 6 caractères.",
+    "err_reconnexion": "Reclique sur ton lien, puis réessaie.",
+    "err_non_connecte": "Tu n'es pas connecté.",
+    "err_echec": "Ça n'a pas marché. Réessaie dans un instant."
   }
 }

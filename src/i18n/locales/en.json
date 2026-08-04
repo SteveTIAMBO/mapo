@@ -5581,5 +5581,24 @@
     "errRecentLogin": "For security, sign in again then retry the deletion.",
     "errNotSignedIn": "You are not signed in.",
     "errGeneric": "The deletion did not complete. Try again, or write to contact@edufrem.com."
+  },
+  "ident": {
+    "title": "Choose your login",
+    "hint": "So you can come back without asking your parent for a new link, choose a login name and a password. You will use them to sign in.",
+    "pseudo": "Your login name",
+    "pseudoPlaceholder": "awa2013",
+    "preview": "You will sign in with: {p}",
+    "password": "Your password",
+    "passwordHint": "At least 6 characters. Do not share it with anyone.",
+    "save": "Save",
+    "ok": "Done. Next time, sign in with {p} and your password.",
+    "doneTitle": "Your login",
+    "doneHint": "You sign in with {p} and your password.",
+    "err_pseudo_court": "Pick a slightly longer login name (3 characters minimum).",
+    "err_pseudo_pris": "The login name {p} is already taken. Try another one.",
+    "err_mdp_court": "The password must be at least 6 characters.",
+    "err_reconnexion": "Click your link again, then retry.",
+    "err_non_connecte": "You are not signed in.",
+    "err_echec": "That did not work. Please try again in a moment."
   }
 }

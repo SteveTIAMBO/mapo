@@ -795,6 +795,13 @@
             <MiapoConfidentialite />
           </div>
 
+          <!-- Compte enfant arrivé par lien magique : se choisir des identifiants
+               pour revenir seul. Le composant se masque de lui-même si ce n'est
+               pas le cas. -->
+          <div v-show="sousSection === 'profil'" class="param-panel">
+            <MiapoMesIdentifiants />
+          </div>
+
           <!-- Sous-menu : Aide & feedbacks (manuel, FAQ, bug, idée) -->
           <div v-show="sousSection === 'aide'" class="param-panel">
             <MiapoAide />
@@ -1137,6 +1144,7 @@ import MiapoFiches from '../components/MiapoFiches.vue'
 import MiapoCoParent from '../components/MiapoCoParent.vue'
 import MiapoEnfantCompte from '../components/MiapoEnfantCompte.vue'
 import MiapoConfidentialite from '../components/MiapoConfidentialite.vue'
+import MiapoMesIdentifiants from '../components/MiapoMesIdentifiants.vue'
 import MiapoRejoindreProfil from '../components/MiapoRejoindreProfil.vue'
 import MiapoNotifications from '../components/MiapoNotifications.vue'
 import MiapoRelanceWhatsApp from '../components/MiapoRelanceWhatsApp.vue'

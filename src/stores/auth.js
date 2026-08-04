@@ -12,14 +12,16 @@ import {
   sendPasswordResetEmail,
   isSignInWithEmailLink,
   signInWithEmailLink,
-  updatePassword
+  updatePassword,
+  linkWithCredential,
+  EmailAuthProvider
 } from 'firebase/auth'
 import {
   doc, getDoc, setDoc, updateDoc,
   collection, query, where, getDocs, serverTimestamp
 } from 'firebase/firestore'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
-import { identifierToEmail } from '../utils/identifier'
+import { identifierToEmail, isSyntheticEmail, pseudoToEmail, isPseudoValide, normalizePseudo } from '../utils/identifier'
 import { currentLang } from '../i18n'
 
 // Comptes demo SECONDAIRE (pas de Firebase, bypass complet, mot de passe requis)
@@ -519,6 +521,11 @@ export const useAuthStore = defineStore('auth', () => {
     // vérification d'e-mail n'a pas de sens. Seuls les comptes e-mail/mot de
     // passe (u.email non vide) sont soumis à l'activation.
     if (!u.email) return true
+    // E-mail synthétique (téléphone, ou pseudo d'enfant) : aucune boîte mail
+    // derrière, donc aucun lien d'activation ne pourra JAMAIS être cliqué.
+    // Sans cette ligne, un enfant qui se choisit un pseudo se retrouverait
+    // enfermé sur l'écran d'activation, définitivement.
+    if (isSyntheticEmail(u.email)) return true
     if (u.emailVerified) return true
     try { await u.reload() } catch { /* hors-ligne : on reste bloqué, normal */ }
     if (auth.currentUser && auth.currentUser.emailVerified) {
@@ -527,6 +534,35 @@ export const useAuthStore = defineStore('auth', () => {
       return true
     }
     return false
+  }
+
+  /**
+   * Enfant connecté par LIEN MAGIQUE : se choisir un pseudo + un mot de passe
+   * pour revenir seul, sans redemander un lien à son parent.
+   *
+   * `linkWithCredential` ATTACHE ces identifiants au compte existant : même UID,
+   * donc le profil, les notes et le rattachement au parent sont conservés. Créer
+   * un nouveau compte à la place perdrait tout.
+   */
+  async function definirIdentifiantsEnfant(pseudo, motDePasse) {
+    const u = auth.currentUser
+    if (!u) return { success: false, error: 'non_connecte' }
+    if (!isPseudoValide(pseudo)) return { success: false, error: 'pseudo_court' }
+    if (!motDePasse || motDePasse.length < 6) return { success: false, error: 'mdp_court' }
+    try {
+      const cred = EmailAuthProvider.credential(pseudoToEmail(pseudo), motDePasse)
+      await linkWithCredential(u, cred)
+      user.value = auth.currentUser
+      return { success: true, pseudo: normalizePseudo(pseudo) }
+    } catch (e) {
+      const code = (e && e.code) || ''
+      if (code === 'auth/email-already-in-use' || code === 'auth/credential-already-in-use') {
+        return { success: false, error: 'pseudo_pris' }
+      }
+      if (code === 'auth/weak-password') return { success: false, error: 'mdp_court' }
+      if (code === 'auth/requires-recent-login') return { success: false, error: 'reconnexion' }
+      return { success: false, error: 'echec' }
+    }
   }
 
   // Connexion avec email/mot de passe
@@ -945,6 +981,7 @@ export const useAuthStore = defineStore('auth', () => {
     edition, isEditionSuperieur, isEditionSecondaire,
     isDemo, notProvisioned, isSuperAdmin, schoolId, userFirstName,
     loginDemo, loginDemoSup, loginWithEmail, loginWithIdentifier, signUpWithEmail, loginWithGoogle, resetPassword,
+    definirIdentifiantsEnfant,
     resendVerification, ensureEmailVerified,
     sendPasswordResetToMe,
     needsPassword, setInitialPassword, dismissNeedsPassword,
