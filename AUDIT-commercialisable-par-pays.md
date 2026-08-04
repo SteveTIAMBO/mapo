@@ -8,12 +8,16 @@
 
 ## Le résumé, sans détour
 
+> Mis à jour en fin de journée : les points 1, 2 et 3 ont été traités.
+
 | Pays | MAPO+ (familles) | MAPO (ERP écoles) |
 |---|---|---|
 | **Cameroun** | vendable | vendable — le produit est né pour lui |
-| **RD Congo** | vendable après le barème confirmé | **bloqué** : examens |
-| **Sénégal** | **bloqué** : classes et matières camerounaises | **bloqué** : examens, séries du lycée |
-| **France** | vendable | **bloqué** : examens, et l'ERP reste de forme camerounaise |
+| **RD Congo** | vendable, barème à confirmer | vendable, barème à confirmer |
+| **Sénégal** | vendable | vendable |
+| **Côte d'Ivoire** | vendable | vendable |
+| **France** | vendable | vendable côté produit — reste la conformité (voir plus bas) |
+| **Gabon** | séries et barème non sourcés | idem |
 
 La notation multi-régime livrée aujourd'hui lève un vrai blocage (le primaire
 sénégalais et ivoirien notés sur 10), mais elle ne suffit pas. Ce qui reste
@@ -43,18 +47,19 @@ nom. À faire dépendre du pays de l'école, avec les examens sourcés :
   sur le site du ministère.
 - Sénégal, Côte d'Ivoire, France : à sourcer avant d'écrire quoi que ce soit.
 
-### 2. Les classes du lycée sont camerounaises pour tout le monde
+### 2. ~~Les classes du lycée sont camerounaises pour tout le monde~~ ✅ levé
 
-`NIVEAUX_SECONDAIRE` impose les séries A / C / D à tous les pays sauf la France
-et la RDC. Une école sénégalaise ne peut donc pas déclarer ses classes
-correctement. Même problème côté MAPO+ : un lycéen sénégalais choisit une classe
-qui n'existe pas chez lui.
+Le **Sénégal** a ses séries (L1a, L1b, L'1, L2, S1, S2, S3 — source CAOSP) et la
+**Côte d'Ivoire** les siennes (A1, A2, C, D — la distinction A1/A2 n'existe pas
+au Cameroun). Reste le **Gabon**, sans source officielle trouvée : il garde la
+liste camerounaise, et c'est écrit dans le code.
 
-### 3. Les matières ne sont sourcées que pour trois pays
+### 3. ~~Les matières ne sont sourcées que pour trois pays~~ ✅ levé sauf Gabon
 
-Cameroun, France et RD Congo ont leur référentiel. Sénégal, Côte d'Ivoire et
-Gabon retombent sur la liste camerounaise. C'est le même défaut que celui réparé
-ce matin pour la RDC.
+Cameroun, France, RD Congo, Sénégal et Côte d'Ivoire ont leur référentiel.
+Détail qui trahit un logiciel importé : la matière civique s'appelle ECM au
+Cameroun, EDHC en Côte d'Ivoire, EMC en France, et « éducation civique et
+morale » en RDC. Les quatre sont distinctes dans le code.
 
 ### 4. Le barème congolais reste supposé
 
