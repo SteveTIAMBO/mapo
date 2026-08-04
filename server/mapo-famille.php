@@ -70,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     }
   }
   // Sonde de LECTURE : on tente de lire un document volontairement inexistant.
+  // ⚠️ L'identifiant ne doit PAS être encadré de doubles tirets bas : Firestore
+  // réserve cette forme et répond 400, ce qui rendait la sonde inutilisable.
   // 404 = tout va bien (on a le droit de lire, le document n'existe pas).
   // 403 = le compte de service n'a pas le rôle Firestore : c'est LA panne qui
   // faisait passer chaque lien magique valide pour un lien expiré.
@@ -80,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     else {
       $st = null;
       fsGet('https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT
-        . '/databases/(default)/documents/enfantInvites/__sonde_diagnostic__', $tok, $st);
+        . '/databases/(default)/documents/enfantInvites/sonde-diagnostic-inexistante', $tok, $st);
       $lecture = $st;
       $lectureVerdict = ($st === 404) ? 'ok' : (($st === 403 || $st === 401) ? 'droits_manquants' : 'inattendu');
     }
