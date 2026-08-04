@@ -247,7 +247,7 @@ ok('CI : A1 et A2 sont distinctes (le Cameroun n\'a qu\'une série A)', ['Tle A1
 ok("CI : l'EDHC ivoirienne, pas l'ECM camerounaise", matCD('Tle D', 'CI').includes('EDHC') && !matCD('Tle D', 'CI').some((m) => /citoyenneté et à la morale/.test(m)), matCD('Tle D', 'CI'))
 ok('CI : A1 est la série des langues vivantes', matCD('Tle A1', 'CI').includes('Espagnol'), matCD('Tle A1', 'CI'))
 ok('CI : D met la SVT en avant', matCD('Tle D', 'CI').includes('SVT'), matCD('Tle D', 'CI'))
-ok('Gabon : faute de source, il garde la liste camerounaise', mod.niveauxSecondairePays('GA').includes('Tle C'), mod.niveauxSecondairePays('GA'))
+ok('Pays retiré ou inconnu : repli sur la liste camerounaise, sans planter', mod.niveauxSecondairePays('GA').includes('Tle C') && mod.niveauxSecondairePays('').includes('Tle C'), mod.niveauxSecondairePays('GA'))
 
 console.log(ko ? `\n>>> ${ko} ÉCHEC(S)` : '\n>>> TOUT PASSE')
 process.exit(ko ? 1 : 0)

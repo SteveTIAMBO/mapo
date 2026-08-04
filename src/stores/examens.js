@@ -53,11 +53,6 @@ export const EXAM_TYPES_PAR_PAYS = {
     { key: 'dnb', label: 'DNB', niveau: '3e', cycle: 'college', desc: 'Diplôme national du brevet' },
     { key: 'bac', label: 'Baccalauréat', niveau: 'Terminale', cycle: 'lycee', desc: 'Fin du secondaire' },
   ],
-  GA: [
-    { key: 'cep', label: 'CEP', niveau: 'CM2', cycle: 'primaire', desc: "Certificat d'études primaires" },
-    { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: "Brevet d'études du premier cycle" },
-    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du secondaire' },
-  ],
 }
 
 /** Examens du pays d'une école. Pays inconnu → Cameroun (marché historique). */

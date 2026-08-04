@@ -92,7 +92,9 @@ describe('barèmes — régimes par pays', () => {
     expect(baremePour({ pays: 'FR', niveau: 'Terminale' }).complement).toBeNull()
   })
 
-  it('Gabon : /20 mais signalé à vérifier (pas de source officielle trouvée)', () => {
+  it('un pays retiré de la table (Gabon) retombe sur le cas inconnu', () => {
+    // Le Gabon a été retiré faute de source : ni ses séries ni son barème
+    // n'étaient sourçables. Il ne doit pas pour autant faire planter la notation.
     expect(baremePour({ pays: 'GA', niveau: '3ème' })).toMatchObject({ bareme: 'note20', aVerifier: true })
   })
 

@@ -70,9 +70,6 @@ export function niveauxSecondairePays(pays) {
   if (pays === 'CD') return NIVEAUX_SECONDAIRE_CD
   if (pays === 'SN') return NIVEAUX_SECONDAIRE_SN
   if (pays === 'CI') return NIVEAUX_SECONDAIRE_CI
-  // Gabon : structure calquée sur le modèle français hérité, mais je n'ai
-  // trouvé aucune source officielle sur ses séries → on sert la liste
-  // camerounaise plutôt que d'inventer, et l'audit le signale.
   return NIVEAUX_SECONDAIRE
 }
 
@@ -221,7 +218,6 @@ export const PAYS = [
   { code: 'CM', label: 'Cameroun' },
   { code: 'SN', label: 'Sénégal' },
   { code: 'CI', label: "Côte d'Ivoire" },
-  { code: 'GA', label: 'Gabon' },
   { code: 'CD', label: 'RD Congo' },
   { code: 'FR', label: 'France' },
   { code: 'autre', label: 'Autre' },

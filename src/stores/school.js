@@ -25,12 +25,6 @@ export const COUNTRY_DEFAULTS = {
     dateFormat: 'DD/MM/YYYY',
     phoneFormat: '+225 XX XX XX XX XX',
   },
-  GA: {
-    name: 'Gabon',
-    currency: 'XAF',
-    dateFormat: 'DD/MM/YYYY',
-    phoneFormat: '+241 XX XX XX XX',
-  },
   // RD Congo : franc congolais, PAS le franc CFA. Facturer une scolarité
   // kinoise en XAF n'aurait aucun sens pour l'école comme pour les parents.
   CD: {

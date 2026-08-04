@@ -100,8 +100,9 @@ export function paliersDe(cle) {
  *    la 6e.
  *  - France : /20, plus les 4 niveaux de maîtrise du socle en complément au
  *    collège (LSU maintenu après la réforme du DNB 2026).
- *  - Gabon : système calqué sur le modèle français, mais barème non confirmé
- *    par une source officielle → `aVerifier`.
+ *  - Gabon : RETIRÉ le 2026-08-03 faute de source officielle (ni séries, ni
+ *    barème). Un pays absent de cette table tombe dans le cas « inconnu » :
+ *    /20 et `aVerifier`. Le rajouter demande d'abord une source.
  */
 export const REGIMES = {
   CM: {
@@ -120,9 +121,6 @@ export const REGIMES = {
     college: { bareme: 'note20', complement: 'paliers4' },
     primaire: { bareme: 'note20', complement: 'paliers4' },
     defaut: { bareme: 'note20' },
-  },
-  GA: {
-    defaut: { bareme: 'note20', aVerifier: true },
   },
   CD: {
     // RD Congo. Structure SOURCÉE : primaire de 6 ans en trois degrés
