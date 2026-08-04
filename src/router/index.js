@@ -551,7 +551,7 @@ router.beforeEach(async (to) => {
     // Compte MAPO+ (B2C Firebase) : accès débloqué seulement une fois l'e-mail
     // confirmé. Tant que l'activation n'est pas faite → écran d'activation.
     if (isFirebaseUser) {
-      const verified = await authStore.ensureEmailVerified()
+      const verified = await authStore.accesDebloque()
       if (!verified) {
         const verifyAllowed = new Set(['VerifierEmail', 'Demo', 'VerifierDiplome', 'CompteNonConfigure'])
         if (!verifyAllowed.has(to.name)) return { name: 'VerifierEmail' }
@@ -564,7 +564,7 @@ router.beforeEach(async (to) => {
   // ── Directeur de COMPLEXE : espace « groupe » consolidé sur plusieurs écoles ──
   // Un compte `directeur_complexe` vit dans /complexe (vue agrégée), pas dans le
   // tableau de bord mono-école : on l'y renvoie depuis toute route MAPO standard.
-  if (isLoggedIn && authStore.isDirecteurComplexe && tenant.mode !== 'megaAdmin' && tenant.mode !== 'miapo') {
+  if (isLoggedIn && authStore.isDirecteurComplexe && tenant.mode !== 'megaAdmin' && tenant.mode !== 'mapoplus') {
     const complexeAllowed = new Set(['ComplexeAdmin', 'VerifierDiplome', 'Login'])
     if (!complexeAllowed.has(to.name)) return { name: 'ComplexeAdmin' }
   }

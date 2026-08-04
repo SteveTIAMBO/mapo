@@ -88,7 +88,10 @@ async function doSignOut() {
 // Retour depuis le lien d'activation (souvent un autre onglet) : on revérifie
 // dès que la fenêtre reprend le focus, et une fois au montage.
 async function recheck() {
-  const ok = await auth.ensureEmailVerified()
+  // `accesDebloque` et non `ensureEmailVerified` : ce dernier répond « oui »
+  // quand la session n'est pas encore restaurée, ce qui renvoyait la personne
+  // vers son espace — puis, de là, vers l'écran de connexion.
+  const ok = await auth.accesDebloque()
   if (ok) router.push('/mon-espace')
 }
 

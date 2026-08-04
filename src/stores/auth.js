@@ -515,6 +515,12 @@ export const useAuthStore = defineStore('auth', () => {
    * (l'utilisateur vient peut-être de cliquer le lien) puis, si c'est bon, on
    * marque le compte activé. Renvoie true si l'accès MAPO+ est autorisé.
    */
+  /**
+   * ⚠️ Renvoie `true` AUSSI quand il n'y a aucun compte Firebase — au sens de
+   * « rien à vérifier ici » (démo), PAS de « e-mail confirmé ». Les appelants
+   * qui veulent savoir si l'accès est débloqué doivent utiliser
+   * `accesDebloque()`, qui distingue les deux cas.
+   */
   async function ensureEmailVerified() {
     const u = auth.currentUser
     if (!u) return true            // pas de compte Firebase (démo…) : géré ailleurs
@@ -565,6 +571,22 @@ export const useAuthStore = defineStore('auth', () => {
       if (code === 'auth/requires-recent-login') return { success: false, error: 'reconnexion' }
       return { success: false, error: 'echec' }
     }
+  }
+
+  /**
+   * L'accès à l'espace est-il RÉELLEMENT débloqué ?
+   *
+   * Différence capitale avec `ensureEmailVerified()` : quand le SDK n'a pas
+   * encore restauré la session (`auth.currentUser` momentanément nul, ce qui
+   * arrive au montage d'une vue juste après l'inscription), on répond NON.
+   * Répondre oui envoyait l'utilisateur vers son espace, d'où le garde le
+   * rejetait vers l'accueil — c'est-à-dire l'écran de connexion, juste après
+   * avoir créé son compte, sans un mot d'explication.
+   */
+  async function accesDebloque() {
+    if (isDemo.value) return true
+    if (!auth.currentUser) return false
+    return ensureEmailVerified()
   }
 
   // Connexion avec email/mot de passe
@@ -995,7 +1017,7 @@ export const useAuthStore = defineStore('auth', () => {
     edition, isEditionSuperieur, isEditionSecondaire,
     isDemo, notProvisioned, isSuperAdmin, schoolId, userFirstName,
     loginDemo, loginDemoSup, loginWithEmail, loginWithIdentifier, signUpWithEmail, loginWithGoogle, resetPassword,
-    definirIdentifiantsEnfant,
+    definirIdentifiantsEnfant, accesDebloque,
     resendVerification, ensureEmailVerified,
     sendPasswordResetToMe,
     needsPassword, setInitialPassword, dismissNeedsPassword,
