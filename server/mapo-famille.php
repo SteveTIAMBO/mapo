@@ -69,12 +69,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
       $domain = '…@' . substr(strrchr($k['client_email'], '@'), 1);
     }
   }
+  // Sonde de LECTURE : on tente de lire un document volontairement inexistant.
+  // 404 = tout va bien (on a le droit de lire, le document n'existe pas).
+  // 403 = le compte de service n'a pas le rôle Firestore : c'est LA panne qui
+  // faisait passer chaque lien magique valide pour un lien expiré.
+  $lecture = null; $lectureVerdict = 'non_testee';
+  if ($valid) {
+    list($tok, $errTok) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore');
+    if (!$tok) { $lectureVerdict = 'jeton_impossible'; }
+    else {
+      $st = null;
+      fsGet('https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT
+        . '/databases/(default)/documents/enfantInvites/__sonde_diagnostic__', $tok, $st);
+      $lecture = $st;
+      $lectureVerdict = ($st === 404) ? 'ok' : (($st === 403 || $st === 401) ? 'droits_manquants' : 'inattendu');
+    }
+  }
   echo json_encode([
     'ok' => true,
     'project' => FIREBASE_PROJECT,
     'sa_key_present' => $present,
     'sa_key_valid' => $valid,
     'sa_domain' => $domain,
+    'lecture_http' => $lecture,
+    'lecture' => $lectureVerdict,
   ]);
   exit;
 }
@@ -99,8 +117,19 @@ if (!$accessToken) { http_response_code(503); echo json_encode(['error' => 'serv
 $fsBase = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT . '/databases/(default)/documents/';
 
 // ── 1. Lire l'invitation enfant (lecture seule) ───────────────────────
-$inv = fsGet($fsBase . 'enfantInvites/' . rawurlencode($code), $accessToken);
-if ($inv === null) { http_response_code(404); echo json_encode(['error' => 'code_inconnu']); exit; }
+$readStatus = null;
+$inv = fsGet($fsBase . 'enfantInvites/' . rawurlencode($code), $accessToken, $readStatus);
+if ($inv === null) {
+  // 403 / 401 = le compte de service n'a pas le droit de lire — c'est une panne
+  // de NOTRE côté. Dire à un enfant « ton lien n'est plus valide » l'enverrait
+  // redemander un lien à son parent, en boucle, sans que rien ne s'arrange.
+  if ($readStatus === 403 || $readStatus === 401) {
+    http_response_code(503);
+    echo json_encode(['error' => 'service_indisponible', 'detail' => 'firestore_' . $readStatus]);
+    exit;
+  }
+  http_response_code(404); echo json_encode(['error' => 'code_inconnu']); exit;
+}
 $f = $inv['fields'] ?? [];
 $ownerUid = $f['ownerUid']['stringValue'] ?? '';
 $enfantId = $f['enfantId']['stringValue'] ?? '';
@@ -214,7 +243,10 @@ function mintCustomToken($uid) {
  * GET Firestore REST. Retourne le document décodé (tableau associatif avec
  * `fields`) ou null si absent/erreur.
  */
-function fsGet($url, $token) {
+// $status (par référence) permet à l'appelant de distinguer 404 (document
+// absent) de 403 (rôle IAM manquant) — deux causes opposées qui produisaient
+// jusqu'ici le MÊME `code_inconnu`, donc le même message trompeur à l'enfant.
+function fsGet($url, $token, &$status = null) {
   $ch = curl_init($url);
   curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
@@ -225,6 +257,7 @@ function fsGet($url, $token) {
   $res = curl_exec($ch);
   $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
   curl_close($ch);
+  $status = $code;
   if ($res === false || $code !== 200) return null;
   $j = json_decode($res, true);
   return is_array($j) ? $j : null;
