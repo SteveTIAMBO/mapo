@@ -14,7 +14,9 @@ import {
   signInWithEmailLink,
   updatePassword,
   linkWithCredential,
-  EmailAuthProvider
+  EmailAuthProvider,
+  getAdditionalUserInfo,
+  deleteUser
 } from 'firebase/auth'
 import {
   doc, getDoc, setDoc, updateDoc,
@@ -646,6 +648,18 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       flagFreshLogin()
       const result = await signInWithPopup(auth, googleProvider)
+      // Google est un moyen de SE CONNECTER, pas de S'INSCRIRE : le formulaire
+      // d'inscription MAPO+ collecte des informations obligatoires (parent ou
+      // apprenant, pays, classe) sans lesquelles l'onboarding n'a aucun sens.
+      // `signInWithPopup` crée pourtant un compte en silence si l'adresse est
+      // inconnue → on le supprime aussitôt et on renvoie la personne vers le
+      // formulaire. Sans cette suppression, l'adresse resterait « connue » et
+      // toute tentative ultérieure passerait, sans jamais poser les questions.
+      if (isMapoPlusTenant() && getAdditionalUserInfo(result)?.isNewUser) {
+        try { await deleteUser(result.user) } catch { try { await signOut(auth) } catch { /* silent */ } }
+        user.value = null
+        return { success: false, error: 'inscription_google_interdite' }
+      }
       if (isDemo.value) clearDemoBleedKeys(); isDemo.value = false; clearDemoSession() // un vrai compte prime sur la démo
       user.value = result.user // voir loginWithEmail : éviter le renvoi au login
       await loadUserProfile(result.user)

@@ -82,9 +82,11 @@
     "classLabel": "Ta classe / série",
     "classPlaceholder": "Choisir…",
     "formationName": "Ta formation",
-    "formationPlaceholder": "MBA, BTS, concours…"
+    "formationPlaceholder": "MBA, BTS, concours…",
+    "googleSignupBlocked": "Ce compte Google n'existe pas encore sur MAPO+. Crée d'abord ton compte avec le formulaire : on a besoin de savoir si tu es parent ou apprenant, et dans quel pays."
   },
   "verifyEmail": {
+    "created": "Ton compte MAPO+ est créé.",
     "title": "Active ton compte MAPO+",
     "sentTo": "On vient de t'envoyer un lien d'activation à :",
     "checkSpam": "Ouvre l'e-mail et clique sur le lien pour débloquer ton espace. Pense à regarder dans les indésirables si tu ne le vois pas.",

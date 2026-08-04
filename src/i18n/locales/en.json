@@ -82,9 +82,11 @@
     "classLabel": "Your class / track",
     "classPlaceholder": "Choose…",
     "formationName": "Your program",
-    "formationPlaceholder": "MBA, diploma, exam prep…"
+    "formationPlaceholder": "MBA, diploma, exam prep…",
+    "googleSignupBlocked": "This Google account does not exist on MAPO+ yet. Create your account with the form first: we need to know whether you are a parent or a learner, and in which country."
   },
   "verifyEmail": {
+    "created": "Your MAPO+ account has been created.",
     "title": "Activate your MAPO+ account",
     "sentTo": "We've just sent an activation link to:",
     "checkSpam": "Open the email and click the link to unlock your space. Check your spam folder if you don't see it.",

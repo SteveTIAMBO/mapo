@@ -17,6 +17,7 @@
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
       </div>
 
+      <p class="ve-created">{{ t('verifyEmail.created') }}</p>
       <h1 class="ve-title">{{ t('verifyEmail.title') }}</h1>
       <p class="ve-text">{{ t('verifyEmail.sentTo') }}</p>
       <p class="ve-email">{{ email }}</p>
@@ -190,6 +191,7 @@ onBeforeUnmount(() => {
   color: var(--pr, #8e24a9);
   background: color-mix(in srgb, var(--pr, #8e24a9) 12%, #fff);
 }
+.ve-created { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: #1B8A5A; }
 .ve-title {
   font-size: 20px;
   font-weight: 800;
