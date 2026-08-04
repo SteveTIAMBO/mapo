@@ -391,6 +391,11 @@
             <div v-else class="card">
               <div class="card-head"><GraduationCap :size="18" /><h3><DualText :text="t('mia.requestRevision')" /></h3></div>
               <p class="muted">{{ t('mia.requestRevisionHint', { name: activeEnfant.firstName }) }}</p>
+              <button v-if="conseilRevision && !reviseMatiere" type="button" class="seq-conseil" @click="reviseMatiere = conseilRevision.matiere">
+                <MiapoOrbe :size="20" />
+                <span class="seq-conseil-tx"><strong>{{ t('mia.seqConseilParent', { name: activeEnfant.firstName }) }}</strong> {{ conseilRevision.matiere }} — {{ t('mia.seqRp_' + conseilRevision.raison) }}</span>
+                <ChevronRight :size="16" class="seq-conseil-arr" />
+              </button>
               <div class="revise-pick">
                 <select v-model="reviseMatiere" class="input"><option value="" disabled>{{ isApprenant ? t('mia.chooseModule') : t('mia.chooseSubject') }}</option><option v-for="m in matieresList" :key="m" :value="m">{{ m }}</option></select>
                 <button class="btn btn-primary" :disabled="!reviseMatiere" @click="demanderRevision"><Plus :size="15" /> <span>{{ t('mia.request') }}</span></button>
@@ -1945,7 +1950,10 @@ const reviseTypes = computed(() => {
 // réviser ensuite (ZPD + progrès + points faibles + exploration). Aide l'apprenant
 // à choisir quand rien n'est encore sélectionné. cf. src/utils/sequenceur.js.
 const conseilRevision = computed(() => {
-  if (!isApprenant.value) return null
+  // Le conseil vaut AUSSI pour le parent : c'est lui qui décide quoi faire
+  // travailler, et il n'a aucun moyen de savoir où son enfant a le plus à
+  // gagner. Le réserver à l'apprenant privait de moteur celui des deux qui
+  // pilote — et beaucoup de familles n'utilisent que le compte parent.
   const e = activeEnfant.value
   if (!e) return null
   void tuteur.revisionsVersion // réactif après chaque révision (Elo/faiblesses à jour)
