@@ -73,6 +73,43 @@ export function niveauxSecondairePays(pays) {
   return NIVEAUX_SECONDAIRE
 }
 
+// ── Cycle → classes ────────────────────────────────────────────────────
+// Source de vérité UNIQUE pour « quelles classes proposer ».
+//
+// Les écrans présentaient auparavant les trois cycles dans un seul menu
+// déroulant, séparés par des intitulés de groupe. Un parent camerounais qui
+// inscrit son enfant en CM1 y faisait défiler des classes de Terminale et des
+// années de Master. On choisit d'abord le cycle, la liste se réduit ensuite —
+// c'est déjà ce que fait la page d'inscription.
+export const CYCLES = ['primaire', 'secondaire', 'superieur']
+
+export function niveauxPourCycle(cycle, pays) {
+  if (cycle === 'primaire') return niveauxPrimairePays(pays)
+  if (cycle === 'secondaire') return niveauxSecondairePays(pays)
+  if (cycle === 'superieur') return NIVEAUX_SUPERIEUR
+  return []
+}
+
+/**
+ * Cycle d'une classe donnée. Indispensable pour les profils DÉJÀ créés : ils
+ * portent une classe mais souvent pas de cycle (le champ ne leur avait jamais
+ * été demandé). Sans cette déduction, ouvrir leur profil afficherait un cycle
+ * vide et donc une liste de classes vide — on effacerait leur niveau en leur
+ * demandant de le confirmer.
+ */
+export function cycleDuNiveau(niveau, pays) {
+  if (!niveau) return ''
+  if (niveau === NIVEAU_HORS_CATALOGUE) return 'superieur'
+  if (niveauxPrimairePays(pays).includes(niveau)) return 'primaire'
+  if (niveauxSecondairePays(pays).includes(niveau)) return 'secondaire'
+  if (NIVEAUX_SUPERIEUR.includes(niveau)) return 'superieur'
+  // Classe d'un autre pays (l'enfant a changé de système) : on ne devine pas,
+  // on cherche dans tous les référentiels avant d'abandonner.
+  if (NIVEAUX_PRIMAIRE.includes(niveau) || NIVEAUX_PRIMAIRE_FR.includes(niveau)) return 'primaire'
+  if (NIVEAUX_SECONDAIRE.includes(niveau) || NIVEAUX_SECONDAIRE_FR.includes(niveau)) return 'secondaire'
+  return ''
+}
+
 // ── RD Congo ──
 // Primaire de 6 ans en trois degrés (élémentaire 1re-2e, moyen 3e-4e, terminal
 // 5e-6e). Secondaire : 2 ans de cycle d'orientation (7e, 8e) puis 4 ans

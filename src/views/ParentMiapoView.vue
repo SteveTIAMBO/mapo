@@ -898,22 +898,22 @@
               <div class="form-group"><label class="form-label">{{ t('mia.lastName') }}</label><input v-model="profil.lastName" class="input" /></div>
             </div>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" class="input"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
-              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in niveauxPrimairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in niveauxSecondairePays(profil.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup v-if="profil.pays !== 'FR'" :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option v-if="profil.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="profil.cycle" :disabled="scolariteVerrouillee" class="input" @change="profil.niveau = ''"><option value="">—</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="profil.niveau" class="input" :disabled="!profil.cycle || scolariteVerrouillee"><option value="" disabled>{{ profil.cycle ? t('mia.classPick') : t('mia.cyclePickFirst') }}</option><option v-for="n in niveauxPourCycle(profil.cycle, profil.pays)" :key="n" :value="n">{{ n }}</option><option v-if="profil.cycle === 'superieur' && profil.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
             </div>
             <template v-if="profil.niveau === NIVEAU_HORS_CATALOGUE">
               <!-- Certification : catalogue → modules préchargés + organisme + date d'examen -->
               <div class="form-group">
                 <label class="form-label">{{ t('mia.certifLabel') }}</label>
-                <select v-model="profil.certifId" class="input" @change="onCertif(profil)">
+                <select v-model="profil.certifId" :disabled="scolariteVerrouillee" class="input" @change="onCertif(profil)">
                   <option value="">{{ t('mia.certifChoose') }}</option>
                   <option v-for="c in CERTIFICATIONS" :key="c.id" :value="c.id">{{ c.nom }}</option>
                   <option value="autre">{{ t('mia.certifOther') }}</option>
                 </select>
               </div>
               <div v-if="profil.certifId" class="form-row">
-                <div class="form-group"><label class="form-label">{{ t('mia.certifOrg') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.organisme" class="input" :placeholder="t('mia.certifOrgPlaceholder')" /></div>
-                <div class="form-group"><label class="form-label">{{ t('mia.certifDate') }}</label><input v-model="profil.certifDate" type="date" class="input" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.certifOrg') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.organisme" :disabled="scolariteVerrouillee" class="input" :placeholder="t('mia.certifOrgPlaceholder')" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.certifDate') }}</label><input v-model="profil.certifDate" :disabled="scolariteVerrouillee" type="date" class="input" /></div>
               </div>
               <p v-if="profil.certifId && profil.certifId !== 'autre'" class="muted small preloaded"><Check :size="13" /> {{ t('mia.certifPreloaded') }}</p>
               <p v-if="joursAvantCertif(profil) !== null" class="certif-countdown"><CalendarDays :size="14" /> {{ t('mia.certifCountdown', { n: joursAvantCertif(profil) }) }}</p>
@@ -924,10 +924,10 @@
                 </div>
               </div>
               <div class="form-row">
-                <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
-                <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" :disabled="scolariteVerrouillee" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
+                <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" :disabled="scolariteVerrouillee" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
               </div>
-              <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" :disabled="scolariteVerrouillee" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
               <!-- Moteur de cours : MIAPO décompose la formation en modules + plan -->
               <div class="course-engine">
                 <div class="ce-head"><MiapoOrbe :size="16" :frozen="true" /><strong>{{ t('mia.courseEngineTitle') }}</strong></div>
@@ -943,7 +943,7 @@
               </div>
             </template>
             <div class="form-row">
-              <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.country') }}</label><select v-model="profil.pays" :disabled="scolariteVerrouillee" class="input"><option v-for="p in PAYS" :key="p.code" :value="p.code">{{ p.label }}</option></select></div>
             </div>
             <!-- Matières (primaire/secondaire) : programme national préchargé, personnalisable -->
             <div v-if="!isNiveauSuperieur(profil.niveau) && profil.niveau !== NIVEAU_HORS_CATALOGUE" class="form-group">
@@ -953,7 +953,7 @@
                 <button type="button" class="btn btn-outline btn-sm" @click="preloadMatieres(profil)">{{ t('mia.customizeSubjects') }}</button>
               </template>
               <template v-else>
-                <textarea v-model="profil.formationModules" class="input" rows="3" :placeholder="t('mia.subjectsPlaceholder')"></textarea>
+                <textarea v-model="profil.formationModules" :disabled="scolariteVerrouillee" class="input" rows="3" :placeholder="t('mia.subjectsPlaceholder')"></textarea>
                 <div v-if="specialitesFR(profil).length" class="spec-adds">
                   <span class="muted small">{{ t('mia.addSpecialite') }}</span>
                   <button v-for="sp in specialitesFR(profil)" :key="sp" type="button" class="btn btn-outline btn-xs spec-btn" @click="addSpecialite(profil, sp)">+ {{ sp }}</button>
@@ -965,7 +965,7 @@
             <template v-if="isNiveauSuperieur(profil.niveau)">
               <div class="form-group">
                 <label class="form-label">{{ t('mia.catSchoolLabel') }}</label>
-                <select v-model="profil.catEcole" class="input" @change="onCatEcole(profil)">
+                <select v-model="profil.catEcole" :disabled="scolariteVerrouillee" class="input" @change="onCatEcole(profil)">
                   <option value="">{{ t('mia.catSchoolChoose') }}</option>
                   <option v-for="e in ECOLES_CATALOGUE" :key="e.id" :value="e.id">{{ e.nom }}</option>
                   <option value="autre">{{ t('mia.catSchoolOther') }}</option>
@@ -973,18 +973,18 @@
               </div>
               <div v-if="ecoleCatalogueObj(profil)" class="form-group">
                 <label class="form-label">{{ t('mia.catFormationLabel') }}</label>
-                <select v-model="profil.catFormation" class="input" @change="onCatFormation(profil)">
+                <select v-model="profil.catFormation" :disabled="scolariteVerrouillee" class="input" @change="onCatFormation(profil)">
                   <option value="">{{ t('mia.catFormationChoose') }}</option>
                   <option v-for="f in ecoleCatalogueObj(profil).formations" :key="f.id" :value="f.id">{{ f.nom }}</option>
                 </select>
                 <p v-if="profil.catFormation" class="muted small preloaded"><Check :size="13" /> {{ t('mia.catPreloaded') }}</p>
               </div>
-              <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" class="input" rows="3" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
+              <div class="form-group"><label class="form-label">{{ t('mia.mySubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" :disabled="scolariteVerrouillee" class="input" rows="3" :placeholder="t('mia.uniSubjectsPlaceholder')"></textarea></div>
             </template>
             <div class="form-row">
               <div class="form-group">
                 <label class="form-label">{{ t('mia.scale') }}</label>
-                <select v-model="profil.bareme" class="input">
+                <select v-model="profil.bareme" :disabled="scolariteVerrouillee" class="input">
                   <option v-for="o in BAREME_OPTIONS" :key="o.key" :value="o.key">{{ t(o.labelKey) }}</option>
                 </select>
                 <small class="muted small">{{ t('mia.scaleHint') }}</small>
@@ -992,11 +992,11 @@
               </div>
               <div class="form-group">
                 <label class="form-label">{{ t('mia.targetGrade') }}</label>
-                <input v-model.number="profil.objectifNote" type="number" min="0" :max="maxNote" step="0.5" class="input" />
+                <input v-model.number="profil.objectifNote" :disabled="scolariteVerrouillee" type="number" min="0" :max="maxNote" step="0.5" class="input" />
                 <small class="muted small">{{ t('mia.targetGradeHint') }}</small>
               </div>
-              <div v-if="!isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
-              <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.filiere" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
+              <div v-if="!isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.school') }}</label><input v-model="profil.ecole" :disabled="scolariteVerrouillee" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
+              <div v-if="isNiveauSuperieur(profil.niveau)" class="form-group"><label class="form-label">{{ t('mia.filiere') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.filiere" :disabled="scolariteVerrouillee" class="input" :placeholder="t('mia.filierePlaceholder')" /></div>
             </div>
             <!-- Objectif PAR MATIÈRE : viser 14 en maths et 10 partout ailleurs.
                  Sans surcharge, la matière suit l'objectif global ci-dessus. -->
@@ -1070,7 +1070,8 @@
           </div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">{{ t('mia.sex') }}</label><select v-model="form.gender" class="input"><option value="M">{{ t('mia.boy') }}</option><option value="F">{{ t('mia.girl') }}</option></select></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input"><optgroup :label="t('mia.cyclePrimary')"><option v-for="n in niveauxPrimairePays(form.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup :label="t('mia.cycleSecondary')"><option v-for="n in niveauxSecondairePays(form.pays)" :key="n" :value="n">{{ n }}</option></optgroup><optgroup v-if="form.pays !== 'FR'" :label="t('mia.cycleHigher')"><option v-for="n in NIVEAUX_SUPERIEUR" :key="n" :value="n">{{ n }}</option></optgroup><option v-if="form.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.cycleLabel') }}</label><select v-model="form.cycle" class="input" @change="form.niveau = ''"><option value="" disabled>{{ t('mia.cyclePick') }}</option><option value="primaire">{{ t('mia.cyclePrimary') }}</option><option value="secondaire">{{ t('mia.cycleSecondary') }}</option><option v-if="form.pays !== 'FR'" value="superieur">{{ t('mia.cycleHigher') }}</option></select></div>
+            <div class="form-group"><label class="form-label">{{ t('mia.classLabel') }}</label><select v-model="form.niveau" class="input" :disabled="!form.cycle"><option value="" disabled>{{ form.cycle ? t('mia.classPick') : t('mia.cyclePickFirst') }}</option><option v-for="n in niveauxPourCycle(form.cycle, form.pays)" :key="n" :value="n">{{ n }}</option><option v-if="form.cycle === 'superieur' && form.pays !== 'FR'" :value="NIVEAU_HORS_CATALOGUE">{{ NIVEAU_HORS_CATALOGUE }}</option></select></div>
           </div>
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
@@ -1124,7 +1125,7 @@ import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_PRIMAIRE_FR, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
+import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_PRIMAIRE_FR, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, niveauxPourCycle, cycleDuNiveau, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
 import { analyserBulletin, analyserEdt } from '../services/aiVision'
 import { useTuteurStore } from '../stores/tuteur'
 import { useMiapoAnalyticsStore } from '../stores/miapoAnalytics'
@@ -1806,12 +1807,26 @@ const BAREME_OPTIONS = [
   { key: 'paliers4', labelKey: 'mia.scaleMastery' },
 ]
 const profilSaved = ref(false)
+// Compte ENFANT rattaché à un parent : sa scolarité ne lui appartient pas.
+// Il garde ce qui relève de sa personne — prénom, photo, thème, accessibilité,
+// centres d'intérêt — et le reste (cycle, classe, pays, école, objectif de
+// note) est du ressort de son parent. Un enfant qui se déclarerait en Terminale
+// changerait ce que le tuteur lui propose et fausserait le suivi que voit sa
+// mère, sans que personne ne s'en aperçoive.
+//
+// ⚠️ Ceci n'est que l'ÉCRAN. Un champ grisé n'est pas une protection : la règle
+// Firestore autorise encore l'enfant à réécrire son profil. Le verrou côté base
+// reste à poser, et demande de connaître exactement ce qu'une session enfant
+// écrit dans ce document (le tuteur y touche peut-être) — sous peine de casser
+// ses révisions en croyant le protéger.
+const scolariteVerrouillee = computed(() => store.isCompteEnfant)
+
 function syncProfil() {
   const e = activeEnfant.value
   if (!e) return
   profil.value = {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
-    cycle: e.cycle || '', niveau: e.niveau || '3ème', pays: e.pays || 'CM',
+    cycle: e.cycle || cycleDuNiveau(e.niveau, e.pays || 'CM'), niveau: e.niveau || '', pays: e.pays || 'CM',
     ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
     objectifNote: store.objectifDe(e),
     bareme: e.bareme || '',
@@ -2136,7 +2151,7 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
 // ── Catalogue école → formation → préchargement du programme (apprenant supérieur) ──
 function ecoleCatalogueObj(o) { return (o.catEcole && o.catEcole !== 'autre') ? ecoleCatalogue(o.catEcole) : null }
 function onCatEcole(o) {
