@@ -198,13 +198,28 @@ service cloud.firestore {
         || isSuperAdmin()
       );
 
-      // L'utilisateur crée son propre profil, rattaché à l'école et au
-      // rôle d'une invitation valide pour son email.
+      // Compte MAPO+ (B2C) : personne ne l'invite, il s'inscrit seul. Il crée
+      // donc son profil sans invitation — mais SANS pouvoir se rattacher à une
+      // école ni se donner un rôle de personnel.
+      //
+      // ⚠️ Sans cette règle, l'inscription MAPO+ était REFUSÉE en silence :
+      // `permission-denied` capté et journalisé en warning côté client (vu en
+      // prod le 05/08 à la création du compte). Conséquence visible : le prénom
+      // et le nom saisis à l'inscription n'étaient jamais enregistrés, et il
+      // fallait les ressaisir dans les Paramètres — le reproche exact de Steve.
+      function profilB2CValide() {
+        return request.resource.data.b2c == true
+          && request.resource.data.schoolId == null
+          && request.resource.data.role in ['parent', 'apprenant'];
+      }
+
+      // L'utilisateur crée son propre profil : soit un profil B2C autonome,
+      // soit un profil d'école rattaché à une invitation valide pour son email.
       allow create: if isSignedIn()
         && request.auth.uid == uid
         && request.resource.data.uid == uid
         && request.resource.data.status == 'active'
-        && invitationOk();
+        && (profilB2CValide() || invitationOk());
 
       // Soi-même : peut modifier ses infos, mais pas son école ni son rôle.
       // Admin de la même école : peut modifier rôle et statut du personnel.

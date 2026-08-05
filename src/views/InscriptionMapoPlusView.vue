@@ -205,12 +205,33 @@ async function handleSignUp() {
   isLoading.value = false
   if (!result.success) { errorMessage.value = result.error; return }
 
-  // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
-  // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
-  miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
+  // ⚠️ À partir d'ici, LE COMPTE EXISTE. Plus rien ne doit pouvoir laisser la
+  // personne sur ce formulaire : elle le resoumettrait, et se heurterait à
+  // « un compte existe déjà avec cet e-mail ». C'est exactement ce que Steve a
+  // vécu le 05/08 — compte créé, e-mail d'activation parti, et le formulaire
+  // toujours à l'écran, sans un mot.
+  //
+  // Le point de vue choisi (parent / apprenant) est un confort : s'il échoue,
+  // il ne doit surtout pas emporter la navigation avec lui.
+  try {
+    miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
+  } catch (e) { console.warn('[inscription] mode non positionné, sans gravité:', e) }
+
   // `replace` et non `push` : revenir en arrière sur un formulaire d'inscription
   // dont le compte vient d'être créé ne mène qu'à une erreur « e-mail déjà utilisé ».
-  router.replace(result.needsVerification ? '/verifier-email' : '/mon-espace')
+  const cible = result.needsVerification ? '/verifier-email' : '/mon-espace'
+  try {
+    // vue-router ne LÈVE pas quand un garde refuse : il RENVOIE un échec, qu'on
+    // ignorait silencieusement. D'où un formulaire figé et zéro trace.
+    const echec = await router.replace(cible)
+    if (echec) {
+      console.warn('[inscription] navigation refusée par un garde:', echec)
+      window.location.assign(cible)
+    }
+  } catch (e) {
+    console.warn('[inscription] navigation impossible, rechargement complet:', e)
+    window.location.assign(cible)
+  }
 }
 </script>
 
