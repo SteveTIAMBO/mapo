@@ -171,6 +171,43 @@ if ($action === 'set_child_login' || $action === 'delete_child') {
       echo json_encode(['error' => 'creation_impossible', 'detail' => $res['error']['message'] ?? ('http_' . $http)]);
       exit;
     }
+
+    // 3. LE POINTEUR DE RATTACHEMENT — sans lui, le compte ne sert à rien.
+    //
+    // Au premier démarrage, l'application lit `users/<enfant>/b2c/link` pour
+    // savoir de quel parent et de quel profil dépend la session. Ce document
+    // manquait ici : le flux « lien magique » l'écrit depuis le navigateur de
+    // l'enfant (il y est authentifié comme lui-même), mais l'enfant qui arrive
+    // par identifiant + code ne sait rien de son parent — il ne peut donc pas
+    // l'écrire. Faute de pointeur, l'application le prenait pour un nouveau
+    // venu et lui refaisait passer tout l'onboarding : prénom, niveau, école…
+    // alors que sa mère venait de les saisir. Vécu le 05/08 (Marie Francisca).
+    //
+    // C'est donc au serveur de l'écrire, avec le compte de service : le parent
+    // n'a aucun droit d'écriture chez son enfant, et il ne doit pas en avoir.
+    list($fsTok, ) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore');
+    if (!$fsTok) {
+      http_response_code(502);
+      echo json_encode(['error' => 'lien_impossible', 'detail' => 'firestore_token']);
+      exit;
+    }
+    $lienUrl = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT
+      . '/databases/(default)/documents/users/' . rawurlencode($childUid) . '/b2c/link';
+    // Mêmes champs que le flux lien magique (enfantsComptes.js) : toute
+    // divergence ferait diverger les deux chemins d'entrée.
+    list($lienRes, $lienHttp) = fsPatch($lienUrl, $fsTok, [
+      'ownerUid' => ['stringValue' => $parentUid],
+      'enfantId' => ['stringValue' => $enfantId],
+    ]);
+    if ($lienHttp !== 200) {
+      // On échoue FRANCHEMENT : le compte existe, mais s'en servir renverrait
+      // l'enfant dans l'onboarding. Mieux vaut que le parent le sache et
+      // recommence — l'opération est rejouable telle quelle.
+      http_response_code(502);
+      echo json_encode(['error' => 'lien_impossible', 'detail' => $lienRes['error']['message'] ?? ('http_' . $lienHttp)]);
+      exit;
+    }
+
     echo json_encode(['ok' => true, 'identifiant' => $ident, 'childUid' => $childUid]);
     exit;
   }
@@ -393,6 +430,28 @@ function itPost($chemin, $token, $body) {
     CURLOPT_POSTFIELDS => json_encode($body),
     CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
     CURLOPT_TIMEOUT => 10,
+    CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return [json_decode($res ?: '{}', true) ?: [], $http];
+}
+
+/**
+ * Écriture d'un document Firestore (compte de service). PATCH sans masque =
+ * création si le document n'existe pas, remplacement complet sinon — c'est ce
+ * qu'on veut pour un pointeur qui ne contient que deux champs.
+ * Retourne [reponse_decodee, code_http].
+ */
+function fsPatch($url, $token, $fields) {
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_CUSTOMREQUEST => 'PATCH',
+    CURLOPT_POSTFIELDS => json_encode(['fields' => $fields]),
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    CURLOPT_TIMEOUT => 8,
     CURLOPT_CONNECTTIMEOUT => 5,
   ]);
   $res = curl_exec($ch);
