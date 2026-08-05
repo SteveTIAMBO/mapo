@@ -5601,6 +5601,15 @@
     "err_mdp_court": "Le mot de passe doit faire au moins 6 caractères.",
     "err_reconnexion": "Reclique sur ton lien, puis réessaie.",
     "err_non_connecte": "Tu n'es pas connecté.",
-    "err_echec": "Ça n'a pas marché. Réessaie dans un instant."
+    "err_echec": "Ça n'a pas marché. Réessaie dans un instant.",
+    "parentTitle": "Identifiant de {name}",
+    "parentHint": "Choisissez son identifiant et un code à chiffres. C'est vous qui les créez : on ne demande ni e-mail ni mot de passe à un enfant.",
+    "parentCode": "Son code",
+    "parentCodePlaceholder": "1234",
+    "parentCodeHint": "4 à 6 chiffres, faciles à retenir pour lui.",
+    "parentSave": "Enregistrer ses identifiants",
+    "parentOk": "C'est fait. Il se connecte avec {p} et son code.",
+    "parentTaken": "L'identifiant {p} est déjà pris. Essayez-en un autre, par exemple en ajoutant un chiffre.",
+    "parentErr": "L'enregistrement a échoué. Réessayez dans un instant."
   }
 }

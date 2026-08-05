@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import { auth, db } from '../firebase'
 import { deleteUser } from 'firebase/auth'
 import { doc, getDoc, getDocs, deleteDoc, collection } from 'firebase/firestore'
+import { useEnfantsComptesStore } from './enfantsComptes'
+import { useEnfantsAutonomesStore } from './enfantsAutonomes'
 
 /**
  * Store « donneesPersonnelles » — les droits RGPD, côté code.
@@ -110,6 +112,17 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
     busy.value = true
     erreur.value = ''
     try {
+      // 0. Les COMPTES ENFANTS rattachés, d'abord. Ce sont des comptes
+      //    d'authentification distincts : les laisser derrière soi ferait
+      //    survivre l'accès d'un mineur à un espace dont le parent est parti.
+      //    Ils appartiennent au parent, c'est donc à lui de les emporter.
+      try {
+        const eco = useEnfantsComptesStore()
+        const enfants = useEnfantsAutonomesStore()
+        for (const e of (enfants.enfants || [])) {
+          await eco.supprimerCompteEnfant(e.id)
+        }
+      } catch { /* best-effort : ne doit jamais empêcher la suppression du parent */ }
       // 1. La sous-collection b2c : profils enfants, lien co-parent, compte enfant.
       try {
         const snap = await getDocs(collection(db, 'users', u, 'b2c'))

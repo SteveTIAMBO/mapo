@@ -8,6 +8,27 @@
     <template v-else>
       <p class="muted">{{ t('mia.enfantCompteHint') }}</p>
 
+      <!-- Identifiant + code de l'enfant : c'est le PARENT qui les choisit.
+           On ne demande ni e-mail ni mot de passe à un mineur. -->
+      <div v-if="enfantId" class="ec-login">
+        <h4 class="ec-login-t">{{ t('ident.parentTitle', { name: nomProfil(enfantId) }) }}</h4>
+        <p class="muted small">{{ t('ident.parentHint') }}</p>
+        <div class="ec-login-row">
+          <label class="form-label">{{ t('ident.pseudo') }}</label>
+          <input v-model="loginIdent" class="input" :placeholder="t('ident.pseudoPlaceholder')" />
+        </div>
+        <div class="ec-login-row">
+          <label class="form-label">{{ t('ident.parentCode') }}</label>
+          <input v-model="loginCode" class="input" inputmode="numeric" maxlength="6" :placeholder="t('ident.parentCodePlaceholder')" />
+          <small class="muted small">{{ t('ident.parentCodeHint') }}</small>
+        </div>
+        <button class="btn btn-primary btn-sm" :disabled="!loginPret || eco.busy" @click="enregistrerLogin">
+          <component :is="eco.busy ? Loader2 : KeyRound" :size="14" :class="{ spin: eco.busy }" />
+          <span>{{ t('ident.parentSave') }}</span>
+        </button>
+        <p v-if="loginMsg" class="ec-login-msg" :class="{ err: loginErr }">{{ loginMsg }}</p>
+      </div>
+
       <!-- Un code par enfant : on choisit DE QUI on ouvre le profil -->
       <div class="row">
         <select v-model="enfantId" class="input select">
@@ -46,12 +67,13 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsComptesStore } from '../stores/enfantsComptes'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
-import { GraduationCap, UserPlus, Copy, X, Loader2, MessageCircle } from 'lucide-vue-next'
+import { normalizePseudo, isPseudoValide } from '../utils/identifier'
+import { GraduationCap, UserPlus, Copy, X, Loader2, MessageCircle, KeyRound } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const authStore = useAuthStore()
@@ -65,6 +87,36 @@ const codePrenom = ref('')
 const copied = ref(false)
 
 const enfantsDispo = computed(() => enfants.enfants)
+
+// ── Identifiant + code de l'enfant, choisis par le parent ──
+const loginIdent = ref('')
+const loginCode = ref('')
+const loginMsg = ref('')
+const loginErr = ref(false)
+const loginPret = computed(() => isPseudoValide(loginIdent.value) && /^\d{4,6}$/.test(loginCode.value))
+
+// Suggestion à partir du prénom : le parent n'a plus qu'à valider. S'il est déjà
+// pris, le serveur le dit au moment d'enregistrer — inutile de deviner avant.
+watch(() => enfantId.value, (id) => {
+  loginMsg.value = ''
+  const e = enfants.enfants.find((x) => x.id === id)
+  loginIdent.value = e ? normalizePseudo(e.firstName || '') : ''
+  loginCode.value = ''
+})
+
+async function enregistrerLogin() {
+  loginMsg.value = ''
+  loginErr.value = false
+  const r = await eco.definirLoginEnfant(enfantId.value, loginIdent.value, loginCode.value)
+  if (r.ok) {
+    loginMsg.value = t('ident.parentOk', { p: r.identifiant })
+  } else {
+    loginErr.value = true
+    loginMsg.value = r.reason === 'identifiant_pris'
+      ? t('ident.parentTaken', { p: normalizePseudo(loginIdent.value) })
+      : t('ident.parentErr')
+  }
+}
 
 function nomProfil(id) {
   const e = enfants.enfants.find((x) => x.id === id)
@@ -99,6 +151,12 @@ async function remove(uid) { await eco.removeCompte(uid) }
 </script>
 
 <style scoped>
+.ec-login { margin: 16px 0; padding: 16px; border-radius: 12px; background: rgba(var(--pr-rgb,21,88,176),.05); }
+.ec-login-t { margin: 0 0 4px; font-size: 15px; }
+.ec-login-row { margin: 12px 0; }
+.ec-login-row .input { width: 100%; }
+.ec-login-msg { margin-top: 10px; font-size: 13px; color: #1B8A5A; }
+.ec-login-msg.err { color: #D93025; }
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .eco { margin-top: 16px; }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--pr); }

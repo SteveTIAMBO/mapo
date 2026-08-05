@@ -55,6 +55,10 @@ if (is_file($cfg)) require_once $cfg;
 if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem');
 // Même clé de compte de service que le provisioning des sous-domaines.
 if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json');
+// Domaine des identifiants d'enfants. DOIT rester identique à
+// PSEUDO_EMAIL_DOMAIN dans src/utils/identifier.js : c'est la même adresse
+// interne des deux côtés, et une divergence rendrait la connexion impossible.
+if (!defined('PSEUDO_DOMAIN')) define('PSEUDO_DOMAIN', 'enfant.mapo-edufrem.app');
 
 // ── Diagnostic (non secret) ───────────────────────────────────────────
 // GET : indique si la clé SA est en place et exploitable, SANS jamais
@@ -108,6 +112,95 @@ $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) $body = [];
 $action = $body['action'] ?? '';
 $code = strtoupper(trim($body['code'] ?? ''));
+
+// ══════════════════════════════════════════════════════════════════════
+//  ACTIONS PARENT — l'enfant est MINEUR : c'est son parent qui décide.
+//
+//  Ces deux actions exigent le jeton Firebase du PARENT, et ne portent que
+//  sur SES enfants : l'UID de l'enfant est dérivé de (uid du parent, id de
+//  l'enfant), donc un parent ne peut atteindre l'enfant de personne d'autre.
+//  C'est la propriété qui rend ces actions sûres — pas une vérification
+//  ajoutée par-dessus, mais la façon dont l'identifiant est construit.
+// ══════════════════════════════════════════════════════════════════════
+if ($action === 'set_child_login' || $action === 'delete_child') {
+  $claims = verifyFirebaseToken();
+  $parentUid = $claims['sub'] ?? '';
+  if ($parentUid === '') { http_response_code(401); echo json_encode(['error' => 'non_autorise']); exit; }
+
+  $enfantId = trim($body['enfantId'] ?? '');
+  if ($enfantId === '' || strlen($enfantId) > 64) { http_response_code(400); echo json_encode(['error' => 'enfant_invalide']); exit; }
+  $childUid = 'enf_' . substr(hash('sha256', $parentUid . '|' . $enfantId), 0, 24);
+
+  list($tok, $errTok) = getGoogleAccessToken('https://www.googleapis.com/auth/cloud-platform');
+  if (!$tok) { http_response_code(503); echo json_encode(['error' => 'service_indisponible', 'detail' => $errTok]); exit; }
+
+  // ── Le parent choisit l'identifiant et un code court pour son enfant ──
+  if ($action === 'set_child_login') {
+    $ident = strtolower(trim($body['identifiant'] ?? ''));
+    // Même normalisation que le client (utils/identifier.js) : sans accents,
+    // sans espaces. Si les deux divergeaient, le parent créerait un identifiant
+    // que l'enfant ne pourrait pas saisir.
+    $ident = preg_replace('/[^a-z0-9._-]/', '', $ident);
+    if (strlen($ident) < 3 || strlen($ident) > 32) { http_response_code(400); echo json_encode(['error' => 'identifiant_invalide']); exit; }
+    $code = trim($body['code'] ?? '');
+    // Code court à chiffres : un enfant de CM1 ne retient pas un mot de passe.
+    if (!preg_match('/^\d{4,6}$/', $code)) { http_response_code(400); echo json_encode(['error' => 'code_invalide']); exit; }
+    $email = $ident . '@' . PSEUDO_DOMAIN;
+
+    // 1. L'identifiant est-il déjà pris par QUELQU'UN D'AUTRE ?
+    list($lu, ) = itPost('accounts:lookup', $tok, ['email' => [$email]]);
+    $pris = $lu['users'][0]['localId'] ?? '';
+    if ($pris !== '' && $pris !== $childUid) {
+      http_response_code(409); echo json_encode(['error' => 'identifiant_pris']); exit;
+    }
+
+    // 2. Créer le compte, ou mettre à jour celui qui existe déjà.
+    //    `emailVerified: true` : cette adresse est interne et ne reçoit rien,
+    //    il n'y a donc aucune activation possible ni souhaitable.
+    if ($pris === '') {
+      list($res, $http) = itPost('accounts', $tok, [
+        'localId' => $childUid, 'email' => $email, 'password' => $code, 'emailVerified' => true,
+      ]);
+    } else {
+      list($res, $http) = itPost('accounts:update', $tok, [
+        'localId' => $childUid, 'email' => $email, 'password' => $code, 'emailVerified' => true,
+      ]);
+    }
+    if ($http !== 200) {
+      http_response_code(502);
+      echo json_encode(['error' => 'creation_impossible', 'detail' => $res['error']['message'] ?? ('http_' . $http)]);
+      exit;
+    }
+    echo json_encode(['ok' => true, 'identifiant' => $ident, 'childUid' => $childUid]);
+    exit;
+  }
+
+  // ── Le parent supprime le compte de son enfant ──
+  // Un mineur n'a pas à demander l'effacement de ses propres données : c'est
+  // son parent qui exerce ce droit pour lui.
+  if ($action === 'delete_child') {
+    list($res, $http) = itPost('accounts:delete', $tok, ['localId' => $childUid]);
+    // 200 = supprimé ; une erreur « utilisateur inconnu » est un succès de fait
+    // (l'enfant n'avait jamais ouvert son lien) et ne doit pas bloquer le parent.
+    $absent = isset($res['error']['message']) && strpos($res['error']['message'], 'USER_NOT_FOUND') !== false;
+    if ($http !== 200 && !$absent) {
+      http_response_code(502);
+      echo json_encode(['error' => 'suppression_impossible', 'detail' => $res['error']['message'] ?? ('http_' . $http)]);
+      exit;
+    }
+    // Les documents de l'enfant, avec le compte de service (le parent n'a pas
+    // le droit d'écrire chez l'enfant, et c'est très bien ainsi).
+    list($fsTok, ) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore');
+    if ($fsTok) {
+      $base = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT . '/databases/(default)/documents/';
+      fsDelete($base . 'users/' . rawurlencode($childUid) . '/b2c/link', $fsTok);
+      fsDelete($base . 'users/' . rawurlencode($childUid), $fsTok);
+      fsDelete($base . 'users/' . rawurlencode($parentUid) . '/enfantsComptes/' . rawurlencode($childUid), $fsTok);
+    }
+    echo json_encode(['ok' => true, 'childUid' => $childUid]);
+    exit;
+  }
+}
 
 if ($action !== 'join_child') { http_response_code(400); echo json_encode(['error' => 'action_inconnue']); exit; }
 if (!preg_match('/^[A-Z0-9]{4,16}$/', $code)) { http_response_code(400); echo json_encode(['error' => 'code_invalide']); exit; }
@@ -248,6 +341,82 @@ function mintCustomToken($uid) {
 // $status (par référence) permet à l'appelant de distinguer 404 (document
 // absent) de 403 (rôle IAM manquant) — deux causes opposées qui produisaient
 // jusqu'ici le MÊME `code_inconnu`, donc le même message trompeur à l'enfant.
+/**
+ * Vérifie le jeton Firebase du PARENT (signature RS256 + audience + expiration).
+ * Reprise à l'identique de mapo-mail.php : implémentation déjà en production.
+ * Renvoie les claims (dont `sub` = uid), ou null.
+ */
+function verifyFirebaseToken() {
+  if (!defined('FIREBASE_PROJECT')) return null;
+  $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+  if (!preg_match('/^Bearer\s+(.+)$/', $authHeader, $m)) return null;
+  $idToken = $m[1];
+
+  $b64 = function ($s) { return base64_decode(strtr($s, '-_', '+/')); };
+  $parts = explode('.', $idToken);
+  if (count($parts) !== 3) return null;
+  $h = json_decode($b64($parts[0]), true);
+  $p = json_decode($b64($parts[1]), true);
+  $sig = $b64($parts[2]);
+  if (($h['alg'] ?? '') !== 'RS256' || empty($h['kid'])) return null;
+  if (($p['aud'] ?? '') !== FIREBASE_PROJECT
+    || ($p['iss'] ?? '') !== 'https://securetoken.google.com/' . FIREBASE_PROJECT
+    || ($p['exp'] ?? 0) < time()
+    || empty($p['sub'])) return null;
+
+  $cacheFile = sys_get_temp_dir() . '/firebase_google_certs.json';
+  $certs = null;
+  if (file_exists($cacheFile) && time() - filemtime($cacheFile) < 3600) {
+    $certs = json_decode(file_get_contents($cacheFile), true);
+  }
+  if (!$certs) {
+    $ctx = stream_context_create(['http' => ['timeout' => 8, 'ignore_errors' => true]]);
+    $raw = @file_get_contents('https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com', false, $ctx);
+    if ($raw === false) return null;
+    $certs = json_decode($raw, true);
+    @file_put_contents($cacheFile, $raw);
+  }
+  $cert = $certs[$h['kid']] ?? null;
+  if (!$cert) return null;
+  $pub = openssl_pkey_get_public($cert);
+  $ok = openssl_verify($parts[0] . '.' . $parts[1], $sig, $pub, OPENSSL_ALGO_SHA256);
+  return $ok === 1 ? $p : null;
+}
+
+/** Appel admin Identity Toolkit (création / mise à jour / suppression de compte). */
+function itPost($chemin, $token, $body) {
+  $url = 'https://identitytoolkit.googleapis.com/v1/projects/' . FIREBASE_PROJECT . '/' . $chemin;
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => json_encode($body),
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    CURLOPT_TIMEOUT => 10,
+    CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return [json_decode($res ?: '{}', true) ?: [], $http];
+}
+
+/** Suppression d'un document Firestore (compte de service). */
+function fsDelete($url, $token) {
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_CUSTOMREQUEST => 'DELETE',
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token],
+    CURLOPT_TIMEOUT => 8,
+    CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  curl_exec($ch);
+  $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+  curl_close($ch);
+  return $http;
+}
+
 function fsGet($url, $token, &$status = null) {
   $ch = curl_init($url);
   curl_setopt_array($ch, [

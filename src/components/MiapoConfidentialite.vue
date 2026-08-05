@@ -93,15 +93,28 @@ async function supprimer() {
 </script>
 
 <style scoped>
-.conf-list { margin: 8px 0 12px; padding-left: 18px; font-size: 13.5px; line-height: 1.6; color: var(--tx2, #4b5563); }
+/* Les cartes se touchaient : sans espacement ni respiration interne, un écran
+   qui parle de suppression définitive se lit mal — et se clique mal. */
+.conf { display: flex; flex-direction: column; gap: 18px; }
+.conf .card { padding: 20px 22px; }
+.conf .card-head { margin-bottom: 10px; }
+.conf .card-head h3 { font-size: 16px; }
+.conf p { margin: 0 0 12px; line-height: 1.6; }
+.conf p:last-child { margin-bottom: 0; }
+.conf-list { margin: 10px 0 16px; padding-left: 20px; font-size: 13.5px; line-height: 1.75; color: var(--tx2, #4b5563); }
+.conf-list li { margin-bottom: 8px; }
+.conf-list li:last-child { margin-bottom: 0; }
 .conf-list strong { color: var(--tx); }
+/* Boutons : hauteur confortable au doigt (44px, la cible tactile minimale). */
+.conf .btn { min-height: 44px; padding: 0 18px; gap: 8px; font-size: 14px; }
 .conf-danger { border: 1px solid rgba(217,48,37,.25); }
-.conf-warn { font-size: 13px; color: #B87A00; margin: 6px 0 8px; }
-.conf-err { font-size: 13px; color: #D93025; margin-top: 8px; }
-.conf-actions { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.conf-warn { font-size: 13px; color: #B87A00; margin: 10px 0; }
+.conf-err { font-size: 13px; color: #D93025; margin-top: 10px; }
+.conf-actions { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.conf .input { margin-top: 4px; }
 .danger { color: #D93025; border-color: rgba(217,48,37,.4); }
-.danger-solid { background: #D93025; color: #fff; border: 0; }
-.danger-solid:disabled { opacity: .5; }
+.danger-solid { background: #D93025; color: #fff; border: 0; min-height: 44px; padding: 0 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.danger-solid:disabled { opacity: .5; cursor: default; }
 .spin { animation: conf-spin 1s linear infinite; }
 @keyframes conf-spin { to { transform: rotate(360deg); } }
 </style>

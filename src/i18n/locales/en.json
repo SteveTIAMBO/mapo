@@ -5601,6 +5601,15 @@
     "err_mdp_court": "The password must be at least 6 characters.",
     "err_reconnexion": "Click your link again, then retry.",
     "err_non_connecte": "You are not signed in.",
-    "err_echec": "That did not work. Please try again in a moment."
+    "err_echec": "That did not work. Please try again in a moment.",
+    "parentTitle": "{name}’s login",
+    "parentHint": "Choose their login name and a numeric code. You create them: we never ask a child for an email or a password.",
+    "parentCode": "Their code",
+    "parentCodePlaceholder": "1234",
+    "parentCodeHint": "4 to 6 digits, easy for them to remember.",
+    "parentSave": "Save their login",
+    "parentOk": "Done. They sign in with {p} and their code.",
+    "parentTaken": "The login name {p} is already taken. Try another one, for instance by adding a digit.",
+    "parentErr": "Saving failed. Please try again in a moment."
   }
 }

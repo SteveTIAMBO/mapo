@@ -161,6 +161,63 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
     }
   }
 
+
+  /** Jeton du parent, pour les actions serveur qui le concernent lui et ses enfants. */
+  async function jetonParent() {
+    const u = auth.currentUser
+    return u ? u.getIdToken() : null
+  }
+
+  /**
+   * Le PARENT fixe l'identifiant et le code de son enfant.
+   *
+   * C'est le parent qui décide, pas l'enfant : on ne demande pas à un mineur de
+   * choisir un mot de passe, ni son adresse e-mail. Le code (4 à 6 chiffres) ne
+   * transite que vers le serveur et n'est JAMAIS écrit dans la base — c'est
+   * Firebase Auth qui le conserve, haché.
+   */
+  async function definirLoginEnfant(enfantId, identifiant, code) {
+    const t = await jetonParent()
+    if (!t) return { ok: false, reason: 'account' }
+    busy.value = true
+    try {
+      const res = await fetch(FAMILLE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'set_child_login', enfantId, identifiant, code }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok || !d || !d.ok) return { ok: false, reason: (d && d.error) || 'server' }
+      return { ok: true, identifiant: d.identifiant }
+    } catch {
+      return { ok: false, reason: 'network' }
+    } finally { busy.value = false }
+  }
+
+  /**
+   * Le PARENT supprime le compte de son enfant (compte d'authentification +
+   * documents). Un mineur n'a pas à réclamer lui-même l'effacement de ses
+   * données : ce droit s'exerce par son parent.
+   */
+  async function supprimerCompteEnfant(enfantId) {
+    const t = await jetonParent()
+    if (!t) return { ok: false, reason: 'account' }
+    busy.value = true
+    try {
+      const res = await fetch(FAMILLE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'delete_child', enfantId }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok || !d || !d.ok) return { ok: false, reason: (d && d.error) || 'server' }
+      await loadComptes()
+      return { ok: true }
+    } catch {
+      return { ok: false, reason: 'network' }
+    } finally { busy.value = false }
+  }
+
   /** Enfant : suis-je rattaché à un profil ? */
   async function loadMyLink() {
     const uid = myUid()
@@ -173,5 +230,6 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
     } catch { ownerUid.value = null; monEnfantId.value = null }
   }
 
-  return { busy, comptes, ownerUid, monEnfantId, createInvite, loadComptes, removeCompte, redeemInvite, joinViaLink, loadMyLink }
+  return { busy, comptes, ownerUid, monEnfantId, createInvite, loadComptes, removeCompte, redeemInvite, joinViaLink, loadMyLink,
+    definirLoginEnfant, supprimerCompteEnfant }
 })
