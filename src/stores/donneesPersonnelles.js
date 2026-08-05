@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth, db } from '../firebase'
-import { deleteUser } from 'firebase/auth'
+import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth'
 import { doc, getDoc, getDocs, deleteDoc, collection } from 'firebase/firestore'
 import { useEnfantsComptesStore } from './enfantsComptes'
 import { useEnfantsAutonomesStore } from './enfantsAutonomes'
@@ -95,20 +95,52 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
   }
 
   /**
+   * Firebase exige une connexion RÉCENTE (moins de 5 minutes) pour supprimer un
+   * compte. On le vérifie AVANT de toucher à quoi que ce soit.
+   */
+  async function connexionRecente() {
+    const u = auth.currentUser
+    if (!u) return false
+    try {
+      const r = await u.getIdTokenResult()
+      const age = Date.now() - Date.parse(r.authTime)
+      return age < 4 * 60 * 1000 // marge sous les 5 min de Firebase
+    } catch { return false }
+  }
+
+  /** Reconnexion par mot de passe, préalable à une suppression. */
+  async function reauthentifier(motDePasse) {
+    const u = auth.currentUser
+    if (!u || !u.email) return { ok: false, reason: 'non_connecte' }
+    try {
+      await reauthenticateWithCredential(u, EmailAuthProvider.credential(u.email, motDePasse))
+      return { ok: true }
+    } catch (e) {
+      const c = (e && e.code) || ''
+      if (c === 'auth/wrong-password' || c === 'auth/invalid-credential') return { ok: false, reason: 'mdp_faux' }
+      return { ok: false, reason: 'echec' }
+    }
+  }
+
+  /**
    * Supprime les données du compte, puis le compte.
    *
-   * Ordre volontaire : les données d'abord. Si on supprimait le compte en
-   * premier et que l'effacement des documents échouait, les données d'enfants
-   * resteraient dans la base SANS que personne ne puisse plus les atteindre pour
-   * les effacer — le pire des deux mondes.
+   * ⚠️ LEÇON PAYÉE EN PRODUCTION. La version précédente effaçait les données
+   * PUIS appelait `deleteUser`, qui a échoué sur `auth/requires-recent-login`.
+   * Résultat : toutes les données détruites, le compte toujours vivant, et un
+   * message disant « ça n'a pas marché ». Le pire des deux mondes, exactement ce
+   * que l'ordre était censé éviter.
    *
-   * Firebase refuse `deleteUser` si la connexion est ancienne
-   * (`auth/requires-recent-login`). On remonte ce cas tel quel pour que
-   * l'interface demande une reconnexion, plutôt que d'échouer en silence.
+   * La vraie protection n'est pas dans l'ordre, elle est AVANT : on vérifie que
+   * la suppression du compte sera acceptée, et on ne détruit rien tant qu'on
+   * n'en est pas sûr. `deleteUser` échoue de façon PRÉVISIBLE — il fallait donc
+   * traiter ce cas d'abord, pas le rattraper après.
    */
   async function supprimerMonCompte() {
     const u = uid()
     if (!u) { erreur.value = 'non_connecte'; return false }
+    // GARDE-FOU : rien n'est effacé si le compte ne pourra pas être supprimé.
+    if (!(await connexionRecente())) { erreur.value = 'auth/requires-recent-login'; return false }
     busy.value = true
     erreur.value = ''
     try {
@@ -152,5 +184,5 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
     }
   }
 
-  return { busy, erreur, collecterMesDonnees, exporterMesDonnees, supprimerMonCompte }
+  return { busy, erreur, collecterMesDonnees, exporterMesDonnees, supprimerMonCompte, connexionRecente, reauthentifier }
 })

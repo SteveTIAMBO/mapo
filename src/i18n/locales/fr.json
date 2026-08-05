@@ -5582,7 +5582,10 @@
     "cancel": "Annuler",
     "errRecentLogin": "Par sécurité, reconnectez-vous puis relancez la suppression.",
     "errNotSignedIn": "Vous n'êtes pas connecté.",
-    "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact{'@'}edufrem.com."
+    "errGeneric": "La suppression n'a pas abouti. Réessayez, ou écrivez-nous à contact{'@'}edufrem.com.",
+    "deleteNeedPassword": "Par sécurité, saisissez votre mot de passe pour confirmer.",
+    "deletePasswordPlaceholder": "Votre mot de passe",
+    "errWrongPassword": "Mot de passe incorrect. Rien n'a été supprimé."
   },
   "ident": {
     "title": "Choisis ton identifiant",

@@ -5582,7 +5582,10 @@
     "cancel": "Cancel",
     "errRecentLogin": "For security, sign in again then retry the deletion.",
     "errNotSignedIn": "You are not signed in.",
-    "errGeneric": "The deletion did not complete. Try again, or write to contact{'@'}edufrem.com."
+    "errGeneric": "The deletion did not complete. Try again, or write to contact{'@'}edufrem.com.",
+    "deleteNeedPassword": "For security, enter your password to confirm.",
+    "deletePasswordPlaceholder": "Your password",
+    "errWrongPassword": "Wrong password. Nothing was deleted."
   },
   "ident": {
     "title": "Choose your login",

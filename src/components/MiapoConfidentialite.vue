@@ -33,6 +33,13 @@
       <template v-else>
         <p class="conf-warn">{{ t('rgpd.deleteConfirmHint', { mot: MOT }) }}</p>
         <input v-model="motSaisi" class="input" :placeholder="MOT" />
+        <!-- Le mot de passe est demandé AVANT toute suppression : Firebase exige
+             une connexion récente, et on ne détruit rien tant qu'on n'est pas
+             certain que le compte pourra être supprimé. -->
+        <template v-if="besoinMotDePasse">
+          <p class="conf-warn">{{ t('rgpd.deleteNeedPassword') }}</p>
+          <input v-model="motDePasse" type="password" class="input" autocomplete="current-password" :placeholder="t('rgpd.deletePasswordPlaceholder')" />
+        </template>
         <div class="conf-actions">
           <button class="btn btn-ghost btn-sm" @click="annuler">{{ t('rgpd.cancel') }}</button>
           <button class="btn btn-sm danger-solid" :disabled="motSaisi.trim().toUpperCase() !== MOT || dp.busy" @click="supprimer">
@@ -47,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ShieldCheck, FileText, Trash2, Loader2 } from 'lucide-vue-next'
@@ -74,6 +81,7 @@ const lignes = computed(() => [
 const erreurLisible = computed(() => {
   if (!dp.erreur) return ''
   if (dp.erreur === 'auth/requires-recent-login') return t('rgpd.errRecentLogin')
+  if (dp.erreur === 'mdp_faux') return t('rgpd.errWrongPassword')
   if (dp.erreur === 'non_connecte') return t('rgpd.errNotSignedIn')
   return t('rgpd.errGeneric')
 })
@@ -87,9 +95,25 @@ async function exporter() {
 function annuler() { confirmOuvert.value = false; motSaisi.value = ''; dp.erreur = '' }
 
 async function supprimer() {
+  dp.erreur = ''
+  // 1. S'assurer d'abord que la suppression du compte sera ACCEPTÉE.
+  if (besoinMotDePasse.value) {
+    const r = await dp.reauthentifier(motDePasse.value)
+    if (!r.ok) { dp.erreur = r.reason === 'mdp_faux' ? 'mdp_faux' : 'echec'; return }
+  }
+  // 2. Seulement ensuite, effacer.
   const ok = await dp.supprimerMonCompte()
   if (ok) router.push('/')
 }
+
+// Vrai tant que la connexion n'est pas assez récente pour que Firebase accepte
+// la suppression. Évalué à l'ouverture de la confirmation.
+const besoinMotDePasse = ref(false)
+const motDePasse = ref('')
+watch(confirmOuvert, async (ouvert) => {
+  if (!ouvert) { motDePasse.value = ''; return }
+  besoinMotDePasse.value = !(await dp.connexionRecente())
+})
 </script>
 
 <style scoped>
