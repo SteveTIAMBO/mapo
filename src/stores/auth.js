@@ -396,6 +396,25 @@ export const useAuthStore = defineStore('auth', () => {
             lastSeenAt: serverTimestamp(),
           }, { merge: true })
         } catch (e) { console.warn('[mapoplus_users] écriture ignorée:', e && e.code) }
+        // Profil utilisateur : le prénom et le nom viennent d'être saisis à
+        // l'inscription — les laisser filer obligeait la personne à les ressaisir
+        // dans les Paramètres, pour une information qu'on venait de lui demander.
+        // `merge` : on ne réécrase jamais un profil existant.
+        try {
+          const [prenom, ...reste] = (displayName || '').trim().split(/\s+/)
+          await setDoc(doc(db, 'users', result.user.uid), {
+            uid: result.user.uid,
+            email: email.trim(),
+            displayName: (displayName || '').trim(),
+            firstName: prenom || '',
+            lastName: reste.join(' '),
+            role: 'parent',
+            b2c: true,
+            schoolId: null,
+            status: 'active',
+            createdAt: serverTimestamp(),
+          }, { merge: true })
+        } catch (e) { console.warn('[profil] écriture ignorée:', e && e.code) }
         // E-mail de bienvenue MAPO+ + lien d'activation (Firebase). Non bloquant.
         await sendWelcomeVerification(result.user)
       }
@@ -758,10 +777,16 @@ export const useAuthStore = defineStore('auth', () => {
     // 4) Aucune école / invitation → compte PARENT B2C AUTONOME (« école-optionnel »).
     // Le parent accède directement à l'espace MAPO+ (tuteur, suivi de son enfant)
     // sans dépendre d'un établissement. Ses données vivent sous users/{uid}/...
+    // Le prénom et le nom sont dérivés du displayName quand aucun document de
+    // profil n'existe (compte créé avant que l'inscription ne les enregistre).
+    const nomComplet = (firebaseUser.displayName || '').trim()
+    const [prenomAuto, ...resteAuto] = nomComplet ? nomComplet.split(/\s+/) : ['']
     userProfile.value = {
       uid: firebaseUser.uid,
       email: firebaseUser.email,
       displayName: firebaseUser.displayName || firebaseUser.email,
+      firstName: prenomAuto || '',
+      lastName: resteAuto.join(' '),
       photoURL: firebaseUser.photoURL || null,
       role: 'parent',
       schoolId: null,
