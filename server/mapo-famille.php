@@ -208,6 +208,34 @@ if ($action === 'set_child_login' || $action === 'delete_child') {
       exit;
     }
 
+    // 4. LE PENDANT CÔTÉ PARENT — sans lui, l'enfant est lié mais ne peut RIEN lire.
+    //
+    // La règle Firestore qui autorise l'enfant à lire son propre profil
+    // (`estMonProfil()`, dans `match /b2c/{docId}`) ne se fie pas au pointeur
+    // ci-dessus : elle exige que le PARENT reconnaisse l'enfant, via
+    // `users/<parent>/enfantsComptes/<enfant>`, et que l'identifiant du profil
+    // demandé corresponde à celui qui y est inscrit. C'est le bon sens de la
+    // sécurité — un enfant ne se déclare pas lui-même enfant de quelqu'un.
+    //
+    // Écrire le pointeur SANS ce document donnait un compte à moitié rattaché :
+    // l'application savait que Marie était une enfant, mais la base lui refusait
+    // la lecture de son profil, sa liste restait vide, et l'onboarding
+    // repartait. Les deux écritures vont ensemble, toujours.
+    $ecUrl = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT
+      . '/databases/(default)/documents/users/' . rawurlencode($parentUid)
+      . '/enfantsComptes/' . rawurlencode($childUid);
+    list($ecRes, $ecHttp) = fsPatch($ecUrl, $fsTok, [
+      'enfantUid' => ['stringValue' => $childUid],
+      'enfantId'  => ['stringValue' => $enfantId],
+      'source'    => ['stringValue' => 'identifiants'],
+      'addedAt'   => ['stringValue' => gmdate('c')],
+    ]);
+    if ($ecHttp !== 200) {
+      http_response_code(502);
+      echo json_encode(['error' => 'lien_impossible', 'detail' => $ecRes['error']['message'] ?? ('http_' . $ecHttp)]);
+      exit;
+    }
+
     echo json_encode(['ok' => true, 'identifiant' => $ident, 'childUid' => $childUid]);
     exit;
   }
@@ -230,9 +258,17 @@ if ($action === 'set_child_login' || $action === 'delete_child') {
     list($fsTok, ) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore');
     if ($fsTok) {
       $base = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT . '/databases/(default)/documents/';
-      fsDelete($base . 'users/' . rawurlencode($childUid) . '/b2c/link', $fsTok);
-      fsDelete($base . 'users/' . rawurlencode($childUid), $fsTok);
+      // ⚠️ Firestore ne supprime PAS en cascade : effacer un document laisse ses
+      // sous-collections intactes et invisibles. La version précédente ne
+      // supprimait que `b2c/link` et le document racine — les révisions de
+      // l'enfant, ses conversations avec le tuteur et le reste de son `b2c`
+      // survivaient à la « suppression de son compte ». Pour un produit qui
+      // promet d'effacer les données d'un mineur à la demande de son parent,
+      // c'était une promesse non tenue.
+      fsSupprimerArbre($base . 'users/' . rawurlencode($childUid), $fsTok);
       fsDelete($base . 'users/' . rawurlencode($parentUid) . '/enfantsComptes/' . rawurlencode($childUid), $fsTok);
+      // Registre d'adoption B2C : il porte l'e-mail interne de l'enfant.
+      fsDelete($base . 'mapoplus_users/' . rawurlencode($childUid), $fsTok);
     }
     echo json_encode(['ok' => true, 'childUid' => $childUid]);
     exit;
@@ -458,6 +494,58 @@ function fsPatch($url, $token, $fields) {
   $http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
   curl_close($ch);
   return [json_decode($res ?: '{}', true) ?: [], $http];
+}
+
+/**
+ * Suppression RÉCURSIVE d'un document et de tout ce qui vit dessous.
+ *
+ * Firestore ne supprime pas en cascade : `DELETE users/x` laisse
+ * `users/x/revisions/…` en place, orphelin et invisible dans la console. Pour
+ * effacer réellement les données d'un enfant, il faut descendre soi-même.
+ *
+ * `:listCollectionIds` donne les sous-collections d'un document (rien ne permet
+ * de les deviner), puis on liste chaque sous-collection et on recommence. La
+ * profondeur est bornée : nos données ne dépassent pas deux niveaux, et une
+ * borne évite qu'une structure inattendue ne fasse tourner la requête sans fin.
+ */
+function fsSupprimerArbre($docUrl, $token, $profondeur = 0) {
+  if ($profondeur > 3) return;
+
+  // 1. Les sous-collections de ce document.
+  $ch = curl_init($docUrl . ':listCollectionIds');
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_POST => true,
+    CURLOPT_POSTFIELDS => '{}',
+    CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $token, 'Content-Type: application/json'],
+    CURLOPT_TIMEOUT => 10,
+    CURLOPT_CONNECTTIMEOUT => 5,
+  ]);
+  $res = curl_exec($ch);
+  curl_close($ch);
+  $ids = json_decode($res ?: '{}', true)['collectionIds'] ?? [];
+
+  foreach ($ids as $coll) {
+    // 2. Les documents de la sous-collection. `mask.fieldPaths` vide : on ne
+    //    veut que les noms, pas le contenu (moins de données transférées).
+    $page = '';
+    do {
+      $listUrl = $docUrl . '/' . rawurlencode($coll) . '?pageSize=300&mask.fieldPaths=__name__'
+        . ($page !== '' ? '&pageToken=' . rawurlencode($page) : '');
+      $l = fsGet($listUrl, $token);
+      $docs = is_array($l) && isset($l['documents']) ? $l['documents'] : [];
+      foreach ($docs as $d) {
+        if (empty($d['name'])) continue;
+        // `name` est un chemin de ressource complet : on reconstruit l'URL.
+        $enfantUrl = 'https://firestore.googleapis.com/v1/' . $d['name'];
+        fsSupprimerArbre($enfantUrl, $token, $profondeur + 1);
+      }
+      $page = (is_array($l) && !empty($l['nextPageToken'])) ? $l['nextPageToken'] : '';
+    } while ($page !== '');
+  }
+
+  // 3. Le document lui-même, une fois vidé de sa descendance.
+  fsDelete($docUrl, $token);
 }
 
 /** Suppression d'un document Firestore (compte de service). */
