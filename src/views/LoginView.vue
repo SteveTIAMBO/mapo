@@ -199,6 +199,9 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
+// Instance MAPO+ standalone (mapoplus.app-edufrem.com) : marque MAPO+, hero
+// famille, inscription sur sa propre page. Utilisé 12 fois dans le template.
+const isMiapoMode = isMapoPlusTenant()
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
 // MAPO+ standalone (mapoplus.app-edufrem.com), on masque les profils de
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
