@@ -38,19 +38,42 @@ describe('accès MAPO+ — compte créé mais e-mail non confirmé', () => {
     expect(deciderAccesMapoPlus({ ...inactif, routeName: 'ParentMiapo' })).toEqual({ name: 'VerifierEmail' })
   })
 
-  it('reste sur l’écran d’activation sans boucler', () => {
-    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'VerifierEmail' })).toBeNull()
+  // ⚠️ Ces routes doivent renvoyer `true` (SERVIR), et non `null` (s'abstenir).
+  //
+  // Ce test existait déjà, sous ce nom exact, et il PASSAIT avec `toBeNull()`.
+  // Il n'a rien empêché : la boucle ne se referme pas ici, elle se referme plus
+  // bas dans le garde, où la règle « parent B2C confiné à MAPO+ » renvoyait
+  // l'écran d'activation vers ParentMiapo. S'abstenir, c'est laisser une autre
+  // règle décider — et cette autre règle décidait le contraire.
+  //
+  // Leçon : un test qui vérifie « ne redirige pas » ne dit RIEN sur ce que fera
+  // le reste du garde. Il faut exiger une décision FERME.
+  it('est servi tel quel sur l’écran d’activation, sans laisser le reste du garde décider', () => {
+    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'VerifierEmail' })).toBe(true)
   })
 
   it('peut QUAND MÊME suivre un lien magique', () => {
     // Le parent qui teste le lien avant d'avoir activé son compte, et l'enfant
     // dont la session n'est pas encore restaurée, doivent passer.
-    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'Rejoindre' })).toBeNull()
+    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'Rejoindre' })).toBe(true)
   })
 
   it('peut vérifier un diplôme et ouvrir la démo', () => {
-    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'VerifierDiplome' })).toBeNull()
-    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'Demo' })).toBeNull()
+    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'VerifierDiplome' })).toBe(true)
+    expect(deciderAccesMapoPlus({ ...inactif, routeName: 'Demo' })).toBe(true)
+  })
+
+  // Reproduction directe du bug de production du 05/08 : on simule les DEUX
+  // décisions qui se renvoyaient la balle, et on vérifie que la seconde ne peut
+  // plus être atteinte. Si quelqu'un remet `null`, ce test tombe.
+  it('ne peut plus former de boucle avec les règles de rôle du garde', () => {
+    const surEcranActivation = deciderAccesMapoPlus({ ...inactif, routeName: 'VerifierEmail' })
+    // `true` = le garde s'arrête ici. Les règles de rôle situées APRÈS (parent
+    // B2C confiné à MAPO+, parent renvoyé à son espace…) ne s'exécutent pas,
+    // donc aucune d'elles ne peut renvoyer l'utilisateur vers ParentMiapo.
+    expect(surEcranActivation).not.toBeNull()
+    expect(surEcranActivation).not.toEqual({ name: 'ParentMiapo' })
+    expect(surEcranActivation).toBe(true)
   })
 })
 

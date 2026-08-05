@@ -17,13 +17,16 @@
  * @param {boolean} etat.isLoggedIn       une session existe (démo ou Firebase)
  * @param {boolean} etat.isFirebaseUser   session Firebase (donc pas la démo)
  * @param {boolean} etat.accesDebloque    e-mail confirmé, ou rien à confirmer
- * @returns {null | {name: string}} null = laisser passer ; sinon route de repli
+ * @returns {null | true | {name: string}}
+ *   - `{name}` : rediriger vers cette route
+ *   - `true`   : SERVIR cette route et ne plus rien décider (voir plus bas)
+ *   - `null`   : pas d'avis, la suite du garde décide
  */
 
 // Routes ouvertes à qui n'est pas connecté. « Rejoindre » en fait partie : c'est
 // la porte d'entrée de l'enfant, qui par construction n'a pas encore de session.
 export const ROUTES_PUBLIQUES = new Set([
-  'Home', 'Demo', 'Login', 'VerifierEmail', 'Rejoindre', 'VerifierDiplome', 'CompteNonConfigure',
+  'Home', 'Demo', 'Login', 'Inscription', 'VerifierEmail', 'Rejoindre', 'VerifierDiplome', 'CompteNonConfigure',
 ])
 
 // Routes accessibles à un compte dont l'e-mail n'est PAS encore confirmé.
@@ -43,7 +46,22 @@ export function deciderAccesMapoPlus({ routeName, isLoggedIn, isFirebaseUser, ac
   if (isFirebaseUser) {
     if (!accesDebloque) {
       if (!ROUTES_SANS_ACTIVATION.has(routeName)) return { name: 'VerifierEmail' }
-      return null
+      // ⚠️ `true`, et surtout PAS `null`. Ces routes doivent être SERVIES, pas
+      // simplement « non refusées » ici.
+      //
+      // Bug vécu en production (05/08). Avec `null`, le garde poursuivait, et la
+      // règle « parent B2C confiné à MAPO+ » renvoyait l'écran d'activation vers
+      // ParentMiapo — que cette fonction renvoyait aussitôt vers l'écran
+      // d'activation. Boucle infinie : vue-router abandonne la navigation au bout
+      // de quelques tours. Rien ne s'affiche, et comme l'avertissement de
+      // vue-router n'existe qu'en développement, la production ne dit RIEN. Vu de
+      // l'utilisateur : il crée son compte, la fenêtre se ferme, et la page de
+      // connexion reste là — l'écran précédent, jamais remplacé.
+      //
+      // Ces routes sont les PRÉ-CONDITIONS de la session (activer son compte,
+      // rejoindre via un lien). Aucune règle de rôle, qui suppose une session
+      // déjà établie, n'a d'autorité sur elles.
+      return true
     }
     // Compte actif : l'écran d'activation n'a plus lieu d'être.
     if (routeName === 'VerifierEmail') return { name: 'ParentMiapo' }

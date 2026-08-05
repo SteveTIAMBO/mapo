@@ -102,6 +102,15 @@ const routes = [
     redirect: '/mon-espace'
   },
   {
+    // Inscription MAPO+ : une PAGE, pas une modale. Elle a une URL (donc elle
+    // peut être liée depuis un e-mail, une plaquette ou un QR code) et sa
+    // redirection vers l'écran d'activation est visible.
+    path: '/inscription',
+    name: 'Inscription',
+    component: () => import('../views/InscriptionMapoPlusView.vue'),
+    meta: { requiresAuth: false, title: 'Créer mon compte' }
+  },
+  {
     path: '/verifier-email',
     name: 'VerifierEmail',
     component: () => import('../views/VerifierEmailView.vue'),

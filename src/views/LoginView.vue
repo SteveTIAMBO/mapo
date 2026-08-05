@@ -78,22 +78,6 @@
           />
         </div>
 
-        <div v-if="mode === 'signup' && isMiapoMode" class="auth-field">
-          <label class="auth-label">{{ t('login.accountFor') }}</label>
-          <div class="role-seg">
-            <button type="button" :class="{ on: signupRole === 'parent' }" @click="signupRole = 'parent'">{{ t('login.roleParent') }}</button>
-            <button type="button" :class="{ on: signupRole === 'apprenant' }" @click="signupRole = 'apprenant'">{{ t('login.roleLearner') }}</button>
-          </div>
-          <p class="auth-role-hint">{{ signupRole === 'apprenant' ? t('login.roleLearnerHint') : t('login.roleParentHint') }}</p>
-        </div>
-
-        <div v-if="mode === 'signup' && isMiapoMode" class="auth-field">
-          <label class="auth-label">{{ t('login.countryLabel') }}</label>
-          <select v-model="signupPays" class="auth-input">
-            <option v-for="p in PAYS_OPTIONS" :key="p.code" :value="p.code">{{ p.label }}</option>
-          </select>
-        </div>
-
         <div class="auth-field">
           <label class="auth-label">{{ mode === 'signup' ? t('login.email') : t('login.emailOrPhone') }}</label>
           <input
@@ -141,7 +125,7 @@
       <p class="auth-switch">
         <template v-if="mode === 'login'">
           {{ t('login.noAccount') }}
-          <button type="button" class="auth-switch-link" @click="isMiapoMode ? openSignup() : setMode('signup')">{{ t('login.createOne') }}</button>
+          <button type="button" class="auth-switch-link" @click="isMiapoMode ? allerInscription() : setMode('signup')">{{ t('login.createOne') }}</button>
         </template>
         <template v-else>
           {{ t('login.haveAccountQ') }}
@@ -199,97 +183,6 @@
     </div>
     </div>
 
-    <!-- Modale d'inscription MAPO+ (façon Facebook) : centrée sur le login flouté -->
-    <div v-if="isMiapoMode && showSignup" class="mplus-modal-backdrop" @click.self="closeSignup">
-      <div class="mplus-modal">
-        <button type="button" class="mplus-modal-x" @click="closeSignup" aria-label="Fermer">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-        </button>
-        <h2 class="mplus-modal-title">{{ t('login.createAccount') }}</h2>
-        <p class="mplus-modal-lead">{{ t('welcome.subtitle') }}</p>
-
-        <form @submit.prevent="handleSignUp" class="auth-form">
-          <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
-
-          <div class="mplus-row">
-            <div class="auth-field">
-              <label class="auth-label">{{ t('login.firstName') }}</label>
-              <input v-model="signupFirstName" type="text" autocomplete="given-name" class="auth-input" :placeholder="t('login.firstName')" required />
-            </div>
-            <div class="auth-field">
-              <label class="auth-label">{{ t('login.lastName') }}</label>
-              <input v-model="signupLastName" type="text" autocomplete="family-name" class="auth-input" :placeholder="t('login.lastName')" required />
-            </div>
-          </div>
-
-          <div class="auth-field">
-            <label class="auth-label">{{ t('login.accountFor') }}</label>
-            <div class="role-seg">
-              <button type="button" :class="{ on: signupRole === 'parent' }" @click="signupRole = 'parent'">{{ t('login.roleParent') }}</button>
-              <button type="button" :class="{ on: signupRole === 'apprenant' }" @click="signupRole = 'apprenant'">{{ t('login.roleLearner') }}</button>
-            </div>
-            <p class="auth-role-hint">{{ signupRole === 'apprenant' ? t('login.roleLearnerHint') : t('login.roleParentHint') }}</p>
-          </div>
-
-          <div class="auth-field">
-            <label class="auth-label">{{ t('login.countryLabel') }}</label>
-            <select v-model="signupPays" class="auth-input">
-              <option v-for="p in PAYS_OPTIONS" :key="p.code" :value="p.code">{{ p.label }}</option>
-            </select>
-          </div>
-
-          <!-- Apprenant : capture du niveau dès l'inscription (préconfigure l'espace) -->
-          <template v-if="signupRole === 'apprenant'">
-            <div class="auth-field">
-              <label class="auth-label">{{ t('login.levelQ') }}</label>
-              <select v-model="signupCycle" class="auth-input" @change="signupNiveau = ''">
-                <option value="secondaire">{{ t('login.levelSecondaire') }}</option>
-                <option value="superieur">{{ t('login.levelSuperieur') }}</option>
-                <option value="autres">{{ t('login.levelOther') }}</option>
-              </select>
-            </div>
-            <div v-if="signupCycle !== 'autres'" class="auth-field">
-              <label class="auth-label">{{ t('login.classLabel') }}</label>
-              <select v-model="signupNiveau" class="auth-input">
-                <option value="" disabled>{{ t('login.classPlaceholder') }}</option>
-                <option v-for="n in niveauOptions" :key="n" :value="n">{{ n }}</option>
-              </select>
-            </div>
-            <div v-else class="auth-field">
-              <label class="auth-label">{{ t('login.formationName') }}</label>
-              <input v-model="signupFormation" type="text" class="auth-input" :placeholder="t('login.formationPlaceholder')" />
-            </div>
-          </template>
-
-          <div class="auth-field">
-            <label class="auth-label">{{ t('login.email') }}</label>
-            <input v-model="loginEmail" type="text" inputmode="email" autocapitalize="none" autocomplete="username" class="auth-input" :placeholder="t('login.emailPlaceholder')" required />
-          </div>
-
-          <div class="auth-field">
-            <label class="auth-label">{{ t('login.password') }}</label>
-            <div class="auth-input-wrap">
-              <input v-model="loginPassword" :type="showPassword ? 'text' : 'password'" class="auth-input" :placeholder="t('login.password')" required />
-              <button type="button" class="auth-eye" @click="showPassword = !showPassword">
-                <svg v-if="!showPassword" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <button type="submit" class="auth-btn-primary" :disabled="isLoading">
-            <span v-if="isLoading" class="auth-spinner"></span>
-            <span v-else>{{ t('login.createAccount') }}</span>
-          </button>
-        </form>
-
-        <!-- Pas de bouton Google ICI : l'inscription MAPO+ demande le rôle, le
-             pays et la classe, sans quoi l'onboarding n'a rien à quoi s'accrocher.
-             Google reste proposé sur l'écran de CONNEXION. -->
-
-        <p class="auth-switch">{{ t('login.haveAccountQ') }} <button type="button" class="auth-switch-link" @click="closeSignup">{{ t('login.signIn') }}</button></p>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -299,7 +192,6 @@ import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
-import { useEnfantsAutonomesStore, setPaysParDefaut, paysParDefaut, niveauxSecondairePays, NIVEAUX_SUPERIEUR, NIVEAU_HORS_CATALOGUE } from '../stores/enfantsAutonomes'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 
@@ -307,34 +199,6 @@ const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
-const miapoStore = useEnfantsAutonomesStore()
-// MAPO+ standalone : à l'inscription, on demande si le compte est celui d'un
-// parent (qui suit un enfant) ou de l'apprenant lui-même (étudiant/adulte).
-const isMiapoMode = isMapoPlusTenant()
-const signupRole = ref('parent') // 'parent' | 'apprenant'
-// Pays capturé DÈS l'inscription : détermine la devise (FCFA / €) et le
-// référentiel (Cameroun / France…) — indispensable pour que l'outil soit
-// opérationnel tout de suite. Pré-rempli avec le pays choisi sur l'accueil.
-const PAYS_OPTIONS = [
-  { code: 'CM', label: 'Cameroun' }, { code: 'SN', label: 'Sénégal' },
-  { code: 'CI', label: "Côte d'Ivoire" }, { code: 'FR', label: 'France' },
-  { code: 'BJ', label: 'Bénin' }, { code: 'other', label: 'Autre' },
-]
-const signupPays = ref(paysParDefaut() || 'CM')
-// MAPO+ : nom/prénom séparés + capture du niveau de l'apprenant dès l'inscription
-// (préconfigure son espace et allège l'onboarding). Les séries suivent le pays :
-// Cameroun → Tle A/C/D (séries dans le niveau), France → Terminale (post-réforme).
-const signupFirstName = ref('')
-const signupLastName = ref('')
-const signupCycle = ref('secondaire') // 'secondaire' | 'superieur' | 'autres'
-const signupNiveau = ref('')
-const signupFormation = ref('')
-const niveauOptions = computed(() => {
-  if (signupCycle.value === 'secondaire') return niveauxSecondairePays(signupPays.value)
-  if (signupCycle.value === 'superieur') return NIVEAUX_SUPERIEUR
-  return []
-})
-
 // Sur l'instance d'une vraie école (<slug>.app-edufrem.com) ou l'instance
 // MAPO+ standalone (mapoplus.app-edufrem.com), on masque les profils de
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
@@ -363,11 +227,10 @@ const signupName = ref('')
 // Démo : profils types affichés par défaut ; le formulaire login/inscription
 // (réservé aux comptes en ligne / vraies écoles) est masqué derrière un lien.
 const showLogin = ref(false)
-// MAPO+ : l'inscription s'ouvre dans une modale centrée (façon Facebook),
-// par-dessus le login flouté. Sur mobile, la modale passe en plein écran.
-const showSignup = ref(false)
-function openSignup() { errorMessage.value = ''; showSignup.value = true }
-function closeSignup() { showSignup.value = false; errorMessage.value = '' }
+// MAPO+ : l'inscription est une PAGE à part (/inscription), plus une modale.
+// Une modale se refermait sur l'écran de connexion, si bien qu'un échec de
+// navigation après la création du compte était indiscernable d'un succès.
+function allerInscription() { router.push('/inscription') }
 
 function setMode(m) {
   mode.value = m
@@ -378,40 +241,15 @@ function handleSubmit() {
   return mode.value === 'signup' ? handleSignUp() : handleRealLogin()
 }
 
+// Inscription depuis une instance ÉCOLE. L'inscription MAPO+ (rôle, pays,
+// niveau) vit désormais dans sa propre page — cf. InscriptionMapoPlusView.vue.
 async function handleSignUp() {
   isLoading.value = true
   errorMessage.value = ''
-  // On fixe le pays choisi AVANT de créer le compte → devise + référentiel prêts.
-  if (isMiapoMode && signupPays.value) setPaysParDefaut(signupPays.value)
-  const displayName = isMiapoMode
-    ? `${signupFirstName.value.trim()} ${signupLastName.value.trim()}`.trim()
-    : signupName.value
-  const meta = isMiapoMode ? { b2c: true, role: signupRole.value, pays: signupPays.value } : {}
-  // Apprenant : on mémorise prénom + niveau/formation choisis à l'inscription
-  // pour préremplir l'onboarding (préconfiguration de son espace).
-  if (isMiapoMode) {
-    try {
-      const pf = { persona: signupRole.value === 'apprenant' ? 'apprenant' : 'parent', pays: signupPays.value }
-      if (signupRole.value === 'apprenant') {
-        pf.firstName = signupFirstName.value.trim()
-        pf.niveau = signupCycle.value === 'autres' ? NIVEAU_HORS_CATALOGUE : (signupNiveau.value || '')
-        pf.formation = signupCycle.value === 'autres' ? signupFormation.value.trim() : ''
-      }
-      localStorage.setItem('mapo_signup_prefill', JSON.stringify(pf))
-    } catch (e) { /* stockage indisponible : sans gravité */ }
-  }
-  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, displayName, meta)
+  const result = await authStore.signUpWithEmail(loginEmail.value.trim(), loginPassword.value, signupName.value, {})
   isLoading.value = false
   if (result.success) {
-    // On referme le modal d'inscription tout de suite : on quitte l'écran de
-    // login pour l'écran d'activation / l'espace, le popup n'a plus lieu d'être.
-    showSignup.value = false
-    // MAPO+ : positionne le point de vue choisi (parent qui suit un enfant, ou
-    // apprenant qui pilote son propre apprentissage — étudiant, adulte…).
-    if (isMiapoMode) miapoStore.setMode(signupRole.value === 'apprenant' ? 'apprenant' : 'parent')
-    // Nouveau compte B2C : écran d'activation tant que l'e-mail n'est pas
-    // confirmé (le lien de bienvenue vient d'être envoyé).
-    router.push(result.needsVerification ? '/verifier-email' : '/mon-espace')
+    router.push(result.needsVerification ? '/verifier-email' : '/dashboard')
   } else {
     errorMessage.value = result.error
   }
@@ -495,14 +333,13 @@ onMounted(() => {
     const sp = new URLSearchParams(window.location.search)
     if (sp.get('signup')) {
       if (isMiapoMode) {
-        showSignup.value = true
+        router.replace('/inscription' + (sp.get('role') ? '?role=' + sp.get('role') : ''))
+        return
       } else {
         mode.value = 'signup'
         showLogin.value = true
       }
     }
-    // ?role=apprenant préselectionne le point de vue « apprenant » (étudiant/adulte).
-    if (sp.get('role') === 'apprenant') signupRole.value = 'apprenant'
   } catch (e) { /* silent */ }
   if (isSchoolTenantMode) return
   try {
@@ -1107,32 +944,6 @@ function resetDemo() {
   margin: 30px 0 0; font-size: 14px; font-style: italic; color: rgba(255, 255, 255, 0.64);
   line-height: 1.6; max-width: 500px; border-left: 3px solid rgba(196, 181, 253, 0.5); padding-left: 14px;
 }
-/* Modale d'inscription (façon Facebook) : centrée sur le login flouté */
-.mplus-modal-backdrop {
-  position: fixed; inset: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: center; padding: 24px;
-  background: rgba(26, 20, 55, 0.55);
-  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-}
-.mplus-modal {
-  position: relative; width: 100%; max-width: 520px; max-height: 92vh; overflow-y: auto;
-  background: #fff; border-radius: 22px; padding: 32px 34px 28px;
-  box-shadow: 0 30px 80px rgba(15, 10, 45, 0.5);
-}
-/* Prénom + Nom côte à côte */
-.mplus-row { display: flex; gap: 12px; }
-.mplus-row .auth-field { flex: 1; }
-@media (max-width: 460px) {
-  .mplus-row { flex-direction: column; gap: 0; }
-}
-.mplus-modal-x {
-  position: absolute; top: 15px; right: 15px; width: 34px; height: 34px; border-radius: 10px;
-  border: none; background: #f2f3f7; color: #6b7280; cursor: pointer; display: grid; place-items: center;
-}
-.mplus-modal-x:hover { background: #e8e9ef; color: #1a1d1f; }
-.mplus-modal-title { font-family: 'Poppins', sans-serif; font-weight: 800; font-size: 22px; color: #1a1d1f; margin: 0 0 4px; }
-.mplus-modal-lead { font-size: 13.5px; color: #6f767e; margin: 0 0 20px; line-height: 1.5; max-width: 92%; }
-
 .mplus-demo-link {
   margin-top: 16px; background: none; border: none; color: #6b7280;
   font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline;
@@ -1147,8 +958,5 @@ function resetDemo() {
   .mplus-benefits { margin-top: 20px; gap: 11px; }
   .mplus-manifesto { display: none; }
   .mplus-page .auth-col { flex: none; padding: 26px 20px 40px; overflow: visible; }
-  /* Inscription en plein écran sur mobile (version classique, sans flou) */
-  .mplus-modal-backdrop { padding: 0; background: #fff; backdrop-filter: none; -webkit-backdrop-filter: none; }
-  .mplus-modal { max-width: 100%; max-height: 100vh; height: 100vh; border-radius: 0; box-shadow: none; padding: 26px 22px 40px; }
 }
 </style>
