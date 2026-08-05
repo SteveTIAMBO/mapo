@@ -27,6 +27,10 @@ rules_version = '2';
 // RÈGLE : toujours COMPARER avec la console et n'y faire que des
 // remplacements chirurgicaux — jamais de copier-coller du fichier entier.
 //
+// Publié en prod le 2026-08-05 (22h09) par remplacement chirurgical, vérifié
+// par une écriture réelle depuis un compte MAPO+ (HTTP 200 là où c'était 403) :
+// `profilB2CValide()` + `allow create` sur users/{uid}. Prod : 534 → 543 lignes.
+//
 // Publiés en prod le 2026-07-18 par remplacement chirurgical :
 // `match /b2c/{docId}` (co-parent + compte enfant), `match /enfantsComptes/...`
 // et `match /enfantInvites/{code}`.
