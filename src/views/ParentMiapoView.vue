@@ -817,6 +817,21 @@
             <Miapo6C :enfant="activeEnfant" />
           </div>
 
+          <!-- Sous-menu : Apparence — la seule chose que l'enfant choisit vraiment -->
+          <div v-show="sousSection === 'apparence'" class="param-panel">
+            <p class="muted small">{{ t('mia.appearanceHint') }}</p>
+            <div class="teintes">
+              <button
+                v-for="teinte in TEINTES" :key="teinte.cle" type="button"
+                class="teinte" :class="{ on: teinteChoisie === teinte.cle }"
+                :style="{ background: teinte.hex }"
+                :aria-label="t('mia.teinte_' + teinte.cle)"
+                :title="t('mia.teinte_' + teinte.cle)"
+                @click="choisirTeinte(teinte.cle)"
+              ><Check v-if="teinteChoisie === teinte.cle" :size="16" /></button>
+            </div>
+          </div>
+
           <!-- Sous-menu : Connecteurs (agenda + compte Carré) -->
           <div v-show="sousSection === 'connecteurs'" class="param-panel">
             <p class="muted small">{{ t('mia.connectorsHint') }}</p>
@@ -1123,6 +1138,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
+import { TEINTES, TEINTE_PAR_DEFAUT, appliquerTeinte } from '../utils/themeB2C'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEnfantsAutonomesStore, NIVEAUX, NIVEAUX_PRIMAIRE, NIVEAUX_PRIMAIRE_FR, NIVEAUX_SECONDAIRE, NIVEAUX_SUPERIEUR, niveauxPrimairePays, niveauxSecondairePays, niveauxPourCycle, cycleDuNiveau, isNiveauSuperieur, NIVEAU_HORS_CATALOGUE, PAYS, MATIERES, matieresPourNiveau, typesNotePays, SPECIALITES_LYCEE_GENERAL_FR, paysParDefaut, setPaysParDefaut, jourISO } from '../stores/enfantsAutonomes'
@@ -1174,7 +1190,7 @@ import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
 import MiapoFormationSetup from '../components/MiapoFormationSetup.vue'
-import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy } from 'lucide-vue-next'
+import { Sparkles, Plus, X, Check, Target, FileText, ChevronRight, ChevronLeft, Trash2, Camera, Loader2, Lightbulb, Compass, GraduationCap, Trophy, Users, TrendingUp, Home, CreditCard, LogOut, Settings, PanelLeftClose, PanelLeftOpen, CalendarDays, CalendarCheck, Link2, ClipboardList, Layers, Flame, Bell, Gauge, Languages, Accessibility, MessageCircle, Receipt, ExternalLink, Menu, Search, ListChecks, MessagesSquare, Shuffle, Ear, Network, PenLine, Puzzle, School, LifeBuoy, Palette } from 'lucide-vue-next'
 import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, TrendingDown, Minus, ShieldCheck, Timer } from 'lucide-vue-next'
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
@@ -1350,6 +1366,22 @@ function toggleGroup(g) {
 const section = ref('accueil')
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
+
+// ── Apparence : la teinte d'accent choisie par l'apprenant ──────────────
+// Rangée sur SON profil (et non dans le navigateur) : elle le suit d'un
+// appareil à l'autre, ce qui est tout l'intérêt d'un compte. `theme` ne figure
+// pas dans les champs gelés par la règle Firestore — un enfant a le droit de
+// choisir ses couleurs.
+const teinteChoisie = computed(() => activeEnfant.value?.theme || TEINTE_PAR_DEFAUT)
+function choisirTeinte(cle) {
+  const e = activeEnfant.value
+  if (!e) return
+  store.updateEnfant(e.id, { theme: cle })
+  appliquerTeinte(cle)
+}
+// Appliquer dès qu'on sait de quel apprenant il s'agit, et à chaque changement
+// de profil (le parent qui bascule d'un enfant à l'autre).
+watch(teinteChoisie, (cle) => appliquerTeinte(cle), { immediate: true })
 const sousMenus = computed(() => {
   const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
   // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
@@ -1362,7 +1394,11 @@ const sousMenus = computed(() => {
   items.push({ key: 'notification', label: t('mia.notifTitle'), icon: Bell })
   // « Mes enfants » (gestion : co-parent, compte enfant) — parent uniquement.
   if (!isApprenant.value) items.push({ key: 'coparent', label: t('mia.coParentTitle'), icon: Users })
-  items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
+  items.push({ key: 'apparence', label: t('mia.secAppearance'), icon: Palette })
+  // « Connecteurs » (agenda, compte Carré) : réglages d'adulte, rattachés au
+  // compte du parent. Ils n'ont rien à faire dans l'espace d'un enfant, qui ne
+  // peut de toute façon rien y connecter.
+  if (!store.isCompteEnfant) items.push({ key: 'connecteurs', label: t('mia.secConnectors'), icon: Link2 })
   items.push({ key: 'accessibilite', label: t('mia.secAccess'), icon: Accessibility })
   // « Aide & feedbacks » — manuel, FAQ, signalement de bug, demande de fonctionnalité.
   items.push({ key: 'donnees', label: t('rgpd.title'), icon: ShieldCheck })
@@ -1457,7 +1493,17 @@ function exporterBilan() {
   h3{font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:#0A84FF;margin:26px 0 10px;border-bottom:1px solid #eee;padding-bottom:5px}
   table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 6px;border-bottom:1px solid #f0f0f0}
   .dots{letter-spacing:3px;color:#0A84FF}ul{margin:0;padding-left:20px}li{margin:5px 0}
-  .foot{margin-top:40px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}</style></head>
+  .foot{margin-top:40px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}
+/* Pastilles de couleur — cibles tactiles confortables (44px), et la coche
+   suffit à indiquer la sélection : pas de bordure colorée (cf. règles de design). */
+.teintes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.teinte {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; display: grid; place-items: center; color: #fff;
+  box-shadow: 0 2px 8px rgba(15, 10, 45, .18);
+}
+.teinte.on { border-color: #1a1d1f; }
+</style></head>
   <body onload="window.print()">
   <div class="hd"><div><h2>MAPO+</h2><small>${t('mia.bilanGenerated')}</small></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
   <h1>${t('mia.bilanTitle')}</h1>
