@@ -2758,6 +2758,12 @@ watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.s
 
 onMounted(async () => {
   await store.hydrate()
+  // Session ENFANT : rapatrier les révisions faites avant le correctif du 06/08,
+  // restées dans son dossier personnel au lieu de celui de sa famille. Une seule
+  // fois, silencieux, sans effet pour un parent.
+  if (store.isCompteEnfant) {
+    try { await tuteur.migrerRevisionsVersProprietaire(store.enfants[0]?.id) } catch { /* silencieux */ }
+  }
   // Session enfant en cours (téléphone confié) : on rouvre sur CET enfant,
   // même après un rechargement — sinon l'enfant retomberait sur le 1er profil.
   const sess = store.childSessionId

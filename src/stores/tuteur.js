@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
-import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { isMapoPlusTenant } from '../utils/tenantContext'
 import { enregistrerActivite } from '../utils/recompenses'
 import { enregistrerResultatElo } from '../utils/elo'
@@ -987,10 +987,49 @@ export const useTuteurStore = defineStore('tuteur', () => {
     return []
   }
 
+
+  /**
+   * Rapatrie les révisions faites AVANT le correctif du 06/08.
+   *
+   * Tant que ce store écrivait sous l'identifiant de la session, les révisions
+   * d'un enfant connecté à son propre compte atterrissaient dans SON dossier au
+   * lieu de celui de sa famille. Elles existent, elles sont juste au mauvais
+   * endroit — et personne ne les voit.
+   *
+   * Ce déplacement a lieu une seule fois, au démarrage d'une session enfant, et
+   * ne peut pas abîmer de données : on ne recopie QUE si la destination est
+   * vide, puis on efface la source (données d'un mineur, on ne les laisse pas
+   * traîner en double). Rejouable sans risque : la fois suivante, il n'y a plus
+   * rien à déplacer.
+   */
+  async function migrerRevisionsVersProprietaire(studentId) {
+    const moi = cloudUid()
+    const proprio = proprietaireUid()
+    // Rien à faire pour un parent : source et destination sont le même dossier.
+    if (!moi || !proprio || moi === proprio || !studentId) return { deplaces: 0 }
+    let deplaces = 0
+    for (const nom of [studentId, 'history_' + studentId, 'conversations_' + studentId]) {
+      try {
+        const source = doc(db, 'users', moi, 'revisions', nom)
+        const snap = await getDoc(source)
+        if (!snap.exists()) continue
+        const cible = doc(db, 'users', proprio, 'revisions', nom)
+        const dejaLa = await getDoc(cible)
+        // La destination fait foi : on n'écrase jamais un travail déjà rapatrié.
+        if (!dejaLa.exists()) {
+          await setDoc(cible, snap.data())
+          deplaces++
+        }
+        await deleteDoc(source)
+      } catch { /* hors ligne ou refusé : on retentera au prochain démarrage */ }
+    }
+    return { deplaces }
+  }
+
   return {
     generating, planning, lastMode, lastReason, revisionsVersion, conversationsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
-    saveRevisionSession, getRevisionHistory, syncHistoryFromCloud,
+    saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
