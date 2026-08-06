@@ -23,6 +23,24 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   </head>
   <body>
+    <!-- Marque affichee AVANT que l'application ne demarre.
+         Le meme index.html sert MAPO et MAPO+ (meme dossier sur le serveur) :
+         jusqu'ici, un parent qui ouvrait mapoplus voyait « MAPO — Gestion
+         Scolaire » le temps du chargement, c'est-a-dire le produit destine aux
+         ecoles. Le routeur corrige le titre, mais trop tard — l'impression est
+         deja faite. On tranche ici, avant le moindre octet de JavaScript
+         applicatif. -->
+    <script>
+      (function () {
+        try {
+          if (location.hostname.split('.')[0] === 'mapoplus') {
+            document.title = 'MAPO+ — Ton professeur particulier disponible 24/7';
+            var d = document.querySelector('meta[name="description"]');
+            if (d) d.setAttribute('content', "MAPO+ — Le professeur particulier qui accompagne chaque apprenant. Revisions, suivi et orientation par l'IA.");
+          }
+        } catch (e) { /* rien a faire : on garde le titre par defaut */ }
+      })();
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
   </body>

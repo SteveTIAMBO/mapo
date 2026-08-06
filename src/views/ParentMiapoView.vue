@@ -1366,22 +1366,6 @@ function toggleGroup(g) {
 const section = ref('accueil')
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
-
-// ── Apparence : la teinte d'accent choisie par l'apprenant ──────────────
-// Rangée sur SON profil (et non dans le navigateur) : elle le suit d'un
-// appareil à l'autre, ce qui est tout l'intérêt d'un compte. `theme` ne figure
-// pas dans les champs gelés par la règle Firestore — un enfant a le droit de
-// choisir ses couleurs.
-const teinteChoisie = computed(() => activeEnfant.value?.theme || TEINTE_PAR_DEFAUT)
-function choisirTeinte(cle) {
-  const e = activeEnfant.value
-  if (!e) return
-  store.updateEnfant(e.id, { theme: cle })
-  appliquerTeinte(cle)
-}
-// Appliquer dès qu'on sait de quel apprenant il s'agit, et à chaque changement
-// de profil (le parent qui bascule d'un enfant à l'autre).
-watch(teinteChoisie, (cle) => appliquerTeinte(cle), { immediate: true })
 const sousMenus = computed(() => {
   const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
   // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
@@ -1638,6 +1622,22 @@ const L = computed(() => isApprenant.value ? {
 const activeId = ref('')
 const activeEnfant = computed(() => store.getEnfant(activeId.value) || enfants.value[0] || null)
 
+
+// ── Apparence : la teinte d'accent choisie par l'apprenant ──────────────
+// Rangée sur SON profil (et non dans le navigateur) : elle le suit d'un
+// appareil à l'autre, ce qui est tout l'intérêt d'un compte. `theme` ne figure
+// pas dans les champs gelés par la règle Firestore — un enfant a le droit de
+// choisir ses couleurs.
+const teinteChoisie = computed(() => activeEnfant.value?.theme || TEINTE_PAR_DEFAUT)
+function choisirTeinte(cle) {
+  const e = activeEnfant.value
+  if (!e) return
+  store.updateEnfant(e.id, { theme: cle })
+  appliquerTeinte(cle)
+}
+// Appliquer dès qu'on sait de quel apprenant il s'agit, et à chaque changement
+// de profil (le parent qui bascule d'un enfant à l'autre).
+watch(teinteChoisie, (cle) => appliquerTeinte(cle), { immediate: true })
 // Onboarding guidé au 1er lancement (nouveau compte B2C sans profil). Voir MiapoOnboarding.vue.
 const showOnboarding = ref(false)
 function onOnboardingDone() {
