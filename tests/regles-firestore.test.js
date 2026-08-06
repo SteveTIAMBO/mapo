@@ -162,3 +162,39 @@ describe('profil enfant — le parent garde la main sur tout', () => {
     await assertSucceeds(setDoc(doc(dbParent(), 'users', PARENT, 'b2c', DOC), profilModifie({ objectifNote: 16 })))
   })
 })
+
+describe('révisions — une famille, un espace', () => {
+  // Le vrai défaut du 06/08 : l'enfant révisait, son historique partait dans SON
+  // dossier, et le module Progression — indexé sur le profil, donc sur le
+  // dossier du parent — ne montrait rien. Deux historiques pour un seul enfant.
+  it('l’enfant écrit SES révisions dans l’espace de son parent', async () => {
+    await assertSucceeds(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', ENFANT_ID), { elo: 1200 }))
+    await assertSucceeds(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}`), { list: [{ matiere: 'Anglais' }] }))
+    await assertSucceeds(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `conversations_${ENFANT_ID}`), { list: [] }))
+  })
+
+  it('et il les relit', async () => {
+    await assertSucceeds(getDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}`)))
+  })
+
+  it('le parent voit et écrit celles de son enfant', async () => {
+    await assertSucceeds(setDoc(doc(dbParent(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}`), { list: [] }))
+    await assertSucceeds(getDoc(doc(dbParent(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}`)))
+  })
+
+  it('l’enfant ne touche PAS aux révisions de sa fratrie', async () => {
+    await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', 'ea-frere'), { elo: 9999 }))
+    await assertFails(getDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', 'history_ea-frere')))
+  })
+
+  it('un tiers ne touche à rien', async () => {
+    await assertFails(setDoc(doc(dbAutre(), 'users', PARENT, 'revisions', ENFANT_ID), { elo: 1 }))
+    await assertFails(getDoc(doc(dbAutre(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}`)))
+  })
+
+  it('l’enfant ne se sert pas du préfixe pour atteindre autre chose', async () => {
+    // `history_ea-marie-bis` commence comme le sien : la comparaison doit être
+    // exacte, pas un préfixe.
+    await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}-bis`), { list: [] }))
+  })
+})

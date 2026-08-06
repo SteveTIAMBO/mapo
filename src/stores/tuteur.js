@@ -23,11 +23,40 @@ function noteCredits(json) {
 }
 import { useUsageStore, COUT_ACTION } from './usage'
 import { useMiapoRefStore } from './miapoRef'
+import { useEnfantsAutonomesStore } from './enfantsAutonomes'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
 // Firestore est déjà configuré avec un cache local persistant (offline-first).
 function cloudUid() { return fbAuth.currentUser ? fbAuth.currentUser.uid : null }
+
+/**
+ * Identifiant de l'espace où vivent les données de révision.
+ *
+ * ⚠️ CE N'EST PAS TOUJOURS L'UTILISATEUR CONNECTÉ. Sur un compte ENFANT, la
+ * session est celle de l'enfant, mais son profil, ses notes et son planning
+ * vivent dans l'espace de son PARENT (`enfantsAutonomes.dataUid()`).
+ *
+ * Ce store écrivait sous l'identifiant de la session. Résultat : l'enfant
+ * révisait, son historique atterrissait dans SON dossier, tandis que le module
+ * Progression — indexé sur le profil, donc sur le dossier du parent — cherchait
+ * au mauvais endroit et n'affichait rien. Pire que l'affichage : le même enfant
+ * se retrouvait avec DEUX historiques parallèles selon qu'il avait travaillé
+ * depuis son compte ou depuis celui de sa mère.
+ *
+ * Une famille, un espace. Le `studentId` distingue les enfants entre eux.
+ */
+function proprietaireUid() {
+  const moi = cloudUid()
+  if (!moi) return null
+  try {
+    const enfants = useEnfantsAutonomesStore()
+    return enfants.linkedOwnerUid || moi
+  } catch {
+    // Store non initialisé (appel très précoce) : on retombe sur la session.
+    return moi
+  }
+}
 function revisionDocRef(uid, studentId) {
   return doc(db, 'users', uid, 'revisions', studentId || 'self')
 }
@@ -207,7 +236,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     try { localStorage.setItem(REVISION_KEY(studentId), JSON.stringify(data)) } catch {}
     revisionsVersion.value++ // notifie les vues réactives (progression, niveaux)
     // Miroir Firestore pour les vrais comptes (durable, cross-appareils).
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (uid) {
       setDoc(revisionDocRef(uid, studentId), { map: data, updatedAt: new Date().toISOString() })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
@@ -220,7 +249,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * Sans effet en démo. À appeler à l'ouverture d'un quiz/écran de révision.
    */
   async function syncFromCloud(studentId) {
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (!uid) return
     try {
       const snap = await getDoc(revisionDocRef(uid, studentId))
@@ -290,7 +319,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // Récompenses : chaque révision archivée compte (total + série de jours).
     try { enregistrerActivite(studentId, { format: session?.format || session?.mode || 'quiz' }) } catch { /* best-effort */ }
     revisionsVersion.value++
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (uid) {
       setDoc(historyDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
@@ -301,7 +330,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
   function getRevisionHistory(studentId) { return loadHistory(studentId) }
   /** Hydrate l'historique depuis Firestore (vrais comptes, multi-appareils). */
   async function syncHistoryFromCloud(studentId) {
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (!uid) return
     try {
       const snap = await getDoc(historyDocRef(uid, studentId))
@@ -334,7 +363,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const capped = without.slice(0, CONV_MAX)
     try { localStorage.setItem(CONV_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
     conversationsVersion.value++
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (uid) {
       setDoc(convDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() })
         .catch(() => { /* offline : cache Firestore réessaiera */ })
@@ -346,12 +375,12 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const capped = loadConversations(studentId).filter((c) => c.id !== id)
     try { localStorage.setItem(CONV_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
     conversationsVersion.value++
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (uid) { setDoc(convDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() }).catch(() => {}) }
   }
   /** Hydrate les conversations depuis Firestore (vrais comptes, multi-appareils). */
   async function syncConversationsFromCloud(studentId) {
-    const uid = cloudUid()
+    const uid = proprietaireUid()
     if (!uid) return
     try {
       const snap = await getDoc(convDocRef(uid, studentId))

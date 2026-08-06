@@ -1055,7 +1055,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   }
 
   return {
-    enfants, mode, setMode, load, hydrate, isCompteEnfant,
+    enfants, mode, setMode, load, hydrate, isCompteEnfant, linkedOwnerUid, linkedEnfantId,
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
     addNote, removeNote, faiblesses, objectifDe, setObjectifMatiere,

@@ -280,6 +280,26 @@ service cloud.firestore {
       // écrit par lui-même contre un code d'invitation valide.
       // Conséquence assumée : l'enfant ne peut PAS lister `b2c` (sa fratrie ferait
       // échouer la requête) — son appli lit son document en direct.
+      // ── Révisions : une famille, un espace ──────────────────────────
+      // Les révisions d'un enfant vivent dans l'espace de son PARENT, au même
+      // endroit que son profil — sinon le même enfant se retrouve avec deux
+      // historiques selon l'appareil utilisé, et le module Progression du parent
+      // ne voit jamais le travail fait depuis le compte de l'enfant.
+      // L'enfant doit donc pouvoir écrire chez son parent, mais UNIQUEMENT les
+      // trois documents qui portent son propre identifiant.
+      match /revisions/{docId} {
+        function monEnfantId() {
+          return get(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid)).data.enfantId;
+        }
+        function estMaRevision() {
+          return exists(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid))
+            && (docId == monEnfantId()
+                || docId == 'history_' + monEnfantId()
+                || docId == 'conversations_' + monEnfantId());
+        }
+        allow read, write: if isSignedIn() && (request.auth.uid == uid || estMaRevision());
+      }
+
       match /b2c/{docId} {
         function isCoParent() {
           return exists(/databases/$(database)/documents/users/$(uid)/coParents/$(request.auth.uid));
