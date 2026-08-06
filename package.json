@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:rules": "firebase emulators:exec --only firestore --project mapo-regles-test \"vitest run tests/regles-firestore.test.js --config vitest.rules.config.js\""
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",
@@ -26,9 +27,11 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.1",
     "@vitejs/plugin-vue": "^6.0.5",
     "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.27",
+    "firebase-tools": "^13.35.1",
     "jsdom": "^29.0.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^3.4.19",

@@ -96,5 +96,9 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    // Les tests de RÈGLES Firestore ont besoin de l'émulateur : ils échoueraient
+    // tous ici et noieraient les vraies régressions dans du bruit. Ils ont leur
+    // propre commande, `npm run test:rules`, qui démarre l'émulateur.
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/regles-firestore.test.js'],
   },
 })
