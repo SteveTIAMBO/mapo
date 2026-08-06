@@ -27,6 +27,13 @@ rules_version = '2';
 // RÈGLE : toujours COMPARER avec la console et n'y faire que des
 // remplacements chirurgicaux — jamais de copier-coller du fichier entier.
 //
+// Publié en prod le 2026-08-05 (22h4x) par remplacement chirurgical :
+// `scolariteInchangee()` — un compte enfant ne peut plus modifier sa scolarité.
+// ⚠️ NON VÉRIFIÉ CÔTÉ ENFANT : la console n'offre plus de simulateur de règles
+// et aucune session enfant n'était disponible. Le compilateur l'accepte et les
+// écritures du parent passent par une autre branche, mais le comportement réel
+// d'une session enfant reste à mesurer (voir le protocole dans le journal).
+//
 // Publié en prod le 2026-08-05 (22h09) par remplacement chirurgical, vérifié
 // par une écriture réelle depuis un compte MAPO+ (HTTP 200 là où c'était 403) :
 // `profilB2CValide()` + `allow create` sur users/{uid}. Prod : 534 → 543 lignes.
@@ -281,11 +288,34 @@ service cloud.firestore {
           return exists(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid))
             && docId == 'enfant_' + get(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid)).data.enfantId;
         }
+        // La SCOLARITÉ n'appartient pas à l'enfant : elle est du ressort de son
+        // parent. Un enfant qui se déclarerait en Terminale changerait ce que le
+        // tuteur lui propose et fausserait le suivi que voit sa mère.
+        //
+        // ⚠️ Liste de ce qui est GELÉ, et non liste de ce qui est permis. Le
+        // document `enfant_<id>` ne contient pas qu'un profil : il porte aussi
+        // ses notes, son planning, ses révisions, son questionnaire 6C et ses
+        // centres d'intérêt — tout ce que l'enfant alimente légitimement en
+        // travaillant. Une liste blanche aurait bloqué ses révisions en croyant
+        // protéger son niveau.
+        function scolariteInchangee() {
+          return !request.resource.data.enfant.diff(resource.data.enfant).affectedKeys().hasAny([
+            'id', 'createdAt',
+            'cycle', 'niveau', 'pays', 'ecole', 'ecoleReliee', 'matricule', 'lienEcole', 'filiere',
+            'formation', 'formationUrl', 'formationModules', 'formationModulesDetail',
+            'formationPlan', 'formationPlanAt',
+            'objectifNote', 'objectifs', 'bareme',
+            'catEcole', 'catFormation', 'certifId', 'organisme', 'certifDate',
+          ]);
+        }
         allow read: if isSignedIn() && (request.auth.uid == uid || isCoParent() || estMonProfil());
         allow write: if isSignedIn() && (
           request.auth.uid == uid
           || ((docId == 'enfants' || docId.matches('enfant_.*')) && isCoParent())
-          || estMonProfil()
+          // `resource != null` : l'enfant modifie un profil que son parent a
+          // créé, il n'en crée jamais. Sur une création, `resource.data`
+          // n'existe pas et la comparaison n'aurait aucun sens.
+          || (estMonProfil() && resource != null && scolariteInchangee())
         );
       }
 
