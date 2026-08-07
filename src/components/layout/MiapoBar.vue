@@ -379,6 +379,11 @@ const HAUTEUR_SAISIE_MAX = 134 // 5 lignes de 22 px + 24 px de marge intérieure
 function ajusterHauteur() {
   const el = inputEl.value
   if (!el) return
+  // Champ vide : on rend la main au CSS (min-height). Surtout NE PAS mesurer —
+  // Chrome compte le PLACEHOLDER dans le scrollHeight d'un textarea (mesuré le
+  // 07/08 : 68 px au lieu de 46). Celui de MIAPO tient sur deux lignes, la zone
+  // restait donc haute d'une ligne de trop après chaque envoi.
+  if (!el.value) { el.style.height = '' ; return }
   el.style.height = 'auto'
   const bordures = el.offsetHeight - el.clientHeight
   el.style.height = Math.min(el.scrollHeight + bordures, HAUTEUR_SAISIE_MAX) + 'px'
