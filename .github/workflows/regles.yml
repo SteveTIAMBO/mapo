@@ -10,12 +10,13 @@
 # lorsque quelqu'un y pense.
 name: Règles Firestore
 
+# ⚠️ MANUEL UNIQUEMENT. Ce workflow installe firebase-tools et demarre un
+# emulateur : environ 16 minutes de runner par execution. Le 06/08 il s'est
+# declenche deux fois dans la journee, pendant que les deploiements se mettaient
+# a etre annules puis a ne plus demarrer du tout — symptomes typiques de minutes
+# Actions epuisees. Faute de preuve, on ne prend pas le risque : ces tests se
+# lancent en local (`npm run test:rules`, gratuit) et ici a la demande.
 on:
-  push:
-    paths:
-      - 'firestore.rules'
-      - 'tests/regles-firestore.test.js'
-      - '.github/workflows/regles.yml'
   workflow_dispatch:
 
 jobs:
