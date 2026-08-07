@@ -70,20 +70,36 @@ function revisionDocRef(uid, studentId) {
 // on régénère simplement comme avant (aucune casse).
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  const d = Math.max(1, Math.min(5, Number(difficulte) || 1))
+  // PAS DE PLAFOND sur la difficulté. Un `min(5, …)` faisait tomber TOUS les
+  // niveaux ≥ 5 dans le même document de banque : dès qu'il contenait 10
+  // questions, l'IA n'était plus jamais appelée et l'apprenant rejouait les
+  // mêmes questions à difficulté gelée, niveau après niveau. Le serveur, lui,
+  // sait déjà calibrer au-delà de 5 (type concours) — c'était la clé qui bridait.
+  const d = Math.max(1, Number(difficulte) || 1)
   return `${norm(matiere)}__${norm(niveau)}__d${d}`
 }
 function bankDocRef(key) { return doc(db, 'quizBank', key) }
 
-async function readBankQuiz({ matiere, niveau, difficulte, nombre }) {
+// Normalise un intitulé de question pour comparer « déjà vue » sans se faire
+// piéger par la casse, les accents ou la ponctuation.
+function normQuestion(t) {
+  return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues }) {
   if (!cloudUid()) return null // démo / non connecté : pas de banque cloud
   try {
     const snap = await getDoc(bankDocRef(bankKey(matiere, niveau, difficulte)))
     if (snap.exists()) {
       const qs = Array.isArray(snap.data()?.questions) ? snap.data().questions : []
       const valid = qs.filter((q) => q && q.q && Array.isArray(q.choices) && q.choices.length === 4)
-      if (valid.length >= nombre) {
-        const shuffled = [...valid].sort(() => Math.random() - 0.5) // variété
+      // On écarte ce que CET apprenant a déjà joué : sans ça, un apprenant qui
+      // reste au même niveau (score < 80 %, donc pas de montée) recevait
+      // indéfiniment le même lot de questions. La banque reste partagée : ce
+      // filtre est purement local, il ne retire rien pour les autres.
+      const neuves = valid.filter((q) => !dejaVues || !dejaVues.has(normQuestion(q.q)))
+      if (neuves.length >= nombre) {
+        const shuffled = [...neuves].sort(() => Math.random() - 0.5) // variété
         return shuffled.slice(0, nombre)
       }
     }
@@ -143,7 +159,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @returns {Promise<{ok, questions, mode, reason}>}
    *   questions: [{ q, choices[4], answer, hint, explanation }]
    */
-  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '', digest = '' }) {
+  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '', digest = '', studentId = '' }) {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
@@ -160,11 +176,33 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const ex = refStore.getExemples(matiere)
       if (ex) effThemes = (themes ? themes + ' ; ' : '') + `Inspire-toi du niveau et du style de ces sujets de l'école : ${ex.slice(0, 1500)}`
     } catch (e) { /* silencieux */ }
+    // Questions DÉJÀ JOUÉES par cet apprenant dans cette matière (historique
+    // local, alimenté à chaque séance terminée). Sert deux fois : à écarter les
+    // reprises de la banque, et à demander du neuf à l'IA. Borné aux 12 dernières
+    // séances : au-delà, revoir une question est de la répétition espacée, pas
+    // de la redite.
+    const dejaVues = new Set()      // texte normalisé → filtre de la banque
+    const dejaVuesTexte = []        // texte d'origine → envoyé à l'IA, plus lisible
+    try {
+      if (studentId) {
+        const m = normQuestion(matiere)
+        loadHistory(studentId)
+          .filter((s) => normQuestion(s?.subjectName) === m)
+          .slice(0, 12)
+          .forEach((s) => (Array.isArray(s.questions) ? s.questions : []).forEach((q) => {
+            if (!q || !q.q) return
+            const n = normQuestion(q.q)
+            if (dejaVues.has(n)) return
+            dejaVues.add(n)
+            dejaVuesTexte.push(q.q)
+          }))
+      }
+    } catch { /* historique illisible : on continue sans filtre */ }
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
     // Uniquement pour une révision générique (pas de thème NI de cours perso imposé :
     // sinon on veut un quiz réellement tiré du cours de l'élève).
     if (!effThemes && !cours) {
-      const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre })
+      const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
       if (fromBank) {
         generating.value = false
         lastMode.value = 'banque'
@@ -186,7 +224,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff } }),
+        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, exclure: dejaVuesTexte.slice(0, 40) } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)

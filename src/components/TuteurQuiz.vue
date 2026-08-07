@@ -476,7 +476,10 @@ async function start() {
   } catch { /* best-effort */ }
   learnerDigest.value = digest
   // Priorité aux cours importés de la matière ; sinon référentiel national (serveur).
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest })
+  // `studentId` sert à écarter les questions déjà jouées par CET apprenant
+  // (banque partagée + consigne à l'IA) : sans lui, un apprenant qui reste au
+  // même niveau rejouait le même lot de questions séance après séance.
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest, studentId: props.studentId })
   if (res && res.reason === 'credits_epuises') { mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []

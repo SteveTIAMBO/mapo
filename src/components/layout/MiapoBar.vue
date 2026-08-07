@@ -37,19 +37,24 @@
 
           <!-- Saisie -->
           <div class="miapo-input-row">
-            <input
+            <!-- textarea et non input : une question de tuteur fait vite deux ou
+                 trois lignes sur téléphone, et un input ne grandit jamais — on
+                 tapait à l'aveugle dès qu'on dépassait la largeur. Entrée envoie
+                 (comportement inchangé), Maj+Entrée passe à la ligne. -->
+            <textarea
               ref="inputEl"
               v-model="instruction"
-              type="text"
+              rows="1"
               class="miapo-input"
               :placeholder="placeholder"
               :disabled="busy || step === 'draft'"
               spellcheck="true"
               autocapitalize="sentences"
               :lang="spellLang"
-              @keydown.enter.prevent="submit"
+              @input="ajusterHauteur"
+              @keydown.enter.exact.prevent="submit"
               @keydown.escape="close"
-            />
+            ></textarea>
             <button v-if="convoSupported" type="button" class="miapo-convo" :class="['s-' + convoState, { on: convoActive }]"
               :disabled="step === 'draft'"
               :title="convoActive ? 'Terminer la conversation' : 'Parler avec MIAPO (conversation mains libres)'" @click="toggleConversation">
@@ -363,6 +368,25 @@ async function resolveLocalQuery(text) {
 
 const inputEl = ref(null)
 const instruction = ref('')
+
+// Hauteur de la zone de saisie : une ligne au repos, puis elle grandit avec le
+// texte jusqu'à 5 lignes, après quoi elle défile. On remet `auto` avant de
+// mesurer, sinon `scrollHeight` reste bloqué sur l'ancienne hauteur et la zone
+// ne redescend jamais quand on efface. `scrollHeight` ignore les bordures : on
+// ajoute l'écart offset/client, sinon il manque 2 px et une barre de défilement
+// parasite apparaît dès la première ligne.
+const HAUTEUR_SAISIE_MAX = 134 // 5 lignes de 22 px + 24 px de marge intérieure
+function ajusterHauteur() {
+  const el = inputEl.value
+  if (!el) return
+  el.style.height = 'auto'
+  const bordures = el.offsetHeight - el.clientHeight
+  el.style.height = Math.min(el.scrollHeight + bordures, HAUTEUR_SAISIE_MAX) + 'px'
+}
+// `instruction` est vidée par le code après envoi (et remplie par la dictée
+// vocale) : sans ce watcher, la zone resterait haute après avoir envoyé un
+// message long, ou resterait basse après une dictée.
+watch(instruction, () => nextTick(ajusterHauteur))
 
 // ── Conversation vocale mains libres (UN SEUL bouton) ────────────────
 // Un bouton lance une vraie conversation avec MIAPO (MAPO+ et MAPO) : elle
@@ -1044,11 +1068,14 @@ onUnmounted(() => {
 .miapo-close:hover { background: var(--input-bg); color: var(--tx); }
 
 .miapo-input-row {
-  display: flex; align-items: center; gap: 8px;
+  /* flex-end : quand la zone de saisie grandit, les boutons restent alignés sur
+     sa dernière ligne au lieu de flotter au milieu. */
+  display: flex; align-items: flex-end; gap: 8px;
   padding: 4px 16px 12px;
 }
 .miapo-input {
-  flex: 1; height: 46px; padding: 0 16px;
+  flex: 1; min-height: 46px; max-height: 134px; padding: 12px 16px;
+  line-height: 22px; resize: none; overflow-y: auto;
   background: var(--input-bg); border: 1px solid var(--divider);
   border-radius: 12px; font-size: 15px; color: var(--tx);
   outline: none; font-family: inherit; transition: border-color .15s;

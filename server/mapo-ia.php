@@ -718,6 +718,15 @@ function buildTutorQuizPrompts($d) {
   // Difficulté ADAPTATIVE SANS PLAFOND : plus l'apprenant réussit, plus ça se corse.
   $diff    = isset($d['difficulte']) ? max(1, intval($d['difficulte'])) : 1;
   $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
+  // Questions déjà posées à CET apprenant dans cette matière. Même motif que
+  // l'appariement : à matière et niveau constants, l'IA ressert spontanément les
+  // mêmes intitulés « évidents ». On les lui interdit pour qu'une révision
+  // apporte du neuf plutôt qu'une redite.
+  $exclure = '';
+  if (!empty($d['exclure']) && is_array($d['exclure'])) {
+    $ex = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 200); }, $d['exclure']))), 0, 40);
+    $exclure = implode("\n- ", $ex);
+  }
 
   $diffTable = [
     1 => "Niveau 1 (découverte) : questions simples sur les définitions et les bases, une seule notion par question.",
@@ -745,6 +754,7 @@ function buildTutorQuizPrompts($d) {
   // Sous-RAG perso : personnalise le CONTEXTE (exemples, ton) sans jamais toucher
   // à la difficulté (pilotée par le niveau adaptatif) ni recopier le profil.
   if ($digest !== '') $system .= " PERSONNALISATION : un PROFIL de l'apprenant est fourni ci-dessous (forces, centres d'intérêt, forme du jour…). ANCRE le contexte et les exemples des questions dans ses centres d'intérêt, et adapte le TON pour le motiver — MAIS conserve EXACTEMENT le niveau de difficulté demandé plus haut, et ne cite JAMAIS le profil dans le texte des questions.";
+  if ($exclure !== '') $system .= " QUESTIONS DÉJÀ POSÉES : la liste « Déjà vues » ci-dessous a DÉJÀ été jouée par cet apprenant. Ne les repose pas, et n'en produis pas de simple reformulation ou de variante triviale (même notion, mêmes nombres). Traite d'AUTRES aspects du programme, ou les mêmes notions sous un angle réellement différent.";
 
   $u = "Matière : {$matiere}\n";
   if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
@@ -752,6 +762,7 @@ function buildTutorQuizPrompts($d) {
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
   if ($digest !== '') $u .= "Profil de l'apprenant (ancrer les exemples et le ton — NE PAS recopier dans les questions) : {$digest}\n";
   if ($cours !== '') $u .= "\nCOURS DE L'ÉLÈVE (source PRIORITAIRE — tire les questions de ce contenu) :\n{$cours}\n";
+  if ($exclure !== '') $u .= "\nDéjà vues (NE PAS reposer, ni reformuler) :\n- {$exclure}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 
   // Assez de tokens pour un quiz complet de 10 questions (~514 tok/question
