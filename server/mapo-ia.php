@@ -743,6 +743,16 @@ function buildTutorQuizPrompts($d) {
   $system = "Tu es un tuteur pédagogique francophone bienveillant et rigoureux qui fait PROGRESSER l'élève dans la durée. {$contexte} "
     . "Tu crées un quiz de révision de {$count} questions à choix multiple sur la matière demandée, adapté au niveau de classe ET au niveau de difficulté indiqué. "
     . "DIFFICULTÉ DEMANDÉE — {$diffDesc} Calibre VRAIMENT les questions sur ce niveau de difficulté (ni plus facile, ni plus dur). "
+    // Mesuré le 07/08 sur un compte réel : aux difficultés 6 et 7 en anglais, le
+    // modèle sortait quand même « Present Simple, 3e personne » et « comparatif
+    // de good ». Il s'ancrait sur la CLASSE (5ème) et ignorait la difficulté.
+    // D'où cette levée d'ambiguïté explicite : la classe borne le PROGRAMME, pas
+    // l'exigence.
+    . ($diff >= 4
+        ? "ARBITRAGE, à respecter absolument : le niveau de classe délimite le PROGRAMME (les notions autorisées), il ne borne PAS l'exigence. "
+          . "À cette difficulté, une question de simple restitution ou d'application immédiate d'une règle de base est HORS SUJET, même si elle est au programme de la classe. "
+          . "Chaque question doit demander de combiner plusieurs notions, de trancher entre des cas voisins, ou de repérer une exception. "
+        : "")
     . "Méthode socratique : pour chaque question, l'INDICE oriente la réflexion SANS donner la réponse ; l'EXPLICATION justifie la bonne réponse. "
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "
     . "Langue simple, phrases courtes (contexte bas débit, texte seul). Les questions doivent être factuellement exactes et avoir une seule bonne réponse. "
