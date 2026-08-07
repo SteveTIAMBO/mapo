@@ -2800,7 +2800,14 @@ function formatDateLong(iso) {
 }
 function jLabel(iso) { const j = joursAvant(iso); if (j === null) return ''; if (j < 0) return t('mia.exPast'); if (j === 0) return t('mia.exToday'); return 'J-' + j }
 function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 && j <= 14) ? 'ex-soon' : '' }
-watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id) } }, { immediate: true })
+// ⚠️ `syncFromCloud` rapatrie l'ÉTAT DE PROGRESSION (niveau par matière, Elo,
+// prochaines échéances). Il n'était appelé nulle part : seul l'historique était
+// synchronisé. Sur un appareil qui n'avait pas servi à réviser — celui d'un
+// parent qui consulte, ou l'enfant après un changement de téléphone — la
+// Progression s'affichait donc VIDE alors que le nuage contenait tout, et
+// l'Historique juste à côté, lui, montrait bien les révisions. Deux fonctions
+// jumelles, une seule branchée.
+watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncFromCloud(id); tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id) } }, { immediate: true })
 
 onMounted(async () => {
   await store.hydrate()
