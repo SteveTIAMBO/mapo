@@ -8,6 +8,22 @@
     <template v-else>
       <p class="muted">{{ t('mia.enfantCompteHint') }}</p>
 
+      <!-- Le choix de l'enfant vient EN PREMIER : il commande tout le reste.
+           Il était placé sous le formulaire qu'il déverrouille, si bien que tant
+           qu'aucun enfant n'était sélectionné on ne voyait ni « Définir les
+           identifiants » ni rien d'autre — l'écran paraissait vide de toute
+           action. Un contrôle qui conditionne un bloc se met avant lui. -->
+      <div class="row">
+        <select v-model="enfantId" class="input select">
+          <option value="">{{ t('mia.enfantCompteChoose') }}</option>
+          <option v-for="e in enfantsDispo" :key="e.id" :value="e.id">{{ e.firstName }} {{ e.lastName }}</option>
+        </select>
+        <button class="btn btn-primary btn-sm" :disabled="eco.busy || !enfantId" @click="invite">
+          <component :is="eco.busy ? Loader2 : UserPlus" :size="14" :class="{ spin: eco.busy }" />
+          <span>{{ t('mia.enfantCompteInvite') }}</span>
+        </button>
+      </div>
+
       <!-- Identifiant + code de l'enfant : c'est le PARENT qui les choisit.
            On ne demande ni e-mail ni mot de passe à un mineur. -->
       <div v-if="enfantId" class="ec-login">
@@ -27,18 +43,6 @@
           <span>{{ t('ident.parentSave') }}</span>
         </button>
         <p v-if="loginMsg" class="ec-login-msg" :class="{ err: loginErr }">{{ loginMsg }}</p>
-      </div>
-
-      <!-- Un code par enfant : on choisit DE QUI on ouvre le profil -->
-      <div class="row">
-        <select v-model="enfantId" class="input select">
-          <option value="">{{ t('mia.enfantCompteChoose') }}</option>
-          <option v-for="e in enfantsDispo" :key="e.id" :value="e.id">{{ e.firstName }} {{ e.lastName }}</option>
-        </select>
-        <button class="btn btn-primary btn-sm" :disabled="eco.busy || !enfantId" @click="invite">
-          <component :is="eco.busy ? Loader2 : UserPlus" :size="14" :class="{ spin: eco.busy }" />
-          <span>{{ t('mia.enfantCompteInvite') }}</span>
-        </button>
       </div>
 
       <div v-if="code" class="code-box">

@@ -62,10 +62,17 @@
       </transition>
 
       <!-- Offline banner -->
-      <transition name="slide-down">
-        <div v-if="!isOnline && !isSyncing" class="offline-banner">
+      <!-- `:duration` explicite : sans elle, Vue attend `transitionend`, qui
+           n'arrive jamais si l'onglet ne peint pas (arrière-plan, économiseur
+           d'énergie). Le bandeau restait alors figé en pleine sortie, donc
+           impossible à fermer. Avec une durée annoncée, Vue conclut au chrono. -->
+      <transition name="slide-down" :duration="300">
+        <div v-if="!isOnline && !isSyncing && !banniereFermee" class="offline-banner">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.56 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-          <span>Mode hors ligne — vos modifications seront synchronisées automatiquement à la reconnexion</span>
+          <span>{{ t('header.offlineBanner') }}</span>
+          <button type="button" class="offline-close" :aria-label="t('common.close')" :title="t('common.close')" @click="banniereFermee = true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
       </transition>
 
@@ -87,6 +94,7 @@
 
 <script setup>
 import { ref, watch, computed, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { RouterView } from 'vue-router'
 import AppSidebar from './AppSidebar.vue'
@@ -97,6 +105,7 @@ import MobileBottomBar from './MobileBottomBar.vue'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
 import { useAuthStore } from '../../stores/auth'
 
+const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
 const authStore = useAuthStore()
 // B2C (MAPO+) : pas de sidebar principale — le volet MAPO+ fait office de menu
@@ -113,6 +122,13 @@ const syncCompleted = ref(false)
 const syncError = ref(false)
 
 const isSyncing = computed(() => syncStatus.value === 'syncing')
+
+// Bandeau hors ligne : informatif au moment de la bascule, pas un panneau
+// permanent. Une fois fermé il ne revient pas pour cette coupure ; l'état reste
+// lisible en continu sur le badge de l'en-tête, qui suffit ensuite.
+const banniereFermee = ref(false)
+// Retour du réseau → on réarme, pour que la coupure SUIVANTE soit annoncée.
+watch(isOnline, (enLigne) => { if (enLigne) banniereFermee.value = false })
 
 // Watch for sync status changes
 watch(syncStatus, (newVal, oldVal) => {
@@ -279,6 +295,17 @@ onUnmounted(() => {
   color: #92400e;
   border-bottom: 1px solid #fbbf24;
 }
+
+/* Fermeture du bandeau : poussée à droite, cible tactile confortable. */
+.offline-close {
+  margin-left: auto;
+  display: grid; place-items: center;
+  width: 28px; height: 28px; padding: 0;
+  border: none; border-radius: 8px;
+  background: transparent; color: inherit; cursor: pointer;
+  opacity: .7; transition: opacity .15s, background .15s;
+}
+.offline-close:hover { opacity: 1; background: rgba(146, 64, 14, .12); }
 
 .sync-banner {
   border-bottom: 1px solid;

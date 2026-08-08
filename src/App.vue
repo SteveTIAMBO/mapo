@@ -1,7 +1,9 @@
 <template>
-  <div v-if="!isOnline" class="offline-banner">
-    Mode hors-ligne — donnees sauvegardees localement, sync au retour du reseau
-  </div>
+  <!-- Pas de bandeau hors ligne ici : AppLayout en affiche déjà un, fermable et
+       traduit. Celui qui se trouvait à cet endroit faisait doublon, n'était ni
+       traduit ni accentué, et se cumulait au-dessus de l'autre : deux lignes
+       pour dire la même chose, dont aucune ne pouvait être fermée. L'état hors
+       ligne reste visible en permanence via le badge de l'en-tête. -->
   <div v-if="authStore.loading" class="loading-screen">
     <div class="loading-inner">
       <div class="loading-logo">
@@ -15,10 +17,8 @@
 
 <script setup>
 import { RouterView } from 'vue-router'
-import { useOnline } from '@vueuse/core'
 import { useAuthStore } from './stores/auth'
 import { useAccessibiliteStore } from './stores/accessibilite'
-const isOnline = useOnline()
 const authStore = useAuthStore()
 // Applique le mode accessibilité (préférences persistées) dès le démarrage.
 useAccessibiliteStore().init()

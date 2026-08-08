@@ -1495,15 +1495,6 @@ function exporterBilan() {
   table{width:100%;border-collapse:collapse;font-size:14px}td{padding:8px 6px;border-bottom:1px solid #f0f0f0}
   .dots{letter-spacing:3px;color:#0A84FF}ul{margin:0;padding-left:20px}li{margin:5px 0}
   .foot{margin-top:40px;border-top:1px solid #ddd;padding-top:10px;font-size:11px;color:#999;text-align:center}
-/* Pastilles de couleur — cibles tactiles confortables (44px), et la coche
-   suffit à indiquer la sélection : pas de bordure colorée (cf. règles de design). */
-.teintes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
-.teinte {
-  width: 44px; height: 44px; border-radius: 50%; border: 2px solid transparent;
-  cursor: pointer; display: grid; place-items: center; color: #fff;
-  box-shadow: 0 2px 8px rgba(15, 10, 45, .18);
-}
-.teinte.on { border-color: #1a1d1f; }
 </style></head>
   <body onload="window.print()">
   <div class="hd"><div><h2>MAPO+</h2><small>${t('mia.bilanGenerated')}</small></div><div style="text-align:right;color:#666;font-size:13px">${esc(dateStr)}</div></div>
@@ -2912,6 +2903,20 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Pastilles de couleur de l'espace.
+   ⚠️ Ces règles étaient tombées DANS la feuille de style du gabarit d'impression
+   du bilan PDF, écrite par `w.document.write(...)`. Elles n'étaient donc jamais
+   appliquées à l'application : les boutons sont vides (seul le sélectionné
+   contient une coche), donc sans dimensions ils s'effondrent à zéro. On voyait
+   UNE pastille au lieu de six, et l'utilisateur n'avait pas le choix annoncé.
+   Cible tactile de 44 px ; la coche suffit à marquer la sélection. */
+.teintes { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 14px; }
+.teinte {
+  width: 44px; height: 44px; border-radius: 50%; border: 2px solid transparent;
+  cursor: pointer; display: grid; place-items: center; color: #fff;
+  box-shadow: 0 2px 8px rgba(15, 10, 45, .18);
+}
+.teinte.on { border-color: #1a1d1f; }
 /* Écran « profil illisible » (session enfant). Plein écran : tant que le profil
    n'est pas là, il n'y a rien de sensé à montrer derrière. */
 .profil-indispo {

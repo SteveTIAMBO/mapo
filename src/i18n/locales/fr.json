@@ -2,7 +2,8 @@
   "common": {
     "byEdufrem": "par EDUFREM",
     "lang": "Langue",
-    "later": "Plus tard"
+    "later": "Plus tard",
+    "close": "Fermer"
   },
   "welcome": {
     "title": "Le professeur particulier qui accompagne chaque apprenant",
@@ -223,7 +224,8 @@
     "pending": "En attente",
     "onlineSynced": "En ligne — tout est synchronisé.",
     "offlineDetail": "Hors ligne — {n} modification(s) en attente. Tout se synchronisera automatiquement au retour du réseau.",
-    "syncingDetail": "{n} modification(s) en cours de synchronisation."
+    "syncingDetail": "{n} modification(s) en cours de synchronisation.",
+    "offlineBanner": "Mode hors ligne : vos modifications seront synchronisées automatiquement à la reconnexion."
   },
   "nav": {
     "carre": "Carré",

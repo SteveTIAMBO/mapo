@@ -2,7 +2,8 @@
   "common": {
     "byEdufrem": "by EDUFREM",
     "lang": "Language",
-    "later": "Later"
+    "later": "Later",
+    "close": "Close"
   },
   "welcome": {
     "title": "The private tutor that supports every learner",
@@ -223,7 +224,8 @@
     "pending": "Pending",
     "onlineSynced": "Online — everything is synced.",
     "offlineDetail": "Offline — {n} pending change(s). Everything will sync automatically when the network is back.",
-    "syncingDetail": "{n} change(s) syncing."
+    "syncingDetail": "{n} change(s) syncing.",
+    "offlineBanner": "Offline: your changes will sync automatically when the connection returns."
   },
   "nav": {
     "carre": "Carré",
