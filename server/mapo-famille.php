@@ -52,6 +52,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
 // Config (best-effort) : FIREBASE_PROJECT non secret → défaut si absent.
 $cfg = __DIR__ . '/mapo-lien-config.php';
 if (is_file($cfg)) require_once $cfg;
+// Registre des notifications : sert à mémoriser « cet enfant dépend de ce
+// parent », écrit ci-dessous aux deux endroits où le serveur connaît les deux
+// comptes. La lib ne fait que du fichier, elle n'ouvre aucune connexion.
+//
+// Inclusion CONDITIONNELLE, et appels gardés par function_exists : ce fichier
+// porte la connexion des enfants (lien magique et identifiants). Une dépendance
+// dure vers une lib de confort le ferait mourir si elle venait à manquer sur le
+// serveur — on n'échange pas un accès contre une notification.
+$libPush = __DIR__ . '/mapo-push-lib.php';
+if (is_file($libPush)) require_once $libPush;
 if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem');
 // Même clé de compte de service que le provisioning des sous-domaines.
 if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json');
@@ -236,6 +246,14 @@ if ($action === 'set_child_login' || $action === 'delete_child') {
       exit;
     }
 
+    // Rattachement enfant → parent pour les NOTIFICATIONS (fichier local).
+    // C'est le seul endroit où le serveur connaît les deux comptes de façon
+    // sûre : `enf_<sha256(parent|enfantId)>` ne s'inverse pas. Sans cette ligne,
+    // le serveur ne saurait pas à qui écrire quand les crédits de l'enfant
+    // s'épuisent. Best-effort : une notification manquée ne doit jamais faire
+    // échouer la création des accès.
+    if (function_exists('mp_lienSet')) mp_lienSet($childUid, $parentUid, trim($body['prenom'] ?? ''));
+
     echo json_encode(['ok' => true, 'identifiant' => $ident, 'childUid' => $childUid]);
     exit;
   }
@@ -308,6 +326,11 @@ if ($ownerUid === '' || $enfantId === '') { http_response_code(404); echo json_e
 // Un même enfant → un seul compte, quelle que soit la rotation du code.
 // On n'écrit rien : pas de « stamp » côté serveur, pas de droit d'écriture.
 $childUid = 'enf_' . substr(hash('sha256', $ownerUid . '|' . $enfantId), 0, 24);
+
+// Rattachement enfant → parent pour les notifications. Ici aussi : le lien
+// magique est l'autre voie d'accès d'un enfant, et un compte créé par ce
+// chemin-là doit pouvoir alerter son parent comme les autres.
+if (function_exists('mp_lienSet')) mp_lienSet($childUid, $ownerUid, $prenom);
 
 // ── 3. Forger le jeton personnalisé Firebase ──────────────────────────
 list($customToken, $errCt) = mintCustomToken($childUid);

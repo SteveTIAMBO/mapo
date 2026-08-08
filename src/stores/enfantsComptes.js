@@ -176,7 +176,7 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
    * transite que vers le serveur et n'est JAMAIS écrit dans la base — c'est
    * Firebase Auth qui le conserve, haché.
    */
-  async function definirLoginEnfant(enfantId, identifiant, code) {
+  async function definirLoginEnfant(enfantId, identifiant, code, prenom = '') {
     const t = await jetonParent()
     if (!t) return { ok: false, reason: 'account' }
     busy.value = true
@@ -184,7 +184,10 @@ export const useEnfantsComptesStore = defineStore('enfantsComptes', () => {
       const res = await fetch(FAMILLE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
-        body: JSON.stringify({ action: 'set_child_login', enfantId, identifiant, code }),
+        // `prenom` sert uniquement à nommer l'enfant dans les notifications
+        // envoyées au parent (« Marie a utilisé tous ses crédits »). Sans lui,
+        // un parent de plusieurs enfants ne saurait pas duquel on parle.
+        body: JSON.stringify({ action: 'set_child_login', enfantId, identifiant, code, prenom }),
       })
       const d = await res.json().catch(() => null)
       if (!res.ok || !d || !d.ok) return { ok: false, reason: (d && d.error) || 'server' }

@@ -133,10 +133,78 @@ if (!empty($r['ok'])) {
   // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
-  if ($metered) { $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']); }
+  if ($metered) {
+    $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']);
+    // Le PARENT est prévenu automatiquement quand la jauge de son enfant tombe
+    // bas, puis quand elle est vide. Volontairement ici et pas côté client :
+    // sinon le parent n'apprendrait le blocage que si l'enfant pense à le
+    // signaler — c'est-à-dire trop tard, et seulement parfois.
+    mapo_alerter_parent_credits($uid, $tokens, $cap, $st);
+  }
   echo json_encode(['ok' => true, 'text' => $text, 'provider' => $provider, 'tokens' => $tokens, 'cap' => $cap]);
 } else {
   echo json_encode(['ok' => false, 'error' => 'ia_echec', 'code' => $r['code'] ?? null, 'detail' => $r['detail'] ?? null]);
+}
+
+/**
+ * Prévient le parent d'un apprenant MINEUR que ses crédits s'épuisent.
+ *
+ * Deux moments seulement : la jauge passe sous 20 % (« bientôt fini », il reste
+ * le temps d'agir) et elle atteint 0 (« fini », l'enfant est bloqué). Une seule
+ * fois chacun par cycle de recharge — la mémoire est indexée sur l'identifiant
+ * de semaine des crédits, donc l'alerte redevient possible d'elle-même à la
+ * recharge suivante.
+ *
+ * Ne fait RIEN si le compte n'est pas rattaché à un parent : un adulte qui gère
+ * son propre abonnement n'a personne à prévenir.
+ *
+ * Entièrement best-effort : une notification est un service rendu, jamais une
+ * raison de faire échouer une révision déjà payée.
+ */
+function mapo_alerter_parent_credits($uid, $restant, $cap, $etat) {
+  try {
+    $libPush = __DIR__ . '/mapo-push-lib.php';
+    $cfgPush = __DIR__ . '/mapo-push-config.php';
+    if (!is_file($libPush) || !is_file($cfgPush)) return;
+    require_once $libPush;
+
+    $lien = mp_lienGet($uid);
+    if (!$lien) return; // compte adulte, ou enfant pas encore rattaché
+
+    $cap = (int) $cap;
+    $restant = (int) $restant + (int) ($etat['bonus'] ?? 0);
+    if ($cap <= 0) return;
+
+    if ($restant <= 0) { $type = 'zero'; }
+    elseif ($restant <= (int) ceil($cap * 0.2)) { $type = 'bas'; }
+    else { return; }
+
+    // Période = semaine de recharge des crédits : une alerte par cycle.
+    $periode = $etat['weekId'] ?? gmdate('oW');
+    if (mp_alerteDejaEnvoyee($uid, $type, $periode)) return;
+    // « Zéro » rend l'alerte « bas » sans objet : on la marque aussi, sinon elle
+    // partirait juste après, pour dire moins que ce qu'on vient d'annoncer.
+    if ($type === 'zero') mp_marquerAlerte($uid, 'bas', $periode);
+
+    $prenom = ($lien['prenom'] ?? '') !== '' ? $lien['prenom'] : 'Votre enfant';
+    if ($type === 'zero') {
+      $titre = 'Crédits épuisés';
+      $texte = "{$prenom} a utilisé tous ses crédits et ne peut plus réviser. Rechargez son compte pour qu'il ou elle continue.";
+    } else {
+      $titre = 'Crédits bientôt épuisés';
+      $texte = "Il reste peu de crédits à {$prenom} pour cette semaine. Pensez à recharger avant qu'il ou elle soit bloqué·e.";
+    }
+
+    // La config n'est chargée QUE dans cette portée de fonction : ses variables
+    // ne fuient pas dans le script appelant.
+    require $cfgPush;
+    if (!isset($VAPID_PUBLIC) || !isset($VAPID_PRIVATE_PEM) || trim($VAPID_PRIVATE_PEM) === '') return;
+
+    mp_notifierUid($lien['parentUid'], $titre, $texte, '/parent/miapo', $VAPID_PUBLIC, $VAPID_PRIVATE_PEM, $VAPID_SUBJECT ?? 'mailto:contact@edufrem.com');
+    mp_marquerAlerte($uid, $type, $periode);
+  } catch (Throwable $e) {
+    // Silencieux par conception : cf. commentaire d'en-tête.
+  }
 }
 
 // ════════════════════════════════════════════════════════════════════

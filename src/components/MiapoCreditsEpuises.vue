@@ -12,6 +12,10 @@
       <h3>{{ t('mia.epuiseTitreEnfant') }}</h3>
       <p>{{ t('mia.epuiseTexteEnfant') }}</p>
       <div class="ce-act">
+        <button v-if="!prevenu" class="btn-primary" :disabled="envoiEnCours" @click="prevenirParent">
+          {{ t('mia.epuisePrevenirParent') }}
+        </button>
+        <span v-else class="ce-ok">{{ dejaFait ? t('mia.epuiseParentPrevenuDejaFait') : t('mia.epuiseParentPrevenu') }}</span>
         <button class="btn-ghost" @click="$emit('quit')">{{ t('common.later') }}</button>
       </div>
     </template>
@@ -35,16 +39,33 @@
  * qu'il était auparavant recopié dans chaque exercice : la version enfant n'a
  * donc été corrigée nulle part.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { usePushStore } from '../stores/push'
 
 defineEmits(['quit', 'abonnement'])
-const { t } = useI18n({ useScope: 'global' })
+const { t, locale } = useI18n({ useScope: 'global' })
 const store = useEnfantsAutonomesStore()
+const push = usePushStore()
 // Un compte enfant est, par construction, celui d'un mineur : il est créé par un
 // parent depuis son espace, jamais en autonomie.
 const estEnfant = computed(() => store.isCompteEnfant)
+
+const envoiEnCours = ref(false)
+const prevenu = ref(false)
+const dejaFait = ref(false)
+
+async function prevenirParent() {
+  envoiEnCours.value = true
+  const r = await push.prevenirParent(locale.value.startsWith('en') ? 'en' : 'fr')
+  envoiEnCours.value = false
+  // Même si l'envoi échoue, on confirme à l'enfant : le parent est de toute
+  // façon alerté automatiquement au franchissement du seuil (côté serveur).
+  // Lui afficher une erreur qu'il ne peut pas résoudre n'aiderait personne.
+  prevenu.value = true
+  dejaFait.value = !!(r && r.deja)
+}
 </script>
 
 <style scoped>
@@ -55,5 +76,6 @@ const estEnfant = computed(() => store.isCompteEnfant)
 .ce svg { width: 30px; height: 30px; color: var(--pr); }
 .ce h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tx); }
 .ce p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--tx2, #4b5563); max-width: 380px; }
-.ce-act { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; }
+.ce-act { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+.ce-ok { font-size: 13.5px; font-weight: 600; color: #16a34a; }
 </style>

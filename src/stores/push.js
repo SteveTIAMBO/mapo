@@ -121,5 +121,30 @@ export const usePushStore = defineStore('push', () => {
     } finally { busy.value = false }
   }
 
-  return { supported, permission, subscribed, busy, refresh, enable, disable, sendTest }
+  /**
+   * L'apprenant demande à prévenir son parent que ses crédits sont épuisés.
+   *
+   * On n'envoie AUCUN destinataire : le serveur part du jeton et retrouve le
+   * parent dans son propre registre. Un client qui pourrait désigner la cible
+   * pourrait arroser n'importe quel compte.
+   *
+   * Renvoie { ok, deja } — `deja` quand la demande a déjà été faite aujourd'hui.
+   */
+  async function prevenirParent(langue = 'fr') {
+    try {
+      if (!auth.currentUser) return { ok: false, reason: 'non_connecte' }
+      const res = await fetch('/mapo-push.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + await auth.currentUser.getIdToken() },
+        body: JSON.stringify({ action: 'alerte-parent', lang: langue }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!d || !d.ok) return { ok: false, reason: (d && d.error) || 'serveur' }
+      return { ok: true, deja: !!d.deja }
+    } catch (e) {
+      return { ok: false, reason: 'reseau' }
+    }
+  }
+
+  return { supported, permission, subscribed, busy, refresh, enable, disable, sendTest, prevenirParent }
 })

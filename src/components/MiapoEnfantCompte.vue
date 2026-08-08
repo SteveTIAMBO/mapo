@@ -107,7 +107,10 @@ watch(() => enfantId.value, (id) => {
 async function enregistrerLogin() {
   loginMsg.value = ''
   loginErr.value = false
-  const r = await eco.definirLoginEnfant(enfantId.value, loginIdent.value, loginCode.value)
+  // Le prénom accompagne la création des accès : il sert à nommer l'enfant dans
+  // les notifications adressées au parent.
+  const prenom = enfants.enfants.find((x) => x.id === enfantId.value)?.firstName || ''
+  const r = await eco.definirLoginEnfant(enfantId.value, loginIdent.value, loginCode.value, prenom)
   if (r.ok) {
     loginMsg.value = t('ident.parentOk', { p: r.identifiant })
   } else {

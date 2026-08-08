@@ -89,8 +89,16 @@ if (!function_exists('mp_b64url')) {
     return is_array($j) ? $j : [];
   }
 
-  /** Ajoute/rafraîchit un abonnement (lecture-modif-écriture verrouillée). */
-  function mp_subsAdd($sub) {
+  /**
+   * Ajoute/rafraîchit un abonnement (lecture-modif-écriture verrouillée).
+   *
+   * `$uid` est le compte Firebase de l'appelant, quand il est authentifié. Sans
+   * lui le registre ne servait qu'aux envois EN MASSE (le rappel quotidien) :
+   * impossible d'écrire à UNE personne précise, faute de savoir à qui appartient
+   * un abonnement. C'est ce qui empêchait d'alerter un parent quand les crédits
+   * de son enfant s'épuisent.
+   */
+  function mp_subsAdd($sub, $uid = '') {
     $endpoint = $sub['endpoint'] ?? '';
     if ($endpoint === '') return false;
     $fp = fopen(mp_subsPath(), 'c+');
@@ -98,9 +106,14 @@ if (!function_exists('mp_b64url')) {
     flock($fp, LOCK_EX);
     $raw = stream_get_contents($fp);
     $map = json_decode($raw, true); if (!is_array($map)) $map = [];
-    $map[sha1($endpoint)] = [
+    $cle = sha1($endpoint);
+    // On ne PERD jamais un uid déjà connu : un appel non authentifié (rappel
+    // quotidien anonyme) ne doit pas effacer le rattachement acquis plus tôt.
+    $uidConnu = $uid !== '' ? $uid : ($map[$cle]['uid'] ?? '');
+    $map[$cle] = [
       'endpoint' => $endpoint,
       'keys' => ['p256dh' => $sub['keys']['p256dh'] ?? '', 'auth' => $sub['keys']['auth'] ?? ''],
+      'uid' => $uidConnu,
       'at' => date('c'),
     ];
     ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
@@ -117,6 +130,96 @@ if (!function_exists('mp_b64url')) {
     $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
     unset($map[sha1($endpoint)]);
     ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
+    flock($fp, LOCK_UN); fclose($fp);
+  }
+
+  /** Abonnements d'UN compte (un même parent peut avoir plusieurs appareils). */
+  function mp_subsForUid($uid) {
+    if ($uid === '') return [];
+    $out = [];
+    foreach (mp_subsLoad() as $s) {
+      if (($s['uid'] ?? '') === $uid) $out[] = $s;
+    }
+    return $out;
+  }
+
+  // ── Rattachement enfant → parent (fichier) ─────────────────────────────
+  // Écrit UNE FOIS, côté serveur, au moment où le parent crée les accès de son
+  // enfant (mapo-famille.php connaît alors les deux comptes). Relu ensuite à
+  // chaque alerte de crédits.
+  //
+  // POURQUOI un fichier plutôt qu'une lecture Firestore : l'alerte part depuis
+  // `mapo-ia.php`, sur le chemin CHAUD d'une requête IA. Y ajouter un appel
+  // Firestore avec le compte de service coûterait un aller-retour réseau à
+  // chaque révision. Et surtout, ce lien ne doit JAMAIS venir du client : un
+  // navigateur qui déclarerait « mon parent est X » permettrait d'arroser
+  // n'importe quel compte de notifications.
+  function mp_lienPath() { return __DIR__ . '/mapo-push-parents.json'; }
+  function mp_lienLoad() {
+    $p = mp_lienPath();
+    if (!file_exists($p)) return [];
+    $j = json_decode(@file_get_contents($p), true);
+    return is_array($j) ? $j : [];
+  }
+  /** Enregistre « cet enfant dépend de ce parent ». Idempotent. */
+  function mp_lienSet($enfantUid, $parentUid, $prenom = '') {
+    if ($enfantUid === '' || $parentUid === '') return false;
+    $fp = fopen(mp_lienPath(), 'c+'); if (!$fp) return false;
+    flock($fp, LOCK_EX);
+    $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
+    $map[$enfantUid] = [
+      'parentUid' => $parentUid,
+      'prenom' => mb_substr(trim((string) $prenom), 0, 40),
+      'at' => date('c'),
+    ];
+    ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
+    flock($fp, LOCK_UN); fclose($fp);
+    return true;
+  }
+  /** Renvoie ['parentUid'=>…, 'prenom'=>…] ou null si l'enfant n'est pas rattaché. */
+  function mp_lienGet($enfantUid) {
+    $m = mp_lienLoad();
+    return $m[$enfantUid] ?? null;
+  }
+
+  /**
+   * Envoie une notification à TOUS les appareils d'un compte.
+   * Renvoie le nombre d'envois acceptés. Les abonnements morts (404/410) sont
+   * purgés au passage : sinon le registre se remplit d'appareils fantômes.
+   */
+  function mp_notifierUid($uid, $titre, $texte, $url, $vapidPub, $vapidPem, $vapidSubject) {
+    $envoyes = 0;
+    foreach (mp_subsForUid($uid) as $sub) {
+      $payload = json_encode(['title' => $titre, 'body' => $texte, 'url' => $url], JSON_UNESCAPED_UNICODE);
+      try {
+        $code = mp_sendWebPush($sub, $payload, $vapidPub, $vapidPem, $vapidSubject);
+      } catch (Throwable $e) { continue; }
+      if ($code === 200 || $code === 201) $envoyes++;
+      elseif ($code === 404 || $code === 410) mp_subsRemove($sub['endpoint'] ?? '');
+    }
+    return $envoyes;
+  }
+
+  // ── Anti-répétition des alertes (fichier) ──────────────────────────────
+  // Les crédits sont vérifiés à CHAQUE requête IA : sans mémoire, franchir un
+  // seuil enverrait une notification par question posée. On retient donc, par
+  // compte et par type d'alerte, la période pour laquelle elle est déjà partie.
+  // La période est l'identifiant de semaine des crédits : l'alerte redevient
+  // donc possible d'elle-même à chaque recharge hebdomadaire.
+  function mp_alertesPath() { return __DIR__ . '/mapo-push-alertes.json'; }
+  function mp_alerteDejaEnvoyee($uid, $type, $periode) {
+    $p = mp_alertesPath();
+    if (!file_exists($p)) return false;
+    $m = json_decode(@file_get_contents($p), true);
+    return is_array($m) && ($m[$uid][$type] ?? '') === $periode;
+  }
+  function mp_marquerAlerte($uid, $type, $periode) {
+    $fp = fopen(mp_alertesPath(), 'c+'); if (!$fp) return;
+    flock($fp, LOCK_EX);
+    $m = json_decode(stream_get_contents($fp), true); if (!is_array($m)) $m = [];
+    if (!isset($m[$uid]) || !is_array($m[$uid])) $m[$uid] = [];
+    $m[$uid][$type] = $periode;
+    ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($m));
     flock($fp, LOCK_UN); fclose($fp);
   }
 

@@ -48,11 +48,41 @@ $action = $body['action'] ?? 'send';
 
 // Inscription au registre (pour le rappel quotidien) / désinscription.
 if ($action === 'register') {
-  echo json_encode(['ok' => mp_subsAdd($sub ?: [])]); exit;
+  // $uid vient du jeton VÉRIFIÉ, jamais du corps de la requête : c'est lui qui
+  // rend possible l'envoi ciblé (alerter LE parent de CET enfant).
+  echo json_encode(['ok' => mp_subsAdd($sub ?: [], $uid ?: '')]); exit;
 }
 if ($action === 'unregister') {
   mp_subsRemove($sub['endpoint'] ?? '');
   echo json_encode(['ok' => true]); exit;
+}
+
+// Un enfant demande à prévenir son parent (crédits épuisés).
+//
+// Le destinataire n'est JAMAIS celui que désigne le client : on part de l'uid du
+// jeton vérifié, et on lit le rattachement enfant→parent écrit côté serveur au
+// moment de la création des accès. Sans ça, n'importe qui pourrait arroser
+// n'importe quel compte de notifications.
+if ($action === 'alerte-parent') {
+  if (!$trusted) { http_response_code(401); echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  $lien = mp_lienGet($uid);
+  if (!$lien) { echo json_encode(['ok' => false, 'error' => 'parent_inconnu']); exit; }
+  // Une seule demande par jour : c'est un rappel, pas une sonnette.
+  $jour = gmdate('Y-m-d');
+  if (mp_alerteDejaEnvoyee($uid, 'demande-enfant', $jour)) {
+    echo json_encode(['ok' => true, 'deja' => true]); exit;
+  }
+  $prenom = $lien['prenom'] !== '' ? $lien['prenom'] : 'Votre enfant';
+  $lang = (($body['lang'] ?? 'fr') === 'en') ? 'en' : 'fr';
+  $titre = $lang === 'en' ? 'Credits used up' : 'Crédits épuisés';
+  $texte = $lang === 'en'
+    ? "{$prenom} has used all their credits and cannot revise. Top up their account to let them continue."
+    : "{$prenom} a utilisé tous ses crédits et ne peut plus réviser. Rechargez son compte pour qu'il ou elle continue.";
+  $n = mp_notifierUid($lien['parentUid'], $titre, $texte, '/parent/miapo', $VAPID_PUBLIC, $VAPID_PRIVATE_PEM, $VAPID_SUBJECT ?? 'mailto:contact@edufrem.com');
+  mp_marquerAlerte($uid, 'demande-enfant', $jour);
+  // `ok` même si le parent n'a aucun appareil abonné : de son point de vue,
+  // l'enfant a bien fait ce qu'on lui demandait. `envoyes` dit la vérité.
+  echo json_encode(['ok' => true, 'envoyes' => $n]); exit;
 }
 
 // Relance WhatsApp : le parent pose son numéro + opt-in ; l'appli rafraîchit la
