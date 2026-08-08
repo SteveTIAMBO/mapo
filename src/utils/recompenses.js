@@ -22,6 +22,30 @@ function ecart(dayA, dayB) {
 export function statsRecompenses(sid) {
   try { return JSON.parse(localStorage.getItem(KEY(sid)) || '{}') } catch { return {} }
 }
+
+/**
+ * Remplace les statistiques locales par celles venues du cloud.
+ *
+ * Ce module reste volontairement SANS Firebase : c'est le store `tuteur` qui
+ * connaît l'espace de la famille (`proprietaireUid`) et porte les échanges avec
+ * la base. Ici on n'expose que le point d'entrée pour poser un état hydraté.
+ *
+ * Les récompenses ne font que CROÎTRE : en cas de désaccord, on garde le total
+ * le plus élevé. C'est ce qui rend la fusion sûre sans horodatage — une séance
+ * révisée hors ligne sur le téléphone ne peut pas être effacée par un état plus
+ * ancien lu depuis un autre appareil.
+ */
+export function hydraterRecompenses(sid, distant) {
+  if (!distant || typeof distant !== 'object') return statsRecompenses(sid)
+  const local = statsRecompenses(sid)
+  if ((local.total || 0) > (distant.total || 0)) return local // le local est en avance
+  const fusion = {
+    ...distant,
+    longest: Math.max(local.longest || 0, distant.longest || 0),
+  }
+  save(sid, fusion)
+  return fusion
+}
 function save(sid, s) { try { localStorage.setItem(KEY(sid), JSON.stringify(s)) } catch { /* quota */ } }
 
 // À appeler à chaque révision TERMINÉE. Met à jour le total et la série de jours.

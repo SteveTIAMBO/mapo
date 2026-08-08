@@ -198,3 +198,36 @@ describe('révisions — une famille, un espace', () => {
     await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `history_${ENFANT_ID}-bis`), { list: [] }))
   })
 })
+
+describe('récompenses — elles suivent l’enfant, pas l’appareil', () => {
+  // Les badges et la série de jours ne vivaient que dans le localStorage du
+  // navigateur : le parent ne voyait jamais la progression de son enfant, et un
+  // changement de téléphone effaçait tout. Elles rejoignent l’espace de la
+  // famille, avec exactement les mêmes garde-fous que les révisions.
+  it('l’enfant enregistre ses récompenses chez son parent', async () => {
+    await assertSucceeds(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}`),
+      { total: 12, streak: 3, byFormat: { quiz: 12 } }))
+  })
+
+  it('et il les relit sur un autre appareil', async () => {
+    await assertSucceeds(getDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}`)))
+  })
+
+  it('le parent les voit — c’est tout l’intérêt', async () => {
+    await assertSucceeds(getDoc(doc(dbParent(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}`)))
+  })
+
+  it('l’enfant ne gonfle pas les récompenses de sa fratrie', async () => {
+    await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', 'recompenses_ea-frere'), { total: 9999 }))
+    await assertFails(getDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', 'recompenses_ea-frere')))
+  })
+
+  it('un tiers n’y touche pas', async () => {
+    await assertFails(setDoc(doc(dbAutre(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}`), { total: 1 }))
+    await assertFails(getDoc(doc(dbAutre(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}`)))
+  })
+
+  it('le préfixe ne sert pas d’échappatoire', async () => {
+    await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}-bis`), { total: 1 }))
+  })
+})

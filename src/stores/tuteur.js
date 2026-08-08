@@ -3,7 +3,7 @@ import { ref } from 'vue'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { isMapoPlusTenant } from '../utils/tenantContext'
-import { enregistrerActivite } from '../utils/recompenses'
+import { enregistrerActivite, hydraterRecompenses } from '../utils/recompenses'
 import { enregistrerResultatElo } from '../utils/elo'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
@@ -143,6 +143,11 @@ function historyDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions
 const CONV_KEY = (sid) => `mapo_b2c_conversations_v1_${sid || 'demo'}`
 const CONV_MAX = 40
 function convDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions', 'conversations_' + (studentId || 'self')) }
+// Récompenses (badges, série de jours) : 4e et dernier document de l'arbre de
+// révision d'un enfant. La règle Firestore l'autorise nommément, comme les
+// trois autres — un enfant n'écrit QUE les documents qui portent son propre
+// identifiant (vérifié à l'émulateur avant publication).
+function recompensesDocRef(uid, studentId) { return doc(db, 'users', uid, 'revisions', 'recompenses_' + (studentId || 'self')) }
 
 export const useTuteurStore = defineStore('tuteur', () => {
   const generating = ref(false)
@@ -300,6 +305,28 @@ export const useTuteurStore = defineStore('tuteur', () => {
         }
       }
     } catch { /* offline / non autorisé : on garde l'état local */ }
+    await syncRecompensesFromCloud(studentId)
+  }
+
+  /**
+   * Hydrate les RÉCOMPENSES (badges, série de jours) depuis l'espace de la
+   * famille.
+   *
+   * Elles ne vivaient que dans le `localStorage` de l'appareil : ce qu'un enfant
+   * gagnait sur son téléphone n'existait nulle part ailleurs. Son parent ne le
+   * voyait jamais, et un changement d'appareil ou un vidage de cache effaçait
+   * des mois de série. Même arbre que ses révisions : une famille, un espace.
+   */
+  async function syncRecompensesFromCloud(studentId) {
+    const uid = proprietaireUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(recompensesDocRef(uid, studentId))
+      if (snap.exists()) {
+        hydraterRecompenses(studentId, snap.data()?.stats)
+        revisionsVersion.value++ // les vues Récompenses lisent le localStorage
+      }
+    } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
   // Niveau de difficulté adaptatif : 1 (bases) → SANS PLAFOND. Plus l'apprenant
@@ -355,12 +382,20 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const capped = list.slice(0, HISTORY_MAX)
     try { localStorage.setItem(HISTORY_KEY(studentId), JSON.stringify(capped)) } catch { /* quota */ }
     // Récompenses : chaque révision archivée compte (total + série de jours).
-    try { enregistrerActivite(studentId, { format: session?.format || session?.mode || 'quiz' }) } catch { /* best-effort */ }
+    let stats = null
+    try { stats = enregistrerActivite(studentId, { format: session?.format || session?.mode || 'quiz' }) } catch { /* best-effort */ }
     revisionsVersion.value++
     const uid = proprietaireUid()
     if (uid) {
       setDoc(historyDocRef(uid, studentId), { list: capped, updatedAt: new Date().toISOString() })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
+      // Les récompenses partent dans le MÊME arbre que l'historique. C'est ce
+      // qui les rend visibles par le parent et les fait suivre l'apprenant d'un
+      // appareil à l'autre — avant, elles mouraient dans le navigateur.
+      if (stats) {
+        setDoc(recompensesDocRef(uid, studentId), { stats, updatedAt: new Date().toISOString() })
+          .catch(() => { /* offline : le cache Firestore réessaiera */ })
+      }
     }
     return entry.id
   }

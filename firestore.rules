@@ -295,7 +295,13 @@ service cloud.firestore {
           return exists(/databases/$(database)/documents/users/$(uid)/enfantsComptes/$(request.auth.uid))
             && (docId == monEnfantId()
                 || docId == 'history_' + monEnfantId()
-                || docId == 'conversations_' + monEnfantId());
+                || docId == 'conversations_' + monEnfantId()
+                // Récompenses (badges, série de jours). Elles ne vivaient que
+                // dans le localStorage de l'appareil : ce que l'enfant gagnait
+                // sur son téléphone n'existait nulle part ailleurs, son parent
+                // ne le voyait jamais, et un changement d'appareil effaçait
+                // tout. Même espace que ses révisions : une famille, un espace.
+                || docId == 'recompenses_' + monEnfantId());
         }
         allow read, write: if isSignedIn() && (request.auth.uid == uid || estMaRevision());
       }
