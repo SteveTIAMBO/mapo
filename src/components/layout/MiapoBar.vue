@@ -837,7 +837,10 @@ async function submitB2C(text, opts = {}) {
     langue: locale.value.startsWith('en') ? 'en' : 'fr',
   })
   chatThinking.value = false
-  const raw = r.ok ? r.text : (r.reason === 'credits_epuises' ? t('mia.chatOutOfCredits') : t('mia.chatError'))
+  // Sur un compte enfant, le message d'épuisement ne renvoie PAS vers l'achat :
+  // c'est le parent qui recharge, pas la mineure qui lit ce message.
+  const msgEpuise = enfantsStore.isCompteEnfant ? t('mia.chatOutOfCreditsEnfant') : t('mia.chatOutOfCredits')
+  const raw = r.ok ? r.text : (r.reason === 'credits_epuises' ? msgEpuise : t('mia.chatError'))
   chatMsgs.value.push({ role: 'miapo', text: withName(raw) })
   // On mémorise seulement une vraie réponse à une question autonome (pas les
   // suivis courts qui dépendent de l'historique, ni les erreurs/crédits épuisés).

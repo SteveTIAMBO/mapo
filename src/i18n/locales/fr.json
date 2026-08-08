@@ -1,7 +1,8 @@
 {
   "common": {
     "byEdufrem": "par EDUFREM",
-    "lang": "Langue"
+    "lang": "Langue",
+    "later": "Plus tard"
   },
   "welcome": {
     "title": "Le professeur particulier qui accompagne chaque apprenant",
@@ -5523,7 +5524,19 @@
     "mcPhotoOk": "Cours transcrit depuis la photo.",
     "mcPhotoUnreadable": "Photo illisible — réessaie avec plus de lumière/netteté.",
     "mpCompRef": "Compétences fondées sur des référentiels reconnus (OCDE Boussole 2030, Forum économique mondial 2025). Le radar met en avant tes forces.",
-    "back": "Retour"
+    "back": "Retour",
+    "profilIndispoTitre": "Je n’arrive pas à ouvrir ton espace",
+    "profilIndispoTexte": "Ton compte est bien relié, mais ton profil n’a pas pu être chargé. Ce n’est pas de ta faute : demande à ton parent de rouvrir « Définir les identifiants » depuis son espace, cela répare le lien.",
+    "profilIndispoReessayer": "Réessayer",
+    "epuiseTitreEnfant": "Tu as utilisé tous tes crédits",
+    "epuiseTexteEnfant": "Tes révisions avec MIAPO reprendront quand ton parent aura rechargé ton compte.",
+    "epuisePrevenirParent": "Prévenir mon parent",
+    "epuiseParentPrevenu": "Ton parent a été prévenu",
+    "epuiseParentPrevenuDejaFait": "Ton parent a déjà été prévenu aujourd’hui",
+    "alerteBientotEpuiseTitre": "Crédits bientôt épuisés",
+    "alerteEpuiseTitre": "Crédits épuisés",
+    "epuiseTexteAdulte": "Tu as utilisé tous tes crédits de révision pour ce cycle.",
+    "chatOutOfCreditsEnfant": "Tu as utilisé tous tes crédits. Tes révisions reprendront quand ton parent aura rechargé ton compte."
   },
   "cx": {
     "appTitle": "Espace complexe",

@@ -1,7 +1,8 @@
 {
   "common": {
     "byEdufrem": "by EDUFREM",
-    "lang": "Language"
+    "lang": "Language",
+    "later": "Later"
   },
   "welcome": {
     "title": "The private tutor that supports every learner",
@@ -5523,7 +5524,19 @@
     "mcPhotoOk": "Course transcribed from the photo.",
     "mcPhotoUnreadable": "Photo unreadable — try again with more light/sharpness.",
     "mpCompRef": "Skills grounded in recognised frameworks (OECD Learning Compass 2030, World Economic Forum 2025). The radar highlights your strengths.",
-    "back": "Back"
+    "back": "Back",
+    "profilIndispoTitre": "I can’t open your space",
+    "profilIndispoTexte": "Your account is linked, but your profile could not be loaded. This is not your fault: ask your parent to reopen “Set sign-in details” from their space, that repairs the link.",
+    "profilIndispoReessayer": "Try again",
+    "epuiseTitreEnfant": "You have used all your credits",
+    "epuiseTexteEnfant": "Your revision sessions with MIAPO will resume once your parent tops up your account.",
+    "epuisePrevenirParent": "Tell my parent",
+    "epuiseParentPrevenu": "Your parent has been told",
+    "epuiseParentPrevenuDejaFait": "Your parent was already told today",
+    "alerteBientotEpuiseTitre": "Credits almost used up",
+    "alerteEpuiseTitre": "Credits used up",
+    "epuiseTexteAdulte": "You have used all your revision credits for this cycle.",
+    "chatOutOfCreditsEnfant": "You have used all your credits. Your revision sessions will resume once your parent tops up your account."
   },
   "cx": {
     "appTitle": "Complex workspace",

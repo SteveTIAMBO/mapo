@@ -432,6 +432,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   const linkedEnfantId = ref(null)
   const isCompteEnfant = computed(() => !!linkedEnfantId.value)
 
+  // Le profil de l'enfant n'a pas pu être chargé alors que la session EST celle
+  // d'un enfant. Cause la plus fréquente : le document de reconnaissance
+  // `users/<parent>/enfantsComptes/<enfantUid>` manque, donc la règle Firestore
+  // refuse la lecture. Sans ce drapeau, l'échec était muet et l'écran d'appel
+  // retombait sur « aucun enfant » — c'est-à-dire sur l'onboarding d'un PARENT,
+  // servi à une enfant, à chaque connexion.
+  const profilEnfantIndisponible = ref(false)
+
   // ── Mode d'usage de MAPO+ (multi-personas, 1er pas) ──────────────────
   // 'parent'    : un parent suit son/ses enfant(s) (cadre par défaut).
   // 'apprenant' : l'apprenant (élève/étudiant) pilote SON propre apprentissage.
@@ -574,7 +582,14 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
         const snap = await getDoc(enfantDocRef(uid, linkedEnfantId.value))
         const profil = snap.exists() ? snap.data()?.enfant : null
         if (profil) { enfants.value = [profil]; cacheLocal() }
-      } catch { /* offline / non autorisé : on garde l'état local */ }
+        // Lecture acceptée mais document absent : le rattachement est incomplet.
+        profilEnfantIndisponible.value = !profil && !enfants.value.length
+      } catch (e) {
+        // Refus de la règle ou hors ligne. On garde le cache local s'il existe ;
+        // sinon on le DIT, au lieu de laisser croire à un premier lancement.
+        profilEnfantIndisponible.value = !enfants.value.length
+        if (!enfants.value.length) console.warn('[MAPO+] profil enfant illisible', e?.code || e)
+      }
       return
     }
 
@@ -1056,6 +1071,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
 
   return {
     enfants, mode, setMode, load, hydrate, isCompteEnfant, linkedOwnerUid, linkedEnfantId,
+    profilEnfantIndisponible,
     parentPin, childSessionId, setParentPin, startChildSession, endChildSession,
     addEnfant, updateEnfant, removeEnfant, getEnfant, lierEcole, delierEcole,
     addNote, removeNote, faiblesses, objectifDe, setObjectifMatiere,

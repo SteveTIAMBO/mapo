@@ -7,16 +7,8 @@
       <small>Quelques secondes</small>
     </div>
 
-    <!-- Crédits épuisés -->
-    <div v-else-if="mode === 'epuise'" class="tq-epuise">
-      <Sparkles :size="30" />
-      <h3>Crédits épuisés</h3>
-      <p>Tu as utilisé tous tes crédits de révision pour ce cycle. Passe à l'offre supérieure pour continuer avec MIAPO.</p>
-      <div class="tq-epuise-act">
-        <button class="btn-primary" @click="$emit('abonnement')"><CreditCard :size="16" /><span>Voir les offres</span></button>
-        <button class="btn-ghost" @click="$emit('quit')">Plus tard</button>
-      </div>
-    </div>
+    <!-- Crédits épuisés (le message diffère si la session est celle d'un mineur) -->
+    <MiapoCreditsEpuises v-else-if="mode === 'epuise'" @quit="$emit('quit')" @abonnement="$emit('abonnement')" />
 
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
@@ -183,13 +175,14 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Sparkles, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, CreditCard, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
+import { Loader2, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import MiapoCreditsEpuises from './MiapoCreditsEpuises.vue'
 
 const props = defineProps({
   matiere: { type: String, required: true },
@@ -637,10 +630,6 @@ onMounted(start)
 .tq-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; text-align: center; }
 .tq-loading p { margin: 0; font-size: 15px; color: var(--tx); }
 .tq-loading small { color: var(--tx3); }
-.tq-epuise { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 20px; text-align: center; color: var(--pr); }
-.tq-epuise h3 { margin: 4px 0 0; font-size: 18px; color: var(--tx); }
-.tq-epuise p { margin: 0; max-width: 360px; font-size: 14px; color: var(--tx3); }
-.tq-epuise-act { display: flex; gap: 10px; margin-top: 8px; }
 .spin { animation: spin .9s linear infinite; color: var(--pr); }
 @keyframes spin { to { transform: rotate(360deg); } }
 

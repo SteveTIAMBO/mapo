@@ -5,12 +5,9 @@
       <Loader2 :size="30" class="spin" /><p>{{ en ? 'MIAPO is preparing your matching game…' : 'MIAPO prépare ton jeu de paires…' }}</p>
     </div>
 
-    <!-- Crédits épuisés -->
-    <div v-else-if="step === 'epuise'" class="card appa-epuise">
-      <Sparkles :size="26" />
-      <h3>{{ en ? 'Out of credits' : 'Crédits épuisés' }}</h3>
-      <p>{{ en ? 'You have used all your revision credits for this cycle.' : 'Tu as utilisé tous tes crédits de révision pour ce cycle.' }}</p>
-      <button class="btn btn-ghost btn-sm" @click="$emit('quit')">{{ en ? 'Later' : 'Plus tard' }}</button>
+    <!-- Crédits épuisés (le message diffère si la session est celle d'un mineur) -->
+    <div v-else-if="step === 'epuise'" class="card">
+      <MiapoCreditsEpuises @quit="$emit('quit')" />
     </div>
 
     <!-- Erreur -->
@@ -104,12 +101,13 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Puzzle, ChevronLeft, Loader2, Check, Sparkles, RefreshCw, Link2, ArrowUpRight, TrendingDown, Target } from 'lucide-vue-next'
+import { Puzzle, ChevronLeft, Loader2, Check, RefreshCw, Link2, ArrowUpRight, TrendingDown, Target } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { NIVEAUX_PRIMAIRE, NIVEAUX_PRIMAIRE_FR } from '../stores/enfantsAutonomes'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
+import MiapoCreditsEpuises from './MiapoCreditsEpuises.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null }, matiere: { type: String, default: 'Culture générale' } })
 defineEmits(['quit'])
@@ -366,9 +364,6 @@ onUnmounted(() => {
 .appa-instr { margin: 0 0 10px; font-size: 13px; color: var(--tx3, #6b7280); }
 .appa-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 30px; text-align: center; }
 .appa-loading p { margin: 0; font-size: 14px; color: var(--tx2, #4b5563); }
-.appa-epuise { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 30px; text-align: center; color: var(--pr); }
-.appa-epuise h3 { margin: 2px 0 0; font-size: 17px; color: var(--tx, #1f2937); }
-.appa-epuise p { margin: 0; max-width: 340px; font-size: 13.5px; color: var(--tx3, #6b7280); }
 .spin { animation: spin .9s linear infinite; color: var(--pr); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .appa-progress { height: 6px; background: rgba(0,0,0,.06); border-radius: 6px; margin: 0 0 14px; overflow: hidden; }

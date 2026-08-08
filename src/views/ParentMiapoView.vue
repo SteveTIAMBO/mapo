@@ -3,6 +3,20 @@
     <!-- Onboarding guidé au 1er lancement (nouveau compte B2C) -->
     <MiapoOnboarding v-if="showOnboarding" @done="onOnboardingDone" />
 
+    <!-- Session ENFANT dont le profil n'a pas pu être lu. On le DIT, au lieu de
+         relancer l'onboarding d'un parent : l'enfant sait que ce n'est pas de
+         son fait, et le message nomme l'action qui répare (côté parent). -->
+    <div v-if="profilEnfantIndisponible" class="profil-indispo">
+      <div class="profil-indispo-carte">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" /><path d="M12 8v4.5" /><circle cx="12" cy="16" r=".6" fill="currentColor" />
+        </svg>
+        <h2>{{ t('mia.profilIndispoTitre') }}</h2>
+        <p>{{ t('mia.profilIndispoTexte') }}</p>
+        <button class="btn-primary" @click="rechargerProfilEnfant">{{ t('mia.profilIndispoReessayer') }}</button>
+      </div>
+    </div>
+
     <!-- Visite guidée (2e onboarding) : explique l'app, sans question de profil -->
     <MiapoTour v-if="showTour" :steps="tourSteps" :labels="tourLabels" @done="onTourDone" />
 
@@ -1221,6 +1235,9 @@ const lang2 = useLangue2Store()
 const analytics = useMiapoAnalyticsStore()
 const relance = useRelanceStore()
 const enfants = computed(() => store.enfants)
+// Session enfant + profil illisible : on affiche un écran explicite (cf. template).
+const profilEnfantIndisponible = computed(() => store.profilEnfantIndisponible && !enfants.value.length)
+async function rechargerProfilEnfant() { await store.load() }
 
 // Suivi d'adoption MAPO+ : marque l'install PWA. Défini ici pour pouvoir le
 // retirer proprement au démontage (évite les écouteurs en double).
@@ -2843,7 +2860,14 @@ onMounted(async () => {
   } else {
     // Onboarding guidé au 1er lancement : nouveau compte B2C sans aucun profil.
     // Forçable en QA via ?onboarding=1 ; la démo (profil amorcé) ne le déclenche pas.
-    showOnboarding.value = route.query.onboarding === '1' || (!authStore.isDemo && enfants.value.length === 0)
+    //
+    // ⚠️ JAMAIS sur une session ENFANT. Son profil a été créé par son parent :
+    // une liste vide ne veut pas dire « premier lancement », elle veut dire
+    // « je n'ai pas réussi à lire son profil ». Sans cette condition, un simple
+    // refus de la règle Firestore relançait l'onboarding d'un PARENT à chaque
+    // connexion de l'enfant, en lui demandant d'ajouter un enfant.
+    showOnboarding.value = route.query.onboarding === '1'
+      || (!authStore.isDemo && !store.isCompteEnfant && enfants.value.length === 0)
   }
   // Pas d'onboarding profil à l'écran (apprenant préconfiguré, ou utilisateur qui
   // revient) → parcours de 1er lancement : formation (si besoin) puis visite guidée.
@@ -2888,6 +2912,22 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* Écran « profil illisible » (session enfant). Plein écran : tant que le profil
+   n'est pas là, il n'y a rien de sensé à montrer derrière. */
+.profil-indispo {
+  position: fixed; inset: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: var(--bg, #eef0f6);
+}
+.profil-indispo-carte {
+  max-width: 420px; text-align: center;
+  background: #fff; border-radius: 18px; padding: 32px 28px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, .12);
+}
+.profil-indispo-carte svg { width: 40px; height: 40px; color: var(--pr); margin-bottom: 14px; }
+.profil-indispo-carte h2 { font-size: 20px; font-weight: 700; margin: 0 0 10px; color: var(--tx); }
+.profil-indispo-carte p { font-size: 14.5px; line-height: 1.55; color: var(--tx2, #4b5563); margin: 0 0 22px; }
+
 .miapo-shell { display: flex; align-items: stretch; gap: 0; min-height: 100%; }
 
 /* ───────── Volet menu ───────── */
