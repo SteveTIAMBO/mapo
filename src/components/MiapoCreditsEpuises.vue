@@ -11,12 +11,16 @@
     <template v-if="estEnfant">
       <h3>{{ t('mia.epuiseTitreEnfant') }}</h3>
       <p>{{ t('mia.epuiseTexteEnfant') }}</p>
+      <!-- `btn` porte la forme et l'espacement, `btn-primary`/`btn-ghost` ne
+           donnent que la couleur : sans les deux, les boutons se rendaient en
+           texte brut. -->
       <div class="ce-act">
-        <button v-if="!prevenu" class="btn-primary" :disabled="envoiEnCours" @click="prevenirParent">
-          {{ t('mia.epuisePrevenirParent') }}
+        <button v-if="!prevenu" class="btn btn-primary" :disabled="envoiEnCours" @click="prevenirParent">
+          <BellRing :size="15" />
+          <span>{{ t('mia.epuisePrevenirParent') }}</span>
         </button>
-        <span v-else class="ce-ok">{{ dejaFait ? t('mia.epuiseParentPrevenuDejaFait') : t('mia.epuiseParentPrevenu') }}</span>
-        <button class="btn-ghost" @click="$emit('quit')">{{ t('common.later') }}</button>
+        <span v-else class="ce-ok"><Check :size="15" /> {{ dejaFait ? t('mia.epuiseParentPrevenuDejaFait') : t('mia.epuiseParentPrevenu') }}</span>
+        <button class="btn btn-ghost" @click="$emit('quit')">{{ t('common.later') }}</button>
       </div>
     </template>
 
@@ -25,8 +29,8 @@
       <h3>{{ t('mia.alerteEpuiseTitre') }}</h3>
       <p>{{ t('mia.epuiseTexteAdulte') }}</p>
       <div class="ce-act">
-        <button class="btn-primary" @click="$emit('abonnement')">{{ t('mia.creditsBuy') }}</button>
-        <button class="btn-ghost" @click="$emit('quit')">{{ t('common.later') }}</button>
+        <button class="btn btn-primary" @click="$emit('abonnement')">{{ t('mia.creditsBuy') }}</button>
+        <button class="btn btn-ghost" @click="$emit('quit')">{{ t('common.later') }}</button>
       </div>
     </template>
   </div>
@@ -41,6 +45,7 @@
  */
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { BellRing, Check } from 'lucide-vue-next'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { usePushStore } from '../stores/push'
 
@@ -73,9 +78,11 @@ async function prevenirParent() {
   display: flex; flex-direction: column; align-items: center;
   gap: 10px; padding: 30px; text-align: center;
 }
-.ce svg { width: 30px; height: 30px; color: var(--pr); }
+/* `>` : uniquement la grande icône d'en-tête. Sans ça, les petites icônes
+   placées DANS les boutons héritaient de 30 px et les déformaient. */
+.ce > svg { width: 30px; height: 30px; color: var(--pr); }
 .ce h3 { margin: 0; font-size: 17px; font-weight: 700; color: var(--tx); }
 .ce p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--tx2, #4b5563); max-width: 380px; }
 .ce-act { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
-.ce-ok { font-size: 13.5px; font-weight: 600; color: #16a34a; }
+.ce-ok { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 600; color: #16a34a; }
 </style>

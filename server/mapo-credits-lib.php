@@ -77,25 +77,40 @@ if (!function_exists('mc_path')) {
     return mc_mutate($uid, function ($e) { return $e; });
   }
 
-  /** Reste-t-il au moins $cost tokens ? (jauge hebdo + solde bonus, sans décompter) */
-  function mc_hasTokens($uid, $cost) {
+  /** Reste-t-il au moins $cost tokens ? (jauge hebdo + bonus, le sien ET celui
+   *  de sa famille, sans rien décompter) */
+  function mc_hasTokens($uid, $cost, $uidFamille = '') {
     $e = mc_state($uid);
-    return $e && ((int) $e['tokens'] + (int) ($e['bonus'] ?? 0)) >= (int) $cost;
+    if (!$e) return false;
+    $bonusDispo = ($uidFamille !== '' && $uidFamille !== $uid)
+      ? mc_bonusFamille($uid, $uidFamille)
+      : (int) ($e['bonus'] ?? 0);
+    return ((int) $e['tokens'] + $bonusDispo) >= (int) $cost;
   }
 
-  /** Décompte $cost tokens : d'abord la jauge hebdo, puis le solde bonus.
-   *  Renvoie le total restant (hebdo + bonus), ou false si insuffisant. */
-  function mc_consume($uid, $cost) {
-    $out = null;
-    mc_mutate($uid, function ($e) use ($cost, &$out) {
+  /** Décompte $cost tokens : d'abord la jauge hebdo PERSONNELLE, puis le bonus
+   *  personnel, puis celui de la FAMILLE.
+   *  Renvoie la jauge hebdo restante (pour l'affichage), ou false si insuffisant. */
+  function mc_consume($uid, $cost, $uidFamille = '') {
+    $out = null; $reste = 0;
+    mc_mutate($uid, function ($e) use ($cost, &$out, &$reste, $uid, $uidFamille) {
       $tok = (int) $e['tokens']; $bon = (int) ($e['bonus'] ?? 0);
-      if ($tok + $bon < (int) $cost) { $out = false; return $e; }
-      $fromWeekly = min($tok, (int) $cost);
-      $e['tokens'] = $tok - $fromWeekly;
-      $e['bonus'] = $bon - ((int) $cost - $fromWeekly);
-      $out = (int) $e['tokens']; // renvoie la jauge HEBDO restante (pour l'affichage)
+      $bonusFamille = ($uidFamille !== '' && $uidFamille !== $uid)
+        ? (int) (mc_state($uidFamille)['bonus'] ?? 0) : 0;
+      if ($tok + $bon + $bonusFamille < (int) $cost) { $out = false; return $e; }
+      $surHebdo = min($tok, (int) $cost);
+      $e['tokens'] = $tok - $surHebdo;
+      $surBonusPerso = min($bon, (int) $cost - $surHebdo);
+      $e['bonus'] = $bon - $surBonusPerso;
+      // Ce qui dépasse encore sera pris sur le pot de la famille, APRÈS ce
+      // verrou : on ne verrouille pas deux entrées à la fois.
+      $reste = (int) $cost - $surHebdo - $surBonusPerso;
+      $out = (int) $e['tokens'];
       return $e;
     });
+    if ($out !== false && $reste > 0 && $uidFamille !== '' && $uidFamille !== $uid) {
+      mc_bonusRetirer($uidFamille, $reste);
+    }
     return $out;
   }
 
@@ -116,6 +131,111 @@ if (!function_exists('mc_path')) {
       $e['bonus'] = (int) ($e['bonus'] ?? 0) + max(0, $tokens);
       return $e;
     });
+  }
+
+  // ── Solde de FAMILLE ────────────────────────────────────────────────────
+  //
+  // La jauge hebdomadaire GRATUITE reste PROPRE À CHAQUE COMPTE : un enfant
+  // garde son quota, et une fratrie de trois n'est pas ramenée au quota d'un
+  // seul. Ce serait une régression du gratuit, pas une amélioration.
+  //
+  // Les crédits ACHETÉS ou OFFERTS (`bonus`), eux, appartiennent à la FAMILLE :
+  // c'est le parent qui paie, et c'est ce qui rend vraie la promesse « le parent
+  // recharge, l'enfant en profite tout de suite ». Sans ça, un code saisi par le
+  // parent n'aurait aucun effet pour son enfant, qui a son propre compteur.
+  //
+  // D'où l'ordre de dépense : jauge hebdo PERSONNELLE, puis bonus de la FAMILLE.
+
+  /** Solde bonus disponible pour cet apprenant : le sien + celui de sa famille. */
+  function mc_bonusFamille($uid, $uidFamille) {
+    $mien = (int) (mc_state($uid)['bonus'] ?? 0);
+    if ($uidFamille === '' || $uidFamille === $uid) return $mien;
+    return $mien + (int) (mc_state($uidFamille)['bonus'] ?? 0);
+  }
+
+  /** Retire $n du bonus d'un compte donné. Renvoie ce qui a réellement été pris. */
+  function mc_bonusRetirer($uid, $n) {
+    $pris = 0;
+    mc_mutate($uid, function ($e) use ($n, &$pris) {
+      $dispo = (int) ($e['bonus'] ?? 0);
+      $pris = min($dispo, max(0, (int) $n));
+      $e['bonus'] = $dispo - $pris;
+      return $e;
+    });
+    return $pris;
+  }
+
+  // ── Codes de crédits (offerts par EDUFREM) ──────────────────────────────
+  //
+  // Un code porte un nombre de crédits et un nombre d'utilisations. Il sert aux
+  // écoles pilotes, aux familles témoins et aux tests, sans passer par un
+  // paiement. Fichier local, comme les autres registres serveur : pas d'IAM, pas
+  // de dépendance, et ça marche même si Firestore est indisponible.
+  function mc_codesPath() { return __DIR__ . '/mapo-credits-codes.json'; }
+  function mc_codesLoad() {
+    $p = mc_codesPath();
+    if (!file_exists($p)) return [];
+    $j = json_decode(@file_get_contents($p), true);
+    return is_array($j) ? $j : [];
+  }
+
+  /** Code lisible : pas de 0/O ni 1/I/L, qu'on se dicte au téléphone sans erreur. */
+  function mc_codeGenerer($longueur = 10) {
+    $alpha = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    $out = '';
+    for ($i = 0; $i < $longueur; $i++) $out .= $alpha[random_int(0, strlen($alpha) - 1)];
+    return substr($out, 0, 5) . '-' . substr($out, 5);
+  }
+
+  /** Crée un code. `$usages` = nombre de comptes qui pourront l'utiliser. */
+  function mc_codeCreer($tokens, $usages, $note, $parUid) {
+    $code = mc_codeGenerer();
+    $fp = fopen(mc_codesPath(), 'c+'); if (!$fp) return null;
+    flock($fp, LOCK_EX);
+    $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
+    $map[$code] = [
+      'tokens' => max(1, (int) $tokens),
+      'usages' => max(1, (int) $usages),
+      'utilisePar' => [],                       // uid → date, pour l'audit
+      'note' => mb_substr(trim((string) $note), 0, 120),
+      'parUid' => $parUid,
+      'creeLe' => gmdate('c'),
+    ];
+    ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map, JSON_UNESCAPED_UNICODE));
+    flock($fp, LOCK_UN); fclose($fp);
+    return $code;
+  }
+
+  /**
+   * Utilise un code au profit de $uid. Renvoie [okBool, raisonOuTokens].
+   *
+   * Tout se fait sous un VERROU EXCLUSIF, lecture et écriture comprises : deux
+   * requêtes simultanées avec le même code doivent se départager, sinon un code
+   * à usage unique se dépense deux fois.
+   */
+  function mc_codeUtiliser($code, $uid) {
+    $code = strtoupper(trim($code));
+    if ($code === '') return [false, 'code_vide'];
+    $fp = fopen(mc_codesPath(), 'c+'); if (!$fp) return [false, 'indisponible'];
+    flock($fp, LOCK_EX);
+    $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
+    $e = $map[$code] ?? null;
+    $res = null;
+    if (!$e) { $res = [false, 'code_inconnu']; }
+    elseif (isset($e['utilisePar'][$uid])) { $res = [false, 'deja_utilise']; }
+    elseif (count($e['utilisePar']) >= (int) $e['usages']) { $res = [false, 'code_epuise']; }
+    else {
+      $e['utilisePar'][$uid] = gmdate('c');
+      $map[$code] = $e;
+      ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map, JSON_UNESCAPED_UNICODE));
+      $res = [true, (int) $e['tokens']];
+    }
+    flock($fp, LOCK_UN); fclose($fp);
+    // Le crédit est accordé APRÈS la libération du verrou : mc_grantCredits
+    // ouvre son propre verrou sur un AUTRE fichier, et imbriquer deux verrous
+    // dans un ordre différent ailleurs finirait par bloquer les deux.
+    if ($res[0]) mc_grantCredits($uid, $res[1]);
+    return $res;
   }
 
   // ── Paiements en attente : lie une transaction Tranzak à {uid, offre} ────

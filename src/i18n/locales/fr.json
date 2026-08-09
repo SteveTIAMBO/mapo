@@ -5538,7 +5538,18 @@
     "alerteBientotEpuiseTitre": "Crédits bientôt épuisés",
     "alerteEpuiseTitre": "Crédits épuisés",
     "epuiseTexteAdulte": "Tu as utilisé tous tes crédits de révision pour ce cycle.",
-    "chatOutOfCreditsEnfant": "Tu as utilisé tous tes crédits. Tes révisions reprendront quand ton parent aura rechargé ton compte."
+    "chatOutOfCreditsEnfant": "Tu as utilisé tous tes crédits. Tes révisions reprendront quand ton parent aura rechargé ton compte.",
+    "alert90Enfant": "Il te reste peu de crédits pour cette semaine. Ton parent est prévenu.",
+    "alert100Enfant": "Tu as utilisé tous tes crédits. Tes révisions reprendront quand ton parent aura rechargé ton compte.",
+    "codeTitre": "J’ai un code",
+    "codeHint": "Un code offert par EDUFREM ajoute des crédits à votre compte. Vos enfants en profitent automatiquement.",
+    "codePlaceholder": "ABCDE-FGHIJ",
+    "codeValider": "Utiliser",
+    "codeOk": "Code accepté : {n} crédits ajoutés.",
+    "codeInconnu": "Ce code n’existe pas. Vérifiez la saisie.",
+    "codeDejaUtilise": "Vous avez déjà utilisé ce code.",
+    "codeEpuise": "Ce code a atteint son nombre d’utilisations.",
+    "codeErreur": "Impossible d’utiliser ce code pour le moment."
   },
   "cx": {
     "appTitle": "Espace complexe",

@@ -114,6 +114,35 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   }
   function marquerEpuise() { tokens.value = 0; if (isDemo.value) saveLocal() }
 
+  /**
+   * Utilise un code de crédits offert par EDUFREM.
+   *
+   * Le code est validé et décompté CÔTÉ SERVEUR : le client n'est pas cru sur
+   * parole, et deux saisies simultanées du même code se départagent sous verrou.
+   * Renvoie { ok, credites, reason }.
+   */
+  async function utiliserCodeCredits(code) {
+    try {
+      const t = await tok()
+      if (!t) return { ok: false, reason: 'non_connecte' }
+      const res = await fetch('/mapo-pay.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'code_utiliser', code }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!d || !d.ok) return { ok: false, reason: (d && d.error) || 'serveur' }
+      // On répercute le nouveau solde immédiatement : le parent doit VOIR que
+      // son code a servi, sans recharger la page.
+      if (typeof d.tokens === 'number') tokens.value = d.tokens
+      if (typeof d.cap === 'number') cap.value = d.cap
+      if (typeof d.bonus === 'number') bonus.value = d.bonus
+      return { ok: true, credites: d.credites }
+    } catch {
+      return { ok: false, reason: 'reseau' }
+    }
+  }
+
   /** Démo : simule l'achat d'une recharge (ajoute les tokens au solde bonus). */
   function activerDemoCredits(packId) {
     const p = packs.value.find((x) => x.id === packId)
@@ -122,5 +151,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     saveLocal()
   }
 
-  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise }
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
 })

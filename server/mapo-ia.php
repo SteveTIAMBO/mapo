@@ -104,10 +104,21 @@ if (!dailyLimitOk()) {
 // crédit perdu si l'IA échoue). Source de vérité = registre serveur par uid.
 $metered = $uid && !empty($body['metered']);
 $coutTokens = 0;
+// Compte de la FAMILLE : pour un enfant, celui de son parent. Les crédits
+// achetés ou offerts appartiennent à la famille (c'est le parent qui paie), et
+// c'est ce qui rend vraie la promesse « le parent recharge, l'enfant en profite
+// tout de suite ». La jauge hebdomadaire gratuite, elle, reste personnelle.
+$uidFamille = '';
 if ($metered) {
   require_once __DIR__ . '/mapo-credits-lib.php';
+  $libPush = __DIR__ . '/mapo-push-lib.php';
+  if (is_file($libPush)) {
+    require_once $libPush;
+    $lienFam = function_exists('mp_lienGet') ? mp_lienGet($uid) : null;
+    if ($lienFam) $uidFamille = $lienFam['parentUid'];
+  }
   $coutTokens = mapo_cout_task($task); // coût en tokens de cette action
-  if (!mc_hasTokens($uid, $coutTokens)) {
+  if (!mc_hasTokens($uid, $coutTokens, $uidFamille)) {
     echo json_encode(['ok' => false, 'error' => 'credits_epuises']); exit;
   }
 }
@@ -134,7 +145,7 @@ if (!empty($r['ok'])) {
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
   if ($metered) {
-    $tokens = mc_consume($uid, $coutTokens); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']);
+    $tokens = mc_consume($uid, $coutTokens, $uidFamille); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']);
     // Le PARENT est prévenu automatiquement quand la jauge de son enfant tombe
     // bas, puis quand elle est vide. Volontairement ici et pas côté client :
     // sinon le parent n'apprendrait le blocage que si l'enfant pense à le

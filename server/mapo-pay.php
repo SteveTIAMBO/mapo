@@ -73,6 +73,67 @@ if (!$uid && !$demoOpen) {
 }
 
 // ════════════════════════════════════════════════════════════════════
+// ACTION : code_creer — un super admin EDUFREM fabrique un code de crédits
+// ════════════════════════════════════════════════════════════════════
+// Sert aux écoles pilotes, aux familles témoins et aux tests, sans passer par
+// un paiement. L'autorisation reprend le motif éprouvé de mapo-provision.php :
+// on relit `superAdmins/{uid}` AVEC LE JETON DE L'APPELANT. Les règles ne
+// laissent passer cette lecture qu'à un super admin — donc aucun compte de
+// service ici, et aucun secret de plus à garder.
+if ($action === 'code_creer') {
+  if (!$uid) { http_response_code(401); echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  $idToken = '';
+  $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+  if (preg_match('/Bearer\s+(\S+)/i', $auth, $m)) $idToken = $m[1];
+  if ($idToken === '' || !defined('FIREBASE_PROJECT')) {
+    http_response_code(401); echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit;
+  }
+  $url = 'https://firestore.googleapis.com/v1/projects/' . FIREBASE_PROJECT
+    . '/databases/(default)/documents/superAdmins/' . rawurlencode($uid);
+  $ctx = stream_context_create(['http' => [
+    'method' => 'GET', 'header' => "Authorization: Bearer {$idToken}\r\n",
+    'timeout' => 8, 'ignore_errors' => true,
+  ]]);
+  @file_get_contents($url, false, $ctx);
+  $code = 0;
+  foreach ($http_response_header ?? [] as $h) {
+    if (preg_match('#^HTTP/\S+\s+(\d+)#', $h, $mm)) $code = (int) $mm[1];
+  }
+  if ($code !== 200) { http_response_code(403); echo json_encode(['ok' => false, 'error' => 'non_superadmin']); exit; }
+
+  require_once __DIR__ . '/mapo-credits-lib.php';
+  $tokens = max(1, min(1000000, (int) ($body['tokens'] ?? 0)));
+  $usages = max(1, min(1000, (int) ($body['usages'] ?? 1)));
+  $nouveau = mc_codeCreer($tokens, $usages, $body['note'] ?? '', $uid);
+  if (!$nouveau) { http_response_code(500); echo json_encode(['ok' => false, 'error' => 'creation_impossible']); exit; }
+  echo json_encode(['ok' => true, 'code' => $nouveau, 'tokens' => $tokens, 'usages' => $usages]);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ACTION : code_utiliser — un parent (ou un apprenant majeur) saisit un code
+// ════════════════════════════════════════════════════════════════════
+// Les crédits vont sur le solde `bonus` de l'appelant, qui sert de pot à toute
+// sa famille : ses enfants y puisent automatiquement une fois leur jauge
+// hebdomadaire personnelle épuisée.
+if ($action === 'code_utiliser') {
+  if (!$uid) { http_response_code(401); echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  if (!rateLimitOk()) { http_response_code(429); echo json_encode(['ok' => false, 'error' => 'rate_limited']); exit; }
+  require_once __DIR__ . '/mapo-credits-lib.php';
+  list($ok, $info) = mc_codeUtiliser((string) ($body['code'] ?? ''), $uid);
+  if (!$ok) { echo json_encode(['ok' => false, 'error' => $info]); exit; }
+  $st = mc_state($uid);
+  echo json_encode([
+    'ok' => true,
+    'credites' => (int) $info,
+    'bonus' => (int) ($st['bonus'] ?? 0),
+    'tokens' => (int) $st['tokens'],
+    'cap' => mc_weeklyCap($st['offreId']),
+  ]);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
 // ACTION : init
 // ════════════════════════════════════════════════════════════════════
 if ($action === 'init') {

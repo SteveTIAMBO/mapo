@@ -47,6 +47,27 @@
           <button class="btn btn-outline btn-sm" @click="choisirPack(p)">{{ t('mia.creditsBuy') }}</button>
         </div>
       </div>
+
+      <!-- Code de crédits offert par EDUFREM (école pilote, famille témoin).
+           Les crédits arrivent sur le solde du parent, qui sert de pot à toute
+           la famille : ses enfants y puisent dès que leur jauge hebdomadaire
+           personnelle est épuisée, sans aucune manipulation de leur côté. -->
+      <div class="code-offert">
+        <label class="form-label" for="code-credits">{{ t('mia.codeTitre') }}</label>
+        <p class="muted xsmall">{{ t('mia.codeHint') }}</p>
+        <div class="code-row">
+          <input
+            id="code-credits" v-model="codeSaisi" class="input code-input"
+            :placeholder="t('mia.codePlaceholder')" autocapitalize="characters"
+            spellcheck="false" maxlength="16" @keydown.enter.prevent="utiliserCode"
+          />
+          <button class="btn btn-primary btn-sm" :disabled="!codeSaisi.trim() || codeEnCours" @click="utiliserCode">
+            <component :is="codeEnCours ? Loader2 : Gift" :size="15" :class="{ spin: codeEnCours }" />
+            <span>{{ t('mia.codeValider') }}</span>
+          </button>
+        </div>
+        <p v-if="codeMsg" class="code-msg" :class="{ err: codeErr }">{{ codeMsg }}</p>
+      </div>
     </div>
 
     <!-- Panneau de paiement -->
@@ -102,7 +123,7 @@ import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
 import { useFacturationMiapoStore } from '../stores/facturationMiapo'
 import { prixOffre, fmtMontant } from '../utils/devise'
-import { Check, CreditCard, Smartphone, Loader2, ChevronDown, Users, Zap } from 'lucide-vue-next'
+import { Check, CreditCard, Smartphone, Loader2, ChevronDown, Users, Zap, Gift } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const isDemo = useAuthStore().isDemo
@@ -187,6 +208,34 @@ async function payer() {
   else if (issue === 'REFUSED') status.value = 'refused'
   else status.value = 'timeout'
 }
+
+// ── Code de crédits offert ────────────────────────────────────────────
+const codeSaisi = ref('')
+const codeEnCours = ref(false)
+const codeMsg = ref('')
+const codeErr = ref(false)
+
+async function utiliserCode() {
+  const code = codeSaisi.value.trim().toUpperCase()
+  if (!code || codeEnCours.value) return
+  codeEnCours.value = true
+  codeMsg.value = ''
+  codeErr.value = false
+  const r = await abo.utiliserCodeCredits(code)
+  codeEnCours.value = false
+  if (r.ok) {
+    codeSaisi.value = ''
+    codeMsg.value = t('mia.codeOk', { n: r.credites })
+  } else {
+    codeErr.value = true
+    // Chaque refus a sa raison : « déjà utilisé » n'est pas « code inconnu »,
+    // et laisser croire à une faute de frappe ferait ressaisir dans le vide.
+    codeMsg.value = r.reason === 'code_inconnu' ? t('mia.codeInconnu')
+      : r.reason === 'deja_utilise' ? t('mia.codeDejaUtilise')
+      : r.reason === 'code_epuise' ? t('mia.codeEpuise')
+      : t('mia.codeErreur')
+  }
+}
 </script>
 
 <style scoped>
@@ -244,4 +293,11 @@ async function payer() {
 .err-line { color: #D93025; font-size: 13px; margin: 10px 0 0; }
 .ok-line { color: #1B8A5A; font-size: 14px; font-weight: 600; margin: 6px 0 0; }
 .link { background: none; border: none; color: var(--pr); cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
+
+/* Code de crédits offert : rangée saisie + bouton, repliée sur mobile. */
+.code-offert { margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--divider, #e5e7eb); }
+.code-row { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.code-input { flex: 1; min-width: 180px; text-transform: uppercase; letter-spacing: .08em; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.code-msg { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: #16a34a; }
+.code-msg.err { color: #b91c1c; }
 </style>

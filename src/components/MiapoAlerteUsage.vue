@@ -3,7 +3,10 @@
     <div v-if="visible" class="alerte" :class="niveauClass" role="status">
       <AlertTriangle :size="17" class="ico" />
       <span class="txt">{{ message }}</span>
-      <button type="button" class="cta" @click="goAbo">{{ t('mia.alertCta') }}</button>
+      <!-- Même règle que l'écran « crédits épuisés » : un mineur n'a ni moyen
+           de paiement ni le droit d'en engager un. On ne lui propose donc pas
+           d'étendre son usage, on lui dit qui peut le faire. -->
+      <button v-if="!estEnfant" type="button" class="cta" @click="goAbo">{{ t('mia.alertCta') }}</button>
       <button type="button" class="close" :aria-label="t('mia.close')" @click="fermer"><X :size="16" /></button>
     </div>
   </transition>
@@ -13,10 +16,13 @@
 import { computed, ref, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAbonnementStore } from '../stores/abonnement'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { AlertTriangle, X } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const abo = useAbonnementStore()
+// Compte enfant = compte de mineur (cree par un parent, jamais en autonomie).
+const estEnfant = computed(() => useEnfantsAutonomesStore().isCompteEnfant)
 const KEY = 'mapo_alerte_usage'
 const dismissed = ref(0)
 
@@ -35,7 +41,17 @@ function weekId() {
 const niveau = computed(() => abo.pourcentage >= 100 ? 100 : abo.pourcentage >= 90 ? 90 : abo.pourcentage >= 50 ? 50 : 0)
 const visible = computed(() => niveau.value > 0 && niveau.value > dismissed.value)
 const niveauClass = computed(() => niveau.value >= 100 ? 'is-full' : niveau.value >= 90 ? 'is-high' : 'is-mid')
-const message = computed(() => niveau.value >= 100 ? t('mia.alert100') : niveau.value >= 90 ? t('mia.alert90') : t('mia.alert50'))
+// Le TEXTE aussi doit changer : « pense a passer a l'offre superieure » et
+// « etends ton usage » s'adressent a quelqu'un qui peut payer. A une mineure on
+// dit ce qui va se passer, et qui va le faire.
+const message = computed(() => {
+  if (estEnfant.value) {
+    return niveau.value >= 100 ? t('mia.alert100Enfant')
+      : niveau.value >= 90 ? t('mia.alert90Enfant')
+      : t('mia.alert50')
+  }
+  return niveau.value >= 100 ? t('mia.alert100') : niveau.value >= 90 ? t('mia.alert90') : t('mia.alert50')
+})
 
 function load() {
   try {

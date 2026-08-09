@@ -5538,7 +5538,18 @@
     "alerteBientotEpuiseTitre": "Credits almost used up",
     "alerteEpuiseTitre": "Credits used up",
     "epuiseTexteAdulte": "You have used all your revision credits for this cycle.",
-    "chatOutOfCreditsEnfant": "You have used all your credits. Your revision sessions will resume once your parent tops up your account."
+    "chatOutOfCreditsEnfant": "You have used all your credits. Your revision sessions will resume once your parent tops up your account.",
+    "alert90Enfant": "You have few credits left this week. Your parent has been told.",
+    "alert100Enfant": "You have used all your credits. Your revision sessions will resume once your parent tops up your account.",
+    "codeTitre": "I have a code",
+    "codeHint": "A code from EDUFREM adds credits to your account. Your children benefit automatically.",
+    "codePlaceholder": "ABCDE-FGHIJ",
+    "codeValider": "Redeem",
+    "codeOk": "Code accepted: {n} credits added.",
+    "codeInconnu": "This code does not exist. Please check what you typed.",
+    "codeDejaUtilise": "You have already used this code.",
+    "codeEpuise": "This code has reached its usage limit.",
+    "codeErreur": "This code cannot be used right now."
   },
   "cx": {
     "appTitle": "Complex workspace",
