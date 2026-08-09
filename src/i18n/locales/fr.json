@@ -5549,7 +5549,8 @@
     "codeInconnu": "Ce code n’existe pas. Vérifiez la saisie.",
     "codeDejaUtilise": "Vous avez déjà utilisé ce code.",
     "codeEpuise": "Ce code a atteint son nombre d’utilisations.",
-    "codeErreur": "Impossible d’utiliser ce code pour le moment."
+    "codeErreur": "Impossible d’utiliser ce code pour le moment.",
+    "profilErreur": "Le profil n’a pas pu être enregistré."
   },
   "cx": {
     "appTitle": "Espace complexe",

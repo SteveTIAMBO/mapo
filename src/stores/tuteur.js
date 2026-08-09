@@ -14,11 +14,31 @@ import { useAbonnementStore } from './abonnement'
 // échoue et l'app retombe sur la banque de quiz LOCALE (gratuite) → aucun
 // crédit consommé, l'offline reste fonctionnel.
 function mtrB2C() { try { return useAuthStore().isB2C } catch { return false } }
+
+/**
+ * Déclaration de famille jointe aux appels IA d'un compte ENFANT.
+ *
+ * Le serveur ne la croit PAS : il recalcule `enf_<sha256(ownerUid|enfantId)>` et
+ * ne la retient que si le résultat est bien l'appelant authentifié. C'est ce qui
+ * lui permet de puiser dans les crédits offerts au parent sans dépendre d'un
+ * registre écrit à la création du compte — donc y compris pour les comptes
+ * enfants créés avant que ce registre existe.
+ */
+function famB2C() {
+  try {
+    const e = useEnfantsAutonomesStore()
+    if (!e.linkedOwnerUid || !e.linkedEnfantId) return undefined
+    return { ownerUid: e.linkedOwnerUid, enfantId: e.linkedEnfantId }
+  } catch { return undefined }
+}
 function noteCredits(json) {
   try {
     const a = useAbonnementStore()
     if (json && (typeof json.tokens === 'number' || typeof json.cap === 'number')) a.majJauge(json.tokens, json.cap)
-    if (json && json.error === 'credits_epuises') a.marquerEpuise()
+    // On transmet les soldes RÉELS renvoyés avec le refus : le client ne doit
+    // plus deviner « zéro » là où le serveur dit seulement « pas assez pour
+    // cette action ».
+    if (json && json.error === 'credits_epuises') a.marquerEpuise(json)
   } catch { /* pas de contexte / offline : sans effet */ }
 }
 import { useUsageStore, COUT_ACTION } from './usage'
@@ -229,7 +249,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, exclure: dejaVuesTexte.slice(0, 40) } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, exclure: dejaVuesTexte.slice(0, 40) } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -556,7 +576,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'vision_copie', data: { image: imageDataUrl, niveau } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -596,7 +616,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee', data: { matiere, niveau, cours, digest, langue, longueur } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'dictee', data: { matiere, niveau, cours, digest, langue, longueur } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -627,7 +647,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'dictee_correction', data: { reference, reponse, niveau, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'dictee_correction', data: { reference, reponse, niveau, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -668,7 +688,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
         // exclure : termes déjà vus dans la session → l'IA renouvelle le vocabulaire à chaque tour.
-        body: JSON.stringify({ metered: mtrB2C(), task: 'appariement', data: { matiere, niveau, difficulte, cours, digest, visuel, langue, exclure: Array.isArray(exclure) ? exclure.slice(-40) : [] } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'appariement', data: { matiere, niveau, difficulte, cours, digest, visuel, langue, exclure: Array.isArray(exclure) ? exclure.slice(-40) : [] } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -707,7 +727,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'vision_cours', data: { image: imageDataUrl, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'vision_cours', data: { image: imageDataUrl, niveau } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -733,7 +753,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'eval_reponse', data: { question, reponse, matiere, niveau } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -782,7 +802,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'orientation', data: { niveau, pays, forts, faibles } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'orientation', data: { niveau, pays, forts, faibles } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -827,7 +847,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, interets, candidats, passions, metiers, age, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'orientation6c', data: { niveau, pays, competences, forts, faibles, interets, candidats, passions, metiers, age, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -873,7 +893,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'prepa_examen', data: { niveau, pays, faibles } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'prepa_examen', data: { niveau, pays, faibles } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -926,7 +946,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'course_plan', data: { formation, programme, niveau } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'course_plan', data: { formation, programme, niveau } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -964,7 +984,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'bilan6c', data: { competences, persona, niveau, formation, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -988,7 +1008,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'extract_modules', data: { formation, ecole, texte } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'extract_modules', data: { formation, ecole, texte } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -1022,7 +1042,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       if (token) headers['Authorization'] = 'Bearer ' + token
       const res = await fetch(IA_URL, {
         method: 'POST', headers,
-        body: JSON.stringify({ metered: mtrB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, prenom, interets, digest, langue } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tuteur_chat', data: { message, niveau, matieres, cours, historique, internet, prenom, interets, digest, langue } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)

@@ -54,7 +54,13 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const restant = computed(() => Math.max(0, tokens.value))
   const utilise = computed(() => Math.max(0, cap.value - tokens.value))
   const pourcentage = computed(() => (cap.value ? Math.min(100, Math.round((utilise.value / cap.value) * 100)) : 0))
-  const épuisé = computed(() => tokens.value <= 0)
+  // « Pas assez pour la dernière action tentée ». DISTINCT de « solde nul » :
+  // un reste de 1 000 ne paie pas un quiz à 2 500, alors que la jauge affiche
+  // encore quelque chose. Sans cette distinction, le client remettait sa jauge
+  // à zéro pour refléter l'échec et retrouvait la vraie valeur au rechargement,
+  // d'où l'alternance « épuisé » / « bientôt épuisé » signalée le 09/08.
+  const insuffisant = ref(false)
+  const épuisé = computed(() => tokens.value + bonus.value <= 0 || insuffisant.value)
 
   async function tok() { try { return auth.currentUser ? await auth.currentUser.getIdToken() : null } catch { return null } }
 
@@ -74,7 +80,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     try {
       const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ action: 'state' }) })
       const d = await r.json().catch(() => ({}))
-      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; renewAt.value = d.renewAt || ''; return true }
+      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; renewAt.value = d.renewAt || ''; insuffisant.value = false; return true }
     } catch { /* offline */ }
     return false
   }
@@ -110,9 +116,24 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   function majJauge(t, c) {
     if (typeof t === 'number') tokens.value = t
     if (typeof c === 'number') cap.value = c
+    // Un appel qui aboutit prouve qu'on pouvait payer : le refus précédent est
+    // caduc. Sans ça, l'écran « épuisé » survivrait à une recharge.
+    insuffisant.value = false
     if (isDemo.value) saveLocal()
   }
-  function marquerEpuise() { tokens.value = 0; if (isDemo.value) saveLocal() }
+  /**
+   * Le serveur a refusé la dernière action faute de crédits.
+   *
+   * On NE FALSIFIE PLUS le solde : on note que l'action n'était pas payable, et
+   * on enregistre les soldes RÉELS que le serveur renvoie avec son refus.
+   */
+  function marquerEpuise(soldes) {
+    insuffisant.value = true
+    if (soldes && typeof soldes.tokens === 'number') tokens.value = soldes.tokens
+    if (soldes && typeof soldes.cap === 'number') cap.value = soldes.cap
+    if (soldes && typeof soldes.bonus === 'number') bonus.value = soldes.bonus
+    if (isDemo.value) saveLocal()
+  }
 
   /**
    * Utilise un code de crédits offert par EDUFREM.
@@ -137,6 +158,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
       if (typeof d.tokens === 'number') tokens.value = d.tokens
       if (typeof d.cap === 'number') cap.value = d.cap
       if (typeof d.bonus === 'number') bonus.value = d.bonus
+      insuffisant.value = false // le code vient de renflouer : on rouvre l'usage
       return { ok: true, credites: d.credites }
     } catch {
       return { ok: false, reason: 'reseau' }
@@ -151,5 +173,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     saveLocal()
   }
 
-  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
 })

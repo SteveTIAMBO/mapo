@@ -5549,7 +5549,8 @@
     "codeInconnu": "This code does not exist. Please check what you typed.",
     "codeDejaUtilise": "You have already used this code.",
     "codeEpuise": "This code has reached its usage limit.",
-    "codeErreur": "This code cannot be used right now."
+    "codeErreur": "This code cannot be used right now.",
+    "profilErreur": "Your profile could not be saved."
   },
   "cx": {
     "appTitle": "Complex workspace",

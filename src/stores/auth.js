@@ -328,13 +328,13 @@ export const useAuthStore = defineStore('auth', () => {
    * Les champs schoolId et role sont immuables côté client (les règles
    * Firestore le garantissent aussi).
    */
-  async function updateMyProfile({ firstName, lastName, displayName, photoURL }) {
+  async function updateMyProfile({ firstName, lastName, displayName, photoURL, phone, typeCompte, raisonSociale, adresseFact, tva }) {
     if (!user.value || !userProfile.value) {
       return { success: false, error: "Vous n'êtes pas connecté." }
     }
     if (isDemo.value) {
       // Démo : on met juste à jour localement
-      updateProfile({ firstName, lastName, displayName, photoURL })
+      updateProfile({ firstName, lastName, displayName, photoURL, phone, typeCompte, raisonSociale, adresseFact, tva })
       return { success: true }
     }
     try {
@@ -343,6 +343,16 @@ export const useAuthStore = defineStore('auth', () => {
       if (lastName !== undefined) patch.lastName = lastName
       if (displayName !== undefined) patch.displayName = displayName
       if (photoURL !== undefined) patch.photoURL = photoURL || null
+      // Champs du profil MAPO+ (contact et facturation). Ils étaient édités dans
+      // l'écran Paramètres mais n'étaient JAMAIS écrits : `saveParentProfil`
+      // passait par `updateProfile`, qui ne touche que la mémoire et, en démo
+      // seulement, le localStorage. La modification s'affichait, puis
+      // disparaissait au rechargement — l'échec ressemblait au succès.
+      if (phone !== undefined) patch.phone = phone
+      if (typeCompte !== undefined) patch.typeCompte = typeCompte
+      if (raisonSociale !== undefined) patch.raisonSociale = raisonSociale
+      if (adresseFact !== undefined) patch.adresseFact = adresseFact
+      if (tva !== undefined) patch.tva = tva
       await updateDoc(doc(db, 'users', user.value.uid), patch)
       userProfile.value = { ...userProfile.value, ...patch }
       // Log activité (best-effort)

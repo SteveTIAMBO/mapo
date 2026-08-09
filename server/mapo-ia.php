@@ -111,15 +111,48 @@ $coutTokens = 0;
 $uidFamille = '';
 if ($metered) {
   require_once __DIR__ . '/mapo-credits-lib.php';
-  $libPush = __DIR__ . '/mapo-push-lib.php';
-  if (is_file($libPush)) {
-    require_once $libPush;
-    $lienFam = function_exists('mp_lienGet') ? mp_lienGet($uid) : null;
-    if ($lienFam) $uidFamille = $lienFam['parentUid'];
+  // 1) Le client PEUT déclarer sa famille — mais on ne le croit pas : on
+  //    VÉRIFIE. L'uid d'un enfant est une fonction pure de (uid du parent, id de
+  //    l'enfant), exactement comme mapo-famille.php le forge. On recalcule : si
+  //    le résultat n'est pas l'appelant authentifié, la déclaration est jetée.
+  //    Aucun compte ne peut donc désigner la famille d'un autre pour lui
+  //    dépenser ses crédits.
+  //
+  //    Cette voie compte parce qu'elle marche pour TOUS les comptes enfants,
+  //    y compris ceux créés avant l'existence du registre de rattachement.
+  $fam = is_array($body['famille'] ?? null) ? $body['famille'] : null;
+  if ($fam) {
+    $ownerCandidat = (string) ($fam['ownerUid'] ?? '');
+    $enfantIdCand  = (string) ($fam['enfantId'] ?? '');
+    if ($ownerCandidat !== '' && $enfantIdCand !== '') {
+      $attendu = 'enf_' . substr(hash('sha256', $ownerCandidat . '|' . $enfantIdCand), 0, 24);
+      if (hash_equals($attendu, $uid)) $uidFamille = $ownerCandidat;
+    }
+  }
+  // 2) Repli : le registre écrit côté serveur à la création des accès.
+  if ($uidFamille === '') {
+    $libPush = __DIR__ . '/mapo-push-lib.php';
+    if (is_file($libPush)) {
+      require_once $libPush;
+      $lienFam = function_exists('mp_lienGet') ? mp_lienGet($uid) : null;
+      if ($lienFam) $uidFamille = $lienFam['parentUid'];
+    }
   }
   $coutTokens = mapo_cout_task($task); // coût en tokens de cette action
   if (!mc_hasTokens($uid, $coutTokens, $uidFamille)) {
-    echo json_encode(['ok' => false, 'error' => 'credits_epuises']); exit;
+    // On renvoie le solde RÉEL avec le refus. Sans lui, le client mettait sa
+    // jauge à zéro pour refléter l'échec, puis la retrouvait non nulle au
+    // rechargement suivant : « épuisé », puis « bientôt épuisé », en boucle.
+    // Le refus ne veut pas dire « zéro », il veut dire « pas assez pour CETTE
+    // action » — un reste de 1 000 ne paie pas un quiz à 2 500.
+    $st = mc_state($uid);
+    echo json_encode([
+      'ok' => false, 'error' => 'credits_epuises',
+      'tokens' => (int) $st['tokens'],
+      'cap' => mc_weeklyCap($st['offreId']),
+      'bonus' => mc_bonusFamille($uid, $uidFamille),
+      'cout' => (int) $coutTokens,
+    ]); exit;
   }
 }
 

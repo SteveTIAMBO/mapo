@@ -93,10 +93,20 @@ if (!function_exists('mc_path')) {
    *  Renvoie la jauge hebdo restante (pour l'affichage), ou false si insuffisant. */
   function mc_consume($uid, $cost, $uidFamille = '') {
     $out = null; $reste = 0;
-    mc_mutate($uid, function ($e) use ($cost, &$out, &$reste, $uid, $uidFamille) {
+    // ⚠️ LE SOLDE DE LA FAMILLE SE LIT **AVANT** D'OUVRIR LE VERROU.
+    //
+    // `mc_mutate` tient un `flock(LOCK_EX)` sur mapo-credits.json pendant tout
+    // l'appel de sa fonction. Appeler `mc_state()` DEDANS rouvre le MÊME fichier
+    // et redemande le même verrou exclusif : sous Linux le verrou est attaché à
+    // l'ouverture, pas au processus, donc la seconde demande attend la première,
+    // qui attend la fin de la fonction. La requête se bloque jusqu'au délai du
+    // serveur — c'est ce qui faisait « tourner l'IA dans le vide » (09/08).
+    // Règle générale : jamais d'appel à mc_state/mc_mutate dans un callback de
+    // mc_mutate.
+    $bonusFamille = ($uidFamille !== '' && $uidFamille !== $uid)
+      ? (int) (mc_state($uidFamille)['bonus'] ?? 0) : 0;
+    mc_mutate($uid, function ($e) use ($cost, &$out, &$reste, $bonusFamille) {
       $tok = (int) $e['tokens']; $bon = (int) ($e['bonus'] ?? 0);
-      $bonusFamille = ($uidFamille !== '' && $uidFamille !== $uid)
-        ? (int) (mc_state($uidFamille)['bonus'] ?? 0) : 0;
       if ($tok + $bon + $bonusFamille < (int) $cost) { $out = false; return $e; }
       $surHebdo = min($tok, (int) $cost);
       $e['tokens'] = $tok - $surHebdo;

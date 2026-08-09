@@ -909,6 +909,7 @@
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveParentProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
               <span v-if="parentSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
+              <span v-if="parentErreur" class="err-line">{{ parentErreur }}</span>
             </div>
           </div>
 
@@ -1989,10 +1990,26 @@ async function onPickParentPhoto(ev) {
   const url = await fileToThumbnail(f)
   if (url) parentProfil.value.photoURL = url
 }
-function saveParentProfil() {
-  authStore.updateProfile({
-    firstName: parentProfil.value.firstName.trim(),
-    lastName: parentProfil.value.lastName.trim(),
+const parentErreur = ref('')
+/**
+ * Enregistre le profil du parent.
+ *
+ * ⚠️ Passait par `authStore.updateProfile`, qui ne met à jour que la MÉMOIRE
+ * (et le localStorage en démo seulement). Sur un vrai compte, rien n'était donc
+ * écrit : le nom s'affichait après la saisie, puis disparaissait au
+ * rechargement. `updateMyProfile` écrit dans `users/{uid}`.
+ *
+ * Et on attend le résultat : afficher « enregistré » avant de savoir si ça l'a
+ * été, c'est reproduire le défaut qu'on corrige.
+ */
+async function saveParentProfil() {
+  parentErreur.value = ''
+  const prenom = parentProfil.value.firstName.trim()
+  const nom = parentProfil.value.lastName.trim()
+  const r = await authStore.updateMyProfile({
+    firstName: prenom,
+    lastName: nom,
+    displayName: [prenom, nom].filter(Boolean).join(' '),
     phone: parentProfil.value.phone.trim(),
     photoURL: parentProfil.value.photoURL,
     typeCompte: parentProfil.value.typeCompte,
@@ -2000,6 +2017,10 @@ function saveParentProfil() {
     adresseFact: parentProfil.value.adresseFact.trim(),
     tva: parentProfil.value.tva.trim(),
   })
+  if (!r || !r.success) {
+    parentErreur.value = (r && r.error) || t('mia.profilErreur')
+    return
+  }
   parentSaved.value = true
   setTimeout(() => { parentSaved.value = false }, 2000)
 }
