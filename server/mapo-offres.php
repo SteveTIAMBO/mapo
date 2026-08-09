@@ -40,6 +40,48 @@ if ($action === 'state') {
   exit;
 }
 
+// ════════════════════════════════════════════════════════════════════
+// ACTION : etat_enfants — consommation de CHAQUE enfant, pour son parent
+// ════════════════════════════════════════════════════════════════════
+// Un parent voit sa propre jauge, qui ne lui apprend rien : il ne révise pas,
+// elle reste pleine pendant que son enfant est bloqué. Il lui faut la
+// consommation de SES enfants.
+//
+// Sûreté : le client envoie des `enfantId`, jamais des uid. Le serveur
+// reconstruit `enf_<sha256(uidAppelant|enfantId)>` — la MÊME formule que
+// mapo-famille.php. Elle ne peut produire que des comptes de CET appelant :
+// quoi qu'on lui envoie, un parent ne peut jamais atteindre l'enfant d'un
+// autre. La sécurité vient de la façon dont l'identifiant est construit, pas
+// d'un contrôle ajouté par-dessus.
+if ($action === 'etat_enfants') {
+  $uid = verifyFirebaseToken();
+  if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  $ids = is_array($body['enfantIds'] ?? null) ? $body['enfantIds'] : [];
+  $ids = array_slice($ids, 0, 20); // un parent n'a pas 200 enfants
+  $out = [];
+  foreach ($ids as $eid) {
+    $eid = trim((string) $eid);
+    if ($eid === '' || strlen($eid) > 64) continue;
+    $childUid = 'enf_' . substr(hash('sha256', $uid . '|' . $eid), 0, 24);
+    $e = mc_state($childUid);
+    $out[] = [
+      'enfantId' => $eid,
+      'tokens' => (int) $e['tokens'],
+      'cap' => mc_weeklyCap($e['offreId']),
+      'bonus' => (int) ($e['bonus'] ?? 0),
+    ];
+  }
+  $moi = mc_state($uid);
+  echo json_encode([
+    'ok' => true,
+    'enfants' => $out,
+    // Le pot de la famille : c'est le solde bonus du parent, celui dans lequel
+    // ses enfants puisent une fois leur jauge hebdomadaire épuisée.
+    'potFamille' => (int) ($moi['bonus'] ?? 0),
+  ]);
+  exit;
+}
+
 if ($action === 'factures') {
   $uid = verifyFirebaseToken();
   if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }

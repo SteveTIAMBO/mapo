@@ -5550,7 +5550,13 @@
     "codeDejaUtilise": "Vous avez déjà utilisé ce code.",
     "codeEpuise": "Ce code a atteint son nombre d’utilisations.",
     "codeErreur": "Impossible d’utiliser ce code pour le moment.",
-    "profilErreur": "Le profil n’a pas pu être enregistré."
+    "profilErreur": "Le profil n’a pas pu être enregistré.",
+    "potTitre": "Crédits de la famille",
+    "potHint": "Ces crédits ne se périment pas. Vos enfants y puisent automatiquement dès que leur quota de la semaine est épuisé.",
+    "usageEnfantsTitre": "Consommation de la semaine",
+    "usageEnfantsHint": "Quota hebdomadaire propre à chaque enfant, remis à zéro le lundi. Une fois épuisé, il puise dans les crédits de la famille.",
+    "usageEnfantEpuise": "Quota de la semaine épuisé.",
+    "usageEnfantInconnu": "Enfant"
   },
   "cx": {
     "appTitle": "Espace complexe",

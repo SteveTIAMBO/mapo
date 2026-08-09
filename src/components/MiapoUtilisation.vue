@@ -21,6 +21,39 @@
       </button>
     </div>
 
+    <!-- Pot de crédits de la FAMILLE.
+         Il n'était affiché nulle part : un parent qui venait d'ajouter 200 000
+         crédits ne les voyait pas, puisque cet écran ne montrait que sa jauge
+         hebdomadaire. Or c'est ce pot, et non sa jauge, qui sert à ses enfants
+         une fois leur quota personnel épuisé. -->
+    <div v-if="abo.potFamille > 0 || abo.bonus > 0" class="card pot-card">
+      <div class="ac-head">
+        <div>
+          <span class="ac-label">{{ t('mia.potTitre') }}</span>
+          <h3>{{ fmtNombre(abo.potFamille || abo.bonus) }}</h3>
+        </div>
+        <Wallet :size="22" class="pot-ico" />
+      </div>
+      <p class="muted small">{{ t('mia.potHint') }}</p>
+    </div>
+
+    <!-- Consommation de CHAQUE enfant.
+         La jauge du parent ne lui apprend rien : il ne révise pas, elle reste
+         pleine pendant que son enfant est bloqué. C'est celle-ci qu'il vient
+         chercher. -->
+    <div v-if="enfantsAffiches.length" class="card enfants-card">
+      <div class="ac-head"><div><span class="ac-label">{{ t('mia.usageEnfantsTitre') }}</span></div></div>
+      <div v-for="e in enfantsAffiches" :key="e.enfantId" class="enf-ligne">
+        <div class="enf-head">
+          <strong>{{ e.prenom }}</strong>
+          <span class="enf-reste" :class="{ warn: e.pct >= 90 }">{{ 100 - e.pct }}%</span>
+        </div>
+        <div class="ac-bar"><div class="ac-bar-fill" :class="e.classe" :style="{ width: e.pct + '%' }"></div></div>
+        <p v-if="e.tokens <= 0" class="muted xsmall enf-note">{{ t('mia.usageEnfantEpuise') }}</p>
+      </div>
+      <p class="muted xsmall">{{ t('mia.usageEnfantsHint') }}</p>
+    </div>
+
     <!-- Cycle mensuel (facturation) : progression jusqu'au renouvellement -->
     <div v-if="abo.renewAt" class="card cycle-card">
       <div class="ac-head">
@@ -39,10 +72,29 @@
 import { computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAbonnementStore } from '../stores/abonnement'
-import { CreditCard } from 'lucide-vue-next'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { CreditCard, Wallet } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const abo = useAbonnementStore()
+const enfantsStore = useEnfantsAutonomesStore()
+
+// On croise ce que le serveur renvoie (consommation, par enfantId) avec les
+// prénoms connus du client : le serveur n'a pas à connaître les prénoms.
+const enfantsAffiches = computed(() => (abo.enfantsUsage || []).map((u) => {
+  const e = (enfantsStore.enfants || []).find((x) => x.id === u.enfantId)
+  const cap = u.cap || 1
+  const pct = Math.min(100, Math.max(0, Math.round(((cap - u.tokens) / cap) * 100)))
+  return {
+    enfantId: u.enfantId,
+    prenom: e?.firstName || t('mia.usageEnfantInconnu'),
+    tokens: u.tokens,
+    pct,
+    classe: pct >= 90 ? 'is-danger' : pct >= 70 ? 'is-warn' : 'is-ok',
+  }
+}))
+
+function fmtNombre(n) { return Number(n || 0).toLocaleString('fr-FR') }
 
 const restePct = computed(() => Math.max(0, 100 - abo.pourcentage))
 const jaugeClass = computed(() => abo.pourcentage >= 90 ? 'is-danger' : abo.pourcentage >= 70 ? 'is-warn' : 'is-ok')
@@ -51,7 +103,13 @@ const cycleJours = computed(() => abo.offre?.cycleJours || 30)
 const joursRestants = computed(() => { if (!abo.renewAt) return 0; const ms = new Date(abo.renewAt) - new Date(); return Math.max(0, Math.ceil(ms / 86400000)) })
 const cyclePct = computed(() => Math.min(100, Math.max(0, Math.round((1 - joursRestants.value / cycleJours.value) * 100))))
 
-onMounted(() => abo.load())
+onMounted(async () => {
+  await abo.load()
+  // Un compte ENFANT n'a rien à surveiller : cette vue est celle du parent.
+  if (enfantsStore.isCompteEnfant) return
+  const ids = (enfantsStore.enfants || []).map((e) => e.id).filter(Boolean)
+  if (ids.length) await abo.fetchEnfantsUsage(ids)
+})
 function dateFr(iso) { try { return new Date(iso).toLocaleDateString('fr-FR') } catch { return '' } }
 // Ouvre Paramètres → Abonnement (upgrade / achat de crédits).
 function openAbo() { window.dispatchEvent(new CustomEvent('open-miapo-settings', { detail: { tab: 'abonnement' } })) }
@@ -79,4 +137,16 @@ function openAbo() { window.dispatchEvent(new CustomEvent('open-miapo-settings',
 .btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 15px; border-radius: 10px; font-weight: 600; font-size: 13px; cursor: pointer; border: 1px solid transparent; font-family: inherit; }
 .btn-primary { background: var(--pr); color: #fff; }
 .manage { margin-top: 14px; }
+
+/* Pot de crédits de la famille + consommation par enfant. */
+.pot-card, .enfants-card { margin-top: 16px; }
+.pot-card .ac-head { align-items: center; }
+.pot-ico { color: var(--pr); flex-shrink: 0; }
+.pot-card h3 { margin: 2px 0 0; font-size: 22px; }
+.enfants-card .enf-ligne { margin-top: 14px; }
+.enf-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+.enf-head strong { font-size: 14.5px; color: var(--tx); }
+.enf-reste { font-size: 13px; font-weight: 700; color: var(--tx3, #6b7280); }
+.enf-reste.warn { color: #b45309; }
+.enf-note { margin: 5px 0 0; }
 </style>

@@ -5550,7 +5550,13 @@
     "codeDejaUtilise": "You have already used this code.",
     "codeEpuise": "This code has reached its usage limit.",
     "codeErreur": "This code cannot be used right now.",
-    "profilErreur": "Your profile could not be saved."
+    "profilErreur": "Your profile could not be saved.",
+    "potTitre": "Family credits",
+    "potHint": "These credits do not expire. Your children draw on them automatically once their weekly allowance runs out.",
+    "usageEnfantsTitre": "This week’s usage",
+    "usageEnfantsHint": "Each child has their own weekly allowance, reset on Monday. Once used up, they draw on the family credits.",
+    "usageEnfantEpuise": "Weekly allowance used up.",
+    "usageEnfantInconnu": "Child"
   },
   "cx": {
     "appTitle": "Complex workspace",

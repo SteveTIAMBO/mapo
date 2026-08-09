@@ -85,6 +85,29 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     return false
   }
 
+  // Consommation de CHAQUE enfant, vue du parent. Le client n'envoie que des
+  // `enfantId` : le serveur reconstruit l'uid du compte à partir du sien, donc
+  // il ne peut jamais renvoyer que les enfants de l'appelant.
+  const enfantsUsage = ref([])   // [{ enfantId, tokens, cap, bonus }]
+  const potFamille = ref(0)
+
+  async function fetchEnfantsUsage(enfantIds) {
+    const t = await tok()
+    if (!t || !Array.isArray(enfantIds) || !enfantIds.length) { enfantsUsage.value = []; return false }
+    try {
+      const r = await fetch('/mapo-offres.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'etat_enfants', enfantIds }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!d || !d.ok) return false
+      enfantsUsage.value = Array.isArray(d.enfants) ? d.enfants : []
+      potFamille.value = Number(d.potFamille) || 0
+      return true
+    } catch { return false }
+  }
+
   async function load() {
     await fetchOffres()
     if (isDemo.value) { loadLocal(); return }
@@ -173,5 +196,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     saveLocal()
   }
 
-  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, enfantsUsage, potFamille, fetchEnfantsUsage, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
 })
