@@ -13,7 +13,13 @@
         </div>
       </div>
       <div class="ac-bar"><div class="ac-bar-fill" :class="jaugeClass" :style="{ width: abo.pourcentage + '%' }"></div></div>
+      <!-- Le POURCENTAGE seul ne suffit pas à voir une petite consommation :
+           une question de chat coûte quelques milliers de crédits, soit
+           quelques pour cent, et l'utilisateur conclut que rien n'a bougé. Le
+           chiffre exact tranche, lui, sans ambiguïté. -->
+      <p class="conso-ligne">{{ t('mia.usageConsomme', { n: fmtNombre(abo.utilise), total: fmtNombre(abo.cap) }) }}</p>
       <p class="muted xsmall">{{ t('mia.aboWeeklyReset') }}</p>
+      <p class="muted xsmall">{{ t('mia.usageOrdre') }}</p>
       <p v-if="abo.renewAt" class="muted small">{{ t('mia.aboRenew', { date: dateFr(abo.renewAt) }) }}</p>
       <p v-if="abo.épuisé" class="err-line">{{ t('mia.aboExhausted') }}</p>
       <button class="btn btn-primary btn-sm manage" @click="openAbo">
@@ -49,6 +55,7 @@
           <span class="enf-reste" :class="{ warn: e.pct >= 90 }">{{ 100 - e.pct }}%</span>
         </div>
         <div class="ac-bar"><div class="ac-bar-fill" :class="e.classe" :style="{ width: e.pct + '%' }"></div></div>
+        <p class="muted xsmall enf-note">{{ t('mia.usageConsomme', { n: fmtNombre(e.utilise), total: fmtNombre(e.cap) }) }}</p>
         <p v-if="e.tokens <= 0" class="muted xsmall enf-note">{{ t('mia.usageEnfantEpuise') }}</p>
       </div>
       <p class="muted xsmall">{{ t('mia.usageEnfantsHint') }}</p>
@@ -89,6 +96,8 @@ const enfantsAffiches = computed(() => (abo.enfantsUsage || []).map((u) => {
     enfantId: u.enfantId,
     prenom: e?.firstName || t('mia.usageEnfantInconnu'),
     tokens: u.tokens,
+    cap,
+    utilise: Math.max(0, cap - u.tokens),
     pct,
     classe: pct >= 90 ? 'is-danger' : pct >= 70 ? 'is-warn' : 'is-ok',
   }
@@ -149,4 +158,5 @@ function openAbo() { window.dispatchEvent(new CustomEvent('open-miapo-settings',
 .enf-reste { font-size: 13px; font-weight: 700; color: var(--tx3, #6b7280); }
 .enf-reste.warn { color: #b45309; }
 .enf-note { margin: 5px 0 0; }
+.conso-ligne { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--tx2, #4b5563); }
 </style>

@@ -5556,7 +5556,9 @@
     "usageEnfantsTitre": "Consommation de la semaine",
     "usageEnfantsHint": "Quota hebdomadaire propre à chaque enfant, remis à zéro le lundi. Une fois épuisé, il puise dans les crédits de la famille.",
     "usageEnfantEpuise": "Quota de la semaine épuisé.",
-    "usageEnfantInconnu": "Enfant"
+    "usageEnfantInconnu": "Enfant",
+    "usageConsomme": "{n} crédits utilisés sur {total} cette semaine",
+    "usageOrdre": "On utilise d’abord le quota de la semaine ; les crédits de la famille ne sont entamés qu’ensuite."
   },
   "cx": {
     "appTitle": "Espace complexe",

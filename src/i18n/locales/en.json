@@ -5556,7 +5556,9 @@
     "usageEnfantsTitre": "This week’s usage",
     "usageEnfantsHint": "Each child has their own weekly allowance, reset on Monday. Once used up, they draw on the family credits.",
     "usageEnfantEpuise": "Weekly allowance used up.",
-    "usageEnfantInconnu": "Child"
+    "usageEnfantInconnu": "Child",
+    "usageConsomme": "{n} credits used out of {total} this week",
+    "usageOrdre": "The weekly allowance is used first; family credits are only drawn on afterwards."
   },
   "cx": {
     "appTitle": "Complex workspace",
