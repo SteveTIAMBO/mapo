@@ -38,7 +38,7 @@ function noteCredits(json) {
     // On transmet les soldes RÉELS renvoyés avec le refus : le client ne doit
     // plus deviner « zéro » là où le serveur dit seulement « pas assez pour
     // cette action ».
-    if (json && json.error === 'credits_epuises') a.marquerEpuise(json)
+    if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) a.marquerEpuise(json, json.error)
   } catch { /* pas de contexte / offline : sans effet */ }
 }
 import { useUsageStore, COUT_ACTION } from './usage'
@@ -255,7 +255,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       noteCredits(json)
       // Crédits épuisés (B2C) : on ne bascule PAS sur la banque locale, on invite
       // à passer à l'offre supérieure (l'IA fraîche est réservée aux crédits).
-      if (json && json.error === 'credits_epuises') {
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) {
         return { ok: false, questions: [], mode: 'none', reason: 'credits_epuises' }
       }
 
@@ -620,7 +620,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
-      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) return { ok: false, reason: 'credits_epuises' }
       if (json && json.ok && json.text) {
         const o = parseJsonObject(json.text)
         const phrases = o && Array.isArray(o.phrases) ? o.phrases.map((p) => String(p).trim()).filter(Boolean) : []
@@ -651,7 +651,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
-      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) return { ok: false, reason: 'credits_epuises' }
       if (json && json.ok && json.text) {
         const o = parseJsonObject(json.text)
         if (o) {
@@ -692,7 +692,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
-      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) return { ok: false, reason: 'credits_epuises' }
       if (json && json.ok && json.text) {
         const o = parseJsonObject(json.text)
         const paires = o && Array.isArray(o.paires)
@@ -1046,7 +1046,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
-      if (json && json.error === 'credits_epuises') return { ok: false, reason: 'credits_epuises' }
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) return { ok: false, reason: 'credits_epuises' }
       if (json && json.ok && json.text) return { ok: true, text: String(json.text).trim() }
       const reason = json && json.error === 'not_configured' ? 'IA pas encore configurée'
         : json && json.error === 'non_autorise' ? 'Connexion requise'

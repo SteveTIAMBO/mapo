@@ -45,18 +45,30 @@ if ($action === 'state') {
   //
   // Même vérification qu'ailleurs : on recalcule l'uid attendu à partir de la
   // déclaration, et on la jette si elle ne désigne pas l'appelant.
-  $potFamille = 0;
+  // Un ENFANT n'a pas de jauge à lui : ce qu'on lui renvoie, c'est l'état de sa
+  // FAMILLE, plus sa propre consommation et le plafond que son parent lui a
+  // éventuellement fixé. Sans ça son écran parlait d'un quota qui n'existe pas.
   $fam = is_array($body['famille'] ?? null) ? $body['famille'] : null;
   if ($fam) {
     $o = (string) ($fam['ownerUid'] ?? ''); $i = (string) ($fam['enfantId'] ?? '');
     if ($o !== '' && $i !== '' && hash_equals('enf_' . substr(hash('sha256', $o . '|' . $i), 0, 24), $uid)) {
-      $potFamille = (int) (mc_state($o)['bonus'] ?? 0);
+      $f = mc_state($o);
+      echo json_encode([
+        'ok' => true, 'offreId' => $f['offreId'], 'tokens' => (int) $f['tokens'],
+        'cap' => mc_weeklyCap($f['offreId']), 'bonus' => (int) ($f['bonus'] ?? 0),
+        'potFamille' => (int) ($f['bonus'] ?? 0),
+        'estEnfant' => true,
+        'conso' => (int) ($e['conso'] ?? 0),
+        'plafond' => (int) ($e['plafond'] ?? 0),
+        'renewAt' => $f['tierExpiry'] ?? '', 'weekId' => $f['weekId'] ?? '',
+      ]);
+      exit;
     }
   }
   echo json_encode([
     'ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'],
     'cap' => mc_weeklyCap($e['offreId']), 'bonus' => (int) ($e['bonus'] ?? 0),
-    'potFamille' => $potFamille,
+    'potFamille' => 0, 'estEnfant' => false,
     'renewAt' => $e['tierExpiry'] ?? '', 'weekId' => $e['weekId'] ?? '',
   ]);
   exit;
@@ -86,11 +98,12 @@ if ($action === 'etat_enfants') {
     if ($eid === '' || strlen($eid) > 64) continue;
     $childUid = 'enf_' . substr(hash('sha256', $uid . '|' . $eid), 0, 24);
     $e = mc_state($childUid);
+    // Un enfant n'a pas de quota : on renvoie ce qu'il a CONSOMMÉ cette semaine
+    // et le plafond que son parent lui a fixé (0 = aucun).
     $out[] = [
       'enfantId' => $eid,
-      'tokens' => (int) $e['tokens'],
-      'cap' => mc_weeklyCap($e['offreId']),
-      'bonus' => (int) ($e['bonus'] ?? 0),
+      'conso' => (int) ($e['conso'] ?? 0),
+      'plafond' => (int) ($e['plafond'] ?? 0),
     ];
   }
   $moi = mc_state($uid);
@@ -101,6 +114,25 @@ if ($action === 'etat_enfants') {
     // ses enfants puisent une fois leur jauge hebdomadaire épuisée.
     'potFamille' => (int) ($moi['bonus'] ?? 0),
   ]);
+  exit;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// ACTION : plafond_enfant — le parent rationne un enfant (0 = pas de limite)
+// ════════════════════════════════════════════════════════════════════
+// Même sûreté que `etat_enfants` : l'uid de l'enfant est RECONSTRUIT à partir
+// de celui de l'appelant, donc un parent ne peut jamais rationner l'enfant d'un
+// autre. C'est un RÉGLAGE, pas un transfert : rien n'est immobilisé, et le
+// parent peut le lever ou le changer à tout moment.
+if ($action === 'plafond_enfant') {
+  $uid = verifyFirebaseToken();
+  if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
+  $eid = trim((string) ($body['enfantId'] ?? ''));
+  if ($eid === '' || strlen($eid) > 64) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'enfant_invalide']); exit; }
+  $plafond = max(0, min(100000000, (int) ($body['plafond'] ?? 0)));
+  $childUid = 'enf_' . substr(hash('sha256', $uid . '|' . $eid), 0, 24);
+  $e = mc_setPlafond($childUid, $plafond);
+  echo json_encode(['ok' => true, 'enfantId' => $eid, 'plafond' => (int) ($e['plafond'] ?? 0), 'conso' => (int) ($e['conso'] ?? 0)]);
   exit;
 }
 

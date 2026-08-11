@@ -8,7 +8,7 @@
     </div>
 
     <!-- Crédits épuisés (le message diffère si la session est celle d'un mineur) -->
-    <MiapoCreditsEpuises v-else-if="mode === 'epuise'" @quit="$emit('quit')" @abonnement="$emit('abonnement')" />
+    <MiapoCreditsEpuises v-else-if="mode === 'epuise'" :motif="motifEpuise" @quit="$emit('quit')" @abonnement="$emit('abonnement')" />
 
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
@@ -379,6 +379,7 @@ function onTimeout() {
 }
 // Provenance des questions (disclaimer léger au lancement) : cours / référentiel / mix.
 const sourceRev = ref('')
+const motifEpuise = ref('credits_epuises') // 'credits_epuises' | 'plafond_atteint'
 const sourceLabel = computed(() => {
   const en = locale.value.startsWith('en')
   if (sourceRev.value === 'cours') return en ? 'Questions based on your imported courses.' : 'Questions tirées de tes cours importés.'
@@ -473,7 +474,7 @@ async function start() {
   // (banque partagée + consigne à l'IA) : sans lui, un apprenant qui reste au
   // même niveau rejouait le même lot de questions séance après séance.
   const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest, studentId: props.studentId })
-  if (res && res.reason === 'credits_epuises') { mode.value = 'epuise'; return }
+  if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []
   if (!questions.value.length) { mode.value = 'result'; return }

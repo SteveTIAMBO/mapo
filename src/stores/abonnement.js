@@ -36,6 +36,12 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const devise = ref(detectDevise())              // 'XAF' (Tranzak) | 'EUR' (Stripe)
   const bonus = ref(0)                            // crédits achetés (PAYG), hors jauge hebdo
   const potFamille = ref(0)                       // solde du PARENT, où l'enfant puise
+  // Compte ENFANT : il n'a pas de jauge à lui. On garde sa CONSOMMATION de la
+  // semaine et le plafond que son parent lui a éventuellement fixé.
+  const estEnfant = ref(false)
+  const conso = ref(0)
+  const plafond = ref(0)
+  const plafondAtteint = ref(false)
   const packsServeur = ref(null)
   const packs = computed(() => packsServeur.value || CREDIT_PACKS)
 
@@ -98,7 +104,14 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     try {
       const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ action: 'state', famille: await famille() }) })
       const d = await r.json().catch(() => ({}))
-      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; potFamille.value = d.potFamille ?? potFamille.value; renewAt.value = d.renewAt || ''; insuffisant.value = false; return true }
+      if (d && d.ok) {
+        offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0
+        cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0
+        potFamille.value = d.potFamille ?? potFamille.value
+        estEnfant.value = !!d.estEnfant; conso.value = d.conso ?? 0; plafond.value = d.plafond ?? 0
+        renewAt.value = d.renewAt || ''; insuffisant.value = false; plafondAtteint.value = false
+        return true
+      }
     } catch { /* offline */ }
     return false
   }
@@ -123,6 +136,24 @@ export const useAbonnementStore = defineStore('abonnement', () => {
       potFamille.value = Number(d.potFamille) || 0
       return true
     } catch { return false }
+  }
+
+  /** Le parent fixe (0 = lève) le plafond hebdomadaire d'un enfant. */
+  async function definirPlafondEnfant(enfantId, valeur) {
+    const t = await tok()
+    if (!t) return { ok: false }
+    try {
+      const r = await fetch('/mapo-offres.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+        body: JSON.stringify({ action: 'plafond_enfant', enfantId, plafond: valeur }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!d || !d.ok) return { ok: false }
+      const l = enfantsUsage.value.find((x) => x.enfantId === enfantId)
+      if (l) l.plafond = d.plafond
+      return { ok: true, plafond: d.plafond }
+    } catch { return { ok: false } }
   }
 
   async function load() {
@@ -167,8 +198,11 @@ export const useAbonnementStore = defineStore('abonnement', () => {
    * On NE FALSIFIE PLUS le solde : on note que l'action n'était pas payable, et
    * on enregistre les soldes RÉELS que le serveur renvoie avec son refus.
    */
-  function marquerEpuise(soldes) {
+  function marquerEpuise(soldes, motif) {
     insuffisant.value = true
+    plafondAtteint.value = motif === 'plafond_atteint'
+    if (soldes && typeof soldes.conso === 'number') conso.value = soldes.conso
+    if (soldes && typeof soldes.plafond === 'number') plafond.value = soldes.plafond
     if (soldes && typeof soldes.tokens === 'number') tokens.value = soldes.tokens
     if (soldes && typeof soldes.cap === 'number') cap.value = soldes.cap
     if (soldes && typeof soldes.bonus === 'number') bonus.value = soldes.bonus
@@ -213,5 +247,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     saveLocal()
   }
 
-  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, enfantsUsage, potFamille, fetchEnfantsUsage, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, plafondAtteint, estEnfant, conso, plafond, enfantsUsage, potFamille, fetchEnfantsUsage, definirPlafondEnfant, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
 })

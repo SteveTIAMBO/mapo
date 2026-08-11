@@ -5558,7 +5558,13 @@
     "usageEnfantEpuise": "Quota de la semaine épuisé.",
     "usageEnfantInconnu": "Enfant",
     "usageConsomme": "{n} crédits utilisés sur {total} cette semaine",
-    "usageOrdre": "On utilise d’abord le quota de la semaine ; les crédits de la famille ne sont entamés qu’ensuite."
+    "usageOrdre": "On utilise d’abord le quota de la semaine ; les crédits de la famille ne sont entamés qu’ensuite.",
+    "enfConsoPlafond": "{n} crédits utilisés cette semaine sur un plafond de {max}",
+    "enfConsoLibre": "{n} crédits utilisés cette semaine (aucun plafond)",
+    "plafondLabel": "Plafond / semaine",
+    "plafondAucun": "Aucun",
+    "saved2": "Appliquer",
+    "epuisePlafondEnfant": "Tu as atteint la limite que ton parent a fixée pour cette semaine."
   },
   "cx": {
     "appTitle": "Espace complexe",

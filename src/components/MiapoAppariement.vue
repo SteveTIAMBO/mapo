@@ -7,7 +7,7 @@
 
     <!-- Crédits épuisés (le message diffère si la session est celle d'un mineur) -->
     <div v-else-if="step === 'epuise'" class="card">
-      <MiapoCreditsEpuises @quit="$emit('quit')" />
+      <MiapoCreditsEpuises :motif="motifEpuise" @quit="$emit('quit')" />
     </div>
 
     <!-- Erreur -->
@@ -129,6 +129,7 @@ const visuel = computed(() => {
 })
 
 const step = ref('loading')
+const motifEpuise = ref('credits_epuises')
 const err = ref('')
 const titre = ref('')
 const level = ref(1)
@@ -179,7 +180,7 @@ async function start() {
   let digest = ''
   try { if (props.enfant) digest = digestApprenant(props.enfant, tuteur.getAllRevisionStates(studentId.value) || {}) } catch { /* best-effort */ }
   const r = await tuteur.genererAppariement({ matiere: props.matiere, niveau: niveau.value, difficulte: level.value, cours, digest, visuel: visuel.value, langue: en.value ? 'en' : 'fr', exclure: seenTerms.value })
-  if (r.reason === 'credits_epuises') { step.value = 'epuise'; return }
+  if (r.reason === 'credits_epuises' || r.reason === 'plafond_atteint') { motifEpuise.value = r.reason; step.value = 'epuise'; return }
   if (!r.ok || !r.paires || r.paires.length < 3) {
     err.value = en.value ? 'Could not prepare the exercise.' : 'Impossible de préparer l\'exercice.'
     step.value = 'error'; return

@@ -52,11 +52,19 @@
       <div v-for="e in enfantsAffiches" :key="e.enfantId" class="enf-ligne">
         <div class="enf-head">
           <strong>{{ e.prenom }}</strong>
-          <span class="enf-reste" :class="{ warn: e.pct >= 90 }">{{ 100 - e.pct }}%</span>
+          <span class="enf-reste">{{ fmtNombre(e.conso) }}</span>
         </div>
-        <div class="ac-bar"><div class="ac-bar-fill" :class="e.classe" :style="{ width: e.pct + '%' }"></div></div>
-        <p class="muted xsmall enf-note">{{ t('mia.usageConsomme', { n: fmtNombre(e.utilise), total: fmtNombre(e.cap) }) }}</p>
-        <p v-if="e.tokens <= 0" class="muted xsmall enf-note">{{ t('mia.usageEnfantEpuise') }}</p>
+        <!-- Barre seulement s'il y a un plafond : sans limite, une barre
+             n'aurait aucun repère et laisserait croire à un quota. -->
+        <div v-if="e.plafond > 0" class="ac-bar"><div class="ac-bar-fill" :class="e.classe" :style="{ width: e.pct + '%' }"></div></div>
+        <p class="muted xsmall enf-note">
+          {{ e.plafond > 0 ? t('mia.enfConsoPlafond', { n: fmtNombre(e.conso), max: fmtNombre(e.plafond) }) : t('mia.enfConsoLibre', { n: fmtNombre(e.conso) }) }}
+        </p>
+        <div class="enf-plaf">
+          <label class="form-label">{{ t('mia.plafondLabel') }}</label>
+          <input v-model.number="brouillonPlafond[e.enfantId]" class="input plaf-input" type="number" min="0" step="5000" :placeholder="t('mia.plafondAucun')" />
+          <button class="btn btn-outline btn-sm" @click="enregistrerPlafond(e.enfantId)">{{ t('mia.saved2') }}</button>
+        </div>
       </div>
       <p class="muted xsmall">{{ t('mia.usageEnfantsHint') }}</p>
     </div>
@@ -76,7 +84,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAbonnementStore } from '../stores/abonnement'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -90,20 +98,29 @@ const enfantsStore = useEnfantsAutonomesStore()
 // prénoms connus du client : le serveur n'a pas à connaître les prénoms.
 const enfantsAffiches = computed(() => (abo.enfantsUsage || []).map((u) => {
   const e = (enfantsStore.enfants || []).find((x) => x.id === u.enfantId)
-  const cap = u.cap || 1
-  const pct = Math.min(100, Math.max(0, Math.round(((cap - u.tokens) / cap) * 100)))
+  // Sans plafond il n'y a rien à remplir : la barre n'a de sens que rapportée
+  // à une limite fixée par le parent.
+  const pct = u.plafond > 0 ? Math.min(100, Math.round(((u.conso || 0) / u.plafond) * 100)) : 0
   return {
     enfantId: u.enfantId,
     prenom: e?.firstName || t('mia.usageEnfantInconnu'),
-    tokens: u.tokens,
-    cap,
-    utilise: Math.max(0, cap - u.tokens),
+    conso: u.conso || 0,
+    plafond: u.plafond || 0,
     pct,
     classe: pct >= 90 ? 'is-danger' : pct >= 70 ? 'is-warn' : 'is-ok',
   }
 }))
 
 function fmtNombre(n) { return Number(n || 0).toLocaleString('fr-FR') }
+
+// Plafond par enfant : c'est un RÉGLAGE réversible, pas un transfert. Rien
+// n'est immobilisé sur le compte de l'enfant, et le reste du pot demeure
+// disponible pour la fratrie.
+const brouillonPlafond = ref({})
+async function enregistrerPlafond(enfantId) {
+  const v = Number(brouillonPlafond.value[enfantId]) || 0
+  await abo.definirPlafondEnfant(enfantId, v)
+}
 
 const restePct = computed(() => Math.max(0, 100 - abo.pourcentage))
 const jaugeClass = computed(() => abo.pourcentage >= 90 ? 'is-danger' : abo.pourcentage >= 70 ? 'is-warn' : 'is-ok')
@@ -117,7 +134,10 @@ onMounted(async () => {
   // Un compte ENFANT n'a rien à surveiller : cette vue est celle du parent.
   if (enfantsStore.isCompteEnfant) return
   const ids = (enfantsStore.enfants || []).map((e) => e.id).filter(Boolean)
-  if (ids.length) await abo.fetchEnfantsUsage(ids)
+  if (ids.length) {
+    await abo.fetchEnfantsUsage(ids)
+    for (const u of abo.enfantsUsage) brouillonPlafond.value[u.enfantId] = u.plafond || null
+  }
 })
 function dateFr(iso) { try { return new Date(iso).toLocaleDateString('fr-FR') } catch { return '' } }
 // Ouvre Paramètres → Abonnement (upgrade / achat de crédits).
@@ -158,5 +178,9 @@ function openAbo() { window.dispatchEvent(new CustomEvent('open-miapo-settings',
 .enf-reste { font-size: 13px; font-weight: 700; color: var(--tx3, #6b7280); }
 .enf-reste.warn { color: #b45309; }
 .enf-note { margin: 5px 0 0; }
+.enf-plaf { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+.enf-plaf .form-label { font-size: 12px; color: var(--tx3); margin: 0; }
+.plaf-input { width: 120px; }
+.btn-outline { background: transparent; border: 1px solid var(--bd, #e5e7eb); color: var(--tx); }
 .conso-ligne { margin: 6px 0 0; font-size: 13px; font-weight: 600; color: var(--tx2, #4b5563); }
 </style>

@@ -5558,7 +5558,13 @@
     "usageEnfantEpuise": "Weekly allowance used up.",
     "usageEnfantInconnu": "Child",
     "usageConsomme": "{n} credits used out of {total} this week",
-    "usageOrdre": "The weekly allowance is used first; family credits are only drawn on afterwards."
+    "usageOrdre": "The weekly allowance is used first; family credits are only drawn on afterwards.",
+    "enfConsoPlafond": "{n} credits used this week, out of a {max} cap",
+    "enfConsoLibre": "{n} credits used this week (no cap)",
+    "plafondLabel": "Weekly cap",
+    "plafondAucun": "None",
+    "saved2": "Apply",
+    "epuisePlafondEnfant": "You have reached the limit your parent set for this week."
   },
   "cx": {
     "appTitle": "Complex workspace",

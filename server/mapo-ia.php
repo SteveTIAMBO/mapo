@@ -145,12 +145,19 @@ if ($metered) {
     // rechargement suivant : « épuisé », puis « bientôt épuisé », en boucle.
     // Le refus ne veut pas dire « zéro », il veut dire « pas assez pour CETTE
     // action » — un reste de 1 000 ne paie pas un quiz à 2 500.
-    $st = mc_state($uid);
+    // Deux refus TRÈS différents, qui ne se disent pas pareil : le plafond fixé
+    // par le parent (la famille a des crédits, mais cet enfant a atteint sa
+    // limite de la semaine) et l'épuisement réel du solde familial.
+    $parPlafond = $uidFamille !== '' && mc_plafondAtteint($uid, $coutTokens);
+    $ref = $uidFamille !== '' ? mc_state($uidFamille) : mc_state($uid);
+    $moi = mc_state($uid);
     echo json_encode([
-      'ok' => false, 'error' => 'credits_epuises',
-      'tokens' => (int) $st['tokens'],
-      'cap' => mc_weeklyCap($st['offreId']),
-      'bonus' => mc_bonusFamille($uid, $uidFamille),
+      'ok' => false, 'error' => $parPlafond ? 'plafond_atteint' : 'credits_epuises',
+      'tokens' => (int) $ref['tokens'],
+      'cap' => mc_weeklyCap($ref['offreId']),
+      'bonus' => (int) ($ref['bonus'] ?? 0),
+      'conso' => (int) ($moi['conso'] ?? 0),
+      'plafond' => (int) ($moi['plafond'] ?? 0),
       'cout' => (int) $coutTokens,
     ]); exit;
   }

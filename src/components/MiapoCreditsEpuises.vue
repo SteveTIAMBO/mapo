@@ -10,7 +10,11 @@
          situation de réclamer de l'argent. C'est son parent qui recharge. -->
     <template v-if="estEnfant">
       <h3>{{ t('mia.epuiseTitreEnfant') }}</h3>
-      <p>{{ t('mia.epuiseTexteEnfant') }}</p>
+      <!-- Deux blocages très différents : la limite fixée par le parent (la
+           famille a des crédits, mais pas pour toi cette semaine) et le solde
+           familial réellement vide. Les confondre enverrait l'enfant réclamer
+           une recharge inutile. -->
+      <p>{{ motif === 'plafond_atteint' ? t('mia.epuisePlafondEnfant') : t('mia.epuiseTexteEnfant') }}</p>
       <!-- `btn` porte la forme et l'espacement, `btn-primary`/`btn-ghost` ne
            donnent que la couleur : sans les deux, les boutons se rendaient en
            texte brut. -->
@@ -49,6 +53,10 @@ import { BellRing, Check } from 'lucide-vue-next'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { usePushStore } from '../stores/push'
 
+// Le MOTIF vient de l'appelant, pas d'un store : ce composant affiche un
+// message, il n'a pas à aller deviner pourquoi on l'a monté. Le brancher sur le
+// store d'abonnement le rendait aussi intestable isolément.
+defineProps({ motif: { type: String, default: 'credits_epuises' } })
 defineEmits(['quit', 'abonnement'])
 const { t, locale } = useI18n({ useScope: 'global' })
 const store = useEnfantsAutonomesStore()

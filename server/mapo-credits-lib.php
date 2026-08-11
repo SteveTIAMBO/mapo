@@ -49,10 +49,20 @@ if (!function_exists('mc_path')) {
 
   /** Entrée « fraîche » pour un palier : jauge pleine, semaine courante. Le
    *  solde `bonus` (crédits PAYG achetés) est CONSERVÉ à travers les recharges. */
-  function mc_fresh($offreId, $tierExpiry, $bonus = 0) {
-    return ['offreId' => $offreId, 'tokens' => mc_weeklyCap($offreId), 'weekId' => mc_week(), 'tierExpiry' => $tierExpiry, 'bonus' => (int) $bonus];
+  function mc_fresh($offreId, $tierExpiry, $bonus = 0, $plafond = 0) {
+    return [
+      'offreId' => $offreId, 'tokens' => mc_weeklyCap($offreId), 'weekId' => mc_week(),
+      'tierExpiry' => $tierExpiry, 'bonus' => (int) $bonus,
+      // Consommation de la semaine. Pour un ENFANT, c'est la SEULE chose qu'on
+      // compte sur son entrée : il n'a pas de quota a lui, il depense celui de
+      // sa famille. Ce compteur sert au suivi du parent et au plafond.
+      'conso' => 0,
+      // Plafond hebdomadaire fixe par le parent (0 = aucun). C'est un REGLAGE,
+      // pas un solde : il survit a la recharge du lundi.
+      'plafond' => (int) $plafond,
+    ];
   }
-  function mc_free($bonus = 0) { return mc_fresh('decouverte', '', $bonus); } // le gratuit n'expire pas
+  function mc_free($bonus = 0, $plafond = 0) { return mc_fresh('decouverte', '', $bonus, $plafond); } // le gratuit n'expire pas
 
   /**
    * Applique les deux règles : (1) palier mensuel échu → retour au gratuit ;
@@ -61,15 +71,24 @@ if (!function_exists('mc_path')) {
    */
   function mc_normalize($entry) {
     $bonus = is_array($entry) ? (int) ($entry['bonus'] ?? 0) : 0;
-    if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free($bonus);
+    // Le plafond est un RÉGLAGE du parent : il traverse les recharges et les
+    // changements d'offre. Le compteur de consommation, lui, se remet à zéro
+    // chaque semaine, comme la jauge.
+    $plafond = is_array($entry) ? (int) ($entry['plafond'] ?? 0) : 0;
+    if (!is_array($entry) || empty($entry['offreId']) || !isset($entry['tokens'])) return mc_free($bonus, $plafond);
     $offre = $entry['offreId'];
     $exp = $entry['tierExpiry'] ?? '';
     // 1) Palier payant expiré (fin du mois payé, pas de reconduction) → gratuit.
-    if ($exp !== '' && strtotime($exp) < time()) return mc_free($bonus);
-    // 2) Recharge hebdomadaire : si on a changé de semaine ISO, jauge au plafond.
-    if (($entry['weekId'] ?? '') !== mc_week()) return mc_fresh($offre, $exp, $bonus);
+    if ($exp !== '' && strtotime($exp) < time()) return mc_free($bonus, $plafond);
+    // 2) Recharge hebdomadaire : si on a changé de semaine ISO, jauge au plafond
+    //    et compteur de consommation remis à zéro.
+    if (($entry['weekId'] ?? '') !== mc_week()) return mc_fresh($offre, $exp, $bonus, $plafond);
     // Sinon : on borne au plafond courant (au cas où il aurait baissé).
-    return ['offreId' => $offre, 'tokens' => min((int) $entry['tokens'], mc_weeklyCap($offre)), 'weekId' => $entry['weekId'], 'tierExpiry' => $exp, 'bonus' => $bonus];
+    return [
+      'offreId' => $offre, 'tokens' => min((int) $entry['tokens'], mc_weeklyCap($offre)),
+      'weekId' => $entry['weekId'], 'tierExpiry' => $exp, 'bonus' => $bonus,
+      'conso' => (int) ($entry['conso'] ?? 0), 'plafond' => $plafond,
+    ];
   }
 
   /** État courant (crée le gratuit si absent) : {offreId, tokens, cap, renewAt, weekId}. */
@@ -77,50 +96,93 @@ if (!function_exists('mc_path')) {
     return mc_mutate($uid, function ($e) { return $e; });
   }
 
-  /** Reste-t-il au moins $cost tokens ? (jauge hebdo + bonus, le sien ET celui
-   *  de sa famille, sans rien décompter) */
+  /**
+   * Peut-on payer $cost ?
+   *
+   * ⭐ UN MINEUR N'A PAS DE JAUGE À LUI. Il dépense celle de sa FAMILLE : le
+   * quota hebdomadaire du parent d'abord, puis les crédits offerts ou achetés.
+   * Lui donner un quota gratuit personnel revenait à multiplier le gratuit par
+   * le nombre d'enfants DÉCLARÉS — une générosité indexée sur une donnée que
+   * l'utilisateur saisit lui-même, donc sans limite.
+   *
+   * Seule contrainte propre à l'enfant : le PLAFOND hebdomadaire que son parent
+   * lui fixe (0 = aucun).
+   */
   function mc_hasTokens($uid, $cost, $uidFamille = '') {
     $e = mc_state($uid);
     if (!$e) return false;
-    $bonusDispo = ($uidFamille !== '' && $uidFamille !== $uid)
-      ? mc_bonusFamille($uid, $uidFamille)
-      : (int) ($e['bonus'] ?? 0);
-    return ((int) $e['tokens'] + $bonusDispo) >= (int) $cost;
+    $cost = (int) $cost;
+    $estEnfant = ($uidFamille !== '' && $uidFamille !== $uid);
+    if (!$estEnfant) {
+      return ((int) $e['tokens'] + (int) ($e['bonus'] ?? 0)) >= $cost;
+    }
+    // Plafond de rationnement : vérifié AVANT le solde, parce qu'il se dépasse
+    // en premier et que le message à afficher n'est pas le même.
+    $plafond = (int) ($e['plafond'] ?? 0);
+    if ($plafond > 0 && ((int) ($e['conso'] ?? 0) + $cost) > $plafond) return false;
+    $f = mc_state($uidFamille);
+    return $f && ((int) $f['tokens'] + (int) ($f['bonus'] ?? 0)) >= $cost;
   }
 
-  /** Décompte $cost tokens : d'abord la jauge hebdo PERSONNELLE, puis le bonus
-   *  personnel, puis celui de la FAMILLE.
-   *  Renvoie la jauge hebdo restante (pour l'affichage), ou false si insuffisant. */
-  function mc_consume($uid, $cost, $uidFamille = '') {
-    $out = null; $reste = 0;
-    // ⚠️ LE SOLDE DE LA FAMILLE SE LIT **AVANT** D'OUVRIR LE VERROU.
-    //
-    // `mc_mutate` tient un `flock(LOCK_EX)` sur mapo-credits.json pendant tout
-    // l'appel de sa fonction. Appeler `mc_state()` DEDANS rouvre le MÊME fichier
-    // et redemande le même verrou exclusif : sous Linux le verrou est attaché à
-    // l'ouverture, pas au processus, donc la seconde demande attend la première,
-    // qui attend la fin de la fonction. La requête se bloque jusqu'au délai du
-    // serveur — c'est ce qui faisait « tourner l'IA dans le vide » (09/08).
-    // Règle générale : jamais d'appel à mc_state/mc_mutate dans un callback de
-    // mc_mutate.
-    $bonusFamille = ($uidFamille !== '' && $uidFamille !== $uid)
-      ? (int) (mc_state($uidFamille)['bonus'] ?? 0) : 0;
-    mc_mutate($uid, function ($e) use ($cost, &$out, &$reste, $bonusFamille) {
-      $tok = (int) $e['tokens']; $bon = (int) ($e['bonus'] ?? 0);
-      if ($tok + $bon + $bonusFamille < (int) $cost) { $out = false; return $e; }
-      $surHebdo = min($tok, (int) $cost);
-      $e['tokens'] = $tok - $surHebdo;
-      $surBonusPerso = min($bon, (int) $cost - $surHebdo);
-      $e['bonus'] = $bon - $surBonusPerso;
-      // Ce qui dépasse encore sera pris sur le pot de la famille, APRÈS ce
-      // verrou : on ne verrouille pas deux entrées à la fois.
-      $reste = (int) $cost - $surHebdo - $surBonusPerso;
-      $out = (int) $e['tokens'];
+  /** L'enfant a-t-il atteint le plafond fixé par son parent ? (pour le message) */
+  function mc_plafondAtteint($uid, $cost) {
+    $e = mc_state($uid);
+    $plafond = (int) ($e['plafond'] ?? 0);
+    return $plafond > 0 && ((int) ($e['conso'] ?? 0) + (int) $cost) > $plafond;
+  }
+
+  /** Le parent fixe (ou lève, avec 0) le plafond hebdomadaire d'un enfant. */
+  function mc_setPlafond($uidEnfant, $plafond) {
+    return mc_mutate($uidEnfant, function ($e) use ($plafond) {
+      $e['plafond'] = max(0, (int) $plafond);
       return $e;
     });
-    if ($out !== false && $reste > 0 && $uidFamille !== '' && $uidFamille !== $uid) {
-      mc_bonusRetirer($uidFamille, $reste);
-    }
+  }
+
+  /**
+   * Décompte $cost.
+   *
+   * ENFANT : rien n'est pris sur son entrée — il n'a pas de jauge. Tout part du
+   * compte de la FAMILLE (quota hebdomadaire du parent, puis crédits offerts ou
+   * achetés). On enregistre seulement sa CONSOMMATION, pour le suivi du parent
+   * et pour le plafond.
+   *
+   * ADULTE : quota hebdomadaire puis crédits, comme avant.
+   *
+   * Renvoie le solde hebdomadaire restant de celui qui paie, ou false.
+   */
+  function mc_consumeEnfant($uidEnfant, $cost, $uidFamille) {
+    $cost = (int) $cost;
+    // On paie d'abord, on comptabilise ensuite : si le paiement échoue, la
+    // consommation de l'enfant ne doit pas être gonflée pour rien.
+    $restant = mc_consume($uidFamille, $cost);
+    if ($restant === false) return false;
+    mc_mutate($uidEnfant, function ($e) use ($cost) {
+      $e['conso'] = (int) ($e['conso'] ?? 0) + $cost;
+      return $e;
+    });
+    return $restant;
+  }
+
+  function mc_consume($uid, $cost, $uidFamille = '') {
+    // Un enfant ne dépense jamais sur sa propre entrée : on redirige.
+    if ($uidFamille !== '' && $uidFamille !== $uid) return mc_consumeEnfant($uid, $cost, $uidFamille);
+    $out = null;
+    // ⚠️ Aucun appel à mc_state/mc_mutate DANS ce callback : `mc_mutate` tient
+    // un flock exclusif sur mapo-credits.json pendant toute son exécution, et
+    // sous Linux le verrou est attaché à l'OUVERTURE, pas au processus. Un
+    // second verrou sur le même fichier attendrait le premier, qui attend la
+    // fin du callback : la requête se bloque jusqu'au délai serveur. C'est ce
+    // qui faisait « tourner l'IA dans le vide » le 09/08.
+    mc_mutate($uid, function ($e) use ($cost, &$out) {
+      $tok = (int) $e['tokens']; $bon = (int) ($e['bonus'] ?? 0);
+      if ($tok + $bon < (int) $cost) { $out = false; return $e; }
+      $surHebdo = min($tok, (int) $cost);
+      $e['tokens'] = $tok - $surHebdo;
+      $e['bonus'] = $bon - ((int) $cost - $surHebdo);
+      $out = (int) $e['tokens']; // jauge HEBDO restante (pour l'affichage)
+      return $e;
+    });
     return $out;
   }
 
@@ -156,24 +218,13 @@ if (!function_exists('mc_path')) {
   //
   // D'où l'ordre de dépense : jauge hebdo PERSONNELLE, puis bonus de la FAMILLE.
 
-  /** Solde bonus disponible pour cet apprenant : le sien + celui de sa famille. */
+  /** Crédits offerts/achetés dont dispose cet apprenant. Pour un enfant, ce
+   *  sont ceux de sa FAMILLE : il n'a pas de solde à lui. */
   function mc_bonusFamille($uid, $uidFamille) {
-    $mien = (int) (mc_state($uid)['bonus'] ?? 0);
-    if ($uidFamille === '' || $uidFamille === $uid) return $mien;
-    return $mien + (int) (mc_state($uidFamille)['bonus'] ?? 0);
+    if ($uidFamille === '' || $uidFamille === $uid) return (int) (mc_state($uid)['bonus'] ?? 0);
+    return (int) (mc_state($uidFamille)['bonus'] ?? 0);
   }
 
-  /** Retire $n du bonus d'un compte donné. Renvoie ce qui a réellement été pris. */
-  function mc_bonusRetirer($uid, $n) {
-    $pris = 0;
-    mc_mutate($uid, function ($e) use ($n, &$pris) {
-      $dispo = (int) ($e['bonus'] ?? 0);
-      $pris = min($dispo, max(0, (int) $n));
-      $e['bonus'] = $dispo - $pris;
-      return $e;
-    });
-    return $pris;
-  }
 
   // ── Codes de crédits (offerts par EDUFREM) ──────────────────────────────
   //
