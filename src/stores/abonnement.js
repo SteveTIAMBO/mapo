@@ -35,6 +35,7 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const remiseFamille = ref(REMISE_FAMILLE)       // { minEnfants, pct } — serveur fait foi
   const devise = ref(detectDevise())              // 'XAF' (Tranzak) | 'EUR' (Stripe)
   const bonus = ref(0)                            // crédits achetés (PAYG), hors jauge hebdo
+  const potFamille = ref(0)                       // solde du PARENT, où l'enfant puise
   const packsServeur = ref(null)
   const packs = computed(() => packsServeur.value || CREDIT_PACKS)
 
@@ -60,9 +61,26 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   // à zéro pour refléter l'échec et retrouvait la vraie valeur au rechargement,
   // d'où l'alternance « épuisé » / « bientôt épuisé » signalée le 09/08.
   const insuffisant = ref(false)
-  const épuisé = computed(() => tokens.value + bonus.value <= 0 || insuffisant.value)
+  // On compte AUSSI le pot de la famille : un enfant dont le quota hebdomadaire
+  // est à zéro peut continuer sur les crédits de son parent. Sans ça, l'écran
+  // annonçait « terminé » alors que le serveur servait ses requêtes.
+  const épuisé = computed(() => tokens.value + bonus.value + potFamille.value <= 0 || insuffisant.value)
 
   async function tok() { try { return auth.currentUser ? await auth.currentUser.getIdToken() : null } catch { return null } }
+
+  /**
+   * Déclaration de famille pour un compte ENFANT. Le serveur ne la croit pas :
+   * il recalcule `enf_<sha256(ownerUid|enfantId)>` et la jette si le résultat
+   * n'est pas l'appelant. Import différé pour éviter un cycle entre stores.
+   */
+  async function famille() {
+    try {
+      const { useEnfantsAutonomesStore } = await import('./enfantsAutonomes')
+      const e = useEnfantsAutonomesStore()
+      if (!e.linkedOwnerUid || !e.linkedEnfantId) return undefined
+      return { ownerUid: e.linkedOwnerUid, enfantId: e.linkedEnfantId }
+    } catch { return undefined }
+  }
 
   async function fetchOffres() {
     try {
@@ -78,9 +96,9 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     const t = await tok()
     if (!t) return false
     try {
-      const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ action: 'state' }) })
+      const r = await fetch('/mapo-offres.php', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t }, body: JSON.stringify({ action: 'state', famille: await famille() }) })
       const d = await r.json().catch(() => ({}))
-      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; renewAt.value = d.renewAt || ''; insuffisant.value = false; return true }
+      if (d && d.ok) { offreId.value = d.offreId || 'decouverte'; tokens.value = d.tokens ?? 0; cap.value = d.cap ?? tokens.value; bonus.value = d.bonus ?? 0; potFamille.value = d.potFamille ?? potFamille.value; renewAt.value = d.renewAt || ''; insuffisant.value = false; return true }
     } catch { /* offline */ }
     return false
   }
@@ -89,7 +107,6 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   // `enfantId` : le serveur reconstruit l'uid du compte à partir du sien, donc
   // il ne peut jamais renvoyer que les enfants de l'appelant.
   const enfantsUsage = ref([])   // [{ enfantId, tokens, cap, bonus }]
-  const potFamille = ref(0)
 
   async function fetchEnfantsUsage(enfantIds) {
     const t = await tok()

@@ -36,7 +36,29 @@ if ($action === 'state') {
   $uid = verifyFirebaseToken();
   if (!$uid) { echo json_encode(['ok' => false, 'error' => 'non_autorise']); exit; }
   $e = mc_state($uid);
-  echo json_encode(['ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'], 'cap' => mc_weeklyCap($e['offreId']), 'bonus' => (int) ($e['bonus'] ?? 0), 'renewAt' => $e['tierExpiry'] ?? '', 'weekId' => $e['weekId'] ?? '']);
+  // Pot de la FAMILLE, pour un compte enfant.
+  //
+  // Sans lui, l'écran d'un enfant annonçait « crédits terminés » dès que SON
+  // quota hebdomadaire tombait à zéro, alors que le serveur acceptait
+  // parfaitement ses requêtes en puisant dans les crédits de son parent. Le
+  // moteur marchait, l'affichage mentait — et l'enfant renonçait à réviser.
+  //
+  // Même vérification qu'ailleurs : on recalcule l'uid attendu à partir de la
+  // déclaration, et on la jette si elle ne désigne pas l'appelant.
+  $potFamille = 0;
+  $fam = is_array($body['famille'] ?? null) ? $body['famille'] : null;
+  if ($fam) {
+    $o = (string) ($fam['ownerUid'] ?? ''); $i = (string) ($fam['enfantId'] ?? '');
+    if ($o !== '' && $i !== '' && hash_equals('enf_' . substr(hash('sha256', $o . '|' . $i), 0, 24), $uid)) {
+      $potFamille = (int) (mc_state($o)['bonus'] ?? 0);
+    }
+  }
+  echo json_encode([
+    'ok' => true, 'offreId' => $e['offreId'], 'tokens' => (int) $e['tokens'],
+    'cap' => mc_weeklyCap($e['offreId']), 'bonus' => (int) ($e['bonus'] ?? 0),
+    'potFamille' => $potFamille,
+    'renewAt' => $e['tierExpiry'] ?? '', 'weekId' => $e['weekId'] ?? '',
+  ]);
   exit;
 }
 
