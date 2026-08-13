@@ -4,20 +4,26 @@
  * Pourquoi synthétiser : l'application vise des connexions lentes et des
  * forfaits comptés. Des fichiers audio, même courts, c'est du poids à
  * télécharger, un cache de plus à gérer et un risque de silence hors ligne.
- * L'API Web Audio produit ces notes en quelques lignes, sans rien charger, et
- * fonctionne offline par construction.
+ * Tout est produit à la volée, et marche offline par construction.
  *
- * Parti pris SONORE, et il compte : la bonne réponse a un son franc et
- * ascendant ; la mauvaise a un son BREF, GRAVE et DOUX — jamais un buzzer.
- * Un enfant qui révise le soir ne doit pas être puni par le son, juste
- * informé. La sanction sonore décourage, elle n'apprend rien.
+ * ⚠️ PREMIÈRE VERSION RATÉE (13/08) : des sinusoïdes pures. Techniquement
+ * correct, mais ça sonnait « bip d'ascenseur » et pas jeu. Ce qui fait le son
+ * de jeu, ce n'est pas la note, ce sont QUATRE choses :
+ *   1. la FORME D'ONDE — carrée ou triangle (harmoniques riches), pas sinus ;
+ *   2. le GLISSANDO — la hauteur monte pendant la note, elle ne reste pas fixe ;
+ *   3. le DÉSACCORD — deux oscillateurs à quelques hertz d'écart, ça épaissit ;
+ *   4. la VITESSE — des notes très courtes qui s'enchaînent, pas une mélodie.
+ *
+ * Parti pris sonore, à ne pas défaire : la bonne réponse claque ; la mauvaise
+ * est un son SOURD et BREF, jamais un buzzer. Un enfant qui révise le soir doit
+ * être informé, pas puni — la sanction sonore décourage et n'apprend rien.
  */
 
 const CLE_SON = 'mapo_b2c_son'
 
 let ctx = null
-/** Le contexte audio ne peut naître que d'un geste de l'utilisateur (règle des
- *  navigateurs). On le crée donc paresseusement, au premier son joué. */
+/** Le contexte audio ne peut naître que d'un geste utilisateur (règle des
+ *  navigateurs) : on le crée paresseusement, au premier son joué. */
 function contexte() {
   if (ctx) return ctx
   try {
@@ -36,60 +42,100 @@ export function definirSon(actif) {
 }
 
 /**
- * Joue une note. `debut` est un décalage en secondes, pour enchaîner sans
- * `setTimeout` — le timing d'un `setTimeout` dérive, celui de l'horloge audio
- * non, et une mélodie qui traîne sonne faux.
+ * Brique de base : une note qui GLISSE d'une hauteur à une autre.
+ *
+ * @param {object} o
+ * @param {number} o.de      hauteur de départ (Hz)
+ * @param {number} o.vers    hauteur d'arrivée (Hz) — c'est le glissando
+ * @param {number} o.debut   décalage en secondes (horloge audio, pas setTimeout :
+ *                           un setTimeout dérive et la mélodie sonne bancale)
+ * @param {number} o.duree
+ * @param {string} o.forme   'square' | 'triangle' | 'sawtooth'
+ * @param {number} o.volume
+ * @param {number} o.desaccord  cents de désaccord d'un second oscillateur
  */
-function note(freq, debut, duree, volume = 0.12) {
+function bip({ de, vers = de, debut = 0, duree = 0.09, forme = 'square', volume = 0.09, desaccord = 0 }) {
   const c = contexte()
   if (!c) return
-  const osc = c.createOscillator()
-  const gain = c.createGain()
-  osc.type = 'sine' // doux : on est dans une app d'enfants, pas dans un jeu d'arcade
-  osc.frequency.value = freq
   const t = c.currentTime + debut
-  // Enveloppe : attaque courte, extinction progressive. Sans elle, chaque note
-  // commence et finit par un « clic » désagréable.
+  const gain = c.createGain()
+  // Enveloppe : attaque quasi instantanée (c'est ce qui fait « claquer »),
+  // extinction rapide. Sans enveloppe, chaque note commence par un clic.
   gain.gain.setValueAtTime(0, t)
-  gain.gain.linearRampToValueAtTime(volume, t + 0.012)
+  gain.gain.linearRampToValueAtTime(volume, t + 0.006)
   gain.gain.exponentialRampToValueAtTime(0.0001, t + duree)
-  osc.connect(gain); gain.connect(c.destination)
-  osc.start(t); osc.stop(t + duree + 0.02)
-}
+  gain.connect(c.destination)
 
-/** Bonne réponse : deux notes qui montent. Court, net, encourageant. */
-export function sonJuste() {
-  if (!sonActif()) return
-  note(660, 0, 0.12)
-  note(880, 0.09, 0.18)
+  const voix = desaccord ? [0, desaccord] : [0]
+  for (const d of voix) {
+    const osc = c.createOscillator()
+    osc.type = forme
+    osc.frequency.setValueAtTime(de, t)
+    if (vers !== de) osc.frequency.exponentialRampToValueAtTime(vers, t + duree)
+    if (d) osc.detune.setValueAtTime(d, t)
+    osc.connect(gain)
+    osc.start(t); osc.stop(t + duree + 0.02)
+  }
 }
 
 /**
- * Mauvaise réponse : UNE note grave et brève, à volume réduit.
- * Volontairement discrète — cf. l'en-tête : on informe, on ne sanctionne pas.
+ * Bonne réponse — le « coin ». Deux notes carrées très rapides, la seconde
+ * glissant vers le haut. C'est le motif universel de la récompense dans le jeu
+ * vidéo depuis quarante ans : court, aigu, ascendant.
+ */
+export function sonJuste() {
+  if (!sonActif()) return
+  bip({ de: 988, duree: 0.055, forme: 'square', volume: 0.075 })
+  bip({ de: 1319, vers: 1568, debut: 0.055, duree: 0.13, forme: 'square', volume: 0.085, desaccord: 8 })
+}
+
+/**
+ * Mauvaise réponse — un son SOURD, pas un buzzer. Onde triangle grave qui
+ * DESCEND, très court, volume réduit de moitié. On informe, on ne punit pas.
  */
 export function sonFaux() {
   if (!sonActif()) return
-  note(220, 0, 0.16, 0.07)
+  bip({ de: 196, vers: 130, duree: 0.16, forme: 'triangle', volume: 0.055 })
 }
 
 /**
- * Série en cours. Le motif s'enrichit avec la longueur : c'est le renforcement
- * qui fait revenir, et il doit se MÉRITER — un même son à 2 et à 10 bonnes
- * réponses d'affilée n'apprend rien à l'oreille.
+ * Série en cours — arpège chiptune ascendant qui S'ALLONGE avec la série.
+ * Le motif doit se mériter : un même son à 2 et à 8 bonnes réponses d'affilée
+ * n'apprend rien à l'oreille et tue le sentiment de progression.
  */
 export function sonSerie(longueur) {
   if (!sonActif()) return
   const n = Math.max(2, Number(longueur) || 2)
-  const notes = [660, 880, 1046, 1318] // do-mi-sol-do, arpège ascendant
-  const combien = Math.min(notes.length, 1 + Math.floor(n / 2))
-  for (let i = 0; i < combien; i++) note(notes[i], i * 0.075, 0.16)
+  // Gamme pentatonique majeure : toutes les combinaisons sonnent justes, donc
+  // l'arpège reste agréable quelle que soit la longueur.
+  const gamme = [784, 880, 1047, 1175, 1397, 1568, 1760, 2093]
+  const combien = Math.min(gamme.length, 2 + Math.floor(n / 2))
+  for (let i = 0; i < combien; i++) {
+    bip({ de: gamme[i], debut: i * 0.045, duree: 0.09, forme: 'square', volume: 0.07, desaccord: 6 })
+  }
+  // Note finale tenue, une octave au-dessus : la « ponctuation » de l'arpège.
+  bip({ de: gamme[combien - 1] * 2, debut: combien * 0.045, duree: 0.22, forme: 'square', volume: 0.06, desaccord: 10 })
 }
 
-/** Quiz terminé avec un bon score : petite fanfare de trois notes. */
+/**
+ * Quiz terminé avec un bon score — petite fanfare montante, plus large et plus
+ * tenue que la série : on ferme la séance, ça doit s'entendre.
+ */
 export function sonVictoire() {
   if (!sonActif()) return
-  note(660, 0, 0.14)
-  note(880, 0.11, 0.14)
-  note(1318, 0.22, 0.3)
+  const motif = [523, 659, 784, 1047]
+  motif.forEach((f, i) => bip({ de: f, debut: i * 0.085, duree: 0.14, forme: 'square', volume: 0.08, desaccord: 7 }))
+  bip({ de: 1047, vers: 1568, debut: 0.36, duree: 0.42, forme: 'square', volume: 0.09, desaccord: 12 })
+}
+
+/**
+ * Palier franchi (programme de l'année maîtrisé) — le son le plus riche de
+ * l'application. Il ne doit arriver que quelques fois par an : c'est ce qui lui
+ * donne sa valeur.
+ */
+export function sonPalier() {
+  if (!sonActif()) return
+  const motif = [523, 784, 1047, 1319, 1568]
+  motif.forEach((f, i) => bip({ de: f, debut: i * 0.07, duree: 0.16, forme: 'square', volume: 0.085, desaccord: 9 }))
+  bip({ de: 1568, vers: 2093, debut: 0.4, duree: 0.55, forme: 'triangle', volume: 0.1, desaccord: 14 })
 }

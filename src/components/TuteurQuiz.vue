@@ -209,7 +209,7 @@ import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { tempsLectureSecondes } from '../utils/tempsLecture'
-import { sonJuste, sonFaux, sonSerie, sonVictoire } from '../utils/sons'
+import { sonJuste, sonFaux, sonSerie, sonVictoire, sonPalier } from '../utils/sons'
 import { niveauSuivant } from '../utils/progressionNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
@@ -462,6 +462,7 @@ const proposeAnneeSuivante = computed(() =>
   !!lastResult.value?.pretPourAnneeSuivante && !palierRefuse.value && !!anneeSuivante.value)
 
 function accepterPalier() {
+  sonPalier()
   const n = tuteur.accepterAnneeSuivante(props.studentId, subjectId.value, programmeActuel.value, props.enfantPays)
   palierRefuse.value = true // la proposition disparaît, le programme a changé
   if (n) level.value = 3    // on reprend au milieu, cf. progressionNiveau.js
