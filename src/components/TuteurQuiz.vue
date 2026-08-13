@@ -18,7 +18,7 @@
       <div class="tq-top">
         <div>
           <span class="tq-subject">{{ matiere }}</span>
-          <span v-if="studentId" class="tq-level" :title="`Difficulté adaptative — sans plafond`">Niveau {{ level }}</span>
+          <span v-if="studentId" class="tq-level" :title="`Difficulté ${level} sur 5 — dans le programme de ${programmeActuel}`">Niveau {{ level }}/5</span>
           <span class="tq-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
         </div>
         <div class="tq-top-right">
@@ -137,6 +137,24 @@
         <span>{{ levelFb.text }}</span>
       </div>
 
+      <!-- Palier franchi : l'apprenant maîtrise le programme de son année dans
+           cette matière. On ne durcit PAS davantage — on lui PROPOSE de passer
+           au programme suivant. Le changement est explicite, par matière, et
+           c'est un moment de fierté : il doit savoir ce qu'il vient d'accomplir. -->
+      <div v-if="proposeAnneeSuivante" class="tq-palier">
+        <Trophy :size="22" />
+        <div class="tq-palier-txt">
+          <strong>{{ locale.startsWith('en') ? 'You have mastered your year’s programme' : 'Tu maîtrises le programme de ton année' }}</strong>
+          <p>{{ locale.startsWith('en')
+            ? `In ${matiere}, you are at the top of what your class covers. Want to move on to the ${anneeSuivante} programme?`
+            : `En ${matiere}, tu es au bout de ce que couvre ta classe. Tu veux passer au programme de ${anneeSuivante} ?` }}</p>
+        </div>
+        <div class="tq-palier-act">
+          <button class="btn-primary" @click="accepterPalier">{{ locale.startsWith('en') ? 'Move up' : 'Je passe au niveau suivant' }}</button>
+          <button class="btn-ghost" @click="refuserPalier">{{ locale.startsWith('en') ? 'Stay here' : 'Je reste sur mon programme' }}</button>
+        </div>
+      </div>
+
       <!-- Carte de révision rapide : concepts qui ont posé le plus de soucis. -->
       <div v-if="recapMissed.length" class="tq-quickcard">
         <div class="tq-qc-head"><MiapoOrbe :size="16" :frozen="true" /> <strong>{{ locale.startsWith('en') ? 'Quick revision card' : 'Carte de révision rapide' }}</strong></div>
@@ -183,6 +201,7 @@ import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { tempsLectureSecondes } from '../utils/tempsLecture'
+import { niveauSuivant } from '../utils/progressionNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -206,6 +225,9 @@ const props = defineProps({
   // Minuteur par question (0 = désactivé). Choisi AVANT le lancement. À échéance,
   // la question compte comme non trouvée (la réponse est révélée) et on avance.
   timerSeconds: { type: Number, default: 0 },
+  // Pays de l'apprenant : les listes de classes en dépendent (CM2→6ème au
+  // Cameroun, CM2→6e en France…). Sans lui, « année suivante » serait faux.
+  enfantPays: { type: String, default: '' },
 })
 const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
@@ -418,6 +440,23 @@ const lastMode = computed(() => tuteur.lastMode)
 const subjectId = computed(() => 'auto-' + props.matiere)
 const level = ref(1)            // niveau de difficulté du quiz en cours
 const lastResult = ref(null)    // retour de recordResult (incl. levelChange)
+// Proposition de changer de programme. Refusable : on ne la repose pas au quiz
+// suivant, l'apprenant a le droit de vouloir consolider.
+const palierRefuse = ref(false)
+const programmeActuel = computed(() => (props.studentId && tuteur.getProgramme(props.studentId, subjectId.value)) || props.niveau)
+const anneeSuivante = computed(() => niveauSuivant(programmeActuel.value, props.enfantPays))
+const proposeAnneeSuivante = computed(() =>
+  !!lastResult.value?.pretPourAnneeSuivante && !palierRefuse.value && !!anneeSuivante.value)
+
+function accepterPalier() {
+  const n = tuteur.accepterAnneeSuivante(props.studentId, subjectId.value, programmeActuel.value, props.enfantPays)
+  palierRefuse.value = true // la proposition disparaît, le programme a changé
+  if (n) level.value = 3    // on reprend au milieu, cf. progressionNiveau.js
+}
+function refuserPalier() {
+  tuteur.refuserAnneeSuivante(props.studentId, subjectId.value)
+  palierRefuse.value = true
+}
 
 const phase = ref('answering')
 const revealed = ref(false)
@@ -499,7 +538,11 @@ async function start() {
   // `studentId` sert à écarter les questions déjà jouées par CET apprenant
   // (banque partagée + consigne à l'IA) : sans lui, un apprenant qui reste au
   // même niveau rejouait le même lot de questions séance après séance.
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: props.niveau, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest, studentId: props.studentId })
+  // Programme suivi POUR CETTE MATIÈRE : celui de la classe par défaut, celui
+  // de l'année suivante si l'apprenant a accepté de basculer. Un élève peut
+  // être en avance en anglais et à sa place en mathématiques.
+  const programme = (props.studentId && tuteur.getProgramme(props.studentId, subjectId.value)) || props.niveau
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest, studentId: props.studentId })
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []
@@ -701,6 +744,16 @@ onMounted(start)
 /* Phase de lecture : volontairement DISCRÈTE et sans pulsation. Rien ne doit
    presser l'apprenant pendant qu'il lit — c'est tout l'objet de cette phase. */
 .tq-timer.lecture { color: var(--tx3, #6b7280); background: rgba(120,120,128,.10); font-weight: 600; }
+.tq-palier {
+  display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+  margin: 14px 0; padding: 16px 18px; border-radius: 14px;
+  background: rgba(var(--pr-rgb,21,88,176),.07); text-align: left;
+}
+.tq-palier > svg { color: var(--pr); flex-shrink: 0; margin-top: 2px; }
+.tq-palier-txt { flex: 1; min-width: 200px; }
+.tq-palier-txt strong { display: block; font-size: 15px; color: var(--tx); }
+.tq-palier-txt p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--tx2, #4b5563); }
+.tq-palier-act { display: flex; gap: 8px; flex-wrap: wrap; width: 100%; }
 .tq-course-empty { margin: 0; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
 .tq-choices { display: flex; flex-direction: column; gap: 10px; }
 .tq-choice { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 15px; text-align: left; transition: all .15s; color: var(--tx); }

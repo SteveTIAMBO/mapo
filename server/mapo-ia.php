@@ -854,10 +854,14 @@ function buildTutorQuizPrompts($d) {
     4 => "Niveau 4 (avancé) : raisonnement en plusieurs étapes, pièges classiques, exige de la rigueur.",
     5 => "Niveau 5 (expert) : problèmes exigeants type examen, analyse fine, distracteurs très proches de la bonne réponse.",
   ];
-  // Au-delà de 5 : on continue de monter l'exigence (type concours/olympiade).
-  $diffDesc = $diff <= 5 ? $diffTable[$diff]
-    : "Niveau {$diff} (expert confirmé, au-delà de l'examen) : problèmes très exigeants de type concours/olympiade, "
-    . "raisonnement en plusieurs étapes, cas limites et distracteurs extrêmement proches ; monte encore d'un cran l'exigence par rapport au niveau 5.";
+  // La difficulté est BORNÉE À 5, et 5 signifie « niveau examen DU PROGRAMME
+  // DE CETTE CLASSE ». Il n'y a plus de palier « concours/olympiade » : il
+  // produisait, pour une élève de 6e arrivée au niveau 13, des questions hors
+  // de son programme — donc hors de ce que MAPO+ promet. Quand un apprenant
+  // maîtrise les 5 paliers, l'application lui propose de changer de PROGRAMME
+  // (l'année suivante), et c'est `niveau` qui bouge, pas la difficulté.
+  $diff = max(1, min(5, $diff));
+  $diffDesc = $diffTable[$diff];
 
   $system = "Tu es un tuteur pédagogique francophone bienveillant et rigoureux qui fait PROGRESSER l'élève dans la durée. {$contexte} "
     . "Tu crées un quiz de révision de {$count} questions à choix multiple sur la matière demandée, adapté au niveau de classe ET au niveau de difficulté indiqué. "
@@ -868,9 +872,11 @@ function buildTutorQuizPrompts($d) {
     // D'où cette levée d'ambiguïté explicite : la classe borne le PROGRAMME, pas
     // l'exigence.
     . ($diff >= 4
-        ? "ARBITRAGE, à respecter absolument : le niveau de classe délimite le PROGRAMME (les notions autorisées), il ne borne PAS l'exigence. "
-          . "À cette difficulté, une question de simple restitution ou d'application immédiate d'une règle de base est HORS SUJET, même si elle est au programme de la classe. "
-          . "Chaque question doit demander de combiner plusieurs notions, de trancher entre des cas voisins, ou de repérer une exception. "
+        ? "ARBITRAGE, à respecter absolument : monte l'exigence SANS SORTIR DU PROGRAMME DE LA CLASSE. "
+          . "À cette difficulté, une question de simple restitution est trop facile : demande de combiner plusieurs notions DU PROGRAMME, "
+          . "de trancher entre des cas voisins, ou de repérer une exception. "
+          . "Mais n'introduis AUCUNE notion qui appartient à une année supérieure : une question juste mais hors programme est une question ratée, "
+          . "elle décourage l'élève au lieu de le faire progresser. "
         : "")
     . "Méthode socratique : pour chaque question, l'INDICE oriente la réflexion SANS donner la réponse ; l'EXPLICATION justifie la bonne réponse. "
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "

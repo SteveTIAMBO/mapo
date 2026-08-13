@@ -4,6 +4,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { isMapoPlusTenant } from '../utils/tenantContext'
 import { enregistrerActivite, hydraterRecompenses } from '../utils/recompenses'
+import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, palierApresReussite, niveauSuivant } from '../utils/progressionNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
@@ -349,21 +350,34 @@ export const useTuteurStore = defineStore('tuteur', () => {
     } catch { /* offline / non autorisé : on garde l'état local */ }
   }
 
-  // Niveau de difficulté adaptatif : 1 (bases) → SANS PLAFOND. Plus l'apprenant
-  // révise et réussit, plus le challenge monte (la difficulté se corse à chaque cran).
-  const MAX_LEVEL = 0 // 0 = pas de plafond
+  // Difficulté adaptative BORNÉE PAR LA CLASSE : 5 paliers à l'intérieur du
+  // programme de l'année. Au-delà, on ne durcit plus, on PROPOSE de passer au
+  // programme suivant (cf. utils/progressionNiveau.js). Sans ce plafond, une
+  // élève de 6e atteignait le niveau 13 et recevait des questions de concours.
+  const MAX_LEVEL = PALIERS_PAR_CLASSE
 
   /** Enregistre le résultat d'un quiz et planifie la prochaine révision. */
   function recordResult(studentId, subjectId, subjectName, scorePercent) {
     const data = loadRevisions(studentId)
     const prev = data[subjectId] || { mastery: 0, attempts: 0, level: 1 }
-    const prevLevel = prev.level || 1
+    // Les profils existants portent des paliers hérités > 5 (13 pour certains) :
+    // on les ramène dans l'échelle plutôt que de les laisser dériver.
+    const prevLevel = Math.min(PALIERS_PAR_CLASSE, Math.max(1, prev.level || 1))
     // Maîtrise = moyenne mobile (donne du poids à la dernière session)
     const mastery = Math.round(prev.attempts ? prev.mastery * 0.5 + scorePercent * 0.5 : scorePercent)
     // Difficulté ADAPTATIVE : on réussit bien → on monte ; on bute → on consolide.
     let level = prevLevel
-    if (scorePercent >= 80) level = prevLevel + 1 // pas de plafond : le niveau monte tant qu'on réussit
-    else if (scorePercent < 50) level = Math.max(1, prevLevel - 1)
+    let pretPourAnneeSuivante = !!prev.pretPourAnneeSuivante
+    if (scorePercent >= 80) {
+      const r = palierApresReussite(prevLevel)
+      level = r.palier
+      // Une seule réussite au sommet suffit à déclencher la PROPOSITION. Elle
+      // reste posée jusqu'à ce que l'apprenant l'accepte ou la refuse : on ne
+      // la redemande pas à chaque quiz.
+      if (r.pretPourAnneeSuivante) pretPourAnneeSuivante = true
+    } else if (scorePercent < 50) {
+      level = Math.max(1, prevLevel - 1)
+    }
     const levelChange = level - prevLevel // +1 monté, -1 redescendu, 0 stable
     // Intervalle selon le score : faible → revoir vite, fort → espacer
     const days = scorePercent >= 80 ? 7 : scorePercent >= 50 ? 3 : 1
@@ -373,6 +387,12 @@ export const useTuteurStore = defineStore('tuteur', () => {
       mastery,
       lastScore: scorePercent,
       level,
+      // Programme sur lequel l'apprenant révise CETTE matière. Vide = celui de
+      // sa classe. Il ne change QUE s'il accepte explicitement de passer à
+      // l'année suivante : un élève peut être en avance en anglais et à sa
+      // place en mathématiques.
+      programme: prev.programme || '',
+      pretPourAnneeSuivante,
       attempts: (prev.attempts || 0) + 1,
       lastReviewed: new Date().toISOString(),
       due,
@@ -387,7 +407,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     if (isMapoPlusTenant()) {
       try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }
     }
-    return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL }
+    return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL, pretPourAnneeSuivante }
   }
 
   // ── Historique des révisions (rejouable, économe : pas de re-génération IA) ──
@@ -490,7 +510,43 @@ export const useTuteurStore = defineStore('tuteur', () => {
   /** Niveau de difficulté courant pour (élève, matière). Défaut : 1. */
   function getLevel(studentId, subjectId) {
     const data = loadRevisions(studentId)
-    return (data[subjectId] && data[subjectId].level) || 1
+    const brut = (data[subjectId] && data[subjectId].level) || 1
+    // Les profils créés avant le plafonnement portent des paliers hérités (13
+    // pour certains). On les ramène dans l'échelle À LA LECTURE : sans ça, le
+    // premier quiz repartirait au niveau concours qu'on vient d'interdire.
+    return Math.min(PALIERS_PAR_CLASSE, Math.max(1, brut))
+  }
+
+  /**
+   * L'apprenant accepte de passer au programme de l'année suivante pour CETTE
+   * matière. On repart au palier du milieu : il vient de prouver qu'il maîtrise
+   * l'année précédente, le renvoyer aux bases serait décourageant et faux.
+   */
+  function accepterAnneeSuivante(studentId, subjectId, classeActuelle, pays) {
+    const data = loadRevisions(studentId)
+    const e = data[subjectId]
+    if (!e) return null
+    const base = e.programme || classeActuelle
+    const suivant = niveauSuivant(base, pays)
+    if (!suivant) return null // déjà en haut de l'échelle : rien à proposer
+    data[subjectId] = { ...e, programme: suivant, level: PALIER_APRES_CHANGEMENT, pretPourAnneeSuivante: false }
+    saveRevisions(studentId, data)
+    revisionsVersion.value++
+    return suivant
+  }
+
+  /** L'apprenant décline : on ne le relance pas à chaque quiz. */
+  function refuserAnneeSuivante(studentId, subjectId) {
+    const data = loadRevisions(studentId)
+    if (!data[subjectId]) return
+    data[subjectId] = { ...data[subjectId], pretPourAnneeSuivante: false }
+    saveRevisions(studentId, data)
+    revisionsVersion.value++
+  }
+
+  /** Programme suivi pour une matière (vide = celui de la classe). */
+  function getProgramme(studentId, subjectId) {
+    return (loadRevisions(studentId)[subjectId] || {}).programme || ''
   }
 
   function getRevisionState(studentId) {
@@ -1122,6 +1178,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
   return {
     generating, planning, lastMode, lastReason, revisionsVersion, conversationsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
+    accepterAnneeSuivante, refuserAnneeSuivante, getProgramme,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
