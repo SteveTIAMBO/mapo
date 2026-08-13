@@ -34,6 +34,10 @@
           class="ma-tab" :class="{ active: tab === 'comptesMapoplus' }"
           role="tab" type="button" @click="tab = 'comptesMapoplus'"
         >Comptes MAPO+</button>
+        <button
+          class="ma-tab" :class="{ active: tab === 'codes' }"
+          role="tab" type="button" @click="tab = 'codes'"
+        >Codes crédits</button>
       </div>
 
       <!-- Vue Paiements scolarité -->
@@ -44,6 +48,9 @@
 
       <!-- Vue Comptes MAPO+ (registre des inscrits B2C) -->
       <MegaMapoplusUsers v-else-if="tab === 'comptesMapoplus'" />
+
+      <!-- Codes de crédits offerts (écoles pilotes, familles témoins, tests) -->
+      <MegaCodesCredits v-else-if="tab === 'codes'" />
 
       <!-- Vue Établissements (existante) -->
       <template v-else>
@@ -520,6 +527,7 @@ import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, PACKS, packModules,
 import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
 import MegaMapoplusUsers from './admin/MegaMapoplusUsers.vue'
+import MegaCodesCredits from './admin/MegaCodesCredits.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
