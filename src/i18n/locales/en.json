@@ -5564,7 +5564,9 @@
     "plafondLabel": "Weekly cap",
     "plafondAucun": "None",
     "saved2": "Apply",
-    "epuisePlafondEnfant": "You have reached the limit your parent set for this week."
+    "epuisePlafondEnfant": "You have reached the limit your parent set for this week.",
+    "accessSons": "Quiz sounds",
+    "accessSonsDesc": "A short sound on correct answers and streaks. Nothing harsh."
   },
   "cx": {
     "appTitle": "Complex workspace",

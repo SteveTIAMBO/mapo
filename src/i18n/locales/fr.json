@@ -5564,7 +5564,9 @@
     "plafondLabel": "Plafond / semaine",
     "plafondAucun": "Aucun",
     "saved2": "Appliquer",
-    "epuisePlafondEnfant": "Tu as atteint la limite que ton parent a fixée pour cette semaine."
+    "epuisePlafondEnfant": "Tu as atteint la limite que ton parent a fixée pour cette semaine.",
+    "accessSons": "Sons du quiz",
+    "accessSonsDesc": "Un son court quand la réponse est juste, et sur les séries. Rien de strident."
   },
   "cx": {
     "appTitle": "Espace complexe",

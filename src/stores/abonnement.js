@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { auth } from '../firebase'
 import { useAuthStore } from './auth'
 import { OFFRES as OFFRES_DEFAUT, OFFRE_GRATUITE, REMISE_FAMILLE, CREDIT_PACKS } from '../config/offres'
@@ -156,11 +156,38 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     } catch { return { ok: false } }
   }
 
+  /**
+   * ⚠️ COURSE À L'INITIALISATION, corrigée le 13/08.
+   *
+   * Le lien de famille (`linkedOwnerUid` / `linkedEnfantId`) est résolu par
+   * `enfantsAutonomes.hydrate()`. Or les composants ENFANTS montent AVANT leur
+   * vue parente : `MiapoAlerteUsage` appelait donc `load()` avant que le lien
+   * soit connu. Sans déclaration de famille, le serveur répondait avec le
+   * compte PROPRE de l'enfant — zéro, puisqu'il n'a pas de jauge à lui — et
+   * l'app annonçait « crédits épuisés » à une enfant dont la famille avait près
+   * de deux millions de crédits.
+   *
+   * On re-demande donc l'état dès que le lien apparaît. Une surveillance, pas
+   * un ordre d'appel imposé : elle tient quel que soit l'ordre de montage, y
+   * compris pour les écrans qu'on ajoutera plus tard.
+   */
+  let lienSurveille = false
+  async function surveillerLienFamille() {
+    if (lienSurveille) return
+    lienSurveille = true
+    try {
+      const { useEnfantsAutonomesStore } = await import('./enfantsAutonomes')
+      const e = useEnfantsAutonomesStore()
+      watch(() => e.linkedEnfantId, (id) => { if (id) fetchState() })
+    } catch { /* sans effet : on garde l'état déjà chargé */ }
+  }
+
   async function load() {
     await fetchOffres()
     if (isDemo.value) { loadLocal(); return }
     const ok = await fetchState()
     if (!ok) loadLocal()
+    surveillerLienFamille()
   }
 
   // ── Démo (local) ──

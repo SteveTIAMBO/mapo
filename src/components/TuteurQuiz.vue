@@ -33,6 +33,12 @@
         </div>
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
+      <!-- Série en cours. C'est le ressort qui fait revenir : ce qu'on protège
+           n'est pas un score, c'est une SUITE — et on ne veut pas la casser.
+           Affichée à partir de 2, sinon elle n'a rien à protéger. -->
+      <transition name="tq-pop">
+        <div v-if="serie >= 2 && !revealed" class="tq-serie"><Flame :size="14" /> <span>{{ serie }} d'affilée</span></div>
+      </transition>
       <div v-if="timerSeconds > 0 && !revealed" class="tq-timer" :class="{ low: !enLecture && timeLeft <= 3, lecture: enLecture }">
         <component :is="enLecture ? BookOpen : Timer" :size="14" />
         <span>{{ enLecture ? (locale.startsWith('en') ? 'Read the question…' : 'Lis la question…') : timeLeft + 's' }}</span>
@@ -70,6 +76,7 @@
           <span class="tq-letter">{{ letters[i] }}</span>
           <span class="tq-text">{{ c }}</span>
           <Check v-if="revealed && i === current.answer" :size="18" class="ic ok" />
+          <span v-if="revealed && i === current.answer" class="tq-eclat" aria-hidden="true"></span>
           <X v-else-if="wrongSet.has(i)" :size="18" class="ic ko" />
         </button>
       </div>
@@ -130,6 +137,7 @@
       <div class="tq-ring" :class="{ perfect: masteryPercent === 100 }" :style="ringStyle"><span>{{ masteryPercent }}%</span></div>
       <h2>{{ resultTitle }}</h2>
       <p class="tq-sub">{{ firstTryCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'first try' : 'du premier coup' }} · {{ correctCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'correct' : 'trouvées' }} — {{ matiere }}</p>
+      <p v-if="meilleureSerie >= 2" class="tq-serie-fin"><Flame :size="15" /> {{ locale.startsWith('en') ? `Best streak: ${meilleureSerie}` : `Meilleure série : ${meilleureSerie} d'affilée` }}</p>
 
       <!-- Feedback de progression adaptative -->
       <div v-if="lastResult" class="tq-level-fb" :class="levelFb.tone">
@@ -196,11 +204,12 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
+import { Loader2, Check, X, Lightbulb, BookOpen, Flame, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { tempsLectureSecondes } from '../utils/tempsLecture'
+import { sonJuste, sonFaux, sonSerie, sonVictoire } from '../utils/sons'
 import { niveauSuivant } from '../utils/progressionNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
@@ -428,6 +437,10 @@ function onTimeout() {
 // Provenance des questions (disclaimer léger au lancement) : cours / référentiel / mix.
 const sourceRev = ref('')
 const motifEpuise = ref('credits_epuises') // 'credits_epuises' | 'plafond_atteint'
+// Série de bonnes réponses D'AFFILÉE, du premier coup. Remise à zéro à la
+// première erreur : une série qui survit à un échec ne veut plus rien dire.
+const serie = ref(0)
+const meilleureSerie = ref(0)
 const sourceLabel = computed(() => {
   const en = locale.value.startsWith('en')
   if (sourceRev.value === 'cours') return en ? 'Questions based on your imported courses.' : 'Questions tirées de tes cours importés.'
@@ -555,6 +568,8 @@ async function start() {
 }
 
 function resetQ() {
+  // NB : `serie` n'est PAS remise à zéro ici — elle traverse les questions,
+  // c'est tout son intérêt.
   phase.value = 'answering'; revealed.value = false; firstTry.value = false; qGrade.value = 0
   attempts.value = 0; wrongSet.value = new Set()
 }
@@ -565,8 +580,19 @@ function select(i) {
     revealed.value = true; phase.value = 'revealed'; firstTry.value = attempts.value === 0
     // Trouvé : 1 point au 1er coup, 0.5 au 2e (note graduée cachée).
     qGrade.value = attempts.value === 0 ? 1 : 0.5
+    // La série ne compte que les réussites DU PREMIER COUP : trouver après deux
+    // essais, c'est bien, mais ce n'est pas la même chose.
+    if (firstTry.value) {
+      serie.value++
+      meilleureSerie.value = Math.max(meilleureSerie.value, serie.value)
+      if (serie.value >= 2) sonSerie(serie.value); else sonJuste()
+    } else {
+      sonJuste()
+    }
   } else {
     attempts.value++
+    serie.value = 0 // une erreur casse la série, c'est ce qui lui donne sa valeur
+    sonFaux()
     const ws = new Set(wrongSet.value); ws.add(i); wrongSet.value = ws
     if (attempts.value >= 2) { revealed.value = true; phase.value = 'revealed'; firstTry.value = false; qGrade.value = 0 }
     else phase.value = 'hinted'
@@ -607,6 +633,7 @@ function finish() {
   clearTimer()
   // La PROGRESSION est pilotée par le score de MAÎTRISE pondéré (caché), pas par
   // le simple taux de bonnes réponses : trouver du 1er coup fait vraiment monter.
+  if (masteryPercent.value >= 80) sonVictoire()
   lastResult.value = props.studentId
     ? tuteur.recordResult(props.studentId, subjectId.value, props.matiere, masteryPercent.value)
     : null
@@ -836,5 +863,36 @@ onMounted(start)
   .btn-primary { padding: 11px 18px; font-size: 14px; }
   .tq-ring { width: 104px; height: 104px; }
   .tq-ring::before { width: 80px; height: 80px; }
+}
+
+/* ── Mode jeu : série, éclat sur la bonne réponse ────────────────────
+   Toutes les animations sont neutralisées si le système demande moins de
+   mouvement (prefers-reduced-motion) — certains enfants y sont sensibles, et
+   c'est une règle d'accessibilité, pas une option. */
+.tq-serie {
+  display: inline-flex; align-items: center; gap: 6px; align-self: center;
+  margin: -2px 0 10px; padding: 4px 12px; border-radius: 20px;
+  font-size: 13px; font-weight: 800; color: #C2571A; background: rgba(194,87,26,.10);
+}
+.tq-serie svg { color: #C2571A; }
+.tq-pop-enter-active { animation: tqpop .32s cubic-bezier(.2,1.4,.4,1); }
+@keyframes tqpop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.tq-serie-fin {
+  display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0;
+  font-size: 13.5px; font-weight: 700; color: #C2571A;
+}
+/* Éclat bref sur la bonne réponse : une onde qui part du bouton. Discret —
+   on souligne la réussite, on ne la fête pas bruyamment à chaque question. */
+.tq-eclat {
+  position: absolute; inset: 0; border-radius: 12px; pointer-events: none;
+  animation: tqeclat .55s ease-out forwards;
+}
+@keyframes tqeclat {
+  from { box-shadow: 0 0 0 0 rgba(22,163,74,.45); }
+  to { box-shadow: 0 0 0 14px rgba(22,163,74,0); }
+}
+.tq-choice { position: relative; }
+@media (prefers-reduced-motion: reduce) {
+  .tq-pop-enter-active, .tq-eclat { animation: none; }
 }
 </style>

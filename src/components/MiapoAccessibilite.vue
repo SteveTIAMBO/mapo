@@ -4,6 +4,21 @@
     <p class="muted">{{ t('mia.accessHint') }}</p>
 
     <ul class="opts">
+      <!-- Sons du quiz. Placés ici plutôt que dans un « mode jeu » à part : pour
+           un enfant sensible au bruit, ou qui révise à côté de quelqu'un, c'est
+           un besoin d'accessibilité avant d'être un réglage de confort. -->
+      <li>
+        <div class="opt-txt">
+          <span class="opt-title">{{ t('mia.accessSons') }}</span>
+          <span class="opt-desc">{{ t('mia.accessSonsDesc') }}</span>
+        </div>
+        <button
+          type="button" role="switch" class="switch" :class="{ on: sons }"
+          :aria-checked="sons ? 'true' : 'false'"
+          :aria-label="t('mia.accessSons')"
+          @click="basculerSons"
+        ><span class="knob" /></button>
+      </li>
       <li>
         <div class="opt-txt">
           <span class="opt-title">{{ t('mia.accessContrast') }}</span>
@@ -49,6 +64,9 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
+import { sonActif, definirSon, sonJuste } from '../utils/sons'
+
 import { useI18n } from 'vue-i18n'
 import { useAccessibiliteStore } from '../stores/accessibilite'
 import { Accessibility } from 'lucide-vue-next'
@@ -57,6 +75,16 @@ const { t } = useI18n({ useScope: 'global' })
 const a11y = useAccessibiliteStore()
 
 function reset() { a11y.contraste = false; a11y.grandTexte = false; a11y.animOff = false }
+
+const sons = ref(sonActif())
+function basculerSons() {
+  sons.value = !sons.value
+  definirSon(sons.value)
+  // On JOUE le son en l'activant : l'utilisateur doit entendre ce qu'il vient
+  // d'allumer, sinon il ne sait pas si ça a marché. Et le geste de clic autorise
+  // le contexte audio (règle des navigateurs), donc c'est le bon moment.
+  if (sons.value) sonJuste()
+}
 </script>
 
 <style scoped>

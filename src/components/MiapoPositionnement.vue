@@ -1,5 +1,11 @@
 <template>
   <div class="pos">
+    <!-- Retour toujours accessible, à toutes les étapes. Sans lui, l'apprenant
+         qui ouvrait une matière par erreur était pris au piège de l'écran de
+         positionnement — la seule sortie était de changer de section. -->
+    <button type="button" class="pos-back" @click="$emit('quitter')">
+      <ChevronLeft :size="16" /> <span>Retour</span>
+    </button>
     <!-- Proposition : on demande, on n'impose pas. Un apprenant pressé doit
          pouvoir réviser tout de suite. -->
     <div v-if="etape === 'invitation'" class="card pos-invit">
@@ -63,7 +69,7 @@
  *   - le résultat dit ce que l'apprenant maîtrise, pas ce qui lui manque.
  */
 import { ref, computed } from 'vue'
-import { Compass, Loader2, Sparkles } from 'lucide-vue-next'
+import { Compass, Loader2, Sparkles, ChevronLeft } from 'lucide-vue-next'
 import { useTuteurStore } from '../stores/tuteur'
 import { palierDeDepart, messagePositionnement } from '../utils/positionnement'
 
@@ -72,7 +78,7 @@ const props = defineProps({
   niveau: { type: String, default: '' },
   themes: { type: String, default: '' },
 })
-const emit = defineEmits(['termine', 'passer'])
+const emit = defineEmits(['termine', 'passer', 'quitter'])
 
 const tuteur = useTuteurStore()
 const etape = ref('invitation') // invitation | test | fin
@@ -118,6 +124,12 @@ function repondre(i) {
 </script>
 
 <style scoped>
+.pos-back {
+  display: inline-flex; align-items: center; gap: 5px; margin-bottom: 10px;
+  padding: 6px 10px 6px 6px; border: none; border-radius: 9px; background: transparent;
+  color: var(--tx3, #6b7280); font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: inherit;
+}
+.pos-back:hover { background: rgba(120,120,128,.12); color: var(--tx); }
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 18px; padding: 26px 22px; }
 .pos-invit, .pos-fin { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
 .pos-invit > svg, .pos-fin > svg { color: var(--pr); }

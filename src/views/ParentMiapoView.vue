@@ -347,6 +347,7 @@
             <MiapoPositionnement
               :matiere="quizMatiere" :niveau="quizNiveau" :themes="quizThemes"
               @termine="onPositionnementFini" @passer="onPositionnementPasse"
+              @quitter="quizMatiere = ''; quizThemes = ''; positionnementAFaire = false"
             />
           </div>
           <div v-else-if="quizMatiere" class="card">
