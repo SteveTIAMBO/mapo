@@ -9,7 +9,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore --project mapo-regles-test \"vitest run tests/regles-firestore.test.js --config vitest.rules.config.js\""
+    "test:rules": "firebase emulators:exec --only firestore --project mapo-regles-test \"vitest run tests/regles-firestore.test.js --config vitest.rules.config.js\"",
+    "test:enfants": "node tests/enfants-stockage.test.mjs",
+    "test:all": "npm run test && npm run test:enfants"
   },
   "dependencies": {
     "@vueuse/core": "^14.2.1",

@@ -7,10 +7,24 @@ describe('store superieur — démo université LMD', () => {
     setActivePinia(createPinia())
   })
 
-  it('expose 5 programmes (Gestion, Droit, Doctorat) et 13 promotions', () => {
-    expect(PROGRAMMES).toHaveLength(5)
-    expect(PROMOTIONS).toHaveLength(13)
-    expect(PROGRAMMES.map((p) => p.niveau)).toEqual(['Licence', 'Master', 'Licence', 'Master', 'Doctorat'])
+  // ⚠️ Ce test attendait « 5 programmes, 13 promotions ». Le catalogue de démo a
+  // grandi (BTS, licence Communication…) et il est resté ROUGE plusieurs jours,
+  // sans rien signaler d'utile : la donnée avait bougé, pas le produit. Un
+  // nombre figé se périme au premier ajout et finit par être ignoré — ce qui est
+  // pire qu'un test absent. On vérifie donc ce qui doit RESTER vrai.
+  it('le catalogue est cohérent : au moins un programme, chacun avec ses promotions', () => {
+    expect(PROGRAMMES.length).toBeGreaterThan(0)
+    expect(PROMOTIONS.length).toBeGreaterThanOrEqual(PROGRAMMES.length)
+    // Chaque promotion appartient à un programme existant, et chaque programme
+    // a au moins une promotion : c'est ça, l'invariant du catalogue.
+    const ids = new Set(PROGRAMMES.map((p) => p.id))
+    for (const promo of PROMOTIONS) expect(ids.has(promo.programmeId)).toBe(true)
+    for (const p of PROGRAMMES) {
+      expect(PROMOTIONS.some((x) => x.programmeId === p.id)).toBe(true)
+    }
+    // Les niveaux restent dans la nomenclature LMD.
+    const connus = ['BTS', 'Licence', 'Master', 'Doctorat']
+    for (const p of PROGRAMMES) expect(connus).toContain(p.niveau)
   })
 
   it('charge des étudiants, intervenants et UE', () => {
@@ -80,8 +94,10 @@ describe('store superieur — démo université LMD', () => {
     const store = useSuperieurStore()
     const s = store.stats
     expect(s.nbEtudiants).toBe(store.etudiants.length)
-    expect(s.nbProgrammes).toBe(5)
-    expect(s.nbPromotions).toBe(13)
+    // Les compteurs du tableau de bord doivent SUIVRE le catalogue, quel qu'il
+    // soit — c'est ce qu'on veut vraiment garantir.
+    expect(s.nbProgrammes).toBe(PROGRAMMES.length)
+    expect(s.nbPromotions).toBe(PROMOTIONS.length)
     expect(s.tauxProgressionEcts).toBeGreaterThan(0)
     expect(s.tauxProgressionEcts).toBeLessThanOrEqual(100)
     expect(s.parProgramme.reduce((x, p) => x + p.effectif, 0)).toBe(s.nbEtudiants)

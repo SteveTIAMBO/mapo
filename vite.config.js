@@ -99,6 +99,12 @@ export default defineConfig({
     // Les tests de RÈGLES Firestore ont besoin de l'émulateur : ils échoueraient
     // tous ici et noieraient les vraies régressions dans du bruit. Ils ont leur
     // propre commande, `npm run test:rules`, qui démarre l'émulateur.
-    exclude: ['**/node_modules/**', '**/dist/**', 'tests/regles-firestore.test.js'],
+    // `tests/enfants-stockage.test.mjs` est un script AUTONOME (son en-tête le
+    // dit : `node tests/enfants-stockage.test.mjs`). Il recopie le store dans
+    // un dossier temporaire et l'importe par chemin ABSOLU, hors du projet —
+    // ce que la résolution de modules de Vite ne sait pas suivre. Sous vitest
+    // il échouait au chargement et polluait le rapport, alors qu'il passe
+    // intégralement sous node. Il a son propre script : `npm run test:enfants`.
+    exclude: ['**/node_modules/**', '**/dist/**', 'tests/regles-firestore.test.js', 'tests/enfants-stockage.test.mjs'],
   },
 })

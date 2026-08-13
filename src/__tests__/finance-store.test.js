@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useSuperieurStore } from '../stores/superieur'
+import { useSuperieurStore, PROMOTIONS } from '../stores/superieur'
 import { useFinanceStore, MODELES_ECHEANCIER, TYPES_FINANCEMENT, FIN_TODAY } from '../stores/finance'
 
 /**
@@ -26,7 +26,9 @@ describe('store finance — Frais & scolarité', () => {
 
   it('initialise les grilles tarifaires (une par promotion)', () => {
     const fin = useFinanceStore()
-    expect(fin.tarifs.length).toBe(13) // une grille par promotion (Gestion + Droit + École doctorale)
+    // « Une grille par promotion » est la règle ; 13 n'en était qu'une
+    // photographie, périmée dès que le catalogue de démo s'est étoffé.
+    expect(fin.tarifs.length).toBe(PROMOTIONS.length)
     for (const t of fin.tarifs) {
       expect(t.fraisInscription).toBeGreaterThan(0)
       expect(t.fraisScolarite).toBeGreaterThan(0)
