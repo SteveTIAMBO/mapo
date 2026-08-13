@@ -63,6 +63,37 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
 
+    // ── Ligues hebdomadaires (classement à l'effort) ─────────────────
+    //
+    // Une ligue par (semaine ISO, niveau de classe). Chaque participant écrit
+    // UNIQUEMENT sa propre entrée, et lit toute la ligue pour voir le classement.
+    //
+    // ⚠️ CE QUI EST EXPOSÉ, ET POURQUOI SI PEU. Ce sont des MINEURS : l'entrée
+    // ne porte QUE le prénom et un total de points. Jamais de nom de famille,
+    // d'école, de pays, d'âge, ni de résultats. Un classement ne doit pas
+    // devenir un annuaire d'enfants.
+    //
+    // ⚠️ Les points sont calculés CÔTÉ CLIENT à ce stade : un utilisateur
+    // averti peut donc gonfler son score. Assumé pour le lancement (cohortes de
+    // proches, enjeu nul). À déplacer côté serveur avant toute récompense qui
+    // a une valeur monétaire — un bon d'achat truqué, c'est une autre affaire.
+    match /ligues/{ligueId}/membres/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn()
+        && request.auth.uid == uid
+        && request.resource.data.points is int
+        && request.resource.data.points >= 0
+        // Garde-fou grossier contre le score absurde : même en révisant tous
+        // les jours, on ne dépasse pas cet ordre de grandeur en une semaine.
+        && request.resource.data.points <= 100000
+        && request.resource.data.prenom is string
+        && request.resource.data.prenom.size() <= 40
+        // La liste des champs est FERMÉE : on n'accepte rien d'autre, pour que
+        // personne ne glisse une donnée personnelle dans un document public.
+        && request.resource.data.keys().hasOnly(['points', 'prenom', 'maj']);
+      allow delete: if isSignedIn() && request.auth.uid == uid;
+    }
+
     // ── Diplômes vérifiables (registre public) ───────────────────────
     // Lecture PUBLIQUE par code → vérification d'authenticité SANS compte
     // (page /verifier, depuis n'importe quel appareil). Émission/révocation

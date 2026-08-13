@@ -231,3 +231,46 @@ describe('récompenses — elles suivent l’enfant, pas l’appareil', () => {
     await assertFails(setDoc(doc(dbEnfant(), 'users', PARENT, 'revisions', `recompenses_${ENFANT_ID}-bis`), { total: 1 }))
   })
 })
+
+describe('ligues — un classement d’enfants expose le strict minimum', () => {
+  const LIGUE = '202633_6eme'
+  const monEntree = (db, uid) => doc(db, "ligues", LIGUE, "membres", uid)
+
+  it('j’écris MON entrée : prénom et points, rien d’autre', async () => {
+    await assertSucceeds(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 120, prenom: 'Marie', maj: '2026-08-13T10:00:00Z' }))
+  })
+
+  it('je lis toute la ligue — sans ça il n’y a pas de classement', async () => {
+    await assertSucceeds(getDoc(monEntree(dbEnfant(), ENFANT)))
+    await assertSucceeds(getDoc(monEntree(dbParent(), ENFANT)))
+  })
+
+  it('je ne peux PAS écrire l’entrée de quelqu’un d’autre', async () => {
+    await assertFails(setDoc(monEntree(dbEnfant(), 'un-autre-enfant'),
+      { points: 99999, prenom: 'Pirate', maj: '2026-08-13T10:00:00Z' }))
+  })
+
+  it('aucune donnée personnelle ne peut se glisser dans un document public', async () => {
+    // C'est le cœur de la protection : la liste des champs est FERMÉE. Sans
+    // elle, un client modifié publierait l'école, le pays ou l'âge d'un mineur.
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 10, prenom: 'Marie', maj: 'x', ecole: 'Collège X' }))
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 10, prenom: 'Marie', maj: 'x', nom: 'Nkeng' }))
+  })
+
+  it('un score absurde est refusé', async () => {
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 999999999, prenom: 'Marie', maj: 'x' }))
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: -5, prenom: 'Marie', maj: 'x' }))
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 'beaucoup', prenom: 'Marie', maj: 'x' }))
+  })
+
+  it('un prénom démesuré est refusé (pas de texte libre dans un doc public)', async () => {
+    await assertFails(setDoc(monEntree(dbEnfant(), ENFANT),
+      { points: 10, prenom: 'M'.repeat(200), maj: 'x' }))
+  })
+})
