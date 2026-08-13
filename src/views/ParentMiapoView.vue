@@ -339,7 +339,17 @@
 
         <!-- ========== TUTEUR ========== -->
         <section v-else-if="section === 'tuteur'" class="sec">
-          <div v-if="quizMatiere" class="card">
+          <!-- Premier contact avec la matière : on propose de situer l'élève
+               avant de lancer le quiz. Sans bulletin — le cas courant en B2C —
+               tout le monde démarrait au palier 1 et s'ennuyait plusieurs
+               séances avant que l'adaptation le rattrape. -->
+          <div v-if="quizMatiere && positionnementAFaire" class="card">
+            <MiapoPositionnement
+              :matiere="quizMatiere" :niveau="quizNiveau" :themes="quizThemes"
+              @termine="onPositionnementFini" @passer="onPositionnementPasse"
+            />
+          </div>
+          <div v-else-if="quizMatiere" class="card">
             <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.passions || ''" :preset-questions="quizPreset" :timer-seconds="quizTimer" :enfant-pays="activeEnfant.pays || ''" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
@@ -1197,6 +1207,7 @@ import MiapoInterets from '../components/MiapoInterets.vue'
 import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
+import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
 import MiapoLienEcole from '../components/MiapoLienEcole.vue'
@@ -2031,6 +2042,22 @@ watch([() => section.value, activeId], () => { if (section.value === 'profil') {
 watch(() => activeEnfant.value?.pays, (p) => abo.refreshDevise(p || ''), { immediate: true })
 
 const quizMatiere = ref('')
+// Positionnement : décidé À L'OUVERTURE de la matière et figé pour la session
+// de révision. Sans ça, l'écrire dans le store rebasculerait aussitôt sur le
+// quiz au milieu du test.
+const positionnementAFaire = ref(false)
+function onPositionnementFini(palier) {
+  try {
+    tuteur.enregistrerPositionnement(activeEnfant.value.id, 'auto-' + quizMatiere.value, quizMatiere.value, palier)
+  } catch { /* best-effort : ne doit jamais empêcher de réviser */ }
+  positionnementAFaire.value = false
+}
+function onPositionnementPasse() {
+  try {
+    tuteur.refuserPositionnement(activeEnfant.value.id, 'auto-' + quizMatiere.value, quizMatiere.value)
+  } catch { /* idem */ }
+  positionnementAFaire.value = false
+}
 const quizTimer = ref(0) // minuteur/question choisi avant lancement (0 = off, 10 = 10 s)
 const reviseMatiere = ref('')
 // Thème en attente (« quiz sur les fractions » sans matière rattachable) : appliqué
@@ -2122,6 +2149,9 @@ function goRevise(matiere, themes) {
   quizPreset.value = null
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
+  // Décidé UNE FOIS, à l'ouverture : le test ne se propose qu'au tout premier
+  // contact avec la matière (jamais joué et jamais positionné).
+  positionnementAFaire.value = tuteur.doitProposerPositionnement(activeEnfant.value?.id, 'auto-' + matiere)
   section.value = 'tuteur'
 }
 // Clic sur une matière « à réviser » : on NE lance PAS un quiz d'office — on
@@ -2166,6 +2196,7 @@ function rejouerSession(s) {
   quizPreset.value = s.questions
   quizThemes.value = ''
   quizMatiere.value = s.subjectName || s.subjectId || ''
+  positionnementAFaire.value = false // un rejeu n'est pas un premier contact
   section.value = 'tuteur'
 }
 // Toutes les révisions sont archivées (quiz, session guidée, fiches, rédaction) :

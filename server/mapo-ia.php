@@ -80,8 +80,12 @@ if (!defined('IA_API_KEY') || IA_API_KEY === '' || strpos(IA_API_KEY, 'A_REMPLIR
 // ── 1. Lire la requête ────────────────────────────────────────────────
 $body = json_decode(file_get_contents('php://input'), true);
 if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'requete_invalide']); exit; }
+// ⚠️ LISTE BLANCHE DES TÂCHES. Toute tâche absente d'ici retombe SILENCIEUSEMENT
+// sur 'appreciation' : la requête réussit (HTTP 200, ok:true) et renvoie une
+// appréciation de bulletin. L'échec ressemble donc au succès. Ajouter la tâche
+// ICI en même temps que son buildXxxPrompts().
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'dictee_correction', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'positionnement', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'dictee_correction', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -263,6 +267,7 @@ function mapo_alerter_parent_credits($uid, $restant, $cap, $etat) {
 // ════════════════════════════════════════════════════════════════════
 function buildPrompts($task, $d) {
   if ($task === 'tutor_quiz') return buildTutorQuizPrompts($d);
+  if ($task === 'positionnement') return buildPositionnementPrompts($d);
   if ($task === 'dictee') return buildDicteePrompts($d);
   if ($task === 'dictee_correction') return buildDicteeCorrectionPrompts($d);
   if ($task === 'appariement') return buildAppariementPrompts($d);
@@ -904,6 +909,47 @@ function buildTutorQuizPrompts($d) {
   // observés ; 3600 ne laissait passer que ~7 questions → on monte à 5400).
   // Le parseur récupère quand même les questions complètes si jamais tronqué.
   return [$system, $u, 5400, false, null];
+}
+
+// ── Test de positionnement : placer un apprenant qui débute une matière ──
+//
+// Huit questions, DEUX par palier de 1 à 4, dans le programme de la classe.
+// Deux par palier parce qu'un QCM à quatre choix se devine une fois sur quatre :
+// sur une seule question, on placerait au hasard. Le palier 5 n'est pas testé,
+// c'est le sommet du programme de l'année — il se mérite en jouant.
+//
+// Chaque question porte son `niveau` : c'est lui qui permet au client de
+// remonter les paliers un par un et de s'arrêter au premier trou.
+function buildPositionnementPrompts($d) {
+  $matiere = clean($d['matiere'] ?? 'Culture générale', 50);
+  $niveau  = clean($d['niveau'] ?? '', 30);
+  $themes  = clean($d['themes'] ?? '', 2000);
+  $contexte = "Élève d'Afrique francophone (programme proche des systèmes camerounais/sénégalais/français).";
+
+  $system = "Tu es un enseignant qui fait passer un TEST DE POSITIONNEMENT à un élève qui commence à réviser cette matière. {$contexte} "
+    . "But : situer son niveau RÉEL dans le programme de sa classe, pas le juger. "
+    . "Produis EXACTEMENT 8 questions à choix multiple, réparties ainsi : "
+    . "2 questions de niveau 1 (bases incontournables, début d'année), "
+    . "2 de niveau 2 (application directe d'une règle connue), "
+    . "2 de niveau 3 (deux notions combinées, distracteurs plausibles), "
+    . "2 de niveau 4 (raisonnement en plusieurs étapes, pièges classiques). "
+    . "TOUT doit rester DANS LE PROGRAMME DE LA CLASSE indiquée : une question hors programme fausserait le placement "
+    . "et découragerait l'élève dès son premier contact. "
+    . "Couvre des CHAPITRES DIFFÉRENTS : le test doit balayer l'année, pas creuser une seule notion. "
+    . "Ordonne les questions du niveau 1 au niveau 4, pour que l'élève sente la montée et n'abandonne pas d'entrée. "
+    . "L'explication est COURTE et positive : elle apprend quelque chose, elle ne sanctionne pas. "
+    . "Langue simple, phrases courtes (contexte bas débit, texte seul). Une seule bonne réponse par question. "
+    . "Réponds STRICTEMENT en JSON valide, sans texte autour, sans bloc de code markdown. "
+    . "Format EXACT : {\"questions\":[{\"niveau\":1,\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
+    . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition ; "
+    . "\"niveau\" vaut 1, 2, 3 ou 4.";
+
+  $u = "Matière : {$matiere}\n";
+  if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
+  if ($themes !== '') $u .= "Chapitres déjà abordés en classe (à privilégier) : {$themes}\n";
+  $u .= "\nGénère le test de positionnement au format JSON demandé.";
+
+  return [$system, $u, 4200, false, null];
 }
 
 // ── Dictée : génère un court texte à DICTER (lu à voix haute côté client) ──

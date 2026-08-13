@@ -544,6 +544,79 @@ export const useTuteurStore = defineStore('tuteur', () => {
     revisionsVersion.value++
   }
 
+  /**
+   * Génère le test de positionnement d'une matière (8 questions, 2 par palier).
+   * Jamais servi depuis la banque partagée : le placement doit reposer sur des
+   * questions du programme de CETTE classe, pas sur un lot mutualisé.
+   */
+  async function genererPositionnement({ matiere, niveau, themes = '' }) {
+    generating.value = true
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST', headers,
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'positionnement', data: { matiere, niveau, themes } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) {
+        return { ok: false, reason: json.error }
+      }
+      if (json && json.ok && json.text) {
+        const valides = parsePositionnement(json.text)
+        if (valides.length) return { ok: true, questions: valides }
+      }
+      return { ok: false, reason: 'indisponible' }
+    } catch {
+      return { ok: false, reason: 'reseau' }
+    } finally {
+      generating.value = false
+    }
+  }
+
+  /**
+   * Enregistre le placement issu du test. On écrit le palier ET on marque la
+   * matière comme positionnée : le test ne doit être proposé qu'UNE fois.
+   */
+  function enregistrerPositionnement(studentId, subjectId, subjectName, palier) {
+    const data = loadRevisions(studentId)
+    const prev = data[subjectId] || {}
+    data[subjectId] = {
+      ...prev,
+      name: subjectName,
+      level: Math.min(PALIERS_PAR_CLASSE, Math.max(1, Number(palier) || 1)),
+      positionne: true,
+      attempts: prev.attempts || 0,
+    }
+    saveRevisions(studentId, data)
+    revisionsVersion.value++
+    return data[subjectId]
+  }
+
+  /**
+   * Faut-il proposer le test de positionnement ?
+   *
+   * Uniquement au tout premier contact avec la matière : jamais joué ET jamais
+   * positionné. Un apprenant qui a déjà révisé a un palier gagné sur le terrain,
+   * plus fiable que huit questions.
+   */
+  function doitProposerPositionnement(studentId, subjectId) {
+    const e = loadRevisions(studentId)[subjectId]
+    if (!e) return true
+    return !e.positionne && !(e.attempts > 0)
+  }
+
+  /** L'apprenant décline le test : on ne le repropose pas. */
+  function refuserPositionnement(studentId, subjectId, subjectName) {
+    const data = loadRevisions(studentId)
+    data[subjectId] = { ...(data[subjectId] || {}), name: subjectName, positionne: true, attempts: data[subjectId]?.attempts || 0 }
+    saveRevisions(studentId, data)
+    revisionsVersion.value++
+  }
+
   /** Programme suivi pour une matière (vide = celui de la classe). */
   function getProgramme(studentId, subjectId) {
     return (loadRevisions(studentId)[subjectId] || {}).programme || ''
@@ -1179,6 +1252,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     generating, planning, lastMode, lastReason, revisionsVersion, conversationsVersion,
     generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
     accepterAnneeSuivante, refuserAnneeSuivante, getProgramme,
+    genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
@@ -1327,6 +1401,40 @@ function parseQuiz(text) {
   }
   return arr
     .map((x) => ({
+      q: String(x.q ?? x.question ?? '').trim(),
+      choices: Array.isArray(x.choices) ? x.choices.map((c) => String(c).trim()).slice(0, 4) : [],
+      answer: Number.isInteger(x.answer) ? x.answer : 0,
+      hint: String(x.hint ?? '').trim(),
+      explanation: String(x.explanation ?? x.explication ?? '').trim(),
+    }))
+    .filter((x) => x.q && x.choices.length === 4 && x.answer >= 0 && x.answer < 4)
+}
+
+/**
+ * Questions du test de positionnement, avec leur PALIER.
+ *
+ * On ne peut pas réutiliser `parseQuiz` : il jette le champ `niveau`, qui est
+ * précisément ce qui permet de placer l'apprenant. On réutilise en revanche sa
+ * tolérance — mesuré en production le 13/08, le modèle rend parfois du JSON
+ * malformé en cours de route (« "niveau1, » au lieu de « "niveau":1, »). Sur un
+ * JSON.parse strict, tout le test était perdu pour une virgule ; avec le
+ * repêchage, on garde les questions bien formées et le placement reste valable.
+ */
+function parsePositionnement(text) {
+  if (!text) return []
+  let t = String(text).trim().replace(/^```(?:json)?/i, '').replace(/```$/i, '').trim()
+  const start = t.indexOf('{'); const end = t.lastIndexOf('}')
+  const slice = (start !== -1 && end !== -1 && end > start) ? t.slice(start, end + 1) : t
+  let arr = []
+  try {
+    const obj = JSON.parse(slice)
+    arr = Array.isArray(obj?.questions) ? obj.questions : (Array.isArray(obj) ? obj : [])
+  } catch {
+    arr = salvageQuestions(t)
+  }
+  return arr
+    .map((x) => ({
+      niveau: Number(x.niveau) || 1,
       q: String(x.q ?? x.question ?? '').trim(),
       choices: Array.isArray(x.choices) ? x.choices.map((c) => String(c).trim()).slice(0, 4) : [],
       answer: Number.isInteger(x.answer) ? x.answer : 0,

@@ -60,6 +60,9 @@ function mapo_credit_pack($id) {
 function mapo_cout_action() {
   return [
     'tutor_quiz'      => 3000,
+    // Test de positionnement : 8 questions, une seule fois par matiere. Meme
+    // ordre de grandeur qu'un quiz — il en produit d'ailleurs autant.
+    'positionnement'  => 3000,
     'vision_copie'    => 3500,
     'vision_bulletin' => 3500,
     'vision_edt'      => 3000,
