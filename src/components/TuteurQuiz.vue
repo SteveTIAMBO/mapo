@@ -33,7 +33,10 @@
         </div>
       </div>
       <div class="tq-progress"><div class="tq-fill" :style="{ width: (index / questions.length * 100) + '%' }"></div></div>
-      <div v-if="timerSeconds > 0 && !revealed" class="tq-timer" :class="{ low: timeLeft <= 3 }"><Timer :size="14" /> <span>{{ timeLeft }}s</span></div>
+      <div v-if="timerSeconds > 0 && !revealed" class="tq-timer" :class="{ low: !enLecture && timeLeft <= 3, lecture: enLecture }">
+        <component :is="enLecture ? BookOpen : Timer" :size="14" />
+        <span>{{ enLecture ? (locale.startsWith('en') ? 'Read the question…' : 'Lis la question…') : timeLeft + 's' }}</span>
+      </div>
 
       <!-- Disclaimer LÉGER : d'où viennent les exercices (mes cours / référentiel / mix) -->
       <p v-if="sourceLabel && index === 0" class="tq-source"><BookOpen :size="13" /> {{ sourceLabel }}</p>
@@ -179,6 +182,7 @@ import { Loader2, Check, X, Lightbulb, BookOpen, ChevronRight, ChevronLeft, Refr
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
+import { tempsLectureSecondes } from '../utils/tempsLecture'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -359,17 +363,39 @@ const showFullCourse = ref(false) // cours complet (identique) replié par défa
 const coursMatiere = computed(() => coursTexteMatiere(props.studentId, props.matiere, 4000))
 
 // ── Minuteur par question (option choisie avant le lancement) ─────────
+//
+// ⚠️ Le décompte NE DÉMARRE PAS à l'affichage. Il commence après un temps de
+// LECTURE, calculé sur la longueur réelle de la question et de ses quatre
+// propositions. Sans ça, un minuteur de 10 s était consommé à lire l'énoncé :
+// on mesurait la vitesse de lecture, pas la maîtrise — et on pénalisait
+// exactement les apprenants qu'on veut aider, les lecteurs lents et ceux qui
+// travaillent dans une langue seconde.
 const timeLeft = ref(0)
+const enLecture = ref(false)
 let timerId = null
-function clearTimer() { if (timerId) { clearInterval(timerId); timerId = null } }
+let lectureId = null
+function clearTimer() {
+  if (timerId) { clearInterval(timerId); timerId = null }
+  if (lectureId) { clearTimeout(lectureId); lectureId = null }
+  enLecture.value = false
+}
+
 function startTimer() {
   clearTimer()
   if (!props.timerSeconds || props.timerSeconds <= 0 || mode.value !== 'quiz') return
+  // Pendant la lecture, on affiche le temps de réponse À VENIR, figé : le
+  // compteur ne doit pas donner l'impression de tourner déjà.
   timeLeft.value = props.timerSeconds
-  timerId = setInterval(() => {
-    timeLeft.value -= 1
-    if (timeLeft.value <= 0) { clearTimer(); onTimeout() }
-  }, 1000)
+  enLecture.value = true
+  lectureId = setTimeout(() => {
+    lectureId = null
+    enLecture.value = false
+    if (mode.value !== 'quiz' || revealed.value) return
+    timerId = setInterval(() => {
+      timeLeft.value -= 1
+      if (timeLeft.value <= 0) { clearTimer(); onTimeout() }
+    }, 1000)
+  }, tempsLectureSecondes(current.value?.q, current.value?.choices) * 1000)
 }
 function onTimeout() {
   if (revealed.value) return
@@ -672,6 +698,9 @@ onMounted(start)
 .tq-course-more:hover { background: rgba(var(--pr-rgb,21,88,176),.06); }
 .tq-timer { display: inline-flex; align-items: center; gap: 6px; align-self: center; margin: -6px 0 12px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 800; color: var(--pr); background: rgba(var(--pr-rgb,21,88,176),.10); }
 .tq-timer.low { color: #D93025; background: rgba(217,48,37,.10); animation: tqpulse 1s ease-in-out infinite; }
+/* Phase de lecture : volontairement DISCRÈTE et sans pulsation. Rien ne doit
+   presser l'apprenant pendant qu'il lit — c'est tout l'objet de cette phase. */
+.tq-timer.lecture { color: var(--tx3, #6b7280); background: rgba(120,120,128,.10); font-weight: 600; }
 .tq-course-empty { margin: 0; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
 .tq-choices { display: flex; flex-direction: column; gap: 10px; }
 .tq-choice { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--bd); border-radius: 12px; background: #fff; cursor: pointer; font-size: 15px; text-align: left; transition: all .15s; color: var(--tx); }
