@@ -616,6 +616,11 @@
         <!-- ========== RÉCOMPENSES (badges) ========== -->
         <section v-else-if="section === 'recompenses'" class="sec">
           <MiapoRecompenses :student-id="activeEnfant?.id || 'me'" />
+          <!-- Le classement vit SOUS les récompenses : même famille (ce qui
+               motive à revenir), et ça évite une entrée de plus dans un menu
+               déjà chargé. Réservé à l'apprenant : le parent n'a pas à voir le
+               classement des camarades de son enfant. -->
+          <MiapoLigue v-if="isApprenant && activeEnfant" :niveau="activeEnfant.niveau || ''" />
         </section>
 
         <!-- ========== PROGRESSION ========== -->
@@ -1208,6 +1213,7 @@ import MiapoInterets from '../components/MiapoInterets.vue'
 import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
+import MiapoLigue from '../components/MiapoLigue.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'

@@ -137,6 +137,13 @@
       <div class="tq-ring" :class="{ perfect: masteryPercent === 100 }" :style="ringStyle"><span>{{ masteryPercent }}%</span></div>
       <h2>{{ resultTitle }}</h2>
       <p class="tq-sub">{{ firstTryCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'first try' : 'du premier coup' }} · {{ correctCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'correct' : 'trouvées' }} — {{ matiere }}</p>
+      <div v-if="gainPoints && gainPoints.total" class="tq-points">
+        <Trophy :size="17" />
+        <div>
+          <strong>+{{ gainPoints.total }} points</strong>
+          <ul><li v-for="(d, i) in gainPoints.detail" :key="i">{{ d.libelle }} <b>+{{ d.points }}</b></li></ul>
+        </div>
+      </div>
       <p v-if="meilleureSerie >= 2" class="tq-serie-fin"><Flame :size="15" /> {{ locale.startsWith('en') ? `Best streak: ${meilleureSerie}` : `Meilleure série : ${meilleureSerie} d'affilée` }}</p>
 
       <!-- Feedback de progression adaptative -->
@@ -210,6 +217,9 @@ import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSuppor
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
 import { tempsLectureSecondes } from '../utils/tempsLecture'
 import { sonJuste, sonFaux, sonSerie, sonVictoire, sonPalier } from '../utils/sons'
+import { pointsSeance } from '../utils/pointsEffort'
+import { serieActuelle } from '../utils/recompenses'
+import { useLigueStore } from '../stores/ligue'
 import { niveauSuivant } from '../utils/progressionNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
@@ -242,6 +252,7 @@ const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
 const { locale } = useI18n({ useScope: 'global' })
 const tuteur = useTuteurStore()
+const ligue = useLigueStore()
 const enfantsStore = useEnfantsAutonomesStore()
 // Sous-RAG perso (v1) : digest compact de l'apprenant, calculé au lancement et
 // réutilisé pour la génération du quiz ET l'explication de concept (même profil).
@@ -437,6 +448,9 @@ function onTimeout() {
 // Provenance des questions (disclaimer léger au lancement) : cours / référentiel / mix.
 const sourceRev = ref('')
 const motifEpuise = ref('credits_epuises') // 'credits_epuises' | 'plafond_atteint'
+// Détail des points gagnés à la dernière séance, montré dans le résultat : un
+// point gagné sans savoir pourquoi n'encourage rien.
+const gainPoints = ref(null)
 // Série de bonnes réponses D'AFFILÉE, du premier coup. Remise à zéro à la
 // première erreur : une série qui survit à un échec ne veut plus rien dire.
 const serie = ref(0)
@@ -568,6 +582,27 @@ async function start() {
   mode.value = 'quiz'
 }
 
+/**
+ * Points d'EFFORT de la séance, publiés dans la ligue hebdomadaire.
+ *
+ * Le SCORE n'entre pas dans le calcul : terminer rapporte pareil à 40 % qu'à
+ * 100 %. Ce qui rapporte en plus, c'est la constance — revenir chaque jour,
+ * tenir une série, franchir un palier. Un élève en difficulté qui travaille
+ * régulièrement doit pouvoir gagner sa ligue.
+ */
+function attribuerPoints() {
+  try {
+    const g = pointsSeance({
+      serieJours: serieActuelle(props.studentId),
+      meilleureSerie: meilleureSerie.value,
+      palierFranchi: !!lastResult.value?.pretPourAnneeSuivante,
+    })
+    gainPoints.value = g
+    const prenom = enfantsStore.enfants.find((e) => e.id === props.studentId)?.firstName || ''
+    ligue.ajouterPoints(props.studentId, programmeActuel.value, prenom, g.total)
+  } catch { /* best-effort : jamais bloquant pour la révision */ }
+}
+
 function resetQ() {
   // NB : `serie` n'est PAS remise à zéro ici — elle traverse les questions,
   // c'est tout son intérêt.
@@ -642,6 +677,9 @@ function finish() {
   // régénérer (économie de tokens) et nourrit la priorisation des faiblesses.
   if (props.studentId) {
     try {
+      // ⚠️ L'ordre compte : `saveRevisionSession` met à jour la série de JOURS
+      // (via enregistrerActivite). Calculer les points avant donnerait la série
+      // de la veille, donc un point de moins à chaque fois.
       tuteur.saveRevisionSession(props.studentId, {
         subjectId: subjectId.value,
         subjectName: props.matiere,
@@ -654,6 +692,7 @@ function finish() {
         questions: questions.value,
         recap: recap.value,
       })
+      attribuerPoints()
     } catch (e) { /* archivage best-effort */ }
     // Signal de forme (séance terminée) : durée, temps moyen/question, humeur.
     // On journalise la MAÎTRISE (signal interne, jamais montré).
@@ -878,6 +917,16 @@ onMounted(start)
 .tq-serie svg { color: #C2571A; }
 .tq-pop-enter-active { animation: tqpop .32s cubic-bezier(.2,1.4,.4,1); }
 @keyframes tqpop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.tq-points {
+  display: flex; gap: 11px; align-items: flex-start; text-align: left;
+  margin: 14px 0 4px; padding: 13px 15px; border-radius: 13px;
+  background: rgba(var(--pr-rgb,21,88,176),.07);
+}
+.tq-points > svg { color: var(--pr); flex-shrink: 0; margin-top: 1px; }
+.tq-points strong { display: block; font-size: 15.5px; color: var(--pr); }
+.tq-points ul { list-style: none; margin: 6px 0 0; padding: 0; }
+.tq-points li { font-size: 13px; color: var(--tx2, #4b5563); display: flex; justify-content: space-between; gap: 14px; }
+.tq-points li b { color: #16a34a; }
 .tq-serie-fin {
   display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 0;
   font-size: 13.5px; font-weight: 700; color: #C2571A;
