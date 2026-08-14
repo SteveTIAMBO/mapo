@@ -343,7 +343,17 @@
                avant de lancer le quiz. Sans bulletin — le cas courant en B2C —
                tout le monde démarrait au palier 1 et s'ennuyait plusieurs
                séances avant que l'adaptation le rattrape. -->
-          <div v-if="quizMatiere && positionnementAFaire" class="card">
+          <!-- Sans école reliée, MIAPO ignore où en est l'élève dans le
+               programme : on le lui demande AVANT le positionnement, pour que le
+               test porte déjà sur le bon chapitre. -->
+          <div v-if="quizMatiere && chapitreADemander">
+            <MiapoChapitre
+              :matiere="quizMatiere" :student-id="activeEnfant?.id || ''"
+              @choisi="onChapitreChoisi" @passer="chapitreADemander = false"
+              @quitter="quizMatiere = ''; quizThemes = ''; chapitreADemander = false; positionnementAFaire = false"
+            />
+          </div>
+          <div v-else-if="quizMatiere && positionnementAFaire" class="card">
             <MiapoPositionnement
               :matiere="quizMatiere" :niveau="quizNiveau" :themes="quizThemes"
               @termine="onPositionnementFini" @passer="onPositionnementPasse"
@@ -1215,6 +1225,8 @@ import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import MiapoLigue from '../components/MiapoLigue.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
+import MiapoChapitre from '../components/MiapoChapitre.vue'
+import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
 import MiapoLienEcole from '../components/MiapoLienEcole.vue'
@@ -2053,6 +2065,13 @@ const quizMatiere = ref('')
 // de révision. Sans ça, l'écrire dans le store rebasculerait aussitôt sur le
 // quiz au milieu du test.
 const positionnementAFaire = ref(false)
+// Chapitre libre : posé avant le positionnement, et seulement sans école reliée
+// (avec l'école, les thèmes viennent des notes et des copies).
+const chapitreADemander = ref(false)
+function onChapitreChoisi(chapitre) {
+  quizThemes.value = chapitre
+  chapitreADemander.value = false
+}
 function onPositionnementFini(palier) {
   try {
     tuteur.enregistrerPositionnement(activeEnfant.value.id, 'auto-' + quizMatiere.value, quizMatiere.value, palier)
@@ -2159,6 +2178,10 @@ function goRevise(matiere, themes) {
   // Décidé UNE FOIS, à l'ouverture : le test ne se propose qu'au tout premier
   // contact avec la matière (jamais joué et jamais positionné).
   positionnementAFaire.value = tuteur.doitProposerPositionnement(activeEnfant.value?.id, 'auto-' + matiere)
+  chapitreADemander.value = doitDemanderChapitre({
+    ecoleReliee: ecoleLieActive.value,
+    themesConnus: quizThemes.value,
+  })
   section.value = 'tuteur'
 }
 // Clic sur une matière « à réviser » : on NE lance PAS un quiz d'office — on
@@ -2204,6 +2227,7 @@ function rejouerSession(s) {
   quizThemes.value = ''
   quizMatiere.value = s.subjectName || s.subjectId || ''
   positionnementAFaire.value = false // un rejeu n'est pas un premier contact
+  chapitreADemander.value = false    // ni un nouveau choix de chapitre
   section.value = 'tuteur'
 }
 // Toutes les révisions sont archivées (quiz, session guidée, fiches, rédaction) :
