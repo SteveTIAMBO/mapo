@@ -55,14 +55,15 @@ describe('Onglets — choisis dans les sections réellement disponibles', () => 
 })
 
 describe('Onglets — la barre reste utilisable', () => {
-  it('jamais plus de 4 onglets + « Plus »', () => {
+  it('jamais plus de 5 onglets', () => {
     const many = ['accueil', 'tuteur', 'progression', 'recompenses', 'historique', 'cours', 'edt'].map(S)
     expect(monter(many, true).findAll('.mtab-it')).toHaveLength(5)
   })
 
-  it('« Plus » est TOUJOURS là : la barre ne doit amputer aucune section', () => {
-    const w = monter([S('accueil')], true)
-    expect(CLES(w)).toContain('Plus')
+  it('aucun onglet « Plus » : le hamburger ouvre déjà le menu complet', () => {
+    // Deux chemins vers la même chose = une place gâchée sur la barre.
+    const w = monter(['accueil', 'tuteur', 'progression'].map(S), true)
+    expect(CLES(w)).not.toContain('Plus')
   })
 
   it('persona inattendu : on affiche les premières sections plutôt que rien', () => {
@@ -80,12 +81,6 @@ describe('Onglets — navigation', () => {
     const w = monter([S('accueil'), S('tuteur'), S('progression'), S('recompenses')], true)
     w.findAll('.mtab-it')[1].trigger('click')
     expect(w.emitted('aller')[0]).toEqual(['tuteur'])
-  })
-
-  it('« Plus » ouvre le menu complet', () => {
-    const w = monter([S('accueil'), S('tuteur')], true)
-    w.findAll('.mtab-it').at(-1).trigger('click')
-    expect(w.emitted('menu')).toBeTruthy()
   })
 
   it('l’onglet courant est signalé aux lecteurs d’écran', () => {

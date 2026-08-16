@@ -50,7 +50,24 @@
         <div v-else class="child-single">{{ activeEnfant?.firstName }} <span>{{ niveauLabel(activeEnfant) }}</span></div>
       </div>
 
-      <nav class="volet-nav" data-tour="menu">
+      <!-- PARAMÈTRES : le sous-menu REMPLACE le menu principal, au lieu d'une
+           rangée d'onglets qui débordait sur plusieurs lignes. Un seul niveau
+           visible à la fois, et un retour explicite pour en sortir. -->
+      <nav v-if="enParametres" class="volet-nav" data-tour="menu">
+        <button type="button" class="nav-retour" @click="quitterParametres">
+          <ChevronLeft :size="18" /><span class="nav-lbl">{{ t('mia.back') }}</span>
+        </button>
+        <span class="nav-titre">{{ t('mia.secSettings') }}</span>
+        <button
+          v-for="st in sousMenus" :key="st.key" type="button"
+          class="nav-item" :class="{ active: sousSection === st.key }"
+          @click="sousSection = st.key; menuOpen = false"
+        >
+          <component :is="st.icon" :size="18" /><span class="nav-lbl"><DualText :text="st.label" /></span>
+        </button>
+      </nav>
+
+      <nav v-else class="volet-nav" data-tour="menu">
         <template v-for="(grp, gi) in navGroups" :key="gi">
           <!-- Bloc sans intitulé (Accueil) : items directs -->
           <template v-if="!grp.group">
@@ -72,7 +89,7 @@
           </template>
         </template>
         <!-- Paramètres : dernier élément du menu (façon HUB). -->
-        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="section = 'profil'; menuOpen = false">
+        <button type="button" class="nav-item" :class="{ active: section === 'profil' }" data-tour="settings" @click="ouvrirParametres()">
           <Settings :size="18" /><span class="nav-lbl">{{ t('mia.secSettings') }}<small v-if="lang2.enabled && lang2.tr(t('mia.secSettings'))" class="nav-lbl2" dir="auto">{{ lang2.tr(t('mia.secSettings')) }}</small></span>
         </button>
       </nav>
@@ -94,7 +111,7 @@
          navigue par routes, et tout MAPO+ vit sur une seule route. -->
     <MiapoTabBar
       :sections="SECTIONS" :section="section" :is-apprenant="isApprenant"
-      @aller="(k) => { section = k; menuOpen = false }" @menu="menuOpen = true"
+      @aller="(k) => { section = k; menuOpen = false }"
     />
 
     <!-- ───────── Contenu ───────── -->
@@ -522,6 +539,13 @@
         <!-- ========== COURS (dépôt perso + Carré) ========== -->
         <section v-else-if="section === 'cours'" class="sec">
           <MiapoMesCours :enfant="activeEnfant" />
+          <!-- Deux besoins distincts : importer SES cours (le contenu de son
+               école), et ajouter une matière que MIAPO couvrira tout seul. -->
+          <MiapoAjouterMatiere
+            v-if="activeEnfant"
+            :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
+            @changer="majMatieresSup"
+          />
         </section>
 
         <!-- ========== MON ÉCOLE — non reliée : saisie du code de liaison ========== -->
@@ -779,12 +803,6 @@
 
         <!-- ========== PARAMÈTRES (sous-menu : profil / abonnement / notifications) ========== -->
         <section v-else-if="section === 'profil'" class="sec">
-          <nav class="param-tabs">
-            <button v-for="st in sousMenus" :key="st.key" type="button" class="param-tab" :class="{ active: sousSection === st.key }" @click="sousSection = st.key">
-              <component :is="st.icon" :size="16" /><DualText :text="st.label" />
-            </button>
-          </nav>
-
           <!-- Sous-menu : Utilisation (offres + jauge de crédits) -->
           <div v-show="sousSection === 'abonnement'">
             <MiapoAbonnement />
@@ -1236,6 +1254,8 @@ import MiapoEchangePoints from '../components/MiapoEchangePoints.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoChapitre from '../components/MiapoChapitre.vue'
 import MiapoTabBar from '../components/MiapoTabBar.vue'
+import MiapoAjouterMatiere from '../components/MiapoAjouterMatiere.vue'
+import { fusionnerMatieres } from '../utils/matieresSup'
 import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
@@ -1424,6 +1444,21 @@ function toggleGroup(g) {
 const section = ref('accueil')
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
+// Paramètres : le sous-menu prend la place du menu principal (Steve, 16/08 —
+// la rangée d'onglets débordait sur plusieurs lignes). On retient la section
+// d'où l'on vient : un « Retour » qui ramène toujours à l'accueil ferait
+// perdre son fil à qui ouvrait les réglages depuis le tuteur.
+const enParametres = computed(() => section.value === 'profil')
+const sectionAvantParametres = ref('accueil')
+function ouvrirParametres() {
+  if (section.value !== 'profil') sectionAvantParametres.value = section.value
+  section.value = 'profil'
+  menuOpen.value = false
+}
+function quitterParametres() {
+  section.value = sectionAvantParametres.value || 'accueil'
+  menuOpen.value = false
+}
 const sousMenus = computed(() => {
   const items = [{ key: 'profil', label: t('mia.secProfile'), icon: Settings }]
   // Abonnement = PAYEUR uniquement (pas un enfant/mineur géré par le parent).
@@ -2366,6 +2401,17 @@ function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeE
 // Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
 // hors-catalogue qui a renseigné ses modules, on pilote toute la boucle
 // (notes → faiblesses → quiz → révision) par SES modules ; sinon catalogue scolaire.
+// Programme officiel SEUL (sans les ajouts) : c'est lui qu'on présente comme
+// non retirable, et qui sert à ne pas reproposer une matière déjà suivie.
+const matieresProgramme = computed(() => {
+  const e = activeEnfant.value
+  if (!e || isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE) return []
+  return matieresPourNiveau(e.niveau, e.pays) || []
+})
+function majMatieresSup(liste) {
+  if (!activeEnfant.value) return
+  store.updateEnfant(activeEnfant.value.id, { matieresSup: liste })
+}
 const matieresList = computed(() => {
   const e = activeEnfant.value
   // Matières personnalisées (supérieur, hors-catalogue, ou secondaire édité) : priorité.
@@ -2378,9 +2424,11 @@ const matieresList = computed(() => {
   // l'école : on renvoie une liste VIDE tant que l'apprenant n'a pas défini ses
   // modules (3e onboarding) — plutôt que d'afficher par erreur des matières du secondaire.
   if (e && !isNiveauSuperieur(e.niveau) && e.niveau !== NIVEAU_HORS_CATALOGUE) {
-    return matieresPourNiveau(e?.niveau, e?.pays)
+    // Les matières AJOUTÉES par l'apprenant viennent en plus du programme
+    // officiel, jamais à la place : le référentiel national reste la base.
+    return fusionnerMatieres(matieresPourNiveau(e?.niveau, e?.pays), e?.matieresSup)
   }
-  return []
+  return fusionnerMatieres([], e?.matieresSup)
 })
 // Apprenant en formation / supérieur dont on ne connaît pas encore les modules :
 // il doit d'abord créer son référentiel avant de saisir des notes ou de réviser.
@@ -3195,6 +3243,17 @@ onUnmounted(() => {
 .sec { display: flex; flex-direction: column; gap: 16px; }
 
 /* Barre d'onglets du menu Paramètres */
+.nav-retour {
+  display: flex; align-items: center; gap: 8px; width: 100%;
+  padding: 9px 10px 9px 6px; margin-bottom: 2px; border: none; border-radius: 10px;
+  background: transparent; color: var(--tx3, #6b7280); font-family: inherit;
+  font-size: 14px; font-weight: 600; cursor: pointer; text-align: left;
+}
+.nav-retour:hover { background: rgba(120,120,128,.12); color: var(--tx); }
+.nav-titre {
+  display: block; padding: 4px 10px 8px; font-size: 11.5px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--tx3, #9ca3af);
+}
 .param-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; background: rgba(var(--pr-rgb), .06); border-radius: 14px; }
 .param-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: none; background: none; border-radius: 10px; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--tx3); cursor: pointer; transition: background .15s ease, color .15s ease; }
 .param-tab:hover { color: var(--tx); }

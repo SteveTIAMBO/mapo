@@ -90,12 +90,22 @@ export function sonJuste() {
 }
 
 /**
- * Mauvaise réponse — un son SOURD, pas un buzzer. Onde triangle grave qui
- * DESCEND, très court, volume réduit de moitié. On informe, on ne punit pas.
+ * Mauvaise réponse — un son DOUX et DESCENDANT, jamais un buzzer.
+ *
+ * ⚠️ VERSION PRÉCÉDENTE INAUDIBLE (Steve, 16/08 : « je n'ai pas de son sur les
+ * réponses fausses »). Elle jouait 196 → 130 Hz à volume 0,055. Le code était
+ * juste, le son sortait bien — mais un haut-parleur de téléphone ne restitue
+ * quasiment rien sous 400 Hz. Sur un ordinateur on l'entendait, sur le
+ * téléphone des familles, non : la panne ne se voyait que sur l'appareil qui
+ * compte.
+ *
+ * On garde l'intention — informer sans punir — mais dans un registre que les
+ * petits haut-parleurs savent reproduire. C'est la DESCENTE qui dit « pas tout
+ * à fait », pas le grave ni le volume.
  */
 export function sonFaux() {
   if (!sonActif()) return
-  bip({ de: 196, vers: 130, duree: 0.16, forme: 'triangle', volume: 0.055 })
+  bip({ de: 440, vers: 330, duree: 0.18, forme: 'triangle', volume: 0.075, desaccord: 6 })
 }
 
 /**

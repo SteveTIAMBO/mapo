@@ -9,12 +9,6 @@
       <component :is="o.icon" :size="21" />
       <span class="mtab-lb">{{ o.label }}</span>
     </button>
-    <!-- « Plus » ouvre le menu complet : une barre à 5 places ne doit jamais
-         amputer l'application de ses autres sections. -->
-    <button type="button" class="mtab-it" @click="$emit('menu')">
-      <MoreHorizontal :size="21" />
-      <span class="mtab-lb">{{ t('mia.more') }}</span>
-    </button>
   </nav>
 </template>
 
@@ -33,10 +27,6 @@
  * l'utilisateur n'a pas (l'école reliée, l'âge et le rôle en retirent).
  */
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { MoreHorizontal } from 'lucide-vue-next'
-
-const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps({
   // Sections disponibles, telles que calculées par la vue : [{ key, label, icon }]
@@ -44,13 +34,17 @@ const props = defineProps({
   section: { type: String, default: '' },
   isApprenant: { type: Boolean, default: false },
 })
-defineEmits(['aller', 'menu'])
+defineEmits(['aller'])
 
-// Ordre de préférence. On en retient 4 au plus : au-delà, sur un écran de
-// 360 px, les libellés deviennent illisibles et les cibles trop étroites pour
-// le pouce.
-const PREF_APPRENANT = ['accueil', 'tuteur', 'progression', 'recompenses']
-const PREF_PARENT = ['accueil', 'enfants', 'progression', 'planning']
+// Ordre de préférence. Cinq places au plus : au-delà, sur un écran de 360 px,
+// les libellés deviennent illisibles et les cibles trop étroites pour le pouce.
+//
+// PAS d'onglet « Plus » : le hamburger de l'en-tête ouvre déjà le menu complet
+// (Steve, 16/08). Deux chemins vers la même chose, c'est une place gâchée sur
+// la barre et une hésitation de plus pour l'utilisateur.
+const MAX_ONGLETS = 5
+const PREF_APPRENANT = ['accueil', 'tuteur', 'progression', 'recompenses', 'historique']
+const PREF_PARENT = ['accueil', 'enfants', 'progression', 'planning', 'edt']
 
 const onglets = computed(() => {
   const dispo = new Map((props.sections || []).filter((s) => s && s.key).map((s) => [s.key, s]))
@@ -58,8 +52,8 @@ const onglets = computed(() => {
   const choisis = pref.map((k) => dispo.get(k)).filter(Boolean)
   // Si la préférence ne donne rien (persona inattendu), on prend simplement les
   // premières sections plutôt que d'afficher une barre vide.
-  const base = choisis.length ? choisis : [...dispo.values()].slice(0, 4)
-  return base.slice(0, 4)
+  const base = choisis.length ? choisis : [...dispo.values()]
+  return base.slice(0, MAX_ONGLETS)
 })
 </script>
 
