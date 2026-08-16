@@ -14,7 +14,14 @@
         class="mc-tab" :class="{ actif: onglet === o.cle }"
         :aria-selected="onglet === o.cle" @click="onglet = o.cle"
       >
-        <component :is="o.icone" :size="15" /><span><DualText :text="o.libelle" /></span>
+        <component :is="o.icone" :size="15" />
+        <!-- Libellé COURT sur mobile : « Importer un cours » + son sous-titre
+             traduit ne tenaient pas dans un onglet, et le sous-titre de
+             DualText est un bloc en colonne qui doublait la hauteur du bouton.
+             L'icône porte le sens, le mot le précise. Le libellé complet reste
+             en titre du panneau, où il a la place. -->
+        <span class="mc-tab-long"><DualText :text="o.libelle" /></span>
+        <span class="mc-tab-court">{{ o.court }}</span>
       </button>
     </nav>
 
@@ -119,9 +126,9 @@ const tuteur = useTuteurStore()
 // celui qui contient la liste des cours déjà enregistrés.
 const onglet = ref('importer')
 const onglets = computed(() => [
-  { cle: 'importer', libelle: t('mia.mcTitle'), icone: IcoUpload },
-  { cle: 'matiere', libelle: 'Ajouter une matière', icone: IcoMatiere },
-  { cle: 'carre', libelle: t('mia.mcCarreTitle'), icone: IcoCarre },
+  { cle: 'importer', libelle: t('mia.mcTitle'), court: 'Importer', icone: IcoUpload },
+  { cle: 'matiere', libelle: 'Ajouter une matière', court: 'Matière', icone: IcoMatiere },
+  { cle: 'carre', libelle: t('mia.mcCarreTitle'), court: 'Carré', icone: IcoCarre },
 ])
 
 // Périmètre Carré (dossier / mot-clé) à synchroniser vers le sous-RAG.
@@ -235,6 +242,16 @@ function fmt(iso) {
   transition: background .15s, color .15s;
 }
 .mc-tab.actif { background: #fff; color: var(--pr); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+.mc-tab-court { display: none; }
+@media (max-width: 768px) {
+  /* Trois onglets à parts égales, qui tiennent sans défilement : sur un écran
+     étroit, un onglet qu'il faut aller chercher en faisant glisser passe
+     inaperçu. */
+  .mc-tabs { gap: 4px; padding: 3px; }
+  .mc-tab { flex: 1 1 0; min-width: 0; justify-content: center; padding: 9px 6px; font-size: 12.5px; }
+  .mc-tab-long { display: none; }
+  .mc-tab-court { display: inline; overflow: hidden; text-overflow: ellipsis; }
+}
 
 .mescours { display: flex; flex-direction: column; gap: 16px; }
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }

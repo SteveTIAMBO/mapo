@@ -3651,7 +3651,10 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 
 /* ───────── Responsive : volet → barre d'onglets en haut ───────── */
 /* Menu hamburger coulissant (mobile) — fond sombre + tiroir */
-.volet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 55; }
+/* Au-dessus de la barre d'onglets basse (z-index 9500). Sans ça, le menu se
+   déroulait DERRIÈRE elle et son pied — profil, déconnexion — restait
+   inatteignable : on voyait le bouton, on ne pouvait pas le toucher. */
+.volet-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, .45); z-index: 9600; }
 
 @media (max-width: 768px) {
   .miapo-shell { display: flex; width: 100%; min-height: 0; }
@@ -3659,7 +3662,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
     position: fixed; left: 0; top: 0; bottom: 0; height: 100vh; height: 100dvh;
     width: 268px; max-width: 84vw;
     transform: translateX(-100%); transition: transform .26s ease;
-    z-index: 60; background: #fff; /* opaque : le menu doit rester lisible (pas de translucide --card) */
+    z-index: 9700; background: #fff; /* opaque : le menu doit rester lisible (pas de translucide --card) */
     border-right: 1px solid var(--bd, #e5e7eb);
     box-shadow: 0 18px 44px rgba(0, 0, 0, .22); align-self: auto;
   }

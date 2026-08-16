@@ -136,11 +136,21 @@ async function motDePasseOublie() {
   errorMessage.value = ''
   const r = await authStore.resetPassword(email)
   isLoading.value = false
-  // resetPassword renvoie volontairement un succès même si l'adresse est
-  // inconnue : on ne dit jamais à un inconnu quels comptes existent. Le
-  // message est donc le même dans les deux cas.
-  if (r.success) infoMessage.value = t('login.resetEmailSent')
-  else errorMessage.value = r.error
+  // ⚠️ CE « SUCCÈS » NE PROUVE PAS QU'UN MAIL EST PARTI.
+  //
+  // Firebase applique par défaut la protection contre l'énumération des
+  // comptes : il répond OK sans rien envoyer si l'adresse est inconnue, ET si
+  // le compte n'a pas de mot de passe (compte créé via Google). Notre couche
+  // fait de même pour ne pas révéler quels comptes existent.
+  //
+  // Résultat vécu (Steve, 16/08) : « j'ai appuyé et je ne reçois pas l'e-mail ».
+  // L'échec ressemblait au succès. Un message neutre est correct côté sécurité
+  // mais inutilisable côté humain : on ANNONCE donc les deux causes possibles
+  // et l'issue de secours, sans jamais confirmer qu'un compte existe.
+  if (r.success) {
+    infoMessage.value = "Si un compte avec mot de passe existe pour cette adresse, l'e-mail vient de partir — pense à regarder tes spams.\n\n"
+      + "Aucun e-mail au bout de quelques minutes ? Deux explications possibles, et Firebase ne nous dit pas laquelle : soit l'adresse ne correspond à aucun compte, soit ce compte a été créé avec Google et n'a donc PAS de mot de passe. Dans ce second cas, utilise le bouton « Continuer avec Google » ci-dessous : c'est la même identité, sans mot de passe à retrouver."
+  } else errorMessage.value = r.error
 }
 
 async function handleGoogleLogin() {
@@ -309,6 +319,7 @@ watch(
 }
 .auth-forgot-link:disabled { opacity: .6; cursor: default; }
 .auth-info {
+  white-space: pre-line;
   padding: 10px 12px; border-radius: 10px; margin-bottom: 12px;
   background: rgba(22, 163, 74, .10); color: #15803d; font-size: 13.5px; line-height: 1.5;
 }
