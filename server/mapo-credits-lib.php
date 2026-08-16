@@ -241,11 +241,37 @@ if (!function_exists('mc_path')) {
   }
 
   /** Code lisible : pas de 0/O ni 1/I/L, qu'on se dicte au téléphone sans erreur. */
-  function mc_codeGenerer($longueur = 10) {
+  function mc_codeGenerer($longueur = 12) {
     $alpha = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
     $out = '';
     for ($i = 0; $i < $longueur; $i++) $out .= $alpha[random_int(0, strlen($alpha) - 1)];
-    return substr($out, 0, 5) . '-' . substr($out, 5);
+    // 12 caractères et non 10 : le registre ne stocke plus que des empreintes,
+    // et une empreinte se casse par force brute. 31^12 ≈ 8·10^17 met l'attaque
+    // hors de portée, pour deux caractères de plus à saisir.
+    return substr($out, 0, 4) . '-' . substr($out, 4, 4) . '-' . substr($out, 8);
+  }
+
+  /**
+   * Empreinte d'un code — c'est ELLE qu'on stocke, jamais le code lui-même.
+   *
+   * INCIDENT DU 16/08 : le registre `mapo-credits-codes.json` a été lisible
+   * depuis le web (règle .htaccess perdue à un déploiement). Les codes y
+   * étaient en clair : quiconque a ouvert l'URL repartait avec des crédits.
+   *
+   * Un code est un jeton au porteur, exactement comme un mot de passe. On le
+   * traite donc comme tel : le serveur n'a pas besoin de le connaître, juste
+   * de reconnaître celui qu'on lui présente. Une prochaine fuite du fichier
+   * ne livrera plus rien d'utilisable — c'est précisément ce qui a sauvé les
+   * jetons Carré, chiffrés dans leur propre registre.
+   *
+   * EFFET IMMÉDIAT VOULU : la recherche se faisant désormais sur l'empreinte,
+   * les anciennes entrées en clair ne correspondent plus à rien. Tous les
+   * codes émis avant ce correctif sont donc RÉVOQUÉS, sans geste manuel et
+   * sans oubli possible. Leurs entrées restent dans le fichier : elles ne
+   * servent plus à rien d'autre qu'à conserver la trace de qui les a utilisés.
+   */
+  function mc_codeEmpreinte($code) {
+    return hash('sha256', 'mapo-code:' . strtoupper(trim((string) $code)));
   }
 
   /** Crée un code. `$usages` = nombre de comptes qui pourront l'utiliser. */
@@ -254,7 +280,9 @@ if (!function_exists('mc_path')) {
     $fp = fopen(mc_codesPath(), 'c+'); if (!$fp) return null;
     flock($fp, LOCK_EX);
     $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
-    $map[$code] = [
+    // Clé = empreinte. Le code en clair ne quitte cette fonction que par sa
+    // valeur de retour, affichée une seule fois à l'admin qui vient de le créer.
+    $map[mc_codeEmpreinte($code)] = [
       'tokens' => max(1, (int) $tokens),
       'usages' => max(1, (int) $usages),
       'utilisePar' => [],                       // uid → date, pour l'audit
@@ -280,14 +308,17 @@ if (!function_exists('mc_path')) {
     $fp = fopen(mc_codesPath(), 'c+'); if (!$fp) return [false, 'indisponible'];
     flock($fp, LOCK_EX);
     $map = json_decode(stream_get_contents($fp), true); if (!is_array($map)) $map = [];
-    $e = $map[$code] ?? null;
+    // Recherche par EMPREINTE. Les entrées en clair d'avant le 16/08 ne
+    // correspondent plus : les codes émis avant l'incident sont révoqués.
+    $cle = mc_codeEmpreinte($code);
+    $e = $map[$cle] ?? null;
     $res = null;
     if (!$e) { $res = [false, 'code_inconnu']; }
     elseif (isset($e['utilisePar'][$uid])) { $res = [false, 'deja_utilise']; }
     elseif (count($e['utilisePar']) >= (int) $e['usages']) { $res = [false, 'code_epuise']; }
     else {
       $e['utilisePar'][$uid] = gmdate('c');
-      $map[$code] = $e;
+      $map[$cle] = $e;
       ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map, JSON_UNESCAPED_UNICODE));
       $res = [true, (int) $e['tokens']];
     }
