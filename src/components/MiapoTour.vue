@@ -199,7 +199,7 @@ onBeforeUnmount(() => {
 .tb-top { display: flex; align-items: center; gap: 10px; margin-bottom: 11px; }
 .tb-dots { display: flex; gap: 5px; flex: 1; align-items: center; }
 .tb-dot { width: 7px; height: 7px; border-radius: 50%; background: #e2e3ec; transition: background 0.2s, width 0.2s; }
-.tb-dot.done { background: color-mix(in srgb, var(--pr, #7c3aed) 45%, #d8cdea); }
+.tb-dot.done { background: linear-gradient(rgba(var(--pr-rgb, 124, 58, 237), 0.45), rgba(var(--pr-rgb, 124, 58, 237), 0.45)), #d8cdea; }
 .tb-dot.on { width: 20px; border-radius: 4px; background: var(--pr, #7c3aed); }
 .tb-skip { border: none; background: none; color: #9096a5; font-size: 12.5px; font-weight: 600; cursor: pointer; padding: 2px 4px; }
 .tb-skip:hover { color: #5c6270; }

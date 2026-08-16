@@ -113,7 +113,7 @@ function skip() { emit('skip') }
   display: flex; align-items: center; justify-content: center; padding: 20px;
   overflow-y: auto;
   background:
-    radial-gradient(1100px 520px at 12% -10%, color-mix(in srgb, var(--pr, #7c3aed) 16%, transparent), transparent 60%),
+    radial-gradient(1100px 520px at 12% -10%, rgba(var(--pr-rgb, 124, 58, 237), 0.16), transparent 60%),
     #f6f7fb;
 }
 .fs-card {
@@ -151,8 +151,8 @@ function skip() { emit('skip') }
 .fs-btn:disabled { opacity: 0.5; cursor: default; }
 .fs-btn.propose {
   width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  color: var(--pr, #7c3aed); background: color-mix(in srgb, var(--pr, #7c3aed) 9%, #fff);
-  border: 1.5px solid color-mix(in srgb, var(--pr, #7c3aed) 35%, #fff); margin-bottom: 6px;
+  color: var(--pr, #7c3aed); background: linear-gradient(rgba(var(--pr-rgb, 124, 58, 237), 0.09), rgba(var(--pr-rgb, 124, 58, 237), 0.09)), #fff;
+  border: 1.5px solid rgba(var(--pr-rgb, 124, 58, 237), 0.35); margin-bottom: 6px;
 }
 .fs-btn.primary {
   color: #fff;
@@ -162,7 +162,7 @@ function skip() { emit('skip') }
 .fs-btn.ghost { color: #565b68; background: #eef0f5; }
 .fs-err { font-size: 13px; font-weight: 600; color: #b4560a; background: #fff3e6; border-radius: 10px; padding: 8px 11px; margin: 4px 0 0; }
 .fs-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
-.fs-chip { font-size: 12.5px; font-weight: 600; color: #5b3a8e; background: color-mix(in srgb, var(--pr, #7c3aed) 12%, #fff); border-radius: 999px; padding: 4px 10px; }
+.fs-chip { font-size: 12.5px; font-weight: 600; color: #5b3a8e; background: linear-gradient(rgba(var(--pr-rgb, 124, 58, 237), 0.12), rgba(var(--pr-rgb, 124, 58, 237), 0.12)), #fff; border-radius: 999px; padding: 4px 10px; }
 .fs-nav { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 .fs-spacer { flex: 1; }
 .fs-spin { width: 15px; height: 15px; border: 2px solid currentColor; border-top-color: transparent; border-radius: 50%; display: inline-block; animation: fs-rot 0.7s linear infinite; }

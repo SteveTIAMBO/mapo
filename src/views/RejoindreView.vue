@@ -117,8 +117,8 @@ onMounted(() => {
 .rj-bg {
   position: absolute; inset: 0; z-index: 0;
   background:
-    radial-gradient(1100px 520px at 15% -10%, color-mix(in srgb, var(--pr, #8e24a9) 16%, transparent), transparent 60%),
-    radial-gradient(900px 480px at 110% 10%, color-mix(in srgb, var(--pr, #8e24a9) 10%, transparent), transparent 55%),
+    radial-gradient(1100px 520px at 15% -10%, rgba(var(--pr-rgb, 142, 36, 169), 0.16), transparent 60%),
+    radial-gradient(900px 480px at 110% 10%, rgba(var(--pr-rgb, 142, 36, 169), 0.1), transparent 55%),
     #f6f7fb;
 }
 .rj-card {
@@ -134,11 +134,11 @@ onMounted(() => {
 }
 .rj-lang { position: absolute; top: 16px; right: 16px; display: flex; gap: 4px; }
 .rj-lang button { border: none; background: transparent; font-size: 12px; font-weight: 700; color: #9aa0ad; padding: 3px 7px; border-radius: 8px; cursor: pointer; }
-.rj-lang button.on { background: color-mix(in srgb, var(--pr, #8e24a9) 14%, transparent); color: var(--pr, #8e24a9); }
+.rj-lang button.on { background: rgba(var(--pr-rgb, 142, 36, 169), 0.14); color: var(--pr, #8e24a9); }
 .rj-logo { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; }
-.rj-logo-mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #fff; background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 55%, #ff6d4d)); box-shadow: 0 6px 16px color-mix(in srgb, var(--pr, #8e24a9) 35%, transparent); }
+.rj-logo-mark { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-weight: 800; font-size: 17px; color: #fff; background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.55)), #ff6d4d; box-shadow: 0 6px 16px rgba(var(--pr-rgb, 142, 36, 169), 0.35); }
 .rj-logo-title { font-size: 20px; font-weight: 800; color: #1c1e27; letter-spacing: -0.02em; }
-.rj-badge { width: 62px; height: 62px; margin: 4px auto 14px; border-radius: 50%; display: grid; place-items: center; color: var(--pr, #8e24a9); background: color-mix(in srgb, var(--pr, #8e24a9) 12%, #fff); }
+.rj-badge { width: 62px; height: 62px; margin: 4px auto 14px; border-radius: 50%; display: grid; place-items: center; color: var(--pr, #8e24a9); background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.12), rgba(var(--pr-rgb, 142, 36, 169), 0.12)), #fff; }
 .rj-badge.warn { color: #b4560a; background: #fff3e6; }
 .rj-badge.spin svg { animation: rjspin 0.9s linear infinite; }
 @keyframes rjspin { to { transform: rotate(360deg); } }
@@ -147,7 +147,7 @@ onMounted(() => {
 .rj-hint { font-size: 13px; color: #8a90a0; margin: 0 0 18px; line-height: 1.5; }
 .rj-btn { width: 100%; border: none; border-radius: 13px; padding: 13px 16px; font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 10px; transition: transform 0.06s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
 .rj-btn:disabled { opacity: 0.6; cursor: default; }
-.rj-btn.primary { color: #fff; background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 60%, #ff6d4d)); box-shadow: 0 8px 20px color-mix(in srgb, var(--pr, #8e24a9) 32%, transparent); }
+.rj-btn.primary { color: #fff; background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.6)), #ff6d4d; box-shadow: 0 8px 20px rgba(var(--pr-rgb, 142, 36, 169), 0.32); }
 .rj-btn.primary:not(:disabled):active { transform: translateY(1px); }
 .rj-link { border: none; background: transparent; color: #8a90a0; font-size: 13.5px; font-weight: 600; cursor: pointer; margin-top: 4px; padding: 6px; }
 .rj-link:hover { color: #565b68; }

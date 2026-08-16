@@ -34,7 +34,15 @@
 
   /* Primary — couleur dominante de l'école (bleu système macOS par défaut).
      --pr-rgb pilote tous les accents translucides → changer la couleur de
-     l'école dans les paramètres met à jour l'accent partout sur le site. */
+     l'école dans les paramètres met à jour l'accent partout sur le site.
+
+     CONVENTION — on n'utilise PAS `color-mix()` (Chrome 111+, hors de notre
+     cible : cf. build.cssTarget). Pour teinter :
+       • sur du transparent → rgba(var(--pr-rgb), .12)
+       • sur une couleur    → linear-gradient(rgba(…,.12), rgba(…,.12)), #fff
+     La seconde forme est le strict équivalent d'un color-mix avec #fff, et
+     fonctionne partout : la couleur devient une couche de fond sous le
+     dégradé constant. */
   --pr: #0A84FF;
   --pr-rgb: 10, 132, 255;
   --pr-dark: #0071E3;

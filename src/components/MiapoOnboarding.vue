@@ -171,7 +171,7 @@ function finish() {
   justify-content: center;
   padding: 20px;
   background:
-    radial-gradient(1100px 520px at 12% -10%, color-mix(in srgb, var(--pr, #8e24a9) 16%, transparent), transparent 60%),
+    radial-gradient(1100px 520px at 12% -10%, rgba(var(--pr-rgb, 142, 36, 169), 0.16), transparent 60%),
     #f6f7fb;
 }
 .mo-card {
@@ -189,12 +189,12 @@ function finish() {
 .mo-mark {
   width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center;
   font-weight: 800; font-size: 16px; color: #fff;
-  background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 55%, #ff6d4d));
+  background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.55)), #ff6d4d;
 }
 .mo-brand-txt { font-size: 18px; font-weight: 800; color: #1c1e27; letter-spacing: -0.02em; }
 .mo-dots { display: flex; gap: 7px; margin-bottom: 20px; }
 .mo-dot { width: 26px; height: 5px; border-radius: 3px; background: #e2e4ec; transition: background 0.25s; }
-.mo-dot.on { background: color-mix(in srgb, var(--pr, #8e24a9) 55%, #d9b8e6); }
+.mo-dot.on { background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.55), rgba(var(--pr-rgb, 142, 36, 169), 0.55)), #d9b8e6; }
 .mo-dot.done { background: var(--pr, #8e24a9); }
 .mo-step { min-height: 232px; }
 .mo-title { font-size: 20px; font-weight: 800; color: #1c1e27; margin: 0 0 6px; line-height: 1.25; }
@@ -205,7 +205,7 @@ function finish() {
   text-align: left; padding: 15px 16px; border-radius: 15px; cursor: pointer;
   border: 1.5px solid #e6e7ee; background: #fff; transition: border-color 0.15s, background 0.15s;
 }
-.mo-choice.sel { border-color: var(--pr, #8e24a9); background: color-mix(in srgb, var(--pr, #8e24a9) 7%, #fff); }
+.mo-choice.sel { border-color: var(--pr, #8e24a9); background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.07), rgba(var(--pr-rgb, 142, 36, 169), 0.07)), #fff; }
 .mo-choice-ic { color: var(--pr, #8e24a9); margin-bottom: 4px; }
 .mo-choice-name { font-size: 15.5px; font-weight: 700; color: #1c1e27; }
 .mo-choice-hint { font-size: 13px; color: #7a8090; line-height: 1.4; }
@@ -224,8 +224,8 @@ function finish() {
 .mo-btn:disabled { opacity: 0.5; cursor: default; }
 .mo-btn.primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 60%, #ff6d4d));
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--pr, #8e24a9) 30%, transparent);
+  background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.6)), #ff6d4d;
+  box-shadow: 0 8px 20px rgba(var(--pr-rgb, 142, 36, 169), 0.3);
 }
 .mo-btn.ghost { color: #565b68; background: #eef0f5; }
 </style>

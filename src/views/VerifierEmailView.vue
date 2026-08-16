@@ -119,8 +119,8 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(1100px 520px at 15% -10%, color-mix(in srgb, var(--pr, #8e24a9) 16%, transparent), transparent 60%),
-    radial-gradient(900px 480px at 110% 10%, color-mix(in srgb, var(--pr, #8e24a9) 10%, transparent), transparent 55%),
+    radial-gradient(1100px 520px at 15% -10%, rgba(var(--pr-rgb, 142, 36, 169), 0.16), transparent 60%),
+    radial-gradient(900px 480px at 110% 10%, rgba(var(--pr-rgb, 142, 36, 169), 0.1), transparent 55%),
     #f6f7fb;
   z-index: 0;
 }
@@ -156,7 +156,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
 }
 .ve-lang button.on {
-  background: color-mix(in srgb, var(--pr, #8e24a9) 14%, transparent);
+  background: rgba(var(--pr-rgb, 142, 36, 169), 0.14);
   color: var(--pr, #8e24a9);
 }
 .ve-logo {
@@ -175,8 +175,8 @@ onBeforeUnmount(() => {
   font-weight: 800;
   font-size: 17px;
   color: #fff;
-  background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 55%, #ff6d4d));
-  box-shadow: 0 6px 16px color-mix(in srgb, var(--pr, #8e24a9) 35%, transparent);
+  background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.55)), #ff6d4d;
+  box-shadow: 0 6px 16px rgba(var(--pr-rgb, 142, 36, 169), 0.35);
 }
 .ve-logo-title {
   font-size: 20px;
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
   display: grid;
   place-items: center;
   color: var(--pr, #8e24a9);
-  background: color-mix(in srgb, var(--pr, #8e24a9) 12%, #fff);
+  background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.12), rgba(var(--pr-rgb, 142, 36, 169), 0.12)), #fff;
 }
 .ve-created { margin: 0 0 6px; font-size: 14px; font-weight: 600; color: #1B8A5A; }
 .ve-title {
@@ -224,7 +224,7 @@ onBeforeUnmount(() => {
   font-size: 13.5px;
   font-weight: 600;
   color: var(--pr, #8e24a9);
-  background: color-mix(in srgb, var(--pr, #8e24a9) 10%, #fff);
+  background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.1), rgba(var(--pr-rgb, 142, 36, 169), 0.1)), #fff;
   border-radius: 12px;
   padding: 9px 12px;
   margin: 0 0 14px;
@@ -250,15 +250,15 @@ onBeforeUnmount(() => {
 }
 .ve-btn.primary {
   color: #fff;
-  background: linear-gradient(135deg, var(--pr, #8e24a9), color-mix(in srgb, var(--pr, #8e24a9) 60%, #ff6d4d));
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--pr, #8e24a9) 32%, transparent);
+  background: linear-gradient(135deg, var(--pr, #8e24a9), rgba(var(--pr-rgb, 142, 36, 169), 0.6)), #ff6d4d;
+  box-shadow: 0 8px 20px rgba(var(--pr-rgb, 142, 36, 169), 0.32);
 }
 .ve-btn.primary:not(:disabled):active {
   transform: translateY(1px);
 }
 .ve-btn.ghost {
   color: var(--pr, #8e24a9);
-  background: color-mix(in srgb, var(--pr, #8e24a9) 10%, #fff);
+  background: linear-gradient(rgba(var(--pr-rgb, 142, 36, 169), 0.1), rgba(var(--pr-rgb, 142, 36, 169), 0.1)), #fff;
 }
 .ve-link {
   border: none;

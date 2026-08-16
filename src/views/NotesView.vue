@@ -2382,7 +2382,7 @@ onMounted(async () => {
 }
 .btn-ai {
   display: inline-flex; align-items: center; gap: 6px;
-  background: linear-gradient(135deg, var(--pr), color-mix(in srgb, var(--pr) 70%, #7c3aed));
+  background: linear-gradient(135deg, var(--pr), rgba(var(--pr-rgb), 0.7)), #7c3aed;
   color: #fff; border: none; font-weight: 600;
 }
 .btn-ai:hover:not(:disabled) { filter: brightness(1.05); }
@@ -2399,7 +2399,7 @@ onMounted(async () => {
 
 /* ── Génération en lot ── */
 .batch-bar { height: 8px; background: rgba(0,0,0,0.08); border-radius: 4px; overflow: hidden; }
-.batch-bar-fill { height: 100%; background: linear-gradient(90deg, var(--pr), color-mix(in srgb, var(--pr) 70%, #7c3aed)); border-radius: 4px; transition: width .3s ease; }
+.batch-bar-fill { height: 100%; background: linear-gradient(90deg, var(--pr), rgba(var(--pr-rgb), 0.7)), #7c3aed; border-radius: 4px; transition: width .3s ease; }
 .batch-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 16px; }
 .batch-modal { background: #fff; border-radius: 16px; padding: 22px; width: 460px; max-width: 100%; box-shadow: 0 24px 64px rgba(0,0,0,0.28); }
 .batch-modal-title { font-size: 18px; font-weight: 700; color: var(--text, #1a1a1a); margin: 0 0 10px; }
