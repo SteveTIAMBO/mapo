@@ -722,6 +722,20 @@
   .btn-sm { min-height: 38px; padding: 8px 12px; }
   .input, .select { min-height: 44px; font-size: 16px; /* prevents iOS zoom */ }
 
+  /* Zoom iOS au focus — la règle ci-dessus ne suffisait PAS.
+     Sous 16px, Safari iOS zoome la page dès qu'un champ reçoit le focus, et
+     n'en ressort pas : la mise en page part de travers pour le reste de la
+     session. Or les styles `scoped` des composants (`.input[data-v-x]`, 0-2-0)
+     l'emportent sur `.input` (0-1-0), et redéfinissent 13 à 15px un peu
+     partout — 88 champs dans le seul espace MAPO+.
+     D'où le ciblage par ÉLÉMENT + !important : c'est une règle de
+     comportement, pas un choix esthétique ; aucun style local ne doit pouvoir
+     la contredire. `font-size` seul est forcé, la taille visuelle des champs
+     reste libre. */
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  select,
+  textarea { font-size: 16px !important; }
+
   /* Card spacing */
   .card { padding: 10px; border-radius: 10px; }
 

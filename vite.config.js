@@ -92,6 +92,15 @@ export default defineConfig({
   build: {
     outDir: '/tmp/mapo-build',
     emptyOutDir: true,
+    // Cible CSS explicite. Par défaut, Vite 8 minifie vers une base récente et
+    // réécrit `@media (max-width: 768px)` en `@media (width <= 768px)` (syntaxe
+    // Media Queries Level 4, Chrome 104+ / Safari 16.4+). Sur un navigateur plus
+    // ancien, la règle est ignorée EN ENTIER : plus aucune mise en page mobile
+    // dans toute l'application — et rien ne le signale, la page s'affiche
+    // simplement en version bureau sur un téléphone.
+    // MAPO vise l'Afrique et des téléphones d'entrée de gamme : on redescend la
+    // cible. Le surcoût est de quelques kilo-octets de CSS.
+    cssTarget: ['chrome90', 'safari14', 'firefox88', 'edge90'],
   },
   test: {
     globals: true,
