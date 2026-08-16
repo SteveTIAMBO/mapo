@@ -90,6 +90,13 @@
       </div>
     </aside>
 
+    <!-- Barre d'onglets basse (mobile) — propre à MAPO+ : la barre de l'ERP
+         navigue par routes, et tout MAPO+ vit sur une seule route. -->
+    <MiapoTabBar
+      :sections="SECTIONS" :section="section" :is-apprenant="isApprenant"
+      @aller="(k) => { section = k; menuOpen = false }" @menu="menuOpen = true"
+    />
+
     <!-- ───────── Contenu ───────── -->
     <main class="miapo-main">
       <!-- En-tête du contenu (façon hub) : salutation + accès rapides. Le volet de
@@ -1226,6 +1233,7 @@ import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import MiapoLigue from '../components/MiapoLigue.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoChapitre from '../components/MiapoChapitre.vue'
+import MiapoTabBar from '../components/MiapoTabBar.vue'
 import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
@@ -3596,7 +3604,10 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
   .volet-nav { flex-direction: column; overflow-x: visible; }
   .volet-logout { margin-top: auto; }
   .miapo-main { max-width: 100%; width: 100%; box-sizing: border-box; }
-  .miapo-scroll { padding: 14px 14px 24px; }
+  /* Réserve la hauteur de la barre d'onglets (+ encoche) : sans ça le dernier
+     bloc de chaque écran est masqué par la barre, ce qui ne se voit qu'en bas
+     de page — donc jamais pendant un test rapide. */
+  .miapo-scroll { padding: 14px 14px calc(78px + env(safe-area-inset-bottom, 0px)); }
   .miapo-topbar { padding: 11px 14px; }
   .mtb-burger { display: inline-flex; }
   .mtb-hi { font-size: 17.5px; }

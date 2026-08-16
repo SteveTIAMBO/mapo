@@ -5,6 +5,7 @@
       <button
         v-if="!isOpen"
         class="miapo-fab"
+        :class="{ 'au-dessus-barre': isB2C }"
         :title="t('mia.fabTitle')"
         :aria-label="t('mia.fabAria')"
         @click="isOpen = true"
@@ -1322,6 +1323,9 @@ kbd {
 @media (max-width: 768px) {
   .miapo-container { padding: 56px 10px 0; }
   .miapo-fab { right: 16px; bottom: 16px; width: 54px; height: 54px; }
+  /* MAPO+ a désormais une barre d'onglets en bas : sans ce décalage l'orbe se
+     poserait dessus et masquerait le dernier onglet. */
+  .miapo-fab.au-dessus-barre { bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
   .miapo-input { font-size: 16px; }        /* évite le zoom automatique d'iOS au focus (< 16px) */
   .miapo-msg-body { max-width: 88%; }        /* bulles un peu plus larges sur petit écran */
   .miapo-modal { max-height: 84vh; }         /* un peu plus de hauteur utile sur téléphone */
