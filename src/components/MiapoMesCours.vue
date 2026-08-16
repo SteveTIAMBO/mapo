@@ -1,7 +1,25 @@
 <template>
   <div class="mescours">
+    <!-- Trois usages DISTINCTS étaient empilés sur une seule page : importer un
+         cours, ajouter une matière, brancher Carré. Rien ne les relie sinon le
+         nom du menu, et il fallait faire défiler pour découvrir qu'ils
+         existaient. Des onglets rendent le choix visible d'emblée.
+
+         Défilement horizontal et NON retour à la ligne : une rangée d'onglets
+         qui passe sur deux lignes, on vient de la retirer des Paramètres pour
+         cette raison. -->
+    <nav class="mc-tabs" role="tablist">
+      <button
+        v-for="o in onglets" :key="o.cle" type="button" role="tab"
+        class="mc-tab" :class="{ actif: onglet === o.cle }"
+        :aria-selected="onglet === o.cle" @click="onglet = o.cle"
+      >
+        <component :is="o.icone" :size="15" /><span><DualText :text="o.libelle" /></span>
+      </button>
+    </nav>
+
     <!-- Importer un cours -->
-    <div class="card">
+    <div v-show="onglet === 'importer'" class="card">
       <div class="card-head"><FolderOpen :size="18" /><h3>{{ t('mia.mcTitle') }}</h3></div>
       <p class="muted">{{ t('mia.mcHint') }}</p>
       <div class="mc-row">
@@ -31,8 +49,9 @@
       <p class="mc-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
     </div>
 
-    <!-- Mes cours enregistrés -->
-    <div class="card">
+    <!-- Mes cours enregistrés : sous « Importer », parce qu'on y vient juste
+         après un import et qu'on veut vérifier que le cours est bien arrivé. -->
+    <div v-show="onglet === 'importer'" class="card">
       <div class="card-head"><Layers :size="18" /><h3>{{ t('mia.mcMine') }}</h3></div>
       <div v-if="docs.length" class="mc-list">
         <div v-for="d in docs" :key="d.id" class="mc-item">
@@ -47,9 +66,15 @@
       <p class="mc-priv"><ShieldCheck :size="13" /> {{ t('mia.mcPrivacy') }}</p>
     </div>
 
+    <!-- Ajouter une matière hors programme (contenu fourni par la vue parente :
+         c'est elle qui détient le profil de l'enfant). -->
+    <div v-show="onglet === 'matiere'">
+      <slot name="ajouter-matiere" />
+    </div>
+
     <!-- Carré : notes de cours comme source du sous-RAG (périmètre choisi).
          L'app Carré (sœur de l'écosystème) s'ouvre depuis ici — plus dans le menu. -->
-    <div class="card">
+    <div v-show="onglet === 'carre'" class="card">
       <div class="card-head"><span class="mc-carre-badge">C</span><h3>{{ t('mia.mcCarreTitle') }}</h3></div>
       <template v-if="connecteurs.carreConnected">
         <p class="muted">{{ t('mia.mcCarreOn') }}</p>
@@ -75,6 +100,8 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { Upload as IcoUpload, BookPlus as IcoMatiere, Link2 as IcoCarre } from 'lucide-vue-next'
+import DualText from './DualText.vue'
 import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { listCoursPerso, addCoursPerso, removeCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
@@ -87,6 +114,15 @@ const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
 const connecteurs = useConnecteursStore()
 const tuteur = useTuteurStore()
+
+// Onglet courant. « Importer » d'abord : c'est l'usage le plus fréquent, et
+// celui qui contient la liste des cours déjà enregistrés.
+const onglet = ref('importer')
+const onglets = computed(() => [
+  { cle: 'importer', libelle: t('mia.mcTitle'), icone: IcoUpload },
+  { cle: 'matiere', libelle: 'Ajouter une matière', icone: IcoMatiere },
+  { cle: 'carre', libelle: t('mia.mcCarreTitle'), icone: IcoCarre },
+])
 
 // Périmètre Carré (dossier / mot-clé) à synchroniser vers le sous-RAG.
 const carreScope = ref('')
@@ -183,6 +219,23 @@ function fmt(iso) {
 </script>
 
 <style scoped>
+.mc-tabs {
+  display: flex; gap: 6px; padding: 4px; margin-bottom: 14px;
+  background: rgba(var(--pr-rgb, 21, 88, 176), .06); border-radius: 14px;
+  /* Défilement plutôt que retour à la ligne : la rangée reste sur UNE ligne,
+     quelle que soit la largeur de l'écran. */
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
+}
+.mc-tabs::-webkit-scrollbar { display: none; }
+.mc-tab {
+  display: inline-flex; align-items: center; gap: 7px; flex: 0 0 auto;
+  padding: 9px 14px; border: none; border-radius: 11px; background: transparent;
+  font-family: inherit; font-size: 13.5px; font-weight: 600;
+  color: var(--tx3, #6b7280); cursor: pointer; white-space: nowrap;
+  transition: background .15s, color .15s;
+}
+.mc-tab.actif { background: #fff; color: var(--pr); box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+
 .mescours { display: flex; flex-direction: column; gap: 16px; }
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; color: var(--pr); }

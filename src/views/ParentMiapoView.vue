@@ -549,14 +549,18 @@
 
         <!-- ========== COURS (dépôt perso + Carré) ========== -->
         <section v-else-if="section === 'cours'" class="sec">
-          <MiapoMesCours :enfant="activeEnfant" />
-          <!-- Deux besoins distincts : importer SES cours (le contenu de son
-               école), et ajouter une matière que MIAPO couvrira tout seul. -->
-          <MiapoAjouterMatiere
-            v-if="activeEnfant"
-            :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
-            @changer="majMatieresSup"
-          />
+          <!-- L'ajout de matière est passé en SLOT : c'est cette vue qui détient
+               le profil de l'enfant, mais c'est le module Cours qui décide de
+               l'onglet où l'afficher. -->
+          <MiapoMesCours :enfant="activeEnfant">
+            <template #ajouter-matiere>
+              <MiapoAjouterMatiere
+                v-if="activeEnfant"
+                :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
+                @changer="majMatieresSup"
+              />
+            </template>
+          </MiapoMesCours>
         </section>
 
         <!-- ========== MON ÉCOLE — non reliée : saisie du code de liaison ========== -->
