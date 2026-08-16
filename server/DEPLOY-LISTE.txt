@@ -1,0 +1,39 @@
+# Fichiers de server/ à publier sur l'hébergement — LISTE UNIQUE.
+#
+# Lue par le workflow CI (.github/workflows/deploy.yml) ET par le script de
+# déploiement manuel (_DEPLOIEMENT-AUTO/envoyer-tranche.sh). Avant, chacun
+# avait sa propre liste : le script manuel n'envoyait en réalité AUCUN .php,
+# et rien ne le disait. Une seule liste, donc, qu'on ne peut plus oublier
+# de tenir à jour à moitié.
+#
+# ⚠️ N'INSCRIRE ICI AUCUN fichier de configuration (*-config.php) ni
+# mapo-sa-key.json : ils vivent uniquement sur le serveur, hors du dépôt.
+# Les scripts les filtrent en plus, mais la première protection est de ne
+# jamais les nommer.
+#
+# Une ligne = un fichier. Les lignes vides et les # sont ignorés.
+
+mapo-ia.php
+mapo-lien.php
+mapo-lien-lib.php
+mapo-famille.php
+mapo-invite.php
+mapo-pay.php
+mapo-pay-tranzak.php
+mapo-pay-stripe.php
+mapo-notify.php
+mapo-provision.php
+mapo-sign.php
+mapo-files.php
+mapo-feedback.php
+mapo-push.php
+mapo-push-lib.php
+mapo-push-cron.php
+mapo-offres-data.php
+mapo-credits-lib.php
+mapo-invoices-lib.php
+mapo-offres.php
+mapo-points.php
+mapo-carre.php
+mapo-mail.php
+mapo-mail-config.example.php

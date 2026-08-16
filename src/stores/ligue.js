@@ -15,9 +15,10 @@ import { idLigue, TAILLE_LIGUE, zoneClassement } from '../utils/pointsEffort'
  * modifié ne peut y glisser l'école, le pays ou l'âge. Le classement ne doit
  * jamais devenir un annuaire d'enfants.
  *
- * ⚠️ Les points sont calculés côté client à ce stade : un utilisateur averti
- * peut gonfler son score. Assumé au lancement (cohortes de proches, rien à
- * gagner). À déplacer côté serveur AVANT toute récompense de valeur monétaire.
+ * SOURCE DE VÉRITÉ = LE SERVEUR (server/mapo-points.php) depuis que les points
+ * s'échangent contre des tokens. Le calcul local subsiste pour l'affichage
+ * immédiat et le mode hors ligne, mais le total du serveur écrase le local dès
+ * qu'il répond. On ne peut pas demander au client de compter ce qu'on lui paie.
  */
 
 // Total de points de la semaine, par apprenant. Local : c'est la source, le
@@ -66,6 +67,29 @@ export const useLigueStore = defineStore('ligue', () => {
     return { total }
   }
 
+  /**
+   * Publie un total QUI VIENT DU SERVEUR.
+   *
+   * Remplace l'ancien cumul local : le client n'additionne plus rien, il
+   * recopie. Le miroir local reste écrit pour que le classement s'affiche
+   * hors ligne, mais il ne fait plus autorité.
+   */
+  async function publierTotal(studentId, niveau, prenom, total) {
+    const t = Math.max(0, Number(total) || 0)
+    const l = idLigue(niveau)
+    try { localStorage.setItem(CLE_POINTS(studentId, l), String(t)) } catch { /* quota */ }
+    const u = uid()
+    if (!u) return { total: t }
+    // Le plafond de la règle est à 100 000 : on borne AVANT d'écrire, sinon
+    // l'écriture serait refusée et le classement figé sans que ça se voie.
+    setDoc(doc(db, 'ligues', l, 'membres', u), {
+      points: Math.min(100000, t),
+      prenom: String(prenom || '').trim().slice(0, 40),
+      maj: new Date().toISOString(),
+    }).catch(() => { /* hors ligne : republié à la prochaine séance */ })
+    return { total: t }
+  }
+
   /** Charge le classement de la ligue courante. */
   async function charger(niveau) {
     const l = idLigue(niveau)
@@ -96,5 +120,5 @@ export const useLigueStore = defineStore('ligue', () => {
 
   const maZone = computed(() => zoneClassement(monRang.value, membres.value.length))
 
-  return { membres, chargement, ligueCourante, monRang, maZone, pointsSemaine, ajouterPoints, charger }
+  return { membres, chargement, ligueCourante, monRang, maZone, pointsSemaine, ajouterPoints, publierTotal, charger }
 })

@@ -637,6 +637,7 @@
                motive à revenir), et ça évite une entrée de plus dans un menu
                déjà chargé. Réservé à l'apprenant : le parent n'a pas à voir le
                classement des camarades de son enfant. -->
+          <MiapoEchangePoints v-if="isApprenant && activeEnfant" />
           <MiapoLigue v-if="isApprenant && activeEnfant" :niveau="activeEnfant.niveau || ''" />
         </section>
 
@@ -1231,6 +1232,7 @@ import MiapoHumeur from '../components/MiapoHumeur.vue'
 import MiapoAide from '../components/MiapoAide.vue'
 import MiapoRecompenses from '../components/MiapoRecompenses.vue'
 import MiapoLigue from '../components/MiapoLigue.vue'
+import MiapoEchangePoints from '../components/MiapoEchangePoints.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoChapitre from '../components/MiapoChapitre.vue'
 import MiapoTabBar from '../components/MiapoTabBar.vue'

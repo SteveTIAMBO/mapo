@@ -12,6 +12,23 @@
   Require all denied
 </FilesMatch>
 
+# REGISTRES SERVEUR (mapo-*.json) — jamais lisibles depuis le web.
+#
+# Ils contiennent les soldes de crédits, les codes cadeaux, les jetons Carré,
+# les abonnements aux notifications et les points d'effort. Ils existent
+# réellement sur le disque, donc la réécriture SPA ne les couvre pas : sans
+# cette règle, ils s'ouvraient en clair dans un navigateur (mesuré le 16/08 :
+# HTTP 200, application/json, avec un code cadeau de 2 000 000 de jetons
+# lisible tel quel).
+#
+# ⚠️ La règle DOIT vivre ici, dans le dépôt. Corrigée une première fois
+# directement sur le serveur, elle a été écrasée au déploiement suivant — la
+# faille était revenue sans que rien ne le signale. Un test de fumée la
+# vérifie désormais après chaque mise en ligne.
+<FilesMatch "^mapo-.*\.json$">
+  Require all denied
+</FilesMatch>
+
 # Toujours revalider l'entrée de l'app et le service worker pour éviter
 # qu'une mise à jour reste bloquée par le cache navigateur. Les fichiers
 # /assets/* sont hashés → ils gardent le cache long par défaut.

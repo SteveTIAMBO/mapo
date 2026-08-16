@@ -218,6 +218,7 @@ import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregis
 import { tempsLectureSecondes } from '../utils/tempsLecture'
 import { sonJuste, sonFaux, sonSerie, sonVictoire, sonPalier } from '../utils/sons'
 import { pointsSeance } from '../utils/pointsEffort'
+import { useRecompensesPointsStore } from '../stores/recompensesPoints'
 import { serieActuelle } from '../utils/recompenses'
 import { useLigueStore } from '../stores/ligue'
 import { niveauSuivant } from '../utils/progressionNiveau'
@@ -253,6 +254,7 @@ const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 const { locale } = useI18n({ useScope: 'global' })
 const tuteur = useTuteurStore()
 const ligue = useLigueStore()
+const points = useRecompensesPointsStore()
 const enfantsStore = useEnfantsAutonomesStore()
 // Sous-RAG perso (v1) : digest compact de l'apprenant, calculé au lancement et
 // réutilisé pour la génération du quiz ET l'explication de concept (même profil).
@@ -590,17 +592,32 @@ async function start() {
  * tenir une série, franchir un palier. Un élève en difficulté qui travaille
  * régulièrement doit pouvoir gagner sa ligue.
  */
-function attribuerPoints() {
+async function attribuerPoints() {
+  const palierFranchi = !!lastResult.value?.pretPourAnneeSuivante
+  // Affichage IMMÉDIAT, calculé localement : l'élève voit son gain à la
+  // seconde où il termine, sans attendre le réseau.
   try {
-    const g = pointsSeance({
+    gainPoints.value = pointsSeance({
       serieJours: serieActuelle(props.studentId),
       meilleureSerie: meilleureSerie.value,
-      palierFranchi: !!lastResult.value?.pretPourAnneeSuivante,
+      palierFranchi,
     })
-    gainPoints.value = g
-    const prenom = enfantsStore.enfants.find((e) => e.id === props.studentId)?.firstName || ''
-    ligue.ajouterPoints(props.studentId, programmeActuel.value, prenom, g.total)
   } catch { /* best-effort : jamais bloquant pour la révision */ }
+
+  // Puis le SERVEUR tranche. C'est lui qui tient le total désormais : les
+  // points s'échangent contre des tokens, un total calculé par le navigateur
+  // serait forgeable. Sa réponse remplace l'estimation locale — y compris pour
+  // dire « pas compté » (plafond journalier), qu'on préfère annoncer plutôt
+  // que laisser croire à une perte.
+  try {
+    const r = await points.declarerSeance({ meilleureSerie: meilleureSerie.value, palierFranchi })
+    if (r && r.compte && r.gain) gainPoints.value = r.gain
+    else if (r && !r.compte) gainPoints.value = { total: 0, detail: [], raison: r.raison }
+    const prenom = enfantsStore.enfants.find((e) => e.id === props.studentId)?.firstName || ''
+    if (r && r.points !== undefined) {
+      ligue.publierTotal(props.studentId, programmeActuel.value, prenom, r.points)
+    }
+  } catch { /* hors ligne : la séance sera comptée à la prochaine connectée */ }
 }
 
 function resetQ() {
