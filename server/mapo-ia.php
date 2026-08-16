@@ -185,6 +185,28 @@ if (!empty($r['ok'])) {
   // Ré-injection du prénom réel : il n'a jamais été transmis au fournisseur IA
   // (envoyé sous forme du jeton PRENOM_ELEVE) → on le restaure ici, côté serveur.
   $text = deanonymize(trim($r['text']), $task, $data);
+
+  // ── VÉRIFICATION AVANT SERVICE (quiz uniquement) ────────────────────────
+  // Aucune question générée n'atteint un élève sans avoir été confirmée par un
+  // solveur INDÉPENDANT qui ne voit pas la réponse marquée. Voir
+  // mapo_quiz_valider() pour le raisonnement complet.
+  if ($task === 'tutor_quiz') {
+    $j = json_decode(preg_replace('/^[^{]*|[^}]*$/', '', $text), true);
+    if (is_array($j) && !empty($j['questions']) && is_array($j['questions'])) {
+      list($gardees, $rejets) = mapo_quiz_valider(
+        $j['questions'],
+        (string) ($data['matiere'] ?? ''),
+        (string) ($data['niveau'] ?? ''),
+        $model
+      );
+      $j['questions'] = array_values($gardees);
+      // On ANNONCE le tri. Sans ce compte, un quiz raccourci passerait pour un
+      // quiz normal et personne ne saurait jamais que le contrôle travaille.
+      $j['verifies'] = count($gardees);
+      $j['rejetes'] = $rejets;
+      $text = json_encode($j, JSON_UNESCAPED_UNICODE);
+    }
+  }
   // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
@@ -832,6 +854,120 @@ function buildExtractModulesPrompts($d) {
 }
 
 // ── Tuteur de révision : génère un quiz QCM en JSON ───────────────────
+
+// ═══════════════════════════════════════════════════════════════════════
+// VÉRIFICATION D'UN QUIZ AVANT DE LE SERVIR À UN ÉLÈVE
+//
+// POURQUOI. Jusqu'ici, l'élève recevait le PREMIER JET du modèle. Aucun
+// enseignant ne distribuerait sa première rédaction d'exercice sans la
+// relire. Et comme la banque de questions est PARTAGÉE, une question fausse
+// n'est pas un incident isolé : elle est resservie indéfiniment.
+//
+// Cas fondateur (16/08) : « quadrilatère aux côtés opposés parallèles et de
+// même longueur, SANS avoir forcément quatre angles droits » → réponse
+// marquée « rectangle ». Le modèle connaît la réponse (parallélogramme) : il
+// a lâché la contrainte négative de son propre énoncé.
+//
+// DEUX FILTRES, du moins cher au plus cher.
+//
+// 1) Contrôles mécaniques — gratuits, déterministes. Ils n'attrapent que la
+//    forme, mais ils l'attrapent toujours.
+//
+// 2) SOLVEUR AVEUGLE — le contrôle décisif. On redonne les questions à un
+//    appel INDÉPENDANT, SANS la réponse marquée, et on lui demande d'y
+//    répondre. S'il choisit autre chose, la question est fausse ou ambiguë :
+//    on la jette. C'est ce qui rend le contrôle sérieux — le modèle qui se
+//    relit lui-même est juge et partie ; celui qui résout à l'aveugle ne sait
+//    même pas ce qu'il est censé confirmer.
+//    Sur le cas fondateur, un solveur aveugle n'aurait jamais choisi
+//    « rectangle » : le désaccord saute aux yeux.
+//
+// COÛT. Un appel court par génération, et UNE SEULE FOIS dans la vie de la
+// banque partagée : la question vérifiée est ensuite servie à tous. C'est le
+// prix d'une promesse qu'on peut tenir.
+
+/** Contrôles de forme. Renvoie true si la question est structurellement saine. */
+function mapo_quiz_forme_ok($q) {
+  if (!is_array($q)) return false;
+  $enonce = trim((string) ($q['q'] ?? ''));
+  $ch = $q['choices'] ?? null;
+  if ($enonce === '' || mb_strlen($enonce) < 10) return false;
+  if (!is_array($ch) || count($ch) !== 4) return false;
+  $vus = [];
+  foreach ($ch as $c) {
+    $c = trim((string) $c);
+    if ($c === '') return false;
+    // Deux propositions identiques rendent la question insoluble : si la bonne
+    // réponse figure deux fois, l'élève a raison en cliquant sur la « mauvaise ».
+    $k = mb_strtolower($c);
+    if (isset($vus[$k])) return false;
+    $vus[$k] = true;
+  }
+  $a = $q['answer'] ?? null;
+  if (!is_int($a) && !ctype_digit((string) $a)) return false;
+  $a = (int) $a;
+  return $a >= 0 && $a <= 3;
+}
+
+/**
+ * Solveur aveugle : renvoie l'index choisi pour chaque question, ou -1.
+ * Le tableau renvoyé est indexé comme $questions.
+ */
+function mapo_quiz_solveur_aveugle($questions, $matiere, $niveau, $model) {
+  $lignes = [];
+  foreach (array_values($questions) as $i => $q) {
+    $ch = array_values($q['choices']);
+    $lignes[] = ($i + 1) . '. ' . trim((string) $q['q'])
+      . "\n   A) " . $ch[0] . "\n   B) " . $ch[1] . "\n   C) " . $ch[2] . "\n   D) " . $ch[3];
+  }
+  $system = "Tu es un correcteur rigoureux. On te donne des questions à choix multiple destinées à un élève"
+    . ($niveau !== '' ? " de niveau {$niveau}" : '') . " en {$matiere}. "
+    . "Réponds à chacune. Lis l'énoncé mot à mot : les négations et restrictions "
+    . "(« sans », « qui n'est pas », « pas forcément », « sauf ») font partie de la question. "
+    . "Si AUCUNE proposition ne convient, ou si plusieurs conviennent, réponds 0 pour cette question — "
+    . "c'est une réponse attendue et utile, pas un échec. "
+    . "Réponds STRICTEMENT en JSON, sans texte autour : {\"r\":[{\"n\":1,\"c\":\"A|B|C|D|0\"}]}";
+  $user = implode("\n\n", $lignes);
+
+  $res = callAnthropic($system, $user, 700, $model);
+  $out = array_fill(0, count($questions), -1);
+  if (empty($res['ok'])) return $out; // vérificateur muet → voir l'appelant
+  $j = json_decode(preg_replace('/^[^{]*|[^}]*$/', '', trim($res['text'])), true);
+  if (!is_array($j) || !isset($j['r']) || !is_array($j['r'])) return $out;
+  $map = ['A' => 0, 'B' => 1, 'C' => 2, 'D' => 3];
+  foreach ($j['r'] as $item) {
+    $n = (int) ($item['n'] ?? 0) - 1;
+    $c = strtoupper(trim((string) ($item['c'] ?? '')));
+    if ($n >= 0 && $n < count($out)) $out[$n] = $map[$c] ?? -1;
+  }
+  return $out;
+}
+
+/**
+ * Filtre un quiz : ne garde que les questions saines ET confirmées.
+ * Renvoie [questionsGardees, nbRejetees].
+ */
+function mapo_quiz_valider($questions, $matiere, $niveau, $model) {
+  $saines = [];
+  $rejets = 0;
+  foreach ($questions as $q) {
+    if (mapo_quiz_forme_ok($q)) $saines[] = $q; else $rejets++;
+  }
+  if (!$saines) return [[], $rejets];
+
+  $choix = mapo_quiz_solveur_aveugle($saines, $matiere, $niveau, $model);
+  // Vérificateur injoignable : on préfère ne rien servir plutôt que servir du
+  // non vérifié. Le client bascule alors sur la banque DÉJÀ validée.
+  if (count(array_filter($choix, function ($c) { return $c >= 0; })) === 0) return [[], $rejets + count($saines)];
+
+  $gardees = [];
+  foreach ($saines as $i => $q) {
+    if (isset($choix[$i]) && $choix[$i] === (int) $q['answer']) $gardees[] = $q;
+    else $rejets++;
+  }
+  return [$gardees, $rejets];
+}
+
 function buildTutorQuizPrompts($d) {
   $matiere = clean($d['matiere'] ?? 'Culture générale', 50);
   $niveau  = clean($d['niveau'] ?? '', 30);
