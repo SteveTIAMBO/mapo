@@ -2,7 +2,10 @@
   <transition name="slide">
     <div v-if="visible" class="alerte" :class="niveauClass" role="status">
       <AlertTriangle :size="17" class="ico" />
-      <span class="txt">{{ message }}</span>
+      <!-- Message adressé au PARENT (ou à l'enfant) sur sa consommation.
+           On ajoute la traduction SOUS le français, sans le remplacer : ici une
+           inversion de sens ne serait pas une maladresse mais un contresens. -->
+      <span class="txt"><DualText :text="message" /></span>
       <!-- Même règle que l'écran « crédits épuisés » : un mineur n'a ni moyen
            de paiement ni le droit d'en engager un. On ne lui propose donc pas
            d'étendre son usage, on lui dit qui peut le faire. -->
@@ -18,6 +21,7 @@ import { useI18n } from 'vue-i18n'
 import { useAbonnementStore } from '../stores/abonnement'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { AlertTriangle, X } from 'lucide-vue-next'
+import DualText from './DualText.vue'
 
 const { t } = useI18n({ useScope: 'global' })
 const abo = useAbonnementStore()

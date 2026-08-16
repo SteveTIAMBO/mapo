@@ -187,7 +187,10 @@
 
           <div class="card insight-card" role="button" tabindex="0" @click="vigilanceTop && vigilanceTop.go()" @keyup.enter="vigilanceTop && vigilanceTop.go()">
             <div class="insight-icon"><MiapoOrbe :size="30" /></div>
-            <div class="insight-body"><strong>{{ t('mia.watchPoints') }}</strong><p>{{ vigilanceTop && vigilanceTop.text }}</p></div>
+            <div class="insight-body">
+              <strong><DualText :text="t('mia.watchPoints')" /></strong>
+              <p><DualText :text="(vigilanceTop && vigilanceTop.text) || ''" /></p>
+            </div>
             <ChevronRight :size="18" class="insight-arrow" />
           </div>
 
@@ -431,7 +434,15 @@
                     <div class="rt-grid">
                       <button v-for="rt in reviseTypes" :key="rt.key" type="button" class="rt-card" @click="launchRevision(rt.key)">
                         <span class="rt-ic"><component :is="RT_ICONS[rt.icon]" :size="18" /></span>
-                        <span class="rt-tx"><strong>{{ t('mia.rt_' + rt.key) }}</strong><small>{{ t('mia.rth_' + rt.key) }}</small></span>
+                        <!-- Intitulé ET explication traduits : c'est ici qu'un
+                             élève choisit son exercice. S'il ne comprend pas
+                             « appariement » ou « récupération espacée », il
+                             clique au hasard — le nom de l'exercice est
+                             justement ce qui doit être clair. -->
+                        <span class="rt-tx">
+                          <strong><DualText :text="t('mia.rt_' + rt.key)" /></strong>
+                          <small><DualText :text="t('mia.rth_' + rt.key)" /></small>
+                        </span>
                       </button>
                     </div>
                   </template>
