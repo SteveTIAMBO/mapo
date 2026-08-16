@@ -823,8 +823,19 @@
                 <p class="muted small">{{ t('mia.lang2Hint') }}</p>
                 <select class="input lang2-select" :value="lang2.code" @change="lang2.setCode($event.target.value)">
                   <option value="">{{ t('mia.lang2None') }}</option>
-                  <option v-for="l in lang2.LANGUES2" :key="l.code" :value="l.code">{{ l.native }}</option>
+                  <optgroup label="Langues internationales">
+                    <option v-for="l in langues2Monde" :key="l.code" :value="l.code">{{ l.native }}</option>
+                  </optgroup>
+                  <optgroup label="Langues d’Afrique">
+                    <option v-for="l in langues2Afrique" :key="l.code" :value="l.code">{{ l.native }}</option>
+                  </optgroup>
                 </select>
+                <!-- Avertissement PRÉCIS, et non générique : dire « certaines
+                     traductions peuvent être imparfaites » ne renseigne
+                     personne. On annonce ce à quoi s'attendre pour LA langue
+                     choisie, et on rappelle que le français reste affiché
+                     au-dessus — c'est ce qui rend l'erreur visible. -->
+                <p v-if="avertissementLangue2" class="lang2-avert">{{ avertissementLangue2 }}</p>
               </div>
             </div>
           </div>
@@ -1449,6 +1460,21 @@ const sousSection = ref('profil')
 // d'où l'on vient : un « Retour » qui ramène toujours à l'accueil ferait
 // perdre son fil à qui ouvrait les réglages depuis le tuteur.
 const enParametres = computed(() => section.value === 'profil')
+// Seconde langue : on sépare monde et Afrique, et on annonce la fiabilité.
+const langues2Monde = computed(() => lang2.LANGUES2.filter((l) => !l.afrique))
+const langues2Afrique = computed(() => lang2.LANGUES2.filter((l) => l.afrique))
+const avertissementLangue2 = computed(() => {
+  const l = lang2.LANGUES2.find((x) => x.code === lang2.code)
+  if (!l || !l.afrique) return ''
+  const socle = 'Le français reste affiché au-dessus : en cas de doute, c’est lui qui fait foi.'
+  if (l.qualite === 'experimentale') {
+    return `La traduction en ${l.native} est expérimentale : elle est produite automatiquement, à partir de très peu de ressources, et comportera des erreurs. ${socle}`
+  }
+  if (l.qualite === 'moyenne') {
+    return `La traduction en ${l.native} est produite automatiquement et peut comporter des maladresses. ${socle}`
+  }
+  return `La traduction en ${l.native} est produite automatiquement. ${socle}`
+})
 const sectionAvantParametres = ref('accueil')
 function ouvrirParametres() {
   if (section.value !== 'profil') sectionAvantParametres.value = section.value
@@ -3253,6 +3279,11 @@ onUnmounted(() => {
 .nav-titre {
   display: block; padding: 4px 10px 8px; font-size: 11.5px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .04em; color: var(--tx3, #9ca3af);
+}
+.lang2-avert {
+  margin: 10px 0 0; padding: 10px 12px; border-radius: 10px;
+  background: rgba(217, 119, 6, .09); color: #92400e;
+  font-size: 12.5px; line-height: 1.5;
 }
 .param-tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px; background: rgba(var(--pr-rgb), .06); border-radius: 14px; }
 .param-tab { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: none; background: none; border-radius: 10px; font-family: inherit; font-size: 13.5px; font-weight: 600; color: var(--tx3); cursor: pointer; transition: background .15s ease, color .15s ease; }

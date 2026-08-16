@@ -20,6 +20,7 @@
 
       <form @submit.prevent="handleLogin" class="auth-form">
         <div v-if="errorMessage" class="auth-error">{{ errorMessage }}</div>
+        <div v-if="infoMessage" class="auth-info">{{ infoMessage }}</div>
 
         <div class="auth-field">
           <label class="auth-label">{{ t('mal.emailLabel') }}</label>
@@ -49,6 +50,18 @@
               <svg v-else width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
             </button>
           </div>
+        </div>
+
+        <!-- Mot de passe oublié — n'apparaît qu'APRÈS un échec.
+             Le proposer d'emblée sur un écran d'administration invite à s'en
+             servir ; le proposer au moment où quelqu'un vient de se tromper,
+             c'est lui tendre la porte de sortie exactement quand il la
+             cherche. Sans ce lien, un administrateur qui perdait son mot de
+             passe n'avait plus AUCUN moyen de rentrer. -->
+        <div v-if="montrerOubli" class="auth-forgot-row">
+          <button type="button" class="auth-forgot-link" :disabled="isLoading" @click="motDePasseOublie">
+            {{ t('login.forgotPassword') }}
+          </button>
         </div>
 
         <button type="submit" class="auth-btn-primary" :disabled="isLoading">
@@ -94,17 +107,40 @@ const loginPassword = ref('')
 const showPassword = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const infoMessage = ref('')
+// Le lien de réinitialisation n'apparaît qu'après un échec : sur un écran
+// d'administration, l'afficher d'emblée revient à inviter à s'en servir.
+const montrerOubli = ref(false)
 
 async function handleLogin() {
   isLoading.value = true
   errorMessage.value = ''
+  infoMessage.value = ''
   const r = await authStore.loginWithEmail(loginEmail.value.trim(), loginPassword.value)
   isLoading.value = false
   if (!r.success) {
     errorMessage.value = r.error
+    montrerOubli.value = true
     return
   }
   goAfterLogin()
+}
+
+async function motDePasseOublie() {
+  const email = loginEmail.value.trim()
+  if (!email || !email.includes('@')) {
+    errorMessage.value = t('login.resetNeedEmail')
+    return
+  }
+  isLoading.value = true
+  errorMessage.value = ''
+  const r = await authStore.resetPassword(email)
+  isLoading.value = false
+  // resetPassword renvoie volontairement un succès même si l'adresse est
+  // inconnue : on ne dit jamais à un inconnu quels comptes existent. Le
+  // message est donc le même dans les deux cas.
+  if (r.success) infoMessage.value = t('login.resetEmailSent')
+  else errorMessage.value = r.error
 }
 
 async function handleGoogleLogin() {
@@ -265,6 +301,16 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 4px;
+}
+.auth-forgot-row { display: flex; justify-content: flex-end; margin: -4px 0 4px; }
+.auth-forgot-link {
+  border: none; background: none; padding: 4px 2px; cursor: pointer;
+  font-family: inherit; font-size: 13px; color: var(--pr, #1558B0); text-decoration: underline;
+}
+.auth-forgot-link:disabled { opacity: .6; cursor: default; }
+.auth-info {
+  padding: 10px 12px; border-radius: 10px; margin-bottom: 12px;
+  background: rgba(22, 163, 74, .10); color: #15803d; font-size: 13.5px; line-height: 1.5;
 }
 .auth-btn-primary {
   width: 100%;
