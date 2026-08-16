@@ -99,17 +99,18 @@
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
           <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p></div>
       </div>
-      <!-- Signalement d'une question fausse. Visible dès que la réponse est
-           révélée, y compris en cas de réussite : c'est souvent en LISANT la
-           correction qu'on voit qu'elle ne tient pas.
-           Discret à dessein — il ne doit pas concurrencer « Question suivante ». -->
+      <!-- Signalement — FORMULATION NEUTRE, à ne pas durcir.
+           La version précédente disait « Cette question est fausse » : elle
+           AFFIRMAIT le défaut et invitait à douter de tout le reste. Un canal
+           de signalement est sain dans un produit éducatif ; annoncer à
+           l'élève que ses exercices peuvent être faux ne l'est pas.
+           Discret aussi par la place : il ne doit pas concurrencer
+           « Question suivante ». -->
       <div v-if="revealed" class="tq-signal-row">
         <button v-if="!signalee" type="button" class="tq-signal" @click="signalerQuestion">
-          <Flag :size="13" /> <span>Cette question est fausse</span>
+          <Flag :size="12" /> <span>Signaler</span>
         </button>
-        <span v-else class="tq-signal-ok">
-          Merci. Elle ne te sera plus proposée, et EDUFREM va la vérifier.
-        </span>
+        <span v-else class="tq-signal-ok">Merci, c'est signalé.</span>
       </div>
 
       <!-- Aide facultative : seulement si l'apprenant a échoué. « Approfondir »

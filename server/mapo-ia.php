@@ -890,7 +890,29 @@ function buildTutorQuizPrompts($d) {
     . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
     . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
-    . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition.";
+    . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition. "
+    // ── AUTO-VÉRIFICATION OBLIGATOIRE ───────────────────────────────────────
+    // Erreur mesurée en prod le 16/08 : « quadrilatère aux côtés opposés
+    // parallèles et de même longueur, SANS avoir forcément quatre angles
+    // droits » → réponse marquée « rectangle ». Le modèle CONNAÎT la réponse
+    // (parallélogramme) : il a lâché la contrainte négative en cours de route,
+    // puis rédigé une explication qui contredisait son propre énoncé.
+    //
+    // Ce n'est donc pas un trou de connaissance, et aucun corpus n'y aurait
+    // changé quoi que ce soit. C'est un défaut de RELECTURE — détectable sans
+    // la moindre source extérieure. On force donc le modèle à écrire cette
+    // relecture : rédiger « le rectangle a quatre angles droits, donc il est
+    // exclu » l'oblige à confronter sa réponse à sa propre question.
+    . "AVANT DE RÉPONDRE, RELIS CHAQUE QUESTION ET VÉRIFIE-LA. Pour chacune : "
+    . "(a) reprends une par une TOUTES les contraintes de l'énoncé, y compris les négations et les restrictions "
+    . "(« sans », « qui n'est pas », « pas forcément », « sauf ») — ce sont elles qu'on oublie ; "
+    . "(b) confirme que la proposition marquée correcte les satisfait TOUTES ; "
+    . "(c) confirme que les trois autres en violent au moins une ; "
+    . "(d) confirme que l'explication ne contredit NI l'énoncé NI la réponse marquée correcte. "
+    . "Si une question échoue à l'un de ces points, NE LA CORRIGE PAS : remplace-la par une autre question, sur la même notion. "
+    . "Si la bonne réponse ne peut pas figurer parmi les propositions, la question est à jeter. "
+    . "Ajoute pour chaque question un champ \"verif\" : une phrase indiquant la contrainte la plus restrictive de l'énoncé et pourquoi la réponse retenue la satisfait. "
+    . "Ce champ n'est PAS affiché à l'élève : il sert à t'obliger à faire la vérification.";
   // Sous-RAG perso : personnalise le CONTEXTE (exemples, ton) sans jamais toucher
   // à la difficulté (pilotée par le niveau adaptatif) ni recopier le profil.
   if ($digest !== '') $system .= " PERSONNALISATION : un PROFIL de l'apprenant est fourni ci-dessous (forces, centres d'intérêt, forme du jour…). ANCRE le contexte et les exemples des questions dans ses centres d'intérêt, et adapte le TON pour le motiver — MAIS conserve EXACTEMENT le niveau de difficulté demandé plus haut, et ne cite JAMAIS le profil dans le texte des questions.";
