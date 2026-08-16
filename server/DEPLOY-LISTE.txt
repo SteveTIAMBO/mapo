@@ -1,10 +1,21 @@
 # Fichiers de server/ à publier sur l'hébergement — LISTE UNIQUE.
 #
-# Lue par le workflow CI (.github/workflows/deploy.yml) ET par le script de
-# déploiement manuel (_DEPLOIEMENT-AUTO/envoyer-tranche.sh). Avant, chacun
-# avait sa propre liste : le script manuel n'envoyait en réalité AUCUN .php,
-# et rien ne le disait. Une seule liste, donc, qu'on ne peut plus oublier
-# de tenir à jour à moitié.
+# Lue par le workflow CI (.github/workflows/deploy.yml) et par le script de
+# publication serveur (_DEPLOIEMENT-AUTO/envoyer-serveur.sh). Une seule liste,
+# qu'on ne peut plus tenir à jour à moitié.
+#
+# ⚠️ LE DÉPLOIEMENT FRONT NE PUBLIE AUCUN .php, ET C'EST VOULU.
+# Le build Vite ne contient pas de PHP : c'est ce qui garantit, par
+# construction, qu'une mise en ligne du front ne peut pas écraser un fichier
+# serveur ni une configuration. Une garantie structurelle vaut mieux qu'un
+# filtre — un filtre se contourne par distraction.
+# Les enjeux ne sont pas symétriques : un front raté se redéploie en trente
+# secondes ; un mapo-ia.php cassé arrête l'IA payante, les paiements et la
+# création d'écoles. Publier du serveur doit se DÉCIDER.
+#
+# Deux voies, toutes deux explicites :
+#   • un push sur GitHub  → la CI lit ce fichier ;
+#   • ./envoyer-serveur.sh --confirmer  → publication manuelle.
 #
 # ⚠️ N'INSCRIRE ICI AUCUN fichier de configuration (*-config.php) ni
 # mapo-sa-key.json : ils vivent uniquement sur le serveur, hors du dépôt.
