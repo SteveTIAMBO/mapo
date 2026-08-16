@@ -98,7 +98,21 @@ if (!function_exists('mp_b64url')) {
    * un abonnement. C'est ce qui empêchait d'alerter un parent quand les crédits
    * de son enfant s'épuisent.
    */
-  function mp_subsAdd($sub, $uid = '') {
+  /**
+   * Enregistre un abonnement push.
+   *
+   * `$textes` = les gabarits DÉJÀ TRADUITS dans la seconde langue du parent,
+   * traduits par le NAVIGATEUR au moment où il choisit sa langue. Le serveur
+   * ne traduit rien : il n'a ni accès au moteur de traduction, ni le droit de
+   * faire attendre un envoi de notification le temps d'un appel d'IA. Il
+   * recopie un texte préparé, c'est tout.
+   *
+   * Le français n'est jamais remplacé — il est CONCATÉNÉ avec la traduction
+   * (voir mp_texteBilingue). Une notification est lue seule, hors de
+   * l'application : si la traduction dit l'inverse du français, le parent doit
+   * pouvoir s'en apercevoir sans ouvrir l'app.
+   */
+  function mp_subsAdd($sub, $uid = '', $textes = null) {
     $endpoint = $sub['endpoint'] ?? '';
     if ($endpoint === '') return false;
     $fp = fopen(mp_subsPath(), 'c+');
@@ -114,6 +128,9 @@ if (!function_exists('mp_b64url')) {
       'endpoint' => $endpoint,
       'keys' => ['p256dh' => $sub['keys']['p256dh'] ?? '', 'auth' => $sub['keys']['auth'] ?? ''],
       'uid' => $uidConnu,
+      // Comme pour l'uid : un appel qui ne fournit pas de traductions ne doit
+      // pas effacer celles déjà enregistrées.
+      'textes' => is_array($textes) ? $textes : ($map[$cle]['textes'] ?? null),
       'at' => date('c'),
     ];
     ftruncate($fp, 0); rewind($fp); fwrite($fp, json_encode($map));
@@ -282,4 +299,18 @@ if (!function_exists('mp_b64url')) {
     curl_close($ch);
     return $code;
   }
+}
+
+/**
+ * Texte bilingue d'une notification : français, puis traduction sous un
+ * séparateur. Jamais la traduction seule.
+ *
+ * @param array|null $textes  gabarits traduits enregistrés avec l'abonnement
+ * @param string     $cle      identifiant du gabarit ('rappel', 'alerte'…)
+ * @param string     $fr       texte français, qui fait toujours foi
+ */
+function mp_texteBilingue($textes, $cle, $fr) {
+  $trad = is_array($textes) && !empty($textes[$cle]) ? trim((string) $textes[$cle]) : '';
+  if ($trad === '' || $trad === $fr) return $fr;
+  return $fr . ' · ' . $trad;
 }

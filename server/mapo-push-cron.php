@@ -39,16 +39,19 @@ if (!$isCli) {
 }
 
 $subs = mp_subsLoad();
-$payload = json_encode([
-  'title' => 'MAPO+',
-  'body'  => "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour.",
-  'url'   => '/parent/miapo',
-], JSON_UNESCAPED_UNICODE);
+// Le texte n'est plus commun à tous : chaque abonnement peut porter sa
+// traduction. On le compose donc DANS la boucle, et non une fois pour toutes.
+const CRON_RAPPEL_FR = "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour.";
 $subject = $VAPID_SUBJECT ?? 'mailto:contact@edufrem.com';
 
 $found = count($subs); $sent = 0; $purged = 0;
 foreach ($subs as $sub) {
   try {
+    $payload = json_encode([
+      'title' => 'MAPO+',
+      'body'  => mp_texteBilingue($sub['textes'] ?? null, 'rappel', CRON_RAPPEL_FR),
+      'url'   => '/parent/miapo',
+    ], JSON_UNESCAPED_UNICODE);
     $status = mp_sendWebPush($sub, $payload, $VAPID_PUBLIC, $VAPID_PRIVATE_PEM, $subject);
   } catch (Throwable $e) { $status = 0; }
   if ($status === 201 || $status === 200) {

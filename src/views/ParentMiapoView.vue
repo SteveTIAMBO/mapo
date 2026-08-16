@@ -832,7 +832,7 @@
               <div class="lang2-block">
                 <h4 class="lang2-title">{{ t('mia.lang2Title') }}</h4>
                 <p class="muted small">{{ t('mia.lang2Hint') }}</p>
-                <select class="input lang2-select" :value="lang2.code" @change="lang2.setCode($event.target.value)">
+                <select class="input lang2-select" :value="lang2.code" @change="changerLangue2($event.target.value)">
                   <option value="">{{ t('mia.lang2None') }}</option>
                   <optgroup label="Langues internationales">
                     <option v-for="l in langues2Monde" :key="l.code" :value="l.code">{{ l.native }}</option>
@@ -1472,6 +1472,16 @@ const sousSection = ref('profil')
 // perdre son fil à qui ouvrait les réglages depuis le tuteur.
 const enParametres = computed(() => section.value === 'profil')
 // Seconde langue : on sépare monde et Afrique, et on annonce la fiabilité.
+function changerLangue2(code) {
+  lang2.setCode(code)
+  // Les notifications partent hors de l'application, avec des textes préparés
+  // à l'avance : sans cette resynchronisation, le parent changerait de langue
+  // et continuerait de recevoir l'ancienne traduction, des heures plus tard,
+  // sans jamais faire le lien.
+  import('../stores/push')
+    .then(({ usePushStore }) => usePushStore().resynchroniserTextes())
+    .catch(() => { /* sans gravité : repris au prochain réabonnement */ })
+}
 const langues2Monde = computed(() => lang2.LANGUES2.filter((l) => !l.afrique))
 const langues2Afrique = computed(() => lang2.LANGUES2.filter((l) => l.afrique))
 const avertissementLangue2 = computed(() => {

@@ -32,13 +32,48 @@ export const usePushStore = defineStore('push', () => {
   }
 
   /** Inscrit / désinscrit l'abonnement au registre serveur (rappel quotidien). */
+  /**
+   * Gabarits des notifications envoyées HORS de l'application.
+   *
+   * Ils vivent ici, côté navigateur, parce que c'est le navigateur qui sait
+   * traduire (store langue2). Le serveur, lui, recopie un texte déjà prêt : il
+   * ne peut pas faire attendre un envoi le temps d'un appel d'IA, et n'a pas
+   * accès au moteur de traduction.
+   *
+   * Le français n'est pas remplacé mais complété côté serveur — une
+   * notification se lit seule, hors de l'app : si la traduction disait
+   * l'inverse, le parent doit pouvoir s'en apercevoir sans rien ouvrir.
+   */
+  const GABARITS_PUSH = {
+    rappel: "C'est l'heure de réviser ! Ouvre MAPO+ pour ta séance du jour.",
+  }
+
+  /** Traduit les gabarits dans la 2e langue, ou renvoie null s'il n'y en a pas. */
+  async function textesTraduits() {
+    try {
+      const { useLangue2Store } = await import('./langue2')
+      const l2 = useLangue2Store()
+      if (!l2.enabled) return null
+      const cles = Object.keys(GABARITS_PUSH)
+      const out = await l2.traduireMaintenant(cles.map((k) => GABARITS_PUSH[k]))
+      if (!out || !out.length) return null
+      const res = {}
+      cles.forEach((k, i) => { if (out[i]) res[k] = out[i] })
+      return Object.keys(res).length ? res : null
+    } catch { return null }
+  }
+
   async function registerServer(sub, action) {
     try {
       const headers = { 'Content-Type': 'application/json' }
       if (auth.currentUser) headers.Authorization = 'Bearer ' + await auth.currentUser.getIdToken()
+      const corps = { action, subscription: JSON.parse(JSON.stringify(sub)) }
+      if (action === 'register') {
+        const textes = await textesTraduits()
+        if (textes) corps.textes = textes
+      }
       await fetch('/mapo-push.php', {
-        method: 'POST', headers,
-        body: JSON.stringify({ action, subscription: JSON.parse(JSON.stringify(sub)) }),
+        method: 'POST', headers, body: JSON.stringify(corps),
       })
     } catch { /* le test immédiat marche quand même ; le quotidien reprendra au prochain enable */ }
   }
@@ -78,6 +113,22 @@ export const usePushStore = defineStore('push', () => {
     } catch (e) {
       return { ok: false, reason: 'error', detail: String(e && e.message || e) }
     } finally { busy.value = false }
+  }
+
+  /**
+   * Le parent vient de changer de seconde langue : on renvoie les gabarits.
+   *
+   * Sans ça, il choisirait le wolof et continuerait de recevoir ses rappels
+   * avec la traduction précédente — un défaut invisible, puisque la
+   * notification arrive hors de l'application, souvent des heures plus tard.
+   */
+  async function resynchroniserTextes() {
+    if (!supported.value || !subscribed.value) return
+    try {
+      const reg = await ready()
+      const sub = await reg.pushManager.getSubscription()
+      if (sub) await registerServer(sub, 'register')
+    } catch { /* sans gravité : repris au prochain enable */ }
   }
 
   /** Coupe les rappels : désabonnement navigateur + retrait Firestore. */
@@ -146,5 +197,5 @@ export const usePushStore = defineStore('push', () => {
     }
   }
 
-  return { supported, permission, subscribed, busy, refresh, enable, disable, sendTest, prevenirParent }
+  return { supported, permission, subscribed, busy, refresh, enable, disable, sendTest, prevenirParent , resynchroniserTextes }
 })

@@ -50,7 +50,17 @@ $action = $body['action'] ?? 'send';
 if ($action === 'register') {
   // $uid vient du jeton VÉRIFIÉ, jamais du corps de la requête : c'est lui qui
   // rend possible l'envoi ciblé (alerter LE parent de CET enfant).
-  echo json_encode(['ok' => mp_subsAdd($sub ?: [], $uid ?: '')]); exit;
+  // Gabarits traduits, préparés par le navigateur (voir mp_subsAdd). Bornés :
+  // ils viennent du client et finissent dans une notification.
+  $textes = null;
+  if (is_array($body['textes'] ?? null)) {
+    $textes = [];
+    foreach ($body['textes'] as $k => $v) {
+      $k = preg_replace('/[^a-z_]/', '', (string) $k);
+      if ($k !== '') $textes[$k] = mb_substr(trim((string) $v), 0, 300);
+    }
+  }
+  echo json_encode(['ok' => mp_subsAdd($sub ?: [], $uid ?: '', $textes)]); exit;
 }
 if ($action === 'unregister') {
   mp_subsRemove($sub['endpoint'] ?? '');

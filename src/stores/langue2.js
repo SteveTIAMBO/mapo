@@ -139,5 +139,31 @@ export const useLangue2Store = defineStore('langue2', () => {
     try { if (code.value) localStorage.setItem(CODE_KEY, code.value); else localStorage.removeItem(CODE_KEY) } catch { /* silent */ }
     loadDict()
   }
-  return { code, dict, enabled, LANGUES2, tr, setCode }
+  /**
+   * Traduit MAINTENANT une liste de textes et attend le résultat.
+   *
+   * `tr()` est volontairement asynchrone et différée : elle sert l'affichage,
+   * où l'on préfère montrer le français tout de suite quitte à compléter
+   * ensuite. Ici c'est l'inverse : on prépare des textes qui partiront plus
+   * tard, hors de l'application (notifications). Il faut donc la réponse avant
+   * de continuer — et la mettre en cache pour ne pas repayer la traduction.
+   */
+  async function traduireMaintenant(textes) {
+    if (!code.value || !Array.isArray(textes) || !textes.length) return []
+    const cible = langEn()
+    if (!cible) return []
+    const manquants = textes.filter((t) => !dict.value[t])
+    if (manquants.length) {
+      const out = await useTuteurStore().translateUI(manquants, cible, 'French')
+      if (out && out.length) {
+        const d = { ...dict.value }
+        manquants.forEach((t, i) => { if (out[i]) d[t] = out[i] })
+        dict.value = d
+        persistDict()
+      }
+    }
+    return textes.map((t) => dict.value[t] || '')
+  }
+
+  return { code, dict, enabled, LANGUES2, tr, setCode, traduireMaintenant }
 })
