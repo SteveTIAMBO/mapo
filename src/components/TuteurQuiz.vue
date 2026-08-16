@@ -27,8 +27,13 @@
             <component :is="voiceOn ? Volume2 : VolumeX" :size="15" />
             <span>{{ voiceOn ? 'Voix ON' : 'Mode voix' }}</span>
           </button>
-          <span class="ia-badge" :class="lastMode === 'ia' ? 'is-ia' : 'is-sim'">
-            <MiapoOrbe :size="14" frozen /> {{ lastMode === 'ia' ? 'MIAPO' : 'Démo' }}
+          <!-- « Démo » ne doit désigner QUE des questions simulées. Le mode
+               `banque` sert des questions bel et bien produites par MIAPO,
+               simplement mises en cache pour ne pas les repayer : les afficher
+               comme une démo faisait croire à du faux contenu, et décrédibilisait
+               une vraie révision. -->
+          <span class="ia-badge" :class="estIA ? 'is-ia' : 'is-sim'">
+            <MiapoOrbe :size="14" frozen /> {{ estIA ? 'MIAPO' : 'Démo' }}
           </span>
         </div>
       </div>
@@ -94,6 +99,19 @@
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
           <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p></div>
       </div>
+      <!-- Signalement d'une question fausse. Visible dès que la réponse est
+           révélée, y compris en cas de réussite : c'est souvent en LISANT la
+           correction qu'on voit qu'elle ne tient pas.
+           Discret à dessein — il ne doit pas concurrencer « Question suivante ». -->
+      <div v-if="revealed" class="tq-signal-row">
+        <button v-if="!signalee" type="button" class="tq-signal" @click="signalerQuestion">
+          <Flag :size="13" /> <span>Cette question est fausse</span>
+        </button>
+        <span v-else class="tq-signal-ok">
+          Merci. Elle ne te sera plus proposée, et EDUFREM va la vérifier.
+        </span>
+      </div>
+
       <!-- Aide facultative : seulement si l'apprenant a échoué. « Approfondir »
            déclenche l'explication du concept ; « Répondre » ouvre le chat. -->
       <div v-if="revealed && !firstTry" class="tq-deepen">
@@ -210,8 +228,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { exclureQuestion } from '../stores/tuteur'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Check, X, Lightbulb, BookOpen, Flame, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer } from 'lucide-vue-next'
+import { Loader2, Check, X, Lightbulb, BookOpen, Flame, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer, Flag } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
@@ -465,6 +484,51 @@ const sourceLabel = computed(() => {
   return ''
 })
 const lastMode = computed(() => tuteur.lastMode)
+// `ia` = généré à l'instant, `banque` = généré par MIAPO puis mis en cache.
+// Les deux sont du vrai contenu ; seul `simulation` est une démo.
+const estIA = computed(() => lastMode.value === 'ia' || lastMode.value === 'banque')
+
+/**
+ * Signaler une question fausse.
+ *
+ * ⚠️ POURQUOI C'EST INDISPENSABLE. Les questions sont mises en cache dans une
+ * banque PARTAGÉE (même matière, même niveau, même difficulté) pour ne pas les
+ * repayer. Une question fausse n'est donc pas un incident isolé : elle est
+ * servie à tous les élèves suivants, indéfiniment. Sans moyen de la retirer,
+ * une erreur de génération devient permanente.
+ *
+ * Cas réel (Steve, 16/08) : « quadrilatère aux côtés opposés parallèles et de
+ * même longueur, SANS forcément quatre angles droits » → réponse validée
+ * « rectangle ». C'est un parallélogramme, et « rectangle » contredit
+ * l'énoncé. L'explication affichée contredisait la question elle-même.
+ *
+ * Deux effets, immédiat et durable : la question est exclue des prochains
+ * tirages de CET apprenant, et le signalement part à EDUFREM avec de quoi la
+ * retrouver dans la banque.
+ */
+const signalee = ref(false)
+async function signalerQuestion() {
+  const q = current.value
+  if (!q || signalee.value) return
+  signalee.value = true
+  try { exclureQuestion(props.studentId, q.q) } catch { /* best-effort */ }
+  try {
+    await fetch('/mapo-feedback.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'bug',
+        subject: 'Question de quiz erronée — ' + props.matiere,
+        message: 'Question signalée par un apprenant.\n\n'
+          + 'Matière : ' + props.matiere + '\nNiveau : ' + (props.niveau || '—')
+          + '\nDifficulté : ' + level.value + '\nMode : ' + lastMode.value
+          + '\n\nÉnoncé : ' + q.q
+          + '\nRéponses : ' + (q.choices || []).join(' | ')
+          + '\nRéponse marquée correcte : ' + ((q.choices || [])[q.answer] ?? '—')
+          + '\nExplication : ' + (q.explanation || '—'),
+      }),
+    })
+  } catch { /* le retrait local a déjà eu lieu, c'est le principal */ }
+}
 
 const subjectId = computed(() => 'auto-' + props.matiere)
 const level = ref(1)            // niveau de difficulté du quiz en cours
@@ -780,6 +844,15 @@ onMounted(start)
 </script>
 
 <style scoped>
+.tq-signal-row { margin: 10px 0 2px; }
+.tq-signal {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px 5px 7px;
+  border: none; border-radius: 8px; background: transparent;
+  color: var(--tx3, #9ca3af); font-family: inherit; font-size: 12.5px; cursor: pointer;
+}
+.tq-signal:hover { background: rgba(185, 28, 28, .07); color: #b91c1c; }
+.tq-signal-ok { display: inline-block; font-size: 12.5px; color: #16a34a; font-weight: 600; }
+
 .tq { display: flex; flex-direction: column; }
 .tq-loading { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 16px; text-align: center; }
 .tq-loading p { margin: 0; font-size: 15px; color: var(--tx); }

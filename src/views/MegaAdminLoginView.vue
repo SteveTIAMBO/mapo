@@ -166,14 +166,21 @@ async function handleGoogleLogin() {
 }
 
 async function goAfterLogin() {
-  // Attendre que loadUserProfile détermine isSuperAdmin
-  await authStore.ready()
+  // `ready()` ne suffisait PAS : sa promesse ne se résout qu'une fois, à la
+  // première réponse de Firebase — donc déjà résolue avant même la connexion
+  // sur cet écran. On lisait isSuperAdmin trop tôt, on rejetait un super admin
+  // valide, et on le DÉCONNECTAIT au passage.
+  await authStore.attendreProfil()
   if (authStore.isSuperAdmin) {
     router.push('/admin')
-  } else {
-    await authStore.logout()
-    errorMessage.value = "Ce compte n'est pas autorisé sur l'espace d'administration EDUFREM."
+    return
   }
+  // On ne déconnecte plus : si le verdict est faux, déconnecter enferme
+  // l'utilisateur dans une boucle où chaque tentative repart de zéro. Le
+  // message dit aussi ce qui manque, pour que la cause soit vérifiable.
+  errorMessage.value = "Ce compte (" + (authStore.user?.email || '—') + ") n'a pas de fiche dans « superAdmins », "
+    + "la collection Firestore qui donne l'accès à l'espace d'administration. "
+    + "Elle se crée depuis la console Firebase, avec l'identifiant du compte comme nom de document."
 }
 
 // Si déjà connecté en super admin, on bascule

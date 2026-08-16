@@ -178,6 +178,26 @@ export const useAuthStore = defineStore('auth', () => {
     if (resolveReady) { resolveReady(); resolveReady = null }
   }
 
+  /**
+   * Attend que le profil chargé corresponde à l'utilisateur connecté.
+   *
+   * `ready()` ne suffit pas : sa promesse ne se résout QU'UNE FOIS, à la
+   * première réponse de Firebase. Sur un écran de connexion, elle est donc
+   * déjà résolue avant même qu'on se connecte, et l'attendre ne fait rien —
+   * on lit alors un profil qui n'est pas encore celui du nouvel arrivant.
+   */
+  async function attendreProfil(timeoutMs = 8000) {
+    const t0 = Date.now()
+    while (Date.now() - t0 < timeoutMs) {
+      const u = user.value
+      if (!u) return false
+      if (isSuperAdmin.value) return true
+      if (userProfile.value && userProfile.value.uid === u.uid) return true
+      await new Promise((r) => setTimeout(r, 120))
+    }
+    return false
+  }
+
   const isAuthenticated = computed(() => !!user.value)
   const isAdmin = computed(() => userProfile.value?.role === 'admin')
   const isDirecteur = computed(() => ['admin', 'directeur'].includes(userProfile.value?.role))
@@ -745,7 +765,19 @@ export const useAuthStore = defineStore('auth', () => {
   async function loadUserProfile(firebaseUser) {
     if (!firebaseUser) return
     notProvisioned.value = false
-    isSuperAdmin.value = false
+    // ⚠️ NE PAS remettre isSuperAdmin à false ICI.
+    //
+    // Bug vécu (Steve, 16/08) : « avec Google il me dit que mon compte n'est
+    // pas autorisé ». Deux exécutions de cette fonction se chevauchent — celle
+    // de loginWithGoogle() et celle déclenchée par onAuthStateChanged. La
+    // seconde remettait le drapeau à false pendant que MegaAdminLoginView le
+    // lisait, juste après la première. Le super admin était donc rejeté ET
+    // déconnecté, alors que ses identifiants étaient bons.
+    //
+    // On ne baisse plus le drapeau par précaution : on le règle quand on SAIT,
+    // c'est-à-dire après une lecture qui a réussi. Une lecture qui échoue
+    // (hors ligne, règle) laisse l'état précédent — mieux vaut garder un accès
+    // acquis que le retirer sur une incertitude.
 
     // 1) Compte super admin EDUFREM ? (court-circuit le flux école)
     try {
@@ -764,6 +796,8 @@ export const useAuthStore = defineStore('auth', () => {
         }
         return
       }
+      // Lecture réussie et aucun document : la réponse est ferme.
+      isSuperAdmin.value = false
     } catch (e) {
       console.error('Erreur vérification super admin:', e)
     }
@@ -1051,6 +1085,7 @@ export const useAuthStore = defineStore('auth', () => {
     isDirecteurComplexe, complexeId,
     edition, isEditionSuperieur, isEditionSecondaire,
     isDemo, notProvisioned, isSuperAdmin, schoolId, userFirstName,
+    attendreProfil,
     loginDemo, loginDemoSup, loginWithEmail, loginWithIdentifier, signUpWithEmail, loginWithGoogle, resetPassword,
     definirIdentifiantsEnfant, accesDebloque,
     resendVerification, ensureEmailVerified,

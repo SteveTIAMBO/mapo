@@ -103,6 +103,29 @@ function bankDocRef(key) { return doc(db, 'quizBank', key) }
 
 // Normalise un intitulé de question pour comparer « déjà vue » sans se faire
 // piéger par la casse, les accents ou la ponctuation.
+/**
+ * Questions signalées comme FAUSSES par l'apprenant.
+ *
+ * La banque de questions est PARTAGÉE : une question erronée y reste et est
+ * resservie indéfiniment à tous les élèves du même niveau. Ce registre local
+ * la retire au moins des tirages de celui qui l'a repérée, sans attendre une
+ * correction manuelle de la banque.
+ */
+const CLE_SIGNALEES = (sid) => `mapo_b2c_q_signalees_${sid || 'me'}`
+export function questionsSignalees(studentId) {
+  try {
+    const b = JSON.parse(localStorage.getItem(CLE_SIGNALEES(studentId)) || '[]')
+    return Array.isArray(b) ? b : []
+  } catch { return [] }
+}
+export function exclureQuestion(studentId, texte) {
+  const n = normQuestion(texte)
+  if (!n) return
+  const liste = questionsSignalees(studentId)
+  if (liste.includes(n)) return
+  try { localStorage.setItem(CLE_SIGNALEES(studentId), JSON.stringify([...liste, n].slice(-200))) } catch { /* quota */ }
+}
+
 function normQuestion(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 }
@@ -209,6 +232,9 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // de la redite.
     const dejaVues = new Set()      // texte normalisé → filtre de la banque
     const dejaVuesTexte = []        // texte d'origine → envoyé à l'IA, plus lisible
+    // Questions signalées comme fausses : on ne les repropose jamais, même si
+    // la banque partagée les contient toujours.
+    try { questionsSignalees(studentId).forEach((n) => dejaVues.add(n)) } catch { /* silent */ }
     try {
       if (studentId) {
         const m = normQuestion(matiere)
