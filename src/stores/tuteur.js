@@ -89,6 +89,25 @@ function revisionDocRef(uid, studentId) {
 // et ça fonctionne en faible connectivité (cache Firestore persistant).
 // Best-effort : si la règle Firestore `quizBank` n'est pas publiée ou hors-ligne,
 // on régénère simplement comme avant (aucune casse).
+/**
+ * Version de la banque de questions partagée.
+ *
+ * PURGE DU 16/08 — v2. Toutes les questions écrites AVANT la vérification par
+ * solveur aveugle (server/mapo-ia.php) sont du contenu non contrôlé : la banque
+ * contenait au moins une question dont aucune proposition n'était juste, servie
+ * à tout élève du même niveau.
+ *
+ * On ne supprime pas les documents : on change la CLÉ. Les anciens deviennent
+ * inatteignables d'un coup, sans toucher Firestore ni manipuler la clé de
+ * service — même principe que l'empreinte des codes cadeaux. Ils pourront être
+ * effacés depuis la console à loisir ; en attendant ils ne coûtent que du
+ * stockage.
+ *
+ * ⚠️ INCRÉMENTER À CHAQUE FOIS qu'on renforce le contrôle qualité : c'est la
+ * seule façon de garantir qu'aucune question d'avant ne survit au changement.
+ */
+const BANQUE_VERSION = 'v2'
+
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   // PAS DE PLAFOND sur la difficulté. Un `min(5, …)` faisait tomber TOUS les
@@ -97,7 +116,7 @@ function bankKey(matiere, niveau, difficulte) {
   // mêmes questions à difficulté gelée, niveau après niveau. Le serveur, lui,
   // sait déjà calibrer au-delà de 5 (type concours) — c'était la clé qui bridait.
   const d = Math.max(1, Number(difficulte) || 1)
-  return `${norm(matiere)}__${norm(niveau)}__d${d}`
+  return `${BANQUE_VERSION}__${norm(matiere)}__${norm(niveau)}__d${d}`
 }
 function bankDocRef(key) { return doc(db, 'quizBank', key) }
 

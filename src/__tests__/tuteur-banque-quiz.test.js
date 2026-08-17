@@ -11,6 +11,9 @@
  * effectivement émis), et pas seulement « ça ne plante pas » — leçon du
  * 05/08 : un test qui ne vérifie que l'absence d'incident ne prouve rien.
  */
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 
@@ -76,21 +79,46 @@ beforeEach(() => {
   })
 })
 
+
+/**
+ * Clé de banque, sans présumer du préfixe de VERSION.
+ *
+ * La clé est versionnée (`v2__…`) : c'est ce qui rend une purge instantanée
+ * quand on renforce le contrôle qualité. Figer le littéral dans un test
+ * obligerait à retoucher le test à chaque purge — et un test qu'on retouche
+ * pour le faire passer ne protège plus rien. On vérifie donc le SUFFIXE.
+ */
+const finit = (cles, suffixe) => cles.some((k) => k.endsWith(suffixe))
+const finitAucune = (cles, suffixe) => !finit(cles, suffixe)
+const cleBanque = (banque, suffixe) => Object.keys(banque).find((k) => k.endsWith(suffixe))
+
+// La banque de test doit être remplie sous la MÊME clé que celle que le store
+// va lire — préfixe de version compris. On LIT donc la version dans la source :
+// la recopier à la main ferait tomber ce test à chaque purge, et un test qu'on
+// retouche pour le faire passer ne protège plus rien.
+const VERSION_BANQUE = (() => {
+  const ici = dirname(fileURLToPath(import.meta.url))
+  const src = readFileSync(resolve(ici, '../stores/tuteur.js'), 'utf8')
+  const m = src.match(/const BANQUE_VERSION = '([a-z0-9]+)'/)
+  return m ? m[1] : ''
+})()
+const cleTest = (suffixe) => VERSION_BANQUE + '__' + suffixe
+
 describe('Banque de quiz — la difficulté ne doit plus être plafonnée', () => {
   it('deux niveaux distincts au-delà de 5 lisent DEUX documents différents', async () => {
     const tuteur = useTuteurStore()
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 6 })
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 7 })
 
-    const lues = clesLues.filter((k) => k.startsWith('anglais__5eme'))
-    expect(lues).toContain('anglais__5eme__d6')
-    expect(lues).toContain('anglais__5eme__d7')
+    const lues = clesLues.filter((k) => k.includes('anglais__5eme'))
+    expect(finit(lues, 'anglais__5eme__d6')).toBe(true)
+    expect(finit(lues, 'anglais__5eme__d7')).toBe(true)
     // Le symptôme exact du bug : tout retombait sur d5.
-    expect(lues).not.toContain('anglais__5eme__d5')
+    expect(finitAucune(lues, 'anglais__5eme__d5')).toBe(true)
   })
 
   it('le niveau 12 ne réutilise pas la banque du niveau 5', async () => {
-    banque['anglais__5eme__d5'] = questions('Niveau 5', 10)
+    banque[cleTest('anglais__5eme__d5')] = questions('Niveau 5', 10)
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 12 })
 
@@ -114,20 +142,20 @@ describe('Banque de quiz — un apprenant ne rejoue pas ses propres questions', 
 
   it('si la banque ne contient que du déjà-vu, on régénère au lieu de resservir', async () => {
     const dejaJouees = questions('Déjà vue', 10)
-    banque['anglais__5eme__d3'] = dejaJouees
+    banque[cleTest('anglais__5eme__d3')] = dejaJouees
     historique('enf1', 'Anglais', dejaJouees)
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
 
-    expect(clesLues).toContain('anglais__5eme__d3') // la banque a bien été consultée
+    expect(finit(clesLues, 'anglais__5eme__d3')).toBe(true) // la banque a bien été consultée
     expect(res.mode).toBe('ia')                      // …et écartée : elle n'avait que du déjà-vu
     expect(appelsIA).toHaveLength(1)
   })
 
   it('la banque reste utilisée quand elle a assez de questions neuves', async () => {
     historique('enf1', 'Anglais', questions('Déjà vue', 5))
-    banque['anglais__5eme__d3'] = [...questions('Déjà vue', 5), ...questions('Neuve', 10)]
+    banque[cleTest('anglais__5eme__d3')] = [...questions('Déjà vue', 5), ...questions('Neuve', 10)]
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -149,12 +177,25 @@ describe('Banque de quiz — un apprenant ne rejoue pas ses propres questions', 
 
   it("l'historique d'une AUTRE matière n'écarte rien", async () => {
     historique('enf1', 'Mathématiques', questions('Déjà vue', 10))
-    banque['anglais__5eme__d3'] = questions('Déjà vue', 10)
+    banque[cleTest('anglais__5eme__d3')] = questions('Déjà vue', 10)
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
 
     expect(res.mode).toBe('banque') // rien à écarter en anglais → la banque sert
     expect(appelsIA).toHaveLength(0)
+  })
+})
+
+
+describe('La banque partagée est VERSIONNÉE (purge instantanée)', () => {
+  it('une version est bien définie dans le store', () => {
+    // Sans préfixe de version, purger la banque exigerait de supprimer des
+    // documents Firestore — donc la clé de service, qu'on ne manipule pas.
+    expect(VERSION_BANQUE).toMatch(/^v\d+$/)
+  })
+
+  it('toute clé lue porte ce préfixe', () => {
+    expect(cleTest('maths__6eme__d1').startsWith(VERSION_BANQUE + '__')).toBe(true)
   })
 })
