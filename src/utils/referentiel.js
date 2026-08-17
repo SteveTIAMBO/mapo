@@ -24,12 +24,21 @@
  * le choix de commencer par les mathématiques.
  */
 import mathsCycle4 from '../data/referentiels/fr-mathematiques-cycle4.json'
+import mathsCycle3 from '../data/referentiels/fr-mathematiques-cycle3.json'
 
-const REFERENTIELS = [mathsCycle4]
+// Plusieurs référentiels peuvent couvrir la même matière dans des cycles
+// différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
+const REFERENTIELS = [mathsCycle3, mathsCycle4]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9]+/g, '')
+
+/** Référentiel couvrant cette classe, ou null. */
+function trouver({ pays, niveau, matiere }) {
+  const cl = String(niveau || '').trim()
+  return REFERENTIELS.find((x) => x.pays === pays && norm(x.matiere) === norm(matiere) && x.classes[cl]) || null
+}
 
 /**
  * Année scolaire en cours (celle de la RENTRÉE).
@@ -46,10 +55,9 @@ export function anneeScolaire(date = new Date()) {
  * pas de référentiel qu'un référentiel faux.
  */
 export function notionsOfficielles({ pays, niveau, matiere, date = new Date() }) {
-  const r = REFERENTIELS.find((x) => x.pays === pays && norm(x.matiere) === norm(matiere))
+  const r = trouver({ pays, niveau, matiere })
   if (!r) return []
   const cl = r.classes[String(niveau || '').trim()]
-  if (!cl) return []
   if (anneeScolaire(date) < cl.enVigueurRentree) return [] // pas encore applicable
   return cl.notions
 }
@@ -57,7 +65,7 @@ export function notionsOfficielles({ pays, niveau, matiere, date = new Date() })
 /** Provenance à afficher — l'attribution est une obligation de la licence. */
 export function sourceOfficielle({ pays, niveau, matiere, date = new Date() }) {
   if (!notionsOfficielles({ pays, niveau, matiere, date }).length) return null
-  const r = REFERENTIELS.find((x) => x.pays === pays && norm(x.matiere) === norm(matiere))
+  const r = trouver({ pays, niveau, matiere })
   return { arrete: r.arrete, bo: r.bo, url: r.url, attribution: r._attribution }
 }
 

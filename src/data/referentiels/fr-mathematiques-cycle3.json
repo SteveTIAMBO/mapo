@@ -1,0 +1,206 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "pays": "FR",
+  "matiere": "Mathématiques",
+  "cycle": "Cycle 3",
+  "arrete": "Arrêté du 10-4-2025 (NOR MENE2504620A)",
+  "bo": "BO n° 16 du 17-4-2025",
+  "url": "https://www.education.gouv.fr/bo/2025/Hebdo16/MENE2504620A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/programme-de-math-matiques-pour-le-cycle-3-439827.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "CM1": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les nombres entiers"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les fractions"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les nombres décimaux"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Le calcul mental"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les quatre opérations"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "La résolution de problèmes"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Algèbre"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les longueurs"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les masses"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les contenances"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les aires"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les angles"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Le repérage dans le temps et les durées"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "La géométrie plane"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Les solides"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Le repérage dans l’espace"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Organisation et gestion de données"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Les probabilités"
+        }
+      ]
+    },
+    "CM2": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les nombres entiers"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les fractions"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les nombres décimaux"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Le calcul mental"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les quatre opérations"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "La résolution de problèmes"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Algèbre"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les aires"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les angles"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Le repérage dans le temps et les durées"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "La géométrie plane"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Les solides"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Déplacements dans l’espace"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Organisation et gestion de données"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Les probabilités"
+        }
+      ]
+    },
+    "6e": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les nombres entiers et décimaux"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Les fractions"
+        },
+        {
+          "domaine": "Nombres, calcul et résolution de problèmes",
+          "notion": "Algèbre"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les longueurs"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les aires"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Les volumes"
+        },
+        {
+          "domaine": "Grandeurs et mesures",
+          "notion": "Le repérage dans le temps et les durées"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Étude de configurations planes"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "La vision dans l’espace"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Organisation et gestion de données"
+        },
+        {
+          "domaine": "Organisation et gestion de données et probabilités",
+          "notion": "Les probabilités"
+        }
+      ]
+    }
+  }
+}

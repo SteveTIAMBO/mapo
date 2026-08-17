@@ -62,8 +62,10 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
     expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'Français', date: en(2026) })).toEqual([])
   })
 
-  it('une classe hors du cycle couvert ne renvoie rien', () => {
-    expect(notionsOfficielles({ pays: 'FR', niveau: '6e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+  it('une classe hors des cycles couverts ne renvoie rien', () => {
+    // Cycles 3 et 4 seulement pour l'instant : le lycée n'est pas couvert.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
 
@@ -86,5 +88,24 @@ describe('Mise en forme pour le prompt', () => {
     const l = notionsPourPrompt({ pays: 'FR', niveau: '5e', matiere: 'Mathématiques', date: en(2026) })
     expect(l[0]).toContain(' — ')
     expect(l.some((x) => x.startsWith('Espace et géométrie'))).toBe(true)
+  })
+})
+
+describe('Cycle 3 — la 6e est couverte, et le bon référentiel est choisi', () => {
+  it('6e en 2026 : notions du cycle 3', () => {
+    const n = notionsOfficielles({ pays: 'FR', niveau: '6e', matiere: 'Mathématiques', date: en(2026) })
+    expect(n.map((x) => x.notion)).toContain('Les fractions')
+  })
+
+  it('la 6e cite l’arrêté du CYCLE 3, pas celui du cycle 4', () => {
+    // Deux référentiels couvrent la même matière : se tromper de cycle
+    // afficherait une provenance fausse tout en paraissant sourcé.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '6e', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2025/)
+    expect(sourceOfficielle({ pays: 'FR', niveau: '5e', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2026/)
+  })
+
+  it('CM2 : applicable seulement à partir de 2026', () => {
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'CM2', matiere: 'Mathématiques', date: en(2025) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'CM2', matiere: 'Mathématiques', date: en(2026) }).length).toBeGreaterThan(10)
   })
 })
