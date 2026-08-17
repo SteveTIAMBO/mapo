@@ -1,0 +1,194 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "pays": "FR",
+  "matiere": "Mathématiques",
+  "cycle": "Cycle 4",
+  "arrete": "Arrêté du 18-2-2026 (NOR MENE2602912A)",
+  "bo": "BO n° 10 du 5-3-2026",
+  "url": "https://www.education.gouv.fr/bo/2026/Hebdo10/MENE2602912A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%202%20%E2%80%93%20Programme%20de%20math%C3%A9matiques%20pour%20le%20cycle%204-480716.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "5e": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Opérations"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Nombres relatifs"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Nombres rationnels"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Puissances"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Calcul littéral et algébrique"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Repérage sur une droite et dans le plan"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Représentation de l’espace"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Transformations"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Angles"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Triangles"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Parallélogrammes"
+        },
+        {
+          "domaine": "Probabilités",
+          "notion": "Statistiques"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Proportionnalité"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Fonctions"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Opérations sur les nombres relatifs"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Nombres rationnels"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Puissances"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Racine carrée"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Calcul littéral et algébrique"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Transformations"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Repérage sur une droite et dans le plan"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Représentation de l’espace"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Parallélogrammes et translations"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Triangles"
+        },
+        {
+          "domaine": "Probabilités",
+          "notion": "Statistiques"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Proportionnalité"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Fonctions"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2028,
+      "notions": [
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Nombres rationnels"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Puissances"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Racine carrée"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Multiples et diviseurs"
+        },
+        {
+          "domaine": "Nombres et calculs",
+          "notion": "Calcul littéral et algébrique"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Repérage sur une droite et dans le plan"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Représentation de l’espace"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Triangles"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Translations et vecteurs"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Organisation et gestion de données et probabilités"
+        },
+        {
+          "domaine": "Espace et géométrie",
+          "notion": "Statistiques"
+        },
+        {
+          "domaine": "Probabilités",
+          "notion": "Statistiques"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Proportionnalité"
+        },
+        {
+          "domaine": "Proportionnalité, fonctions",
+          "notion": "Fonctions"
+        }
+      ]
+    }
+  }
+}

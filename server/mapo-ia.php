@@ -982,6 +982,16 @@ function buildTutorQuizPrompts($d) {
   // l'appariement : à matière et niveau constants, l'IA ressert spontanément les
   // mêmes intitulés « évidents ». On les lui interdit pour qu'une révision
   // apporte du neuf plutôt qu'une redite.
+  // Notions du programme OFFICIEL, transmises par le client quand il en a un
+  // pour cette classe et cette matière. Quand la liste est là, elle CADRE la
+  // génération : c'est la différence entre « appuie-toi sur le programme »
+  // (une consigne que le modèle interprète) et « voici le programme ».
+  $notions = '';
+  if (!empty($d['notions']) && is_array($d['notions'])) {
+    $n = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 160); }, $d['notions']))), 0, 60);
+    $notions = implode("\n- ", $n);
+  }
+
   $exclure = '';
   if (!empty($d['exclure']) && is_array($d['exclure'])) {
     $ex = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 200); }, $d['exclure']))), 0, 40);
@@ -1022,6 +1032,11 @@ function buildTutorQuizPrompts($d) {
     . "Méthode socratique : pour chaque question, l'INDICE oriente la réflexion SANS donner la réponse ; l'EXPLICATION justifie la bonne réponse. "
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "
     . "Langue simple, phrases courtes (contexte bas débit, texte seul). Les questions doivent être factuellement exactes et avoir une seule bonne réponse. "
+    . ($notions !== ''
+        ? "PROGRAMME OFFICIEL DE CETTE CLASSE — liste EXHAUSTIVE des notions au programme :\n- {$notions}\n"
+          . "Chaque question DOIT porter sur l'une de ces notions. N'en invente aucune autre : une question juste mais hors de cette liste est hors programme, donc ratée. "
+          . "Si le thème demandé par l'élève ne correspond à aucune notion de la liste, prends la notion la plus proche qui y figure. "
+        : '')
     . "PRIORITÉ À LA SOURCE : si un COURS DE L'ÉLÈVE est fourni ci-dessous, tire les questions EN PRIORITÉ de son contenu (notions, exemples, formules qui y figurent) ; complète par le programme officiel seulement si nécessaire. Si AUCUN cours n'est fourni, appuie-toi sur le programme officiel (référentiel national/manuels validés). "
     . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
@@ -1205,6 +1220,16 @@ function buildAppariementPrompts($d) {
   // Termes déjà vus dans la session (colonne gauche des tours précédents) : on les
   // envoie pour que chaque niveau apporte du vocabulaire NEUF (sinon l'IA, à niveau
   // et matière constants, ressert les mêmes associations « évidentes »).
+  // Notions du programme OFFICIEL, transmises par le client quand il en a un
+  // pour cette classe et cette matière. Quand la liste est là, elle CADRE la
+  // génération : c'est la différence entre « appuie-toi sur le programme »
+  // (une consigne que le modèle interprète) et « voici le programme ».
+  $notions = '';
+  if (!empty($d['notions']) && is_array($d['notions'])) {
+    $n = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 160); }, $d['notions']))), 0, 60);
+    $notions = implode("\n- ", $n);
+  }
+
   $exclure = '';
   if (!empty($d['exclure']) && is_array($d['exclure'])) {
     $ex = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 60); }, $d['exclure']))), 0, 40);

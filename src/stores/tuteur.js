@@ -44,6 +44,7 @@ function noteCredits(json) {
 }
 import { useUsageStore, COUT_ACTION } from './usage'
 import { useMiapoRefStore } from './miapoRef'
+import { notionsPourPrompt, sourceOfficielle } from '../utils/referentiel'
 import { useEnfantsAutonomesStore } from './enfantsAutonomes'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
@@ -292,10 +293,23 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const headers = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = 'Bearer ' + token
 
+      // Notions du PROGRAMME OFFICIEL, quand on en a un pour (pays, classe,
+      // matière) ET qu'il est déjà en vigueur pour cette classe. Sinon la liste
+      // est vide et le serveur se comporte comme avant : mieux vaut aucun
+      // référentiel qu'un référentiel qui ne s'applique pas encore.
+      let notions = []
+      let refSource = null
+      try {
+        const e = useEnfantsAutonomesStore().enfants.find((x) => x.id === studentId)
+        const args = { pays: e?.pays || 'FR', niveau, matiere }
+        notions = notionsPourPrompt(args)
+        refSource = sourceOfficielle(args)
+      } catch { /* pas de référentiel : comportement inchangé */ }
+
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, exclure: dejaVuesTexte.slice(0, 40) } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, notions, exclure: dejaVuesTexte.slice(0, 40) } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -311,7 +325,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
           lastMode.value = 'ia'
           // Provenance des questions (cours de l'élève / référentiel / mix) pour le
           // petit disclaimer affiché au lancement. Repli : cours fourni → 'cours'.
-          let source = cours ? 'cours' : 'referentiel'
+          // « referentiel » ne doit se dire que si un VRAI programme officiel a
+          // cadré la génération. Sans lui, la source honnête est le modèle
+          // lui-même — l'ancienne étiquette laissait croire à un sourçage
+          // officiel qui n'existait pas.
+          let source = cours ? 'cours' : (refSource ? 'referentiel' : 'ia')
           try { const o = parseJsonObject(json.text); if (o && o.source) source = String(o.source) } catch { /* défaut */ }
           // Alimente la banque partagée SEULEMENT pour un quiz générique (pas de cours perso).
           if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
