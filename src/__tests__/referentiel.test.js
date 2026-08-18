@@ -63,9 +63,9 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // Cycles 3 et 4 seulement pour l'instant : le lycée n'est pas couvert.
+    // La 2nde est désormais couverte en maths ; 1re et Terminale ne le sont pas.
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
-    expect(notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '1re', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
 
@@ -201,5 +201,27 @@ describe('Français — intitulés d’entrées seulement, jamais d’extraits d
     // Licence Ouverte ne les couvre pas. On ne stocke que les intitulés.
     const s = sourceOfficielle({ pays: 'FR', niveau: '5e', matiere: 'Français', date: en(2026) })
     expect(s).not.toBeNull()
+  })
+})
+
+
+describe('Lycée — la 2nde entre dans le référentiel', () => {
+  it('six domaines du programme de 2nde', () => {
+    const n = notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) })
+    expect(n).toHaveLength(6)
+    expect(n.map((x) => x.notion)).toContain('Vocabulaire ensembliste et logique')
+  })
+
+  it('elle cite l’arrêté du LYCÉE, pas ceux du collège', () => {
+    // Trois référentiels couvrent désormais les maths : cycle 3, cycle 4, 2nde.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2019/)
+  })
+
+  it('les rubriques du préambule ne sont PAS des notions', () => {
+    // « Intentions majeures », « Organisation du programme »… sont en même
+    // police que les domaines : seul le titre « Programme » les sépare.
+    const n = notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
+    expect(n).not.toContain('Organisation du programme')
+    expect(n.some((x) => /lignes directrices/i.test(x))).toBe(false)
   })
 })
