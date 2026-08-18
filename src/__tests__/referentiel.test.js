@@ -168,3 +168,17 @@ describe('SVT — trois thématiques de cycle', () => {
     expect(n).toContain('Le corps humain et la santé')
   })
 })
+
+describe('Technologie — le titre coupé en fin de ligne est recollé', () => {
+  it('les quatre thématiques sont là, entières', () => {
+    const n = notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Technologie', date: en(2026) })
+    expect(n).toHaveLength(4)
+    // Ce titre-là s'étalait sur deux lignes du PDF : une extraction naïve
+    // le tronquait à « … induits dans la ».
+    expect(n.map((x) => x.notion)).toContain('Les objets techniques, les services et les changements induits dans la société')
+  })
+
+  it('définie au niveau du cycle', () => {
+    expect(granulariteProgramme({ pays: 'FR', niveau: '3e', matiere: 'Technologie' })).toBe('cycle')
+  })
+})
