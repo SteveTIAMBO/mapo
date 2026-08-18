@@ -150,3 +150,21 @@ describe('Granularité — ne pas attribuer à une classe ce que le texte dit du
     }
   })
 })
+
+describe('SVT — trois thématiques de cycle', () => {
+  it('les trois classes reçoivent les mêmes thématiques', () => {
+    for (const c of ['5e', '4e', '3e']) {
+      expect(notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'SVT', date: en(2026) })).toHaveLength(3)
+    }
+  })
+
+  it('définies au niveau du CYCLE, comme la physique-chimie', () => {
+    expect(granulariteProgramme({ pays: 'FR', niveau: '4e', matiere: 'SVT' })).toBe('cycle')
+  })
+
+  it('les intitulés sont ceux du texte officiel', () => {
+    const n = notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'SVT', date: en(2026) }).map((x) => x.notion)
+    expect(n).toContain('Le vivant et son évolution')
+    expect(n).toContain('Le corps humain et la santé')
+  })
+})
