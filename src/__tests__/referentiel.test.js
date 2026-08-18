@@ -63,9 +63,10 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // La 2nde est désormais couverte en maths ; 1re et Terminale ne le sont pas.
-    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
-    expect(notionsOfficielles({ pays: 'FR', niveau: '1re', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    // Le lycée est couvert en MATHS seulement : les autres matières du lycée
+    // ne le sont pas, et les classes du technologique non plus.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Physique-Chimie', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
 
@@ -223,5 +224,33 @@ describe('Lycée — la 2nde entre dans le référentiel', () => {
     const n = notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
     expect(n).not.toContain('Organisation du programme')
     expect(n.some((x) => /lignes directrices/i.test(x))).toBe(false)
+  })
+})
+
+
+describe('Lycée — la 2nde, la 1re et la Terminale sont couvertes en maths', () => {
+  it('chaque classe a ses propres domaines', () => {
+    const n = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
+    expect(n('2nde')).toHaveLength(6)
+    expect(n('1re')).toHaveLength(6)
+    expect(n('Terminale')).toHaveLength(5)
+    // La 1re distingue Algèbre et Géométrie ; la Terminale les fusionne.
+    expect(n('1re')).toContain('Géométrie')
+    expect(n('Terminale')).toContain('Algèbre et géométrie')
+    expect(n('Terminale')).not.toContain('Géométrie')
+  })
+
+  it('chaque classe cite SON arrêté', () => {
+    // 2nde et 1re : BO spécial n° 1 de janvier 2019. Terminale : n° 8 de juillet.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '1re', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/n° 1 /)
+    expect(sourceOfficielle({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/n° 8 /)
+  })
+
+  it('aucune rubrique de préambule n’a été prise pour un domaine', () => {
+    for (const c of ['2nde', '1re', 'Terminale']) {
+      const n = notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
+      expect(n).not.toContain('Organisation du programme')
+      expect(n).not.toContain('Intentions majeures')
+    }
   })
 })

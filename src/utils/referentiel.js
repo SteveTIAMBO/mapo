@@ -33,10 +33,12 @@ import techCycle4 from '../data/referentiels/fr-technologie-cycle4.json'
 import fraCycle3 from '../data/referentiels/fr-francais-cycle3.json'
 import fraCycle4 from '../data/referentiels/fr-francais-cycle4.json'
 import maths2nde from '../data/referentiels/fr-mathematiques-2nde.json'
+import maths1re from '../data/referentiels/fr-mathematiques-1re.json'
+import mathsTle from '../data/referentiels/fr-mathematiques-terminale.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
-const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4, maths2nde]
+const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4, maths2nde, maths1re, mathsTle]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
