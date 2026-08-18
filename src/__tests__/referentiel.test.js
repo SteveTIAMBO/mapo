@@ -237,6 +237,15 @@ describe('Maths au lycée — le programme de 2019 n’est PLUS celui de la rent
     expect(n.some((x) => x.domaine === 'Géométrie' && x.notion === 'Droites du plan')).toBe(true)
   })
 
+  it('écarter une rubrique ne doit pas emporter son domaine', () => {
+    // En terminale, la seule entrée sous « Algorithmique et programmation » est
+    // « Histoire des mathématiques ». L'écarter vidait le domaine, qui sortait
+    // du référentiel sans un mot : un pan du programme disparu en silence.
+    const dom = (c, a) => [...new Set(notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(a) }).map((x) => x.domaine))]
+    expect(dom('Terminale', 2027)).toContain('Algorithmique et programmation')
+    expect(dom('2nde', 2026)).toContain('Automatismes')
+  })
+
   it('ni rubrique de préambule, ni rubrique de cadrage, prise pour une notion', () => {
     // « Objectifs » et « Histoire des mathématiques » sont au même niveau
     // d'indentation que les notions : rien ne les distingue sauf leur nom.

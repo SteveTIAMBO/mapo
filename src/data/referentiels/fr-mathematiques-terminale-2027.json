@@ -20,6 +20,10 @@
           "notion": "Vocabulaire ensembliste et logique"
         },
         {
+          "domaine": "Algorithmique et programmation",
+          "notion": "Algorithmique et programmation"
+        },
+        {
           "domaine": "Algèbre et géométrie",
           "notion": "Combinatoire et dénombrement"
         },

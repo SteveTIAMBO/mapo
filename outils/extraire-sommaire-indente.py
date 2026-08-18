@@ -16,7 +16,15 @@ def norm(s):
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
     return ' '.join(s.replace('’', "'").split())
 
-def extraire(chemin):
+def extraire(chemin, exclure=()):
+    """Notions du sommaire. `exclure` : intitulés de cadrage, écartés par leur nom.
+
+    ⚠️ Écarter une notion peut faire disparaître SON DOMAINE. En terminale, la
+    seule entrée sous « Algorithmique et programmation » est « Histoire des
+    mathématiques » : l'écarter vidait le domaine, qui sortait du référentiel
+    sans un mot. Un domaine ainsi vidé est réintroduit tel quel.
+    """
+    exclure = {norm(x) for x in exclure}
     with pdfplumber.open(chemin) as pdf:
         corpus = '\n'.join((p.extract_text() or '') for p in pdf.pages)
         lignes = [(round(l['x0']), l['text'].strip())
@@ -27,23 +35,26 @@ def extraire(chemin):
         debut = next(i for i, (x, t) in enumerate(lignes) if x <= 40 and norm(t) == 'programme')
     except StopIteration:
         raise SystemExit('Pas de section « Programme » dans le sommaire.')
-    out, domaine = [], None
+    domaines, notions, domaine = [], [], None
     for x, t in lignes[debut + 1:]:
         if x <= 40:
             break              # retour au niveau 0 : le sommaire est fini
         if x <= 52:
             domaine = t
-            out.append({'domaine': t, 'notion': t})   # domaine sans sous-titre
-        elif domaine:
-            if out and out[-1] == {'domaine': domaine, 'notion': domaine}:
-                out.pop()      # le domaine avait bien des sous-titres
-            out.append({'domaine': domaine, 'notion': t})
+            domaines.append(t)
+        elif domaine and norm(t) not in exclure:
+            notions.append({'domaine': domaine, 'notion': t})
+    # Un domaine sans sous-titre retenu reste une notion à part entière.
+    out = []
+    for d in domaines:
+        siennes = [n for n in notions if n['domaine'] == d]
+        out.extend(siennes or [{'domaine': d, 'notion': d}])
     src = norm(corpus)
     return [n for n in out if norm(n['notion']) in src and norm(n['domaine']) in src]
 
 if __name__ == '__main__':
     for f in ['m2026-2nde', 'm2026-1re', 'm2027-tle']:
-        g = extraire(f + '.pdf')
+        g = extraire(f + '.pdf', ['Objectifs', 'Histoire des mathématiques'])
         print('=' * 60, f, f'({len(g)} notions)')
         d = None
         for n in g:
