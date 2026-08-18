@@ -1,0 +1,80 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_granularite": "cycle",
+  "_noteGranularite": "Thèmes définis pour l'ENSEMBLE du cycle 4 : le programme laisse la répartition sur les trois années à l'établissement.",
+  "pays": "FR",
+  "matiere": "Physique-Chimie",
+  "cycle": "Cycle 4",
+  "arrete": "Arrêté du 9-11-2015 modifié par l'arrêté du 17-7-2020",
+  "bo": "BO n° 31 du 30-7-2020",
+  "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/31/89/1/ensel714_annexe3_1312891.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "5e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Organisation et transformations de la matière"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Mouvement et interactions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "L’énergie, ses transferts et ses conversions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Des signaux pour observer et communiquer"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Organisation et transformations de la matière"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Mouvement et interactions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "L’énergie, ses transferts et ses conversions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Des signaux pour observer et communiquer"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Organisation et transformations de la matière"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Mouvement et interactions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "L’énergie, ses transferts et ses conversions"
+        },
+        {
+          "domaine": "Physique-Chimie",
+          "notion": "Des signaux pour observer et communiquer"
+        }
+      ]
+    }
+  }
+}

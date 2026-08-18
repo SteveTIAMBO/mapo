@@ -10,7 +10,7 @@
  * d'erreur qu'on ne repère jamais en testant vite.
  */
 import { describe, it, expect } from 'vitest'
-import { notionsOfficielles, notionsPourPrompt, sourceOfficielle, anneeScolaire } from '../utils/referentiel'
+import { notionsOfficielles, notionsPourPrompt, sourceOfficielle, anneeScolaire, granulariteProgramme } from '../utils/referentiel'
 
 const en = (a, m = 9) => new Date(a, m, 15)
 
@@ -129,5 +129,24 @@ describe('Histoire-géographie — programme NON réformé, applicable aux trois
 
   it('la provenance cite l’arrêté de 2015 modifié, pas celui des maths', () => {
     expect(sourceOfficielle({ pays: 'FR', niveau: '5e', matiere: 'Histoire-Géographie', date: en(2026) }).arrete).toMatch(/2015/)
+  })
+})
+
+describe('Granularité — ne pas attribuer à une classe ce que le texte dit du cycle', () => {
+  it('les maths et l’histoire-géo sont définies par CLASSE', () => {
+    expect(granulariteProgramme({ pays: 'FR', niveau: '5e', matiere: 'Mathématiques' })).toBe('classe')
+    expect(granulariteProgramme({ pays: 'FR', niveau: '5e', matiere: 'Histoire-Géographie' })).toBe('classe')
+  })
+
+  it('la physique-chimie est définie pour le CYCLE', () => {
+    // Le programme officiel laisse la répartition sur les trois années à
+    // l'établissement : annoncer « au programme de 5e » serait inventer.
+    expect(granulariteProgramme({ pays: 'FR', niveau: '5e', matiere: 'Physique-Chimie' })).toBe('cycle')
+  })
+
+  it('ses quatre thèmes sont proposés aux trois classes', () => {
+    for (const c of ['5e', '4e', '3e']) {
+      expect(notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Physique-Chimie', date: en(2026) })).toHaveLength(4)
+    }
   })
 })

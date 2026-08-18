@@ -26,10 +26,11 @@
 import mathsCycle4 from '../data/referentiels/fr-mathematiques-cycle4.json'
 import mathsCycle3 from '../data/referentiels/fr-mathematiques-cycle3.json'
 import hgCycle4 from '../data/referentiels/fr-histoire-geographie-cycle4.json'
+import pcCycle4 from '../data/referentiels/fr-physique-chimie-cycle4.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
-const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4]
+const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -68,6 +69,19 @@ export function sourceOfficielle({ pays, niveau, matiere, date = new Date() }) {
   if (!notionsOfficielles({ pays, niveau, matiere, date }).length) return null
   const r = trouver({ pays, niveau, matiere })
   return { arrete: r.arrete, bo: r.bo, url: r.url, attribution: r._attribution }
+}
+
+/**
+ * Le programme est-il défini par CLASSE ou pour tout le CYCLE ?
+ *
+ * Les maths et l'histoire-géo attribuent leurs thèmes à une année précise. Les
+ * sciences, non : le texte officiel dit qu'ils « ont vocation à être traités
+ * tout au long du cycle » et laisse la répartition à l'établissement. Annoncer
+ * « au programme de 5e » dans ce cas serait une sur-interprétation.
+ */
+export function granulariteProgramme({ pays, niveau, matiere }) {
+  const r = trouver({ pays, niveau, matiere })
+  return r && r._granularite === 'cycle' ? 'cycle' : 'classe'
 }
 
 /** Liste compacte des notions, prête à cadrer un prompt. */

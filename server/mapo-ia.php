@@ -1033,7 +1033,10 @@ function buildTutorQuizPrompts($d) {
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "
     . "Langue simple, phrases courtes (contexte bas débit, texte seul). Les questions doivent être factuellement exactes et avoir une seule bonne réponse. "
     . ($notions !== ''
-        ? "PROGRAMME OFFICIEL DE CETTE CLASSE — liste EXHAUSTIVE des notions au programme :\n- {$notions}\n"
+        ? ((($d['granularite'] ?? 'classe') === 'cycle')
+            ? "PROGRAMME OFFICIEL DU CYCLE (la répartition sur les années relève de l'établissement) — liste EXHAUSTIVE des notions :\n- {$notions}\n"
+            : "PROGRAMME OFFICIEL DE CETTE CLASSE — liste EXHAUSTIVE des notions au programme :\n- {$notions}\n"
+          )
           . "Chaque question DOIT porter sur l'une de ces notions. N'en invente aucune autre : une question juste mais hors de cette liste est hors programme, donc ratée. "
           . "Si le thème demandé par l'élève ne correspond à aucune notion de la liste, prends la notion la plus proche qui y figure. "
         : '')

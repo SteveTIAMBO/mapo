@@ -44,7 +44,7 @@ function noteCredits(json) {
 }
 import { useUsageStore, COUT_ACTION } from './usage'
 import { useMiapoRefStore } from './miapoRef'
-import { notionsPourPrompt, sourceOfficielle } from '../utils/referentiel'
+import { notionsPourPrompt, sourceOfficielle, granulariteProgramme } from '../utils/referentiel'
 import { useEnfantsAutonomesStore } from './enfantsAutonomes'
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes.
@@ -299,17 +299,19 @@ export const useTuteurStore = defineStore('tuteur', () => {
       // référentiel qu'un référentiel qui ne s'applique pas encore.
       let notions = []
       let refSource = null
+      let granularite = 'classe'
       try {
         const e = useEnfantsAutonomesStore().enfants.find((x) => x.id === studentId)
         const args = { pays: e?.pays || 'FR', niveau, matiere }
         notions = notionsPourPrompt(args)
         refSource = sourceOfficielle(args)
+        granularite = granulariteProgramme(args)
       } catch { /* pas de référentiel : comportement inchangé */ }
 
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, notions, exclure: dejaVuesTexte.slice(0, 40) } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, notions, granularite, exclure: dejaVuesTexte.slice(0, 40) } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
