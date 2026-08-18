@@ -109,3 +109,25 @@ describe('Cycle 3 — la 6e est couverte, et le bon référentiel est choisi', (
     expect(notionsOfficielles({ pays: 'FR', niveau: 'CM2', matiere: 'Mathématiques', date: en(2026) }).length).toBeGreaterThan(10)
   })
 })
+
+describe('Histoire-géographie — programme NON réformé, applicable aux trois classes', () => {
+  it('5e, 4e et 3e sont couvertes dès aujourd’hui', () => {
+    // Contrairement aux maths, ce programme n'est pas en cours de refonte :
+    // il s'applique depuis 2020 aux trois niveaux, sans échelonnement.
+    for (const c of ['5e', '4e', '3e']) {
+      expect(notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Histoire-Géographie', date: en(2026) }).length).toBe(6)
+    }
+  })
+
+  it('les thèmes sont bien ceux de la classe, pas du cycle', () => {
+    const cinq = notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'Histoire-Géographie', date: en(2026) })
+    const trois = notionsOfficielles({ pays: 'FR', niveau: '3e', matiere: 'Histoire-Géographie', date: en(2026) })
+    expect(cinq.some((n) => /islam/i.test(n.notion))).toBe(true)
+    expect(trois.some((n) => /1914|guerres totales/i.test(n.notion))).toBe(true)
+    expect(cinq.map((n) => n.notion)).not.toEqual(trois.map((n) => n.notion))
+  })
+
+  it('la provenance cite l’arrêté de 2015 modifié, pas celui des maths', () => {
+    expect(sourceOfficielle({ pays: 'FR', niveau: '5e', matiere: 'Histoire-Géographie', date: en(2026) }).arrete).toMatch(/2015/)
+  })
+})

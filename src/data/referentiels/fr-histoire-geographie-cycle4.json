@@ -1,0 +1,103 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "Lecture des TABLEAUX du PDF (le texte brut fusionne les deux colonnes et coupe les titres). Notions vérifiées mot pour mot dans les cellules source.",
+  "pays": "FR",
+  "matiere": "Histoire-Géographie",
+  "cycle": "Cycle 4",
+  "arrete": "Arrêté du 9-11-2015 modifié par l'arrêté du 17-7-2020",
+  "bo": "BO n° 31 du 30-7-2020",
+  "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/31/89/1/ensel714_annexe3_1312891.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "5e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Chrétientés et islam (VIe-XIIIe siècles), des mondes en contact"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Société, Église et pouvoir politique dans l’occident féodal (XIe-XVe siècles)"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Transformations de l’Europe et ouverture sur le monde aux XVIe et XVIIe siècles"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "La question démographique et l’inégal développement"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Des ressources limitées, à gérer et à renouveler"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "L’environnement, du local au planétaire"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Le XVIIIe siècle. Expansions, Lumières et révolutions"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "L’Europe et le monde au XIXe siècle :"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Société, culture et politique dans la France du XIXe siècle"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "L’urbanisation du monde"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Les mobilités humaines transnationales"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Des espaces transformés par la mondialisation"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "L'Europe, un théâtre majeur des guerres totales (1914-1945)"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Le monde depuis 1945"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Françaises et Français dans une République repensée"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Dynamiques territoriales de la France contemporaine"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "Pourquoi et comment aménager le territoire?"
+        },
+        {
+          "domaine": "Histoire et géographie",
+          "notion": "La France et l’Union européenne"
+        }
+      ]
+    }
+  }
+}
