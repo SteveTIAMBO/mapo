@@ -63,9 +63,9 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // Le lycée est couvert en MATHS seulement : les autres matières du lycée
-    // ne le sont pas, et les classes du technologique non plus.
-    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Physique-Chimie', date: en(2026) })).toEqual([])
+    // Le lycée général est couvert en maths, physique-chimie et SVT. Les autres
+    // matières du lycée ne le sont pas, et la voie technologique non plus.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Histoire-Géographie', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
@@ -206,51 +206,111 @@ describe('Français — intitulés d’entrées seulement, jamais d’extraits d
 })
 
 
-describe('Lycée — la 2nde entre dans le référentiel', () => {
-  it('six domaines du programme de 2nde', () => {
+describe('Maths au lycée — le programme de 2019 n’est PLUS celui de la rentrée 2026', () => {
+  // Les arrêtés du 26-2-2026 (BO n° 14 du 2-4-2026) REMPLACENT l'annexe des
+  // arrêtés de 2019 sans les abroger : le véhicule juridique survit, son
+  // contenu change. Continuer à servir le programme de 2019 en 2de et en 1re
+  // aurait été parfaitement crédible — et faux depuis la rentrée.
+  const notions = (c, a = 2026) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(a) }).map((x) => x.notion)
+
+  it('la 2nde et la 1re servent le programme de 2026', () => {
+    expect(sourceOfficielle({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2026/)
+    expect(sourceOfficielle({ pays: 'FR', niveau: '1re', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/n° 14/)
+    expect(notions('2nde')).toContain('Automatismes')
+    expect(notions('1re')).toContain('Suites numériques, modèles discrets')
+  })
+
+  it('la Terminale garde 2019 en 2026 et bascule TOUTE SEULE en 2027', () => {
+    // Le nouveau programme de terminale est déjà dans le dépôt, daté de la
+    // rentrée 2027. Le servir un an trop tôt serait la même erreur en miroir.
+    expect(sourceOfficielle({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2019/)
+    expect(sourceOfficielle({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2027) }).arrete).toMatch(/2026/)
+    expect(notions('Terminale', 2026)).not.toContain('Combinatoire et dénombrement')
+    expect(notions('Terminale', 2027)).toContain('Combinatoire et dénombrement')
+  })
+
+  it('les notions sont plus fines qu’avant : deux niveaux, pas un', () => {
+    // L'ancienne extraction ne retenait que les grands domaines. Le sommaire
+    // du nouveau texte est indenté : on descend d'un cran sans rien inventer.
     const n = notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) })
-    expect(n).toHaveLength(6)
-    expect(n.map((x) => x.notion)).toContain('Vocabulaire ensembliste et logique')
+    expect(n.length).toBeGreaterThan(10)
+    expect(n.some((x) => x.domaine === 'Géométrie' && x.notion === 'Droites du plan')).toBe(true)
   })
 
-  it('elle cite l’arrêté du LYCÉE, pas ceux du collège', () => {
-    // Trois référentiels couvrent désormais les maths : cycle 3, cycle 4, 2nde.
-    expect(sourceOfficielle({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).arrete).toMatch(/2019/)
-  })
-
-  it('les rubriques du préambule ne sont PAS des notions', () => {
-    // « Intentions majeures », « Organisation du programme »… sont en même
-    // police que les domaines : seul le titre « Programme » les sépare.
-    const n = notionsOfficielles({ pays: 'FR', niveau: '2nde', matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
-    expect(n).not.toContain('Organisation du programme')
-    expect(n.some((x) => /lignes directrices/i.test(x))).toBe(false)
+  it('ni rubrique de préambule, ni rubrique de cadrage, prise pour une notion', () => {
+    // « Objectifs » et « Histoire des mathématiques » sont au même niveau
+    // d'indentation que les notions : rien ne les distingue sauf leur nom.
+    for (const c of ['2nde', '1re', 'Terminale']) {
+      for (const a of [2026, 2027]) {
+        const n = notions(c, a)
+        expect(n).not.toContain('Organisation du programme')
+        expect(n).not.toContain('Intentions majeures')
+        expect(n).not.toContain('Objectifs')
+        expect(n).not.toContain('Histoire des mathématiques')
+      }
+    }
   })
 })
 
 
-describe('Lycée — la 2nde, la 1re et la Terminale sont couvertes en maths', () => {
-  it('chaque classe a ses propres domaines', () => {
-    const n = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
-    expect(n('2nde')).toHaveLength(6)
-    expect(n('1re')).toHaveLength(6)
-    expect(n('Terminale')).toHaveLength(5)
-    // La 1re distingue Algèbre et Géométrie ; la Terminale les fusionne.
-    expect(n('1re')).toContain('Géométrie')
-    expect(n('Terminale')).toContain('Algèbre et géométrie')
-    expect(n('Terminale')).not.toContain('Géométrie')
-  })
+describe('Lycée — physique-chimie et SVT, de la 2nde à la Terminale', () => {
+  const pc = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Physique-Chimie', date: en(2026) })
+  const svt = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'SVT', date: en(2026) })
 
-  it('chaque classe cite SON arrêté', () => {
-    // 2nde et 1re : BO spécial n° 1 de janvier 2019. Terminale : n° 8 de juillet.
-    expect(sourceOfficielle({ pays: 'FR', niveau: '1re', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/n° 1 /)
-    expect(sourceOfficielle({ pays: 'FR', niveau: 'Terminale', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/n° 8 /)
-  })
-
-  it('aucune rubrique de préambule n’a été prise pour un domaine', () => {
+  it('les trois classes sont couvertes dans les deux matières', () => {
     for (const c of ['2nde', '1re', 'Terminale']) {
-      const n = notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Mathématiques', date: en(2026) }).map((x) => x.notion)
-      expect(n).not.toContain('Organisation du programme')
-      expect(n).not.toContain('Intentions majeures')
+      expect(pc(c).length).toBeGreaterThan(4)
+      expect(svt(c).length).toBeGreaterThan(4)
     }
+  })
+
+  it('la 2nde de physique-chimie n’a que TROIS parties, la 1re en a quatre', () => {
+    // L'énergie n'apparaît qu'au cycle terminal. Proposer « L'énergie » à une
+    // 2de serait hors programme tout en sonnant juste.
+    const parties = (c) => [...new Set(pc(c).map((x) => x.domaine))]
+    expect(parties('2nde')).toHaveLength(3)
+    expect(parties('2nde').some((d) => /énergie/i.test(d))).toBe(false)
+    expect(parties('1re')).toHaveLength(4)
+    expect(parties('1re').some((d) => /énergie/i.test(d))).toBe(true)
+  })
+
+  it('les intitulés de thématique SVT changent d’une classe à l’autre', () => {
+    // « Les enjeux contemporains de la planète » (2de), « Enjeux contemporains
+    // de la planète » (1re), « Enjeux planétaires contemporains » (Tle) : trois
+    // libellés voisins pour trois textes. On rend celui de la classe demandée.
+    const d = (c) => [...new Set(svt(c).map((x) => x.domaine))]
+    expect(d('2nde')).toContain('Les enjeux contemporains de la planète')
+    expect(d('1re')).toContain('Enjeux contemporains de la planète')
+    expect(d('Terminale')).toContain('Enjeux planétaires contemporains')
+  })
+
+  it('au lycée ces programmes sont définis par CLASSE, pas par cycle', () => {
+    // Au collège c'est l'inverse : le texte y laisse la répartition à
+    // l'établissement. Au lycée, chaque classe a son propre arrêté.
+    expect(granulariteProgramme({ pays: 'FR', niveau: '1re', matiere: 'Physique-Chimie', date: en(2026) })).toBe('classe')
+    expect(granulariteProgramme({ pays: 'FR', niveau: '5e', matiere: 'Physique-Chimie', date: en(2026) })).toBe('cycle')
+  })
+
+  it('aucun en-tête de tableau n’a été pris pour une section', () => {
+    // « Connaissances », « Capacités exigibles », « Activités expérimentales
+    // support de la formation » sont dans la même police grasse que les titres.
+    const tous = ['2nde', '1re', 'Terminale'].flatMap((c) => [...pc(c), ...svt(c)]).map((x) => x.notion)
+    for (const piege of ['Connaissances', 'Capacités', 'Capacités exigibles', 'Activités expérimentales support de la formation']) {
+      expect(tous).not.toContain(piege)
+    }
+    expect(tous.some((x) => /^Notions (abordées|étudiées)/.test(x))).toBe(false)
+  })
+})
+
+
+describe('Nom de matière — le référentiel SVT était livré mais jamais trouvé', () => {
+  it('le libellé du catalogue élève ramène bien le référentiel', () => {
+    // Le catalogue dit « Sciences de la vie et de la Terre (SVT) », le
+    // référentiel s'appelle « SVT ». Les deux ne se rencontraient jamais :
+    // la recherche échouait en silence et retombait sur « pas de référentiel ».
+    const long = 'Sciences de la vie et de la Terre (SVT)'
+    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: long, date: en(2026) })).toHaveLength(3)
+    expect(notionsOfficielles({ pays: 'FR', niveau: '1re', matiere: long, date: en(2026) })).toHaveLength(5)
+    expect(sourceOfficielle({ pays: 'FR', niveau: '2nde', matiere: long, date: en(2026) })).not.toBeNull()
   })
 })

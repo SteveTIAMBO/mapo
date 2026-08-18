@@ -1,0 +1,61 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-sciences-lycee.py — grandes parties déclarées et vérifiées mot pour mot ; sections repérées en 11 gras (numérotation en physique-chimie, puce en SVT).",
+  "pays": "FR",
+  "matiere": "Physique-Chimie",
+  "cycle": "Première générale — enseignement de spécialité",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901635A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/43/2/spe635_annexe_1063432.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Constitution et transformations de la matière",
+          "notion": "1. Suivi de l’évolution d’un système, siège d’une transformation"
+        },
+        {
+          "domaine": "Constitution et transformations de la matière",
+          "notion": "2. De la structure des entités aux propriétés physiques de la matière"
+        },
+        {
+          "domaine": "Constitution et transformations de la matière",
+          "notion": "3. Propriétés physico-chimiques, synthèses et combustions d’espèces chimiques organiques"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "1. Interactions fondamentales et introduction à la notion de champ"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "2. Description d’un fluide au repos"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "3. Mouvement d’un système"
+        },
+        {
+          "domaine": "L’énergie : conversions et transferts",
+          "notion": "1. Aspects énergétiques des phénomènes électriques"
+        },
+        {
+          "domaine": "L’énergie : conversions et transferts",
+          "notion": "2. Aspects énergétiques des phénomènes mécaniques"
+        },
+        {
+          "domaine": "Ondes et signaux",
+          "notion": "1. Ondes mécaniques"
+        },
+        {
+          "domaine": "Ondes et signaux",
+          "notion": "2. La lumière : images et couleurs, modèles ondulatoire et particulaire"
+        }
+      ]
+    }
+  }
+}

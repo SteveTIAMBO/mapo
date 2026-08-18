@@ -1,0 +1,53 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-sciences-lycee.py — grandes parties déclarées et vérifiées mot pour mot ; sections repérées en 11 gras (numérotation en physique-chimie, puce en SVT).",
+  "pays": "FR",
+  "matiere": "Physique-Chimie",
+  "cycle": "Seconde générale et technologique",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901634A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/98/9/spe634_annexe_1062989.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "2nde": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Constitution et transformations de la matière",
+          "notion": "1. Constitution de la matière de l’échelle macroscopique à l’échelle microscopique"
+        },
+        {
+          "domaine": "Constitution et transformations de la matière",
+          "notion": "2. Modélisation des transformations de la matière et transfert d’énergie"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "1. Décrire un mouvement"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "2. Modéliser une action sur un système"
+        },
+        {
+          "domaine": "Mouvement et interactions",
+          "notion": "3. Principe d’inertie"
+        },
+        {
+          "domaine": "Ondes et signaux",
+          "notion": "1. Émission et perception d’un son"
+        },
+        {
+          "domaine": "Ondes et signaux",
+          "notion": "2. Vision et image"
+        },
+        {
+          "domaine": "Ondes et signaux",
+          "notion": "3. Signaux et capteurs"
+        }
+      ]
+    }
+  }
+}

@@ -106,8 +106,14 @@ function revisionDocRef(uid, studentId) {
  *
  * ⚠️ INCRÉMENTER À CHAQUE FOIS qu'on renforce le contrôle qualité : c'est la
  * seule façon de garantir qu'aucune question d'avant ne survit au changement.
+ *
+ * v3 (19-8-2026) : deux raisons distinctes. Le programme de maths de 2de et de
+ * 1re a CHANGÉ à cette rentrée — les questions en banque portent sur un
+ * programme qui n'est plus le bon. Et le référentiel de SVT n'était jamais
+ * trouvé (nom de matière différent côté catalogue), donc tout ce qui a été
+ * généré en SVT l'a été sans cadrage officiel.
  */
-const BANQUE_VERSION = 'v2'
+const BANQUE_VERSION = 'v3'
 
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

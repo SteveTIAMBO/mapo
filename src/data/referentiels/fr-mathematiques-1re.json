@@ -2,42 +2,90 @@
   "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
   "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
   "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
-  "_extraitPar": "Domaines repérés par taille de police (14), rubriques de préambule exclues par nom. Notions vérifiées mot pour mot dans la source.",
+  "_extraitPar": "outils/extraire-sommaire-indente.py — sommaire indenté (x=47 domaine, x=58 notion), après « Programme ». Rubriques de cadrage écartées : Objectifs, Histoire des mathématiques.",
   "pays": "FR",
   "matiere": "Mathématiques",
-  "extraitLe": "2026-08-18",
-  "cycle": "Première générale (spécialité)",
-  "arrete": "Arrêté du 17-1-2019",
-  "bo": "BO spécial n° 1 du 22-1-2019",
-  "url": "https://www.education.gouv.fr/pid285/bulletin_officiel.html?pid_bo=38502",
-  "urlPdf": "http://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/16/8/spe632_annexe_1063168.pdf",
+  "cycle": "Première générale — enseignement de spécialité",
+  "arrete": "Arrêté du 26-2-2026",
+  "bo": "BO n° 14 du 2-4-2026",
+  "url": "https://www.education.gouv.fr/bo/2026/Hebdo14/MENE2602917A",
+  "urlPdf": "",
+  "extraitLe": "2026-08-19",
   "classes": {
     "1re": {
-      "enVigueurRentree": 2019,
+      "enVigueurRentree": 2026,
       "notions": [
         {
-          "domaine": "Mathématiques",
-          "notion": "Algèbre"
-        },
-        {
-          "domaine": "Mathématiques",
-          "notion": "Analyse"
-        },
-        {
-          "domaine": "Mathématiques",
-          "notion": "Géométrie"
-        },
-        {
-          "domaine": "Mathématiques",
-          "notion": "Probabilités et statistiques"
-        },
-        {
-          "domaine": "Mathématiques",
-          "notion": "Algorithmique et programmation"
-        },
-        {
-          "domaine": "Mathématiques",
+          "domaine": "Vocabulaire ensembliste et logique",
           "notion": "Vocabulaire ensembliste et logique"
+        },
+        {
+          "domaine": "Algorithmique et programmation",
+          "notion": "Notion de liste"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Évolutions et variations"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Calcul numérique et algébrique"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Fonctions et représentations"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Statistiques"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Probabilités"
+        },
+        {
+          "domaine": "Algèbre",
+          "notion": "Suites numériques, modèles discrets"
+        },
+        {
+          "domaine": "Algèbre",
+          "notion": "Équations, fonctions polynômes du second degré"
+        },
+        {
+          "domaine": "Analyse",
+          "notion": "Dérivation"
+        },
+        {
+          "domaine": "Analyse",
+          "notion": "Variations et courbes représentatives des fonctions"
+        },
+        {
+          "domaine": "Analyse",
+          "notion": "Fonction exponentielle"
+        },
+        {
+          "domaine": "Analyse",
+          "notion": "Trigonométrie"
+        },
+        {
+          "domaine": "Géométrie",
+          "notion": "Calcul vectoriel et produit scalaire"
+        },
+        {
+          "domaine": "Géométrie",
+          "notion": "Géométrie repérée"
+        },
+        {
+          "domaine": "Probabilités et statistiques",
+          "notion": "Probabilités conditionnelles et indépendance"
+        },
+        {
+          "domaine": "Probabilités et statistiques",
+          "notion": "Variables aléatoires réelles"
+        },
+        {
+          "domaine": "Probabilités et statistiques",
+          "notion": "Expérimentations"
         }
       ]
     }
