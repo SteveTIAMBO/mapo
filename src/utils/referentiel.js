@@ -20,8 +20,9 @@
  * LICENCE. Licence Ouverte / Etalab 2.0 : réutilisation commerciale autorisée,
  * attribution obligatoire. Elle est portée par chaque fichier de référentiel et
  * doit rester affichable. Réserve connue : les extraits littéraires cités dans
- * les programmes de FRANÇAIS ne sont PAS couverts (propriété de tiers) — d'où
- * le choix de commencer par les mathématiques.
+ * les programmes de FRANÇAIS ne sont PAS couverts (propriété de tiers). Le
+ * référentiel de français ne retient donc QUE les intitulés d'entrées du
+ * programme : aucun extrait d'œuvre n'est extrait ni stocké.
  */
 import mathsCycle4 from '../data/referentiels/fr-mathematiques-cycle4.json'
 import mathsCycle3 from '../data/referentiels/fr-mathematiques-cycle3.json'
@@ -29,10 +30,12 @@ import hgCycle4 from '../data/referentiels/fr-histoire-geographie-cycle4.json'
 import pcCycle4 from '../data/referentiels/fr-physique-chimie-cycle4.json'
 import svtCycle4 from '../data/referentiels/fr-svt-cycle4.json'
 import techCycle4 from '../data/referentiels/fr-technologie-cycle4.json'
+import fraCycle3 from '../data/referentiels/fr-francais-cycle3.json'
+import fraCycle4 from '../data/referentiels/fr-francais-cycle4.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
-const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4]
+const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

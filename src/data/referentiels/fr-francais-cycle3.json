@@ -1,0 +1,99 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_reserveLicence": "Seuls les intitulés d'entrées du programme sont repris. Aucun extrait d'œuvre n'est stocké (propriété de tiers, hors Licence Ouverte).",
+  "pays": "FR",
+  "matiere": "Français",
+  "cycle": "Cycle 3",
+  "arrete": "Arrêté du 10-4-2025 (NOR MENE2504620A)",
+  "bo": "BO n° 16 du 17-4-2025",
+  "url": "https://www.education.gouv.fr/bo/2025/Hebdo16/MENE2504620A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/programme-de-fran-ais-pour-le-cycle-3-439824.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "CM1": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Découvrir des héroïnes, des héros"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Se confronter au merveilleux, à l’étrange"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Imaginer et vivre d’autres vies"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Comprendre et interroger la morale"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Savourer le goût des mots, imaginer et créer en poésie"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Se découvrir, s’affirmer dans le rapport aux autres"
+        }
+      ]
+    },
+    "CM2": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Découvrir des héroïnes, des héros"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Se confronter au merveilleux, à l’étrange"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Imaginer et vivre d’autres vies"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Comprendre et interroger la morale"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Savourer le goût des mots, imaginer et créer en poésie"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Se découvrir, s’affirmer dans le rapport aux autres"
+        }
+      ]
+    },
+    "6e": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Créer, recréer le monde : récits des origines (récit, fiction)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Chanter et enchanter le monde : mots et merveilles (poésie)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Se masquer, jouer, déjouer : ruses en action (théâtre)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Partir à l’aventure ! (récit, fiction)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Rencontrer des monstres : expérience de l’autre, expérience de soi (récit, fiction)"
+        }
+      ]
+    }
+  }
+}

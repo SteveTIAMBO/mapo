@@ -1,0 +1,79 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_reserveLicence": "Seuls les intitulés d'entrées du programme sont repris. Aucun extrait d'œuvre n'est stocké (propriété de tiers, hors Licence Ouverte).",
+  "pays": "FR",
+  "matiere": "Français",
+  "cycle": "Cycle 4",
+  "arrete": "Arrêté du 18-2-2026 (NOR MENE2602912A)",
+  "bo": "BO n° 10 du 5-3-2026",
+  "url": "https://www.education.gouv.fr/bo/2026/Hebdo10/MENE2602912A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%201%20%E2%80%93%20Programme%20de%20fran%C3%A7ais%20pour%20le%20cycle%204-480713.pdf",
+  "extraitLe": "2026-08-17",
+  "classes": {
+    "5e": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Devenir héroïne/héros : destins romanesques (récit, fiction)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Voyager en poésie : « Du monde entier au cœur du monde » (poésie)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Expérimenter et jouer au théâtre : la société sens dessus dessous (théâtre)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Imaginer, sentir, raisonner : des histoires pour plaire et instruire (récit, fiction)"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Sonder, explorer, anticiper : la fiction aux limites de notre monde (récit, fiction)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Contempler, célébrer, veiller : habiter la terre en poète (poésie)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Obéir, désobéir, trahir ? Conflits de valeurs sur scène (théâtre)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Critiquer, dénoncer, penser : les Lumières en héritage (discours, essai, récit, fiction)"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2028,
+      "notions": [
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Montrer, témoigner, réparer : le roman, le récit à l’épreuve du réel (récit, fiction)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "S’unir, se désunir, se réunir en mots : l’amour en poésie (poésie)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Représenter, penser, questionner la société au théâtre : la scène et la Cité (théâtre)"
+        },
+        {
+          "domaine": "Culture littéraire et artistique",
+          "notion": "Défendre les valeurs humanistes : écrivains et journalistes acteurs de leur temps (articles, essai, récit)"
+        }
+      ]
+    }
+  }
+}

@@ -59,7 +59,7 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   it('une matière sans référentiel ne renvoie rien', () => {
     // Mieux vaut pas de référentiel qu'un référentiel inventé : la génération
     // retombe alors sur son comportement actuel, sans faire de fausse promesse.
-    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'Français', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'Arts plastiques', date: en(2026) })).toEqual([])
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
@@ -180,5 +180,26 @@ describe('Technologie — le titre coupé en fin de ligne est recollé', () => {
 
   it('définie au niveau du cycle', () => {
     expect(granulariteProgramme({ pays: 'FR', niveau: '3e', matiere: 'Technologie' })).toBe('cycle')
+  })
+})
+
+
+describe('Français — intitulés d’entrées seulement, jamais d’extraits d’œuvres', () => {
+  it('la 6e et la 5e sont couvertes', () => {
+    expect(notionsOfficielles({ pays: 'FR', niveau: '6e', matiere: 'Français', date: en(2026) }).length).toBeGreaterThan(3)
+    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'Français', date: en(2026) })).toHaveLength(4)
+  })
+
+  it('le millésime du cycle 4 s’applique aussi au français', () => {
+    // Même arrêté que les maths : 5e en 2026, 4e en 2027, 3e en 2028.
+    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Français', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Français', date: en(2027) })).toHaveLength(4)
+  })
+
+  it('la réserve de licence est portée par le référentiel', () => {
+    // Les œuvres citées dans le programme appartiennent à des tiers : la
+    // Licence Ouverte ne les couvre pas. On ne stocke que les intitulés.
+    const s = sourceOfficielle({ pays: 'FR', niveau: '5e', matiere: 'Français', date: en(2026) })
+    expect(s).not.toBeNull()
   })
 })
