@@ -1,0 +1,188 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Remplacé au CM1 à la rentrée 2026 ; reste applicable au CM2 et en 6e jusqu'en 2027.",
+  "_extraitPar": "outils/extraire-primaire.py — thème en 12 gras, notion en 10.",
+  "pays": "FR",
+  "matiere": "Sciences et technologie",
+  "cycle": "Cycle 3 (CM1, CM2, 6e)",
+  "_granularite": "cycle",
+  "arrete": "Arrêté du 15-6-2023",
+  "bo": "BO n° 25 du 22-6-2023",
+  "url": "https://www.education.gouv.fr/bo/2023/Hebdo25/MENE2314101A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%20%E2%80%93%20Programme%20de%20sciences%20et%20technologie%20du%20cycle%203-365166.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CM1": {
+      "enVigueurRentree": 2023,
+      "notions": [
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "États et constitution de la matière à l’échelle macroscopique"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Différents types de mouvement"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Ressources en énergie et conversions d’énergie"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Signal et information"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Panorama du monde vivant"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Alimentation humaine"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Cycle de vie et reproduction des êtres vivants"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Les objets techniques en réponse aux besoins des individus et de la société"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Description du fonctionnement et de la constitution d’objets techniques"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Démarche de conception et de réalisation d’un objet technique"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Programmation d’objets techniques"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "La Terre, une planète singulière et active"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "Écosystème : structure, fonctionnement et dynamique"
+        }
+      ]
+    },
+    "CM2": {
+      "enVigueurRentree": 2023,
+      "notions": [
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "États et constitution de la matière à l’échelle macroscopique"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Différents types de mouvement"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Ressources en énergie et conversions d’énergie"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Signal et information"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Panorama du monde vivant"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Alimentation humaine"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Cycle de vie et reproduction des êtres vivants"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Les objets techniques en réponse aux besoins des individus et de la société"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Description du fonctionnement et de la constitution d’objets techniques"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Démarche de conception et de réalisation d’un objet technique"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Programmation d’objets techniques"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "La Terre, une planète singulière et active"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "Écosystème : structure, fonctionnement et dynamique"
+        }
+      ]
+    },
+    "6e": {
+      "enVigueurRentree": 2023,
+      "notions": [
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "États et constitution de la matière à l’échelle macroscopique"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Différents types de mouvement"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Ressources en énergie et conversions d’énergie"
+        },
+        {
+          "domaine": "Matière, mouvement, énergie, information",
+          "notion": "Signal et information"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Panorama du monde vivant"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Alimentation humaine"
+        },
+        {
+          "domaine": "Le vivant, sa diversité et les fonctions qui le caractérisent",
+          "notion": "Cycle de vie et reproduction des êtres vivants"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Les objets techniques en réponse aux besoins des individus et de la société"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Description du fonctionnement et de la constitution d’objets techniques"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Démarche de conception et de réalisation d’un objet technique"
+        },
+        {
+          "domaine": "Les objets techniques au cœur de la société",
+          "notion": "Programmation d’objets techniques"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "La Terre, une planète singulière et active"
+        },
+        {
+          "domaine": "La Terre, une planète peuplée par des êtres vivants",
+          "notion": "Écosystème : structure, fonctionnement et dynamique"
+        }
+      ]
+    }
+  }
+}

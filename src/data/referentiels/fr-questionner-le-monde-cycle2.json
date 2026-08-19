@@ -1,0 +1,78 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. « Questionner le monde » tient lieu de sciences et d'histoire-géographie au cycle 2. Remplacé au CP à la rentrée 2026 par deux programmes distincts ; reste applicable au CE1 et au CE2 jusqu'en 2027.",
+  "_extraitPar": "outils/extraire-primaire.py — discipline isolée dans l'annexe de cycle par la taille de police.",
+  "pays": "FR",
+  "matiere": "Questionner le monde",
+  "matiereAussi": [
+    "Sciences et technologie",
+    "Histoire-Géographie"
+  ],
+  "cycle": "Cycle 2 (CE1, CE2)",
+  "arrete": "Arrêté du 9-11-2015, annexe remplacée par l’arrêté du 17-7-2020",
+  "bo": "BO n° 31 du 30-7-2020",
+  "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/31/88/5/ensel714_annexe1_1312885.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CE1": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Qu’est-ce que la matière ?"
+        },
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Comment reconnaître le monde vivant ?"
+        },
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Les objets techniques. Qu’est-ce que c’est ? À quels besoins répondent-ils ? Comment fonctionnent-ils ?"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Se situer dans l’espace"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Se situer dans le temps"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Explorer les organisations du monde"
+        }
+      ]
+    },
+    "CE2": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Qu’est-ce que la matière ?"
+        },
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Comment reconnaître le monde vivant ?"
+        },
+        {
+          "domaine": "Questionner le monde du vivant, de la matière et des objets",
+          "notion": "Les objets techniques. Qu’est-ce que c’est ? À quels besoins répondent-ils ? Comment fonctionnent-ils ?"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Se situer dans l’espace"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Se situer dans le temps"
+        },
+        {
+          "domaine": "Questionner l’espace et le temps",
+          "notion": "Explorer les organisations du monde"
+        }
+      ]
+    }
+  }
+}

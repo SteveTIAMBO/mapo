@@ -1,0 +1,95 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Application ÉCHELONNÉE : CP à la rentrée 2026, CE1 et CE2 à la rentrée 2027.",
+  "_extraitPar": "outils/extraire-sommaire-indente.py — sommaire indenté à trois niveaux (domaine, CLASSE, notion) ; durées et périodes retirées.",
+  "pays": "FR",
+  "matiere": "Histoire-Géographie",
+  "cycle": "Cycle 2 (CP, CE1, CE2)",
+  "arrete": "Arrêté du 22-4-2026",
+  "bo": "BO du 14-5-2026",
+  "url": "https://www.education.gouv.fr/bo/2026/Hebdo20/MENE2608631A",
+  "urlPdf": "",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CP": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 : Les manifestations naturelles du temps"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 : Les représentations humaines du temps"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 : Situer des évènements dans le temps"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 : Autour de l’école"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 : Des représentations du monde"
+        }
+      ]
+    },
+    "CE1": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 : Du passé proche au passé lointain"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 : Les grandes périodes de l’histoire"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 : Les traces du passé"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 : La Terre est peuplée"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 : Découvrir les lieux où vivent les êtres humains"
+        }
+      ]
+    },
+    "CE2": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 : La vie des femmes et des hommes au Paléolithique et au Néolithique (environ 3 millions d'années à 3000 av. J.-C.)"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 : Vivre à Rome et en Gaule romaine du Ier siècle avant J.-C. au IIe siècle après J.-C."
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 : La construction du royaume de France (Xe – XVe siècles)"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 : L’inégale répartition de la population en France"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 : Se loger en France"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 3 : Travailler en France"
+        }
+      ]
+    }
+  }
+}

@@ -67,13 +67,26 @@ import hlpTle from '../data/referentiels/fr-hlp-terminale.json'
 import nsi1re from '../data/referentiels/fr-nsi-1re.json'
 import nsiTle from '../data/referentiels/fr-nsi-terminale.json'
 import emc from '../data/referentiels/fr-emc.json'
+import fraCycle2 from '../data/referentiels/fr-francais-cycle2.json'
+import mathsCycle2 from '../data/referentiels/fr-mathematiques-cycle2.json'
+import qlmCycle2 from '../data/referentiels/fr-questionner-le-monde-cycle2.json'
+import stCycle2 from '../data/referentiels/fr-sciences-technologie-cycle2.json'
+import hgCycle2 from '../data/referentiels/fr-histoire-geographie-cycle2.json'
+import stCycle3_2023 from '../data/referentiels/fr-sciences-technologie-cycle3-2023.json'
+import stCycle3_2026 from '../data/referentiels/fr-sciences-technologie-cycle3-2026.json'
+import hgCycle3_2020 from '../data/referentiels/fr-histoire-geographie-cycle3-2020.json'
+import hgCycle3_2026 from '../data/referentiels/fr-histoire-geographie-cycle3-2026.json'
+import anglaisCollege from '../data/referentiels/fr-anglais-college.json'
+import anglaisLycee from '../data/referentiels/fr-anglais-lycee.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
 const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4,
   maths2nde, maths1re, mathsTle, mathsTle2027, pc2nde, pc1re, pcTle, svt2nde, svt1re, svtTle,
   hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde,
-  hggsp1re, hggspTle, hlp1re, hlpTle, nsi1re, nsiTle, emc]
+  hggsp1re, hggspTle, hlp1re, hlpTle, nsi1re, nsiTle, emc,
+  fraCycle2, mathsCycle2, qlmCycle2, stCycle2, hgCycle2,
+  stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026, anglaisCollege, anglaisLycee]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -99,7 +112,25 @@ function clesMatiere(s) {
   cles.delete('')
   return cles
 }
-const memeMatiere = (a, b) => [...clesMatiere(a)].some((x) => clesMatiere(b).has(x))
+/**
+ * Toutes les clés sous lesquelles un référentiel doit être trouvable.
+ *
+ * `matiereAussi` sert au seul cas où le programme officiel ne porte PAS le nom
+ * de la matière : au cycle 2, « Questionner le monde » tient lieu de sciences
+ * ET d'histoire-géographie. Un élève de CE1 qui révise « Sciences et
+ * technologie » doit tomber dessus, sinon on lui répond qu'il n'y a rien.
+ */
+function clesReferentiel(ref) {
+  const cles = clesMatiere(ref.matiere)
+  for (const autre of ref.matiereAussi || []) {
+    for (const c of clesMatiere(autre)) cles.add(c)
+  }
+  return cles
+}
+const memeMatiere = (ref, demandee) => {
+  const cles = clesReferentiel(ref)
+  return [...clesMatiere(demandee)].some((x) => cles.has(x))
+}
 
 /**
  * Référentiel applicable à cette classe à cette date, ou null.
@@ -113,7 +144,7 @@ function trouver({ pays, niveau, matiere, date = new Date() }) {
   const cl = String(niveau || '').trim()
   const an = anneeScolaire(date)
   return REFERENTIELS
-    .filter((x) => x.pays === pays && memeMatiere(x.matiere, matiere) && x.classes[cl])
+    .filter((x) => x.pays === pays && memeMatiere(x, matiere) && x.classes[cl])
     .filter((x) => an >= x.classes[cl].enVigueurRentree)
     .sort((a, b) => b.classes[cl].enVigueurRentree - a.classes[cl].enVigueurRentree)[0] || null
 }

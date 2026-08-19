@@ -1,0 +1,103 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Arrêté du 5-5-2025, qui remplace celui de 2019 pour les langues vivantes et introduit un programme PAR LANGUE. Application échelonnée classe par classe.",
+  "_extraitPar": "outils/extraire-sommaire-indente.py — sommaire indenté, la CLASSE étant marquée par la taille. Seuls les « Repères culturels » sont retenus : les activités langagières décrivent des savoir-faire, pas des connaissances.",
+  "pays": "FR",
+  "matiere": "Anglais",
+  "cycle": "Lycée général et technologique",
+  "arrete": "Arrêté du 5-5-2025",
+  "bo": "BO n° 22 du 28-5-2025",
+  "url": "https://www.education.gouv.fr/bo/2025/Hebdo22/MENE2504621A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/annexe-4-programme-d-anglais-pour-les-classes-de-lyc-e-g-n-ral-et-technologique-440361.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "2nde": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 1. Représentation de soi et rapport à autrui"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 2. Vivre entre générations"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 3. Le passé dans le présent"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 4. Défis et transitions"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 5. Créer et recréer"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 6. Les pays du Commonwealth : héritages, unité, diversité"
+        }
+      ]
+    },
+    "1re": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 1. Identités et échanges"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 2. Diversité et inclusion"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 3. Art et pouvoir"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 4. Innovations scientifiques et responsabilité"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 5. L’être humain et la nature"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 6. Les aires anglophones américaines"
+        }
+      ]
+    },
+    "Terminale": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 1. Espace privé et espace public"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 2. Territoire et mémoire"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 3. Fictions et réalités"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 4. Enjeux et formes de la communication"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 5. Citoyenneté et mondes virtuels"
+        },
+        {
+          "domaine": "Repères culturels – LVA, LVB et LVC",
+          "notion": "Axe 6. Le Royaume-Uni et ses nations"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,107 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Remplacé au CM1 à la rentrée 2026 ; reste applicable au CM2 et en 6e jusqu'en 2027.",
+  "_extraitPar": "outils/extraire-primaire.py — discipline isolée dans l'annexe de cycle par la taille de police.",
+  "pays": "FR",
+  "matiere": "Histoire-Géographie",
+  "cycle": "Cycle 3 (CM1, CM2, 6e)",
+  "arrete": "Arrêté du 9-11-2015, annexe remplacée par l’arrêté du 17-7-2020",
+  "bo": "BO n° 31 du 30-7-2020",
+  "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/31/88/7/ensel714_annexe2_1312887.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CM1": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 - Et avant la France ?"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 - Le temps des rois"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 - Le temps de la Révolution et de l’Empire"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 - Découvrir le(s) lieu(x) où j’habite"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 - Se loger, travailler, se cultiver, avoir des loisirs en France"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 3 - Consommer en France"
+        }
+      ]
+    },
+    "CM2": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 - Le temps de la République"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 - L’âge industriel en France"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 - La France, des guerres mondiales à l’Union européenne"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 - Se déplacer"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 - Communiquer d’un bout à l’autre du monde grâce à l’Internet"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 3 - Mieux habiter"
+        }
+      ]
+    },
+    "6e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 - La longue histoire de l’humanité et des migrations"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 - Récits fondateurs, croyances et citoyenneté dans la Méditerranée antique au Ier millénaire avant J-C"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 - L’empire romain dans le monde antique"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 - Habiter une métropole"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 - Habiter un espace de faible densité"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 3 - Habiter les littoraux"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 4 - Le monde habité"
+        }
+      ]
+    }
+  }
+}

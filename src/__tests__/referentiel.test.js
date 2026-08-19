@@ -63,11 +63,15 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // Les langues vivantes ne sont volontairement pas couvertes : leurs
-    // programmes décrivent des activités langagières, pas des connaissances
-    // qu'on puisse interroger. La voie technologique ne l'est pas non plus.
-    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Anglais (LVA)', date: en(2026) })).toEqual([])
+    // Les arts et l'EPS ne sont volontairement pas couverts : leurs programmes
+    // décrivent des PRATIQUES, sur lesquelles un quiz à quatre propositions
+    // n'a rien à dire. La voie technologique ne l'est pas non plus.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Arts plastiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Éducation physique et sportive (EPS)', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    // ⚠️ Trou connu, du côté du CATALOGUE et non du référentiel : « LV2
+    // (Espagnol/Allemand) » désigne deux langues d'un coup, donc aucune.
+    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'LV2 (Espagnol/Allemand)', date: en(2026) })).toEqual([])
   })
 })
 
@@ -313,6 +317,60 @@ describe('Lycée — physique-chimie et SVT, de la 2nde à la Terminale', () => 
 })
 
 
+describe('Primaire — deux millésimes coexistent dans la même matière', () => {
+  // À la rentrée 2026, trois arrêtés du printemps remplacent les sciences,
+  // l'histoire-géo et les langues du primaire, mais CLASSE PAR CLASSE : le CP
+  // et le CM1 d'abord, le reste en 2027. Un CM1 et un CM2 n'ont donc pas le
+  // même programme de sciences cette année. C'est le cas qui justifie que
+  // `trouver` arbitre entre plusieurs référentiels d'une même classe.
+  const n = (niveau, matiere, a = 2026) => notionsOfficielles({ pays: 'FR', niveau, matiere, date: en(a) })
+  const src = (niveau, matiere, a = 2026) => sourceOfficielle({ pays: 'FR', niveau, matiere, date: en(a) })
+
+  it('en sciences, le CM1 est sur 2026 et le CM2 sur 2023', () => {
+    expect(src('CM1', 'Sciences et technologie').arrete).toMatch(/2026/)
+    expect(src('CM2', 'Sciences et technologie').arrete).toMatch(/2023/)
+    expect(src('6e', 'Sciences et technologie').arrete).toMatch(/2023/)
+  })
+
+  it('en histoire-géo, le CM1 est sur 2026 et le CM2 sur 2020', () => {
+    expect(src('CM1', 'Histoire-Géographie').arrete).toMatch(/2026/)
+    expect(src('CM2', 'Histoire-Géographie').arrete).toMatch(/2020/)
+  })
+
+  it('et les contenus diffèrent vraiment, ce n’est pas qu’une étiquette', () => {
+    expect(n('CM1', 'Histoire-Géographie').map((x) => x.notion))
+      .toContain('Thème 1 : La vie quotidienne au Moyen Âge (XIe - XIIIe siècles)')
+    expect(n('CM2', 'Histoire-Géographie').map((x) => x.notion))
+      .toContain('Thème 1 - Le temps de la République')
+  })
+
+  it('en 2027 tout le cycle 3 aura basculé, sans qu’on touche au code', () => {
+    expect(src('CM2', 'Sciences et technologie', 2027).arrete).toMatch(/2026/)
+    expect(src('6e', 'Histoire-Géographie', 2027).arrete).toMatch(/2026/)
+  })
+
+  it('le cycle 2 est couvert en français et en mathématiques depuis 2025', () => {
+    for (const c of ['CP', 'CE1', 'CE2']) {
+      expect(n(c, 'Français').length).toBeGreaterThan(8)
+      expect(n(c, 'Mathématiques').length).toBeGreaterThan(8)
+      // Pas d'échelonnement pour ces deux-là : les trois classes ensemble.
+      expect(n(c, 'Français', 2024)).toEqual([])
+    }
+    expect(n('CP', 'Français').map((x) => x.notion)).toContain('Lire à voix haute')
+  })
+
+  it('« Questionner le monde » répond quand on demande les sciences au CE1', () => {
+    // Le programme du cycle 2 ne s'appelle pas comme la matière du catalogue.
+    // Sans passerelle, un CE1 s'entendait répondre qu'il n'y a pas de
+    // référentiel — alors qu'il y en a un, et qu'il est en vigueur.
+    expect(n('CE1', 'Sciences et technologie').map((x) => x.notion)).toContain('Comment reconnaître le monde vivant ?')
+    expect(n('CE2', 'Histoire-Géographie').map((x) => x.notion)).toContain('Se situer dans le temps')
+    // Au CP en revanche, il a été remplacé : c'est le texte de 2026 qui sort.
+    expect(src('CP', 'Sciences et technologie').arrete).toMatch(/2026/)
+  })
+})
+
+
 describe('EMC — un seul arrêté du CP à la terminale, appliqué en trois vagues', () => {
   // L'arrêté du 29-5-2024 réécrit tout l'EMC et abroge ceux de 2015 et 2019.
   // Son application est échelonnée : 2024, 2025, puis 2026 — et la TERMINALE
@@ -345,6 +403,41 @@ describe('EMC — un seul arrêté du CP à la terminale, appliqué en trois vag
     const tous = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale'].flatMap((c) => emc(c)).map((x) => x.notion)
     expect(tous.some((x) => /heures?\)$/.test(x))).toBe(false)
     expect(tous.some((x) => /voie professionnelle/.test(x))).toBe(false)
+  })
+})
+
+
+describe('Anglais — les repères culturels, pas les savoir-faire', () => {
+  // L'arrêté du 5-5-2025 remplace celui de 2019 et introduit un programme PAR
+  // LANGUE. On ne retient que les « Repères culturels » : les activités
+  // langagières (« épeler », « prendre des notes ») décrivent des savoir-faire,
+  // sur lesquels un quiz à quatre propositions n'a rien à dire.
+  const n = (niveau, a = 2026) => notionsOfficielles({ pays: 'FR', niveau, matiere: 'Anglais (LV1)', date: en(a) })
+
+  it('la 6e et la 5e sont passées au programme de 2025, la 4e et la 3e pas encore', () => {
+    expect(n('6e').length).toBeGreaterThan(4)
+    expect(n('5e').length).toBeGreaterThan(4)
+    expect(n('4e')).toEqual([])
+    expect(n('4e', 2027).length).toBeGreaterThan(4)
+    expect(n('3e', 2028).length).toBeGreaterThan(4)
+  })
+
+  it('chaque classe a ses propres axes, et le sixième est une aire culturelle', () => {
+    expect(n('5e').map((x) => x.notion)).toContain('Axe 6. Le Royaume-Uni')
+    expect(n('3e', 2028).map((x) => x.notion)).toContain('Axe 6. Les États-Unis')
+  })
+
+  it('le lycée aussi, sous le libellé LVA du catalogue', () => {
+    const lva = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Anglais (LVA)', date: en(2026) })
+    expect(lva('2nde')).toHaveLength(6)
+    expect(lva('Terminale').map((x) => x.notion)).toContain('Axe 2. Territoire et mémoire')
+  })
+
+  it('aucune activité langagière n’a été prise pour un repère culturel', () => {
+    const tous = ['6e', '5e'].flatMap((c) => n(c)).map((x) => x.notion)
+    expect(tous.every((x) => x.startsWith('Axe '))).toBe(true)
+    expect(tous).not.toContain('Activités langagières')
+    expect(tous).not.toContain('Outils linguistiques')
   })
 })
 

@@ -1,0 +1,139 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Application ÉCHELONNÉE : CP à la rentrée 2026, CE1 et CE2 à la rentrée 2027.",
+  "_extraitPar": "outils/extraire-sommaire-indente.py — sommaire indenté à trois niveaux (domaine, CLASSE, notion) ; durées et périodes retirées.",
+  "pays": "FR",
+  "matiere": "Sciences et technologie",
+  "cycle": "Cycle 2 (CP, CE1, CE2)",
+  "arrete": "Arrêté du 5-6-2026",
+  "bo": "BO du 11-6-2026",
+  "url": "https://www.education.gouv.fr/bo/2026/Hebdo24/MENE2611650A",
+  "urlPdf": "",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CP": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "Masse, volumes et mesure de température"
+        },
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "États physiques de la matière"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Unité et diversité du vivant"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Observer et décrire son environnement proche"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Agir pour protéger l’environnement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Alimentation"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Croissance et mouvement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Santé et hygiène de vie"
+        }
+      ]
+    },
+    "CE1": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "Masse et volumes"
+        },
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "États physiques de la matière"
+        },
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "L’électricité"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Nutrition des êtres vivants"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Sens et perception chez les animaux"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Observer et décrire son environnement proche"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Agir pour protéger l’environnement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Alimentation"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Croissance et mouvement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Santé et hygiène de vie"
+        }
+      ]
+    },
+    "CE2": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "Masse, volumes et mesure du temps"
+        },
+        {
+          "domaine": "La matière, les mesures, l’électricité",
+          "notion": "États physiques de la matière"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Unité et diversité du vivant"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Reproduction, croissance et développement"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Locomotion chez les animaux"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Observer et décrire son environnement proche"
+        },
+        {
+          "domaine": "Les êtres vivants dans leur environnement",
+          "notion": "Agir pour protéger l’environnement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Croissance et mouvement"
+        },
+        {
+          "domaine": "Le corps humain et la santé",
+          "notion": "Santé et hygiène de vie"
+        }
+      ]
+    }
+  }
+}

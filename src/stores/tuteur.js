@@ -120,8 +120,13 @@ function revisionDocRef(uid, studentId) {
  * v5 (19-8-2026) : trois spécialités de plus (HGGSP, HLP, NSI) et surtout
  * l'EMC, dont le programme a été RÉÉCRIT en 2024 — du CP à la terminale. Ce
  * qui a été généré en EMC portait sur le programme abrogé.
+ *
+ * v6 (19-8-2026) : le PRIMAIRE entre dans le référentiel (CP au CM2), et trois
+ * arrêtés du printemps 2026 y changent les programmes de sciences et
+ * d'histoire-géographie au CP et au CM1. Là encore, ce qui était en banque
+ * portait sur un programme qui n'est plus le bon, ou sur aucun.
  */
-const BANQUE_VERSION = 'v5'
+const BANQUE_VERSION = 'v6'
 
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
