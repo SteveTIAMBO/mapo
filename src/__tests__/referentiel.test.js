@@ -63,9 +63,10 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // Le lycée général est couvert en maths, physique-chimie et SVT. Les autres
-    // matières du lycée ne le sont pas, et la voie technologique non plus.
-    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Histoire-Géographie', date: en(2026) })).toEqual([])
+    // Les langues vivantes ne sont volontairement pas couvertes : leurs
+    // programmes décrivent des activités langagières, pas des connaissances
+    // qu'on puisse interroger. La voie technologique ne l'est pas non plus.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Anglais (LVA)', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
@@ -321,5 +322,113 @@ describe('Nom de matière — le référentiel SVT était livré mais jamais tro
     expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: long, date: en(2026) })).toHaveLength(3)
     expect(notionsOfficielles({ pays: 'FR', niveau: '1re', matiere: long, date: en(2026) })).toHaveLength(5)
     expect(sourceOfficielle({ pays: 'FR', niveau: '2nde', matiere: long, date: en(2026) })).not.toBeNull()
+  })
+
+  it('le sigle marche dans les deux sens, sans table à tenir à jour', () => {
+    // Deux autres matières du lycée ont un sigle dans le catalogue. Une table
+    // d'alias aurait exigé qu'on pense à les y ajouter — et l'oubli aurait été
+    // silencieux, comme il l'a été pour la SVT.
+    for (const [libelle, n] of [['Sciences économiques et sociales (SES)', 12],
+      ['Sciences numériques et technologie (SNT)', 7]]) {
+      const cl = libelle.includes('SNT') ? '2nde' : '1re'
+      expect(notionsOfficielles({ pays: 'FR', niveau: cl, matiere: libelle, date: en(2026) })).toHaveLength(n)
+    }
+    // Le libellé sans son sigle marche aussi : c'est celui du référentiel.
+    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Sciences économiques et sociales', date: en(2026) })).toHaveLength(12)
+  })
+})
+
+
+describe('Lycée — le tronc commun est couvert', () => {
+  const n = (niveau, matiere) => notionsOfficielles({ pays: 'FR', niveau, matiere, date: en(2026) })
+
+  it('histoire-géographie : quatre thèmes d’histoire et quatre de géographie, par classe', () => {
+    for (const c of ['2nde', '1re', 'Terminale']) {
+      const notions = n(c, 'Histoire-Géographie')
+      expect(notions).toHaveLength(8)
+      expect(notions.filter((x) => x.domaine === 'Histoire')).toHaveLength(4)
+      expect(notions.filter((x) => x.domaine === 'Géographie')).toHaveLength(4)
+    }
+  })
+
+  it('la durée horaire n’est pas dans le titre du thème', () => {
+    // « Thème 3 : Des mobilités généralisées (12-14 heures) » : la durée relève
+    // de l'organisation de l'année, pas de ce qu'il y a à réviser.
+    const tous = ['2nde', '1re', 'Terminale'].flatMap((c) => n(c, 'Histoire-Géographie')).map((x) => x.notion)
+    expect(tous.some((x) => /heures\)$/.test(x))).toBe(false)
+    // Une date entre parenthèses, elle, fait partie du titre et doit rester.
+    expect(tous.some((x) => /\(1929-1945\)$/.test(x))).toBe(true)
+  })
+
+  it('le thème conclusif de terminale n’a pas de numéro et compte quand même', () => {
+    expect(n('Terminale', 'Histoire-Géographie').map((x) => x.notion)
+      .some((x) => x.startsWith('Thème conclusif'))).toBe(true)
+  })
+
+  it('enseignement scientifique : le programme de 2023, pas celui de 2019', () => {
+    // Les annexes de 2019 ont été REMPLACÉES en 2023. Les pages du BO de 2019
+    // affichent pourtant toujours l'ancienne : s'y fier aurait été une erreur.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '1re', matiere: 'Enseignement scientifique', date: en(2026) }).arrete).toMatch(/2023/)
+    expect(n('Terminale', 'Enseignement scientifique').map((x) => x.notion)).toContain('De la machine de Turing à l’intelligence artificielle')
+  })
+
+  it('le module de maths de 1re, porté par un arrêté distinct, est bien là', () => {
+    expect(n('1re', 'Enseignement scientifique').map((x) => x.notion)).toContain('Phénomènes aléatoires')
+  })
+
+  it('français : les objets d’étude diffèrent entre la 2de et la 1re', () => {
+    const o = (c) => n(c, 'Français').filter((x) => x.domaine === 'Les objets d’étude').map((x) => x.notion)
+    expect(o('2nde')).toHaveLength(4)
+    expect(o('1re')).toHaveLength(4)
+    expect(o('2nde')).toContain('La poésie du Moyen Âge au XVIIIe siècle')
+    expect(o('1re')).toContain('La poésie du XIXe siècle au XXIe siècle')
+    expect(o('2nde')).not.toEqual(o('1re'))
+  })
+
+  it('français : la 2de ne reçoit pas les points de langue réservés à la 1re', () => {
+    // Le même chapitre « Étude de la langue » sert aux deux classes et marque
+    // lui-même le partage : « (dès la classe de seconde) » / « (classe de
+    // première) ». Tout servir à une 2de aurait été crédible et hors programme.
+    const langue = (c) => n(c, 'Français').filter((x) => x.domaine === 'Étude de la langue').map((x) => x.notion)
+    expect(langue('2nde').some((x) => /classe de première/.test(x))).toBe(false)
+    expect(langue('1re').some((x) => /classe de première/.test(x))).toBe(true)
+    expect(langue('1re').length).toBeGreaterThan(langue('2nde').length)
+  })
+
+  it('français : aucune œuvre au programme n’est stockée', () => {
+    // Les œuvres sont fixées chaque année par une note de service distincte —
+    // et elles appartiennent à des tiers, que la Licence Ouverte ne couvre pas.
+    const s = sourceOfficielle({ pays: 'FR', niveau: '1re', matiere: 'Français', date: en(2026) })
+    expect(s.arrete).toMatch(/modifié/)   // l'arrêté de 2019 a été modifié en 2020
+  })
+
+  it('philosophie : les dix-sept notions, entières', () => {
+    // Elles sont disposées en grille à trois colonnes, SANS caractère espace :
+    // une lecture naïve produisait « Lebonheur » et une notion au lieu de trois.
+    const notions = n('Terminale', 'Philosophie').filter((x) => x.domaine === 'Notions').map((x) => x.notion)
+    expect(notions).toHaveLength(17)
+    expect(notions).toContain('Le bonheur')
+    expect(notions).toContain('L’inconscient')
+    // « Lebonheur » commencerait bien par « Le » mais sans l'espace : c'est
+    // exactement ce que cette expression attrape.
+    expect(notions.every((x) => /^(Le |La |L’)/.test(x))).toBe(true)
+  })
+
+  it('philosophie : les repères sont des couples, pas une ligne entière', () => {
+    const reperes = n('Terminale', 'Philosophie').filter((x) => x.domaine === 'Repères').map((x) => x.notion)
+    expect(reperes.length).toBeGreaterThan(25)
+    expect(reperes).toContain('Légal/légitime')
+    expect(reperes.every((x) => x.includes('/') && !/[–—]/.test(x))).toBe(true)
+  })
+
+  it('SES : les questionnements sont répartis entre les trois parties', () => {
+    const d = (c) => [...new Set(n(c, 'Sciences économiques et sociales').map((x) => x.domaine))]
+    expect(d('1re')).toEqual(['Science économique', 'Sociologie et science politique', 'Regards croisés'])
+    expect(n('Terminale', 'Sciences économiques et sociales')).toHaveLength(12)
+  })
+
+  it('SNT : les sept thématiques de seconde', () => {
+    expect(n('2nde', 'Sciences numériques et technologie')).toHaveLength(7)
+    expect(n('2nde', 'Sciences numériques et technologie').map((x) => x.notion)).toContain('Les réseaux sociaux')
   })
 })

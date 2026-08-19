@@ -1,0 +1,213 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — grille des notions reconstruite par abscisse ; repères séparés sur le tiret.",
+  "pays": "FR",
+  "matiere": "Philosophie",
+  "cycle": "Terminale générale",
+  "arrete": "Arrêté du 19-7-2019",
+  "bo": "BO spécial n° 8 du 25-7-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special8/MENE1921238A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SPE8_MENJ_25_7_2019/15/9/spe238_annexe1_1159159.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "Terminale": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Notions",
+          "notion": "L’art"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "Le bonheur"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La conscience"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "Le devoir"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "L’État"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "L’inconscient"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La justice"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "Le langage"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La liberté"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La nature"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La raison"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La religion"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La science"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La technique"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "Le temps"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "Le travail"
+        },
+        {
+          "domaine": "Notions",
+          "notion": "La vérité"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Absolu/relatif"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Abstrait/concret"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "En acte/en puissance"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Analyse/synthèse"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Concept/image/métaphore"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Contingent/nécessaire"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Croire/savoir"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Essentiel/accidentel"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Exemple/preuve"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Expliquer/comprendre"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "En fait/en droit"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Formel/matériel"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Genre/espèce/individu"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Hypothèse/conséquence/conclusion"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Idéal/réel"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Identité/égalité/différence"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Impossible/possible"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Intuitif/discursif"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Légal/légitime"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Médiat/immédiat"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Objectif/subjectif/intersubjectif"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Obligation/contrainte"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Origine/fondement"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Persuader/convaincre"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Principe/cause/fin"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Public/privé"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Ressemblance/analogie"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Théorie/pratique"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Transcendant/immanent"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Universel/général/particulier/singulier"
+        },
+        {
+          "domaine": "Repères",
+          "notion": "Vrai/probable/certain"
+        }
+      ]
+    }
+  }
+}

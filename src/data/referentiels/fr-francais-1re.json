@@ -1,0 +1,69 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Les ŒUVRES au programme de première sont fixées chaque année par une note de service distincte : elles ne figurent pas ici.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — titres en gras 11 indentés, dans la section de niveau 14 voulue.",
+  "pays": "FR",
+  "matiere": "Français",
+  "cycle": "Première générale",
+  "arrete": "Arrêté du 17-1-2019 modifié par l’arrêté du 28-9-2020",
+  "bo": "BO spécial n° 1 du 22-1-2019, modifié BO n° 40 du 22-10-2020",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901575A.htm",
+  "urlPdf": "https://eduscol.education.gouv.fr/sites/default/files/document/04annexe2francais1egtbomodifiepdf-69837.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Étude de la langue",
+          "notion": "Les accords dans le groupe nominal et entre le sujet et le verbe (dès la classe de seconde)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "Le verbe : valeurs temporelles, aspectuelles, modales ; concordance des temps (dès la classe de seconde)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "Les relations au sein de la phrase complexe (dès la classe de seconde)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "La syntaxe des propositions subordonnées relatives (dès la classe de seconde)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "Les subordonnées conjonctives utilisées en fonction de compléments circonstanciels (classe de première)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "L’interrogation : syntaxe, sémantique et pragmatique (classe de première)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "L’expression de la négation (classe de première)"
+        },
+        {
+          "domaine": "Étude de la langue",
+          "notion": "Lexique (classes de seconde et première)"
+        },
+        {
+          "domaine": "Les objets d’étude",
+          "notion": "La poésie du XIXe siècle au XXIe siècle"
+        },
+        {
+          "domaine": "Les objets d’étude",
+          "notion": "La littérature d’idées du XVIe siècle au XVIIIe siècle"
+        },
+        {
+          "domaine": "Les objets d’étude",
+          "notion": "Le roman et le récit du Moyen Âge au XXIe siècle"
+        },
+        {
+          "domaine": "Les objets d’étude",
+          "notion": "Le théâtre du XVIIe siècle au XXIe siècle"
+        }
+      ]
+    }
+  }
+}

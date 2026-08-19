@@ -1,0 +1,69 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — colonne « Questionnements » du tableau ; contrôle de fidélité fait cellule par cellule.",
+  "pays": "FR",
+  "matiere": "Sciences économiques et sociales",
+  "cycle": "Première générale — enseignement de spécialité",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901639A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/54/4/spe639_annexe_1063544.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Science économique",
+          "notion": "Comment un marché concurrentiel fonctionne-t-il ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment les marchés imparfaitement concurrentiels fonctionnent-ils ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Quelles sont les principales défaillances du marché ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment les agents économiques se financent-ils ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Qu’est-ce que la monnaie et comment est-elle créée ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment la socialisation contribue-t-elle à expliquer les différences de comportement des individus ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment se construisent et évoluent les liens sociaux ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Quels sont les processus sociaux qui contribuent à la déviance ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment se forme et s’exprime l’opinion publique ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Voter : une affaire individuelle ou collective ?"
+        },
+        {
+          "domaine": "Regards croisés",
+          "notion": "Comment l’assurance et la protection sociale contribuent-elles à la gestion des risques dans les sociétés développées ?"
+        },
+        {
+          "domaine": "Regards croisés",
+          "notion": "Comment les entreprises sont-elles organisées et gouvernées ?"
+        }
+      ]
+    }
+  }
+}

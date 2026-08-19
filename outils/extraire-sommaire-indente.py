@@ -16,7 +16,7 @@ def norm(s):
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
     return ' '.join(s.replace('’', "'").split())
 
-def extraire(chemin, exclure=()):
+def extraire(chemin, exclure=(), marqueur='programme'):
     """Notions du sommaire. `exclure` : intitulés de cadrage, écartés par leur nom.
 
     ⚠️ Écarter une notion peut faire disparaître SON DOMAINE. En terminale, la
@@ -32,9 +32,9 @@ def extraire(chemin, exclure=()):
                   if round(max(c['size'] for c in l['chars']), 1) == 8.5]
     # Le sommaire s'arrête au premier titre de niveau 0 qui suit « Programme ».
     try:
-        debut = next(i for i, (x, t) in enumerate(lignes) if x <= 40 and norm(t) == 'programme')
+        debut = next(i for i, (x, t) in enumerate(lignes) if x <= 40 and norm(t) == marqueur)
     except StopIteration:
-        raise SystemExit('Pas de section « Programme » dans le sommaire.')
+        raise SystemExit(f'Pas de section « {marqueur} » dans le sommaire.')
     domaines, notions, domaine = [], [], None
     for x, t in lignes[debut + 1:]:
         if x <= 40:

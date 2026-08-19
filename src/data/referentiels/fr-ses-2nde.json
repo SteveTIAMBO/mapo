@@ -1,0 +1,45 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — colonne « Questionnements » du tableau ; contrôle de fidélité fait cellule par cellule.",
+  "pays": "FR",
+  "matiere": "Sciences économiques et sociales",
+  "cycle": "Seconde générale et technologique — enseignement commun",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901638A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/05/3/spe638_annexe_1063053.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "2nde": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Sciences économiques et sociales",
+          "notion": "Comment les économistes, les sociologues et les politistes raisonnent-ils et travaillent-ils ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment crée-t-on des richesses et comment les mesure-t-on ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment se forment les prix sur un marché ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment devenons-nous des acteurs sociaux ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment s’organise la vie politique ?"
+        },
+        {
+          "domaine": "Regards croisés",
+          "notion": "Quelles relations entre le diplôme, l’emploi et le salaire ?"
+        }
+      ]
+    }
+  }
+}

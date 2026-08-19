@@ -1,0 +1,53 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — « Thème N » en gras 11 sous « Histoire » / « Géographie » ; durée horaire retirée.",
+  "pays": "FR",
+  "matiere": "Histoire-Géographie",
+  "cycle": "Seconde générale et technologique",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901577A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/69/9/spe577_annexe1CORR_1063699.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "2nde": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 1 : Le monde méditerranéen : empreintes de l’Antiquité et du Moyen Âge"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 2 : XVe-XVIe siècles : un nouveau rapport au monde, un temps de mutation intellectuelle"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 3 : L’État à l’époque moderne : France et Angleterre"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Thème 4 : Dynamiques et ruptures dans les sociétés des XVIIe et XVIIIe siècles"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 1 : Sociétés et environnements : des équilibres fragiles"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 2 : Territoires, populations et développement : quels défis ?"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 3 : Des mobilités généralisées"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Thème 4 : L’Afrique australe : un espace en profonde mutation"
+        }
+      ]
+    }
+  }
+}

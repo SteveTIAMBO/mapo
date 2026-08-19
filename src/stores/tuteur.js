@@ -112,8 +112,12 @@ function revisionDocRef(uid, studentId) {
  * programme qui n'est plus le bon. Et le référentiel de SVT n'était jamais
  * trouvé (nom de matière différent côté catalogue), donc tout ce qui a été
  * généré en SVT l'a été sans cadrage officiel.
+ *
+ * v4 (19-8-2026) : le lycée général est passé de 3 à 9 matières couvertes
+ * (histoire-géo, enseignement scientifique, français, philosophie, SES, SNT).
+ * Tout ce qui a été généré dans ces matières l'a été sans programme officiel.
  */
-const BANQUE_VERSION = 'v3'
+const BANQUE_VERSION = 'v4'
 
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

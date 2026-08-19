@@ -1,0 +1,65 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — thèmes en 11, sous-thèmes numérotés en gras 8,5.",
+  "pays": "FR",
+  "matiere": "Enseignement scientifique",
+  "cycle": "Terminale générale",
+  "arrete": "Arrêté du 30-5-2023",
+  "bo": "BO n° 25 du 22-6-2023",
+  "url": "https://www.education.gouv.fr/bo/2023/Hebdo25/MENE2312807A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%20%E2%80%93%20Programme%20d%E2%80%99enseignement%20scientifique%20de%20%20terminale%20g%C3%A9n%C3%A9rale-365058.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "Terminale": {
+      "enVigueurRentree": 2024,
+      "notions": [
+        {
+          "domaine": "Science, climat et société",
+          "notion": "L’atmosphère terrestre et la vie"
+        },
+        {
+          "domaine": "Science, climat et société",
+          "notion": "La complexité du système climatique"
+        },
+        {
+          "domaine": "Science, climat et société",
+          "notion": "Le climat du futur"
+        },
+        {
+          "domaine": "Le futur des énergies",
+          "notion": "Deux siècles d’énergie électrique"
+        },
+        {
+          "domaine": "Le futur des énergies",
+          "notion": "Conversion et transport de l’énergie électrique"
+        },
+        {
+          "domaine": "Le futur des énergies",
+          "notion": "Énergie, choix de développement et futur climatique"
+        },
+        {
+          "domaine": "Une histoire du vivant",
+          "notion": "La biodiversité et son évolution"
+        },
+        {
+          "domaine": "Une histoire du vivant",
+          "notion": "L’évolution comme grille de lecture du monde"
+        },
+        {
+          "domaine": "Une histoire du vivant",
+          "notion": "L’évolution humaine"
+        },
+        {
+          "domaine": "Une histoire du vivant",
+          "notion": "Les modèles démographiques"
+        },
+        {
+          "domaine": "Une histoire du vivant",
+          "notion": "De la machine de Turing à l’intelligence artificielle"
+        }
+      ]
+    }
+  }
+}

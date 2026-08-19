@@ -1,0 +1,69 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — colonne « Questionnements » du tableau ; contrôle de fidélité fait cellule par cellule.",
+  "pays": "FR",
+  "matiere": "Sciences économiques et sociales",
+  "cycle": "Terminale générale — enseignement de spécialité",
+  "arrete": "Arrêté du 19-7-2019",
+  "bo": "BO spécial n° 8 du 25-7-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special8/MENE1921253A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SPE8_MENJ_25_7_2019/82/1/spe253_annexe_1158821.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "Terminale": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Science économique",
+          "notion": "Quels sont les sources et les défis de la croissance économique ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Quels sont les fondements du commerce international et de l’internationalisation de la production ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment lutter contre le chômage ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Comment expliquer les crises financières et réguler le système financier ?"
+        },
+        {
+          "domaine": "Science économique",
+          "notion": "Quelles politiques économiques dans le cadre européen ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment est structurée la société française actuelle ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Quelle est l’action de l’École sur les destins individuels et sur l’évolution de la société ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Quels sont les caractéristiques contemporaines et les facteurs de la mobilité sociale ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Quelles mutations du travail et de l’emploi ?"
+        },
+        {
+          "domaine": "Sociologie et science politique",
+          "notion": "Comment expliquer l’engagement politique dans les sociétés démocratiques ?"
+        },
+        {
+          "domaine": "Regards croisés",
+          "notion": "Quelles inégalités sont compatibles avec les différentes conceptions de la justice sociale ?"
+        },
+        {
+          "domaine": "Regards croisés",
+          "notion": "Quelle action publique pour l’environnement ?"
+        }
+      ]
+    }
+  }
+}

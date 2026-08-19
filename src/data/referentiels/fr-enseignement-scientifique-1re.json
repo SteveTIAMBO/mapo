@@ -1,0 +1,102 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — thèmes en 11, sous-thèmes numérotés en gras 8,5. Module de maths : sommaire indenté (outils/extraire-sommaire-indente.py).",
+  "pays": "FR",
+  "matiere": "Enseignement scientifique",
+  "cycle": "Première générale",
+  "arrete": "Arrêté du 30-5-2023",
+  "bo": "BO n° 25 du 22-6-2023",
+  "url": "https://www.education.gouv.fr/bo/2023/Hebdo25/MENE2312806A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%20%E2%80%93%20Programme%20d%E2%80%99enseignement%20scientifique%20de%20%20premi%C3%A8re%20g%C3%A9n%C3%A9rale-365055.pdf",
+  "_complement": "Le module de mathématiques intégré relève d'un arrêté distinct : arrêté du 26-2-2026 (MENE2602916A), BO n° 14 du 2-4-2026, applicable à la rentrée 2026. Ses domaines sont inclus ci-dessous.",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2023,
+      "notions": [
+        {
+          "domaine": "Une longue histoire de la matière",
+          "notion": "Un niveau d’organisation : les éléments chimiques"
+        },
+        {
+          "domaine": "Une longue histoire de la matière",
+          "notion": "Des édifices ordonnés : les cristaux"
+        },
+        {
+          "domaine": "Une longue histoire de la matière",
+          "notion": "Une structure complexe : la cellule vivante"
+        },
+        {
+          "domaine": "Le Soleil, notre source d’énergie",
+          "notion": "Le rayonnement solaire"
+        },
+        {
+          "domaine": "Le Soleil, notre source d’énergie",
+          "notion": "Le bilan radiatif terrestre"
+        },
+        {
+          "domaine": "Le Soleil, notre source d’énergie",
+          "notion": "De la conversion biologique de l’énergie solaire par la photosynthèse à l’énergie nécessaire à tous les êtres"
+        },
+        {
+          "domaine": "Le Soleil, notre source d’énergie",
+          "notion": "Une diversité de sources d’énergie utilisables par l’Humanité"
+        },
+        {
+          "domaine": "La Terre, un astre singulier",
+          "notion": "La forme de la Terre"
+        },
+        {
+          "domaine": "La Terre, un astre singulier",
+          "notion": "L’histoire de l’âge de la Terre"
+        },
+        {
+          "domaine": "La Terre, un astre singulier",
+          "notion": "La Terre dans l’Univers"
+        },
+        {
+          "domaine": "Son, musique et audition",
+          "notion": "Son et musique"
+        },
+        {
+          "domaine": "Son, musique et audition",
+          "notion": "Le son, une information à coder"
+        },
+        {
+          "domaine": "Son, musique et audition",
+          "notion": "Entendre et protéger son audition"
+        },
+        {
+          "domaine": "Automatismes",
+          "notion": "Automatismes"
+        },
+        {
+          "domaine": "Analyse de l'information chiffrée",
+          "notion": "Analyse de l'information chiffrée"
+        },
+        {
+          "domaine": "Phénomènes aléatoires",
+          "notion": "Phénomènes aléatoires"
+        },
+        {
+          "domaine": "Phénomènes d'évolution, modélisation par des fonctions",
+          "notion": "Phénomènes d'évolution, modélisation par des fonctions"
+        },
+        {
+          "domaine": "Variation linéaire",
+          "notion": "Variation linéaire"
+        },
+        {
+          "domaine": "Modélisation quadratique",
+          "notion": "Modélisation quadratique"
+        },
+        {
+          "domaine": "Variation exponentielle",
+          "notion": "Variation exponentielle"
+        }
+      ]
+    }
+  }
+}

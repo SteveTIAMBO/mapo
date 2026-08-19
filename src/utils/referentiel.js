@@ -48,24 +48,50 @@ import pcTle from '../data/referentiels/fr-physique-chimie-terminale.json'
 import svt2nde from '../data/referentiels/fr-svt-2nde.json'
 import svt1re from '../data/referentiels/fr-svt-1re.json'
 import svtTle from '../data/referentiels/fr-svt-terminale.json'
+import hg2nde from '../data/referentiels/fr-histoire-geographie-2nde.json'
+import hg1re from '../data/referentiels/fr-histoire-geographie-1re.json'
+import hgTle from '../data/referentiels/fr-histoire-geographie-terminale.json'
+import es1re from '../data/referentiels/fr-enseignement-scientifique-1re.json'
+import esTle from '../data/referentiels/fr-enseignement-scientifique-terminale.json'
+import fra2nde from '../data/referentiels/fr-francais-2nde.json'
+import fra1re from '../data/referentiels/fr-francais-1re.json'
+import philoTle from '../data/referentiels/fr-philosophie-terminale.json'
+import ses2nde from '../data/referentiels/fr-ses-2nde.json'
+import ses1re from '../data/referentiels/fr-ses-1re.json'
+import sesTle from '../data/referentiels/fr-ses-terminale.json'
+import snt2nde from '../data/referentiels/fr-snt-2nde.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
 const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4,
-  maths2nde, maths1re, mathsTle, mathsTle2027, pc2nde, pc1re, pcTle, svt2nde, svt1re, svtTle]
+  maths2nde, maths1re, mathsTle, mathsTle2027, pc2nde, pc1re, pcTle, svt2nde, svt1re, svtTle,
+  hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9]+/g, '')
 
 /**
- * Le catalogue de matières et les référentiels ne nomment pas toujours la même
- * matière pareil : l'élève voit « Sciences de la vie et de la Terre (SVT) », le
- * référentiel s'appelle « SVT ». Sans cette table, la recherche échoue en
- * silence et le référentiel, pourtant livré, n'est jamais servi.
+ * Noms sous lesquels une matière peut être désignée.
+ *
+ * ⚠️ Le catalogue de l'élève et les référentiels ne l'écrivent pas pareil :
+ * « Sciences de la vie et de la Terre (SVT) » d'un côté, « SVT » de l'autre.
+ * Les deux ne se rencontraient jamais, et l'échec était MUET — une recherche
+ * infructueuse est un cas légitime du système. Plutôt qu'une table à tenir à
+ * jour matière par matière, on retient les trois écritures possibles : le
+ * libellé entier, le libellé sans son sigle, et le sigle seul.
  */
-const ALIAS = { sciencesdelavieetdelaterresvt: 'svt' }
-const cleMatiere = (s) => { const n = norm(s); return ALIAS[n] || n }
+function clesMatiere(s) {
+  const cles = new Set([norm(s)])
+  const sigle = String(s || '').match(/\(([^)]+)\)\s*$/)
+  if (sigle) {
+    cles.add(norm(sigle[1]))
+    cles.add(norm(String(s).slice(0, sigle.index)))
+  }
+  cles.delete('')
+  return cles
+}
+const memeMatiere = (a, b) => [...clesMatiere(a)].some((x) => clesMatiere(b).has(x))
 
 /**
  * Référentiel applicable à cette classe à cette date, ou null.
@@ -78,9 +104,8 @@ const cleMatiere = (s) => { const n = norm(s); return ALIAS[n] || n }
 function trouver({ pays, niveau, matiere, date = new Date() }) {
   const cl = String(niveau || '').trim()
   const an = anneeScolaire(date)
-  const m = cleMatiere(matiere)
   return REFERENTIELS
-    .filter((x) => x.pays === pays && cleMatiere(x.matiere) === m && x.classes[cl])
+    .filter((x) => x.pays === pays && memeMatiere(x.matiere, matiere) && x.classes[cl])
     .filter((x) => an >= x.classes[cl].enVigueurRentree)
     .sort((a, b) => b.classes[cl].enVigueurRentree - a.classes[cl].enVigueurRentree)[0] || null
 }
