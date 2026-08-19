@@ -313,6 +313,42 @@ describe('Lycée — physique-chimie et SVT, de la 2nde à la Terminale', () => 
 })
 
 
+describe('EMC — un seul arrêté du CP à la terminale, appliqué en trois vagues', () => {
+  // L'arrêté du 29-5-2024 réécrit tout l'EMC et abroge ceux de 2015 et 2019.
+  // Son application est échelonnée : 2024, 2025, puis 2026 — et la TERMINALE
+  // bascule précisément à cette rentrée. C'est la seule matière qui couvre
+  // d'un coup les douze classes du catalogue.
+  const emc = (niveau, a = 2026) => notionsOfficielles({ pays: 'FR', niveau, matiere: 'Enseignement moral et civique (EMC)', date: en(a) })
+
+  it('les douze classes, du CP à la terminale, sont servies en 2026', () => {
+    for (const c of ['CP', 'CE1', 'CE2', 'CM1', 'CM2', '6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale']) {
+      expect(emc(c).length).toBeGreaterThan(1)
+    }
+  })
+
+  it('en 2024 la terminale ne recevait encore rien, la 2de si', () => {
+    expect(emc('Terminale', 2024)).toEqual([])
+    expect(emc('2nde', 2024).length).toBeGreaterThan(1)
+    expect(emc('1re', 2024)).toEqual([])
+    expect(emc('1re', 2025).length).toBeGreaterThan(1)
+  })
+
+  it('chaque classe a bien SES entrées', () => {
+    expect(emc('3e').map((x) => x.notion)).toContain('Les règles du jeu démocratique')
+    expect(emc('Terminale').map((x) => x.notion)).toContain('Les principes et les espaces du débat démocratique')
+    expect(emc('CP').map((x) => x.notion)).toContain('Être élève à l’école de la République')
+  })
+
+  it('la durée horaire est retirée, même quand elle tient sur deux lignes', () => {
+    // « (6 heures en voies générale et technologique, 5 heures en voie
+    // professionnelle) » déborde d'une ligne sur l'autre dans le PDF.
+    const tous = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale'].flatMap((c) => emc(c)).map((x) => x.notion)
+    expect(tous.some((x) => /heures?\)$/.test(x))).toBe(false)
+    expect(tous.some((x) => /voie professionnelle/.test(x))).toBe(false)
+  })
+})
+
+
 describe('Nom de matière — le référentiel SVT était livré mais jamais trouvé', () => {
   it('le libellé du catalogue élève ramène bien le référentiel', () => {
     // Le catalogue dit « Sciences de la vie et de la Terre (SVT) », le
@@ -425,6 +461,39 @@ describe('Lycée — le tronc commun est couvert', () => {
     const d = (c) => [...new Set(n(c, 'Sciences économiques et sociales').map((x) => x.domaine))]
     expect(d('1re')).toEqual(['Science économique', 'Sociologie et science politique', 'Regards croisés'])
     expect(n('Terminale', 'Sciences économiques et sociales')).toHaveLength(12)
+  })
+
+  it('les spécialités les plus choisies sont couvertes en 1re ET en terminale', () => {
+    for (const m of ['Histoire-géographie, géopolitique et sciences politiques (HGGSP)',
+      'Humanités, littérature et philosophie (HLP)',
+      'Numérique et sciences informatiques (NSI)']) {
+      expect(n('1re', m).length).toBeGreaterThan(4)
+      expect(n('Terminale', m).length).toBeGreaterThan(4)
+    }
+  })
+
+  it('HGGSP et histoire-géo sont DEUX matières, pas une', () => {
+    // Les deux libellés se ressemblent beaucoup. Servir les thèmes de la
+    // spécialité à un élève qui révise le tronc commun serait crédible et faux.
+    const spe = n('1re', 'Histoire-géographie, géopolitique et sciences politiques (HGGSP)').map((x) => x.notion)
+    const commun = n('1re', 'Histoire-Géographie').map((x) => x.notion)
+    expect(spe).toContain('Thème 1 : Comprendre un régime politique : la démocratie')
+    expect(commun).toContain('Thème 1 : L’Europe face aux révolutions')
+    expect(spe.some((x) => commun.includes(x))).toBe(false)
+  })
+
+  it('HLP et philosophie non plus', () => {
+    const hlp = n('Terminale', 'Humanités, littérature et philosophie (HLP)').map((x) => x.notion)
+    expect(hlp).toContain('Les métamorphoses du moi')
+    expect(hlp).not.toContain('La conscience')   // ça, c'est la philosophie
+  })
+
+  it('HLP : les intitulés viennent du programme, pas de la bibliographie', () => {
+    // Le document répète ses deux semestres dans « Bibliographie indicative » :
+    // sans garde de section, chaque entrée serait comptée deux fois.
+    const d = [...new Set(n('1re', 'Humanités, littérature et philosophie (HLP)').map((x) => x.domaine))]
+    expect(d).toHaveLength(2)
+    expect(d[0]).toMatch(/^Semestre 1/)
   })
 
   it('SNT : les sept thématiques de seconde', () => {

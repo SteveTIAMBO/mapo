@@ -116,8 +116,12 @@ function revisionDocRef(uid, studentId) {
  * v4 (19-8-2026) : le lycée général est passé de 3 à 9 matières couvertes
  * (histoire-géo, enseignement scientifique, français, philosophie, SES, SNT).
  * Tout ce qui a été généré dans ces matières l'a été sans programme officiel.
+ *
+ * v5 (19-8-2026) : trois spécialités de plus (HGGSP, HLP, NSI) et surtout
+ * l'EMC, dont le programme a été RÉÉCRIT en 2024 — du CP à la terminale. Ce
+ * qui a été généré en EMC portait sur le programme abrogé.
  */
-const BANQUE_VERSION = 'v4'
+const BANQUE_VERSION = 'v5'
 
 function bankKey(matiere, niveau, difficulte) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')

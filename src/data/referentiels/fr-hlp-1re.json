@@ -1,0 +1,45 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — entrées à puce sous chaque semestre, dans la section « Programme » (pas la bibliographie).",
+  "pays": "FR",
+  "matiere": "Humanités, littérature et philosophie",
+  "cycle": "Première générale — enseignement de spécialité",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901578A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/00/2/spe578_annexe_1063002.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Semestre 1 : les pouvoirs de la parole",
+          "notion": "L’art de la parole"
+        },
+        {
+          "domaine": "Semestre 1 : les pouvoirs de la parole",
+          "notion": "L’autorité de la parole"
+        },
+        {
+          "domaine": "Semestre 1 : les pouvoirs de la parole",
+          "notion": "Les séductions de la parole"
+        },
+        {
+          "domaine": "Semestre 2 : les représentations du monde",
+          "notion": "Découverte du monde et pluralité des cultures"
+        },
+        {
+          "domaine": "Semestre 2 : les représentations du monde",
+          "notion": "Décrire, figurer, imaginer"
+        },
+        {
+          "domaine": "Semestre 2 : les représentations du monde",
+          "notion": "L’homme et l’animal"
+        }
+      ]
+    }
+  }
+}

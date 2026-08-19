@@ -1,0 +1,45 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Le programme reste enseigné en entier ; seule l'ÉPREUVE de terminale porte, depuis la session 2026, sur une rotation annuelle de thèmes (note de service du 27-8-2025, MENE2521923N).",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — « Thème N » en 14, après le titre de classe en 15.",
+  "pays": "FR",
+  "matiere": "Histoire-géographie, géopolitique et sciences politiques",
+  "cycle": "Terminale générale — enseignement de spécialité",
+  "arrete": "Arrêté du 19-7-2019",
+  "bo": "BO spécial n° 8 du 25-7-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special8/MENE1921254A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SPE8_MENJ_25_7_2019/18/0/spe254_annexe_1159180.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "Terminale": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 1 – De nouveaux espaces de conquête"
+        },
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 2 – Faire la guerre, faire la paix : formes de conflits et modes de résolution"
+        },
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 3 – Histoire et mémoires"
+        },
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 4 – Identifier, protéger et valoriser le patrimoine : enjeux géopolitiques"
+        },
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 5 – L’environnement, entre exploitation et protection : un enjeu planétaire"
+        },
+        {
+          "domaine": "Histoire-géographie, géopolitique et sciences politiques",
+          "notion": "Thème 6 – L’enjeu de la connaissance"
+        }
+      ]
+    }
+  }
+}

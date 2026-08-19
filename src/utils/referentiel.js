@@ -60,12 +60,20 @@ import ses2nde from '../data/referentiels/fr-ses-2nde.json'
 import ses1re from '../data/referentiels/fr-ses-1re.json'
 import sesTle from '../data/referentiels/fr-ses-terminale.json'
 import snt2nde from '../data/referentiels/fr-snt-2nde.json'
+import hggsp1re from '../data/referentiels/fr-hggsp-1re.json'
+import hggspTle from '../data/referentiels/fr-hggsp-terminale.json'
+import hlp1re from '../data/referentiels/fr-hlp-1re.json'
+import hlpTle from '../data/referentiels/fr-hlp-terminale.json'
+import nsi1re from '../data/referentiels/fr-nsi-1re.json'
+import nsiTle from '../data/referentiels/fr-nsi-terminale.json'
+import emc from '../data/referentiels/fr-emc.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
 const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4,
   maths2nde, maths1re, mathsTle, mathsTle2027, pc2nde, pc1re, pcTle, svt2nde, svt1re, svtTle,
-  hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde]
+  hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde,
+  hggsp1re, hggspTle, hlp1re, hlpTle, nsi1re, nsiTle, emc]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

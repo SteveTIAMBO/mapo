@@ -1,0 +1,53 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — rubriques en 14 après le titre « Éléments de programme ».",
+  "pays": "FR",
+  "matiere": "Numérique et sciences informatiques",
+  "cycle": "Première générale — enseignement de spécialité",
+  "arrete": "Arrêté du 17-1-2019",
+  "bo": "BO spécial n° 1 du 22-1-2019",
+  "url": "https://www.education.gouv.fr/bo/19/Special1/MENE1901633A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/SP1-MEN-22-1-2019/26/8/spe633_annexe_1063268.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "1re": {
+      "enVigueurRentree": 2019,
+      "notions": [
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Histoire de l’informatique"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Représentation des données : types et valeurs de base"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Représentation des données : types construits"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Traitement de données en tables"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Interactions entre l’homme et la machine sur le Web"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Architectures matérielles et systèmes d’exploitation"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Langages et programmation"
+        },
+        {
+          "domaine": "Numérique et sciences informatiques",
+          "notion": "Algorithmique"
+        }
+      ]
+    }
+  }
+}

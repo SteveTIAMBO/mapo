@@ -1,0 +1,208 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Cet arrêté abroge les programmes d'EMC de 2015 et de 2019 ; son application est ÉCHELONNÉE classe par classe (2024, 2025, 2026) — la terminale bascule à la rentrée 2026.",
+  "_extraitPar": "outils/extraire-lycee-tronc-commun.py — découpage par CLASSE (titre en gras 11), entrées en gras 8,5 au même retrait ; durée horaire retirée.",
+  "pays": "FR",
+  "matiere": "Enseignement moral et civique",
+  "cycle": "Du CP à la terminale",
+  "arrete": "Arrêté du 29-5-2024",
+  "bo": "BO n° 22 du 30-5-2024",
+  "url": "https://www.education.gouv.fr/bo/2024/Hebdo22/MENE2413934A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/document/Annexe%20%E2%80%94%20Programme%20d%E2%80%99enseignement%20moral%20et%20civique%20du%20cours%20pr%C3%A9paratoire%20%C3%A0%20la%20classe%20terminale%20des%20voies%20g%C3%A9n%C3%A9rale%2C%20technologique%20et%20professionnelle%20et%20des%20classes%20pr%C3%A9parant%20au%20CAP-402159.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "CP": {
+      "enVigueurRentree": 2024,
+      "notions": [
+        {
+          "domaine": "CP : Se reconnaitre comme individu et élève",
+          "notion": "Connaissance et maîtrise de soi"
+        },
+        {
+          "domaine": "CP : Se reconnaitre comme individu et élève",
+          "notion": "Les règles collectives et l’autonomie"
+        },
+        {
+          "domaine": "CP : Se reconnaitre comme individu et élève",
+          "notion": "Règles d’hygiène et exigence d’intimité"
+        },
+        {
+          "domaine": "CP : Se reconnaitre comme individu et élève",
+          "notion": "Être élève à l’école de la République"
+        }
+      ]
+    },
+    "CE1": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "CE1 : Respecter les autres",
+          "notion": "Altérité et sociabilité"
+        },
+        {
+          "domaine": "CE1 : Respecter les autres",
+          "notion": "Règles collectives et prise d’initiative"
+        },
+        {
+          "domaine": "CE1 : Respecter les autres",
+          "notion": "Principes et symboles de la République"
+        }
+      ]
+    },
+    "CE2": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "CE2 : Apprendre ensemble et vivre ensemble",
+          "notion": "L’engagement pour le bien commun"
+        },
+        {
+          "domaine": "CE2 : Apprendre ensemble et vivre ensemble",
+          "notion": "La République et son fonctionnement"
+        }
+      ]
+    },
+    "CM1": {
+      "enVigueurRentree": 2024,
+      "notions": [
+        {
+          "domaine": "CM1 : Faire société",
+          "notion": "Civisme et citoyenneté"
+        },
+        {
+          "domaine": "CM1 : Faire société",
+          "notion": "L’égalité dans la dignité"
+        },
+        {
+          "domaine": "CM1 : Faire société",
+          "notion": "Comment faire société"
+        }
+      ]
+    },
+    "CM2": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "CM2 : Vivre en république",
+          "notion": "Citoyenneté et nationalité"
+        },
+        {
+          "domaine": "CM2 : Vivre en république",
+          "notion": "Libertés et droits fondamentaux"
+        },
+        {
+          "domaine": "CM2 : Vivre en république",
+          "notion": "Respecter les droits de tous"
+        },
+        {
+          "domaine": "CM2 : Vivre en république",
+          "notion": "À l’école laïque"
+        }
+      ]
+    },
+    "6e": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Sixième : Apprendre à vivre dans une société démocratique",
+          "notion": "Représenter les autres et servir l’intérêt général"
+        },
+        {
+          "domaine": "Sixième : Apprendre à vivre dans une société démocratique",
+          "notion": "Respecter des règles et en comprendre la finalité : l’exemple de la laïcité à l’École"
+        },
+        {
+          "domaine": "Sixième : Apprendre à vivre dans une société démocratique",
+          "notion": "Avoir des droits en tant que personne et respecter ceux des autres : l’exemple du droit à la vie privée"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2024,
+      "notions": [
+        {
+          "domaine": "Cinquième : Égalité, fraternité et solidarité",
+          "notion": "Agir pour l’égalité femmes-hommes et lutter contre les discriminations"
+        },
+        {
+          "domaine": "Cinquième : Égalité, fraternité et solidarité",
+          "notion": "La solidarité et ses échelles"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Quatrième : Défendre les droits et les libertés",
+          "notion": "L’État de droit et les libertés"
+        },
+        {
+          "domaine": "Quatrième : Défendre les droits et les libertés",
+          "notion": "Défendre le cadre démocratique : sécurité et défense nationale"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Troisième : Faire vivre la démocratie",
+          "notion": "Les règles du jeu démocratique"
+        },
+        {
+          "domaine": "Troisième : Faire vivre la démocratie",
+          "notion": "Les acteurs du jeu démocratique et leur engagement (1) : l’opinion"
+        },
+        {
+          "domaine": "Troisième : Faire vivre la démocratie",
+          "notion": "Les acteurs du jeu démocratique et leur engagement (2) : l’engagement collectif"
+        }
+      ]
+    },
+    "2nde": {
+      "enVigueurRentree": 2024,
+      "notions": [
+        {
+          "domaine": "Seconde : Droits, libertés et responsabilité",
+          "notion": "L’État de droit garantit les droits et libertés et un pluralisme démocratique"
+        },
+        {
+          "domaine": "Seconde : Droits, libertés et responsabilité",
+          "notion": "Liberté et responsabilité : l’exemple de l’information (vecteurs, nécessité et enjeux)"
+        },
+        {
+          "domaine": "Seconde : Droits, libertés et responsabilité",
+          "notion": "Droits et responsabilité : l’exemple de la protection de l’environnement et de la sauvegarde de la biodiversité"
+        }
+      ]
+    },
+    "1re": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Première : Cohésion et diversité dans une société démocratique",
+          "notion": "Les valeurs et les principes de la République à l’épreuve de la cohésion sociale"
+        },
+        {
+          "domaine": "Première : Cohésion et diversité dans une société démocratique",
+          "notion": "La République et la Nation"
+        }
+      ]
+    },
+    "Terminale": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Terminale : La vie démocratique : débat, délibération et prise de décision",
+          "notion": "Les principes et les espaces du débat démocratique"
+        },
+        {
+          "domaine": "Terminale : La vie démocratique : débat, délibération et prise de décision",
+          "notion": "La délibération dans les institutions (nationales, européennes, internationales)"
+        }
+      ]
+    }
+  }
+}
