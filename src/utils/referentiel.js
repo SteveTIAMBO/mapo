@@ -96,6 +96,7 @@ import cmHistoire43 from '../data/referentiels/cm-histoire-4e3e.json'
 import cmGeographie43 from '../data/referentiels/cm-geographie-4e3e.json'
 import cmEcm43 from '../data/referentiels/cm-ecm-4e3e.json'
 import cmFrancais43 from '../data/referentiels/cm-francais-4e3e.json'
+import cmAnglais43 from '../data/referentiels/cm-anglais-4e3e.json'
 import cmInfoTleA from '../data/referentiels/cm-informatique-tle-a.json'
 import cmInfoTleCD from '../data/referentiels/cm-informatique-tle-cd.json'
 
@@ -111,7 +112,7 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, t
   espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4,
   cmMaths, cmSciences, cmHistoire, cmGeographie, cmEcm,
   cmMaths43, cmHistoire43, cmGeographie43, cmEcm43, cmFrancais43,
-  cmInfoTleA, cmInfoTleCD]
+  cmAnglais43, cmInfoTleA, cmInfoTleCD]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

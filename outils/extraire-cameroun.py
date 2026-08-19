@@ -188,3 +188,50 @@ def modules_par_tableau(chemin, domaine):
         if c:
             par_classe.setdefault(c, []).append({'domaine': domaine, 'notion': titre})
     return _fidele(par_classe, src)
+
+
+# ── Anglais 4ème-3ème : la classe n'est QUE dans le tableau synoptique ───────
+# Ce document enchaîne dix modules en deux blocs sans le moindre bandeau de
+# classe entre eux. Les attribuer par ordre d'apparition serait une supposition
+# — et une règle de position a déjà déraillé plusieurs fois sur ces PDF.
+#
+# Le seul lien EXPLICITE entre un module et son année est le tableau
+# synoptique : une colonne « Level » y porte « 4ème » ou « 3ème », une colonne
+# « Titles of the Modules » porte l'intitulé. La cellule de niveau est fusionnée
+# sur toute la hauteur du bloc, donc vide sur les lignes suivantes : on reporte
+# la dernière valeur rencontrée.
+def modules_du_synoptique(chemin, domaine):
+    par_classe, cellules = {}, []
+    with pdfplumber.open(chemin) as pdf:
+        for p in pdf.pages:
+            for tab in p.extract_tables():
+                i_niveau = i_titre = None
+                classe = None
+                for ligne in tab:
+                    cases = [(c or '').replace('\n', ' ').strip() for c in ligne]
+                    cellules.extend(cases)
+                    entetes = [norm(c) for c in cases]
+                    if 'level' in entetes and any('titles' in e for e in entetes):
+                        i_niveau = entetes.index('level')
+                        i_titre = next(i for i, e in enumerate(entetes) if 'titles' in e)
+                        classe = None
+                        continue
+                    if i_titre is None:
+                        continue
+                    brut = cases[i_niveau] if i_niveau < len(cases) else ''
+                    m = re.search(r'(\d)\s*ème', brut)
+                    if m:
+                        classe = CLASSES.get(m.group(1))
+                    titre = cases[i_titre] if i_titre < len(cases) else ''
+                    if classe and len(titre) > 8:
+                        par_classe.setdefault(classe, []).append(
+                            {'domaine': domaine, 'notion': ' '.join(titre.split()).strip(' .')})
+    # ⚠️ On prend l'intitulé DU TABLEAU, alors qu'en terminale on prend celui du
+    # corps. Ce n'est pas une incohérence : là-bas la classe était connue et le
+    # corps faisait foi ; ici le tableau est le SEUL endroit qui relie un module
+    # à son année, donc on le prend entier plutôt que de recoudre deux sources
+    # dont les formulations diffèrent.
+    #
+    # Fidélité comparée aux CELLULES : `extract_text` entrelace les colonnes,
+    # aucun intitulé n'y figure d'un seul tenant.
+    return _fidele(par_classe, norm('\n'.join(cellules)))

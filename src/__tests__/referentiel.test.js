@@ -144,6 +144,18 @@ describe('Cameroun — des MODULES, pas des thèmes', () => {
     expect(granulariteProgramme({ pays: 'CM', niveau: '4ème', matiere: 'Français', date: en(2026) })).toBe('cycle')
   })
 
+  it('l’anglais est rattaché à sa classe par le TABLEAU, pas par l’ordre des pages', () => {
+    // Le corps du document enchaîne dix modules sans aucune mention de classe.
+    // Les attribuer par ordre d'apparition aurait été une supposition ; le
+    // tableau synoptique, lui, porte explicitement « 4ème » et « 3ème ».
+    expect(n('4ème', 'Anglais')).toHaveLength(5)
+    expect(n('3ème', 'Anglais')).toHaveLength(5)
+    expect(n('4ème', 'Anglais').map((x) => x.notion).some((x) => /social integration/.test(x))).toBe(true)
+    expect(n('3ème', 'Anglais').map((x) => x.notion).some((x) => /national integration/.test(x))).toBe(true)
+    // Les deux se ressemblent assez pour qu'une inversion passe inaperçue.
+    expect(n('4ème', 'Anglais')).not.toEqual(n('3ème', 'Anglais'))
+  })
+
   it('la terminale est couverte en informatique, série par série', () => {
     // ⚠️ Le portail annonçait ces deux fichiers comme « les programmes de
     // terminale ». Ouverts, ce sont ceux de l'INFORMATIQUE — troisième libellé

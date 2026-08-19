@@ -1,0 +1,66 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programme d'études « English to Francophones ».",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Les intitulés proviennent du TABLEAU SYNOPTIQUE, seul endroit du document qui relie un module à son année : le corps du texte enchaîne les dix modules sans mention de classe.",
+  "_extraitPar": "outils/extraire-cameroun.py — colonnes « Level » et « Titles of the Modules » du tableau synoptique ; contrôle de fidélité fait cellule par cellule.",
+  "pays": "CM",
+  "matiere": "Anglais",
+  "cycle": "Premier cycle du secondaire général (4ème et 3ème)",
+  "arrete": "Arrêté n° 419/14/MINESEC/IGE du 14-8-2014",
+  "bo": "Programmes d'études APC, août 2014",
+  "url": "https://files.minesec.gov.cm",
+  "urlPdf": "https://files.minesec.gov.cm/direct/view.php?s=2i",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "4ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about social integration (traditions and customs of Cameroon and conflict resolution)"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about a vision of their future professional life while managing leisure"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about protection of the environment and the fight against endemic and pandemic diseases"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about gender issues and mutual acceptance"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore ICTs"
+        }
+      ]
+    },
+    "3ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about national integration and diversity acceptance"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about consumption habits and how they impact economic and social life"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about maintaining hygiene and sanitation and climate change"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about the quest for excellence, gender issues, and democracy"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore utilities of Modern technology"
+        }
+      ]
+    }
+  }
+}
