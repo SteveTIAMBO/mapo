@@ -367,6 +367,12 @@ const routes = [
         meta: { title: 'Devoirs' }
       },
       {
+        path: 'preparation',
+        name: 'Preparation',
+        component: () => import('../views/PreparationView.vue'),
+        meta: { title: 'Cahier de préparation' }
+      },
+      {
         path: 'suivi-revisions',
         name: 'RevisionSuivi',
         component: () => import('../views/RevisionSuiviView.vue'),

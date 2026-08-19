@@ -229,6 +229,10 @@ const STAFF_NAV_ITEMS = [
   // Évaluation
   { key: 'notes', to: '/notes', icon: FileText, label: 'nav.notesEval', group: 'evaluation' },
   { key: 'devoirs', to: '/devoirs', icon: ClipboardCheck, label: 'nav.devoirs', group: 'evaluation' },
+  // Cahier de préparation : l'enseignant y planifie SES matières, la direction
+  // valide. Rattaché à la clé « devoirs » (permission 'own' pour l'enseignant),
+  // donc pas de nouvelle clé de permission à créer.
+  { key: 'devoirs', to: '/preparation', icon: ClipboardList, label: 'nav.preparation', group: 'evaluation' },
   { key: 'notes', to: '/examens', icon: Award, label: 'nav.examens', dirOnly: true, group: 'evaluation' },
   { key: 'notes', to: '/diplomes', icon: BadgeCheck, label: 'nav.diplomes', dirOnly: true, group: 'evaluation' },
   // Vie scolaire
