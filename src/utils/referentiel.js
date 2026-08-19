@@ -78,6 +78,12 @@ import hgCycle3_2020 from '../data/referentiels/fr-histoire-geographie-cycle3-20
 import hgCycle3_2026 from '../data/referentiels/fr-histoire-geographie-cycle3-2026.json'
 import anglaisCollege from '../data/referentiels/fr-anglais-college.json'
 import anglaisLycee from '../data/referentiels/fr-anglais-lycee.json'
+import allemandCollege from '../data/referentiels/fr-allemand-college.json'
+import allemandLycee from '../data/referentiels/fr-allemand-lycee.json'
+import espagnolCollege from '../data/referentiels/fr-espagnol-college.json'
+import espagnolLycee from '../data/referentiels/fr-espagnol-lycee.json'
+import italienCollege from '../data/referentiels/fr-italien-college.json'
+import italienLycee from '../data/referentiels/fr-italien-lycee.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -86,7 +92,9 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, t
   hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde,
   hggsp1re, hggspTle, hlp1re, hlpTle, nsi1re, nsiTle, emc,
   fraCycle2, mathsCycle2, qlmCycle2, stCycle2, hgCycle2,
-  stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026, anglaisCollege, anglaisLycee]
+  stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026,
+  anglaisCollege, anglaisLycee, allemandCollege, allemandLycee,
+  espagnolCollege, espagnolLycee, italienCollege, italienLycee]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

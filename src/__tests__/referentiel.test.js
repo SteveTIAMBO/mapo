@@ -69,9 +69,6 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Arts plastiques', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Éducation physique et sportive (EPS)', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
-    // ⚠️ Trou connu, du côté du CATALOGUE et non du référentiel : « LV2
-    // (Espagnol/Allemand) » désigne deux langues d'un coup, donc aucune.
-    expect(notionsOfficielles({ pays: 'FR', niveau: '5e', matiere: 'LV2 (Espagnol/Allemand)', date: en(2026) })).toEqual([])
   })
 })
 
@@ -403,6 +400,36 @@ describe('EMC — un seul arrêté du CP à la terminale, appliqué en trois vag
     const tous = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale'].flatMap((c) => emc(c)).map((x) => x.notion)
     expect(tous.some((x) => /heures?\)$/.test(x))).toBe(false)
     expect(tous.some((x) => /voie professionnelle/.test(x))).toBe(false)
+  })
+})
+
+
+describe('Quatre langues — un programme par langue depuis 2025', () => {
+  // L'arrêté du 5-5-2025 a fait éclater le programme unique de LV en un texte
+  // PAR LANGUE. Le catalogue disait encore « LV2 (Espagnol/Allemand) » : un
+  // libellé pour deux langues, donc aucune atteignable. Il est désormais scindé.
+  const n = (niveau, matiere, a = 2026) => notionsOfficielles({ pays: 'FR', niveau, matiere, date: en(a) })
+
+  it('espagnol, allemand et italien répondent sous le libellé du catalogue', () => {
+    for (const m of ['Espagnol (LV2)', 'Allemand (LV2)', 'Italien (LV2)']) {
+      expect(n('5e', m).length).toBeGreaterThan(4)
+    }
+    for (const m of ['Espagnol (LVB)', 'Allemand (LVB)', 'Italien (LVB)']) {
+      expect(n('Terminale', m)).toHaveLength(6)
+    }
+  })
+
+  it('les cinq premiers axes sont communs, le sixième est propre à la langue', () => {
+    // C'est le seul endroit où les quatre textes divergent — et c'est là que
+    // se joue l'intérêt de distinguer les langues plutôt que de les mélanger.
+    const axe6 = (m) => n('Terminale', m).map((x) => x.notion).find((x) => x.startsWith('Axe 6'))
+    expect(axe6('Anglais (LVA)')).toMatch(/Royaume-Uni/)
+    expect(axe6('Espagnol (LVB)')).toMatch(/hispanique/)
+    expect(axe6('Allemand (LVB)')).toMatch(/Dichter/)
+    expect(axe6('Italien (LVB)')).toMatch(/République à l’Europe/)
+    // Les axes 1 à 5, eux, sont bien identiques d'une langue à l'autre.
+    const cinq = (m) => n('Terminale', m).map((x) => x.notion).slice(0, 5)
+    expect(cinq('Espagnol (LVB)')).toEqual(cinq('Allemand (LVB)'))
   })
 })
 

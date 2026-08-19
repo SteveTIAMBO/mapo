@@ -310,12 +310,14 @@ export const MATIERES_PRIMAIRE_FR = [
 ]
 export const MATIERES_COLLEGE_FR = [
   'Français', 'Mathématiques', 'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
-  'Anglais (LV1)', 'LV2 (Espagnol/Allemand)', 'Sciences de la vie et de la Terre (SVT)',
+  'Anglais (LV1)', 'Espagnol (LV2)', 'Allemand (LV2)', 'Italien (LV2)',
+  'Sciences de la vie et de la Terre (SVT)',
   'Physique-Chimie', 'Technologie', 'Éducation physique et sportive (EPS)',
   'Arts plastiques', 'Éducation musicale',
 ]
 export const MATIERES_LYCEE_2NDE_FR = [
-  'Français', 'Histoire-Géographie', 'Anglais (LVA)', 'LVB (Espagnol/Allemand)',
+  'Français', 'Histoire-Géographie', 'Anglais (LVA)',
+  'Espagnol (LVB)', 'Allemand (LVB)', 'Italien (LVB)',
   'Sciences économiques et sociales (SES)', 'Mathématiques', 'Physique-Chimie',
   'Sciences de la vie et de la Terre (SVT)', 'Éducation physique et sportive (EPS)',
   'Enseignement moral et civique (EMC)', 'Sciences numériques et technologie (SNT)',
@@ -323,7 +325,7 @@ export const MATIERES_LYCEE_2NDE_FR = [
 // Tronc commun 1re/Tle : Français en 1re → Philosophie en Terminale (filtré selon le niveau).
 const MATIERES_LYCEE_CYCLE_TERMINAL_FR = [
   'Français', 'Philosophie', 'Histoire-Géographie', 'Anglais (LVA)',
-  'LVB (Espagnol/Allemand)', 'Enseignement scientifique',
+  'Espagnol (LVB)', 'Allemand (LVB)', 'Italien (LVB)', 'Enseignement scientifique',
   'Éducation physique et sportive (EPS)', 'Enseignement moral et civique (EMC)',
 ]
 // 13 spécialités du lycée général — à ajouter au profil selon le choix de l'élève.

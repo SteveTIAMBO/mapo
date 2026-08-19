@@ -1,0 +1,128 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. Arrêté du 5-5-2025, qui remplace celui de 2019 pour les langues vivantes et introduit un programme PAR LANGUE. Application échelonnée classe par classe.",
+  "_extraitPar": "outils/extraire-sommaire-indente.py — sommaire indenté, la CLASSE étant marquée par la taille. Seuls les « Repères culturels » sont retenus : les activités langagières décrivent des savoir-faire, pas des connaissances.",
+  "pays": "FR",
+  "matiere": "Allemand",
+  "cycle": "Collège (6e à 3e)",
+  "arrete": "Arrêté du 5-5-2025",
+  "bo": "BO n° 22 du 28-5-2025",
+  "url": "https://www.education.gouv.fr/bo/2025/Hebdo22/MENE2504621A",
+  "urlPdf": "https://www.education.gouv.fr/sites/default/files/annexe-1-programme-d-allemand-pour-les-classes-de-coll-ge-440355.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "6e": {
+      "enVigueurRentree": 2025,
+      "notions": [
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 1. Personnes et personnages"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 2. Le quotidien : vivre, jouer, apprendre"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 3. Pays et paysages"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 4. Imaginaire, contes et légendes"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 5. Arts et expression des sentiments"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2026,
+      "notions": [
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 1. Portrait, autoportrait"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 2. Le quotidien : lieux, rythmes, saisons"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 3. École et loisirs"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 4. Le réel et l’imaginaire"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 5. Des langues, des lieux, des histoires"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 6. 16 nuances d’Allemagne"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2027,
+      "notions": [
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 1. Sport et société"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 2. Voyages et exploration"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 3. Villes, villages, quartiers"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 4. Inventer, innover, créer"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 5. Langages et messages artistiques"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 6. Suisse et Autriche"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2028,
+      "notions": [
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 1. À la rencontre de l’autre"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 2. Travailler hier, aujourd’hui, demain"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 3. Voyages et migrations"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 4. Langages et médias"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 5. Formes de l’engagement"
+        },
+        {
+          "domaine": "Repères culturels",
+          "notion": "Axe 6. Le monde franco-allemand"
+        }
+      ]
+    }
+  }
+}
