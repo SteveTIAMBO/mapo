@@ -1,0 +1,33 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection de Pédagogie chargée de l'enseignement de l'informatique.",
+  "_extraitPar": "outils/extraire-cameroun.py — intitulés de modules du CORPS du document (la casse distingue le corps du tableau synoptique), vérifiés mot pour mot.",
+  "pays": "CM",
+  "matiere": "Informatique",
+  "arrete": "Programme national, juillet 2020",
+  "bo": "MINESEC, juillet 2020",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-19",
+  "cycle": "Terminale, séries A, ABI, SH et AC",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Ce programme est celui de l'INFORMATIQUE : le portail ne publie pas, à ce jour, les autres disciplines de terminale ni aucun programme de première.",
+  "urlPdf": "https://files.minesec.gov.cm/direct/view.php?s=jh",
+  "classes": {
+    "Tle A": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Informatique",
+          "notion": "SYSTEMES INFORMATIQUES ET HUMANITÉS NUMÉRIQUES"
+        },
+        {
+          "domaine": "Informatique",
+          "notion": "SYSTÈMES D’INFORMATION ET BASES DE DONNÉES"
+        },
+        {
+          "domaine": "Informatique",
+          "notion": "PRODUCTION DES DOCUMENTS NUMÉRIQUES"
+        }
+      ]
+    }
+  }
+}

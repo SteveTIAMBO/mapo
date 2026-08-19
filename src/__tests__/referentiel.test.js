@@ -144,6 +144,30 @@ describe('Cameroun — des MODULES, pas des thèmes', () => {
     expect(granulariteProgramme({ pays: 'CM', niveau: '4ème', matiere: 'Français', date: en(2026) })).toBe('cycle')
   })
 
+  it('la terminale est couverte en informatique, série par série', () => {
+    // ⚠️ Le portail annonçait ces deux fichiers comme « les programmes de
+    // terminale ». Ouverts, ce sont ceux de l'INFORMATIQUE — troisième libellé
+    // trompeur de ce portail. On sert donc ce qu'ils contiennent vraiment.
+    expect(n('Tle A', 'Informatique')).toHaveLength(3)
+    expect(n('Tle C', 'Informatique')).toHaveLength(3)
+    expect(n('Tle D', 'Informatique')).toEqual(n('Tle C', 'Informatique'))
+    // Les séries littéraires et scientifiques n'ont PAS le même programme.
+    expect(n('Tle A', 'Informatique')).not.toEqual(n('Tle C', 'Informatique'))
+    expect(n('Tle C', 'Informatique').map((x) => x.notion)).toContain('ALGORITHMIQUE ET PROGRAMMATION')
+  })
+
+  it('le titre du CORPS fait foi, pas celui du tableau synoptique', () => {
+    // Le même module est nommé deux fois dans le document, avec des mots
+    // différents : « Production des contenus numériques » au sommaire,
+    // « PRODUCTION DES DOCUMENTS NUMÉRIQUES » dans le corps. Sans arbitrage,
+    // chaque module était compté deux fois, sous deux intitulés concurrents.
+    const titres = n('Tle A', 'Informatique').map((x) => x.notion)
+    expect(titres).toContain('PRODUCTION DES DOCUMENTS NUMÉRIQUES')
+    expect(titres).not.toContain('Production des contenus numériques')
+    // Et la durée du module n'est pas du contenu.
+    expect(titres.some((x) => /\d+\s*[Hh]\)?$/.test(x))).toBe(false)
+  })
+
   it('l’ECM répond sous le libellé à sigle du catalogue camerounais', () => {
     expect(n('6ème', 'Éducation à la citoyenneté et à la morale (ECM)').map((x) => x.notion))
       .toContain('La vie familiale et scolaire')

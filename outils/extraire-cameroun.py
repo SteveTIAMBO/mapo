@@ -138,10 +138,27 @@ def modules_sur_une_ligne(chemin, domaine, classes):
         titres = []
         for p in pdf.pages:
             for l in p.extract_text_lines():
-                m = re.match(r'^MODULE\s+([IVX]+|\d+)\s*[:\-]\s*(.+)$', l['text'].strip(), re.I)
-                if m and len(m.group(2)) > 4:
-                    titres.append({'domaine': domaine,
-                                   'notion': ' '.join(m.group(2).split()).strip(' .')})
+                # ⚠️ CASSE SIGNIFIANTE, et c'est le seul repère disponible. Le
+                # tableau synoptique écrit « Module 1 : … », le corps du document
+                # « MODULE I : … ». Les deux nomment le même module — parfois
+                # avec des mots DIFFÉRENTS (« contenus » ici, « documents » là).
+                # C'est le titre du CORPS qui fait foi, donc on n'accepte que la
+                # forme capitalisée.
+                m = re.match(r'^MODULE\s+([IVX]+|\d+)\s*[:\-]\s*(.+)$', l['text'].strip())
+                if not m or len(m.group(2)) <= 4:
+                    continue
+                titre = ' '.join(m.group(2).split())
+                # « (SUITE) » signale la reprise du même module page suivante :
+                # ce n'est pas un module de plus.
+                if re.search(r'\(\s*SUITE\s*\)\s*$', titre, re.I):
+                    continue
+                # La durée fait partie du bandeau, pas du contenu. ⚠️ Elle
+                # s'écrit de DEUX façons dans le même document — « (20 H) » dans
+                # le corps, « 20 h » dans le tableau synoptique — et le module
+                # apparaît aux deux endroits. Ne retirer qu'une seule forme
+                # laissait chaque module compté deux fois.
+                titre = re.sub(r'\s*\(?\s*\d+\s*[Hh]\s*\)?\s*$', '', titre).strip(' .')
+                titres.append({'domaine': domaine, 'notion': titre})
     return _fidele({c: list(titres) for c in classes}, src)
 
 
