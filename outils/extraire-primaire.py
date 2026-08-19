@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extraction des programmes du primaire encore en vigueur sous l'ancien régime.
+"""Extraction dans les ANNEXES DE CYCLE de l'arrêté du 9-11-2015 (version 2020).
 
 POURQUOI CE SCRIPT EN PLUS DES AUTRES. À la rentrée 2026, le primaire vit une
 transition : trois arrêtés du printemps 2026 remplacent les programmes de
@@ -124,3 +124,32 @@ def discipline_du_cycle(chemin, discipline, motif, classes=None, exclure=()):
 
 
 CLASSES_CYCLE3_2020 = {'classe de cm1': 'CM1', 'classe de cm2': 'CM2', 'classe de sixieme': '6e'}
+
+
+# ── Thématiques d'histoire des arts (cycle 4) ────────────────────────────────
+# Seule partie des enseignements artistiques qui porte des CONNAISSANCES et non
+# des pratiques : huit thématiques périodisées, du monde antique à nos jours.
+# Elles vivent dans un tableau à deux colonnes, chaque cellule contenant le
+# titre PUIS ses objets d'étude, séparés par des tirets.
+#
+# ⚠️ Le contrôle de fidélité se fait ici sur les CELLULES : `extract_text`
+# entrelace les deux colonnes, aucun titre n'y figure d'un seul tenant.
+def thematiques_histoire_des_arts(chemin, domaine):
+    titres, cellules = [], []
+    with pdfplumber.open(chemin) as pdf:
+        for p in pdf.pages:
+            for tab in p.extract_tables():
+                for ligne in tab:
+                    for c in ligne:
+                        c = (c or '').replace('\n', ' ').strip()
+                        if not c:
+                            continue
+                        cellules.append(c)
+                        # ⚠️ Couper au premier tiret tout court ne marche pas :
+                        # les titres contiennent eux-mêmes des tirets, dans les
+                        # bornes de siècles (« IXe-XVe s. », « 1750-1850 »).
+                        # Seul le tiret ENTOURÉ D'ESPACES ouvre les objets d'étude.
+                        if re.match(r'^\d+\.\s', c):
+                            titres.append({'domaine': domaine,
+                                           'notion': ' '.join(re.split(r'\s-\s', c, maxsplit=1)[0].split())})
+    return _fidele(titres, norm('\n'.join(cellules)))

@@ -1,0 +1,128 @@
+{
+  "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+  "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère. L'histoire des arts est la seule partie des enseignements artistiques qui porte des CONNAISSANCES : les programmes d'arts plastiques et d'éducation musicale décrivent des pratiques (produire, chanter, écouter), pas des savoirs interrogeables.",
+  "_extraitPar": "outils/extraire-primaire.py — colonne « Thématiques » du tableau à deux colonnes ; contrôle de fidélité fait cellule par cellule. Le titre s'arrête au premier tiret ENTOURÉ D'ESPACES, les bornes de siècles en contenant elles-mêmes.",
+  "pays": "FR",
+  "matiere": "Histoire des arts",
+  "cycle": "Cycle 4 (5e, 4e, 3e)",
+  "_granularite": "cycle",
+  "arrete": "Arrêté du 9-11-2015, annexe remplacée par l’arrêté du 17-7-2020",
+  "bo": "BO n° 31 du 30-7-2020",
+  "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+  "urlPdf": "https://cache.media.education.gouv.fr/file/31/89/1/ensel714_annexe3_1312891.pdf",
+  "extraitLe": "2026-08-19",
+  "classes": {
+    "5e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire des arts",
+          "notion": "1. Arts et société à l’époque antique et au haut Moyen Âge"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "2. Formes et circulations artistiques (IXe- XVe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "3. Le sacre de l’artiste (XIVe-début XVIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "4. État, société et modes de vie (XIIIe- XVIIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "5. L’art au temps des Lumières et des révolutions (1750-1850)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "6. De la Belle Époque aux « années folles » : l’ère des avant-gardes (1870-1930)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "7. Les arts entre liberté et propagande (1910-1945)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "8. Les arts à l’ère de la consommation de masse (de 1945 à nos jours)"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire des arts",
+          "notion": "1. Arts et société à l’époque antique et au haut Moyen Âge"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "2. Formes et circulations artistiques (IXe- XVe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "3. Le sacre de l’artiste (XIVe-début XVIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "4. État, société et modes de vie (XIIIe- XVIIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "5. L’art au temps des Lumières et des révolutions (1750-1850)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "6. De la Belle Époque aux « années folles » : l’ère des avant-gardes (1870-1930)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "7. Les arts entre liberté et propagande (1910-1945)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "8. Les arts à l’ère de la consommation de masse (de 1945 à nos jours)"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire des arts",
+          "notion": "1. Arts et société à l’époque antique et au haut Moyen Âge"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "2. Formes et circulations artistiques (IXe- XVe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "3. Le sacre de l’artiste (XIVe-début XVIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "4. État, société et modes de vie (XIIIe- XVIIIe s.)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "5. L’art au temps des Lumières et des révolutions (1750-1850)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "6. De la Belle Époque aux « années folles » : l’ère des avant-gardes (1870-1930)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "7. Les arts entre liberté et propagande (1910-1945)"
+        },
+        {
+          "domaine": "Histoire des arts",
+          "notion": "8. Les arts à l’ère de la consommation de masse (de 1945 à nos jours)"
+        }
+      ]
+    }
+  }
+}

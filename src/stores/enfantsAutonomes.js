@@ -313,7 +313,7 @@ export const MATIERES_COLLEGE_FR = [
   'Anglais (LV1)', 'Espagnol (LV2)', 'Allemand (LV2)', 'Italien (LV2)',
   'Sciences de la vie et de la Terre (SVT)',
   'Physique-Chimie', 'Technologie', 'Éducation physique et sportive (EPS)',
-  'Arts plastiques', 'Éducation musicale',
+  'Arts plastiques', 'Éducation musicale', 'Histoire des arts',
 ]
 export const MATIERES_LYCEE_2NDE_FR = [
   'Français', 'Histoire-Géographie', 'Anglais (LVA)',

@@ -63,10 +63,12 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   })
 
   it('une classe hors des cycles couverts ne renvoie rien', () => {
-    // Les arts et l'EPS ne sont volontairement pas couverts : leurs programmes
-    // décrivent des PRATIQUES, sur lesquelles un quiz à quatre propositions
-    // n'a rien à dire. La voie technologique ne l'est pas non plus.
-    expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale', matiere: 'Arts plastiques', date: en(2026) })).toEqual([])
+    // Les arts plastiques, l'éducation musicale et l'EPS ne sont volontairement
+    // pas couverts : leurs programmes décrivent des PRATIQUES — « produire »,
+    // « chanter », « expérimenter » — sur lesquelles un quiz à quatre
+    // propositions n'a rien à dire. La voie technologique ne l'est pas non plus.
+    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Arts plastiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Éducation musicale', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Éducation physique et sportive (EPS)', date: en(2026) })).toEqual([])
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
@@ -400,6 +402,33 @@ describe('EMC — un seul arrêté du CP à la terminale, appliqué en trois vag
     const tous = ['6e', '5e', '4e', '3e', '2nde', '1re', 'Terminale'].flatMap((c) => emc(c)).map((x) => x.notion)
     expect(tous.some((x) => /heures?\)$/.test(x))).toBe(false)
     expect(tous.some((x) => /voie professionnelle/.test(x))).toBe(false)
+  })
+})
+
+
+describe('Histoire des arts — la seule part des enseignements artistiques qui soit du SAVOIR', () => {
+  // Éducation musicale et arts plastiques décrivent des pratiques. L'histoire
+  // des arts, elle, énumère huit thématiques périodisées : ça, un élève peut
+  // le réviser. C'est ce qui justifie de couvrir l'une et pas les autres.
+  const n = (c) => notionsOfficielles({ pays: 'FR', niveau: c, matiere: 'Histoire des arts', date: en(2026) })
+
+  it('les huit thématiques, du monde antique à nos jours, aux trois classes', () => {
+    for (const c of ['5e', '4e', '3e']) expect(n(c)).toHaveLength(8)
+    const titres = n('4e').map((x) => x.notion)
+    expect(titres[0]).toMatch(/époque antique/)
+    expect(titres[7]).toMatch(/de 1945 à nos jours/)
+  })
+
+  it('les bornes de siècles n’ont pas été prises pour un séparateur', () => {
+    // Les titres contiennent eux-mêmes des tirets — « XIVe-début XVIIe s. »,
+    // « 1750-1850 ». Couper au premier tiret venu n'en ramenait que deux sur huit.
+    const titres = n('3e').map((x) => x.notion)
+    expect(titres.some((x) => /1750-1850/.test(x))).toBe(true)
+    expect(titres.some((x) => /XIVe-début XVIIe/.test(x))).toBe(true)
+  })
+
+  it('définie pour le CYCLE : le texte ne répartit pas sur les trois années', () => {
+    expect(granulariteProgramme({ pays: 'FR', niveau: '4e', matiere: 'Histoire des arts', date: en(2026) })).toBe('cycle')
   })
 })
 

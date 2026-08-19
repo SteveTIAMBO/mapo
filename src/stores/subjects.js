@@ -5,6 +5,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey } from '../utils/demoScope'
 import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
+import { LEVELS_PRIMAIRE, LEVELS_PRIMAIRE_CG } from './classes'
 
 // Version de demo pour reset quand la structure change
 const DEMO_SUBJECTS_VERSION = 2
@@ -64,7 +65,17 @@ const DEFAULT_SUBJECTS = [
 ]
 
 // ── PRIMAIRE : niveaux + disciplines (APC, pas de coefficient chiffré) ──
-const PRIMAIRE_LEVELS = ['SIL', 'CP', 'CE1', 'CE2', 'CM1', 'CM2']
+//
+// Cette liste sert d'AIGUILLAGE : un niveau qui n'y figure pas est traité comme
+// du secondaire, donc filtré par coefficient — et comme aucun coefficient n'est
+// défini pour une classe du primaire, la classe se retrouvait SANS AUCUNE
+// matière. Écran vide, aucune erreur : le défaut ne se voyait pas.
+// C'est ce qui arrivait à un CP1 congolais ou ivoirien, absent de la liste
+// camerounaise SIL/CP. On la construit donc à partir des niveaux du primaire de
+// TOUS les pays connus, jamais d'un seul.
+const PRIMAIRE_LEVELS = [...new Set(
+  [...LEVELS_PRIMAIRE, ...LEVELS_PRIMAIRE_CG].map((l) => l.value),
+)]
 const PRIMAIRE_SUBJECT_OBJECTS = DISCIPLINES_PRIMAIRE.map((d, i) => ({
   id: 'sp-' + i,
   name: d.name,

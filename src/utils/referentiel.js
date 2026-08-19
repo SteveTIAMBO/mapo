@@ -84,6 +84,7 @@ import espagnolCollege from '../data/referentiels/fr-espagnol-college.json'
 import espagnolLycee from '../data/referentiels/fr-espagnol-lycee.json'
 import italienCollege from '../data/referentiels/fr-italien-college.json'
 import italienLycee from '../data/referentiels/fr-italien-lycee.json'
+import hdaCycle4 from '../data/referentiels/fr-histoire-des-arts-cycle4.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -94,7 +95,7 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, t
   fraCycle2, mathsCycle2, qlmCycle2, stCycle2, hgCycle2,
   stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026,
   anglaisCollege, anglaisLycee, allemandCollege, allemandLycee,
-  espagnolCollege, espagnolLycee, italienCollege, italienLycee]
+  espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -1333,7 +1333,15 @@ function formatMoney(amount) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '—'
-  const d = new Date(dateStr + 'T00:00:00')
+  // Les dates arrivent sous DEUX formes : « AAAA-MM-JJ » quand elles viennent
+  // d'un champ de formulaire, et un horodatage ISO complet quand elles viennent
+  // du store (`new Date().toISOString()`, et les données de démonstration).
+  // Concaténer « T00:00:00 » au second donnait « 2026-01-10T10:00:00.000ZT00:00:00 »,
+  // donc une date invalide, affichée telle quelle : tous les paiements de la
+  // démonstration montraient « Invalid Date ».
+  const s = String(dateStr)
+  const d = new Date(s.length <= 10 ? s + 'T00:00:00' : s)
+  if (Number.isNaN(d.getTime())) return '—'
   return d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR')
 }
 
