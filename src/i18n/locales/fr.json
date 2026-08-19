@@ -3747,8 +3747,10 @@
       "admis": "Admis",
       "redoublant": "Redoublant",
       "diplome": "Diplômé",
-      "transfere": "Transféré"
+      "transfere": "Transféré",
+      "aPlacer": "À placer"
     },
+    "aPlacerWarn": "{n} élève(s) ne seront pas déplacés : leur niveau n'est pas reconnu, choisissez leur classe d'arrivée à la main après le passage d'année.",
     "previous": "Précédent",
     "settingsTitle": "Paramètres {year}",
     "settingsDesc": "Vérifiez et ajustez les informations de l'établissement pour la nouvelle année scolaire. Les données de l'année en cours sont pré-remplies.",

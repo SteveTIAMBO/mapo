@@ -1,4 +1,5 @@
 import jsPDF from 'jspdf'
+import { fmtMontant } from './monnaie'
 import autoTable from 'jspdf-autotable'
 
 /**
@@ -379,7 +380,7 @@ export function generateReceiptPDF(opts) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
   doc.setTextColor(27, 138, 90)
-  doc.text(formatMoneyPDF(payment.amount), pageW / 2, y + 1, { align: 'center' })
+  doc.text(formatMoneyPDF(payment.amount, school.currency), pageW / 2, y + 1, { align: 'center' })
 
   y += 11
   doc.setFontSize(9)
@@ -436,7 +437,8 @@ function formatDatePDF(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
 }
 
-function formatMoneyPDF(amount) {
-  const num = Math.round(amount || 0)
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA'
+// La devise vient de l'école : un reçu remis à une famille ne doit pas afficher
+// une monnaie que l'établissement n'utilise pas.
+function formatMoneyPDF(amount, devise) {
+  return fmtMontant(amount, devise)
 }

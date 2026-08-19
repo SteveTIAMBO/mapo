@@ -3747,8 +3747,10 @@
       "admis": "Promoted",
       "redoublant": "Repeater",
       "diplome": "Graduate",
-      "transfere": "Transferred"
+      "transfere": "Transferred",
+      "aPlacer": "To be assigned"
     },
+    "aPlacerWarn": "{n} student(s) will not be moved: their level is not recognised, assign their new class manually after the year rollover.",
     "previous": "Previous",
     "settingsTitle": "{year} settings",
     "settingsDesc": "Review and adjust the school's information for the new school year. The current year's data is pre-filled.",

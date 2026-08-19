@@ -354,6 +354,7 @@ import { useParentChildrenStore } from '../stores/parentChildren'
 import { useFacturationStore } from '../stores/facturation'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 import { useCinetpayStore } from '../stores/cinetpay'
 import { useTranzakStore } from '../stores/tranzak'
 import {
@@ -689,8 +690,7 @@ function previewLastReceipt() {
 }
 
 function formatMoney(amount) {
-  const num = Math.round(amount || 0)
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA'
+  return fmtMontant(amount, currency.value)
 }
 
 function formatDate(dateStr) {

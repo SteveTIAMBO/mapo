@@ -96,11 +96,14 @@ import { useRouter } from 'vue-router'
 import { setLang } from '../i18n'
 import { useComplexeStore } from '../stores/complexe'
 import { useAuthStore } from '../stores/auth'
+import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 import { Building2, Building, Users, GraduationCap, Wallet, BarChart3, ExternalLink, UserRound, LogOut, Info } from 'lucide-vue-next'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const store = useComplexeStore()
+const schoolStore = useSchoolStore()
 const authStore = useAuthStore()
 
 const { identity, totalSchools, totalEleves, totalPersonnel, totalRecettes } = storeRefs()
@@ -115,7 +118,7 @@ function storeRefs() {
 }
 
 const numLocale = computed(() => (locale.value === 'en' ? 'en-GB' : 'fr-FR'))
-function formatMoney(n) { return (n || 0).toLocaleString(numLocale.value) + ' FCFA' }
+function formatMoney(n) { return fmtMontant(n, schoolStore.schoolSettings?.currency) }
 function barW(n) { return Math.round(((n || 0) / store.maxEleves) * 100) + '%' }
 
 async function logout() { await authStore.logout(); router.push('/bienvenue') }

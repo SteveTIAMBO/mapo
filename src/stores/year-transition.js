@@ -1,21 +1,42 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useSchoolStore } from './school'
-import { useClassesStore, LEVELS } from './classes'
+import { useClassesStore, LEVELS, levelsPrimairePour } from './classes'
 import { useElevesStore } from './eleves'
 import { useNotesStore } from './notes'
 import { usePersonnelStore } from './personnel'
 import { demoKey } from '../utils/demoScope'
 
-// Map each level to the next one
-const LEVEL_PROGRESSION = {
-  '6e': '5e',
-  '5e': '4e',
-  '4e': '3e',
-  '3e': '2nde',
-  '2nde': '1ere',
-  '1ere': 'Tle',
-  'Tle': null, // Fin de cycle — diplômé
+/**
+ * Niveau suivant, DÉDUIT des niveaux de l'école et non d'une table figée.
+ *
+ * Le défaut corrigé : `LEVEL_PROGRESSION` ne contenait que 6e → Tle. Pour une
+ * école primaire — un produit vendu — ou pour tout niveau non camerounais,
+ * `LEVEL_PROGRESSION[niveau]` valait `undefined`. Or `undefined !== null` :
+ * l'élève était donc proposé « admis », l'école confirmait, puis l'exécution
+ * faisait `if (!nextLevel) continue` et le SAUTAIT. L'assistant se déroulait
+ * jusqu'au bout, aucune erreur, aucun compteur à zéro : l'école clôturait son
+ * année et découvrait en septembre que ses effectifs n'avaient pas bougé.
+ *
+ * Trois réponses possibles, et il faut absolument les distinguer :
+ *   - un niveau       → l'élève monte ;
+ *   - `null`          → dernier niveau du cycle, donc diplômé ;
+ *   - `undefined`     → niveau INCONNU de nos référentiels. On ne devine pas, et
+ *                       surtout on ne saute pas en silence : l'élève est signalé.
+ */
+export function niveauSuivant(niveau, pays) {
+  const n = String(niveau || '').trim()
+  if (!n) return undefined
+  // Une école déclare ses classes dans un seul de ces deux ordres. On cherche
+  // dans les deux : l'édition n'est pas toujours connue d'ici, et une école qui
+  // couvre primaire ET secondaire ne doit pas casser.
+  for (const liste of [levelsPrimairePour(pays), LEVELS]) {
+    const codes = liste.map((l) => l.value)
+    const i = codes.indexOf(n)
+    if (i === -1) continue
+    return i === codes.length - 1 ? null : codes[i + 1]
+  }
+  return undefined
 }
 
 // Map level code to class name prefix
@@ -42,6 +63,8 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
   const newYearSettings = ref({}) // Copy of school settings for next year
   const isExecuting = ref(false)
   const transitionComplete = ref(false)
+  // Élèves dont le niveau n'est pas reconnu : l'écran doit pouvoir les nommer.
+  const elevesNonTraites = ref([])
 
   // ── Computed ──
 
@@ -68,14 +91,19 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
         const annualAvg = notesStore.getGeneralAnnualAvg(
           cls.id, eleve.id, cls
         )
-        const nextLevel = LEVEL_PROGRESSION[cls.level]
+        const pays = schoolStore.schoolSettings?.country
+        const nextLevel = niveauSuivant(cls.level, pays)
+        // `undefined` = niveau que nos référentiels ne connaissent pas. On ne peut
+        // pas calculer sa classe d'arrivée, donc on ne prétend pas le faire : il
+        // passe en « à placer » et l'école tranche. C'est le contraire de l'ancien
+        // comportement, qui affichait « admis » puis ne faisait rien.
+        const niveauInconnu = nextLevel === undefined
 
         let autoDecision = 'redoublant'
-        if (annualAvg !== null && annualAvg >= 10) {
+        if (niveauInconnu) {
+          autoDecision = 'a_placer'
+        } else if (annualAvg !== null && annualAvg >= 10) {
           autoDecision = nextLevel === null ? 'diplome' : 'admis'
-        }
-        if (cls.level === 'Tle' && annualAvg !== null && annualAvg >= 10) {
-          autoDecision = 'diplome'
         }
 
         results.push({
@@ -91,6 +119,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
           annualAvg,
           autoDecision,
           nextLevel,
+          niveauInconnu,
         })
       }
     }
@@ -109,6 +138,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
     const decisions = studentDecisions.value
     const results = studentResults.value
     let admis = 0, redoublants = 0, diplomes = 0, transferes = 0, total = results.length
+    let aPlacer = 0
     let withAvg = 0, totalAvg = 0
 
     for (const r of results) {
@@ -117,6 +147,9 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
       else if (decision === 'redoublant') redoublants++
       else if (decision === 'diplome') diplomes++
       else if (decision === 'transfere') transferes++
+      // Comptés à part, et jamais additionnés aux admis : le taux de réussite ne
+      // doit pas se nourrir d'élèves que le logiciel n'a pas su traiter.
+      else if (decision === 'a_placer') aPlacer++
 
       if (r.annualAvg !== null) {
         withAvg++
@@ -130,6 +163,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
       redoublants,
       diplomes,
       transferes,
+      aPlacer,
       tauxReussite: total > 0 ? Math.round(((admis + diplomes) / total) * 100) : 0,
       moyenneGenerale: withAvg > 0 ? Math.round((totalAvg / withAvg) * 100) / 100 : null,
     }
@@ -173,7 +207,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
         }
       } else if (decision === 'admis') {
         // Move to next level, same section
-        const nextLevel = LEVEL_PROGRESSION[r.level]
+        const nextLevel = r.nextLevel
         if (!nextLevel) continue
 
         const nextPrefix = LEVEL_NAME_MAP[nextLevel]
@@ -265,6 +299,10 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
       await schoolStore.saveSettings(newYearSettings.value)
 
       // 3. Update student statuses and class assignments
+      // Élèves que le passage d'année n'a pas su traiter. Un passage d'année qui
+      // ne bouge personne DOIT le dire : c'est la fonction la plus sensible du
+      // calendrier scolaire, et l'école la lance une fois par an.
+      const nonTraites = []
       for (const r of results) {
         const decision = decisions[r.eleveId] || r.autoDecision
 
@@ -277,10 +315,21 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
           await elevesStore.updateEleve(r.eleveId, {
             status: 'transfere',
           })
+        } else if (decision === 'a_placer') {
+          // Niveau inconnu de nos référentiels : on NE TOUCHE PAS à la classe,
+          // mais on le compte pour que l'écran puisse le dire. L'ancien code
+          // sautait ces élèves sans laisser de trace.
+          nonTraites.push(r)
+          await elevesStore.updateEleve(r.eleveId, { status: 'en_attente' })
         } else if (decision === 'admis') {
           // Move to next level class
-          const nextLevel = LEVEL_PROGRESSION[r.level]
-          if (!nextLevel) continue
+          const nextLevel = r.nextLevel
+          if (!nextLevel) {
+            // Ni niveau suivant ni décision de fin de cycle : on le signale au
+            // lieu de le perdre. C'est exactement le cas qui était muet.
+            nonTraites.push(r)
+            continue
+          }
 
           let targetClassName = null
           for (const cls of classesStore.classes) {
@@ -320,7 +369,9 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
       // 5. Reset notes for new year (clear all notes, validations, mentions)
       notesStore.resetForNewYear()
 
+      elevesNonTraites.value = nonTraites
       transitionComplete.value = true
+      return { traites: results.length - nonTraites.length, nonTraites: nonTraites.length }
     } catch (error) {
       console.error('Erreur transition:', error)
       throw error
@@ -335,6 +386,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
     newYearSettings,
     isExecuting,
     transitionComplete,
+    elevesNonTraites,
     nextAcademicYear,
     studentResults,
     transitionStats,

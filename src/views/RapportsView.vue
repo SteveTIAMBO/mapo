@@ -566,6 +566,7 @@ import {
   ChevronLeft, Download, FileText
 } from 'lucide-vue-next'
 import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const factStore = useFacturationStore()
@@ -585,9 +586,7 @@ const acadTrimester = ref('T1')
 
 // ── Helpers ──
 function formatMoney(amount) {
-  const num = Math.round(amount || 0)
-  const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return `${formatted} FCFA`
+  return fmtMontant(amount, schoolStore.schoolSettings?.currency)
 }
 
 // ── Présences stats ──
@@ -968,8 +967,7 @@ ${content}
 }
 
 function fmtM(amount) {
-  const num = Math.round(amount || 0)
-  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA'
+  return fmtMontant(amount, schoolStore.schoolSettings?.currency)
 }
 
 function buildFinancierHTML(schoolName, year, today, stats, synth) {

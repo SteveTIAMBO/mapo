@@ -127,8 +127,16 @@
                 <select :value="getDecision(r.eleveId)" @change="transitionStore.setDecision(r.eleveId, $event.target.value)" class="input decision-select" :class="'decision-' + getDecision(r.eleveId)">
                   <option value="admis">{{ t('yt.decisions.admis') }}</option>
                   <option value="redoublant">{{ t('yt.decisions.redoublant') }}</option>
-                  <option v-if="r.level === 'Tle'" value="diplome">{{ t('yt.decisions.diplome') }}</option>
+                  <!-- « Diplômé » se propose au DERNIER niveau du cycle, quel qu'il
+                       soit : un CM2 termine le primaire comme une Terminale termine
+                       le lycée. La condition sur 'Tle' privait le primaire de
+                       l'option, alors que c'est une édition vendue. -->
+                  <option v-if="r.nextLevel === null" value="diplome">{{ t('yt.decisions.diplome') }}</option>
                   <option value="transfere">{{ t('yt.decisions.transfere') }}</option>
+                  <!-- Niveau inconnu de nos référentiels : l'école doit pouvoir le
+                       voir et le laisser de côté sciemment, plutôt que de croire
+                       l'élève admis alors que rien ne sera écrit. -->
+                  <option v-if="r.niveauInconnu" value="a_placer">{{ t('yt.decisions.aPlacer') }}</option>
                 </select>
               </td>
             </tr>
@@ -267,6 +275,13 @@
           <div class="confirm-item">{{ t('yt.confirmRepeat', { n: transitionStore.transitionStats.redoublants }) }}</div>
           <div class="confirm-item">{{ t('yt.confirmGrad', { n: transitionStore.transitionStats.diplomes }) }}</div>
           <div class="confirm-item">{{ t('yt.confirmTransfer', { n: transitionStore.transitionStats.transferes }) }}</div>
+        </div>
+
+        <!-- Un passage d'année qui ne bouge personne doit le DIRE avant, pas après.
+             L'école ne lance cette opération qu'une fois par an. -->
+        <div v-if="transitionStore.transitionStats.aPlacer > 0" class="warning-banner" style="margin: 16px 0;">
+          <AlertCircle :size="16" />
+          <span>{{ t('yt.aPlacerWarn', { n: transitionStore.transitionStats.aPlacer }) }}</span>
         </div>
 
         <div class="warning-banner" style="margin: 20px 0;">

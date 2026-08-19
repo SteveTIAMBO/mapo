@@ -171,6 +171,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 import { Wallet, Download, Info, MessageSquare, Plus, X } from 'lucide-vue-next'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -242,8 +243,7 @@ const payHistory = computed(() => {
 })
 
 function formatMoney(val) {
-  if (!val) return '0 XAF'
-  return val.toLocaleString('fr-FR') + ' XAF'
+  return fmtMontant(val, schoolStore.schoolSettings?.currency)
 }
 
 function downloadPayslip(payment) {

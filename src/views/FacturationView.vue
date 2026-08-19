@@ -1202,6 +1202,7 @@ import { useFacturationStore, FEE_TYPES, PAYMENT_METHODS, PAYMENT_STATUS } from 
 import { useElevesStore } from '../stores/eleves'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'
 import {
@@ -1324,11 +1325,9 @@ function getMonthLabel(yearMonth) {
   return date.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' })
 }
 
+// La devise vient des Paramètres de l'école, elle n'est plus écrite en dur.
 function formatMoney(amount) {
-  const num = Math.round(amount || 0)
-  // Format with regular spaces (not thin/narrow spaces) for better readability
-  const formatted = num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-  return `${formatted} FCFA`
+  return fmtMontant(amount, schoolStore.schoolSettings?.currency)
 }
 
 function formatDate(dateStr) {
@@ -1921,7 +1920,7 @@ const relanceSending = ref(false)
 const relanceResult = ref(null)
 
 const ecoleName = computed(() => schoolStore.schoolSettings?.schoolName || (locale.value === 'en' ? 'the school' : "l'établissement"))
-const fmtMoney = (n) => (n || 0).toLocaleString('fr-FR') + ' FCFA'
+const fmtMoney = (n) => fmtMontant(n, schoolStore.schoolSettings?.currency)
 const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR') } catch { return '' } }
 
 const relanceCandidates = computed(() => elevesWithPayments.value

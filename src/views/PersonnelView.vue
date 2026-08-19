@@ -431,6 +431,8 @@
 import { usePersonnelStore, STAFF_CATEGORIES, STAFF_ROLES, SUBJECTS_BY_CYCLE, QUALIFICATION_LEVELS, CONTRACT_TYPES } from '../stores/personnel'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
+import { useSchoolStore } from '../stores/school'
+import { fmtMontant } from '../utils/monnaie'
 import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus, Pencil, Trash2, X, UserPlus } from 'lucide-vue-next'
@@ -440,6 +442,7 @@ const { t } = useI18n({ useScope: 'global' })
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
+const schoolStore = useSchoolStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const currentPage = ref(1)
@@ -618,8 +621,7 @@ const confirmDelete = async () => {
 const openDetailModal = (member) => { detailMember.value = member; showDetailModal.value = true }
 const closeDetailModal = () => { showDetailModal.value = false; detailMember.value = null }
 
-const moneyFormatter = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 })
-const formatMoney = (v) => `${moneyFormatter.format(v)} FCFA`
+const formatMoney = (v) => fmtMontant(v, schoolStore.schoolSettings?.currency)
 
 onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); classesStore.loadClasses() })
 </script>
