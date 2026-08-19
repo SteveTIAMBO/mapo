@@ -249,7 +249,7 @@ async function loadXLSX() {
 }
 import { useElevesStore } from '../stores/eleves'
 import { usePersonnelStore } from '../stores/personnel'
-import { useClassesStore, LEVELS, LEVELS_PRIMAIRE } from '../stores/classes'
+import { useClassesStore, LEVELS, LEVELS_TOUS } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
@@ -689,7 +689,7 @@ function validateRow(row, mod) {
     // par classe se fait ensuite dans MAPO). Rétro-compat : un ancien fichier qui
     // met le nom complet dans « Classe » arrive ici comme section → className = ce nom.
     if (!row.className) {
-      const lvl = [...LEVELS, ...LEVELS_PRIMAIRE].find(l => l.value === row.niveau || l.label === row.niveau)
+      const lvl = LEVELS_TOUS.find(l => l.value === row.niveau || l.label === row.niveau)
       const niveauLabel = lvl ? lvl.label : (row.niveau || '')
       row.className = [niveauLabel, row.section].filter(Boolean).join(' ').trim()
     }
@@ -761,10 +761,14 @@ function validateRow(row, mod) {
     // francophones courants (ex. « 6ème » → « 6e ») par confort, sinon on garde
     // la dénomination de l'école telle quelle.
     if (row.level) {
-      const known = [...LEVELS, ...LEVELS_PRIMAIRE].map(l => l.value)
+      const known = LEVELS_TOUS.map(l => l.value)
       if (!known.includes(row.level)) {
         const l = row.level.toLowerCase().replace('è', 'e')
-        const match = known.find(v => v.toLowerCase() === l || l.startsWith(v.toLowerCase()))
+        // L'égalité passe AVANT le rapprochement par préfixe, sinon un « CP1 »
+        // congolais serait recalé en « CP » camerounais : le niveau change sans
+        // rien signaler, et l'école ne comprend pas où sont passés ses écoliers.
+        const match = known.find(v => v.toLowerCase() === l)
+          || known.find(v => l.startsWith(v.toLowerCase()))
         if (match) row.level = match
       }
     }
@@ -774,7 +778,7 @@ function validateRow(row, mod) {
     // Le nom de la classe = Niveau + Section (« 6ème A »). Plus besoin de le
     // saisir : on le dérive si absent (rétro-compat s'il est fourni directement).
     if (!row.name) {
-      const lvl = [...LEVELS, ...LEVELS_PRIMAIRE].find(l => l.value === row.level)
+      const lvl = LEVELS_TOUS.find(l => l.value === row.level)
       const niveauLabel = lvl ? lvl.label : (row.level || '')
       row.name = [niveauLabel, row.serie].filter(Boolean).join(' ').trim()
     }

@@ -33,6 +33,17 @@ export const COUNTRY_DEFAULTS = {
     dateFormat: 'DD/MM/YYYY',
     phoneFormat: '+243 XXX XXX XXX',
   },
+  // Congo-Brazzaville : membre de la CEMAC, donc franc CFA d'Afrique centrale
+  // (XAF, ISO 4217 n° 950, sans décimale) — à ne surtout pas confondre avec le
+  // franc congolais (CDF) de la RD Congo juste au-dessus. Format de téléphone :
+  // plan fermé à 9 chiffres notifié à l'UIT par l'ARPCE, le 0 initial fait
+  // partie du numéro et se conserve à l'international.
+  CG: {
+    name: 'Congo-Brazzaville',
+    currency: 'XAF',
+    dateFormat: 'DD/MM/YYYY',
+    phoneFormat: '+242 XX XXX XX XX',
+  },
   FR: {
     name: 'France',
     currency: 'EUR',

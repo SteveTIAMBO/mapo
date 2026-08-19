@@ -121,6 +121,7 @@
                 <option value="CM">{{ t('param.cm') }}</option>
                 <option value="SN">{{ t('param.sn') }}</option>
                 <option value="CI">{{ t('param.ci') }}</option>
+                <option value="CG">{{ t('param.cg') }}</option>
               </select>
             </div>
 
@@ -454,7 +455,7 @@ const getSchoolTypeLabel = (value) => {
 }
 
 const getCountryLabel = (code) => {
-  const map = { CM: 'param.cm', SN: 'param.sn', CI: 'param.ci' }
+  const map = { CM: 'param.cm', SN: 'param.sn', CI: 'param.ci', CG: 'param.cg' }
   return map[code] ? t(map[code]) : code
 }
 
@@ -585,7 +586,16 @@ async function onConfigFile(e) {
     if (cfg.primaryColor) f.primaryColor = cfg.primaryColor
     if (cfg.country) {
       const c = norm(cfg.country)
-      f.country = c.startsWith('sen') ? 'SN' : (c.includes('ivoire') || c.startsWith('cote')) ? 'CI' : 'CM'
+      // « Congo » est ambigu : le Congo-Brazzaville (CG) et la RD Congo (CD)
+      // n'ont ni la même devise ni les mêmes classes. On ne retient CG que si
+      // rien n'évoque la rive de Kinshasa ; dans le doute on ne devine pas et
+      // on laisse le repli, l'école corrigera dans le menu déroulant.
+      const estRdc = /\b(rdc|rd congo|democratique|kinshasa|zaire)\b/.test(c)
+      const estCongoBrazza = c.includes('congo') && !estRdc
+      f.country = c.startsWith('sen') ? 'SN'
+        : (c.includes('ivoire') || c.startsWith('cote')) ? 'CI'
+        : estCongoBrazza ? 'CG'
+        : 'CM'
       onCountryChange()
     }
     if (cfg.schoolType) {

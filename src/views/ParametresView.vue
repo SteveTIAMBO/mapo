@@ -62,6 +62,7 @@
                   <option value="CM">{{ t('param.cm') }}</option>
                   <option value="SN">{{ t('param.sn') }}</option>
                   <option value="CI">{{ t('param.ci') }}</option>
+                  <option value="CG">{{ t('param.cg') }}</option>
                 </select>
               </div>
               <div class="field">

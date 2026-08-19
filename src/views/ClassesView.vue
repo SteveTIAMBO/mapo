@@ -276,8 +276,9 @@
 </template>
 
 <script setup>
-import { useClassesStore, LEVELS, LEVELS_PRIMAIRE, SECTIONS } from '../stores/classes'
+import { useClassesStore, LEVELS, levelsPrimairePour, SECTIONS } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
+import { useSchoolStore } from '../stores/school'
 import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
@@ -344,9 +345,13 @@ const teachersList = computed(() => {
     .sort((a, b) => a.fullName.localeCompare(b.fullName))
 })
 
-// Niveaux selon l'édition active (Primaire → SIL-CM2, sinon 6e-Tle).
+// Niveaux selon l'édition active (Primaire → SIL-CM2, sinon 6e-Tle), et selon le
+// PAYS de l'école : le primaire congolais commence à CP1, pas à la SIL.
 const editionStore = useEditionStore()
-const levels = computed(() => (editionStore.isPrimaire ? LEVELS_PRIMAIRE : LEVELS))
+const schoolStore = useSchoolStore()
+const levels = computed(() => (
+  editionStore.isPrimaire ? levelsPrimairePour(schoolStore.schoolSettings?.country) : LEVELS
+))
 
 const levelFilters = computed(() => [
   { value: '', label: t('classes.all') },

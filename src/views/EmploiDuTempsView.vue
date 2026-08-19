@@ -1512,7 +1512,7 @@ const sortedHolidays = computed(() => {
 
 const schoolCountryLabel = computed(() => {
   const country = schoolStore.schoolSettings?.country
-  const labels = { CM: 'Cameroun', SN: 'Sénégal', CI: "Côte d'Ivoire" }
+  const labels = { CM: 'Cameroun', SN: 'Sénégal', CI: "Côte d'Ivoire", CG: 'Congo-Brazzaville' }
   return labels[country] || 'pays'
 })
 

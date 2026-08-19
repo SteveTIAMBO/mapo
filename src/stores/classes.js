@@ -32,6 +32,43 @@ export const LEVELS_PRIMAIRE = [
   { value: 'CM2', label: 'CM2', cycle: 'primaire' },
 ]
 
+/**
+ * Niveaux du PRIMAIRE au Congo-Brazzaville — CP1 → CM2, six ans.
+ *
+ * Le Congo n'a pas de SIL : le primaire démarre à CP1 et CP2, là où le Cameroun
+ * a SIL puis CP. Servir la liste camerounaise à une école congolaise l'obligerait
+ * à ranger ses écoliers dans une classe qui n'existe pas chez elle.
+ *
+ * Structure sourcée : loi n° 25-95 du 17 novembre 1995 (art. 13) — le primaire
+ * est organisé en deux cycles, « cycle d'éveil » puis « cycle de fixation ».
+ * Répartition des six classes dans ces deux cycles : tableau « Structure du
+ * système scolaire », MEPSA 2008, repris par l'ODSEF (Université Laval, 2015).
+ * Le second cycle du secondaire est inchangé (6e → Tle) : la structure
+ * congolaise est identique à celle déjà servie par LEVELS.
+ */
+export const LEVELS_PRIMAIRE_CG = [
+  { value: 'CP1', label: 'CP1', cycle: 'primaire' },
+  { value: 'CP2', label: 'CP2', cycle: 'primaire' },
+  { value: 'CE1', label: 'CE1', cycle: 'primaire' },
+  { value: 'CE2', label: 'CE2', cycle: 'primaire' },
+  { value: 'CM1', label: 'CM1', cycle: 'primaire' },
+  { value: 'CM2', label: 'CM2', cycle: 'primaire' },
+]
+
+/** Niveaux du primaire du pays de l'école. Pays sans liste propre → Cameroun. */
+export function levelsPrimairePour(pays) {
+  return pays === 'CG' ? LEVELS_PRIMAIRE_CG : LEVELS_PRIMAIRE
+}
+
+/**
+ * Tous les niveaux connus, tous pays et tous cycles confondus. Sert à RECONNAÎTRE
+ * un niveau saisi ou importé — jamais à en proposer une liste à l'écran, sinon on
+ * remettrait sous les yeux d'une école congolaise la SIL camerounaise.
+ */
+export const LEVELS_TOUS = [...LEVELS, ...LEVELS_PRIMAIRE, ...LEVELS_PRIMAIRE_CG.filter(
+  (l) => !LEVELS_PRIMAIRE.some((p) => p.value === l.value),
+)]
+
 export const SECTIONS = [
   { value: 'A', label: 'A' },
   { value: 'B', label: 'B' },

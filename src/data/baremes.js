@@ -131,6 +131,23 @@ export const REGIMES = {
     // l'interface le DIT à l'utilisateur au lieu de le supposer en silence.
     defaut: { bareme: 'pourcent', aVerifier: true },
   },
+  CG: {
+    // Congo-Brazzaville. SECONDAIRE SOURCÉ : notation sur 20 et admission à
+    // 10/20 — décret n° 2013-295 du 25 juin 2013 portant organisation du
+    // baccalauréat, art. 19 nouveau (JO n° 27-2013) ; même seuil pour le brevet
+    // et le baccalauréat techniques (décrets n° 2021-391 et 2021-392 du 2 août
+    // 2021) et pour les examens professionnels (décret n° 2023-689 du 30 juin
+    // 2023, art. 22-23 : « les prestations des candidats sont notées de zéro
+    // (0) à vingt (20) »).
+    // PRIMAIRE NON SOURCÉ : aucun texte accessible ne fixe le barème du
+    // primaire congolais. Le décret n° 96-174 du 15 avril 1996 fixant les
+    // normes applicables à l'école, visé par les arrêtés du ministère, n'est
+    // publié nulle part. On applique donc /20 comme au secondaire, mais avec
+    // `aVerifier` : l'interface le DIT au lieu de laisser croire que c'est
+    // officiel, et l'école peut corriger.
+    primaire: { bareme: 'note20', aVerifier: true },
+    defaut: { bareme: 'note20' },
+  },
 }
 
 const NIVEAUX_COLLEGE_FR = ['6e', '5e', '4e', '3e']
@@ -146,7 +163,10 @@ export function cycleDe(niveau, pays) {
   if (!n) return 'defaut'
   if (pays === 'FR' && NIVEAUX_COLLEGE_FR.includes(n)) return 'college'
   // Primaire : SIL/CP/CE1…/CM2 (Afrique francophone) et CP/CE…/CM2 (France).
-  if (/^(SIL|CP|CE1|CE2|CM1|CM2|CI)$/i.test(n)) return 'primaire'
+  // CP1/CP2 : le Congo-Brazzaville et la Côte d'Ivoire dédoublent le cours
+  // préparatoire. Sans eux, un CP1 congolais tombait dans `defaut` et échappait
+  // à la règle du primaire — en silence, puisque `defaut` répond toujours.
+  if (/^(SIL|CP|CP1|CP2|CE1|CE2|CM1|CM2|CI)$/i.test(n)) return 'primaire'
   return 'defaut'
 }
 

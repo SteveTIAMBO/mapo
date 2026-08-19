@@ -25,7 +25,13 @@ import { demoKey } from '../utils/demoScope'
  * Sources : Cameroun (MINEDUC/MINESEC) ; Sénégal — CFEE, BFEM, Baccalauréat,
  * organisés par le ministère de l'Éducation nationale et l'Office du bac ;
  * Côte d'Ivoire — CEPE, BEPC, Baccalauréat (DECO, men-deco.org) ; RD Congo —
- * ENAFEP, TENASOSP, EXETAT (edu-nc.gouv.cd) ; France — DNB et Baccalauréat.
+ * ENAFEP, TENASOSP, EXETAT (edu-nc.gouv.cd) ; Congo-Brazzaville — CEPE, BEPC,
+ * Baccalauréat (MEPPSA, note de service n° 174 du 24/02/2026) ; France — DNB et
+ * Baccalauréat.
+ *
+ * Les clés (`cepe`, `bepc`, `bac`) sont volontairement communes entre pays quand
+ * l'examen porte le même nom : un examen déjà enregistré reste lisible, et les
+ * écrans qui présélectionnent `bac` continuent de fonctionner.
  */
 export const EXAM_TYPES_PAR_PAYS = {
   CM: [
@@ -48,6 +54,24 @@ export const EXAM_TYPES_PAR_PAYS = {
     { key: 'enafep', label: 'ENAFEP', niveau: '6e primaire', cycle: 'primaire', desc: 'Évaluation nationale de fin d’études primaires' },
     { key: 'tenasosp', label: 'TENASOSP', niveau: '8e année', cycle: 'college', desc: "Test national de fin d'études du cycle terminal" },
     { key: 'exetat', label: "EXETAT", niveau: '4e humanités', cycle: 'lycee', desc: "Examen d'État (fin des humanités)" },
+  ],
+  // Congo-Brazzaville. Les trois examens d'État de l'enseignement général sont
+  // ceux que le ministre énumère lui-même dans la note de service n° 174
+  // MEPPSA-CAB-DEC du 24 février 2026 fixant les dates des examens et concours,
+  // et que la Direction des examens et concours détaille session par session.
+  // Il n'y a NI probatoire (Cameroun) NI concours national d'entrée en 6e
+  // généralisé : le seul concours d'entrée en 6e qui subsiste est réservé aux
+  // deux lycées d'excellence de Mbounda et d'Oyo, il ne concerne donc pas une
+  // école ordinaire et n'a rien à faire dans ce module.
+  // ⚠️ Le CEPE est en sursis : le projet de loi adopté en Conseil des ministres
+  // du 20 janvier 2026 le remplace par un certificat d'études primaires (CEP)
+  // délivré sur contrôle continu. Au 19/08/2026 la loi n'est pas promulguée
+  // (absente du Journal officiel n° 1 à 33 de 2026), donc le CEPE reste en
+  // vigueur. À revoir dès la promulgation.
+  CG: [
+    { key: 'cepe', label: 'CEPE', niveau: 'CM2', cycle: 'primaire', desc: "Certificat d'études primaires élémentaires" },
+    { key: 'bepc', label: 'BEPC', niveau: '3e', cycle: 'college', desc: "Brevet d'études du premier cycle" },
+    { key: 'bac', label: 'Baccalauréat', niveau: 'Tle', cycle: 'lycee', desc: 'Fin du second cycle (séries A2, A4, C, D)' },
   ],
   FR: [
     { key: 'dnb', label: 'DNB', niveau: '3e', cycle: 'college', desc: 'Diplôme national du brevet' },

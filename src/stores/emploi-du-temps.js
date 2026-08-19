@@ -163,6 +163,21 @@ export const HOLIDAYS_BY_COUNTRY = {
     { month: 11, day: 1, name: 'Toussaint' },
     { month: 12, day: 25, name: 'Noël' },
   ],
+  // Congo-Brazzaville — loi n° 2-94 du 1er mars 1994 fixant les jours fériés,
+  // chômés et payés, article premier. Seules les six fêtes à DATE FIXE sont
+  // ici ; les trois autres (lundi de Pâques, jeudi de l'Ascension, lundi de
+  // Pentecôte) sont mobiles et ne peuvent pas être écrites en dur. Le 15 août
+  // est à la fois l'indépendance et la fête nationale : une seule date, pas
+  // deux. Le 28 novembre (Journée de la République) est commémoré mais ne
+  // figure dans aucun texte de férié : on ne l'ajoute pas.
+  CG: [
+    { month: 1, day: 1, name: 'Jour de l\'An' },
+    { month: 5, day: 1, name: 'Fête du Travail' },
+    { month: 6, day: 10, name: 'Commémoration de la Conférence nationale souveraine' },
+    { month: 8, day: 15, name: 'Fête nationale' },
+    { month: 11, day: 1, name: 'Toussaint' },
+    { month: 12, day: 25, name: 'Noël' },
+  ],
 }
 
 // Format a local Date to YYYY-MM-DD without timezone shift
