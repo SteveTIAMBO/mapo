@@ -204,6 +204,17 @@ if (!empty($r['ok'])) {
       // quiz normal et personne ne saurait jamais que le contrôle travaille.
       $j['verifies'] = count($gardees);
       $j['rejetes'] = $rejets;
+      // Et on le CONSIGNE. Ce compte n'était renvoyé à personne : le contrôle
+      // travaillait sans qu'on sache jamais s'il rejetait une question sur
+      // cent ou une sur trois, ni dans quelle matière. Sans ce chiffre,
+      // « aucune hallucination » reste une intention, pas un fait mesuré.
+      mapo_qualite_journal(
+        (string) ($data['matiere'] ?? ''),
+        (string) ($data['niveau'] ?? ''),
+        !empty($data['notions']),
+        count($gardees),
+        $rejets
+      );
       $text = json_encode($j, JSON_UNESCAPED_UNICODE);
     }
   }
@@ -1495,6 +1506,50 @@ function dailyLimitOk() {
   $data['count'] = ($data['count'] ?? 0) + 1;
   @file_put_contents($file, json_encode($data));
   return true;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Journal de qualité — taux de rejet du solveur aveugle
+// ════════════════════════════════════════════════════════════════════
+// POURQUOI. Le solveur aveugle rejette les questions dont il ne retrouve pas
+// la réponse marquée. C'est notre garde-fou principal contre une question
+// fausse — mais son taux de rejet n'était consigné NULLE PART. On ne pouvait
+// donc pas répondre à la seule question qui compte : « où se trompe-t-elle ? »
+//
+// Ce journal donne le chiffre par MATIÈRE, par NIVEAU et selon qu'un programme
+// officiel cadrait ou non la génération. C'est cette dernière colonne qui est
+// intéressante : elle dit si le référentiel sert vraiment à quelque chose, et
+// elle pointe les matières où l'on génère à l'aveugle.
+//
+// Le fichier vit à côté des autres registres, donc protégé par la règle
+// `.htaccess` qui refuse tout `mapo-*.json`. Un seul verrou, jamais imbriqué.
+function mapo_qualite_journal($matiere, $niveau, $avecReferentiel, $gardees, $rejetees) {
+  $path = __DIR__ . '/mapo-qualite.json';
+  $cle = date('Y-m') . '|' . mb_substr($matiere, 0, 40) . '|' . mb_substr($niveau, 0, 20)
+       . '|' . ($avecReferentiel ? 'ref' : 'sans');
+  $fp = @fopen($path, 'c+');
+  if (!$fp) return;
+  if (flock($fp, LOCK_EX)) {
+    $brut = stream_get_contents($fp);
+    $data = json_decode($brut, true);
+    if (!is_array($data)) $data = [];
+    if (!isset($data[$cle])) $data[$cle] = ['gardees' => 0, 'rejetees' => 0, 'appels' => 0];
+    $data[$cle]['gardees'] += (int) $gardees;
+    $data[$cle]['rejetees'] += (int) $rejetees;
+    $data[$cle]['appels'] += 1;
+    // Borne dure : le registre ne doit pas grossir sans fin sur un serveur
+    // mutualisé. Au-delà, on garde les entrées les plus actives.
+    if (count($data) > 400) {
+      uasort($data, function ($a, $b) { return $b['appels'] - $a['appels']; });
+      $data = array_slice($data, 0, 300, true);
+    }
+    ftruncate($fp, 0);
+    rewind($fp);
+    fwrite($fp, json_encode($data, JSON_UNESCAPED_UNICODE));
+    fflush($fp);
+    flock($fp, LOCK_UN);
+  }
+  fclose($fp);
 }
 
 function rateLimitOk() {

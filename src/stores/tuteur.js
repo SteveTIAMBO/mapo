@@ -292,12 +292,30 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // 1) Réutilisation : banque d'exercices partagée (0 token, marche hors-ligne).
     // Uniquement pour une révision générique (pas de thème NI de cours perso imposé :
     // sinon on veut un quiz réellement tiré du cours de l'élève).
+    // Notions du PROGRAMME OFFICIEL, quand on en a un pour (pays, classe,
+    // matière) ET qu'il est déjà en vigueur. Calculé AVANT la banque : la
+    // provenance annoncée en dépend, y compris pour une question réutilisée.
+    let notions = []
+    let refSource = null
+    let granularite = 'classe'
+    try {
+      const e = useEnfantsAutonomesStore().enfants.find((x) => x.id === studentId)
+      const args = { pays: e?.pays || 'FR', niveau, matiere }
+      notions = notionsPourPrompt(args)
+      refSource = sourceOfficielle(args)
+      granularite = granulariteProgramme(args)
+    } catch { /* pas de référentiel : comportement inchangé */ }
+
     if (!effThemes && !cours) {
       const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
       if (fromBank) {
         generating.value = false
         lastMode.value = 'banque'
-        return { ok: true, questions: fromBank, mode: 'banque', reason: '', source: 'referentiel' }
+        // ⚠️ Cette branche annonçait TOUJOURS « referentiel », même dans une
+        // matière qui n'en a aucun — le correctif du 19/08 n'avait touché que
+        // la génération fraîche. Une question ressortie de la banque n'est pas
+        // mieux sourcée qu'une neuve : elle a la provenance de sa matière.
+        return { ok: true, questions: fromBank, mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
       }
     }
     // Confidentialité + frugalité : le digest (profil PRIVÉ de l'apprenant) ne
@@ -311,21 +329,6 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const token = user ? await user.getIdToken().catch(() => null) : null
       const headers = { 'Content-Type': 'application/json' }
       if (token) headers['Authorization'] = 'Bearer ' + token
-
-      // Notions du PROGRAMME OFFICIEL, quand on en a un pour (pays, classe,
-      // matière) ET qu'il est déjà en vigueur pour cette classe. Sinon la liste
-      // est vide et le serveur se comporte comme avant : mieux vaut aucun
-      // référentiel qu'un référentiel qui ne s'applique pas encore.
-      let notions = []
-      let refSource = null
-      let granularite = 'classe'
-      try {
-        const e = useEnfantsAutonomesStore().enfants.find((x) => x.id === studentId)
-        const args = { pays: e?.pays || 'FR', niveau, matiere }
-        notions = notionsPourPrompt(args)
-        refSource = sourceOfficielle(args)
-        granularite = granulariteProgramme(args)
-      } catch { /* pas de référentiel : comportement inchangé */ }
 
       const res = await fetch(IA_URL, {
         method: 'POST',

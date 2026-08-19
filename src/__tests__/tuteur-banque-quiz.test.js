@@ -45,7 +45,12 @@ vi.mock('../stores/auth', () => ({ useAuthStore: () => ({ isB2C: true }) }))
 vi.mock('../stores/abonnement', () => ({ useAbonnementStore: () => ({ majJauge: () => {}, marquerEpuise: () => {} }) }))
 vi.mock('../stores/usage', () => ({ useUsageStore: () => ({ consume: () => {} }), COUT_ACTION: { quiz: 1 } }))
 vi.mock('../stores/miapoRef', () => ({ useMiapoRefStore: () => ({ load: async () => {}, getExemples: () => '' }) }))
-vi.mock('../stores/enfantsAutonomes', () => ({ useEnfantsAutonomesStore: () => ({ linkedOwnerUid: null }) }))
+// L'enfant porte son PAYS : c'est lui qui décide s'il existe un programme
+// officiel pour (pays, classe, matière), donc la provenance annoncée.
+let enfantCourant = { id: 'e1', pays: 'FR' }
+vi.mock('../stores/enfantsAutonomes', () => ({
+  useEnfantsAutonomesStore: () => ({ linkedOwnerUid: null, get enfants() { return [enfantCourant] } }),
+}))
 
 import { useTuteurStore } from '../stores/tuteur'
 
@@ -197,5 +202,46 @@ describe('La banque partagée est VERSIONNÉE (purge instantanée)', () => {
 
   it('toute clé lue porte ce préfixe', () => {
     expect(cleTest('maths__6eme__d1').startsWith(VERSION_BANQUE + '__')).toBe(true)
+  })
+})
+
+
+/**
+ * La provenance annoncée doit être VRAIE, y compris pour une question
+ * réutilisée.
+ *
+ * Le 19/08, la génération fraîche avait été corrigée pour ne plus annoncer
+ * « referentiel » quand aucun programme officiel n'existe. La branche BANQUE,
+ * elle, était restée : elle annonçait toujours « referentiel », dans toutes les
+ * matières et tous les pays. Une question ressortie de la banque n'est pourtant
+ * pas mieux sourcée qu'une neuve — elle a la provenance de sa matière.
+ */
+describe('Provenance — la banque ne doit pas s’attribuer un programme qu’elle n’a pas', () => {
+  it('matière SANS référentiel : la banque annonce « ia », pas « referentiel »', async () => {
+    enfantCourant = { id: 'e1', pays: 'FR' }
+    banque[cleTest('arts-plastiques__4e__d3')] = questions('Banque', 10)
+    const tuteur = useTuteurStore()
+    const r = await tuteur.generateQuiz({ matiere: 'Arts plastiques', niveau: '4e', nombre: 10, difficulte: 3, studentId: 'e1' })
+    expect(r.mode).toBe('banque')
+    expect(r.source).toBe('ia')
+  })
+
+  it('matière AVEC référentiel : la banque peut l’annoncer', async () => {
+    enfantCourant = { id: 'e1', pays: 'FR' }
+    banque[cleTest('mathematiques__5e__d3')] = questions('Banque', 10)
+    const tuteur = useTuteurStore()
+    const r = await tuteur.generateQuiz({ matiere: 'Mathématiques', niveau: '5e', nombre: 10, difficulte: 3, studentId: 'e1' })
+    expect(r.mode).toBe('banque')
+    expect(r.source).toBe('referentiel')
+  })
+
+  it('le PAYS de l’enfant compte : « 5e » n’existe pas au Cameroun', async () => {
+    // Même matière, même intitulé de classe, autre pays : le Cameroun écrit
+    // « 5ème ». Annoncer un programme officiel ici serait faux.
+    enfantCourant = { id: 'e1', pays: 'CM' }
+    banque[cleTest('mathematiques__5e__d3')] = questions('Banque', 10)
+    const tuteur = useTuteurStore()
+    const r = await tuteur.generateQuiz({ matiere: 'Mathématiques', niveau: '5e', nombre: 10, difficulte: 3, studentId: 'e1' })
+    expect(r.source).toBe('ia')
   })
 })
