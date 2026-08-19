@@ -85,6 +85,12 @@ import espagnolLycee from '../data/referentiels/fr-espagnol-lycee.json'
 import italienCollege from '../data/referentiels/fr-italien-college.json'
 import italienLycee from '../data/referentiels/fr-italien-lycee.json'
 import hdaCycle4 from '../data/referentiels/fr-histoire-des-arts-cycle4.json'
+// ── Cameroun (MINESEC) ──
+import cmMaths from '../data/referentiels/cm-mathematiques-6e5e.json'
+import cmSciences from '../data/referentiels/cm-sciences-6e5e.json'
+import cmHistoire from '../data/referentiels/cm-histoire-6e5e.json'
+import cmGeographie from '../data/referentiels/cm-geographie-6e5e.json'
+import cmEcm from '../data/referentiels/cm-ecm-6e5e.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -95,7 +101,8 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, t
   fraCycle2, mathsCycle2, qlmCycle2, stCycle2, hgCycle2,
   stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026,
   anglaisCollege, anglaisLycee, allemandCollege, allemandLycee,
-  espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4]
+  espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4,
+  cmMaths, cmSciences, cmHistoire, cmGeographie, cmEcm]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -1,0 +1,50 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seules les INTITULÉS de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "cycle": "Premier cycle du secondaire général (6ème et 5ème)",
+  "arrete": "Arrêté n° 263/14/MINESEC/IGE du 14-8-2014",
+  "bo": "Programmes d'études APC, août 2014",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-19",
+  "matiere": "Histoire",
+  "urlPdf": "https://files.minesec.gov.cm/direct/view.php?s=2g",
+  "classes": {
+    "6ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Le legs des civilisations anciennes d’Afrique dans la pensée et l’édification du monde actuel"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Le legs des civilisations anciennes d’Europe, et d’Asie dans la pensée et l’édification du monde actuel"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "L‘apport des religions monothéistes dans la pensée et l’édification du monde actuel"
+        }
+      ]
+    },
+    "5ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Peuplement et organisation socio – politique du Cameroun"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "L’âge d’or de l’Afrique"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Les relations entre l’Afrique et le reste du monde"
+        }
+      ]
+    }
+  }
+}

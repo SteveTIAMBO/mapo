@@ -53,7 +53,15 @@ describe('Millésime — on ne sert QUE ce qui est applicable', () => {
 
 describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
   it('un pays sans référentiel ne renvoie rien', () => {
-    expect(notionsOfficielles({ pays: 'CM', niveau: '5e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'SN', niveau: '5e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+  })
+
+  it('et les classes d’un pays ne s’écrivent pas comme celles d’un autre', () => {
+    // Le Cameroun dit « 6ème », la France « 6e ». Ce ne sont pas les mêmes
+    // clés : demander « 6e » au Cameroun ne doit pas ramener le programme
+    // français par accident, ni l'inverse.
+    expect(notionsOfficielles({ pays: 'CM', niveau: '6e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'FR', niveau: '6ème', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 
   it('une matière sans référentiel ne renvoie rien', () => {
@@ -73,6 +81,50 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
     expect(notionsOfficielles({ pays: 'FR', niveau: 'Terminale STMG', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 })
+
+describe('Cameroun — des MODULES, pas des thèmes', () => {
+  // L'Approche Par les Compétences ne découpe pas le programme en thèmes mais
+  // en modules rattachés à des « familles de situations » de la vie réelle.
+  // C'est l'unité que l'élève camerounais reconnaît de son année.
+  const n = (niveau, matiere) => notionsOfficielles({ pays: 'CM', niveau, matiere, date: en(2026) })
+
+  it('la 6ème et la 5ème ont leurs propres modules', () => {
+    for (const mat of ['Mathématiques', 'Histoire', 'Géographie']) {
+      expect(n('6ème', mat).length).toBeGreaterThan(1)
+      expect(n('5ème', mat).length).toBeGreaterThan(1)
+      expect(n('6ème', mat)).not.toEqual(n('5ème', mat))
+    }
+    expect(n('6ème', 'Histoire').map((x) => x.notion))
+      .toContain('L‘apport des religions monothéistes dans la pensée et l’édification du monde actuel')
+  })
+
+  it('la provenance cite l’arrêté camerounais, pas un texte français', () => {
+    const s = sourceOfficielle({ pays: 'CM', niveau: '6ème', matiere: 'Mathématiques', date: en(2026) })
+    expect(s.arrete).toMatch(/MINESEC/)
+    expect(s.attribution).toMatch(/MINESEC/)
+  })
+
+  it('« Sciences » répond quand l’élève demande la PCT ou la SVT', () => {
+    // Au premier cycle, le Cameroun n'a PAS deux programmes séparés : un seul
+    // texte « Sciences (PCT et SVTEEHB) » couvre les deux matières du
+    // catalogue. Sans passerelle, l'élève s'entendait répondre qu'il n'y a rien.
+    expect(n('6ème', 'Physique-Chimie-Technologie (PCT)').map((x) => x.notion)).toContain('LE MONDE VIVANT')
+    expect(n('5ème', 'SVT').map((x) => x.notion)).toContain('TECHNOLOGIE')
+  })
+
+  it('ce texte-là ne répartit pas entre les deux années, et on le dit', () => {
+    // Le volume horaire y est donné globalement (« 22 (10 + 12) heures ») :
+    // annoncer « au programme de 6ème » serait une sur-interprétation.
+    expect(granulariteProgramme({ pays: 'CM', niveau: '6ème', matiere: 'SVT', date: en(2026) })).toBe('cycle')
+    expect(granulariteProgramme({ pays: 'CM', niveau: '6ème', matiere: 'Histoire', date: en(2026) })).toBe('classe')
+  })
+
+  it('l’ECM répond sous le libellé à sigle du catalogue camerounais', () => {
+    expect(n('6ème', 'Éducation à la citoyenneté et à la morale (ECM)').map((x) => x.notion))
+      .toContain('La vie familiale et scolaire')
+  })
+})
+
 
 describe('Attribution — obligation de la Licence Ouverte', () => {
   it('la provenance accompagne toute notion servie', () => {
