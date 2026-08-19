@@ -91,6 +91,11 @@ import cmSciences from '../data/referentiels/cm-sciences-6e5e.json'
 import cmHistoire from '../data/referentiels/cm-histoire-6e5e.json'
 import cmGeographie from '../data/referentiels/cm-geographie-6e5e.json'
 import cmEcm from '../data/referentiels/cm-ecm-6e5e.json'
+import cmMaths43 from '../data/referentiels/cm-mathematiques-4e3e.json'
+import cmHistoire43 from '../data/referentiels/cm-histoire-4e3e.json'
+import cmGeographie43 from '../data/referentiels/cm-geographie-4e3e.json'
+import cmEcm43 from '../data/referentiels/cm-ecm-4e3e.json'
+import cmFrancais43 from '../data/referentiels/cm-francais-4e3e.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -102,7 +107,8 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, t
   stCycle3_2023, stCycle3_2026, hgCycle3_2020, hgCycle3_2026,
   anglaisCollege, anglaisLycee, allemandCollege, allemandLycee,
   espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4,
-  cmMaths, cmSciences, cmHistoire, cmGeographie, cmEcm]
+  cmMaths, cmSciences, cmHistoire, cmGeographie, cmEcm,
+  cmMaths43, cmHistoire43, cmGeographie43, cmEcm43, cmFrancais43]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

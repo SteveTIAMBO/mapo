@@ -1,0 +1,58 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "cycle": "Premier cycle du secondaire général (4ème et 3ème)",
+  "arrete": "Arrêté n° 419/14/MINESEC/IGE du 14-8-2014",
+  "bo": "Programmes d'études APC, août 2014",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-19",
+  "matiere": "Géographie",
+  "urlPdf": "https://files.minesec.gov.cm/direct/view.php?s=2u",
+  "classes": {
+    "4ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Géographie",
+          "notion": "La diversité physique et humaine de l’Afrique"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "L’économie moderne en Afrique"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "La CEMAC"
+        }
+      ]
+    },
+    "3ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Géographie",
+          "notion": "Les milieux géographiques du Cameroun"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "La population du Cameroun"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Les activités économiques du Cameroun"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Luttons contre la pauvreté"
+        },
+        {
+          "domaine": "Géographie",
+          "notion": "Les échanges dans le monde"
+        }
+      ]
+    }
+  }
+}

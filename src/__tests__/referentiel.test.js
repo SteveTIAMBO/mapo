@@ -119,6 +119,31 @@ describe('Cameroun — des MODULES, pas des thèmes', () => {
     expect(granulariteProgramme({ pays: 'CM', niveau: '6ème', matiere: 'Histoire', date: en(2026) })).toBe('classe')
   })
 
+  it('le second cycle du collège est couvert, et distinct du premier', () => {
+    for (const mat of ['Mathématiques', 'Histoire', 'Géographie']) {
+      expect(n('4ème', mat).length).toBeGreaterThan(2)
+      expect(n('3ème', mat).length).toBeGreaterThan(2)
+      expect(n('4ème', mat)).not.toEqual(n('6ème', mat))
+    }
+    expect(n('3ème', 'Histoire').map((x) => x.notion)).toContain('Du Kamerun à la République du Cameroun (1884-1990)')
+  })
+
+  it('en maths, la classe est nommée APRÈS le module — et pourtant bien attribuée', () => {
+    // Le document ne dit pas « CLASSE DE 3ème » avant le bloc : il légende
+    // chaque tableau APRÈS. Se fier à la dernière classe rencontrée mettait
+    // tout le second bloc en 4ème — huit modules dans la mauvaise année.
+    const rationnels = n('4ème', 'Mathématiques').map((x) => x.notion).find((x) => /RATIONNELS/.test(x))
+    const reels = n('3ème', 'Mathématiques').map((x) => x.notion).find((x) => /REELS/.test(x))
+    expect(rationnels).toBeTruthy()   // les rationnels, c'est la 4ème
+    expect(reels).toBeTruthy()        // les réels, la 3ème
+    expect(n('4ème', 'Mathématiques').map((x) => x.notion).some((x) => /REELS/.test(x))).toBe(false)
+  })
+
+  it('le français de 4ème-3ème ne répartit pas ses modules entre les deux années', () => {
+    expect(n('4ème', 'Français')).toEqual(n('3ème', 'Français'))
+    expect(granulariteProgramme({ pays: 'CM', niveau: '4ème', matiere: 'Français', date: en(2026) })).toBe('cycle')
+  })
+
   it('l’ECM répond sous le libellé à sigle du catalogue camerounais', () => {
     expect(n('6ème', 'Éducation à la citoyenneté et à la morale (ECM)').map((x) => x.notion))
       .toContain('La vie familiale et scolaire')

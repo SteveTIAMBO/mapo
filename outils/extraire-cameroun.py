@@ -52,14 +52,23 @@ def _corpus(pdf):
 
 
 CLASSES = {'6': '6ème', '5': '5ème', '4': '4ème', '3': '3ème'}
+# Les bandeaux s'écrivent aussi en toutes lettres, et pas toujours de la même
+# façon d'un document à l'autre.
+CLASSES_MOT = {'sixieme': '6ème', 'cinquieme': '5ème', 'quatrieme': '4ème', 'troisieme': '3ème'}
 
 
 # ── Histoire, géographie, ECM : « TITRE DU MODULE : … » ──────────────────────
 # Ces trois programmes portent un bandeau « CLASSE DE 6e » répété sur CHAQUE
 # page : c'est le repère de classe le plus sûr du document, bien plus que la
 # position du module. Le titre, lui, est explicitement étiqueté.
-def modules_titres(chemin, domaine):
-    par_classe, classe = {}, None
+def modules_titres(chemin, domaine, classe_par_defaut=None, classes_communes=None):
+    """`classe_par_defaut` : en histoire et en géographie de 4ème-3ème, le premier
+    bloc n'est PAS annoncé — seul le second porte « CLASSE DE 3e ». Sans valeur
+    par défaut, la moitié du programme se perdait en silence."""
+    #  `classes_communes` : en français de 4ème-3ème, les cinq modules sont
+    #  listés UNE fois, avant toute mention de classe — ils valent pour les deux
+    #  années. Le référentiel doit alors être de granularité « cycle ».
+    par_classe, classe = {}, (classes_communes[0] if classes_communes else classe_par_defaut)
     with pdfplumber.open(chemin) as pdf:
         src = _corpus(pdf)
         for p in pdf.pages:
@@ -69,10 +78,20 @@ def modules_titres(chemin, domaine):
                 if m:
                     classe = CLASSES.get(m.group(1), classe)
                     continue
-                m = re.match(r'^TITRE DU MODULE\s*:?\s*(.+)$', t, re.I)
+                m = re.match(r'^CLASSE DE\s+([A-ZÉÈ]+)', t, re.I)
+                if m and norm(m.group(1)) in CLASSES_MOT:
+                    classe = CLASSES_MOT[norm(m.group(1))]
+                    continue
+                # Le libellé varie : « TITRE DU MODULE : », « 1. Titre du
+                # module : », « 1- Titre du module : ». Même étiquette, trois
+                # typographies selon l'inspection qui a rédigé le document.
+                m = re.match(r'^\d*\s*[.\-]?\s*TITRE DU MODULE\s*:?\s*(.+)$', t, re.I)
                 if m and classe:
                     par_classe.setdefault(classe, []).append(
                         {'domaine': domaine, 'notion': ' '.join(m.group(1).split()).strip(' .')})
+    if classes_communes:
+        tous = [n for v in par_classe.values() for n in v]
+        par_classe = {c: list(tous) for c in classes_communes}
     return _fidele(par_classe, src)
 
 
@@ -124,3 +143,31 @@ def modules_sur_une_ligne(chemin, domaine, classes):
                     titres.append({'domaine': domaine,
                                    'notion': ' '.join(m.group(2).split()).strip(' .')})
     return _fidele({c: list(titres) for c in classes}, src)
+
+
+# ── Mathématiques de 4ème-3ème : la classe est nommée APRÈS le module ────────
+# Ici le document n'annonce pas « CLASSE DE 3ème » avant le bloc : il légende
+# chaque tableau, « Tableau 13 : Classe de 3ème », APRÈS le titre du module.
+# Se fier à la dernière classe rencontrée attribuerait donc tout le second bloc
+# à la 4ème. On lit donc les deux en DEUX passes, puis on les recoud par le
+# numéro de module — le seul lien explicite entre les deux.
+def modules_par_tableau(chemin, domaine):
+    titres, classe_du_module, cellules = {}, {}, []
+    with pdfplumber.open(chemin) as pdf:
+        src = _corpus(pdf)
+        for p in pdf.pages:
+            lignes = list(p.extract_text_lines())
+            for i, l in enumerate(lignes):
+                t = l['text'].strip()
+                m = re.match(r'^MODULE\s*N?\s*°?\s*(\d+)\s*$', t, re.I)
+                if m and i + 1 < len(lignes):
+                    titres[int(m.group(1))] = ' '.join(lignes[i + 1]['text'].split()).strip(' .')
+                m = re.match(r'^Tableau\s*(\d+)\s*:?\s*Classe de\s*(\d)', t, re.I)
+                if m:
+                    classe_du_module[int(m.group(1))] = CLASSES.get(m.group(2))
+    par_classe = {}
+    for num, titre in sorted(titres.items()):
+        c = classe_du_module.get(num)
+        if c:
+            par_classe.setdefault(c, []).append({'domaine': domaine, 'notion': titre})
+    return _fidele(par_classe, src)

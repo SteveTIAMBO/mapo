@@ -1,0 +1,58 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "cycle": "Premier cycle du secondaire général (4ème et 3ème)",
+  "arrete": "Arrêté n° 419/14/MINESEC/IGE du 14-8-2014",
+  "bo": "Programmes d'études APC, août 2014",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-19",
+  "matiere": "Mathématiques",
+  "urlPdf": "https://files.minesec.gov.cm/direct/view.php?s=2s",
+  "classes": {
+    "4ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Mathématiques",
+          "notion": "RELATIONS ET OPÉRATIONS FONDAMENTALES DANS L’ENSEMBLE DES NOMBRES RATIONNELS"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "ORGANISATION ET GESTION DES DONNÉES"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "CONFIGURATIONS ET TRANSFORMATIONS ÉLÉMENTAIRES DU PLAN"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "SOLIDES DE L’ESPACE"
+        }
+      ]
+    },
+    "3ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Mathématiques",
+          "notion": "RELATIONS ET OPÉRATIONS FONDAMENTALES DANS L’ENSEMBLE DES NOMBRES REELS"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "ORGANISATION ET GESTION DES DONNÉES"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "CONFIGURATIONS ET TRANSFORMATIONS ÉLÉMENTAIRES DU PLAN"
+        },
+        {
+          "domaine": "Mathématiques",
+          "notion": "SOLIDES DE L’ESPACE"
+        }
+      ]
+    }
+  }
+}
