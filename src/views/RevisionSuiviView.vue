@@ -152,6 +152,9 @@ import { useTuteurStore } from '../stores/tuteur'
 import { Sparkles, AlertTriangle, Users, Info, Loader2, X, Home, TrendingUp, TrendingDown, Minus, Activity } from 'lucide-vue-next'
 import { useCoursStore } from '../stores/cours'
 import { useMiapoSuiviStore } from '../stores/miapoSuivi'
+import { useAuthStore } from '../stores/auth'
+import { usePersonnelStore } from '../stores/personnel'
+import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
@@ -161,6 +164,40 @@ const notesStore = useNotesStore()
 const tuteur = useTuteurStore()
 const coursStore = useCoursStore()
 const miapoSuivi = useMiapoSuiviStore()
+const authStore = useAuthStore()
+const personnelStore = usePersonnelStore()
+const edtStore = useEmploiDuTempsStore()
+
+// ── Cloisonnement enseignant ────────────────────────────────────────────────
+// Cet écran remonte les fragilités des élèves à celui qui peut agir. Sans filtre,
+// un enseignant y voyait TOUS les élèves de l'établissement et TOUTES les
+// matières, y compris celles qu'il n'enseigne pas : l'écran répondait, rien
+// n'alertait, et ça contredisait ce qui est promis en démonstration
+// (« l'enseignant ne voit que ses classes »).
+// Même mécanique que le module Notes : ses classes via l'emploi du temps, ses
+// matières via sa fiche de personnel. Le directeur, lui, garde la vue complète.
+const teacherClassIds = computed(() => {
+  if (!authStore.isTeacher) return null
+  return personnelStore.getTeacherClassIds(authStore.userProfile, edtStore)
+})
+
+const teacherSubjects = computed(() => {
+  if (!authStore.isTeacher) return []
+  const record = personnelStore.getTeacherStaffRecord(authStore.userProfile)
+  return record?.subjects || []
+})
+
+// Comparaison tolérante aux accents et à la casse, comme dans le module Notes :
+// « Mathematiques » saisi à l'import doit rencontrer « Mathématiques ».
+function sameSubject(a, b) {
+  return (a || '').toString().trim().localeCompare((b || '').toString().trim(), 'fr', { sensitivity: 'base' }) === 0
+}
+
+/** Une matière concerne-t-elle l'utilisateur courant ? Le directeur voit tout. */
+function matiereVisible(nom) {
+  if (!teacherSubjects.value.length) return true
+  return teacherSubjects.value.some((ts) => sameSubject(ts, nom))
+}
 
 const classFilter = ref('')
 // Remédiation MIAPO : à partir des matières en difficulté, prépare une séance ciblée.
@@ -195,7 +232,18 @@ const WEAK_NOTE = 10   // moyenne /20 sous laquelle une matière est « à trava
 const WEAK_MASTERY = 50 // maîtrise de révision sous laquelle une matière est fragile
 const MAX_ROWS = 60      // borne d'affichage
 
-const inscrits = computed(() => elevesStore.eleves.filter((e) => e.status === 'inscrit'))
+// Élèves visibles : les inscrits, restreints aux classes de l'enseignant le cas
+// échéant. `teacherClassIds` contient des ID de classe, les élèves portent un nom
+// de classe : on passe par `classById` pour faire le pont.
+const inscrits = computed(() => {
+  const tous = elevesStore.eleves.filter((e) => e.status === 'inscrit')
+  const ids = teacherClassIds.value
+  if (!ids) return tous
+  return tous.filter((e) => {
+    const cls = classById.value[e.className]
+    return cls && ids.includes(cls.id)
+  })
+})
 const TRIMS = ['T3', 'T2', 'T1'] // on prend le trimestre le plus récent disponible
 
 function fmtDate(iso) {
@@ -219,7 +267,7 @@ const classById = computed(() => {
 function weakFor(eleve) {
   const cls = classById.value[eleve.className]
   if (!cls) return { weak: [], lastIso: null }
-  const subs = subjectsStore.subjects || []
+  const subs = (subjectsStore.subjects || []).filter((s) => matiereVisible(s.name || s.label))
   const weak = []
   for (const s of subs) {
     let avg = null
@@ -237,7 +285,7 @@ function weakFor(eleve) {
   if (rs) {
     for (const v of Object.values(rs)) {
       if (v.lastReviewed && (!lastIso || v.lastReviewed > lastIso)) lastIso = v.lastReviewed
-      if (typeof v.mastery === 'number' && v.mastery < WEAK_MASTERY && !weak.find((w) => w.name === v.name)) {
+      if (typeof v.mastery === 'number' && v.mastery < WEAK_MASTERY && matiereVisible(v.name) && !weak.find((w) => w.name === v.name)) {
         weak.push({ name: v.name, value: `${v.mastery}%`, sort: v.mastery / 5 })
       }
     }
@@ -250,7 +298,7 @@ function weakFor(eleve) {
     if (ms.updatedAt && (!lastIso || ms.updatedAt > lastIso)) lastIso = ms.updatedAt
     for (const m of ms.matieres) {
       if (m.derniereActivite && (!lastIso || m.derniereActivite > lastIso)) lastIso = m.derniereActivite
-      if (!m.enCalibrage && m.tendance <= -20 && !weak.find((w) => w.name === m.matiere)) {
+      if (!m.enCalibrage && m.tendance <= -20 && matiereVisible(m.matiere) && !weak.find((w) => w.name === m.matiere)) {
         weak.push({ name: m.matiere, value: t('revsuivi.eloDown'), sort: 5 + m.tendance / 20 })
       }
     }
@@ -281,8 +329,9 @@ function buildFromData() {
 // Échantillon de démonstration EN MÉMOIRE (aucun stockage) : garantit un écran
 // parlant tant qu'aucune donnée réelle de révision n'est encore remontée.
 function buildDemoSample() {
-  const subs = (subjectsStore.subjects || []).filter((s) =>
-    ['s-maths', 's-francais', 's-anglais', 's-physique', 's-svt', 's-hg', 's-pct'].includes(s.id))
+  const subs = (subjectsStore.subjects || [])
+    .filter((s) => ['s-maths', 's-francais', 's-anglais', 's-physique', 's-svt', 's-hg', 's-pct'].includes(s.id))
+    .filter((s) => matiereVisible(s.name || s.label))
   if (!subs.length) return []
   const byClass = {}
   for (const e of inscrits.value) (byClass[e.className] = byClass[e.className] || []).push(e)
@@ -353,7 +402,12 @@ const autonomie = computed(() => {
   const list = []
   for (const s of miapoSuivi.suivi) {
     const e = byId[s.eleveId]
-    const mats = [...s.matieres].sort((a, b) => b.attempts - a.attempts).slice(0, 5)
+    // Même garde que pour la trajectoire : le suivi MIAPO+ porte son propre nom
+    // d'élève et de classe, il ne suffit donc pas de filtrer les inscrits.
+    if (teacherClassIds.value && !e) continue
+    const mats = [...s.matieres]
+      .filter((m) => matiereVisible(m.matiere))
+      .sort((a, b) => b.attempts - a.attempts).slice(0, 5)
     if (!mats.length) continue
     let lastIso = s.updatedAt
     for (const m of mats) if (m.derniereActivite && (!lastIso || m.derniereActivite > lastIso)) lastIso = m.derniereActivite
@@ -383,9 +437,13 @@ const classeTrajectoire = computed(() => {
   for (const e of inscrits.value) byId[e.id] = e
   const agg = {}
   for (const s of miapoSuivi.suivi) {
+    // Un enseignant n'agrège que ses propres élèves : sans ce garde, le repli sur
+    // `s.className` faisait entrer dans la moyenne des élèves d'autres classes.
+    if (teacherClassIds.value && !byId[s.eleveId]) continue
     const cls = s.className || byId[s.eleveId]?.className || ''
     if (classFilter.value && cls !== classFilter.value) continue
     for (const m of s.matieres) {
+      if (!matiereVisible(m.matiere)) continue
       const a = agg[m.matiere] || (agg[m.matiere] = { matiere: m.matiere, up: 0, stable: 0, down: 0, sum: 0, cnt: 0 })
       a.cnt++; a.sum += m.tendance
       if (m.tendance >= 15) a.up++
