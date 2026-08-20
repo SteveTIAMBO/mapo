@@ -250,7 +250,7 @@
                 <div class="ma-modules-group-title">{{ g.titre }}</div>
                 <div class="ma-modules-grid">
                   <label v-for="m in g.modules" :key="m.key" class="ma-module-card" :class="{ 'is-active': form.modulesActifs.includes(m.key) }">
-                    <input type="checkbox" :value="m.key" v-model="form.modulesActifs" />
+                    <input type="checkbox" :value="m.key" v-model="form.modulesActifs" @change="form.pack = 'custom'" />
                     <span class="ma-module-content">
                       <span class="ma-module-title">{{ m.label }}</span>
                       <span class="ma-module-desc">{{ m.description }}</span>
@@ -357,15 +357,28 @@
               </div>
             </div>
 
-            <div v-if="modulesEdit.pack === 'custom'" class="ma-field">
-              <div class="ma-modules-grid">
-                <label v-for="m in modulesEditDisponibles" :key="m.key" class="ma-module-card" :class="{ 'is-active': modulesEdit.selection.includes(m.key) }">
-                  <input type="checkbox" :value="m.key" v-model="modulesEdit.selection" />
-                  <span class="ma-module-content">
-                    <span class="ma-module-title">{{ m.label }}</span>
-                    <span class="ma-module-desc">{{ m.description }}</span>
-                  </span>
-                </label>
+            <div class="ma-field">
+              <div class="ma-modules-head">
+                <label class="ma-label">Modules ({{ modulesEdit.selection.length }})</label>
+                <div class="ma-modules-bulk">
+                  <button type="button" class="ma-linkbtn" @click="toutCocherEdit">Tout cocher</button>
+                  <button type="button" class="ma-linkbtn" @click="modulesEdit.selection = []">Tout décocher</button>
+                </div>
+              </div>
+              <p v-if="!modulesEdit.selection.length" class="ma-hint ma-hint-warn">
+                Aucun module coché : à sa connexion, l'école n'aura accès qu'à son profil.
+              </p>
+              <div v-for="g in groupesModulesEdit" :key="g.titre" class="ma-modules-group">
+                <div class="ma-modules-group-title">{{ g.titre }}</div>
+                <div class="ma-modules-grid">
+                  <label v-for="m in g.modules" :key="m.key" class="ma-module-card" :class="{ 'is-active': modulesEdit.selection.includes(m.key) }">
+                    <input type="checkbox" :value="m.key" v-model="modulesEdit.selection" @change="modulesEdit.pack = 'custom'" />
+                    <span class="ma-module-content">
+                      <span class="ma-module-title">{{ m.label }}</span>
+                      <span class="ma-module-desc">{{ m.description }}</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
 
@@ -535,7 +548,7 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
+import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, MODULES_STRUCTURE, MODULES_PEDAGOGIE, MODULES_SERVICES, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
 import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
 import MegaMapoplusUsers from './admin/MegaMapoplusUsers.vue'
@@ -825,6 +838,34 @@ const modulesEditDisponibles = computed(() => {
   return ed.modulesDisponibles.map((k) => ({ key: k, ...MODULES_INFO[k] }))
 })
 
+/** Regroupe une liste de clés en familles, pour un écran lisible. */
+function grouper(cles) {
+  const dans = (fam) => cles.filter((k) => fam.includes(k)).map((k) => ({ key: k, ...MODULES_INFO[k] }))
+  const autres = cles.filter((k) => ![...MODULES_STRUCTURE, ...MODULES_PEDAGOGIE, ...MODULES_SERVICES].includes(k))
+  return [
+    { titre: 'Structure de l’établissement', modules: dans(MODULES_STRUCTURE) },
+    { titre: 'Pédagogie et vie scolaire', modules: dans(MODULES_PEDAGOGIE) },
+    { titre: 'Services', modules: dans(MODULES_SERVICES) },
+    { titre: 'Enseignement supérieur', modules: autres.map((k) => ({ key: k, ...MODULES_INFO[k] })) },
+  ].filter((g) => g.modules.length)
+}
+
+const groupesModules = computed(() => grouper(modulesDisponibles.value.map((m) => m.key)))
+const groupesModulesEdit = computed(() => grouper(modulesEditDisponibles.value.map((m) => m.key)))
+
+function toutCocher(cible) {
+  cible.modulesActifs = modulesDisponibles.value.map((m) => m.key)
+  cible.pack = 'custom'
+}
+function toutDecocher(cible) {
+  cible.modulesActifs = []
+  cible.pack = 'custom'
+}
+function toutCocherEdit() {
+  modulesEdit.value.selection = modulesEditDisponibles.value.map((m) => m.key)
+  modulesEdit.value.pack = 'custom'
+}
+
 const modulesEditPacks = computed(() => {
   if (!modulesEdit.value) return []
   return PACKS[modulesEdit.value.school.edition] || PACKS.secondaire
@@ -848,8 +889,15 @@ async function promptComplexe(school) {
 
 function ouvrirModules(school) {
   const ed = EDITIONS[school.edition] || EDITIONS.secondaire
+  // ⚠️ Migration. Une école créée AVANT la suppression du socle n'a dans sa liste
+  // que les modules optionnels : la structure et les services étaient implicites.
+  // Ouvrir la modale telle quelle les afficherait DÉCOCHÉS, et un simple
+  // enregistrement lui retirerait Élèves, Classes et Paramètres. On pré-coche
+  // donc ce dont elle dispose RÉELLEMENT aujourd'hui.
+  const ancienModele = Number(school.modulesVersion) < 2
+  const implicites = ancienModele ? [...MODULES_STRUCTURE, ...MODULES_SERVICES] : []
   const current = Array.isArray(school.modulesActifs) && school.modulesActifs.length
-    ? school.modulesActifs.filter((k) => ed.modulesDisponibles.includes(k))
+    ? [...new Set([...implicites, ...school.modulesActifs])].filter((k) => ed.modulesDisponibles.includes(k))
     : [...ed.modulesParDefaut]
   const trialUntil = school.trialUntil || null
   const trialActive = trialUntil ? new Date(trialUntil).getTime() > Date.now() : false
@@ -947,6 +995,14 @@ onMounted(() => {
 })
 
 // Détecte la modification manuelle du slug (pour ne plus l'écraser)
+// Choisir un pack PRÉ-COCHE les cases correspondantes. Ce n'est plus une
+// alternative aux cases : c'est un raccourci pour les remplir, et l'utilisateur
+// ajuste ensuite. Cocher ou décocher bascule le pack sur « Personnalisé ».
+watch(() => form.pack, (p) => {
+  if (!p || p === 'custom') return
+  form.modulesActifs = packModules(form.edition, p)
+})
+
 watch(() => form.slug, (v) => {
   if (v !== slugify(form.nom)) slugManuallyEdited.value = true
 })
@@ -1191,6 +1247,13 @@ watch(() => form.slug, (v) => {
 }
 .ma-input:focus { border-color: var(--pr); }
 .ma-hint { font-size: 12.5px; color: var(--tx3); margin: 5px 0 0; line-height: 1.45; }
+.ma-hint-warn { color: #A33227; }
+.ma-modules-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.ma-modules-bulk { display: flex; gap: 12px; }
+.ma-linkbtn { background: none; border: 0; padding: 0; font-size: 12.5px; color: var(--pr); cursor: pointer; }
+.ma-linkbtn:hover { text-decoration: underline; }
+.ma-modules-group { margin-top: 14px; }
+.ma-modules-group-title { font-size: 12px; font-weight: 650; letter-spacing: .03em; text-transform: uppercase; color: var(--tx3); margin-bottom: 7px; }
 .ma-subdomain { display: flex; align-items: stretch; }
 .ma-subdomain .ma-input {
   border-top-right-radius: 0; border-bottom-right-radius: 0;

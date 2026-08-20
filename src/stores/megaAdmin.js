@@ -489,11 +489,12 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
 
     // Pack commercial → modules actifs. 'custom' = sélection manuelle.
     const pack = payload.pack || 'custom'
-    const modulesActifs = pack !== 'custom'
-      ? packModules(edition, pack)
-      : (Array.isArray(payload.modulesActifs) && payload.modulesActifs.length
-        ? payload.modulesActifs
-        : EDITIONS[edition].modulesParDefaut)
+    // Une liste fournie fait foi, MÊME VIDE : décocher tout est un choix, pas une
+    // absence de choix. Retomber sur les modules par défaut dans ce cas
+    // reproduirait le travers qu'on élimine, un réglage saisi et jamais appliqué.
+    const modulesActifs = Array.isArray(payload.modulesActifs)
+      ? [...payload.modulesActifs]
+      : (pack !== 'custom' ? packModules(edition, pack) : [...EDITIONS[edition].modulesParDefaut])
 
     // Essai version complète : accès à tout pendant TRIAL_MONTHS mois.
     const trialUntil = payload.essai ? computeTrialUntil() : null
