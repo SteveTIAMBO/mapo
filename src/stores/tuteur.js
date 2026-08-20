@@ -346,6 +346,18 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const nombreDemande = Math.min(12, manque + Math.max(2, Math.ceil(manque * 0.4)))
     // Ne pas régénérer ce que la banque vient déjà de fournir.
     const exclureTexte = [...socleBanque.map((q) => q.q), ...dejaVuesTexte].slice(0, 40)
+
+    // DEUX TENTATIVES. Un échec de génération est le plus souvent transitoire :
+    // réseau coupé, réponse tronquée, ou lot entièrement rejeté par le solveur
+    // (le tirage suivant sera différent). On redemande donc à l'IA plutôt que
+    // de servir autre chose. Il n'y a plus AUCUN contenu de remplacement :
+    // servir des questions hors programme pour éviter un écran vide revient à
+    // faire croire à l'apprenant qu'il révise sa leçon.
+    // ⚠️ On ne relance PAS quand l'échec est définitif (crédits épuisés, IA non
+    // configurée, limite atteinte) : une seconde tentative ne changerait rien
+    // et, pour les crédits, la facturerait deux fois.
+    let definitif = false
+    for (let tentative = 1; tentative <= 2 && !definitif; tentative++) {
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -362,7 +374,8 @@ export const useTuteurStore = defineStore('tuteur', () => {
       // Crédits épuisés (B2C) : on ne bascule PAS sur la banque locale, on invite
       // à passer à l'offre supérieure (l'IA fraîche est réservée aux crédits).
       if (json && (json.error === 'credits_epuises' || json.error === 'plafond_atteint')) {
-        return { ok: false, questions: [], mode: 'none', reason: 'credits_epuises' }
+        generating.value = false
+        return { ok: false, questions: [], mode: 'none', reason: json.error }
       }
 
       if (json && json.ok && json.text) {
@@ -387,23 +400,30 @@ export const useTuteurStore = defineStore('tuteur', () => {
             if (!k || vus.has(k)) return false
             vus.add(k); return true
           })
+          generating.value = false
           return { ok: true, questions: retenues.slice(0, nombre), mode: 'ia', reason: '', source }
         }
-        lastReason.value = 'Réponse IA illisible, mode démonstration'
+        // Aucune question retenue : lot entièrement rejeté par le solveur, ou
+        // réponse illisible. Cas typiquement transitoire → on retente.
+        lastReason.value = 'Aucune question n’a passé la vérification'
       } else {
-        lastReason.value = json && json.error === 'not_configured'
+        const err = json && json.error
+        // Échecs DÉFINITIFS : retenter ne ferait que perdre du temps.
+        definitif = err === 'not_configured' || err === 'non_autorise'
+          || err === 'limite_atteinte' || err === 'limite_globale'
+        lastReason.value = err === 'not_configured'
           ? 'IA pas encore configurée'
-          : json && json.error === 'non_autorise'
+          : err === 'non_autorise'
             ? 'Connexion requise'
-            : json && (json.error === 'limite_atteinte' || json.error === 'limite_globale')
-              ? 'Limite de démo atteinte, réessayez plus tard'
-              : (json && (json.detail || json.error)) || 'Service IA indisponible'
+            : (err === 'limite_atteinte' || err === 'limite_globale')
+              ? 'Limite atteinte, réessaie plus tard'
+              : (json && (json.detail || err)) || 'Service IA indisponible'
       }
     } catch (e) {
-      lastReason.value = 'Proxy indisponible (mode démonstration)'
-    } finally {
-      generating.value = false
+      lastReason.value = 'Service IA injoignable'
     }
+    }
+    generating.value = false
     // L'IA a échoué. Si la banque partagée a fourni ne serait-ce qu'une
     // question, on la sert : elle est validée ET conforme au niveau, alors que
     // le repli local est générique et hors programme. Mieux vaut une séance
@@ -412,11 +432,12 @@ export const useTuteurStore = defineStore('tuteur', () => {
       lastMode.value = 'banque'
       return { ok: true, questions: socleBanque.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
     }
-    // Repli démo — dernier recours. Contenu GÉNÉRIQUE, sans lien avec le
-    // programme ni avec le niveau : l'appelant doit le dire à l'apprenant
-    // (mode 'simulation'), sinon l'enfant croit réviser sa leçon.
-    lastMode.value = 'simulation'
-    return { ok: true, questions: buildLocalQuiz(matiere, nombre), mode: 'simulation', reason: lastReason.value }
+    // Deux tentatives infructueuses et rien en banque. On ne fabrique RIEN pour
+    // combler : l'appelant affiche un écran d'échec avec « Réessayer ». Un
+    // apprenant qui repart les mains vides le sait ; un apprenant à qui l'on
+    // sert des questions hors programme croit avoir révisé sa leçon.
+    lastMode.value = 'echec'
+    return { ok: false, questions: [], mode: 'echec', reason: lastReason.value }
   }
 
   // ── Répétition espacée ────────────────────────────────────────────────
@@ -959,8 +980,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
         if (paires.length >= 3) return { ok: true, titre: String((o && o.titre) || '').trim(), paires }
       }
     } catch (e) { /* réseau / IA indispo → repli local ci-dessous */ }
-    // Repli hors-ligne / démo (comme buildLocalQuiz pour le quiz) : paires locales,
-    // pour que « Relie les paires » fonctionne TOUJOURS, même sans IA/crédits.
+    // Repli hors-ligne / démo propre à « Relie les paires » : le QUIZ, lui, n'a
+    // plus de repli local (servir des questions hors programme faisait croire à
+    // l'apprenant qu'il révisait sa leçon). Ici le contenu est un jeu de
+    // vocabulaire assumé comme tel, pas une révision du programme.
     const n = Math.max(4, Math.min(8, 3 + (difficulte || 1)))
     return { ok: true, titre: '', paires: buildLocalPairs(matiere, n, visuel), mode: 'simulation' }
   }
@@ -1592,40 +1615,6 @@ function salvageQuestions(text) {
   return out
 }
 
-// ── Banque locale (repli démo, sans IA) ─────────────────────────────────
-const LOCAL_BANK = {
-  maths: [
-    { q: 'Combien font 7 × 8 ?', choices: ['54', '56', '48', '64'], answer: 1, hint: 'Pense à 7 × 8 = 7 × 4, doublé.', explanation: '7 × 8 = 56. On peut faire 7 × 4 = 28, puis ×2 = 56.' },
-    { q: 'Quelle est l’aire d’un rectangle de 5 cm sur 3 cm ?', choices: ['8 cm²', '15 cm²', '16 cm²', '15 cm'], answer: 1, hint: 'Aire = longueur × largeur.', explanation: '5 × 3 = 15 cm². L’aire s’exprime en cm².' },
-    { q: 'Quel est le PGCD de 12 et 18 ?', choices: ['2', '3', '6', '9'], answer: 2, hint: 'Cherche le plus grand diviseur commun aux deux.', explanation: 'Diviseurs communs : 1, 2, 3, 6. Le plus grand est 6.' },
-    { q: 'Combien vaut 3² + 4² ?', choices: ['25', '12', '49', '7'], answer: 0, hint: '3² = 9 et 4² = 16.', explanation: '9 + 16 = 25 (c’est aussi 5², théorème de Pythagore).' },
-  ],
-  francais: [
-    { q: 'Quel est le pluriel de « cheval » ?', choices: ['chevals', 'chevaux', 'chevales', 'cheveaux'], answer: 1, hint: 'Les mots en -al font souvent leur pluriel en -aux.', explanation: 'Cheval → chevaux. Exceptions : bal, carnaval, festival (+s).' },
-    { q: 'Dans « Je mange une pomme », quel est le COD ?', choices: ['Je', 'mange', 'une pomme', 'aucun'], answer: 2, hint: 'Le COD répond à « mange quoi ? ».', explanation: 'On mange « quoi ? » → une pomme : c’est le complément d’objet direct.' },
-    { q: 'Quel est le contraire de « rapide » ?', choices: ['vif', 'lent', 'pressé', 'agile'], answer: 1, hint: 'Cherche l’antonyme.', explanation: 'Le contraire de rapide est lent.' },
-    { q: '« Ils (finir) leurs devoirs » au présent : ', choices: ['finis', 'finit', 'finissent', 'finissons'], answer: 2, hint: 'Verbe du 2e groupe, 3e personne du pluriel.', explanation: 'Ils finissent. Au présent, -ir (2e groupe) → -issent.' },
-  ],
-  histoire: [
-    { q: 'Sur quel continent se trouve le Cameroun ?', choices: ['Asie', 'Afrique', 'Europe', 'Amérique'], answer: 1, hint: 'C’est un pays d’Afrique centrale.', explanation: 'Le Cameroun est situé en Afrique centrale, sur le golfe de Guinée.' },
-    { q: 'Quel fleuve traverse l’Égypte ?', choices: ['Le Congo', 'Le Niger', 'Le Nil', 'Le Sénégal'], answer: 2, hint: 'Le plus long fleuve d’Afrique.', explanation: 'Le Nil traverse l’Égypte et se jette dans la Méditerranée.' },
-    { q: 'Quelle est la capitale du Sénégal ?', choices: ['Abidjan', 'Dakar', 'Bamako', 'Yaoundé'], answer: 1, hint: 'Ville côtière, pointe ouest de l’Afrique.', explanation: 'Dakar est la capitale du Sénégal.' },
-    { q: 'Un point cardinal :', choices: ['Le centre', 'Le nord', 'La gauche', 'Le haut'], answer: 1, hint: 'Nord, sud, est, ouest.', explanation: 'Les points cardinaux sont le nord, le sud, l’est et l’ouest.' },
-  ],
-  svt: [
-    { q: 'Quel organe pompe le sang ?', choices: ['Le foie', 'Le cœur', 'Les poumons', 'Le rein'], answer: 1, hint: 'C’est un muscle qui bat.', explanation: 'Le cœur pompe le sang dans tout le corps.' },
-    { q: 'Que respirent les plantes pour la photosynthèse ?', choices: ['Le dioxygène', 'Le dioxyde de carbone', 'L’azote', 'L’hydrogène'], answer: 1, hint: 'Le gaz que nous expirons.', explanation: 'Les plantes absorbent le CO₂ et rejettent du dioxygène (O₂).' },
-    { q: 'Combien de dents a un adulte (en général) ?', choices: ['20', '28', '32', '36'], answer: 2, hint: 'Dents de sagesse comprises.', explanation: 'Un adulte a 32 dents, dents de sagesse incluses.' },
-    { q: 'L’eau bout à quelle température (niveau de la mer) ?', choices: ['50 °C', '80 °C', '100 °C', '120 °C'], answer: 2, hint: 'Au niveau de la mer.', explanation: 'L’eau bout à 100 °C au niveau de la mer.' },
-  ],
-  anglais: [
-    { q: 'Comment dit-on « livre » en anglais ?', choices: ['Book', 'Pen', 'Table', 'Door'], answer: 0, hint: 'On lit un… book.', explanation: '« Livre » se dit « book ».' },
-    { q: 'Quel est le pluriel de « child » ?', choices: ['childs', 'childes', 'children', 'childrens'], answer: 2, hint: 'Pluriel irrégulier.', explanation: 'Child → children (pluriel irrégulier).' },
-    { q: 'Traduis « Je suis » :', choices: ['I am', 'I is', 'I are', 'Me am'], answer: 0, hint: 'Verbe to be, 1re personne.', explanation: '« Je suis » = « I am ».' },
-    { q: 'What is the opposite of « big » ?', choices: ['Tall', 'Small', 'Large', 'High'], answer: 1, hint: 'Contraire de grand.', explanation: 'The opposite of « big » is « small ».' },
-  ],
-}
-
 function normalizeKey(name) {
   const n = (name || '').toLowerCase()
   if (/(math)/.test(n)) return 'maths'
@@ -1634,18 +1623,6 @@ function normalizeKey(name) {
   if (/(svt|biolog|science.*vie|nature)/.test(n)) return 'svt'
   if (/(angl|english)/.test(n)) return 'anglais'
   return ''
-}
-
-export function buildLocalQuiz(matiere, nombre = 5) {
-  const key = normalizeKey(matiere)
-  const bank = LOCAL_BANK[key]
-  if (bank && bank.length) return bank.slice(0, nombre)
-  // Générique si matière inconnue
-  return [
-    { q: `Révision « ${matiere} » : pour bien réviser, que faut-il faire d’abord ?`, choices: ['Tout apprendre par cœur la veille', 'Relire et s’entraîner régulièrement', 'Ne rien faire', 'Copier sans comprendre'], answer: 1, hint: 'La régularité bat le bachotage.', explanation: 'Réviser un peu chaque jour et s’entraîner ancre durablement les connaissances.' },
-    { q: 'Face à un exercice difficile, la meilleure attitude est :', choices: ['Abandonner', 'Reformuler l’énoncé et chercher un exemple', 'Deviner au hasard', 'Sauter la question'], answer: 1, hint: 'Comprendre la question est la 1re étape.', explanation: 'Reformuler l’énoncé et chercher un cas simple aide à débloquer.' },
-    { q: 'Pour mémoriser durablement, il vaut mieux :', choices: ['Réviser une seule fois', 'Espacer les révisions dans le temps', 'Tout faire la nuit', 'Lire sans écrire'], answer: 1, hint: 'C’est le principe de la répétition espacée.', explanation: 'Revoir à intervalles croissants renforce la mémoire à long terme.' },
-  ].slice(0, nombre)
 }
 
 // Banque de PAIRES locale (repli hors-ligne / démo de « Relie les paires »).

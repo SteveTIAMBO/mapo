@@ -314,13 +314,56 @@ describe('Panne IA — la banque passe avant le repli générique', () => {
     expect(res.questions.every((q) => q.q.startsWith('Neuve'))).toBe(true)
   })
 
-  it('IA injoignable et banque VIDE : repli générique, annoncé comme tel', async () => {
-    global.fetch = vi.fn(async () => { throw new Error('proxy injoignable') })
+  it('IA injoignable et banque VIDE : ÉCHEC assumé, aucun contenu de remplacement', async () => {
+    let appels = 0
+    global.fetch = vi.fn(async () => { appels++; throw new Error('proxy injoignable') })
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
 
-    // `simulation` est le signal que le composant transforme en bandeau visible.
-    expect(res.mode).toBe('simulation')
+    // Plus AUCUNE question fabriquée : servir du hors-programme faisait croire
+    // à l'apprenant qu'il avait révisé sa leçon.
+    expect(res.ok).toBe(false)
+    expect(res.mode).toBe('echec')
+    expect(res.questions).toHaveLength(0)
+    expect(appels).toBe(2) // on redemande à l'IA avant d'abandonner
+  })
+
+  it('un lot ENTIÈREMENT rejeté par le solveur déclenche une seconde génération', async () => {
+    let appels = 0
+    global.fetch = vi.fn(async () => {
+      appels++
+      // 1re tentative : le solveur a tout rejeté (questions vide). 2e : ça passe.
+      const questionsRendues = appels === 1 ? [] : questions('IA', 10)
+      return { json: async () => ({ ok: true, text: JSON.stringify({ source: 'ia', questions: questionsRendues }) }) }
+    })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(appels).toBe(2)
+    expect(res.questions).toHaveLength(10)
+  })
+
+  it('crédits épuisés : AUCUNE seconde tentative (elle serait facturée)', async () => {
+    let appels = 0
+    global.fetch = vi.fn(async () => { appels++; return { json: async () => ({ ok: false, error: 'credits_epuises' }) } })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(appels).toBe(1)
+    expect(res.reason).toBe('credits_epuises')
+  })
+
+  it('IA non configurée : échec DÉFINITIF, on ne retente pas', async () => {
+    let appels = 0
+    global.fetch = vi.fn(async () => { appels++; return { json: async () => ({ ok: false, error: 'not_configured' }) } })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(appels).toBe(1)
+    expect(res.mode).toBe('echec')
   })
 })

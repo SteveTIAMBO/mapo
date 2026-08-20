@@ -10,6 +10,24 @@
     <!-- Crédits épuisés (le message diffère si la session est celle d'un mineur) -->
     <MiapoCreditsEpuises v-else-if="mode === 'epuise'" :motif="motifEpuise" @quit="$emit('quit')" @abonnement="$emit('abonnement')" />
 
+    <!-- Séance impossible à préparer. Il n'existe PLUS de contenu de
+         remplacement : servir des questions hors programme revenait à faire
+         croire à l'apprenant qu'il avait révisé sa leçon. -->
+    <div v-else-if="mode === 'echec'" class="tq-echec">
+      <CloudOff :size="34" />
+      <h2>{{ echecTitre }}</h2>
+      <p>{{ echecTexte }}</p>
+      <small v-if="motifEchec">{{ motifEchec }}</small>
+      <div class="tq-echec-actions">
+        <button type="button" class="tq-retry" @click="start">
+          {{ locale.startsWith('en') ? 'Try again' : 'Réessayer' }}
+        </button>
+        <button type="button" class="tq-quit" @click="$emit('quit')">
+          {{ locale.startsWith('en') ? 'Back' : 'Retour' }}
+        </button>
+      </div>
+    </div>
+
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
       <button type="button" class="tq-back" @click="$emit('quit')">
@@ -51,10 +69,6 @@
 
       <!-- Disclaimer LÉGER : d'où viennent les exercices (mes cours / référentiel / mix) -->
       <p v-if="sourceLabel && index === 0" class="tq-source"><BookOpen :size="13" /> {{ sourceLabel }}</p>
-      <!-- Séance de SECOURS : contenu générique, sans lien avec le programme.
-           Le dire est une question d'honnêteté — sans ce mot, l'apprenant croit
-           réviser sa leçon alors qu'il répond à des questions de méthode. -->
-      <p v-if="estSecours && index === 0" class="tq-source is-secours"><BookOpen :size="13" /> {{ secoursLabel }}</p>
 
       <div class="tq-qrow">
         <h2 class="tq-q">{{ current.q }}</h2>
@@ -235,7 +249,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { exclureQuestion } from '../stores/tuteur'
 import { useTuteurStore } from '../stores/tuteur'
-import { Loader2, Check, X, Lightbulb, BookOpen, Flame, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer, Flag } from 'lucide-vue-next'
+import { Loader2, Check, X, Lightbulb, BookOpen, Flame, ChevronRight, ChevronLeft, RefreshCw, ArrowUpRight, TrendingDown, Target, Trophy, Volume2, VolumeX, Mic, RotateCcw, Info, Timer, Flag, CloudOff } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 import { speak, stopSpeaking, listenOnce, isSpeechSupported, isRecognitionSupported, warmUpVoices } from '../services/voice'
 import { enregistrerSeance, peutDemanderFeedback, marquerFeedbackMontre, enregistrerFeedback } from '../utils/humeur'
@@ -492,14 +506,16 @@ const lastMode = computed(() => tuteur.lastMode)
 // `ia` = généré à l'instant, `banque` = généré par MIAPO puis mis en cache.
 // Les deux sont du vrai contenu ; seul `simulation` est une démo.
 const estIA = computed(() => lastMode.value === 'ia' || lastMode.value === 'banque')
-// Repli de dernier recours : questions génériques embarquées dans l'app, sans
-// rapport avec la matière ni le niveau. Annoncé sobrement, sans dramatiser :
-// l'enfant n'y est pour rien et la séance reste utile, mais il doit savoir
-// qu'il ne révise pas son programme.
-const estSecours = computed(() => lastMode.value === 'simulation')
-const secoursLabel = computed(() => (locale.value.startsWith('en')
-  ? 'Backup session: general study questions, not linked to your curriculum.'
-  : 'Séance de secours : questions de méthode, sans lien avec ton programme.'))
+
+// Échec de préparation de la séance. Le message reste factuel et ne culpabilise
+// pas l'apprenant : il n'y est pour rien, et la bonne action est de relancer.
+const motifEchec = ref('')
+const echecTitre = computed(() => (locale.value.startsWith('en')
+  ? 'I could not prepare your session'
+  : 'Je n’ai pas pu préparer ta séance'))
+const echecTexte = computed(() => (locale.value.startsWith('en')
+  ? 'Nothing was lost. Check your connection, then try again.'
+  : 'Rien n’est perdu. Vérifie ta connexion, puis relance.'))
 
 /**
  * Signaler une question fausse.
@@ -653,7 +669,14 @@ async function start() {
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
   questions.value = res.questions || []
-  if (!questions.value.length) { mode.value = 'result'; return }
+  // Aucune question : l'écran de RÉSULTAT s'affichait, avec un score pour une
+  // séance jamais jouée — l'échec prenait l'apparence d'une réussite. On le dit,
+  // et on propose de relancer : il n'y a plus de contenu de remplacement.
+  if (!questions.value.length) {
+    motifEchec.value = (res && res.reason) || ''
+    mode.value = 'echec'
+    return
+  }
   index.value = 0
   grades.value = []
   resetQ()
@@ -898,10 +921,17 @@ onMounted(start)
 .tq-back:hover { background: var(--input-bg, #f1f3f5); color: var(--tx, #1f2937); }
 .tq-source { display: inline-flex; align-items: center; gap: 6px; margin: 10px 0 0; padding: 6px 11px; border-radius: 8px; background: rgba(var(--pr-rgb,21,88,176),.06); color: var(--tx3, #6b7280); font-size: 12px; line-height: 1.3; }
 .tq-source svg { color: var(--pr); flex-shrink: 0; }
-/* Séance de secours : teinte d'attention, jamais d'alarme rouge — ce n'est pas
-   une faute de l'apprenant. Pas de bordure gauche colorée (règle maison). */
-.tq-source.is-secours { background: rgba(180,120,20,.08); color: #8a6320; }
-.tq-source.is-secours svg { color: #b4791a; }
+
+/* Échec de préparation : sobre, centré, sans dramatisation. L'action évidente
+   (Réessayer) est mise en avant ; Retour reste disponible. */
+.tq-echec { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 48px 20px; }
+.tq-echec svg { color: var(--tx3, #9ca3af); }
+.tq-echec h2 { margin: 4px 0 0; font-size: 18px; font-weight: 650; }
+.tq-echec p { margin: 0; color: var(--tx2, #4b5563); font-size: 14px; }
+.tq-echec small { color: var(--tx3, #9ca3af); font-size: 12px; }
+.tq-echec-actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; justify-content: center; }
+.tq-retry { padding: 10px 22px; border: 0; border-radius: 10px; background: var(--pr); color: #fff; font-weight: 600; font-size: 14px; cursor: pointer; }
+.tq-quit { padding: 10px 22px; border: 1px solid var(--bd, #e5e7eb); border-radius: 10px; background: transparent; color: var(--tx2, #4b5563); font-size: 14px; cursor: pointer; }
 .tq-qrow { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 18px; }
 .tq-q { font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0; color: var(--tx); flex: 1; min-width: 0; }
 .tq-info { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; margin-top: 1px; border: 1px solid var(--bd, #e5e7eb); background: #fff; border-radius: 9px; color: var(--tx3, #6b7280); cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
