@@ -111,7 +111,9 @@
       <div class="card-head"><Users :size="18" /><h3>{{ t('revsuivi.studentsToSupport', { n: filteredStudents.length }) }}</h3></div>
 
       <div v-if="filteredStudents.length === 0" class="empty">
-        <p>{{ t('revsuivi.noDifficulty') }}</p>
+        <!-- Ne JAMAIS dire « aucune difficulté » quand on n'a rien pu regarder. -->
+        <p v-if="cloisonnementIndetermine">{{ t('revsuivi.scopeUnknown') }}</p>
+        <p v-else>{{ t('revsuivi.noDifficulty') }}</p>
       </div>
 
       <div v-else class="student-list">
@@ -178,8 +180,25 @@ const edtStore = useEmploiDuTempsStore()
 // matières via sa fiche de personnel. Le directeur, lui, garde la vue complète.
 const teacherClassIds = computed(() => {
   if (!authStore.isTeacher) return null
-  return personnelStore.getTeacherClassIds(authStore.userProfile, edtStore)
+  const ids = personnelStore.getTeacherClassIds(authStore.userProfile, edtStore) || []
+  if (ids.length) return ids
+  // Repli : la classe portée par le profil (professeur principal). Mieux vaut
+  // montrer sa classe que de tout masquer.
+  const sienne = classesStore.classes.find((c) => c.name === authStore.userProfile?.className)
+  return sienne ? [sienne.id] : []
 })
+
+/**
+ * Impossible de déterminer les classes de cet enseignant.
+ *
+ * ⚠️ Ce cas DOIT être distingué de « aucun élève en difficulté ». Sinon l'écran
+ * affiche un message rassurant alors qu'il n'a rien pu regarder — c'est ce qui
+ * s'est produit en démonstration : zéro élève, et le bandeau annonçait qu'il n'y
+ * avait aucune difficulté.
+ */
+const cloisonnementIndetermine = computed(() => (
+  authStore.isTeacher && teacherClassIds.value !== null && teacherClassIds.value.length === 0
+))
 
 const teacherSubjects = computed(() => {
   if (!authStore.isTeacher) return []
@@ -463,6 +482,11 @@ onMounted(async () => {
     elevesStore.loadEleves?.(),
     subjectsStore.loadSubjects?.(),
     classesStore.loadClasses?.(),
+    // Indispensables au cloisonnement : sans la fiche de personnel et l'emploi du
+    // temps, on ne sait pas quelles sont les classes de l'enseignant, et le filtre
+    // se refermait sur ZÉRO élève en affichant « aucun élève en difficulté ».
+    personnelStore.loadStaff?.(),
+    edtStore.loadData?.(),
   ])
   states.value = tuteur.getAllRevisionStates(inscrits.value.map((e) => e.id))
   loaded.value = true

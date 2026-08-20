@@ -755,27 +755,27 @@
                 <div class="mention-row">
                   <span class="mention-label" style="color:#D93025">Blâme</span>
                   <span class="mention-range">{{ t('notes.setAvgLt') }}</span>
-                  <input type="number" v-model.number="settingsForm.mentionBlame" class="input mention-input" min="0" max="20" step="0.5" />
+                  <input type="number" v-model.number="settingsForm.mentionBlame" class="input mention-input" min="0" :max="settingsForm.noteMax" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#E8A838">Avertissement</span>
                   <span class="mention-range">{{ t('notes.setLt') }}</span>
-                  <input type="number" v-model.number="settingsForm.mentionAvertissement" class="input mention-input" min="0" max="20" step="0.5" />
+                  <input type="number" v-model.number="settingsForm.mentionAvertissement" class="input mention-input" min="0" :max="settingsForm.noteMax" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#666">Aucune mention</span>
                   <span class="mention-range">{{ t('notes.setLt') }}</span>
-                  <input type="number" v-model.number="settingsForm.mentionEncouragement" class="input mention-input" min="0" max="20" step="0.5" />
+                  <input type="number" v-model.number="settingsForm.mentionEncouragement" class="input mention-input" min="0" :max="settingsForm.noteMax" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#1B8A5A">Encouragements</span>
                   <span class="mention-range">{{ t('notes.setLt') }}</span>
-                  <input type="number" v-model.number="settingsForm.mentionTableau" class="input mention-input" min="0" max="20" step="0.5" />
+                  <input type="number" v-model.number="settingsForm.mentionTableau" class="input mention-input" min="0" :max="settingsForm.noteMax" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:#1B8A5A; font-weight:700">Tableau d'honneur</span>
                   <span class="mention-range">{{ t('notes.setLt') }}</span>
-                  <input type="number" v-model.number="settingsForm.mentionFelicitations" class="input mention-input" min="0" max="20" step="0.5" />
+                  <input type="number" v-model.number="settingsForm.mentionFelicitations" class="input mention-input" min="0" :max="settingsForm.noteMax" step="0.5" />
                 </div>
                 <div class="mention-row">
                   <span class="mention-label" style="color:var(--pr); font-weight:700">Félicitations</span>
@@ -921,6 +921,21 @@ function openNotesSettings() {
   settingsForm.mentionFelicitations = s.mentionFelicitations ?? 16
   showNotesSettings.value = true
 }
+
+// Changer le barème REPROPORTIONNE les seuils de mention.
+// Constaté en démonstration : en passant de 20 à 10, les seuils restaient à
+// 12/14/16, donc inatteignables, et toutes les mentions disparaissaient du
+// bulletin sans un message. Un seuil hors échelle est un réglage mort.
+watch(() => settingsForm.noteMax, (nouveau, ancien) => {
+  if (!nouveau || !ancien || nouveau === ancien) return
+  const r = nouveau / ancien
+  const arrondi = (v) => Math.round((Number(v) || 0) * r * 2) / 2
+  settingsForm.mentionBlame = arrondi(settingsForm.mentionBlame)
+  settingsForm.mentionAvertissement = arrondi(settingsForm.mentionAvertissement)
+  settingsForm.mentionEncouragement = arrondi(settingsForm.mentionEncouragement)
+  settingsForm.mentionTableau = arrondi(settingsForm.mentionTableau)
+  settingsForm.mentionFelicitations = arrondi(settingsForm.mentionFelicitations)
+})
 
 async function saveNotesSettings() {
   await schoolStore.saveSettings({

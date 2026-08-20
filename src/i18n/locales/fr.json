@@ -1567,7 +1567,8 @@
     "traj_goulot": "goulot",
     "traj_elan": "en élan",
     "traj_stable": "stable",
-    "trajFoot": "Chaque barre répartit les élèves qui révisent cette matière : en progrès (vert), stable (gris), en recul (rouge)."
+    "trajFoot": "Chaque barre répartit les élèves qui révisent cette matière : en progrès (vert), stable (gris), en recul (rouge).",
+    "scopeUnknown": "Vos classes ne sont pas identifiables : aucune matière ni classe n'est rattachée à votre fiche de personnel. Demandez à la direction de la compléter, sinon ce suivi reste vide."
   },
   "wv": {
     "title": "Bienvenue sur MAPO",

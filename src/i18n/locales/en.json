@@ -1567,7 +1567,8 @@
     "traj_goulot": "bottleneck",
     "traj_elan": "gaining",
     "traj_stable": "steady",
-    "trajFoot": "Each bar splits the students revising this subject: improving (green), steady (grey), slipping (red)."
+    "trajFoot": "Each bar splits the students revising this subject: improving (green), steady (grey), slipping (red).",
+    "scopeUnknown": "Your classes cannot be identified: no subject or class is linked to your staff record. Ask management to complete it, otherwise this tracking stays empty."
   },
   "wv": {
     "title": "Welcome to MAPO",

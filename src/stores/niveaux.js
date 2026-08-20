@@ -99,7 +99,13 @@ export const useNiveauxStore = defineStore('niveaux', () => {
     return niveaux.value.filter((n) => n.cycle === cycle)
   }
 
-  async function load() {
+  /**
+   * Charge le référentiel. Appelé une fois par la coquille de l'application, et
+   * aussi par les écrans qui en dépendent : le garde évite de relire Firestore à
+   * chaque navigation. `force` sert à recharger explicitement après un import.
+   */
+  async function load(force = false) {
+    if (loaded.value && !force) return
     const authStore = useAuthStore()
     if (authStore.isDemo) {
       try {

@@ -104,6 +104,7 @@ import MiapoBar from './MiapoBar.vue'
 import MobileBottomBar from './MobileBottomBar.vue'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
 import { useAuthStore } from '../../stores/auth'
+import { useNiveauxStore } from '../../stores/niveaux'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
@@ -190,6 +191,12 @@ onMounted(() => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
   window.addEventListener('open-global-search', openSearch)
+  // Référentiel des niveaux chargé UNE FOIS pour toute la session.
+  // Il était chargé écran par écran : partout ailleurs, `cycleDe()` renvoyait
+  // null et on retombait EN SILENCE sur l'heuristique camerounaise. Constaté en
+  // démonstration : un niveau déclaré « second cycle » recevait les matières du
+  // collège dans l'écran Notes. Le réglage existait, il n'était simplement pas lu.
+  useNiveauxStore().load()
 })
 
 onUnmounted(() => {
