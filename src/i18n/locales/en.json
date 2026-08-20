@@ -530,7 +530,19 @@
     "update": "Update",
     "create": "Create",
     "deleteTitle": "Delete this class?",
-    "deleteText": "The class {name} will be permanently deleted."
+    "deleteText": "The class {name} will be permanently deleted.",
+    "manageLevels": "Levels",
+    "levelsHint": "Declare your school's levels, in the order pupils progress through them. The cycle drives subjects, teaching hours and reports.",
+    "cyclePrimaire": "Primary",
+    "cyclePremier": "Lower secondary",
+    "cycleSecond": "Upper secondary",
+    "levelClasses": "{n} class(es)",
+    "levelPh": "Level name (e.g. Form 1)",
+    "addLevel": "Add",
+    "levelDuplicate": "That level already exists.",
+    "levelInUse": "“{label}” cannot be removed: classes are still attached to it.",
+    "resetLevels": "Reset to default levels",
+    "done": "Done"
   },
   "cours": {
     "title": "Courses",

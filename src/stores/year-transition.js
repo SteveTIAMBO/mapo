@@ -5,6 +5,7 @@ import { useClassesStore, LEVELS, levelsPrimairePour } from './classes'
 import { useElevesStore } from './eleves'
 import { useNotesStore } from './notes'
 import { usePersonnelStore } from './personnel'
+import { useNiveauxStore } from './niveaux'
 import { demoKey } from '../utils/demoScope'
 
 /**
@@ -24,9 +25,16 @@ import { demoKey } from '../utils/demoScope'
  *   - `undefined`     → niveau INCONNU de nos référentiels. On ne devine pas, et
  *                       surtout on ne saute pas en silence : l'élève est signalé.
  */
-export function niveauSuivant(niveau, pays) {
+export function niveauSuivant(niveau, pays, niveauxEcole = null) {
   const n = String(niveau || '').trim()
   if (!n) return undefined
+  // Le référentiel de l'école passe AVANT nos listes : c'est elle qui connaît
+  // l'ordre de ses propres niveaux, y compris ceux qu'elle a créés.
+  if (Array.isArray(niveauxEcole) && niveauxEcole.length) {
+    const codes = niveauxEcole.map((x) => (typeof x === 'string' ? x : x.value))
+    const i = codes.indexOf(n)
+    if (i !== -1) return i === codes.length - 1 ? null : codes[i + 1]
+  }
   // Une école déclare ses classes dans un seul de ces deux ordres. On cherche
   // dans les deux : l'édition n'est pas toujours connue d'ici, et une école qui
   // couvre primaire ET secondaire ne doit pas casser.
@@ -56,6 +64,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
   const elevesStore = useElevesStore()
   const notesStore = useNotesStore()
   const personnelStore = usePersonnelStore()
+  const niveauxStore = useNiveauxStore()
 
   // ── State ──
   const transitionStep = ref(0) // 0=bilan, 1=decisions, 2=new year settings, 3=preview, 4=confirm
@@ -92,7 +101,7 @@ export const useYearTransitionStore = defineStore('yearTransition', () => {
           cls.id, eleve.id, cls
         )
         const pays = schoolStore.schoolSettings?.country
-        const nextLevel = niveauSuivant(cls.level, pays)
+        const nextLevel = niveauSuivant(cls.level, pays, niveauxStore.valeurs)
         // `undefined` = niveau que nos référentiels ne connaissent pas. On ne peut
         // pas calculer sa classe d'arrivée, donc on ne prétend pas le faire : il
         // passe en « à placer » et l'école tranche. C'est le contraire de l'ancien

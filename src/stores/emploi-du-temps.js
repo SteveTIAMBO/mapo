@@ -117,9 +117,19 @@ export const SERIES_SUBJECT_HOURS = {
 }
 
 // Retourne les heures par défaut pour un niveau + série (optionnelle)
-export function getDefaultHoursForLevel(level, serie) {
-  const cycle = ['6e', '5e', '4e', '3e'].includes(level) ? 'college' : 'lycee'
-  const base = { ...(DEFAULT_SUBJECT_HOURS[cycle]?.[level] || {}) }
+export function getDefaultHoursForLevel(level, serie, cycleEcole = null) {
+  // Le cycle vient du référentiel de l'école quand elle en a un : « Form 1 » ou
+  // « CP1 » ne sont ni dans la liste collège ni dans la liste lycée.
+  const cycle = cycleEcole === 'second' ? 'lycee'
+    : cycleEcole === 'premier' ? 'college'
+    : (['6e', '5e', '4e', '3e'].includes(level) ? 'college' : 'lycee')
+  // ⚠️ Repli. Un niveau inconnu de la table renvoyait un objet VIDE : zéro heure,
+  // aucun cours généré, aucune erreur. On sert alors la grille du premier niveau
+  // du cycle, que l'école ajuste ensuite. Une grille approximative se corrige,
+  // un écran vide ne se comprend pas.
+  const table = DEFAULT_SUBJECT_HOURS[cycle] || {}
+  const source = table[level] || table[Object.keys(table)[0]] || {}
+  const base = { ...source }
   // Appliquer les surcharges de série si applicable
   if (serie && SERIES_SUBJECT_HOURS[serie]?.[level]) {
     const overrides = SERIES_SUBJECT_HOURS[serie][level]

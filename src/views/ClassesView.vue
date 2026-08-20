@@ -6,10 +6,16 @@
         <h1>{{ t('classes.title') }}</h1>
         <p>{{ headerCount }}</p>
       </div>
-      <button v-if="!authStore.isTeacher" class="btn btn-primary" @click="openAddModal">
-        <Plus :size="16" />
-        <span>{{ t('classes.newClass') }}</span>
-      </button>
+      <div v-if="!authStore.isTeacher" class="page-header-actions">
+        <button class="btn btn-outline" @click="showNiveaux = true">
+          <ListOrdered :size="16" />
+          <span>{{ t('classes.manageLevels') }}</span>
+        </button>
+        <button class="btn btn-primary" @click="openAddModal">
+          <Plus :size="16" />
+          <span>{{ t('classes.newClass') }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Stat bar -->
@@ -273,12 +279,60 @@
       </div>
     </div>
   </div>
+
+    <!-- Niveaux de l'école : c'est ELLE qui les déclare, dans SON ordre -->
+    <div v-if="showNiveaux" class="modal-overlay" @click.self="showNiveaux = false">
+      <div class="modal-card" style="max-width: 620px;">
+        <div class="modal-header">
+          <h3>{{ t('classes.manageLevels') }}</h3>
+          <button class="btn btn-ghost btn-sm" @click="showNiveaux = false"><X :size="18" /></button>
+        </div>
+        <div class="modal-body">
+          <p class="nv-hint">{{ t('classes.levelsHint') }}</p>
+
+          <ul class="nv-list">
+            <li v-for="(n, i) in niveauxStore.niveaux" :key="n.value" class="nv-row">
+              <input class="input nv-label" :value="n.label" @change="niveauxStore.modifier(n.value, { label: $event.target.value })" />
+              <select class="input nv-cycle" :value="n.cycle" @change="niveauxStore.modifier(n.value, { cycle: $event.target.value })">
+                <option value="primaire">{{ t('classes.cyclePrimaire') }}</option>
+                <option value="premier">{{ t('classes.cyclePremier') }}</option>
+                <option value="second">{{ t('classes.cycleSecond') }}</option>
+              </select>
+              <span class="nv-count">{{ t('classes.levelClasses', { n: nbClasses(n.value) }) }}</span>
+              <div class="nv-actions">
+                <button class="btn btn-ghost btn-sm" :disabled="i === 0" @click="niveauxStore.deplacer(n.value, 'haut')"><ChevronUp :size="15" /></button>
+                <button class="btn btn-ghost btn-sm" :disabled="i === niveauxStore.niveaux.length - 1" @click="niveauxStore.deplacer(n.value, 'bas')"><ChevronDown :size="15" /></button>
+                <button class="btn btn-ghost btn-sm" @click="retirerNiveau(n)"><Trash2 :size="15" /></button>
+              </div>
+            </li>
+          </ul>
+
+          <div class="nv-add">
+            <input v-model="nouveauNiveau" class="input" :placeholder="t('classes.levelPh')" @keyup.enter="ajouterNiveau" />
+            <select v-model="nouveauCycle" class="input nv-cycle">
+              <option value="primaire">{{ t('classes.cyclePrimaire') }}</option>
+              <option value="premier">{{ t('classes.cyclePremier') }}</option>
+              <option value="second">{{ t('classes.cycleSecond') }}</option>
+            </select>
+            <button class="btn btn-outline btn-sm" :disabled="!nouveauNiveau.trim()" @click="ajouterNiveau">
+              <Plus :size="15" /><span>{{ t('classes.addLevel') }}</span>
+            </button>
+          </div>
+          <p v-if="erreurNiveau" class="nv-err">{{ erreurNiveau }}</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" @click="niveauxStore.reinitialiser()">{{ t('classes.resetLevels') }}</button>
+          <button class="btn btn-primary" @click="showNiveaux = false">{{ t('classes.done') }}</button>
+        </div>
+      </div>
+    </div>
 </template>
 
 <script setup>
 import { useClassesStore, LEVELS, levelsPrimairePour, SECTIONS } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
 import { useSchoolStore } from '../stores/school'
+import { useNiveauxStore } from '../stores/niveaux'
 import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
@@ -286,7 +340,7 @@ import { useElevesStore } from '../stores/eleves'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
-import { Search, Plus, Pencil, Trash2, X, BookOpen } from 'lucide-vue-next'
+import { Search, Plus, Pencil, Trash2, X, BookOpen, ListOrdered, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -349,9 +403,35 @@ const teachersList = computed(() => {
 // PAYS de l'école : le primaire congolais commence à CP1, pas à la SIL.
 const editionStore = useEditionStore()
 const schoolStore = useSchoolStore()
-const levels = computed(() => (
-  editionStore.isPrimaire ? levelsPrimairePour(schoolStore.schoolSettings?.country) : LEVELS
-))
+const niveauxStore = useNiveauxStore()
+
+// Les niveaux proposés viennent du référentiel DE L'ÉCOLE. Tant qu'elle n'a rien
+// déclaré, le store sert une amorce déduite de son pays et de son édition.
+const levels = computed(() => niveauxStore.niveaux)
+
+const showNiveaux = ref(false)
+const nouveauNiveau = ref('')
+const nouveauCycle = ref(editionStore.isPrimaire ? 'primaire' : 'premier')
+const erreurNiveau = ref('')
+
+function nbClasses(value) {
+  return classesStore.classes.filter((c) => c.level === value).length
+}
+
+function ajouterNiveau() {
+  erreurNiveau.value = ''
+  const n = niveauxStore.ajouter({ label: nouveauNiveau.value, cycle: nouveauCycle.value })
+  if (!n) { erreurNiveau.value = t('classes.levelDuplicate'); return }
+  nouveauNiveau.value = ''
+}
+
+// Retirer un niveau encore utilisé orphanerait ses classes : elles
+// disparaîtraient des écrans sans un message. On refuse et on l'explique.
+function retirerNiveau(n) {
+  erreurNiveau.value = ''
+  const r = niveauxStore.retirer(n.value, classesStore.classes)
+  if (!r.ok) erreurNiveau.value = t('classes.levelInUse', { label: n.label })
+}
 
 const levelFilters = computed(() => [
   { value: '', label: t('classes.all') },
@@ -492,6 +572,7 @@ function applyMiapoQuery() {
 }
 
 onMounted(async () => {
+  niveauxStore.load()
   await personnelStore.loadStaff()
   await classesStore.loadClasses()
   await elevesStore.loadEleves()
@@ -919,5 +1000,23 @@ watch(() => route.query, applyMiapoQuery)
 
   /* Pagination */
   .pagination-top, .pagination-bottom { padding: 10px 12px; }
+}
+
+/* Niveaux de l'école. Volontairement « nv- » et pas « -card » : une règle
+   !important de main.css repeint certaines classes en -card. */
+.page-header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nv-hint { margin: 0 0 12px; font-size: 13px; color: var(--tx3); }
+.nv-list { list-style: none; margin: 0; padding: 0; }
+.nv-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-top: 1px solid var(--card-border); }
+.nv-label { flex: 1; min-width: 110px; }
+.nv-cycle { max-width: 150px; }
+.nv-count { font-size: 12px; color: var(--tx3); white-space: nowrap; }
+.nv-actions { display: flex; gap: 2px; }
+.nv-add { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+.nv-add .input { flex: 1; min-width: 140px; }
+.nv-err { margin: 8px 0 0; font-size: 12.5px; color: #A33227; }
+@media (max-width: 768px) {
+  .nv-row { flex-wrap: wrap; }
+  .nv-cycle { max-width: none; }
 }
 </style>

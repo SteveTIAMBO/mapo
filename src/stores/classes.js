@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
+import { useNiveauxStore } from './niveaux'
 
 export const LEVELS = [
   { value: '6e', label: '6ème', cycle: 'premier' },
@@ -148,9 +149,14 @@ export const useClassesStore = defineStore('classes', () => {
   const classStats = computed(() => {
     const stats = { total: classes.value.length, premier: 0, second: 0, totalStudents: 0 }
     classes.value.forEach((cls) => {
-      const lvl = LEVELS.find((l) => l.value === cls.level)
-      if (lvl?.cycle === 'premier') stats.premier++
-      else if (lvl?.cycle === 'second') stats.second++
+      // Le cycle vient du référentiel de l'école. Avant, il était cherché dans la
+      // seule liste 6e-Tle : une école primaire ou anglophone affichait donc
+      // « premier : 0, second : 0 » sur son tableau de bord, sans explication.
+      let cycle = null
+      try { cycle = useNiveauxStore().cycleDe(cls.level) } catch { cycle = null }
+      if (!cycle) cycle = LEVELS.find((l) => l.value === cls.level)?.cycle || null
+      if (cycle === 'premier') stats.premier++
+      else if (cycle === 'second') stats.second++
       stats.totalStudents += cls.enrolled || 0
     })
     return stats

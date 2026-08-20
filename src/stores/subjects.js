@@ -6,6 +6,7 @@ import { useAuthStore } from './auth'
 import { demoKey } from '../utils/demoScope'
 import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
 import { LEVELS_PRIMAIRE, LEVELS_PRIMAIRE_CG } from './classes'
+import { useNiveauxStore } from './niveaux'
 
 // Version de demo pour reset quand la structure change
 const DEMO_SUBJECTS_VERSION = 2
@@ -91,40 +92,58 @@ export const useSubjectsStore = defineStore('subjects', () => {
 
   // ── Getters ──
 
+
+  /**
+   * Cycle d'un niveau, du point de vue des MATIÈRES.
+   *
+   * On interroge d'abord le référentiel de l'école : c'est elle qui sait si son
+   * « Form 1 » est un premier ou un second cycle. On ne retombe sur l'heuristique
+   * camerounaise que si elle n'a rien déclaré.
+   */
+  function cycleMatieres(level) {
+    let cycle = null
+    try { cycle = useNiveauxStore().cycleDe(level) } catch { cycle = null }
+    if (cycle === 'primaire') return 'primaire'
+    if (cycle === 'premier') return 'college'
+    if (cycle === 'second') return 'lycee'
+    if (PRIMAIRE_LEVELS.includes(level)) return 'primaire'
+    return ['2nde', '1ere', 'Tle'].includes(level) ? 'lycee' : 'college'
+  }
+
+  /**
+   * Matières d'un cycle pour un niveau donné.
+   *
+   * ⚠️ Le filtre par coefficient est ce qui rendait une classe VIDE. Un niveau
+   * que l'école vient de déclarer n'a évidemment aucun coefficient : la liste
+   * revenait donc vide, sans erreur, et l'enseignant ouvrait un écran désert.
+   * On ne filtre par coefficient QUE si au moins une matière en porte un pour ce
+   * niveau. Sinon on sert toutes les matières du cycle, et l'école affine ensuite.
+   */
+  function matieresDuCycle(cycle, level) {
+    const duCycle = subjects.value.filter((s) => s.cycles?.includes(cycle))
+    const avecCoeff = duCycle.filter((s) => {
+      const c = s.coefficients?.[level]
+      return c !== undefined && c > 0
+    })
+    return avecCoeff.length ? avecCoeff : duCycle
+  }
+
   // Get all subject names for a class object (by level/cycle)
   function getSubjectsForClass(cls) {
     if (!cls) return []
     const level = cls.level || ''
-    // Primaire : les 10 disciplines APC (indépendant du store secondaire).
-    if (PRIMAIRE_LEVELS.includes(level)) return PRIMAIRE_SUBJECT_OBJECTS.map(s => s.name)
-    const isLycee = ['2nde', '1ere', 'Tle'].includes(level)
-    const cycle = isLycee ? 'lycee' : 'college'
-
-    return subjects.value
-      .filter(s => {
-        // Subject must be in the right cycle
-        if (!s.cycles.includes(cycle)) return false
-        // Subject must have a coefficient for this level (coefficient > 0 means active)
-        const coeff = s.coefficients?.[level]
-        return coeff !== undefined && coeff > 0
-      })
-      .map(s => s.name)
+    const cycle = cycleMatieres(level)
+    if (cycle === 'primaire') return PRIMAIRE_SUBJECT_OBJECTS.map(s => s.name)
+    return matieresDuCycle(cycle, level).map(s => s.name)
   }
 
   // Get all subject objects for a class (with full data)
   function getSubjectObjectsForClass(cls) {
     if (!cls) return []
     const level = cls.level || ''
-    if (PRIMAIRE_LEVELS.includes(level)) return PRIMAIRE_SUBJECT_OBJECTS
-    const isLycee = ['2nde', '1ere', 'Tle'].includes(level)
-    const cycle = isLycee ? 'lycee' : 'college'
-
-    return subjects.value
-      .filter(s => {
-        if (!s.cycles.includes(cycle)) return false
-        const coeff = s.coefficients?.[level]
-        return coeff !== undefined && coeff > 0
-      })
+    const cycle = cycleMatieres(level)
+    if (cycle === 'primaire') return PRIMAIRE_SUBJECT_OBJECTS
+    return matieresDuCycle(cycle, level)
   }
 
   // Get coefficient for a specific subject and class

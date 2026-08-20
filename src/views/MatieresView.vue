@@ -145,7 +145,7 @@
 
       <!-- Summary -->
       <div class="summary-row" style="margin-top: 16px;">
-        <div class="card summary-card" v-for="level in LEVELS" :key="level.value">
+        <div class="card summary-card" v-for="level in niveauxStore.niveaux" :key="level.value">
           <div class="summary-level">{{ level.label }}</div>
           <div class="summary-count">{{ t('matieres.subjectsCount', { n: getSubjectCountForLevel(level.value) }) }}</div>
           <div class="summary-total">{{ t('matieres.totalCoeff', { n: getTotalCoeffForLevel(level.value) }) }}</div>
@@ -257,9 +257,10 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useSubjectsStore } from '../stores/subjects'
-import { useClassesStore, LEVELS } from '../stores/classes'
+import { useClassesStore } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
 import { DOMAINES_PRIMAIRE, DISCIPLINES_PRIMAIRE } from '../data/primaire'
+import { useNiveauxStore } from '../stores/niveaux'
 import { Plus, BookOpen, Pencil, Trash2, Save, X, Loader2, Info } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
@@ -284,8 +285,13 @@ const editingSubject = ref(null)
 const showDeleteConfirm = ref(false)
 const deletingSubject = ref(null)
 
-const collegeLevels = LEVELS.filter(l => l.cycle === 'premier')
-const lyceeLevels = LEVELS.filter(l => l.cycle === 'second')
+// Colonnes de coefficients : les niveaux DE L'ÉCOLE. Bornées à LEVELS, elles
+// interdisaient de saisir un coefficient pour un niveau déclaré par l'école,
+// comme « Form 1 » — et sans coefficient, la matière n'apparaissait pas dans la
+// classe. Le réglage était donc impossible ET la conséquence invisible.
+const niveauxStore = useNiveauxStore()
+const collegeLevels = computed(() => niveauxStore.duCycle('premier'))
+const lyceeLevels = computed(() => niveauxStore.duCycle('second'))
 
 const COLORS = [
   '#93C5FD', '#C4B5FD', '#FCA5A5', '#6EE7B7', '#FCD34D',
@@ -306,7 +312,7 @@ function resetForm() {
   form.cycles = ['college', 'lycee']
   form.color = '#CBD5E1'
   form.coefficients = {}
-  for (const level of LEVELS) {
+  for (const level of niveauxStore.niveaux) {
     form.coefficients[level.value] = 0
   }
 }
@@ -323,9 +329,9 @@ const filteredSubjects = computed(() => {
 })
 
 const visibleLevels = computed(() => {
-  if (activeFilter.value === 'college') return collegeLevels
-  if (activeFilter.value === 'lycee') return lyceeLevels
-  return LEVELS
+  if (activeFilter.value === 'college') return collegeLevels.value
+  if (activeFilter.value === 'lycee') return lyceeLevels.value
+  return niveauxStore.niveaux
 })
 
 function isLevelInCycle(level, subject) {
@@ -335,7 +341,7 @@ function isLevelInCycle(level, subject) {
 }
 
 function getSubjectCountForLevel(levelValue) {
-  const level = LEVELS.find(l => l.value === levelValue)
+  const level = niveauxStore.trouver(levelValue)
   if (!level) return 0
   const cycle = level.cycle === 'premier' ? 'college' : 'lycee'
   return subjectsStore.subjects.filter(s =>
@@ -344,7 +350,7 @@ function getSubjectCountForLevel(levelValue) {
 }
 
 function getTotalCoeffForLevel(levelValue) {
-  const level = LEVELS.find(l => l.value === levelValue)
+  const level = niveauxStore.trouver(levelValue)
   if (!level) return 0
   const cycle = level.cycle === 'premier' ? 'college' : 'lycee'
   return subjectsStore.subjects
@@ -366,7 +372,7 @@ function openEditModal(subject) {
   form.cycles = [...subject.cycles]
   form.color = subject.color || '#CBD5E1'
   form.coefficients = {}
-  for (const level of LEVELS) {
+  for (const level of niveauxStore.niveaux) {
     form.coefficients[level.value] = subject.coefficients?.[level.value] || 0
   }
   showModal.value = true
@@ -412,6 +418,7 @@ function doDelete() {
 // ── Lifecycle ──
 onMounted(async () => {
   loading.value = true
+  niveauxStore.load()
   await subjectsStore.loadSubjects()
   await classesStore.loadClasses()
   loading.value = false

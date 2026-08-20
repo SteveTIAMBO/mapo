@@ -530,7 +530,19 @@
     "update": "Mettre à jour",
     "create": "Créer",
     "deleteTitle": "Supprimer cette classe ?",
-    "deleteText": "La classe {name} sera définitivement supprimée."
+    "deleteText": "La classe {name} sera définitivement supprimée.",
+    "manageLevels": "Niveaux",
+    "levelsHint": "Déclarez les niveaux de votre établissement, dans l'ordre de la progression scolaire. Le cycle détermine les matières, les volumes horaires et le bulletin.",
+    "cyclePrimaire": "Primaire",
+    "cyclePremier": "Premier cycle",
+    "cycleSecond": "Second cycle",
+    "levelClasses": "{n} classe(s)",
+    "levelPh": "Nom du niveau (ex. Form 1)",
+    "addLevel": "Ajouter",
+    "levelDuplicate": "Ce niveau existe déjà.",
+    "levelInUse": "« {label} » ne peut pas être retiré : des classes s'y rattachent encore.",
+    "resetLevels": "Revenir aux niveaux par défaut",
+    "done": "Terminé"
   },
   "cours": {
     "title": "Cours",
