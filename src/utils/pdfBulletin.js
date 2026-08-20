@@ -120,7 +120,10 @@ export function generateBulletinPDF(opts) {
   const footCols = headRow.length
   const footRow = ['MOYENNE GÉNÉRALE']
   for (let i = 1; i < footCols - 2; i++) footRow.push('')
-  footRow.push(generalAvg !== null && generalAvg !== undefined ? `${generalAvg.toFixed(2)} / 20` : '-')
+  // Barème de l'école : un bulletin d'une école qui note sur 10 ne doit pas
+  // imprimer « / 20 » sous la moyenne générale.
+  const noteMax = Number(school.noteMax) > 0 ? Number(school.noteMax) : 20
+  footRow.push(generalAvg !== null && generalAvg !== undefined ? `${generalAvg.toFixed(2)} / ${noteMax}` : '-')
   footRow.push(generalAppreciation || '-')
 
   autoTable(doc, {
@@ -164,8 +167,10 @@ export function generateBulletinPDF(opts) {
           data.cell.styles.halign = 'center'
           const val = parseFloat(data.cell.text?.[0])
           if (!isNaN(val)) {
-            if (val < 10) data.cell.styles.textColor = [217, 48, 37] // red
-            else if (val >= 15) data.cell.styles.textColor = [21, 88, 176] // blue for high
+            // Seuils proportionnels au barème : sur 10, tout aurait été rouge ;
+            // sur 100, tout aurait été bleu.
+            if (val < noteMax / 2) data.cell.styles.textColor = [217, 48, 37] // red
+            else if (val >= noteMax * 0.75) data.cell.styles.textColor = [21, 88, 176] // blue for high
             else data.cell.styles.textColor = [30, 30, 30] // normal
           }
         }
@@ -197,7 +202,7 @@ export function generateBulletinPDF(opts) {
           data.cell.styles.fontStyle = 'bold'
           const val = parseFloat(data.cell.text?.[0])
           if (!isNaN(val)) {
-            if (val < 10) data.cell.styles.textColor = [217, 48, 37]
+            if (val < noteMax / 2) data.cell.styles.textColor = [217, 48, 37]
             else data.cell.styles.textColor = [21, 88, 176]
           }
         }

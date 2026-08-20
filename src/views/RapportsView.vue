@@ -352,10 +352,10 @@
                 <td><strong>{{ row.name }}</strong></td>
                 <td class="tr mono" :class="row.avg >= 10 ? 'clr-green' : 'clr-red'">{{ row.avg.toFixed(2) }}</td>
                 <td class="tc">
-                  <span class="app-badge" :class="'app-' + getAppreciationClass(row.avg)">{{ getAppreciation(row.avg) }}</span>
+                  <span class="app-badge" :class="'app-' + getAppreciationClass(row.avg)">{{ getAppreciation(row.avg, baremeCourant.noteMax) }}</span>
                 </td>
                 <td class="tc" style="font-size: 12px;">
-                  {{ acadTrimester === 'annual' ? getDecision(row.avg) : '' }}
+                  {{ acadTrimester === 'annual' ? getDecision(row.avg, baremeCourant.noteMax) : '' }}
                 </td>
               </tr>
             </tbody>
@@ -566,6 +566,7 @@ import {
   ChevronLeft, Download, FileText
 } from 'lucide-vue-next'
 import { useSchoolStore } from '../stores/school'
+import { baremeEcole } from '../stores/notes'
 import { fmtMontant } from '../utils/monnaie'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -577,6 +578,8 @@ const notesStore = useNotesStore()
 const presencesStore = usePresencesStore()
 const disciplineStore = useDisciplineStore()
 const schoolStore = useSchoolStore()
+// Barème de l'école : les seuils ne sont plus supposés sur 20.
+const baremeCourant = computed(() => baremeEcole(schoolStore.schoolSettings))
 
 // ── State ──
 const activeTab = ref('financier')
@@ -701,7 +704,7 @@ const classPerformance = computed(() => {
       classId: cls.id, className: cls.name, effectif: eleveIds.length,
       avg: classAvg, max: Math.max(...avgs), min: Math.min(...avgs),
       successRate: Math.round((successCount / avgs.length) * 100),
-      appreciation: getAppreciation(classAvg),
+      appreciation: getAppreciation(classAvg, baremeCourant.value.noteMax),
       appreciationClass: getAppreciationClass(classAvg),
     })
   }
@@ -1015,8 +1018,8 @@ function buildAcademiqueHTML(schoolName, year, today) {
       `<tr><td class="text-center">${r.rank}${r.rank === 1 ? 'er' : 'e'}</td>
       <td><strong>${r.name}</strong></td>
       <td class="text-right">${r.avg.toFixed(2)}</td>
-      <td class="text-center">${getAppreciation(r.avg)}</td>
-      <td class="text-center">${acadTrimester.value === 'annual' ? getDecision(r.avg) : ''}</td></tr>`
+      <td class="text-center">${getAppreciation(r.avg, baremeCourant.value.noteMax)}</td>
+      <td class="text-center">${acadTrimester.value === 'annual' ? getDecision(r.avg, baremeCourant.value.noteMax) : ''}</td></tr>`
     ).join('')
     return `
 <h2>Classement ${cls?.name || ''} — ${period}</h2>

@@ -142,7 +142,7 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
-import { useNotesStore, getAppreciation, SEQUENCES, TRIMESTERS } from '../stores/notes'
+import { useNotesStore, getAppreciation, getMention as mentionEcole, baremeEcole, SEQUENCES, TRIMESTERS } from '../stores/notes'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 import { usePersonnelStore } from '../stores/personnel'
@@ -266,7 +266,7 @@ const childGrades = computed(() => {
       seqNotes[seq.value] = notesStore.getNote?.(cls.id, sub.name, seq.value, selectedChild.value.id) ?? null
     }
 
-    const appreciation = avg !== null ? getAppreciation(avg) : null
+    const appreciation = avg !== null ? getAppreciation(avg, baremeEcole(schoolStore.schoolSettings).noteMax) : null
     const appreciationClass = avg !== null ? getAppreciationClass(avg) : ''
     return { subject: sub.name, coef: sub.coef || 1, avg, seqNotes, appreciation, appreciationClass }
   })
@@ -323,7 +323,7 @@ const childAverage = computed(() => {
 
 const childAppreciation = computed(() => {
   if (childAverage.value === null) return ''
-  return getAppreciation(childAverage.value)
+  return getAppreciation(childAverage.value, baremeEcole(schoolStore.schoolSettings).noteMax)
 })
 
 const childRank = computed(() => {
@@ -347,13 +347,11 @@ const childRank = computed(() => {
 })
 
 // === Mention helper ===
+// Les seuils viennent des Paramètres de l'école : le parent doit lire la même
+// mention que celle imprimée sur le bulletin, pas une échelle parallèle.
 function getMention(avg) {
   if (avg === null) return null
-  if (avg >= 16) return 'Félicitations'
-  if (avg >= 14) return 'Tableau d\'honneur'
-  if (avg >= 12) return 'Encouragements'
-  if (avg >= 10) return 'Passable'
-  return null
+  return mentionEcole(avg, baremeEcole(schoolStore.schoolSettings).seuils) || null
 }
 
 // === Build bulletin PDF doc ===
@@ -413,6 +411,9 @@ function buildBulletinDoc() {
     email: school.email || '',
     academicYear: school.academicYear || '',
     logoUrl: school.logo || null,
+    // Le bulletin téléchargé par le parent doit porter le même barème que celui
+    // édité par la direction, sinon les deux documents se contredisent.
+    noteMax: school.noteMax || 20,
   }
 
   return generateBulletinPDF({

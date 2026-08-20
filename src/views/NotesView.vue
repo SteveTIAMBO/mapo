@@ -243,7 +243,7 @@
                         type="number"
                         class="note-input"
                         :class="{ 'note-fail': parseFloat(editingNotes[eleve.id]?.s1) < 10 }"
-                        min="0" max="20" step="0.25"
+                        min="0" :max="baremeCourant.noteMax" step="0.25"
                         :value="editingNotes[eleve.id]?.s1 ?? ''"
                         @input="onInput(eleve.id, 's1', $event)"
                         placeholder="-"
@@ -256,7 +256,7 @@
                         type="number"
                         class="note-input"
                         :class="{ 'note-fail': parseFloat(editingNotes[eleve.id]?.s1) < 10 }"
-                        min="0" max="20" step="0.25"
+                        min="0" :max="baremeCourant.noteMax" step="0.25"
                         :value="editingNotes[eleve.id]?.s1 ?? ''"
                         @input="onInput(eleve.id, 's1', $event)"
                         placeholder="-"
@@ -267,7 +267,7 @@
                         type="number"
                         class="note-input"
                         :class="{ 'note-fail': parseFloat(editingNotes[eleve.id]?.s2) < 10 }"
-                        min="0" max="20" step="0.25"
+                        min="0" :max="baremeCourant.noteMax" step="0.25"
                         :value="editingNotes[eleve.id]?.s2 ?? ''"
                         @input="onInput(eleve.id, 's2', $event)"
                         placeholder="-"
@@ -465,18 +465,18 @@
                 <tr class="bulletin-total-row">
                   <td colspan="2"><strong>{{ t('notes.docOverall') }}</strong></td>
                   <td v-if="selectedPeriod.startsWith('S')" class="bulletin-avg" :class="{ 'note-cell-fail': bulletinGeneralAvg !== null && bulletinGeneralAvg < 10, 'note-cell-success': bulletinGeneralAvg >= 10 }">
-                    <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / 20</strong>
+                    <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / {{ baremeCourant.noteMax }}</strong>
                   </td>
                   <template v-else-if="selectedTrimester !== 'annual'">
                     <td colspan="2"></td>
                     <td class="bulletin-avg" :class="{ 'note-cell-fail': bulletinGeneralAvg !== null && bulletinGeneralAvg < 10, 'note-cell-success': bulletinGeneralAvg >= 10 }">
-                      <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / 20</strong>
+                      <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / {{ baremeCourant.noteMax }}</strong>
                     </td>
                   </template>
                   <template v-else>
                     <td colspan="3"></td>
                     <td class="bulletin-avg" :class="{ 'note-cell-fail': bulletinGeneralAvg !== null && bulletinGeneralAvg < 10, 'note-cell-success': bulletinGeneralAvg >= 10 }">
-                      <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / 20</strong>
+                      <strong>{{ bulletinGeneralAvg !== null ? bulletinGeneralAvg.toFixed(2) : '-' }} / {{ baremeCourant.noteMax }}</strong>
                     </td>
                   </template>
                   <td></td>
@@ -801,7 +801,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useNotesStore, SEQUENCES, TRIMESTERS, SIGN_PERIODS, VALIDATION_STATUS, getAppreciation, getMention, getDecision } from '../stores/notes'
+import { useNotesStore, SEQUENCES, TRIMESTERS, SIGN_PERIODS, VALIDATION_STATUS, getAppreciation, getMention, getDecision, baremeEcole } from '../stores/notes'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
 import { usePersonnelStore, SUBJECTS_BY_CYCLE } from '../stores/personnel'
@@ -1484,7 +1484,7 @@ const bulletinRank = computed(() => {
 
 const bulletinMention = computed(() => {
   if (bulletinGeneralAvg.value === null) return ''
-  return getMention(bulletinGeneralAvg.value)
+  return getMention(bulletinGeneralAvg.value, baremeCourant.value.seuils)
 })
 
 const bulletinDecision = computed(() => {
@@ -1571,7 +1571,7 @@ function buildAppreciationData(eleveId, classAvgs = null) {
     moyenneGenerale: typeof moy === 'number' ? moy : null,
     rang: rankRow?.rank || null,
     effectif: classEleves.value.length || null,
-    mention: typeof moy === 'number' ? getMention(moy) : '',
+    mention: typeof moy === 'number' ? getMention(moy, baremeCourant.value.seuils) : '',
     matieres,
     ton: appreciationTon.value,
   }
@@ -1779,8 +1779,10 @@ function draftAge(ts) {
 watch(editingNotes, () => { if (isDirty.value) saveNotesDraft() }, { deep: true })
 
 // ── Helpers ──
-function getAppreciationText(avg) { return getAppreciation(avg) }
-function getDecisionText(avg) { return getDecision(avg) }
+// Barème et seuils viennent des Paramètres de l'école, plus de valeur en dur.
+const baremeCourant = computed(() => baremeEcole(schoolStore.schoolSettings))
+function getAppreciationText(avg) { return getAppreciation(avg, baremeCourant.value.noteMax) }
+function getDecisionText(avg) { return getDecision(avg, baremeCourant.value.noteMax) }
 
 function getAppreciationClass(avg) {
   if (avg >= 16) return 'appr-excellent'
@@ -1934,6 +1936,8 @@ async function massPrintBulletins(format = 'papier') {
           email: school.email || '',
           academicYear: school.academicYear || '',
           logoUrl: school.logo || null,
+          // Sans cette ligne, le PDF retomberait sur /20 quel que soit le réglage.
+          noteMax: school.noteMax || 20,
         },
         child: {
           lastName: eleve.lastName,
@@ -1947,7 +1951,7 @@ async function massPrintBulletins(format = 'papier') {
         generalAvg,
         generalAppreciation: generalAvg !== null ? getAppreciation(generalAvg) : '',
         rank: rankStr,
-        mention: generalAvg !== null ? getMention(generalAvg) : '',
+        mention: generalAvg !== null ? getMention(generalAvg, baremeCourant.value.seuils) : '',
         effectif: allClassEleves.length,
         directeurName: validation.dirValidatedBy || school.directorName || '',
         profPrincipalName: '',

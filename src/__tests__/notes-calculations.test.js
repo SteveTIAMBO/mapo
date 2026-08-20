@@ -67,18 +67,40 @@ describe('getMention', () => {
     expect(getMention(18)).toBe('Félicitations du conseil de classe')
   })
 
-  it('retourne Encouragements pour >= 14 et < 16', () => {
-    expect(getMention(14)).toBe('Encouragements')
-    expect(getMention(15.5)).toBe('Encouragements')
+  // ⚠️ ATTENTE CORRIGÉE le 19/08/2026. Ces trois tests encodaient une échelle
+  // INVERSÉE : « Tableau d'honneur » était placé à 12 et « Encouragements » à 14,
+  // donc au-dessus du tableau d'honneur. L'écran de réglage des mentions et
+  // l'espace parent font tous les deux l'inverse, et c'est eux qui ont raison :
+  // l'échelle monte Avertissement, Encouragements, Tableau d'honneur,
+  // Félicitations. Le test protégeait donc le défaut.
+  it('retourne Tableau d\'honneur pour >= 14 et < 16', () => {
+    expect(getMention(14)).toBe('Tableau d\'honneur')
+    expect(getMention(15.5)).toBe('Tableau d\'honneur')
   })
 
-  it('retourne Tableau d\'honneur pour >= 12 et < 14', () => {
-    expect(getMention(12)).toBe('Tableau d\'honneur')
+  it('retourne Encouragements pour >= 12 et < 14', () => {
+    expect(getMention(12)).toBe('Encouragements')
+    expect(getMention(13.99)).toBe('Encouragements')
   })
 
-  it('retourne chaine vide pour < 12', () => {
+  it('retourne chaine vide entre l\'avertissement et les encouragements', () => {
     expect(getMention(11.99)).toBe('')
-    expect(getMention(0)).toBe('')
+    expect(getMention(9)).toBe('')
+  })
+
+  it('descend aussi : avertissement puis blâme', () => {
+    // L'écran de réglage proposait ces deux seuils depuis toujours ; la fonction
+    // les ignorait et renvoyait une chaîne vide pour toute moyenne faible.
+    expect(getMention(8)).toBe('Avertissement')
+    expect(getMention(5)).toBe('Blâme')
+  })
+
+  it('suit les seuils DE L\'ÉCOLE quand elle en a réglé', () => {
+    const seuils = { blame: 5, avertissement: 8, encouragements: 10, tableau: 13, felicitations: 17 }
+    expect(getMention(17, seuils)).toBe('Félicitations du conseil de classe')
+    expect(getMention(16, seuils)).toBe('Tableau d\'honneur')
+    expect(getMention(10, seuils)).toBe('Encouragements')
+    expect(getMention(4, seuils)).toBe('Blâme')
   })
 })
 

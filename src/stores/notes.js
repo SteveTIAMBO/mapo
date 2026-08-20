@@ -27,26 +27,86 @@ export const TRIMESTERS = [
   { value: 'T3', label: '3ème Trimestre', sequences: ['S5', 'S6'] },
 ]
 
-export function getAppreciation(avg) {
-  if (avg >= 16) return 'Excellent'
-  if (avg >= 14) return 'Très bien'
-  if (avg >= 12) return 'Bien'
-  if (avg >= 10) return 'Assez bien'
-  if (avg >= 8) return 'Passable'
-  if (avg >= 6) return 'Insuffisant'
+/**
+ * Barème et seuils de mention — LUS DEPUIS L'ÉCOLE.
+ *
+ * Ces trois fonctions avaient leurs seuils écrits en dur sur 20, alors que
+ * l'écran « Réglages des notes » proposait un barème (20, 10 ou 100) et six
+ * seuils de mention, les enregistrait, et confirmait la sauvegarde. Rien ne les
+ * relisait. Une école ivoirienne réglait /10 et l'application continuait à
+ * afficher /20 : un réglage décoratif, exactement ce qu'on élimine partout.
+ *
+ * ⚠️ Au passage, un défaut de cohérence. `getMention` plaçait « Tableau
+ * d'honneur » À 12 et « Encouragements » à 14, donc SOUS le tableau d'honneur.
+ * L'écran de réglage et l'espace parent font l'inverse, et c'est eux qui ont
+ * raison : l'échelle française monte Avertissement, Encouragements, Tableau
+ * d'honneur, Félicitations. L'ordre est corrigé ici.
+ */
+export const SEUILS_MENTION_DEFAUT = {
+  blame: 7,
+  avertissement: 9,
+  encouragements: 12,
+  tableau: 14,
+  felicitations: 16,
+}
+
+/** Seuils et barème d'une école, à partir de ses paramètres enregistrés. */
+export function baremeEcole(settings = {}) {
+  const noteMax = Number(settings.noteMax) > 0 ? Number(settings.noteMax) : 20
+  return {
+    noteMax,
+    seuils: {
+      blame: num(settings.mentionBlame, SEUILS_MENTION_DEFAUT.blame),
+      avertissement: num(settings.mentionAvertissement, SEUILS_MENTION_DEFAUT.avertissement),
+      encouragements: num(settings.mentionEncouragement, SEUILS_MENTION_DEFAUT.encouragements),
+      tableau: num(settings.mentionTableau, SEUILS_MENTION_DEFAUT.tableau),
+      felicitations: num(settings.mentionFelicitations, SEUILS_MENTION_DEFAUT.felicitations),
+    },
+  }
+}
+
+function num(v, defaut) {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : defaut
+}
+
+/**
+ * Ramène une moyenne exprimée sur `noteMax` à son équivalent sur 20.
+ * Les seuils d'appréciation et de décision restent pensés sur 20 : c'est
+ * l'échelle de référence, et la convertir évite de dupliquer six jeux de seuils.
+ * Les seuils de MENTION, eux, sont saisis par l'école dans SON barème.
+ */
+function sur20(avg, noteMax) {
+  if (!Number.isFinite(avg)) return avg
+  return noteMax === 20 ? avg : (avg * 20) / noteMax
+}
+
+export function getAppreciation(avg, noteMax = 20) {
+  const a = sur20(avg, noteMax)
+  if (a >= 16) return 'Excellent'
+  if (a >= 14) return 'Très bien'
+  if (a >= 12) return 'Bien'
+  if (a >= 10) return 'Assez bien'
+  if (a >= 8) return 'Passable'
+  if (a >= 6) return 'Insuffisant'
   return 'Très insuffisant'
 }
 
-export function getMention(avg) {
-  if (avg >= 16) return 'Félicitations du conseil de classe'
-  if (avg >= 14) return 'Encouragements'
-  if (avg >= 12) return 'Tableau d\'honneur'
+export function getMention(avg, seuils = SEUILS_MENTION_DEFAUT) {
+  if (!Number.isFinite(avg)) return ''
+  const s = { ...SEUILS_MENTION_DEFAUT, ...(seuils || {}) }
+  if (avg >= s.felicitations) return 'Félicitations du conseil de classe'
+  if (avg >= s.tableau) return 'Tableau d\'honneur'
+  if (avg >= s.encouragements) return 'Encouragements'
+  if (avg < s.blame) return 'Blâme'
+  if (avg < s.avertissement) return 'Avertissement'
   return ''
 }
 
-export function getDecision(avg) {
-  if (avg >= 10) return 'Admis(e) en classe supérieure'
-  if (avg >= 8.5) return 'Rachat / Redoublement'
+export function getDecision(avg, noteMax = 20) {
+  const a = sur20(avg, noteMax)
+  if (a >= 10) return 'Admis(e) en classe supérieure'
+  if (a >= 8.5) return 'Rachat / Redoublement'
   return 'Redoublement'
 }
 
