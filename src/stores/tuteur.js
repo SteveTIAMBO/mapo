@@ -181,10 +181,14 @@ async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues }) {
       // indéfiniment le même lot de questions. La banque reste partagée : ce
       // filtre est purement local, il ne retire rien pour les autres.
       const neuves = valid.filter((q) => !dejaVues || !dejaVues.has(normQuestion(q.q)))
-      if (neuves.length >= nombre) {
-        const shuffled = [...neuves].sort(() => Math.random() - 0.5) // variété
-        return shuffled.slice(0, nombre)
-      }
+      // ⚠️ Lecture PARTIELLE, et c'est le point important. Cette fonction ne
+      // rendait rien tant que la banque n'avait pas le compte EXACT demandé :
+      // 6 questions déjà validées quand il en fallait 7 étaient purement
+      // jetées. On les rend maintenant telles quelles, et l'appelant complète.
+      // Une question validée coûte cher (un appel de génération + un appel de
+      // vérification) — la gaspiller pour une unité manquante n'a aucun sens.
+      const shuffled = [...neuves].sort(() => Math.random() - 0.5) // variété
+      return shuffled.slice(0, nombre)
     }
   } catch { /* règle absente / offline → on régénère */ }
   return null
@@ -306,16 +310,21 @@ export const useTuteurStore = defineStore('tuteur', () => {
       granularite = granulariteProgramme(args)
     } catch { /* pas de référentiel : comportement inchangé */ }
 
+    // Questions déjà validées récupérées de la banque partagée. Si elles
+    // suffisent, on ne dérange pas l'IA du tout ; sinon elles servent de socle
+    // et on ne demande à l'IA que le COMPLÉMENT.
+    let socleBanque = []
     if (!effThemes && !cours) {
       const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
-      if (fromBank) {
+      socleBanque = Array.isArray(fromBank) ? fromBank : []
+      if (socleBanque.length >= nombre) {
         generating.value = false
         lastMode.value = 'banque'
         // ⚠️ Cette branche annonçait TOUJOURS « referentiel », même dans une
         // matière qui n'en a aucun — le correctif du 19/08 n'avait touché que
         // la génération fraîche. Une question ressortie de la banque n'est pas
         // mieux sourcée qu'une neuve : elle a la provenance de sa matière.
-        return { ok: true, questions: fromBank, mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
+        return { ok: true, questions: socleBanque.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
       }
     }
     // Confidentialité + frugalité : le digest (profil PRIVÉ de l'apprenant) ne
@@ -324,6 +333,19 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // alimente la banque PARTAGÉE (appendBankQuiz) ; y injecter un profil personnel
     // ferait fuiter les centres d'intérêt d'un élève dans les quiz des autres.
     const digestEff = (effThemes || cours) ? digest : ''
+
+    // Ce qui manque encore, une fois le socle de la banque posé.
+    const manque = Math.max(1, nombre - socleBanque.length)
+    // MARGE DE SURGÉNÉRATION. Le solveur aveugle rejette une partie des
+    // questions produites — c'est son travail. Sans marge, chaque rejet
+    // raccourcit la séance de l'élève, et le raccourcissement frappe le PLUS
+    // FORT les plus jeunes : le manifeste ne leur accorde que 5 questions
+    // (mémoire de travail, attention soutenue), donc deux rejets leur en
+    // laissent 3. On demande donc davantage et on sert la cible.
+    // Le serveur borne de toute façon à 12.
+    const nombreDemande = Math.min(12, manque + Math.max(2, Math.ceil(manque * 0.4)))
+    // Ne pas régénérer ce que la banque vient déjà de fournir.
+    const exclureTexte = [...socleBanque.map((q) => q.q), ...dejaVuesTexte].slice(0, 40)
     try {
       const user = fbAuth.currentUser
       const token = user ? await user.getIdToken().catch(() => null) : null
@@ -333,7 +355,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre, themes: effThemes, difficulte, cours, digest: digestEff, notions, granularite, exclure: dejaVuesTexte.slice(0, 40) } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre: nombreDemande, themes: effThemes, difficulte, cours, digest: digestEff, notions, granularite, exclure: exclureTexte } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -357,7 +379,15 @@ export const useTuteurStore = defineStore('tuteur', () => {
           try { const o = parseJsonObject(json.text); if (o && o.source) source = String(o.source) } catch { /* défaut */ }
           // Alimente la banque partagée SEULEMENT pour un quiz générique (pas de cours perso).
           if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
-          return { ok: true, questions: parsed.slice(0, nombre), mode: 'ia', reason: '', source }
+          // Socle validé d'abord, complément frais ensuite, sans doublon. Le
+          // socle vient de la banque : ces questions ont DÉJÀ passé le solveur.
+          const vus = new Set()
+          const retenues = [...socleBanque, ...parsed].filter((q) => {
+            const k = normQuestion(q && q.q)
+            if (!k || vus.has(k)) return false
+            vus.add(k); return true
+          })
+          return { ok: true, questions: retenues.slice(0, nombre), mode: 'ia', reason: '', source }
         }
         lastReason.value = 'Réponse IA illisible, mode démonstration'
       } else {
@@ -374,7 +404,17 @@ export const useTuteurStore = defineStore('tuteur', () => {
     } finally {
       generating.value = false
     }
-    // Repli démo
+    // L'IA a échoué. Si la banque partagée a fourni ne serait-ce qu'une
+    // question, on la sert : elle est validée ET conforme au niveau, alors que
+    // le repli local est générique et hors programme. Mieux vaut une séance
+    // courte mais juste qu'une séance complète mais hors sujet.
+    if (socleBanque.length) {
+      lastMode.value = 'banque'
+      return { ok: true, questions: socleBanque.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
+    }
+    // Repli démo — dernier recours. Contenu GÉNÉRIQUE, sans lien avec le
+    // programme ni avec le niveau : l'appelant doit le dire à l'apprenant
+    // (mode 'simulation'), sinon l'enfant croit réviser sa leçon.
     lastMode.value = 'simulation'
     return { ok: true, questions: buildLocalQuiz(matiere, nombre), mode: 'simulation', reason: lastReason.value }
   }

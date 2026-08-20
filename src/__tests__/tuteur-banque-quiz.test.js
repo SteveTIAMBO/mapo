@@ -245,3 +245,82 @@ describe('Provenance — la banque ne doit pas s’attribuer un programme qu’e
     expect(r.source).toBe('ia')
   })
 })
+
+/**
+ * Une question validée coûte DEUX appels IA (génération + vérification par le
+ * solveur aveugle). La jeter parce qu'il en manque une autre est le gaspillage
+ * le plus cher du produit — et c'est exactement ce que faisait la lecture en
+ * tout-ou-rien : 6 questions prêtes étaient ignorées quand il en fallait 7.
+ */
+describe('Banque partagée — lecture PARTIELLE et complément', () => {
+  it('une banque incomplète est SERVIE puis complétée par l’IA, pas jetée', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(res.questions).toHaveLength(10)
+    // Les 6 de la banque d'abord (déjà validées), le complément ensuite.
+    expect(res.questions.filter((q) => q.q.startsWith('Neuve'))).toHaveLength(6)
+    expect(res.questions.filter((q) => q.q.startsWith('IA'))).toHaveLength(4)
+  })
+
+  it('l’IA n’est sollicitée que pour le COMPLÉMENT, avec une marge de rejet', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+
+    const tuteur = useTuteurStore()
+    await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    const demande = appelsIA[0].data.nombre
+    expect(demande).toBeGreaterThan(4)   // marge : le solveur va en rejeter
+    expect(demande).toBeLessThan(10)     // mais on ne repaie pas la séance entière
+  })
+
+  it('les questions déjà fournies par la banque ne sont pas redemandées à l’IA', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+
+    const tuteur = useTuteurStore()
+    await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(appelsIA[0].data.exclure.filter((t) => t.startsWith('Neuve'))).toHaveLength(6)
+  })
+
+  it('aucun doublon entre le socle de la banque et le complément', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('IA', 4) // mêmes intitulés que le mock IA
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    const vus = new Set(res.questions.map((q) => q.q))
+    expect(vus.size).toBe(res.questions.length)
+  })
+})
+
+/**
+ * Le repli local est GÉNÉRIQUE : 4 questions de méthode, sans rapport avec la
+ * matière ni le niveau. Une séance courte mais conforme au programme vaut mieux
+ * qu'une séance complète mais hors sujet.
+ */
+describe('Panne IA — la banque passe avant le repli générique', () => {
+  it('IA injoignable et banque partielle : on sert la banque', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 3)
+    global.fetch = vi.fn(async () => { throw new Error('proxy injoignable') })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    expect(res.mode).toBe('banque')
+    expect(res.questions).toHaveLength(3)
+    expect(res.questions.every((q) => q.q.startsWith('Neuve'))).toBe(true)
+  })
+
+  it('IA injoignable et banque VIDE : repli générique, annoncé comme tel', async () => {
+    global.fetch = vi.fn(async () => { throw new Error('proxy injoignable') })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
+
+    // `simulation` est le signal que le composant transforme en bandeau visible.
+    expect(res.mode).toBe('simulation')
+  })
+})
