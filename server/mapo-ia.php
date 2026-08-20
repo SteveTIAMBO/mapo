@@ -106,7 +106,18 @@ if (!dailyLimitOk()) {
 // ce drapeau ; l'espace ÉCOLE ne le fait pas → non décompté, l'école paie).
 // On VÉRIFIE avant l'appel (bloque à 0), on DÉCOMPTE après succès (pas de
 // crédit perdu si l'IA échoue). Source de vérité = registre serveur par uid.
-$metered = $uid && !empty($body['metered']);
+// ⚠️ Le client DÉCLARE `metered`, et jusqu'ici on le croyait sur parole. Un
+// compte MAPO+ qui omettait le drapeau obtenait donc de l'IA gratuite et sans
+// limite : il suffisait d'un navigateur. Même motif que le montant d'abonnement
+// corrigé le 20/08 — une décision qui coûte de l'argent, prise par le client.
+//
+// On ne peut pas simplement forcer le décompte : l'espace ÉCOLE n'envoie pas ce
+// drapeau parce que c'est l'école qui paie, et le lui imposer viderait les
+// crédits de ses utilisateurs. On ajoute donc le décompte UNIQUEMENT là où le
+// serveur SAIT, par ses propres registres, qu'il a affaire à un compte B2C.
+// L'ajout est monotone : il ne peut que fermer des trous, jamais en ouvrir.
+if ($uid) require_once __DIR__ . '/mapo-credits-lib.php';
+$metered = $uid && (!empty($body['metered']) || mapo_compte_b2c($uid));
 $coutTokens = 0;
 // Compte de la FAMILLE : pour un enfant, celui de son parent. Les crédits
 // achetés ou offerts appartiennent à la famille (c'est le parent qui paie), et
@@ -940,7 +951,14 @@ function mapo_quiz_solveur_aveugle($questions, $matiere, $niveau, $model) {
     . "Réponds STRICTEMENT en JSON, sans texte autour : {\"r\":[{\"n\":1,\"c\":\"A|B|C|D|0\"}]}";
   $user = implode("\n\n", $lignes);
 
-  $res = callAnthropic($system, $user, 700, $model);
+  // ⚠️ Appeler le fournisseur CONFIGURÉ, pas un fournisseur en dur. Ce solveur
+  // a appelé callAnthropic() directement pendant toute sa première mise en
+  // ligne, alors que ce serveur tourne sur un endpoint OpenAI-compatible : sans
+  // clé Anthropic, l'appel échouait TOUJOURS, le solveur était muet, et
+  // l'appelant rejetait donc 100 % des questions — dans toutes les matières.
+  // Personne ne l'a vu parce que le client bascule alors silencieusement sur un
+  // petit quiz local en dur : le quiz s'affichait, plus court, l'air normal.
+  $res = mapo_appel_ia($system, $user, 700, $model);
   $out = array_fill(0, count($questions), -1);
   if (empty($res['ok'])) return $out; // vérificateur muet → voir l'appelant
   $j = json_decode(preg_replace('/^[^{]*|[^}]*$/', '', trim($res['text'])), true);
@@ -1407,6 +1425,19 @@ function modelForTask($task) {
   return defined('IA_MODEL') ? IA_MODEL : null;
 }
 
+/**
+ * Appel IA texte vers le fournisseur CONFIGURÉ (même aiguillage que l'appel
+ * principal). À utiliser partout où le code a besoin d'un appel IA interne :
+ * écrire callAnthropic() en dur marche sur un serveur et échoue en silence sur
+ * un autre, selon la config — c'est exactement ce qui est arrivé au solveur.
+ */
+function mapo_appel_ia($system, $user, $maxTokens = 260, $model = null) {
+  $provider = defined('IA_PROVIDER') ? IA_PROVIDER : 'anthropic';
+  return $provider === 'anthropic'
+    ? callAnthropic($system, $user, $maxTokens, $model)
+    : callOpenAICompat($system, $user, $maxTokens, true, null, $model);
+}
+
 function callAnthropic($system, $user, $maxTokens = 260, $model = null) {
   $payload = json_encode([
     'model'      => $model ?: (defined('IA_MODEL') ? IA_MODEL : 'claude-haiku-4-5-20251001'),
@@ -1523,6 +1554,31 @@ function dailyLimitOk() {
 //
 // Le fichier vit à côté des autres registres, donc protégé par la règle
 // `.htaccess` qui refuse tout `mapo-*.json`. Un seul verrou, jamais imbriqué.
+// ════════════════════════════════════════════════════════════════════
+//  Ce compte est-il un compte MAPO+ (B2C) ? — d'après NOS registres
+// ════════════════════════════════════════════════════════════════════
+// Trois preuves, aucune fournie par le client. Une seule suffit :
+//
+//  1. L'uid commence par `enf_` : c'est un compte ENFANT, forgé par
+//     mapo-famille.php comme une fonction de (uid du parent, id de l'enfant).
+//     Aucun compte d'école ne porte cette forme.
+//  2. Le registre de rattachement le connaît comme enfant d'une famille.
+//  3. Il a déjà une entrée dans le registre de crédits — donc il a déjà
+//     consommé, acheté ou reçu des crédits MAPO+ par le passé.
+//
+// En cas de doute, on renvoie false : mieux vaut ne pas décompter à tort que
+// de vider les crédits d'un utilisateur d'école.
+function mapo_compte_b2c($uid) {
+  if ($uid === '') return false;
+  if (strncmp($uid, 'enf_', 4) === 0) return true;
+  $libPush = __DIR__ . '/mapo-push-lib.php';
+  if (is_file($libPush)) {
+    require_once $libPush;
+    if (function_exists('mp_lienGet') && mp_lienGet($uid)) return true;
+  }
+  return function_exists('mc_loadAll') && array_key_exists($uid, mc_loadAll());
+}
+
 function mapo_qualite_journal($matiere, $niveau, $avecReferentiel, $gardees, $rejetees) {
   $path = __DIR__ . '/mapo-qualite.json';
   $cle = date('Y-m') . '|' . mb_substr($matiere, 0, 40) . '|' . mb_substr($niveau, 0, 20)
