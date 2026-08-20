@@ -56,8 +56,45 @@ const ROUTE_PERMISSION_MAP = {
   'parametres': 'parametres',
   'roles': 'roles',
   'acces': 'roles',
-  'inscriptions': 'eleves',
-  'transition-annee': 'parametres',
+  'inscriptions': 'inscriptions',
+  'transition-annee': 'transition-annee',
+  // Depuis la suppression du socle, ces modules se décochent comme les autres :
+  // leurs routes doivent donc être gardées, sinon la case décochée retirerait
+  // l'entrée de menu mais laisserait l'écran accessible par l'URL. Un réglage
+  // à moitié appliqué est pire qu'un réglage absent.
+  'dashboard': 'dashboard',
+  'preparation': 'devoirs',
+  'bibliotheque': 'bibliotheque',
+  'transport': 'transport',
+  'cantine': 'cantine',
+  'infirmerie': 'infirmerie',
+}
+
+/**
+ * Première route de repli réellement accessible pour cette école.
+ *
+ * Ordre volontaire : on essaie le tableau de bord, puis les écrans de travail
+ * quotidien, puis la structure. `Profile` ferme la marche : elle n'est associée
+ * à aucun module, donc elle reste joignable quoi que l'école ait décoché. C'est
+ * la seule garantie qu'un utilisateur connecté voit toujours QUELQUE CHOSE.
+ */
+const REPLIS = [
+  ['dashboard', 'Dashboard'],
+  ['notes', 'Notes'],
+  ['presences', 'Presences'],
+  ['emploi-du-temps', 'EmploiDuTemps'],
+  ['eleves', 'Eleves'],
+  ['classes', 'Classes'],
+  ['parametres', 'Parametres'],
+]
+
+function premiereDestinationActive(schoolIdentity, to) {
+  for (const [cle, nom] of REPLIS) {
+    if (to.name === nom) continue // ne jamais se rediriger vers soi-même
+    if (schoolIdentity.isModuleActif(cle)) return { name: nom }
+  }
+  if (to.name === 'Profil') return false
+  return { name: 'Profil' }
 }
 
 const routes = [
@@ -707,7 +744,11 @@ router.beforeEach(async (to) => {
     if (moduleKey && !schoolIdentity.isModuleActif(moduleKey)) {
       if (isEleve) return { name: 'EleveDashboard' }
       if (isParent) return { name: 'ParentDashboard' }
-      return { name: 'Dashboard' }
+      // Depuis la suppression du socle, le tableau de bord lui-même peut être
+      // décoché. Y renvoyer produirait une boucle de redirection SILENCIEUSE :
+      // aucune erreur, l'écran précédent reste affiché. On cherche donc la
+      // première destination réellement active, et à défaut on l'annonce.
+      return premiereDestinationActive(schoolIdentity, to)
     }
   }
 })

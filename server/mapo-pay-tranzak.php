@@ -93,6 +93,29 @@ if ($action === 'init') {
   $pack = preg_replace('/[^a-z_]/', '', strtolower((string) ($body['creditPack'] ?? '')));
   $packData = $pack !== '' ? mapo_credit_pack($pack) : null;
   if ($packData) { $amount = (int) $packData['prix']; $currency = 'XAF'; }
+
+  // ⚠️ ABONNEMENT : le montant vient du SERVEUR, jamais du client.
+  //
+  // Les recharges étaient protégées ainsi depuis le début ; les abonnements,
+  // non. Le client envoyait à la fois `subscriptionOffer` et `amount`, et on le
+  // croyait sur les deux. Il suffisait donc de demander « illimite » en payant
+  // 1 FCFA : Tranzak confirmait le paiement d'1 FCFA, et le serveur accordait
+  // Premium — qui vaut 10 000. Rien dans les journaux n'aurait paru anormal,
+  // puisque le paiement était bien réel.
+  //
+  // Une offre inconnue est REFUSÉE plutôt que rabattue sur l'offre gratuite :
+  // `mapo_offre()` a un repli silencieux, utile à la lecture, dangereux ici.
+  $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
+  if (!$packData && $offre !== '') {
+    $o = null;
+    foreach (mapo_offres() as $cand) if ($cand['id'] === $offre) $o = $cand;
+    if (!$o || (int) $o['prix'] < 1) {
+      http_response_code(400);
+      echo json_encode(['ok' => false, 'error' => 'offre_invalide']); exit;
+    }
+    $amount = (int) $o['prix'];
+    $currency = 'XAF';
+  }
   if ($amount < 1) {
     http_response_code(400); echo json_encode(['ok' => false, 'error' => 'montant_invalide']); exit;
   }
@@ -147,7 +170,9 @@ if ($action === 'init') {
     $txid = (string) ($d['requestId'] ?? $ref);
     // Abonnement MAPO+ : on mémorise {transaction → uid + offre} pour n'accorder
     // l'offre QU'APRÈS confirmation du paiement (voir check).
-    $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
+    // `$offre` a été lu et VALIDÉ plus haut, en même temps que le montant : le
+    // relire ici depuis le corps de la requête rouvrirait la porte qu'on vient
+    // de fermer, puisque le montant, lui, serait resté celui de l'offre réelle.
     if ($uid) {
       if ($packData) mc_pendingSet($txid, $uid, $pack, 'credits', (int) $packData['tokens']);
       elseif ($offre !== '') mc_pendingSet($txid, $uid, $offre, 'tier');

@@ -216,7 +216,7 @@
 
             <div class="ma-field">
               <label class="ma-label">Pack</label>
-              <p class="ma-hint">Le socle (élèves, classes, matières, personnel, paramètres, accès) est toujours inclus.</p>
+              <p class="ma-hint">Un pack ne fait que pré-cocher des modules. Rien n'est imposé : tout se coche et se décoche ensuite un par un, structure comprise.</p>
               <div class="ma-radio-group">
                 <label v-for="p in packsDisponibles" :key="p.key" class="ma-radio">
                   <input type="radio" :value="p.key" v-model="form.pack" />
@@ -235,16 +235,28 @@
               </div>
             </div>
 
-            <div v-if="form.pack === 'custom'" class="ma-field">
-              <label class="ma-label">Modules à activer</label>
-              <div class="ma-modules-grid">
-                <label v-for="m in modulesDisponibles" :key="m.key" class="ma-module-card" :class="{ 'is-active': form.modulesActifs.includes(m.key) }">
-                  <input type="checkbox" :value="m.key" v-model="form.modulesActifs" />
-                  <span class="ma-module-content">
-                    <span class="ma-module-title">{{ m.label }}</span>
-                    <span class="ma-module-desc">{{ m.description }}</span>
-                  </span>
-                </label>
+            <div class="ma-field">
+              <div class="ma-modules-head">
+                <label class="ma-label">Modules à activer ({{ form.modulesActifs.length }})</label>
+                <div class="ma-modules-bulk">
+                  <button type="button" class="ma-linkbtn" @click="toutCocher(form)">Tout cocher</button>
+                  <button type="button" class="ma-linkbtn" @click="toutDecocher(form)">Tout décocher</button>
+                </div>
+              </div>
+              <p v-if="!form.modulesActifs.length" class="ma-hint ma-hint-warn">
+                Aucun module coché : à sa connexion, l'école n'aura accès qu'à son profil.
+              </p>
+              <div v-for="g in groupesModules" :key="g.titre" class="ma-modules-group">
+                <div class="ma-modules-group-title">{{ g.titre }}</div>
+                <div class="ma-modules-grid">
+                  <label v-for="m in g.modules" :key="m.key" class="ma-module-card" :class="{ 'is-active': form.modulesActifs.includes(m.key) }">
+                    <input type="checkbox" :value="m.key" v-model="form.modulesActifs" />
+                    <span class="ma-module-content">
+                      <span class="ma-module-title">{{ m.label }}</span>
+                      <span class="ma-module-desc">{{ m.description }}</span>
+                    </span>
+                  </label>
+                </div>
               </div>
             </div>
 

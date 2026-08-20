@@ -64,26 +64,38 @@ const RESERVED_SLUGS = new Set([
  *
  * Les modules core (dashboard, parametres) sont toujours actifs.
  */
+/**
+ * Familles de modules — un simple regroupement pour l'écran de sélection.
+ * Ce n'est PLUS une hiérarchie de droits : aucune famille n'est privilégiée,
+ * chaque module se coche ou se décoche indépendamment.
+ */
+export const MODULES_STRUCTURE = [
+  'dashboard', 'eleves', 'inscriptions', 'classes', 'matieres', 'personnel',
+  'import', 'transition-annee', 'parametres', 'roles',
+]
+export const MODULES_PEDAGOGIE = [
+  'notes', 'presences', 'emploi-du-temps', 'devoirs', 'preparation',
+  'discipline', 'messagerie', 'salaire', 'facturation', 'rapports',
+]
+export const MODULES_SERVICES = ['bibliotheque', 'transport', 'cantine', 'infirmerie']
+
 export const EDITIONS = {
   primaire: {
     key: 'primaire',
     label: 'Primaire',
     description: 'Maternelle et primaire',
-    // Le socle (élèves, classes, personnel, paramètres…) est toujours
-    // actif — seuls les modules optionnels sont listés ici.
-    modulesDisponibles: ['notes', 'presences', 'emploi-du-temps', 'devoirs',
-      'discipline', 'messagerie', 'salaire', 'facturation', 'rapports'],
-    modulesParDefaut: ['notes', 'presences'],
+    // Plus de socle : TOUT est cochable, y compris la structure. Ce qui est ici
+    // n'est qu'un ordre d'affichage et une présélection.
+    modulesDisponibles: [...MODULES_STRUCTURE, ...MODULES_PEDAGOGIE, ...MODULES_SERVICES],
+    modulesParDefaut: [...MODULES_STRUCTURE, 'notes', 'presences'],
     roleAdmin: 'directeur',
   },
   secondaire: {
     key: 'secondaire',
     label: 'Secondaire',
     description: 'Collège et lycée',
-    modulesDisponibles: ['notes', 'presences', 'emploi-du-temps', 'devoirs',
-      'discipline', 'messagerie', 'salaire', 'facturation', 'rapports'],
-    // Périmètre pilote : socle + notes/bulletins + absences/EDT + messagerie
-    modulesParDefaut: ['notes', 'presences', 'emploi-du-temps', 'messagerie'],
+    modulesDisponibles: [...MODULES_STRUCTURE, ...MODULES_PEDAGOGIE, ...MODULES_SERVICES],
+    modulesParDefaut: [...MODULES_STRUCTURE, 'notes', 'presences', 'emploi-du-temps', 'messagerie'],
     roleAdmin: 'directeur',
   },
   superieur: {
@@ -112,7 +124,43 @@ export const MODULES_INFO = {
   salaire: { label: 'Mon salaire', description: 'Consultation de la rémunération par le personnel.' },
   facturation: { label: 'Comptabilité', description: 'Frais de scolarité, paiements et salaires.' },
   rapports: { label: 'Rapports', description: 'Statistiques et rapports d\'établissement.' },
+  preparation: { label: 'Cahier de préparation', description: 'Plans de progression par matière, validés par la direction.' },
+  // ── Structure de l'établissement ──
+  // Ces modules formaient le « socle » : ils étaient toujours actifs et
+  // n'apparaissaient nulle part. Ils sont désormais des cases à cocher comme les
+  // autres. Les décocher est possible et assumé ; l'école ne peut pas se
+  // verrouiller définitivement puisque seul EDUFREM modifie cette liste.
+  dashboard: { label: 'Tableau de bord', description: 'Écran d\'accueil et indicateurs de l\'établissement.' },
+  eleves: { label: 'Élèves', description: 'Annuaire des élèves, fiches et dossiers.' },
+  inscriptions: { label: 'Inscriptions', description: 'Demandes d\'inscription et admissions.' },
+  classes: { label: 'Classes', description: 'Niveaux, classes et effectifs.' },
+  matieres: { label: 'Matières', description: 'Référentiel des matières et coefficients.' },
+  personnel: { label: 'Personnel', description: 'Enseignants et personnel administratif.' },
+  import: { label: 'Import', description: 'Import du classeur de démarrage (élèves, classes, matières).' },
+  'transition-annee': { label: 'Passage d\'année', description: 'Bilan de fin d\'année et création de la nouvelle année.' },
+  parametres: { label: 'Paramètres', description: 'Identité de l\'école, périodes, devise, évaluation.' },
+  roles: { label: 'Rôles & accès', description: 'Comptes, invitations et permissions par rôle.' },
+  // ── Vie scolaire & services ──
+  bibliotheque: { label: 'Bibliothèque', description: 'Fonds documentaire, emprunts et retours.' },
+  transport: { label: 'Transport', description: 'Circuits, véhicules et élèves transportés.' },
+  cantine: { label: 'Cantine', description: 'Menus, crédits repas et suivi.' },
+  infirmerie: { label: 'Infirmerie', description: 'Fiches de santé, passages et soins.' },
 }
+
+/**
+ * Version du modèle de modules porté par le document école.
+ *
+ * ⚠️ Sans ce marqueur, la suppression du socle CASSE toutes les écoles déjà
+ * créées. Leur champ `modulesActifs` ne contient que les modules OPTIONNELS —
+ * le socle étant implicite à l'époque. Si l'on se met à filtrer TOUTES les clés
+ * sur cette liste, ces écoles perdent d'un coup Élèves, Classes, Paramètres et
+ * Accès, sans un message. On lit donc `modulesVersion` : absent ou < 2, on
+ * applique l'ancien comportement ; à partir de 2, la liste fait foi pour tout.
+ */
+export const MODULES_VERSION = 2
+
+/** Toutes les clés de module connues, dans l'ordre d'affichage. */
+export const MODULES_ORDRE = Object.keys(MODULES_INFO)
 
 /**
  * Packs commerciaux par édition (étude marché Pronote 2026-06-07).
@@ -167,7 +215,12 @@ PACKS.primaire = PACKS.secondaire
 export function packModules(edition, packKey) {
   const list = PACKS[edition] || PACKS.secondaire
   const pack = list.find((p) => p.key === packKey) || list[list.length - 1]
-  return [...pack.modules]
+  // Un pack ne décrit que son offre pédagogique. Depuis la suppression du socle,
+  // la structure doit être listée EXPLICITEMENT, sinon une école créée avec un
+  // pack se retrouverait sans Élèves ni Paramètres. Le pack reste une
+  // présélection : chaque case se décoche ensuite individuellement.
+  const structure = edition === 'superieur' ? [] : MODULES_STRUCTURE
+  return [...new Set([...structure, ...pack.modules])]
 }
 
 /** Date de fin d'essai : aujourd'hui + TRIAL_MONTHS mois (ISO, minuit). */
@@ -461,6 +514,9 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
         type: (payload.type || '').trim() || null,
         edition,
         modulesActifs,
+        // Marqueur de modèle : à partir de 2, `modulesActifs` fait foi pour TOUS
+        // les modules, plus aucun n'est implicite. Voir MODULES_VERSION.
+        modulesVersion: MODULES_VERSION,
         pack,
         trialUntil,
         anneeAcademique,
@@ -554,7 +610,14 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     }
     const patch = {}
     if (pack !== undefined) patch.pack = pack
-    if (modulesActifs !== undefined) patch.modulesActifs = modulesActifs
+    if (modulesActifs !== undefined) {
+      patch.modulesActifs = modulesActifs
+      // Enregistrer une liste, c'est passer au nouveau modèle : elle fait foi pour
+      // tous les modules. Sans ce marqueur, l'école resterait lue à l'ancienne et
+      // les cases décochées de la structure n'auraient aucun effet — un réglage
+      // sauvegardé et jamais relu, exactement ce qu'on est en train d'éliminer.
+      patch.modulesVersion = MODULES_VERSION
+    }
     if (trialUntil !== undefined) patch.trialUntil = trialUntil
     if (!Object.keys(patch).length) return { success: true }
     try {
