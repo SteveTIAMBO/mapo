@@ -1303,6 +1303,9 @@ import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
+// Persistance du drapeau « visite guidée déjà vue » : voir tourDocRef().
+import { doc, getDoc, setDoc } from 'firebase/firestore'
+import { db } from '../firebase'
 // Icônes des types de révision (clé → composant), pilotées par le catalogue.
 const RT_ICONS = { ListChecks, Layers, MessagesSquare, Shuffle, Ear, PenLine, Network, Puzzle }
 
@@ -1849,12 +1852,44 @@ const tourSteps = computed(() => {
 })
 function tourKey() { return 'mapo_miapo_tour_v1_' + (authStore.user?.uid || 'anon') }
 function tourSeen() { try { return localStorage.getItem(tourKey()) === '1' } catch { return false } }
-function maybeStartTour() {
+
+/**
+ * « J'ai déjà vu la visite guidée » est un fait qui appartient à la PERSONNE,
+ * pas à la machine. Il ne vivait qu'en localStorage : un vieux compte se
+ * retrouvait donc à la case départ dès qu'il ouvrait sa session sur un autre
+ * navigateur, un autre appareil, ou après un nettoyage du cache — en donnant
+ * l'impression d'un compte neuf. On le range à côté des autres données B2C de
+ * l'utilisateur, sans nouvelle règle Firestore (même sous-collection que
+ * `enfant_*` et `link`).
+ */
+function tourDocRef() {
+  const uid = authStore.user?.uid
+  return uid ? doc(db, 'users', uid, 'b2c', 'prefs') : null
+}
+async function tourVuCloud() {
+  const ref = tourDocRef()
+  if (!ref) return false
+  try { const s = await getDoc(ref); return !!(s.exists() && s.data()?.tourVu) } catch { return false }
+}
+function marquerTourVu() {
+  try { localStorage.setItem(tourKey(), '1') } catch { /* stockage indisponible */ }
+  const ref = tourDocRef()
+  // Best-effort : hors ligne, le drapeau local suffit pour cette session.
+  if (ref) setDoc(ref, { tourVu: true, updatedAt: new Date().toISOString() }, { merge: true }).catch(() => {})
+}
+
+async function maybeStartTour() {
   const force = route.query.tour === '1' // relecture QA
   if (!force) {
     if (authStore.isDemo) return
     if (!enfants.value.length) return
     if (tourSeen()) return
+    // Rien en local : ce navigateur est peut-être simplement nouveau. On
+    // demande au cloud avant de resservir une visite déjà faite ailleurs.
+    if (await tourVuCloud()) {
+      try { localStorage.setItem(tourKey(), '1') } catch { /* stockage indisponible */ }
+      return
+    }
   }
   nextTick(() => {
     // Sur mobile le menu est un tiroir fermé : on l'ouvre pour pouvoir pointer
@@ -1872,7 +1907,7 @@ function maybeStartTour() {
 function onTourDone() {
   showTour.value = false
   menuOpen.value = false
-  try { localStorage.setItem(tourKey(), '1') } catch { /* stockage indisponible */ }
+  marquerTourVu()
   maybeAskHumeur()
 }
 
