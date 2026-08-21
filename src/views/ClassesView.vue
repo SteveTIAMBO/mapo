@@ -433,10 +433,18 @@ function retirerNiveau(n) {
   if (!r.ok) erreurNiveau.value = t('classes.levelInUse', { label: n.label })
 }
 
-const levelFilters = computed(() => [
-  { value: '', label: t('classes.all') },
-  ...levels.value.map((l) => ({ value: l.value, label: l.label })),
-])
+// Puces de filtre : uniquement les niveaux RÉELLEMENT présents dans les classes
+// affichées. Un enseignant qui n'a que la 6ème A et la Tle C voyait toute la
+// palette 6ème → Terminale ; cliquer sur « 5ème » ouvrait une liste vide, ce qui
+// ressemble à un écran cassé. Un filtre ne doit proposer que ce qu'il peut filtrer.
+const levelFilters = computed(() => {
+  const presents = new Set(visibleClasses.value.map((c) => c.level))
+  const proposables = levels.value.filter((l) => presents.has(l.value))
+  // Le directeur d'une école qui n'a encore créé aucune classe garde la liste
+  // complète : sinon la barre de filtres disparaîtrait sans explication.
+  const liste = proposables.length ? proposables : levels.value
+  return [{ value: '', label: t('classes.all') }, ...liste.map((l) => ({ value: l.value, label: l.label }))]
+})
 
 const headerCount = computed(() => {
   const n = authStore.isTeacher ? filteredClasses.value.length : classesStore.classStats.total
@@ -453,12 +461,15 @@ const formData = reactive({
   enrolled: 0, homeroomTeacher: ''
 })
 
+// Classes auxquelles l'utilisateur a accès, AVANT les filtres de l'écran.
+// Sert aussi à construire les puces de filtre : on ne propose que du filtrable.
+const visibleClasses = computed(() => {
+  if (!teacherClassIds.value) return classesStore.classes
+  return classesStore.classes.filter((c) => teacherClassIds.value.includes(c.id))
+})
+
 const filteredClasses = computed(() => {
-  let list = classesStore.classes
-  // Enseignant: seulement ses classes
-  if (teacherClassIds.value) {
-    list = list.filter(c => teacherClassIds.value.includes(c.id))
-  }
+  let list = visibleClasses.value
   if (searchQuery.value) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(c =>
