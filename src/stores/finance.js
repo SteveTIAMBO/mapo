@@ -39,7 +39,27 @@ function loadEntity(key, fallback) {
 function saveEntity(key, value) {
   try {
     localStorage.setItem(`fin_${key}_v${FIN_VERSION}`, JSON.stringify(value))
+    purgerAnciennesVersions(key)
   } catch (e) { /* silent */ }
+}
+
+/**
+ * Supprime les versions PRÉCÉDENTES de la même entité.
+ *
+ * Chaque montée de `FIN_VERSION` laissait derrière elle la totalité des données
+ * de l'ancienne version, pour toujours. Constaté en démonstration : `fin_*_v2`,
+ * `v3` et `v5` cohabitaient et occupaient 2,2 Mo à eux seuls, sur un quota
+ * navigateur d'environ 5 Mo. Une fois le quota atteint, TOUTES les écritures de
+ * la démo échouent — notes, présences, tout — sans que rien ne s'affiche.
+ */
+function purgerAnciennesVersions(key) {
+  const prefixe = `fin_${key}_v`
+  const actuelle = `${prefixe}${FIN_VERSION}`
+  for (const k of Object.keys(localStorage)) {
+    if (k.startsWith(prefixe) && k !== actuelle) {
+      try { localStorage.removeItem(k) } catch { /* rien à faire */ }
+    }
+  }
 }
 
 // ── RNG déterministe (graine différente de celle de superieur.js) ──

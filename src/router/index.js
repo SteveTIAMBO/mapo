@@ -56,14 +56,27 @@ const ROUTE_PERMISSION_MAP = {
   'parametres': 'parametres',
   'roles': 'roles',
   'acces': 'roles',
+  'inscriptions': 'eleves',
+  'transition-annee': 'parametres',
+  'preparation': 'devoirs',
+}
+
+/**
+ * Route → clé de MODULE ACTIVABLE. À ne pas confondre avec la table ci-dessus.
+ *
+ * ⚠️ Les deux tables répondent à deux questions différentes :
+ *   - `ROUTE_PERMISSION_MAP` : ce rôle a-t-il le DROIT d'ouvrir cet écran ?
+ *   - `ROUTE_MODULE_MAP`     : ce module est-il ACTIVÉ pour cette école ?
+ * Les avoir confondues a coûté six écrans : en pointant « inscriptions » vers
+ * une clé de module qui n'existe pas dans les rôles, le directeur se faisait
+ * renvoyer au tableau de bord depuis Inscriptions, Passage d'année,
+ * Bibliothèque, Transport, Cantine et Infirmerie. Constaté en démonstration.
+ */
+const ROUTE_MODULE_MAP = {
+  ...ROUTE_PERMISSION_MAP,
+  'dashboard': 'dashboard',
   'inscriptions': 'inscriptions',
   'transition-annee': 'transition-annee',
-  // Depuis la suppression du socle, ces modules se décochent comme les autres :
-  // leurs routes doivent donc être gardées, sinon la case décochée retirerait
-  // l'entrée de menu mais laisserait l'écran accessible par l'URL. Un réglage
-  // à moitié appliqué est pire qu'un réglage absent.
-  'dashboard': 'dashboard',
-  'preparation': 'devoirs',
   'bibliotheque': 'bibliotheque',
   'transport': 'transport',
   'cantine': 'cantine',
@@ -739,7 +752,7 @@ router.beforeEach(async (to) => {
       }
       moduleKey = subMap[segments[1]] || null
     } else {
-      moduleKey = ROUTE_PERMISSION_MAP[segments[0]] || null
+      moduleKey = ROUTE_MODULE_MAP[segments[0]] || null
     }
     if (moduleKey && !schoolIdentity.isModuleActif(moduleKey)) {
       if (isEleve) return { name: 'EleveDashboard' }

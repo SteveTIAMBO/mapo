@@ -152,6 +152,8 @@ export const useNotesStore = defineStore('notes', () => {
   const notes = ref({})
   const loading = ref(false)
   const setupDone = ref(false) // onboarding flag
+  // Vrai si la dernière écriture locale a échoué (quota saturé). L'écran peut le dire.
+  const erreurStockage = ref(false)
 
   // validations: { [classId_trimester]: { status, ppValidatedAt, ppValidatedBy, dirValidatedAt, dirValidatedBy, eleveValidations: { [eleveId]: { pp: bool, dir: bool } } } }
   const validations = ref({})
@@ -811,8 +813,16 @@ export const useNotesStore = defineStore('notes', () => {
     const data = { notes: notes.value, setupDone: setupDone.value, validations: validations.value, mentions: mentions.value, subjectValidations: subjectValidations.value, dirSignatures: dirSignatures.value, distributions: distributions.value }
 
     if (authStore.isDemo) {
-      localStorage.setItem(notesDemoKey(), JSON.stringify(data))
-      localStorage.setItem(notesDemoVersionKey(), String(DEMO_NOTES_VERSION))
+      // Le quota localStorage (~5 Mo) peut être atteint en démonstration. Sans ce
+      // garde, l'échec remontait en rejet NON capturé : les notes cessaient
+      // d'être enregistrées et l'utilisateur ne voyait rien. On le dit.
+      try {
+        localStorage.setItem(notesDemoKey(), JSON.stringify(data))
+        localStorage.setItem(notesDemoVersionKey(), String(DEMO_NOTES_VERSION))
+      } catch (e) {
+        console.error('Notes non enregistrées : stockage local saturé.', e)
+        erreurStockage.value = true
+      }
     } else {
       localStorage.setItem('mapo_notes', JSON.stringify(data))
       if (authStore.schoolId) {
@@ -1061,6 +1071,7 @@ export const useNotesStore = defineStore('notes', () => {
     getClassRanking, getClassAnnualRanking,
     getSequenceStats,
     loadNotes, saveAllNotes, convertirNotes, compterNotesSaisies, completeSetup,
+    erreurStockage,
     // Mentions
     getCustomMention, setCustomMention,
     // Subject validations (teacher workflow)
