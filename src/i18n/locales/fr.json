@@ -1119,7 +1119,8 @@
     "apprOk": "Appréciation générée. Relisez et ajustez avant d'enregistrer.",
     "apprLocal": "Proposition générée localement ({reason}). Relisez et ajustez.",
     "apprFail": "Échec de la génération.",
-    "inAppTodoAlert": "Fonctionnalité en cours de développement.\n\nLes bulletins numériques seront envoyés par email aux parents.\nPour l'instant, les bulletins PDF sont téléchargés pour envoi manuel."
+    "inAppTodoAlert": "Fonctionnalité en cours de développement.\n\nLes bulletins numériques seront envoyés par email aux parents.\nPour l'instant, les bulletins PDF sont téléchargés pour envoi manuel.",
+    "scaleConvertConfirm": "{n} note(s) déjà saisie(s) vont être converties du barème sur {de} vers le barème sur {vers}. Continuer ?"
   },
   "eleve": {
     "noStudentRecord": "Compte non lié à un dossier élève.",

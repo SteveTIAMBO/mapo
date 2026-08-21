@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { demoKey } from '../utils/demoScope'
 import { ref, computed } from 'vue'
 
 // ── Module Bibliothèque (édition primaire/secondaire) ──────────────────
@@ -7,8 +8,10 @@ import { ref, computed } from 'vue'
 const K_BOOKS = 'mapo_biblio_ouvrages'
 const K_LOANS = 'mapo_biblio_emprunts'
 const uid = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36)
-const load = (k, fb) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb } catch { return fb } }
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* quota */ } }
+const load = (k, fb) => { try { const r = localStorage.getItem(demoKey(k)); return r ? JSON.parse(r) : fb } catch { return fb } }
+// Clé suffixée par ÉDITION : le primaire et le secondaire sont deux produits
+// distincts, leurs données de démonstration ne doivent pas se mélanger.
+const save = (k, v) => { try { localStorage.setItem(demoKey(k), JSON.stringify(v)) } catch { /* quota */ } }
 
 const SEED_BOOKS = [
   { id: 'liv-1', titre: 'Une si longue lettre', auteur: 'Mariama Bâ', isbn: '978-2-7236-0430-1', categorie: 'Roman', total: 8, dispo: 5 },

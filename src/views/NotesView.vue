@@ -938,6 +938,19 @@ watch(() => settingsForm.noteMax, (nouveau, ancien) => {
 })
 
 async function saveNotesSettings() {
+  // Changer le barème CONVERTIT les notes déjà saisies. Sans cela, l'écran
+  // affichait « 10,27 / 10 », une moyenne supérieure au maximum. En pratique le
+  // barème se choisit à la rentrée et la conversion ne porte sur rien, mais quand
+  // elle porte sur quelque chose elle doit être juste, et annoncée.
+  const ancienMax = Number(schoolStore.schoolSettings?.noteMax) || 20
+  const nouveauMax = Number(settingsForm.noteMax) || 20
+  if (nouveauMax !== ancienMax) {
+    const aConvertir = notesStore.compterNotesSaisies?.() ?? 0
+    if (aConvertir > 0 && !window.confirm(t('notes.scaleConvertConfirm', { n: aConvertir, de: ancienMax, vers: nouveauMax }))) {
+      return
+    }
+    notesStore.convertirNotes(ancienMax, nouveauMax)
+  }
   await schoolStore.saveSettings({
     evaluationType: settingsForm.evaluationType,
     noteMax: settingsForm.noteMax,

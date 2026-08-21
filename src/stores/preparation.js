@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 import { useSchoolStore } from './school'
 
 /**
@@ -30,6 +31,8 @@ import { useSchoolStore } from './school'
  * Cours (mêmes règles Firestore, aucune règle à ajouter) ; démo → localStorage.
  */
 
+// Clé SUFFIXÉE PAR ÉDITION : sans cela, le primaire lirait les données du
+// secondaire et inversement. Les deux éditions sont des produits distincts.
 const DEMO_KEY = 'mapo_preparation_v1'
 
 export const STATUTS = ['brouillon', 'soumis', 'valide', 'a_revoir']
@@ -49,7 +52,7 @@ export const usePreparationStore = defineStore('preparation', () => {
     const authStore = useAuthStore()
     if (authStore.isDemo) {
       try {
-        const s = JSON.parse(localStorage.getItem(DEMO_KEY) || '{}')
+        const s = JSON.parse(localStorage.getItem(demoKey(DEMO_KEY)) || '{}')
         fiches.value = Array.isArray(s.fiches) ? s.fiches : demoSeed()
       } catch { fiches.value = demoSeed() }
       loaded.value = true
@@ -68,7 +71,7 @@ export const usePreparationStore = defineStore('preparation', () => {
     const authStore = useAuthStore()
     const data = JSON.parse(JSON.stringify(fiches.value))
     if (authStore.isDemo) {
-      try { localStorage.setItem(DEMO_KEY, JSON.stringify({ fiches: data })) } catch { /* quota */ }
+      try { localStorage.setItem(demoKey(DEMO_KEY), JSON.stringify({ fiches: data })) } catch { /* quota */ }
       return
     }
     try {

@@ -1119,7 +1119,8 @@
     "apprOk": "Appreciation generated. Review and adjust before saving.",
     "apprLocal": "Proposal generated locally ({reason}). Review and adjust.",
     "apprFail": "Generation failed.",
-    "inAppTodoAlert": "Feature under development.\n\nDigital report cards will be emailed to parents.\nFor now, PDF report cards are downloaded for manual sending."
+    "inAppTodoAlert": "Feature under development.\n\nDigital report cards will be emailed to parents.\nFor now, PDF report cards are downloaded for manual sending.",
+    "scaleConvertConfirm": "{n} grade(s) already entered will be converted from the {de}-point scale to the {vers}-point scale. Continue?"
   },
   "eleve": {
     "noStudentRecord": "Account not linked to a student record.",

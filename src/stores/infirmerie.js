@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { demoKey } from '../utils/demoScope'
 import { ref, computed } from 'vue'
 
 // ── Module Infirmerie & santé (édition primaire/secondaire) ────────────
@@ -8,8 +9,10 @@ import { ref, computed } from 'vue'
 const K_PASSAGES = 'mapo_infirmerie_passages'
 const K_FICHES = 'mapo_infirmerie_fiches'
 const uid = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36)
-const load = (k, fb) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb } catch { return fb } }
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* quota */ } }
+const load = (k, fb) => { try { const r = localStorage.getItem(demoKey(k)); return r ? JSON.parse(r) : fb } catch { return fb } }
+// Clé suffixée par ÉDITION : le primaire et le secondaire sont deux produits
+// distincts, leurs données de démonstration ne doivent pas se mélanger.
+const save = (k, v) => { try { localStorage.setItem(demoKey(k), JSON.stringify(v)) } catch { /* quota */ } }
 
 const SEED_PASSAGES = [
   { id: 'pas-1', date: '2026-07-21', eleve: 'Kevin Simo', classe: '4ème C', motif: 'Maux de tête', soin: 'Repos + paracétamol', sortie: 'Retour en classe' },

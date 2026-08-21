@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { demoKey } from '../utils/demoScope'
 import { ref, computed } from 'vue'
 
 // ── Module Transport scolaire (édition primaire/secondaire) ────────────
@@ -8,8 +9,10 @@ import { ref, computed } from 'vue'
 const K_LIGNES = 'mapo_transport_lignes'
 const K_ABOS = 'mapo_transport_abonnes'
 const uid = (p) => p + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36)
-const load = (k, fb) => { try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : fb } catch { return fb } }
-const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* quota */ } }
+const load = (k, fb) => { try { const r = localStorage.getItem(demoKey(k)); return r ? JSON.parse(r) : fb } catch { return fb } }
+// Clé suffixée par ÉDITION : le primaire et le secondaire sont deux produits
+// distincts, leurs données de démonstration ne doivent pas se mélanger.
+const save = (k, v) => { try { localStorage.setItem(demoKey(k), JSON.stringify(v)) } catch { /* quota */ } }
 
 const SEED_LIGNES = [
   { id: 'lig-1', nom: 'Ligne A — Centre-ville', chauffeur: 'Emmanuel Ndjock', immat: 'CE 4521 A', capacite: 30, depart: '06:30', tarif: 25000 },

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { db, auth } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
+import { demoKey } from '../utils/demoScope'
 
 /**
  * Store « Cours » — contenus pédagogiques publiés par les enseignants et mis à
@@ -27,7 +28,7 @@ export const useCoursStore = defineStore('cours', () => {
   async function load() {
     const authStore = useAuthStore()
     if (authStore.isDemo) {
-      try { const s = JSON.parse(localStorage.getItem(DEMO_KEY) || '{}'); items.value = Array.isArray(s.items) ? s.items : demoSeed() } catch { items.value = demoSeed() }
+      try { const s = JSON.parse(localStorage.getItem(demoKey(DEMO_KEY)) || '{}'); items.value = Array.isArray(s.items) ? s.items : demoSeed() } catch { items.value = demoSeed() }
       loaded.value = true
       return
     }
@@ -43,7 +44,7 @@ export const useCoursStore = defineStore('cours', () => {
   async function save() {
     const authStore = useAuthStore()
     const data = JSON.parse(JSON.stringify(items.value))
-    if (authStore.isDemo) { try { localStorage.setItem(DEMO_KEY, JSON.stringify({ items: data })) } catch { /* quota */ } return }
+    if (authStore.isDemo) { try { localStorage.setItem(demoKey(DEMO_KEY), JSON.stringify({ items: data })) } catch { /* quota */ } return }
     try {
       const sid = authStore.schoolId
       if (!sid) return

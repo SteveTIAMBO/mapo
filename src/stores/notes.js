@@ -759,6 +759,53 @@ export const useNotesStore = defineStore('notes', () => {
     notes.value[key][eleveId] = value === '' || value === null ? null : parseFloat(value)
   }
 
+  /** Nombre de notes réellement saisies. Sert à ne prévenir que s'il y a de quoi. */
+  function compterNotesSaisies() {
+    let n = 0
+    for (const key of Object.keys(notes.value)) {
+      const parEleve = notes.value[key] || {}
+      for (const id of Object.keys(parEleve)) {
+        const v = parEleve[id]
+        if (v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))) n++
+      }
+    }
+    return n
+  }
+
+  /**
+   * Convertit TOUTES les notes saisies d'un barème vers un autre.
+   *
+   * Pourquoi : sans conversion, passer de 20 à 10 affichait « 10,27 / 10 », donc
+   * une moyenne supérieure au maximum. En pratique le barème se choisit à la
+   * rentrée, avant toute saisie, et la conversion ne porte alors sur rien ; mais
+   * quand elle porte sur quelque chose, elle doit être juste plutôt que muette.
+   *
+   * On arrondit au quart de point, le pas de saisie de l'application. Les cases
+   * vides restent vides : `null` n'est pas un zéro.
+   *
+   * Renvoie le nombre de notes converties, pour que l'appelant puisse le dire.
+   */
+  function convertirNotes(ancienMax, nouveauMax) {
+    const a = Number(ancienMax), n = Number(nouveauMax)
+    if (!(a > 0) || !(n > 0) || a === n) return 0
+    const r = n / a
+    let converties = 0
+    for (const key of Object.keys(notes.value)) {
+      const parEleve = notes.value[key]
+      if (!parEleve) continue
+      for (const eleveId of Object.keys(parEleve)) {
+        const v = parEleve[eleveId]
+        if (v === null || v === undefined || v === '') continue
+        const num = Number(v)
+        if (!Number.isFinite(num)) continue
+        parEleve[eleveId] = Math.round(num * r * 4) / 4
+        converties++
+      }
+    }
+    if (converties) saveAllNotes()
+    return converties
+  }
+
   async function saveAllNotes() {
     const authStore = useAuthStore()
     const data = { notes: notes.value, setupDone: setupDone.value, validations: validations.value, mentions: mentions.value, subjectValidations: subjectValidations.value, dirSignatures: dirSignatures.value, distributions: distributions.value }
@@ -1013,7 +1060,7 @@ export const useNotesStore = defineStore('notes', () => {
     getGeneralTrimesterAvg, getGeneralAnnualAvg,
     getClassRanking, getClassAnnualRanking,
     getSequenceStats,
-    loadNotes, saveAllNotes, completeSetup,
+    loadNotes, saveAllNotes, convertirNotes, compterNotesSaisies, completeSetup,
     // Mentions
     getCustomMention, setCustomMention,
     // Subject validations (teacher workflow)
