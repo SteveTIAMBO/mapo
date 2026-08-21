@@ -310,13 +310,26 @@ export const useTuteurStore = defineStore('tuteur', () => {
       granularite = granulariteProgramme(args)
     } catch { /* pas de référentiel : comportement inchangé */ }
 
-    // Questions déjà validées récupérées de la banque partagée. Si elles
-    // suffisent, on ne dérange pas l'IA du tout ; sinon elles servent de socle
-    // et on ne demande à l'IA que le COMPLÉMENT.
-    let socleBanque = []
-    if (!effThemes && !cours) {
-      const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
-      socleBanque = Array.isArray(fromBank) ? fromBank : []
+    // ORDRE DES SOURCES. Il dépend de ce que l'apprenant a fourni :
+    //
+    //  • Cours importé (ou thème ciblé) → le COURS est prioritaire. L'IA est
+    //    donc sollicitée pour la séance ENTIÈRE, à partir du cours (le serveur
+    //    lui impose déjà « tire les questions du cours, complète par le
+    //    programme officiel si nécessaire »). La banque partagée n'intervient
+    //    qu'en COMPLÉMENT, si le tri laisse la séance trop courte : ses
+    //    questions viennent du programme officiel de la MÊME classe, donc
+    //    cohérentes avec le niveau, mais elles ne doivent pas prendre la place
+    //    de questions tirées du cours de l'élève.
+    //  • Sans cours → la banque est le SOCLE (elle ne coûte rien) et l'IA ne
+    //    produit que le complément.
+    //
+    // Dans les deux cas la banque n'est ALIMENTÉE que par les quiz génériques :
+    // le contenu d'un cours personnel n'a rien à faire dans une banque partagée.
+    const banqueEnComplement = !!(effThemes || cours)
+    const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
+    const banqueDispo = Array.isArray(fromBank) ? fromBank : []
+    let socleBanque = banqueEnComplement ? [] : banqueDispo
+    {
       if (socleBanque.length >= nombre) {
         generating.value = false
         lastMode.value = 'banque'
@@ -344,8 +357,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // laissent 3. On demande donc davantage et on sert la cible.
     // Le serveur borne de toute façon à 12.
     const nombreDemande = Math.min(12, manque + Math.max(2, Math.ceil(manque * 0.4)))
-    // Ne pas régénérer ce que la banque vient déjà de fournir.
-    const exclureTexte = [...socleBanque.map((q) => q.q), ...dejaVuesTexte].slice(0, 40)
+    // Ne pas régénérer ce que la banque peut fournir — qu'elle serve de socle
+    // ou seulement de complément : dans les deux cas ces questions peuvent
+    // finir dans la séance, et une question posée deux fois est une question
+    // perdue.
+    const exclureTexte = [...banqueDispo.map((q) => q.q), ...dejaVuesTexte].slice(0, 40)
 
     // DEUX TENTATIVES. Un échec de génération est le plus souvent transitoire :
     // réseau coupé, réponse tronquée, ou lot entièrement rejeté par le solveur
@@ -395,11 +411,24 @@ export const useTuteurStore = defineStore('tuteur', () => {
           // Socle validé d'abord, complément frais ensuite, sans doublon. Le
           // socle vient de la banque : ces questions ont DÉJÀ passé le solveur.
           const vus = new Set()
-          const retenues = [...socleBanque, ...parsed].filter((q) => {
+          const dedoublonne = (liste) => liste.filter((q) => {
             const k = normQuestion(q && q.q)
             if (!k || vus.has(k)) return false
             vus.add(k); return true
           })
+          const retenues = dedoublonne([...socleBanque, ...parsed])
+          // Séance encore trop courte alors qu'un cours était prioritaire : on
+          // la complète par le programme officiel (banque partagée, même
+          // classe). L'apprenant garde une séance de la bonne longueur sans que
+          // le programme ait pris la place de son cours.
+          if (banqueEnComplement && retenues.length < nombre && banqueDispo.length) {
+            const ajouts = dedoublonne(banqueDispo).slice(0, nombre - retenues.length)
+            if (ajouts.length) {
+              retenues.push(...ajouts)
+              // On le DIT : la séance n'est plus tirée du seul cours.
+              if (source === 'cours') source = 'mix'
+            }
+          }
           generating.value = false
           return { ok: true, questions: retenues.slice(0, nombre), mode: 'ia', reason: '', source }
         }
@@ -428,9 +457,11 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // question, on la sert : elle est validée ET conforme au niveau, alors que
     // le repli local est générique et hors programme. Mieux vaut une séance
     // courte mais juste qu'une séance complète mais hors sujet.
-    if (socleBanque.length) {
+    if (banqueDispo.length) {
       lastMode.value = 'banque'
-      return { ok: true, questions: socleBanque.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
+      // Même quand un cours était prioritaire : l'IA n'ayant rien rendu, le
+      // programme officiel de la classe reste la meilleure séance disponible.
+      return { ok: true, questions: banqueDispo.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
     }
     // Deux tentatives infructueuses et rien en banque. On ne fabrique RIEN pour
     // combler : l'appelant affiche un écran d'échec avec « Réessayer ». Un

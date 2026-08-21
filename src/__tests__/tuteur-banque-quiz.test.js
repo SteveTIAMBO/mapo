@@ -367,3 +367,76 @@ describe('Panne IA — la banque passe avant le repli générique', () => {
     expect(res.mode).toBe('echec')
   })
 })
+
+/**
+ * ORDRE DES SOURCES quand l'apprenant a importé son cours.
+ *
+ * Règle produit (Steve, 20/08) : le COURS est prioritaire, mais on peut
+ * compléter par le programme officiel tant que c'est cohérent avec le niveau.
+ * Le serveur applique déjà la priorité dans le prompt ; ces tests protègent la
+ * moitié CLIENT, qui ignorait purement et simplement la banque dans ce cas.
+ */
+describe('Cours importé — priorité au cours, complément par le programme', () => {
+  it('le cours ne se fait pas voler la place : l’IA est sollicitée pour la séance ENTIÈRE', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+
+    const tuteur = useTuteurStore()
+    await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours importé sur les temps verbaux.' })
+
+    // Sans cours, la banque aurait couvert les 10 et l'IA n'aurait pas été
+    // appelée. Avec un cours, elle DOIT l'être, et pour la séance complète.
+    expect(appelsIA).toHaveLength(1)
+    expect(appelsIA[0].data.nombre).toBeGreaterThanOrEqual(10)
+  })
+
+  it('séance trop courte après le tri : la banque complète, et on annonce « mix »', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+    global.fetch = vi.fn(async (_url, opts) => {
+      appelsIA.push(JSON.parse(opts.body))
+      // Le solveur n'a laissé passer que 4 questions tirées du cours.
+      return { json: async () => ({ ok: true, text: JSON.stringify({ source: 'cours', questions: questions('Cours', 4) }) }) }
+    })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours.' })
+
+    expect(res.questions).toHaveLength(10)
+    // Le cours d'abord, le programme ensuite — jamais l'inverse.
+    expect(res.questions.slice(0, 4).every((q) => q.q.startsWith('Cours'))).toBe(true)
+    expect(res.questions.slice(4).every((q) => q.q.startsWith('Programme'))).toBe(true)
+    expect(res.source).toBe('mix')
+  })
+
+  it('séance complète depuis le cours : la banque n’intervient pas, la source reste « cours »', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+    global.fetch = vi.fn(async (_url, opts) => {
+      appelsIA.push(JSON.parse(opts.body))
+      return { json: async () => ({ ok: true, text: JSON.stringify({ source: 'cours', questions: questions('Cours', 10) }) }) }
+    })
+
+    const tuteur = useTuteurStore()
+    const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours.' })
+
+    expect(res.questions.every((q) => q.q.startsWith('Cours'))).toBe(true)
+    expect(res.source).toBe('cours')
+  })
+
+  it('le programme officiel est transmis MÊME quand un cours est fourni', async () => {
+    enfantCourant = { id: 'enf1', pays: 'FR' }
+    const tuteur = useTuteurStore()
+    await tuteur.generateQuiz({ matiere: 'Mathématiques', niveau: '5e', nombre: 10, difficulte: 1, studentId: 'enf1', cours: 'Mon cours.' })
+
+    // « complète par le programme officiel » suppose que le serveur l'ait reçu.
+    expect(Array.isArray(appelsIA[0].data.notions)).toBe(true)
+    expect(appelsIA[0].data.notions.length).toBeGreaterThan(0)
+  })
+
+  it('les questions de la banque ne sont pas redemandées à l’IA, même en simple complément', async () => {
+    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 6)
+
+    const tuteur = useTuteurStore()
+    await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours.' })
+
+    expect(appelsIA[0].data.exclure.filter((t) => t.startsWith('Programme'))).toHaveLength(6)
+  })
+})
