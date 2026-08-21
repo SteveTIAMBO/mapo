@@ -201,6 +201,9 @@ if (!empty($r['ok'])) {
   // Aucune question générée n'atteint un élève sans avoir été confirmée par un
   // solveur INDÉPENDANT qui ne voit pas la réponse marquée. Voir
   // mapo_quiz_valider() pour le raisonnement complet.
+  // Un quiz qui ne délivre AUCUNE question n'est pas un service rendu : il ne
+  // sera pas facturé (voir le décompte plus bas).
+  $rienALivrer = false;
   if ($task === 'tutor_quiz') {
     $j = json_decode(preg_replace('/^[^{]*|[^}]*$/', '', $text), true);
     if (is_array($j) && !empty($j['questions']) && is_array($j['questions'])) {
@@ -226,13 +229,24 @@ if (!empty($r['ok'])) {
         count($gardees),
         $rejets
       );
+      $rienALivrer = empty($gardees);
       $text = json_encode($j, JSON_UNESCAPED_UNICODE);
     }
   }
   // Succès → on décompte le coût en tokens (si requête MAPO+ metered) et on
   // renvoie la jauge (solde + plafond) pour un affichage immédiat.
   $tokens = null; $cap = null;
-  if ($metered) {
+  // ⚠️ ON NE FACTURE PAS UNE SÉANCE VIDE. Le décompte était inconditionnel :
+  // un quiz dont le solveur avait rejeté TOUTES les questions coûtait le prix
+  // plein et ne rendait rien. Quand le vérificateur est resté muet (rejet à
+  // 100 % pendant toute sa mise en ligne), un compte a ainsi brûlé sa semaine
+  // sans recevoir une seule question — la panne était de NOTRE côté, la
+  // facture était pour l'apprenant. Et depuis que le client retente une fois,
+  // l'addition doublait.
+  // L'appel au fournisseur nous coûte quand même : c'est notre problème, pas
+  // celui de l'enfant. Les garde-fous anti-abus restent en place (plafond
+  // quotidien, plafond global), donc cette exception ne s'exploite pas.
+  if ($metered && !$rienALivrer) {
     $tokens = mc_consume($uid, $coutTokens, $uidFamille); $st = mc_state($uid); $cap = mc_weeklyCap($st['offreId']);
     // Le PARENT est prévenu automatiquement quand la jauge de son enfant tombe
     // bas, puis quand elle est vide. Volontairement ici et pas côté client :
