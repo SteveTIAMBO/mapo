@@ -5411,7 +5411,7 @@
     "regenerate": "Regenerate",
     "retry": "Try again",
     "levelBySubject": "Level by subject",
-    "levelRises": "The level rises with every revision {name} passes — no ceiling. That's the long-term tracking.",
+    "levelRises": "The bar moves forward when {name} succeeds, and back when they fail. Clearing a level takes dozens of sessions: that's the long-term tracking.",
     "levShort": "Lv. {n}",
     "progEmptyLearner": "Start revisions in",
     "progEmptyParent": "Request revisions in",
