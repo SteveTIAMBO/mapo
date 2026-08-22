@@ -3,9 +3,20 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, setDoc, getDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
 import { useElevesStore } from './eleves'
 import { useClassesStore } from './classes'
+import { packPays, localiserDonnees } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
+
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
+
 
 export const DEVOIR_TYPES = [
   { value: 'devoir_maison', label: 'Devoir de maison' },
@@ -242,6 +253,7 @@ export const useDevoirsStore = defineStore('devoirs', () => {
         }
       }
       generateDemoDevoirs()
+      devoirs.value = localiser(devoirs.value)
       loading.value = false
       return
     }

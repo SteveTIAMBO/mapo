@@ -155,3 +155,45 @@ export function localiserNomComplet(complet, reference, pack) {
   const remplace = localiserNom(nom, reference, pack)
   return [...bouts.slice(0, -1), remplace].join(' ')
 }
+
+/**
+ * Localise TOUTES les chaînes d'une structure de données de démonstration.
+ *
+ * Pourquoi une passe générique plutôt qu'un champ à la fois : les noms
+ * camerounais apparaissent dans 285 endroits répartis sur 32 fichiers de seed —
+ * élèves fixes, incidents de discipline, messages, inscriptions, devoirs. Les
+ * traiter champ par champ garantissait d'en oublier, et surtout d'en oublier en
+ * SILENCE : un écran resté camerounais au milieu d'une démo congolaise ne
+ * produit aucune erreur, il produit juste une mauvaise impression en rendez-vous.
+ *
+ * Le remplacement se fait sur des MOTS ENTIERS et respecte la casse, donc
+ * « Abega Cédric » devient « Ganga Cédric » mais l'adresse `a.abega@…` reste
+ * intacte, et aucun mot ordinaire n'est touché.
+ */
+let _regexCache = null
+let _regexPack = null
+
+function regexNoms(reference) {
+  if (_regexCache && _regexPack === reference) return _regexCache
+  _regexPack = reference
+  _regexCache = new RegExp('\\b(' + reference.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')\\b', 'g')
+  return _regexCache
+}
+
+export function localiserTexte(texte, reference, pack) {
+  if (!pack?.nomsFamille?.length || typeof texte !== 'string' || !texte) return texte
+  return texte.replace(regexNoms(reference), (m) => localiserNom(m, reference, pack))
+}
+
+/** Applique `localiserTexte` en profondeur : tableaux, objets, chaînes. */
+export function localiserDonnees(valeur, reference, pack) {
+  if (!pack?.nomsFamille?.length) return valeur
+  if (typeof valeur === 'string') return localiserTexte(valeur, reference, pack)
+  if (Array.isArray(valeur)) return valeur.map((v) => localiserDonnees(v, reference, pack))
+  if (valeur && typeof valeur === 'object') {
+    const out = {}
+    for (const [k, v] of Object.entries(valeur)) out[k] = localiserDonnees(v, reference, pack)
+    return out
+  }
+  return valeur
+}

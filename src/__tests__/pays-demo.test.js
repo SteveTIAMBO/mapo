@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet } from '../data/paysDemo'
+import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 /**
@@ -91,6 +91,44 @@ describe('substitution des noms : déterministe, donc stable', () => {
   it('résiste à un nom vide ou à un prénom seul, sans planter', () => {
     expect(localiserNomComplet('', NOMS_REFERENCE, PAYS_DEMO.CG)).toBe('')
     expect(localiserNomComplet('Madame', NOMS_REFERENCE, PAYS_DEMO.CG)).toBe('Madame')
+  })
+})
+
+describe('localisation en profondeur des données de démo', () => {
+  const cg = PAYS_DEMO.CG
+
+  it('remplace les noms dans une phrase, sans toucher au reste', () => {
+    // Les noms camerounais apparaissent dans 285 endroits sur 32 fichiers de
+    // seed (incidents, messages, inscriptions…). Les traiter champ par champ
+    // garantissait d'en oublier — et de les oublier EN SILENCE.
+    const r = localiserTexte('Abega Cédric, signalé par Mme Tchinda', NOMS_REFERENCE, cg)
+    expect(r).not.toContain('Abega')
+    expect(r).not.toContain('Tchinda')
+    expect(r).toContain('Cédric')
+    expect(r).toContain('signalé par Mme')
+  })
+
+  it('ne touche pas aux adresses e-mail en minuscules', () => {
+    expect(localiserTexte('a.abega@edufrem.com', NOMS_REFERENCE, cg)).toBe('a.abega@edufrem.com')
+  })
+
+  it('ne remplace que des mots ENTIERS', () => {
+    // « Ngo » ne doit pas transformer « Ngoumou » ni « Congo ».
+    const r = localiserTexte('Congo Ngoumou', NOMS_REFERENCE, cg)
+    expect(r).toBe('Congo Ngoumou')
+  })
+
+  it('descend dans les tableaux et les objets imbriqués', () => {
+    const src = [{ nom: 'Belibi', enfants: [{ n: 'Kamga', age: 12 }] }]
+    const r = localiserDonnees(src, NOMS_REFERENCE, cg)
+    expect(r[0].nom).not.toBe('Belibi')
+    expect(r[0].enfants[0].n).toBe(localiserNom('Kamga', NOMS_REFERENCE, cg))
+    expect(r[0].enfants[0].age).toBe(12) // les nombres sont laissés tels quels
+  })
+
+  it('le Cameroun ne modifie rien, même en profondeur', () => {
+    const src = [{ nom: 'Belibi' }]
+    expect(localiserDonnees(src, NOMS_REFERENCE, PAYS_DEMO.CM)[0].nom).toBe('Belibi')
   })
 })
 

@@ -10,9 +10,20 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
 import { useElevesStore } from './eleves'
 import { useFacturationStore } from './facturation'
+import { packPays, localiserDonnees } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
+
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
+
 
 // ── Constants ──
 
@@ -366,7 +377,7 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
         dossiers.value = saved
       } else {
         const elevesStore = useElevesStore()
-        dossiers.value = generateDemoDossiers(elevesStore)
+        dossiers.value = localiser(generateDemoDossiers(elevesStore))
         localStorage.setItem(demoKey(DEMO_VERSION_KEY), String(DEMO_VERSION))
         saveDemoDossiers()
       }

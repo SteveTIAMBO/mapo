@@ -3,7 +3,18 @@ import { ref, computed } from 'vue'
 import { db, auth } from '../firebase'
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
+import { packPays, localiserDonnees } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
+
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
+
 
 // Types d'incidents
 export const INCIDENT_TYPES = [
@@ -85,6 +96,7 @@ export const useDisciplineStore = defineStore('discipline', () => {
         incidents.value = saved
       } else {
         generateDemoData()
+        incidents.value = localiser(incidents.value)
       }
       loading.value = false
       return

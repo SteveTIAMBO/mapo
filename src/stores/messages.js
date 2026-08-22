@@ -5,7 +5,18 @@ import {
   collection, getDocs, addDoc, updateDoc, deleteDoc, doc
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
+import { packPays, localiserDonnees } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
+
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
+
 
 // Types de messages
 export const MESSAGE_TYPES = {
@@ -321,7 +332,7 @@ export const useMessagesStore = defineStore('messages', () => {
     if (authStore.isDemo) {
       const savedVersion = localStorage.getItem(demoKey(DEMO_MESSAGES_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_MESSAGES_VERSION)) ? loadDemoMessagesFromStorage() : null
-      messages.value = saved || generateDemoMessages()
+      messages.value = saved || localiser(generateDemoMessages())
       if (!saved) {
         localStorage.setItem(demoKey(DEMO_MESSAGES_VERSION_KEY), String(DEMO_MESSAGES_VERSION))
         saveDemoMessages()

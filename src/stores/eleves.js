@@ -324,7 +324,7 @@ export const useElevesStore = defineStore('eleves', () => {
       const ed = useEditionStore()
       const savedVersion = localStorage.getItem(DEMO_ELEVES_VERSION_KEY + demoSuffix())
       const saved = (savedVersion === String(DEMO_ELEVES_VERSION)) ? loadDemoEleves() : null
-      eleves.value = saved || (ed.isPrimaire ? generatePrimaireStudents() : generateDemoStudents())
+      eleves.value = saved || localiser(ed.isPrimaire ? generatePrimaireStudents() : generateDemoStudents())
       if (!saved) {
         localStorage.setItem(DEMO_ELEVES_VERSION_KEY + demoSuffix(), String(DEMO_ELEVES_VERSION))
         saveDemoEleves()
