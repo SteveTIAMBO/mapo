@@ -44,9 +44,6 @@ export const PAYS_DEMO = {
       phoneFormat: '+237 6XX XXX XXX',
       currency: 'XAF',
       country: 'CM',
-      directorFirstName: 'Michel',
-      directorLastName: 'Teussop',
-      directorName: 'Teussop Michel',
       email: 'contact@edufrem.com',
     },
     // Identité : aucun renommage. Voir le principe 1.
@@ -72,9 +69,6 @@ export const PAYS_DEMO = {
       phoneFormat: '+242 0X XXX XX XX',
       currency: 'XAF',
       country: 'CG',
-      directorFirstName: 'Alphonse',
-      directorLastName: 'Makosso',
-      directorName: 'Makosso Alphonse',
       email: 'contact@edufrem.com',
     },
     /**
@@ -143,9 +137,6 @@ export const PAYS_DEMO = {
       // l'euro, deux monnaies distinctes.
       currency: 'XOF',
       country: 'SN',
-      directorFirstName: 'Abdoulaye',
-      directorLastName: 'Diop',
-      directorName: 'Diop Abdoulaye',
       email: 'contact@edufrem.com',
     },
     nomsFamille: [
@@ -200,9 +191,6 @@ export const PAYS_DEMO = {
       phoneFormat: '+33 X XX XX XX XX',
       currency: 'EUR',
       country: 'FR',
-      directorFirstName: 'Claire',
-      directorLastName: 'Lefèvre',
-      directorName: 'Lefèvre Claire',
       email: 'contact@edufrem.com',
     },
     nomsFamille: [
@@ -241,6 +229,28 @@ export const PAYS_DEMO = {
      */
     seriesLycee: null,
   },
+}
+
+/**
+ * Identité du directeur, DÉDUITE du compte de démonstration.
+ *
+ * ⚠️ Défaut vu à l'écran le 22/08 : chaque pack déclarait son propre directeur
+ * (« Diop Abdoulaye » au Sénégal) alors que le compte connecté, lui, était
+ * « Michel Diouf » — le prénom du compte de démo avec le nom localisé. Deux
+ * identités pour la même personne : la barre latérale affichait l'une, et les
+ * BULLETINS étaient signés de l'autre. Un directeur qui signe sous un nom qui
+ * n'est pas le sien est un faux document, pas un détail cosmétique.
+ *
+ * On calcule donc l'identité à partir du compte, pour qu'elles coïncident par
+ * construction et non par recopie.
+ */
+export function directeurDuPays(reference, pack, compte = { firstName: 'Michel', lastName: 'Teussop' }) {
+  const lastName = localiserNom(compte.lastName, reference, pack)
+  return {
+    directorFirstName: compte.firstName,
+    directorLastName: lastName,
+    directorName: `${lastName} ${compte.firstName}`,
+  }
 }
 
 /** Codes des pays disponibles, dans l'ordre d'affichage. */

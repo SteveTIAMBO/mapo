@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries } from '../data/paysDemo'
+import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries, directeurDuPays } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 /**
@@ -267,5 +267,36 @@ describe('séries du lycée : elles changent de pays en pays', () => {
 
   it('le Congo garde A, C, D : rien à renommer', () => {
     expect(appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO.CG)).toBe(classes)
+  })
+})
+
+describe('le directeur déclaré est celui qui se connecte', () => {
+  /**
+   * Défaut vu à l'écran le 22/08 : chaque pack déclarait son propre directeur
+   * (« Diop Abdoulaye » au Sénégal) alors que le compte connecté était
+   * « Michel Diouf ». La barre latérale affichait l'un, les BULLETINS étaient
+   * signés de l'autre. Un directeur qui signe sous un nom qui n'est pas le sien
+   * est un faux document, pas un détail cosmétique.
+   */
+  it('le nom déclaré vient du compte, pas d’une saisie parallèle', () => {
+    for (const code of CODES_PAYS_DEMO) {
+      const pack = PAYS_DEMO[code]
+      const d = directeurDuPays(NOMS_REFERENCE, pack)
+      const attendu = localiserNom('Teussop', NOMS_REFERENCE, pack)
+      expect(d.directorLastName).toBe(attendu)
+      expect(d.directorName).toBe(`${attendu} Michel`)
+    }
+  })
+
+  it('le Cameroun reste « Teussop Michel », à la lettre', () => {
+    expect(directeurDuPays(NOMS_REFERENCE, PAYS_DEMO.CM).directorName).toBe('Teussop Michel')
+  })
+
+  it('aucun pack ne redéclare un directeur en parallèle', () => {
+    // Une deuxième source pour la même identité, c'est la garantie qu'elles
+    // divergeront un jour.
+    for (const code of CODES_PAYS_DEMO) {
+      expect(PAYS_DEMO[code].ecole.directorName).toBeUndefined()
+    }
   })
 })

@@ -5,7 +5,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
 import { demoKey, paysDemo } from '../utils/demoScope'
-import { packPays } from '../data/paysDemo'
+import { packPays, directeurDuPays } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
 import { publishSchoolDirectory } from '../utils/schoolDirectory'
 
 export const COUNTRY_DEFAULTS = {
@@ -315,6 +316,9 @@ export const useSchoolStore = defineStore('school', () => {
             ? { schoolName: pack.ecole.schoolName.replace(/^Coll[èe]ge( Priv[ée])?/, 'École Primaire') }
             : {}),
           ...(ed.isPrimaire ? (pack.ecolePrimaire || {}) : {}),
+          // Le directeur DÉCLARÉ doit être celui qui se connecte : sinon les
+          // bulletins sont signés d'un nom que personne ne porte à l'écran.
+          ...directeurDuPays(NOMS_REFERENCE, pack),
         }
         // Ajouter la signature manuscrite demo du directeur
         if (!schoolSettings.value.directorSignature) {
