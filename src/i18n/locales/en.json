@@ -1644,7 +1644,15 @@
     "description": "Description",
     "descriptionPlaceholder": "Describe your claim...",
     "cancel": "Cancel",
-    "send": "Send"
+    "send": "Send",
+    "deductionsInfo": "Deductions applied",
+    "noScale": "No scale is configured for the school’s country.",
+    "cap": "cap {m}",
+    "taxNotSet": "Not configured",
+    "progressive": "Progressive scale",
+    "payDay": "Payment day",
+    "payDay25": "25th of each month",
+    "source": "Rate source: {s}"
   },
   "sup": {
     "backToChoice": "Back to selection",
@@ -4030,7 +4038,13 @@
     "periodAdded": "{p} added.",
     "periodRemoved": "{p} removed.",
     "periodLastOne": "A school has at least one period.",
-    "periodHasNotes": "{p} holds {n} grade(s): delete them first, otherwise they would become unreachable."
+    "periodHasNotes": "{p} holds {n} grade(s): delete them first, otherwise they would become unreachable.",
+    "secPayroll": "Payroll",
+    "salaryTaxRate": "Salary tax rate",
+    "salaryTaxHint": "Applied to gross pay minus social contributions. Leave at 0 until you know the rate: the payslip will then state that tax is not deducted, rather than show a wrong net.",
+    "payrollNoScale": "No contribution scale is configured for this country: payslips will only show gross pay.",
+    "payrollNoTax": "Social contributions are configured for this country. Salary tax is not: available public sources contradict each other, so we did not encode it. Enter your rate below.",
+    "payrollOk": "Contributions and tax are configured for this country. {s}"
   },
   "onb": {
     "welcome": "Welcome! How would you like to start?",

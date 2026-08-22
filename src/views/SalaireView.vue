@@ -76,35 +76,37 @@
       </div>
     </section>
 
-    <!-- Info zone CEMAC -->
+    <!-- Retenues appliquées — celles du PAYS de l'établissement.
+         Ce bloc listait les taux camerounais en dur (CNPS, IRPP, CAC, Crédit
+         Foncier), y compris pour une école qui n'est pas au Cameroun. -->
     <section class="section">
       <h2 class="section-heading">
         <Info :size="18" style="color: var(--pr);" />
-        {{ t('sal.cemacInfo') }}
+        {{ t('sal.deductionsInfo') }}
       </h2>
       <div class="card info-card">
-        <div class="info-grid">
-          <div class="info-item">
-            <span class="info-label">CNPS (Caisse Nationale de Prévoyance Sociale)</span>
-            <span class="info-value">4,2% salarial + 11,2% patronal</span>
+        <div v-if="!paie.paysCouvert" class="info-item">
+          <span class="info-label">{{ t('sal.noScale') }}</span>
+        </div>
+        <div v-else class="info-grid">
+          <div v-for="l in paie.lignes" :key="l.code" class="info-item">
+            <span class="info-label">{{ l.libelle }}</span>
+            <span class="info-value">{{ fmtTaux(l.taux) }}<template v-if="l.plafond"> · {{ t('sal.cap', { m: formatMoney(l.plafond) }) }}</template></span>
           </div>
           <div class="info-item">
-            <span class="info-label">IRPP (Impôt sur le Revenu des Personnes Physiques)</span>
-            <span class="info-value">Barème progressif (10% - 35%)</span>
+            <span class="info-label">{{ paie.impotLibelle }}</span>
+            <span class="info-value">{{ paie.impotNonParametre ? t('sal.taxNotSet') : t('sal.progressive') }}</span>
+          </div>
+          <div v-if="paie.additionnelle" class="info-item">
+            <span class="info-label">{{ paie.additionnelle.libelle }}</span>
+            <span class="info-value">{{ fmtTaux(paie.additionnelle.taux) }}</span>
           </div>
           <div class="info-item">
-            <span class="info-label">CAC (Centimes Additionnels Communaux)</span>
-            <span class="info-value">10% de l'IRPP</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Crédit Foncier</span>
-            <span class="info-value">1% du salaire brut</span>
-          </div>
-          <div class="info-item">
-            <span class="info-label">Jour de paiement</span>
-            <span class="info-value">25 de chaque mois</span>
+            <span class="info-label">{{ t('sal.payDay') }}</span>
+            <span class="info-value">{{ t('sal.payDay25') }}</span>
           </div>
         </div>
+        <p v-if="paie.source" class="info-source">{{ t('sal.source', { s: paie.source }) }}</p>
       </div>
     </section>
 
@@ -172,6 +174,7 @@ import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useSchoolStore } from '../stores/school'
 import { fmtMontant } from '../utils/monnaie'
+import { calculPaie, fmtTaux } from '../utils/paie'
 import { Wallet, Download, Info, MessageSquare, Plus, X } from 'lucide-vue-next'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -193,19 +196,20 @@ const staffRecord = computed(() =>
 
 const currentSalary = computed(() => staffRecord.value?.salary || 180000)
 
-// CEMAC deductions (simplified)
-const cnpsRate = 0.042
-const irfRate = 0.11 // Simplified average IRPP for this bracket
-const creditFoncier = 0.01
+/**
+ * Décompte du bulletin — BARÈME DU PAYS DE L'ÉCOLE.
+ *
+ * ⚠️ C'était trois taux camerounais en dur (CNPS 4,2 %, IRPP ~11 %, Crédit
+ * Foncier 1 %), appliqués à toute école quel que soit son pays. Le Crédit
+ * Foncier, par exemple, n'existe pas au Congo. Voir `utils/paie.js`.
+ */
+const paie = computed(() => calculPaie({
+  brut: currentSalary.value,
+  pays: schoolStore.schoolSettings?.country,
+  tauxImpotEcole: Number(schoolStore.schoolSettings?.tauxImpotSalaire) || null,
+}))
 
-const netSalary = computed(() => {
-  const gross = currentSalary.value
-  const cnps = Math.round(gross * cnpsRate)
-  const cf = Math.round(gross * creditFoncier)
-  const taxable = gross - cnps - cf
-  const irf = Math.round(taxable * irfRate)
-  return gross - cnps - cf - irf
-})
+const netSalary = computed(() => paie.value.net)
 
 const nextPayDate = computed(() => {
   const now = new Date()
@@ -218,25 +222,20 @@ const nextPayDate = computed(() => {
 // Generate 6 months of pay history
 const payHistory = computed(() => {
   const gross = currentSalary.value
+  const p = paie.value
   const months = []
   const now = new Date()
   for (let i = 0; i < 6; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 25)
-    const cnps = Math.round(gross * cnpsRate)
-    const cf = Math.round(gross * creditFoncier)
-    const taxable = gross - cnps - cf
-    const irf = Math.round(taxable * irfRate)
-    const net = gross - cnps - cf - irf
-    const paid = i > 0 // Current month not yet paid
     months.push({
       period: d.toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR', { month: 'long', year: 'numeric' }),
       month: d.getMonth(),
       year: d.getFullYear(),
       gross,
-      cnps: cnps + cf,
-      irf,
-      net,
-      paid,
+      cnps: p.totalCotisations,
+      irf: p.impot + (p.additionnelle?.montant || 0),
+      net: p.net,
+      paid: i > 0, // Current month not yet paid
     })
   }
   return months
@@ -244,6 +243,31 @@ const payHistory = computed(() => {
 
 function formatMoney(val) {
   return fmtMontant(val, schoolStore.schoolSettings?.currency)
+}
+
+/** Lignes du bulletin, construites depuis le barème du pays. */
+function lignesBulletin(payment) {
+  const p = paie.value
+  const lignes = [['Salaire de base', formatMoney(payment.gross), '', '', formatMoney(payment.gross)]]
+  for (const l of p.lignes) {
+    lignes.push([l.libelle, formatMoney(l.assiette) + (l.plafonne ? ' (plafonné)' : ''), fmtTaux(l.taux), formatMoney(l.montant), ''])
+  }
+  if (p.impotNonParametre) lignes.push([p.impotLibelle, formatMoney(p.netImposable), 'non paramétré', '—', ''])
+  else if (p.impot) lignes.push([p.impotLibelle, formatMoney(p.netImposable), 'progressif', formatMoney(p.impot), ''])
+  if (p.additionnelle) lignes.push([p.additionnelle.libelle, formatMoney(p.additionnelle.assiette), fmtTaux(p.additionnelle.taux), formatMoney(p.additionnelle.montant), ''])
+  if (!p.paysCouvert) lignes.push(['Aucun barème pour ce pays', '', '', '—', ''])
+  return lignes
+}
+
+/** Mention de bas de bulletin : elle DIT ce qui n'a pas pu être calculé. */
+function mentionBulletin() {
+  const p = paie.value
+  if (!p.paysCouvert) return "Aucun barème social n'est paramétré pour le pays de l'établissement : seul le salaire brut est certain."
+  const bouts = []
+  if (p.simplifie) bouts.push('Barème simplifié, à titre indicatif.')
+  if (p.impotNonParametre) bouts.push("L'impôt sur les salaires n'est pas paramétré : il n'est PAS déduit du net ci-dessus.")
+  if (p.source) bouts.push('Source des taux : ' + p.source)
+  return bouts.join(' ')
 }
 
 function downloadPayslip(payment) {
@@ -289,12 +313,7 @@ function downloadPayslip(payment) {
   autoTable(doc, {
     startY: y,
     head: [['Rubrique', 'Base', 'Taux', 'Retenue', 'Gain']],
-    body: [
-      ['Salaire de base', formatMoney(payment.gross), '', '', formatMoney(payment.gross)],
-      ['CNPS (part salariale)', formatMoney(payment.gross), '4,2%', formatMoney(Math.round(payment.gross * 0.042)), ''],
-      ['Crédit Foncier', formatMoney(payment.gross), '1%', formatMoney(Math.round(payment.gross * 0.01)), ''],
-      ['IRPP', '', '~11%', formatMoney(payment.irf), ''],
-    ],
+    body: lignesBulletin(payment),
     foot: [['NET A PAYER', '', '', '', formatMoney(payment.net)]],
     margin: { left: margin, right: margin },
     theme: 'grid',
@@ -305,11 +324,15 @@ function downloadPayslip(payment) {
 
   y = doc.lastAutoTable.finalY + 15
 
-  // Zone CEMAC note
+  // ⚠️ Cette zone affirmait « Ce bulletin est conforme à la réglementation CEMAC
+  // en vigueur » alors que les taux étaient camerounais en dur. Affirmer une
+  // conformité qu'on n'a pas est plus grave qu'un chiffre faux : on la remplace
+  // par ce qui est vrai, y compris quand c'est « on ne sait pas ».
   doc.setFontSize(7)
   doc.setTextColor(130, 130, 130)
-  doc.text('Ce bulletin est conforme à la réglementation CEMAC en vigueur.', pageW / 2, y, { align: 'center' })
-  doc.text(`Généré par MAPO — ${new Date().toLocaleDateString('fr-FR')}`, pageW / 2, y + 4, { align: 'center' })
+  const notes = doc.splitTextToSize(mentionBulletin(), pageW - 2 * margin)
+  doc.text(notes, pageW / 2, y, { align: 'center' })
+  doc.text(`Généré par MAPO — ${new Date().toLocaleDateString('fr-FR')}`, pageW / 2, y + 4 + notes.length * 3, { align: 'center' })
 
   const blobUrl = doc.output('bloburl')
   window.open(blobUrl, '_blank')
@@ -366,6 +389,8 @@ onMounted(async () => {
   font-weight: 600;
   margin-bottom: 12px;
 }
+
+.info-source { margin: 14px 0 0; font-size: 12px; color: var(--tx3); }
 
 .info-card { padding: 20px; }
 .info-grid {

@@ -1644,7 +1644,15 @@
     "description": "Description",
     "descriptionPlaceholder": "Décrivez votre réclamation...",
     "cancel": "Annuler",
-    "send": "Envoyer"
+    "send": "Envoyer",
+    "deductionsInfo": "Retenues appliquées",
+    "noScale": "Aucun barème n'est paramétré pour le pays de l'établissement.",
+    "cap": "plafond {m}",
+    "taxNotSet": "Non paramétré",
+    "progressive": "Barème progressif",
+    "payDay": "Jour de paiement",
+    "payDay25": "25 de chaque mois",
+    "source": "Source des taux : {s}"
   },
   "sup": {
     "backToChoice": "Retour au choix",
@@ -4030,7 +4038,13 @@
     "periodAdded": "{p} ajouté.",
     "periodRemoved": "{p} retiré.",
     "periodLastOne": "Une école a au moins une période.",
-    "periodHasNotes": "{p} porte {n} note(s) : supprimez-les d'abord, sinon elles deviendraient introuvables."
+    "periodHasNotes": "{p} porte {n} note(s) : supprimez-les d'abord, sinon elles deviendraient introuvables.",
+    "secPayroll": "Paie",
+    "salaryTaxRate": "Taux d’impôt sur les salaires",
+    "salaryTaxHint": "Appliqué au salaire brut diminué des cotisations. Laissez à 0 tant que vous ne connaissez pas le taux : le bulletin indiquera alors que l'impôt n'est pas déduit, plutôt que d'afficher un net faux.",
+    "payrollNoScale": "Aucun barème de cotisations n'est paramétré pour ce pays : les bulletins n'affichent que le salaire brut.",
+    "payrollNoTax": "Les cotisations sociales de ce pays sont paramétrées. En revanche l'impôt sur les salaires ne l'est pas : les sources publiques disponibles se contredisent, nous ne l'avons donc pas codé. Saisissez votre taux ci-dessous.",
+    "payrollOk": "Cotisations et impôt paramétrés pour ce pays. {s}"
   },
   "onb": {
     "welcome": "Bienvenue ! Comment démarrer ?",

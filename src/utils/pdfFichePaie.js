@@ -1,18 +1,23 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { salaireInfo } from './supComptaHelpers'
+import { calculPaie, fmtTaux } from './paie'
+import { fmtMontant } from './monnaie'
+import { useSchoolStore } from '../stores/school'
 
 /**
  * Génère une FICHE DE PAIE (bulletin de salaire) PDF pour un intervenant et un mois.
  * Salaire de base dérivé de supComptaHelpers.salaireInfo (cohérent avec l'onglet
- * Salaires de la Comptabilité). Le bulletin détaille ensuite un décompte réaliste
- * (Cameroun, valeurs SIMPLIFIÉES pour la démo) :
- *   Gains    : salaire de base + primes (transport, technicité) → salaire brut
- *   Retenues : CNPS part salariale (4,2 %) + IRPP (barème progressif) + CAC (10 % IRPP)
- *   Net à payer = brut − retenues
- *   Charge patronale CNPS (~11,2 %) affichée à titre indicatif (non déduite).
+ * Salaires de la Comptabilité).
+ *
+ * ⚠️ Les retenues NE SONT PLUS ÉCRITES EN DUR. Elles venaient du barème
+ * camerounais (CNPS 4,2 %, plafond 750 000, IRPP, CAC) et s'appliquaient à
+ * toutes les écoles, quel que soit leur pays : une école congolaise recevait un
+ * bulletin faux. Le barème vient maintenant de `utils/paie.js`, en fonction du
+ * pays déclaré par l'école, et le document dit ce qui n'a pas pu être calculé.
+ *
  * Le PDF s'ouvre dans le navigateur (aperçu) avant tout téléchargement.
- * Montants en FCFA. Décompte 100 % déterministe (aucun aléa).
+ * Décompte 100 % déterministe (aucun aléa).
  */
 
 const MOIS_FR = [
@@ -20,35 +25,28 @@ const MOIS_FR = [
   'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
 ]
 
-// ── Barème social & fiscal (Cameroun) — valeurs SIMPLIFIÉES pour la démo ──
-const CNPS_TAUX_SALARIE = 0.042    // PVID part salariale (pension vieillesse)
-const CNPS_TAUX_EMPLOYEUR = 0.112  // charges patronales (PVID + prestations familiales + risques pro), indicatif
-const CNPS_PLAFOND = 750000        // plafond mensuel cotisable (FCFA)
-const CAC_TAUX = 0.10              // Centimes Additionnels Communaux = 10 % de l'IRPP
+// Primes maison (indépendantes du pays : ce sont des usages de l'établissement,
+// pas des obligations légales).
 const INDEMNITE_TRANSPORT = 25000  // indemnité de transport mensuelle (permanents)
 const PRIME_TECHNICITE_TAUX = 0.08 // prime de technicité = 8 % du salaire de base (permanents)
 
-// Barème IRPP MENSUEL SIMPLIFIÉ, appliqué au net imposable (progressif par tranches).
-const IRPP_BAREME = [
-  { plafond: 62000, taux: 0 },     // tranche exonérée (~SMIG)
-  { plafond: 200000, taux: 0.10 },
-  { plafond: 400000, taux: 0.15 },
-  { plafond: Infinity, taux: 0.20 },
-]
-
-function calcIrppMensuel(netImposable) {
-  let irpp = 0
-  let bas = 0
-  for (const tr of IRPP_BAREME) {
-    if (netImposable <= bas) break
-    const assiette = Math.min(netImposable, tr.plafond) - bas
-    irpp += assiette * tr.taux
-    bas = tr.plafond
-  }
-  return Math.round(irpp)
+/** Pays de l'école. Le store peut être indisponible (tests, appel hors app). */
+function paysEcole(override) {
+  if (override) return override
+  try { return useSchoolStore().schoolSettings?.country || '' } catch (e) { return '' }
 }
 
-const fcfa = (n) => `${(Math.round(n) || 0).toLocaleString('fr-FR')} FCFA`
+/** Taux d'impôt saisi par l'école, quand son pays n'a pas de barème sourcé. */
+function tauxImpotEcole() {
+  try { return Number(useSchoolStore().schoolSettings?.tauxImpotSalaire) || null } catch (e) { return null }
+}
+
+/** Montant dans la devise de l'école — « FCFA » était écrit en dur. */
+function fcfa(n) {
+  let devise = 'XAF'
+  try { devise = useSchoolStore().schoolSettings?.currency || 'XAF' } catch (e) { /* hors app */ }
+  return fmtMontant(Math.round(n) || 0, devise)
+}
 
 export function moisLabel(monthIndex) { return MOIS_FR[monthIndex] || '' }
 
@@ -65,11 +63,11 @@ export function fichePaieFilename(intervenant, year, monthIndex) {
  *
  * Champs renvoyés :
  *   base, primes{indemniteTransport, primeTechnicite}, totalPrimes, brut, brutAnnuel,
- *   assietteCnps, cnpsSalarie (alias cnps), netImposable, irpp, cac, totalRetenues,
- *   net, cnpsEmployeur (+ tous les champs de salaireInfo : statut, tauxHoraire, volume,
- *   mensuel, annuel).
+ *   lignes (cotisations du pays), totalCotisations, netImposable, impot,
+ *   impotNonParametre, additionnelle, totalRetenues, net, employeur, totalEmployeur
+ *   (+ tous les champs de salaireInfo : statut, tauxHoraire, volume, mensuel, annuel).
  */
-export function fichePaieDetail(intervenant) {
+export function fichePaieDetail(intervenant, pays = '') {
   const info = salaireInfo(intervenant)
   const estVacataire = info.statut === 'vacataire'
 
@@ -82,17 +80,8 @@ export function fichePaieDetail(intervenant) {
   const totalPrimes = indemniteTransport + primeTechnicite
   const brut = base + totalPrimes
 
-  // Retenues salariales.
-  const assietteCnps = Math.min(brut, CNPS_PLAFOND)
-  const cnpsSalarie = Math.round(assietteCnps * CNPS_TAUX_SALARIE)
-  const netImposable = brut - cnpsSalarie
-  const irpp = calcIrppMensuel(netImposable)
-  const cac = Math.round(irpp * CAC_TAUX)
-  const totalRetenues = cnpsSalarie + irpp + cac
-  const net = brut - totalRetenues
-
-  // Charge patronale (information — NON déduite du net à payer).
-  const cnpsEmployeur = Math.round(assietteCnps * CNPS_TAUX_EMPLOYEUR)
+  // Retenues : barème DU PAYS DE L'ÉCOLE, jamais celui du Cameroun par défaut.
+  const paie = calculPaie({ brut, pays: paysEcole(pays), tauxImpotEcole: tauxImpotEcole() })
 
   return {
     ...info, // statut, tauxHoraire, volume, mensuel, annuel
@@ -103,15 +92,12 @@ export function fichePaieDetail(intervenant) {
     totalPrimes,
     brut,
     brutAnnuel: brut * 12,
-    assietteCnps,
-    cnpsSalarie,
-    cnps: cnpsSalarie, // rétro-compatibilité (ancien champ)
-    netImposable,
-    irpp,
-    cac,
-    totalRetenues,
-    net,
-    cnpsEmployeur,
+    ...paie,
+    net: paie.net,
+    // Champs conservés pour les écrans qui les lisaient déjà.
+    cnpsSalarie: paie.totalCotisations,
+    cnps: paie.totalCotisations,
+    cnpsEmployeur: paie.totalEmployeur,
   }
 }
 
@@ -181,11 +167,25 @@ export function generateFichePaie(intervenant, year, monthIndex, ecole = {}) {
   })
 
   // ── Tableau RETENUES ──
-  const retenues = [
-    ['CNPS (part salariale)', `${fcfa(d.assietteCnps)}${d.brut > d.assietteCnps ? ' (plafonné)' : ''}`, '4,2 %', `- ${fcfa(d.cnpsSalarie)}`],
-    ['IRPP (barème simplifié)', fcfa(d.netImposable), 'progressif', `- ${fcfa(d.irpp)}`],
-    ['CAC (centimes add. communaux)', fcfa(d.irpp), '10 %', `- ${fcfa(d.cac)}`],
-  ]
+  // Lignes issues du barème du pays. Rien n'est écrit en dur : une école dont le
+  // pays n'a pas de barème voit un tableau vide plutôt qu'un décompte inventé.
+  const retenues = d.lignes.map((l) => [
+    l.libelle,
+    `${fcfa(l.assiette)}${l.plafonne ? ' (plafonné)' : ''}`,
+    fmtTaux(l.taux),
+    `- ${fcfa(l.montant)}`,
+  ])
+  if (d.impotNonParametre) {
+    retenues.push([d.impotLibelle, fcfa(d.netImposable), 'non paramétré', '—'])
+  } else if (d.impot) {
+    retenues.push([d.impotLibelle, fcfa(d.netImposable), 'progressif', `- ${fcfa(d.impot)}`])
+  }
+  if (d.additionnelle) {
+    retenues.push([d.additionnelle.libelle, fcfa(d.additionnelle.assiette), fmtTaux(d.additionnelle.taux), `- ${fcfa(d.additionnelle.montant)}`])
+  }
+  if (!d.paysCouvert) {
+    retenues.push(['Aucun barème pour ce pays', '', '', '—'])
+  }
 
   autoTable(doc, {
     startY: doc.lastAutoTable.finalY + 14,
@@ -212,8 +212,11 @@ export function generateFichePaie(intervenant, year, monthIndex, ecole = {}) {
   // ── Info charge patronale (non déduite du net) ──
   yy += 38 + 20
   doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(90, 90, 90)
+  const detailPatronal = d.employeur.map((l) => `${l.libelle} ${fmtTaux(l.taux)}`).join(' · ')
   const infoLines = doc.splitTextToSize(
-    `Charges patronales CNPS (employeur, ~11,2 %) : ${fcfa(d.cnpsEmployeur)} — à titre indicatif, non déduites du net à payer.`,
+    d.employeur.length
+      ? `Charges patronales : ${fcfa(d.totalEmployeur)} — à titre indicatif, non déduites du net à payer. ${detailPatronal}.`
+      : 'Charges patronales : non paramétrées pour ce pays.',
     RIGHT - M,
   )
   doc.text(infoLines, M, yy)
@@ -221,10 +224,18 @@ export function generateFichePaie(intervenant, year, monthIndex, ecole = {}) {
 
   // ── Mentions ──
   doc.setFont('helvetica', 'italic'); doc.setFontSize(8.5); doc.setTextColor(140, 140, 140)
-  doc.text(
-    `Document généré le ${new Date().toLocaleDateString('fr-FR')} · ${ecole.nom || ''}. Bulletin indicatif (démonstration) — barèmes CNPS / IRPP / CAC simplifiés.`,
-    M, yy,
-  )
+  // ⚠️ La mention DIT ce qui n'a pas été calculé. Un bulletin muet sur un impôt
+  // manquant affiche un net supérieur au net réel, sans que personne ne le sache.
+  const mentions = [`Document généré le ${new Date().toLocaleDateString('fr-FR')} · ${ecole.nom || ''}.`]
+  if (!d.paysCouvert) {
+    mentions.push("Aucun barème social n'est paramétré pour le pays de l'établissement : seul le brut est certain.")
+  } else {
+    if (d.simplifie) mentions.push('Barème simplifié, à titre indicatif.')
+    if (d.impotNonParametre) mentions.push("L'impôt sur les salaires n'est pas paramétré : il n'est PAS déduit du net ci-dessus.")
+    if (d.source) mentions.push(`Source des taux : ${d.source}`)
+  }
+  const mentionLines = doc.splitTextToSize(mentions.join(' '), RIGHT - M)
+  doc.text(mentionLines, M, yy)
 
   previewPdf(doc, fichePaieFilename(intervenant, year, monthIndex))
 }

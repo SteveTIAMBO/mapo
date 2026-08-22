@@ -390,6 +390,27 @@
           </div>
         </section>
 
+        <!-- Paie : uniquement ce que le pays ne fournit pas -->
+        <section v-if="isDirecteur" class="card settings-card">
+          <div class="card-header">
+            <div class="section-label">{{ t('param.secPayroll') }}</div>
+          </div>
+          <div class="card-body">
+            <p style="font-size: 13px; color: var(--tx3); margin: 0 0 16px 0;">{{ infoPaie }}</p>
+            <!-- Le champ n'apparaît QUE si le pays n'a pas de barème d'impôt
+                 sourcé. Le proposer alors qu'un barème existe créerait deux
+                 vérités concurrentes sur le même bulletin. -->
+            <div v-if="paieBareme && paieBareme.impot === null" class="field" style="max-width: 260px;">
+              <label>{{ t('param.salaryTaxRate') }}</label>
+              <div style="display:flex; align-items:center; gap:8px;">
+                <input v-model.number="tauxImpotPct" type="number" min="0" max="60" step="0.1" class="input" />
+                <span style="color: var(--tx3);">%</span>
+              </div>
+              <p style="font-size: 12px; color: var(--tx3); margin: 8px 0 0;">{{ t('param.salaryTaxHint') }}</p>
+            </div>
+          </div>
+        </section>
+
         <!-- Feedback / Support -->
         <section class="card settings-card">
           <div class="card-header">
@@ -447,6 +468,7 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useMiapoRefStore } from '../stores/miapoRef'
 import { useNotesStore } from '../stores/notes'
 import { periodesParDefaut, ajouterPeriode, retirerDernierePeriode, libellePeriode, listePeriodes } from '../utils/periodes'
+import { baremePaie } from '../utils/paie'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const schoolStore = useSchoolStore()
@@ -518,6 +540,25 @@ const form = reactive({
   services: DEFAULT_SERVICES.map(s => ({ ...s })),
   decoupage: 'trimestres',
   periods: {},
+  // Taux d'impôt sur les salaires, saisi par l'école quand son pays n'a pas de
+  // barème sourcé (le Congo, dont les sources publiques se contredisent).
+  tauxImpotSalaire: 0,
+})
+
+/** Barème de paie du pays choisi, ou null s'il n'y en a pas. */
+const paieBareme = computed(() => baremePaie(form.country))
+
+/** Saisie en pourcentage, stockage en taux : 5 à l'écran, 0.05 en base. */
+const tauxImpotPct = computed({
+  get: () => Math.round((Number(form.tauxImpotSalaire) || 0) * 1000) / 10,
+  set: (v) => { form.tauxImpotSalaire = (Number(v) || 0) / 100 },
+})
+
+/** Ce que l'école doit savoir sur son barème — y compris qu'il n'y en a pas. */
+const infoPaie = computed(() => {
+  if (!paieBareme.value) return t('param.payrollNoScale')
+  if (paieBareme.value.impot === null) return t('param.payrollNoTax')
+  return t('param.payrollOk', { s: paieBareme.value.source })
 })
 
 const notesStore = useNotesStore()
