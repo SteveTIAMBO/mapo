@@ -3,8 +3,18 @@ import { ref, computed } from 'vue'
 import { db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
 import { useSchoolStore } from './school'
+import { packPays, localiserDonnees } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
+
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
 
 /**
  * Store « Cahier de préparation ».
@@ -347,9 +357,10 @@ export const usePreparationStore = defineStore('preparation', () => {
     fiches.value.reduce((n, f) => n + f.modules.filter(attendDirection).length, 0))
 
   function demoSeed() {
+    // Noms du pays choisi : le cahier de démo nommait ses enseignants en dur.
     const periode = Object.keys(useSchoolStore().schoolSettings?.periods || {})[0] || 'T1'
     const base = { fait: false, motif: '', valideLe: '', validePar: '', details: '' }
-    return [
+    return localiser([
       {
         id: 'pr-demo1', matiere: 'Mathématiques', classe: '6ème A', periode,
         modules: [
@@ -369,7 +380,7 @@ export const usePreparationStore = defineStore('preparation', () => {
         auteurId: '', auteurNom: 'Claire Ngo',
         creeLe: new Date().toISOString(), majLe: new Date().toISOString(),
       },
-    ]
+    ])
   }
 
   return {

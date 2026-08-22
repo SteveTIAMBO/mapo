@@ -96,7 +96,6 @@ export const useDisciplineStore = defineStore('discipline', () => {
         incidents.value = saved
       } else {
         generateDemoData()
-        incidents.value = localiser(incidents.value)
       }
       loading.value = false
       return
@@ -226,7 +225,10 @@ export const useDisciplineStore = defineStore('discipline', () => {
       { id: 'disc-012', eleveId: '', eleveName: 'Etoundi Christian', classId: '', className: 'Tle D', type: 'absence', description: 'Absence injustifiée le jour de l\'évaluation de Physique S6', date: '2026-05-20', reportedBy: 'M. Talla Hervé', sanction: 'avertissement', sanctionDate: '2026-05-22', resolved: true, notes: 'Évaluation de rattrapage organisée. Dernière absence tolérée avant conseil.' },
       { id: 'disc-013', eleveId: '', eleveName: 'Abega Cédric', classId: '', className: '6ème B', type: 'tenue', description: 'Port du téléphone portable en classe (interdit par le règlement)', date: '2026-06-02', reportedBy: 'Mme Tchinda Véronique', sanction: 'observation', sanctionDate: '2026-06-02', resolved: true, notes: 'Téléphone confisqué et restitué au parent.' },
     ]
-    incidents.value = demoIncidents
+    // ⚠️ La localisation doit précéder saveDemo(). Appliquée après, elle ne
+    // touchait que la copie EN MÉMOIRE : la version enregistrée restait
+    // camerounaise et revenait au rechargement suivant, sans aucun signal.
+    incidents.value = localiser(demoIncidents)
     saveDemo()
   }
 

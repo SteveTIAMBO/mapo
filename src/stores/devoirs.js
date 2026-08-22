@@ -253,7 +253,6 @@ export const useDevoirsStore = defineStore('devoirs', () => {
         }
       }
       generateDemoDevoirs()
-      devoirs.value = localiser(devoirs.value)
       loading.value = false
       return
     }
@@ -455,7 +454,7 @@ export const useDevoirsStore = defineStore('devoirs', () => {
       },
     ]
 
-    devoirs.value = demoDevoirs
+    devoirs.value = localiser(demoDevoirs)
 
     // Soumissions démo pour les enfants parent
     const demoSubmissions = {}
@@ -516,7 +515,7 @@ export const useDevoirsStore = defineStore('devoirs', () => {
       }
     }
 
-    submissions.value = demoSubmissions
+    submissions.value = localiser(demoSubmissions)
     saveAll()
   }
 
