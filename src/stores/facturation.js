@@ -15,6 +15,16 @@ import { paysDemo } from '../utils/demoScope'
  * Sans cela, une école française affichait des frais de scolarité de
  * 150 000 € — des francs CFA portant un symbole euro.
  */
+/**
+ * ⚠️ La clé de DONNÉES n'était pas suffixée, alors que sa clé de VERSION l'était.
+ *
+ * Conséquence : passer sur la France régénérait des factures en euros et les
+ * écrivait par-dessus celles du Cameroun ; revenir au Cameroun relisait cette
+ * même clé et affichait des euros dans une école de Yaoundé. Un demi-suffixe ne
+ * cloisonne rien — il déplace juste le mélange.
+ */
+function cleFacturation() { return demoKey('mapo_facturation') }
+
 function montantsPays(ligne) {
   return { ...ligne, amount: montantDemo(ligne.amount, packPays(paysDemo())) }
 }
@@ -329,9 +339,9 @@ export const useFacturationStore = defineStore('facturation', () => {
         const docRef = doc(db, 'schools', authStore.schoolId, 'facturation', 'data')
         await setDoc(docRef, data, { merge: true })
       }
-      localStorage.setItem('mapo_facturation', JSON.stringify(data))
+      localStorage.setItem(cleFacturation(), JSON.stringify(data))
     } catch {
-      localStorage.setItem('mapo_facturation', JSON.stringify(data))
+      localStorage.setItem(cleFacturation(), JSON.stringify(data))
     }
   }
 
@@ -373,7 +383,7 @@ export const useFacturationStore = defineStore('facturation', () => {
           salaryPayments.value = data.salaryPayments || []
           setupDone.value = data.setupDone || false
         } else {
-          const stored = localStorage.getItem('mapo_facturation')
+          const stored = localStorage.getItem(cleFacturation())
           if (stored) {
             const data = JSON.parse(stored)
             feeStructure.value = data.feeStructure || []
@@ -386,7 +396,7 @@ export const useFacturationStore = defineStore('facturation', () => {
         }
       }
     } catch {
-      const stored = localStorage.getItem('mapo_facturation')
+      const stored = localStorage.getItem(cleFacturation())
       if (stored) {
         const data = JSON.parse(stored)
         feeStructure.value = data.feeStructure || []

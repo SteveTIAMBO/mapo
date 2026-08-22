@@ -242,13 +242,21 @@ export const usePersonnelStore = defineStore('personnel', () => {
         const email = `${p.firstName.charAt(0).toLowerCase()}.${lastName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}@edufrem.com`
         return { ...p, lastName, email, phone: telephonePays(p.phone, pack) }
       })
-      // Ensure salary field exists on all demo staff
-      // Salaires À L'ÉCHELLE DU PAYS. Sans cela, la fiche de paie française
-      // affichait « 220 000 € » par mois pour un enseignant.
-      staff.value = baseData.map(s => ({
-        ...s,
-        salary: montantDemo(s.salary || DEMO_SALARIES[s.role] || 150000, pack, { min: pack.salaireMin }),
-      }))
+      /**
+       * Salaires À L'ÉCHELLE DU PAYS — appliquée UNE SEULE FOIS, au moment du
+       * seed.
+       *
+       * ⚠️ Défaut vécu : la mise à l'échelle portait sur `baseData`, donc aussi
+       * sur les données déjà ENREGISTRÉES. Au deuxième chargement, un salaire
+       * français de 2 930 € était redivisé par 75, tombait à 39 €, et le
+       * plancher SMIC le remontait à 1 800 € : tout le personnel se retrouvait
+       * payé au minimum, sans la moindre erreur à l'écran. Même famille que
+       * « localiser après avoir enregistré » : une transformation qu'on
+       * réapplique à son propre résultat.
+       */
+      staff.value = saved.length > 0
+        ? baseData.map(s => ({ ...s, salary: s.salary || montantDemo(DEMO_SALARIES[s.role] || 150000, pack, { min: pack.salaireMin }) }))
+        : baseData.map(s => ({ ...s, salary: montantDemo(s.salary || DEMO_SALARIES[s.role] || 150000, pack, { min: pack.salaireMin }) }))
       if (saved.length === 0) {
         localStorage.setItem(demoKey(DEMO_STAFF_VERSION_KEY), String(DEMO_STAFF_VERSION))
         saveDemoStaff()
