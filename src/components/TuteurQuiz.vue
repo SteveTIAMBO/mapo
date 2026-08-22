@@ -36,7 +36,13 @@
       <div class="tq-top">
         <div>
           <span class="tq-subject">{{ matiere }}</span>
-          <span v-if="studentId" class="tq-level" :title="`Difficulté ${level} sur 5 — dans le programme de ${programmeActuel}`">Niveau {{ level }}/5</span>
+          <!-- « /5 » est JUSTE : PALIERS_PAR_CLASSE vaut 5 et getLevel() borne
+               le palier à cette échelle. Ce qui a perdu son plafond, c'est la
+               CLÉ DE BANQUE (un min(5, …) y écrasait tous les niveaux ≥ 5 dans
+               un même document) — pas le palier affiché. Au palier 5, on ne
+               monte pas à 6 : on PROPOSE le programme de l'année suivante, et
+               le palier repart au milieu de ce nouveau programme. -->
+          <span v-if="studentId" class="tq-level" :title="niveauTitre">{{ niveauLabel }}</span>
           <span class="tq-counter">Question {{ index + 1 }} / {{ questions.length }}</span>
         </div>
         <div class="tq-top-right">
@@ -259,7 +265,7 @@ import { pointsSeance } from '../utils/pointsEffort'
 import { useRecompensesPointsStore } from '../stores/recompensesPoints'
 import { serieActuelle } from '../utils/recompenses'
 import { useLigueStore } from '../stores/ligue'
-import { niveauSuivant } from '../utils/progressionNiveau'
+import { niveauSuivant, PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -506,6 +512,17 @@ const lastMode = computed(() => tuteur.lastMode)
 // `ia` = généré à l'instant, `banque` = généré par MIAPO puis mis en cache.
 // Les deux sont du vrai contenu ; seul `simulation` est une démo.
 const estIA = computed(() => lastMode.value === 'ia' || lastMode.value === 'banque')
+
+// Palier de difficulté DANS LE PROGRAMME DE LA CLASSE : l'échelle va bien
+// jusqu'à PALIERS_PAR_CLASSE. Le « 5 » n'est donc pas un reste, c'est la borne
+// voulue — arrivé au sommet, l'apprenant se voit proposer le programme de
+// l'année suivante plutôt qu'un palier 6 qui sortirait de son année.
+// L'infobulle le dit, sinon « 3/5 » ressemble à une fin de parcours.
+const niveauLabel = computed(() => (locale.value.startsWith('en') ? 'Level ' : 'Niveau ')
+  + level.value + '/' + PALIERS_PAR_CLASSE)
+const niveauTitre = computed(() => (locale.value.startsWith('en')
+  ? `Difficulty ${level.value} of ${PALIERS_PAR_CLASSE} within the ${programmeActuel.value} curriculum. At the top, MIAPO offers the next year's curriculum.`
+  : `Difficulté ${level.value} sur ${PALIERS_PAR_CLASSE} dans le programme de ${programmeActuel.value}. Au sommet, MIAPO propose le programme de l'année suivante.`))
 
 // Échec de préparation de la séance. Le message reste factuel et ne culpabilise
 // pas l'apprenant : il n'y est pour rien, et la bonne action est de relancer.
