@@ -937,7 +937,7 @@
   },
   "examens": {
     "title": "National exams",
-    "subtitle": "Registrations, results and pass rates (CEP, BEPC, Probatoire, Baccalauréat).",
+    "subtitle": "Registrations, results and pass rates ({liste}).",
     "newExam": "+ New exam",
     "kpiSessions": "Sessions",
     "kpiCandidates": "Candidates",

@@ -937,7 +937,7 @@
   },
   "examens": {
     "title": "Examens nationaux",
-    "subtitle": "Inscriptions, résultats et taux de réussite (CEP, BEPC, Probatoire, Baccalauréat).",
+    "subtitle": "Inscriptions, résultats et taux de réussite ({liste}).",
     "newExam": "+ Nouvel examen",
     "kpiSessions": "Sessions",
     "kpiCandidates": "Candidats",

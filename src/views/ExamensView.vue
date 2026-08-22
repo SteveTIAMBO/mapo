@@ -5,7 +5,7 @@
       <header class="ex-head">
         <div>
           <h1 class="ex-title">{{ t('examens.title') }}</h1>
-          <p class="ex-sub">{{ t('examens.subtitle') }}</p>
+          <p class="ex-sub">{{ t('examens.subtitle', { liste: listeExamens }) }}</p>
         </div>
         <button class="btn btn-primary" type="button" @click="showCreate = true">{{ t('examens.newExam') }}</button>
       </header>
@@ -212,6 +212,11 @@ const emitFeedback = ref('')
 // Les examens dépendent du PAYS de l'école : un CEP camerounais n'a rien à
 // faire dans une école de Dakar ou de Kinshasa.
 const types = computed(() => examTypesPays(schoolStore.schoolSettings?.country))
+
+// Le sous-titre énumérait « CEP, BEPC, Probatoire, Baccalauréat » EN DUR : des
+// examens camerounais, affichés tels quels à une école congolaise qui n'a pas
+// de Probatoire. Il suit désormais le pays, comme le reste de l'écran.
+const listeExamens = computed(() => types.value.map((t) => t.label).join(', '))
 const statuses = RESULT_STATUS
 const mentions = MENTIONS
 
