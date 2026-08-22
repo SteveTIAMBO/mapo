@@ -11,6 +11,9 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
+import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
+import { packPays, localiserNomComplet } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
 import { useNiveauxStore } from './niveaux'
 
 export const LEVELS = [
@@ -181,8 +184,9 @@ export const useClassesStore = defineStore('classes', () => {
     if (changed) saveDemoClasses()
   }
 
-  // Suffixe de clé démo selon l'édition (primaire = cache séparé).
-  function demoSuffix() { return useEditionStore().isPrimaire ? '_primaire' : '' }
+  // Suffixe de clé démo : édition ET pays. Source unique, utils/demoScope.js —
+  // ce fichier en gardait une copie locale qui ignorait le pays.
+  function demoSuffix() { return demoSuffixGlobal() }
 
   // Helpers demo localStorage
   function saveDemoClasses() {
@@ -203,7 +207,15 @@ export const useClassesStore = defineStore('classes', () => {
       const ed = useEditionStore()
       const savedVer = localStorage.getItem(DEMO_CLASSES_VERSION_KEY + demoSuffix())
       const saved = (savedVer === String(DEMO_CLASSES_VERSION)) ? loadDemoClasses() : null
-      classes.value = saved || [...(ed.isPrimaire ? DEMO_CLASSES_PRIMAIRE : DEMO_CLASSES)]
+      // Classes de démo DU PAYS choisi. Le primaire change de niveaux (CP1/CP2
+      // au Congo, SIL/CP au Cameroun) ; le secondaire a la même structure dans
+      // les deux pays (6e → Tle, séries A, C, D), seuls les noms des professeurs
+      // principaux sont localisés.
+      const pack = packPays(paysDemo())
+      const base = ed.isPrimaire
+        ? (pack.classesPrimaire || DEMO_CLASSES_PRIMAIRE)
+        : DEMO_CLASSES.map((c) => ({ ...c, homeroomTeacher: localiserNomComplet(c.homeroomTeacher, NOMS_REFERENCE, pack) }))
+      classes.value = saved || base.map((c) => ({ ...c }))
       if (!saved) {
         localStorage.setItem(DEMO_CLASSES_VERSION_KEY + demoSuffix(), String(DEMO_CLASSES_VERSION))
         saveDemoClasses()

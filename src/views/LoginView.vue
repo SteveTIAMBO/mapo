@@ -149,6 +149,24 @@
       <!-- DÉMONSTRATION : profils types, accès direct sans connexion -->
       <!-- (le formulaire ci-dessus est réservé aux comptes en ligne / vraies écoles) -->
       <div v-if="!isSchoolTenantMode && !showLogin" class="auth-demo-credentials">
+        <!-- Pays de la démonstration. Chaque pays a son propre espace de
+             stockage : revenir sur un pays restitue ce qu'on y avait laissé, et
+             aucun écran ne mélange deux pays. Changer de pays recharge
+             l'application, parce que les jeux de données sont lus à
+             l'initialisation des stores. -->
+        <div class="auth-demo-pays">
+          <span class="auth-demo-pays-label">{{ t('login.demoCountry') }}</span>
+          <div class="auth-demo-pays-choix">
+            <button
+              v-for="p in paysDisponibles"
+              :key="p.code"
+              type="button"
+              class="auth-demo-pays-btn"
+              :class="{ active: p.code === paysActif }"
+              @click="choisirPays(p.code)"
+            >{{ p.nom }}</button>
+          </div>
+        </div>
         <p class="auth-demo-title">{{ t('login.chooseDemo') }}</p>
         <div class="auth-demo-accounts">
           <button
@@ -194,6 +212,8 @@ import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
+import { paysDemo, setPaysDemo } from '../utils/demoScope'
+import { PAYS_DEMO, CODES_PAYS_DEMO } from '../data/paysDemo'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -316,6 +336,25 @@ async function handleGoogleLogin() {
   }
 }
 
+// ── Pays de la démonstration ──
+const paysDisponibles = CODES_PAYS_DEMO.map((code) => ({ code, nom: PAYS_DEMO[code].nom }))
+const paysActif = ref(paysDemo())
+
+/**
+ * Change le pays et RECHARGE la page.
+ *
+ * Le rechargement n'est pas de la paresse : les jeux de démonstration sont lus
+ * au moment où chaque store s'initialise. Basculer à chaud laisserait à l'écran
+ * les stores déjà chargés avec l'ancien pays — une école de Pointe-Noire pleine
+ * d'élèves camerounais, sans le moindre message d'erreur.
+ */
+function choisirPays(code) {
+  if (code === paysActif.value) return
+  setPaysDemo(code)
+  paysActif.value = code
+  window.location.reload()
+}
+
 function loginDemoAs(role) {
   errorMessage.value = ''
   const result = authStore.loginDemo(role, 'demo1234')
@@ -358,7 +397,11 @@ onMounted(() => {
 })
 
 function resetDemo() {
-  const keys = Object.keys(localStorage).filter(k => k.startsWith('mapo_demo'))
+  // ⚠️ Le pays choisi n'est PAS effacé : c'est une préférence d'affichage, pas
+  // une donnée de démonstration. L'effacer remettrait la démo au Cameroun alors
+  // que le sélecteur continuerait d'afficher le Congo — un écart muet entre ce
+  // qui est montré et ce qui est chargé.
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('mapo_demo') && k !== 'mapo_demo_pays')
   keys.forEach(k => localStorage.removeItem(k))
   localStorage.removeItem('mapo_nav_log')
   errorMessage.value = ''
@@ -738,6 +781,34 @@ function resetDemo() {
 .auth-forgot-link:disabled { opacity: 0.5; cursor: default; }
 
 /* ── Demo credentials ── */
+.auth-demo-pays {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.auth-demo-pays-label { font-size: 12.5px; color: var(--tx3, #8a8a8e); }
+.auth-demo-pays-choix { display: inline-flex; gap: 6px; }
+.auth-demo-pays-btn {
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--tx2, #4a4a4f);
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.auth-demo-pays-btn:hover { background: rgba(255, 255, 255, 0.85); }
+.auth-demo-pays-btn.active {
+  color: #fff;
+  background: var(--pr, #0A84FF);
+  border-color: transparent;
+}
+
 .auth-demo-credentials {
   margin-top: 20px;
   padding: 16px;

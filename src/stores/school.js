@@ -4,6 +4,8 @@ import { db } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
+import { demoKey, paysDemo } from '../utils/demoScope'
+import { packPays } from '../data/paysDemo'
 import { publishSchoolDirectory } from '../utils/schoolDirectory'
 
 export const COUNTRY_DEFAULTS = {
@@ -67,18 +69,13 @@ const DEMO_SETTINGS_KEY = 'mapo_demo_school_settings'
 const DEMO_SCHOOL_VERSION_KEY = 'mapo_demo_school_version'
 const DEMO_SCHOOL_VERSION = 7
 
-// La démo doit être propre à chaque édition (primaire ≠ secondaire) : on suffixe
-// les clés localStorage par édition, sinon une école primaire hériterait des
-// réglages du collège (nom, séquences…). Voir aussi classes.js / eleves.js.
-function demoSuffix() {
-  try {
-    return useEditionStore().isPrimaire ? '_primaire' : ''
-  } catch (e) {
-    return ''
-  }
-}
-function demoSettingsKey() { return DEMO_SETTINGS_KEY + demoSuffix() }
-function demoVersionKey() { return DEMO_SCHOOL_VERSION_KEY + demoSuffix() }
+// ⚠️ Ce fichier avait sa PROPRE copie de demoSuffix(), comme classes.js,
+// eleves.js et notes.js. Trois copies de plus veut dire trois endroits où
+// oublier une évolution : quand le PAYS est entré dans le suffixe, ces copies
+// ne l'auraient pas su, et la démo congolaise aurait relu les réglages
+// camerounais sans le moindre signal. Une seule source : utils/demoScope.js.
+function demoSettingsKey() { return demoKey(DEMO_SETTINGS_KEY) }
+function demoVersionKey() { return demoKey(DEMO_SCHOOL_VERSION_KEY) }
 
 // Génère une signature manuscrite demo sur un canvas puis retourne un data:image/png
 function generateDemoSignature() {
@@ -303,11 +300,21 @@ export const useSchoolStore = defineStore('school', () => {
           }
         } catch (e) { /* silent */ }
       } else {
-        // Initialize with demo defaults (+ surcharge primaire si édition primaire)
+        // Réglages de démo : socle camerounais, surcharge de l'édition primaire,
+        // puis IDENTITÉ DU PAYS choisi sur l'écran de connexion. Le pack du
+        // Cameroun ne surcharge rien : la démo de référence reste identique.
+        const pack = packPays(paysDemo())
         schoolSettings.value = {
           ...schoolSettings.value,
           ...DEMO_SCHOOL_DEFAULTS,
           ...(ed.isPrimaire ? DEMO_SCHOOL_PRIMAIRE : {}),
+          ...(pack.ecole || {}),
+          // Le nom d'école du primaire prime sur celui du pack : « École
+          // Primaire … » plutôt que « Collège … » quand on est en primaire.
+          ...(ed.isPrimaire && pack.ecole
+            ? { schoolName: pack.ecole.schoolName.replace(/^Coll[èe]ge( Priv[ée])?/, 'École Primaire') }
+            : {}),
+          ...(ed.isPrimaire ? (pack.ecolePrimaire || {}) : {}),
         }
         // Ajouter la signature manuscrite demo du directeur
         if (!schoolSettings.value.directorSignature) {

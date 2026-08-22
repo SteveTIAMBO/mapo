@@ -10,7 +10,9 @@ import {
   doc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
-import { demoKey } from '../utils/demoScope'
+import { demoKey, paysDemo } from '../utils/demoScope'
+import { packPays, localiserNom } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 export const STAFF_CATEGORIES = [
   { value: 'enseignement', label: 'Enseignement', color: '#1558B0' },
@@ -136,6 +138,18 @@ const DEMO_STAFF_DATA = [
   { id: 'p-020', firstName: 'Bernadette', lastName: 'Ndjié', category: 'support', role: 'Cuisinier', email: '', phone: '+237 655 112 234', subjects: [], status: 'Actif' },
 ]
 
+/**
+ * Remplace l'indicatif d'un numéro de démonstration par celui du pays.
+ * Les chiffres, eux, ne sont pas retouchés : un numéro de démo n'a pas à
+ * ressembler à un vrai numéro attribué, il doit juste ne pas afficher +237
+ * pour une école de Pointe-Noire.
+ */
+function telephonePays(tel, pack) {
+  const indicatif = String(pack?.ecole?.phone || '').split(' ')[0]
+  if (!indicatif || !tel) return tel
+  return String(tel).replace(/^\+\d+/, indicatif)
+}
+
 const DEMO_STAFF_KEY = 'mapo_demo_personnel'
 const DEMO_STAFF_VERSION_KEY = 'mapo_demo_personnel_version'
 const DEMO_STAFF_VERSION = 7 // v7: affectations classesBySubject (Jean Kamga = Maths 6ème A + Tle C)
@@ -216,7 +230,18 @@ export const usePersonnelStore = defineStore('personnel', () => {
     if (authStore.isDemo) {
       const savedVersion = localStorage.getItem(demoKey(DEMO_STAFF_VERSION_KEY))
       const saved = (savedVersion === String(DEMO_STAFF_VERSION)) ? loadDemoStaff() : []
-      const baseData = saved.length > 0 ? saved : [...DEMO_STAFF_DATA]
+      // Personnel de démonstration DU PAYS choisi : seuls le nom de famille et
+      // l'adresse e-mail qui en découle changent. Les identifiants (p-001…),
+      // les matières et les affectations de classes restent identiques — c'est
+      // ce qui garde l'emploi du temps, les notes et le cahier de préparation
+      // cohérents d'un pays à l'autre.
+      const pack = packPays(paysDemo())
+      const baseData = saved.length > 0 ? saved : DEMO_STAFF_DATA.map((p) => {
+        const lastName = localiserNom(p.lastName, NOMS_REFERENCE, pack)
+        if (lastName === p.lastName) return { ...p }
+        const email = `${p.firstName.charAt(0).toLowerCase()}.${lastName.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')}@edufrem.com`
+        return { ...p, lastName, email, phone: telephonePays(p.phone, pack) }
+      })
       // Ensure salary field exists on all demo staff
       staff.value = baseData.map(s => ({
         ...s,

@@ -85,7 +85,8 @@
     "classPlaceholder": "Choisir…",
     "formationName": "Ta formation",
     "formationPlaceholder": "MBA, BTS, concours…",
-    "googleSignupBlocked": "Ce compte Google n'existe pas encore sur MAPO+. Crée d'abord ton compte avec le formulaire : on a besoin de savoir si tu es parent ou apprenant, et dans quel pays."
+    "googleSignupBlocked": "Ce compte Google n'existe pas encore sur MAPO+. Crée d'abord ton compte avec le formulaire : on a besoin de savoir si tu es parent ou apprenant, et dans quel pays.",
+    "demoCountry": "Pays de la démonstration"
   },
   "verifyEmail": {
     "created": "Ton compte MAPO+ est créé.",

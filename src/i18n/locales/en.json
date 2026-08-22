@@ -85,7 +85,8 @@
     "classPlaceholder": "Choose…",
     "formationName": "Your program",
     "formationPlaceholder": "MBA, diploma, exam prep…",
-    "googleSignupBlocked": "This Google account does not exist on MAPO+ yet. Create your account with the form first: we need to know whether you are a parent or a learner, and in which country."
+    "googleSignupBlocked": "This Google account does not exist on MAPO+ yet. Create your account with the form first: we need to know whether you are a parent or a learner, and in which country.",
+    "demoCountry": "Demo country"
   },
   "verifyEmail": {
     "created": "Your MAPO+ account has been created.",

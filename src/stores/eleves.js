@@ -12,6 +12,9 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
+import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
+import { packPays } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 export const GENDERS = [
   { value: 'M', label: 'Masculin' },
@@ -40,7 +43,19 @@ export const VULNERABILITY_TYPES = [
 // Prenoms camerounais courants
 const FIRST_NAMES_M = ['Jean', 'Paul', 'Samuel', 'David', 'Emmanuel', 'Patrick', 'François', 'Daniel', 'Joseph', 'Albert', 'Pierre', 'Henri', 'Marc', 'Stéphane', 'Kevin', 'Yannick', 'Olivier', 'Christian', 'Éric', 'Joël', 'Isaac', 'Benjamin', 'Armand', 'Cédric', 'Fabrice']
 const FIRST_NAMES_F = ['Marie', 'Claire', 'Hélène', 'Brigitte', 'Sylvie', 'Rose', 'Jeanne', 'Bernadette', 'Julienne', 'Victoire', 'Anne', 'Céline', 'Sandrine', 'Florence', 'Grâce', 'Esther', 'Ruth', 'Vanessa', 'Christelle', 'Nadège', 'Pauline', 'Viviane', 'Colette', 'Irène', 'Monique']
-const LAST_NAMES = ['Kamga', 'Mbarga', 'Ngo', 'Nana', 'Atangana', 'Fotso', 'Djomou', 'Kenfack', 'Ngono', 'Tagne', 'Mballa', 'Essomba', 'Teussop', 'Fouda', 'Nkoulou', 'Onana', 'Biyick', 'Ekotto', 'Mvondo', 'Ndjie', 'Tchinda', 'Simo', 'Mbianda', 'Tchoupo', 'Nkeng', 'Messi', 'Ndjock', 'Owona', 'Tamba', 'Eyebe', 'Belibi', 'Ongolo', 'Zang', 'Etoundi', 'Abega']
+/**
+ * Noms de famille des élèves de démonstration — CEUX DU PAYS CHOISI.
+ *
+ * La liste camerounaise vit désormais dans `data/nomsDemo.js` (liste de
+ * référence) ; le pays choisi fournit ses équivalents position par position.
+ * On ne prend que les 35 premiers : les suivants sont réservés au personnel,
+ * les mêler ferait apparaître des noms de professeurs parmi les élèves.
+ */
+function lastNames() {
+  const pack = packPays(paysDemo())
+  const source = pack.nomsFamille || NOMS_REFERENCE
+  return source.slice(0, 35)
+}
 const CITIES = ['Yaounde', 'Douala', 'Bafoussam', 'Garoua', 'Bamenda']
 const QUARTIERS_YDE = ['Santa Barbara', 'Bastos', 'Mvan', 'Essos', 'Nkolbisson', 'Biyem-Assi', 'Mendong', 'Emana', 'Ngousso', 'Mimboman', 'Nkoldongo', 'Mokolo']
 
@@ -73,7 +88,7 @@ function generateDemoStudents() {
       const gender = Math.random() > 0.48 ? 'M' : 'F'
       const firstNames = gender === 'M' ? FIRST_NAMES_M : FIRST_NAMES_F
       const firstName = pickRandom(firstNames)
-      const lastName = pickRandom(LAST_NAMES)
+      const lastName = pickRandom(lastNames())
       const birthYear = className.startsWith('6') ? 2014 : className.startsWith('5') ? 2013 : className.startsWith('4') ? 2012 : className.startsWith('3') ? 2011 : className.startsWith('2') ? 2010 : className.startsWith('1') ? 2009 : 2008
       const birthMonth = Math.floor(Math.random() * 12) + 1
       const birthDay = Math.floor(Math.random() * 28) + 1
@@ -90,7 +105,7 @@ function generateDemoStudents() {
         className,
         city: 'Yaounde',
         quartier: pickRandom(QUARTIERS_YDE),
-        parentLastName: pickRandom(LAST_NAMES),
+        parentLastName: pickRandom(lastNames()),
         parentFirstName: pickRandom(parentFirstNames),
         parentPhone: `+237 6${Math.floor(Math.random() * 4) + 5}${Math.floor(Math.random() * 10)} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
         parentPhone2: Math.random() > 0.7 ? `+237 6${Math.floor(Math.random() * 4) + 5}${Math.floor(Math.random() * 10)} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}` : '',
@@ -214,13 +229,13 @@ function generatePrimaireStudents() {
         id: `ep-${String(id).padStart(4, '0')}`,
         matricule: generateMatricule(year, id),
         firstName: pickRandom(firstNames),
-        lastName: pickRandom(LAST_NAMES),
+        lastName: pickRandom(lastNames()),
         gender,
         dateOfBirth: `${year}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}`,
         className: name,
         city: 'Douala',
         quartier: pickRandom(QUARTIERS_YDE),
-        parentLastName: pickRandom(LAST_NAMES),
+        parentLastName: pickRandom(lastNames()),
         parentFirstName: pickRandom(FIRST_NAMES_M),
         parentPhone: `+237 6${Math.floor(Math.random() * 4) + 5}${Math.floor(Math.random() * 10)} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')} ${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`,
         parentPhone2: '',
@@ -286,8 +301,9 @@ export const useElevesStore = defineStore('eleves', () => {
     return [...set].sort()
   })
 
-  // Suffixe de clé démo selon l'édition (primaire = cache séparé).
-  function demoSuffix() { return useEditionStore().isPrimaire ? '_primaire' : '' }
+  // Suffixe de clé démo : édition ET pays. Source unique, utils/demoScope.js —
+  // ce fichier en gardait une copie locale qui ignorait le pays.
+  function demoSuffix() { return demoSuffixGlobal() }
 
   // Helpers demo localStorage
   function saveDemoEleves() {

@@ -9,6 +9,7 @@ import { usePersonnelStore, SUBJECTS_BY_CYCLE } from './personnel'
 import { useElevesStore } from './eleves'
 import { getDefaultHoursForLevel, getSubjectHoursKey } from './emploi-du-temps'
 import { useSubjectsStore } from './subjects'
+import { demoKey } from '../utils/demoScope'
 
 // ── Structure : Sequence 1 + Sequence 2 = Trimestre. T1+T2+T3 = Année ──
 //
@@ -143,14 +144,11 @@ const DEMO_NOTES_KEY = 'mapo_demo_notes'
 const DEMO_NOTES_VERSION_KEY = 'mapo_demo_notes_version'
 const DEMO_NOTES_VERSION = 14 // v14: clés démo edition-aware + seed primaire (trimestriel S1/S3/S5)
 
-// La démo de notes doit être propre à chaque édition (sinon le primaire hérite des
-// notes du secondaire, dont les IDs de classes diffèrent → bulletin vide). On suffixe
-// les clés localStorage par édition, comme school.js / classes.js / eleves.js.
-function notesDemoSuffix() {
-  try { return useEditionStore().isPrimaire ? '_primaire' : '' } catch (e) { return '' }
-}
-function notesDemoKey() { return DEMO_NOTES_KEY + notesDemoSuffix() }
-function notesDemoVersionKey() { return DEMO_NOTES_VERSION_KEY + notesDemoSuffix() }
+// La démo de notes est propre à chaque édition ET à chaque pays (sinon le
+// primaire hérite des notes du secondaire, dont les IDs de classes diffèrent →
+// bulletin vide). Suffixe unique : utils/demoScope.js.
+function notesDemoKey() { return demoKey(DEMO_NOTES_KEY) }
+function notesDemoVersionKey() { return demoKey(DEMO_NOTES_VERSION_KEY) }
 
 export const useNotesStore = defineStore('notes', () => {
   // notes: { [classId_subjectId_sequence]: { [eleveId]: number|null } }
