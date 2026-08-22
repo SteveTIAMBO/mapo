@@ -7,6 +7,17 @@ import { demoKey } from '../utils/demoScope'
 import { useClassesStore } from './classes'
 import { useElevesStore } from './eleves'
 import { usePersonnelStore } from './personnel'
+import { packPays, montantDemo } from '../data/paysDemo'
+import { paysDemo } from '../utils/demoScope'
+
+/**
+ * Met un montant de démonstration à l'échelle du pays choisi.
+ * Sans cela, une école française affichait des frais de scolarité de
+ * 150 000 € — des francs CFA portant un symbole euro.
+ */
+function montantsPays(ligne) {
+  return { ...ligne, amount: montantDemo(ligne.amount, packPays(paysDemo())) }
+}
 
 const DEMO_KEY = 'mapo_demo_facturation'
 const DEMO_VERSION_KEY = 'mapo_demo_facturation_version'
@@ -394,6 +405,7 @@ export const useFacturationStore = defineStore('facturation', () => {
 
     // Grille tarifaire réaliste (école privée Cameroun)
     feeStructure.value = [
+      ...[
       { id: 'fee-1', feeType: 'inscription', label: 'Frais d\'inscription', level: 'all', amount: 25000 },
       { id: 'fee-2', feeType: 'scolarite', label: 'Scolarité - Collège', level: '6e', amount: 150000 },
       { id: 'fee-3', feeType: 'scolarite', label: 'Scolarité - Collège', level: '5e', amount: 150000 },
@@ -403,6 +415,7 @@ export const useFacturationStore = defineStore('facturation', () => {
       { id: 'fee-7', feeType: 'scolarite', label: 'Scolarité - Lycée', level: '1ere', amount: 200000 },
       { id: 'fee-8', feeType: 'scolarite', label: 'Scolarité - Lycée', level: 'Tle', amount: 225000 },
       { id: 'fee-9', feeType: 'ape', label: 'Frais APE', level: 'all', amount: 10000 },
+      ].map(montantsPays),
       { id: 'fee-10', feeType: 'examen', label: 'Frais d\'examen', level: 'all', amount: 5000 },
     ]
 
@@ -514,6 +527,7 @@ export const useFacturationStore = defineStore('facturation', () => {
 
     // Charges fixes démo
     charges.value = [
+      ...[
       { id: 'chg-1', label: 'Loyer locaux', category: 'immobilier', amount: 500000, frequency: 'mensuel' },
       { id: 'chg-2', label: 'Électricité', category: 'energie', amount: 120000, frequency: 'mensuel' },
       { id: 'chg-3', label: 'Eau', category: 'energie', amount: 45000, frequency: 'mensuel' },
@@ -522,6 +536,7 @@ export const useFacturationStore = defineStore('facturation', () => {
       { id: 'chg-6', label: 'Fournitures bureau', category: 'fournitures', amount: 75000, frequency: 'trimestriel' },
       { id: 'chg-7', label: 'Entretien et réparations', category: 'maintenance', amount: 100000, frequency: 'trimestriel' },
       { id: 'chg-8', label: 'Produits d\'entretien', category: 'fournitures', amount: 40000, frequency: 'mensuel' },
+      ].map(montantsPays),
     ]
 
     // Salaires démo pour les mois passés (sept 2025 → mars 2026)
@@ -539,7 +554,10 @@ export const useFacturationStore = defineStore('facturation', () => {
     for (const month of salMonths) {
       const staffList = personnelStore.staff.length > 0 ? personnelStore.staff : []
       for (const s of staffList) {
-        const salary = s.salary || DEMO_SALARIES[s.role] || 150000
+        // `s.salary` est déjà à l'échelle du pays (personnel.js). Le repli, lui,
+        // ne l'était pas : il aurait réintroduit des francs CFA en euros.
+        const pack = packPays(paysDemo())
+        const salary = s.salary || montantDemo(DEMO_SALARIES[s.role] || 150000, pack, { min: pack.salaireMin })
         // 95% payés sur les mois passés, sauf mars (mois en cours) 70%
         const isPaid = month === '2026-03' ? Math.random() < 0.7 : Math.random() < 0.95
         if (isPaid) {

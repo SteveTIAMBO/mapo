@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries, directeurDuPays } from '../data/paysDemo'
+import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries, directeurDuPays, montantDemo } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 /**
@@ -298,5 +298,42 @@ describe('le directeur déclaré est celui qui se connecte', () => {
     for (const code of CODES_PAYS_DEMO) {
       expect(PAYS_DEMO[code].ecole.directorName).toBeUndefined()
     }
+  })
+})
+
+describe('montants de démonstration à l’échelle du pays', () => {
+  /**
+   * Défaut vu à l'écran : la fiche de paie française affichait « 220 000 € »
+   * par mois pour un enseignant — des francs CFA portant un symbole euro.
+   * Aucun prospect français ne peut prendre ça au sérieux.
+   */
+  it('les pays en franc CFA ne changent rien', () => {
+    for (const code of ['CM', 'CG', 'SN']) {
+      expect(montantDemo(220000, PAYS_DEMO[code])).toBe(220000)
+    }
+  })
+
+  it('la France ramène les montants à des ordres de grandeur plausibles', () => {
+    const fr = PAYS_DEMO.FR
+    expect(montantDemo(220000, fr)).toBeGreaterThan(2000)
+    expect(montantDemo(220000, fr)).toBeLessThan(4000)
+    expect(montantDemo(150000, fr)).toBeGreaterThan(1000) // scolarité annuelle
+    expect(montantDemo(150000, fr)).toBeLessThan(3500)
+  })
+
+  it('⚠️ aucun salaire français ne passe sous le SMIC', () => {
+    // Sans plancher, l'agent d'entretien de la démo serait payé 1 000 € brut :
+    // illégal, et visible par n'importe quel visiteur français.
+    const fr = PAYS_DEMO.FR
+    expect(montantDemo(75000, fr, { min: fr.salaireMin })).toBe(1800)
+    // Le plancher ne s'applique QU'aux salaires : une facture de 75 000 FCFA
+    // n'a pas de minimum légal.
+    expect(montantDemo(75000, fr)).toBeLessThan(1800)
+  })
+
+  it('ce n’est PAS une conversion au cours officiel', () => {
+    // 220 000 XAF valent environ 335 € : un salaire tout aussi faux. Le facteur
+    // cherche la plausibilité, pas l'équivalence monétaire.
+    expect(montantDemo(220000, PAYS_DEMO.FR)).not.toBeCloseTo(220000 / 655.957, 0)
   })
 })

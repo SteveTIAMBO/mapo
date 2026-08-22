@@ -54,6 +54,8 @@ export const PAYS_DEMO = {
     // Séries du second cycle. `null` signifie « aucune série », pas « celles du
     // Cameroun » : la France n'en a plus depuis la réforme du lycée.
     seriesLycee: ['A', 'C', 'D'],
+    // Échelle des montants de démonstration. Voir `montantDemo`.
+    facteurMontant: 1,
   },
 
   CG: {
@@ -118,6 +120,8 @@ export const PAYS_DEMO = {
     // relèvent du technique et n'ont rien à faire dans une démo d'enseignement
     // général. Source : ecolesaucongo.com/series.html.
     seriesLycee: ['A', 'C', 'D'],
+    // Franc CFA comme le Cameroun : les ordres de grandeur sont les mêmes.
+    facteurMontant: 1,
   },
 
   // ── Sénégal ──
@@ -175,6 +179,9 @@ export const PAYS_DEMO = {
      * répandues. Source : senegalecoles.com/series-1-series-secondaire-general.html
      */
     seriesLycee: ['L2', 'S1', 'S2'],
+    // Le XOF et le XAF ont la même valeur face à l'euro : mêmes ordres de
+    // grandeur pour les salaires comme pour les frais de scolarité.
+    facteurMontant: 1,
   },
 
   // ── France ──
@@ -228,6 +235,27 @@ export const PAYS_DEMO = {
      * pas « celles du voisin » : les classes deviennent 1ère 1, 1ère 2, 1ère 3.
      */
     seriesLycee: null,
+    /**
+     * ⚠️ Échelle des montants — ce n'est PAS un taux de change.
+     *
+     * Les montants de démonstration sont calibrés en francs CFA. Affichés tels
+     * quels avec le symbole euro, ils donnaient « 220 000 € par mois » sur la
+     * fiche de paie d'un enseignant : un chiffre qu'aucun prospect français ne
+     * peut prendre au sérieux. Une conversion au cours officiel (655,957) ne
+     * corrigerait rien non plus — elle donnerait 335 €, tout aussi faux.
+     *
+     * Ce facteur cherche la PLAUSIBILITÉ, pas l'équivalence monétaire : un
+     * professeur autour de 2 400 €, un directeur autour de 4 700 €, une
+     * scolarité de collège privé autour de 2 000 € l'an.
+     */
+    facteurMontant: 1 / 75,
+    /**
+     * Aucun bulletin français ne peut afficher moins que le SMIC. Sans ce
+     * plancher, l'agent d'entretien de la démo serait payé 1 000 € brut —
+     * illégal, et visible par n'importe quel visiteur français.
+     * SMIC mensuel brut 2026 : environ 1 800 €.
+     */
+    salaireMin: 1800,
   },
 }
 
@@ -358,4 +386,18 @@ export function appliquerSeries(classes, packSource, pack) {
     const prefixe = c.name.replace(new RegExp('\\s*' + c.serie + '$'), '')
     return { ...c, serie: cible ? nouvelle : '', section: nouvelle, name: `${prefixe} ${nouvelle}` }
   })
+}
+
+/**
+ * Montant de démonstration à l'échelle du pays.
+ *
+ * `min` sert aux salaires : un plancher légal (le SMIC en France) que le simple
+ * produit ne respecterait pas. Arrondi à la dizaine pour rester lisible.
+ */
+export function montantDemo(montant, pack, { min = 0 } = {}) {
+  const f = pack?.facteurMontant ?? 1
+  if (f === 1) return montant
+  const brut = Number(montant) * f
+  const plancher = min || 0
+  return Math.max(plancher, Math.round(brut / 10) * 10)
 }

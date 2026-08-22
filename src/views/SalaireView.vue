@@ -184,6 +184,8 @@ import { usePersonnelStore } from '../stores/personnel'
 import { useSchoolStore } from '../stores/school'
 import { fmtMontant } from '../utils/monnaie'
 import { calculPaie, fmtTaux } from '../utils/paie'
+import { packPays, montantDemo } from '../data/paysDemo'
+import { paysDemo } from '../utils/demoScope'
 import { Wallet, Download, Info, MessageSquare, Plus, X } from 'lucide-vue-next'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -203,7 +205,13 @@ const staffRecord = computed(() =>
   personnelStore.getTeacherStaffRecord(authStore.userProfile)
 )
 
-const currentSalary = computed(() => staffRecord.value?.salary || 180000)
+// Repli quand l'enseignant n'a pas de fiche de personnel. Mis à l'échelle du
+// pays comme le reste : sinon il affichait 180 000 € en France.
+const currentSalary = computed(() => {
+  if (staffRecord.value?.salary) return staffRecord.value.salary
+  const pack = packPays(paysDemo())
+  return montantDemo(180000, pack, { min: pack.salaireMin })
+})
 
 /**
  * Décompte du bulletin — BARÈME DU PAYS DE L'ÉCOLE.

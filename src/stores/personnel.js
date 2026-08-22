@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey, paysDemo } from '../utils/demoScope'
-import { packPays, localiserNom } from '../data/paysDemo'
+import { packPays, localiserNom, montantDemo } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 export const STAFF_CATEGORIES = [
@@ -243,9 +243,11 @@ export const usePersonnelStore = defineStore('personnel', () => {
         return { ...p, lastName, email, phone: telephonePays(p.phone, pack) }
       })
       // Ensure salary field exists on all demo staff
+      // Salaires À L'ÉCHELLE DU PAYS. Sans cela, la fiche de paie française
+      // affichait « 220 000 € » par mois pour un enseignant.
       staff.value = baseData.map(s => ({
         ...s,
-        salary: s.salary || DEMO_SALARIES[s.role] || 150000,
+        salary: montantDemo(s.salary || DEMO_SALARIES[s.role] || 150000, pack, { min: pack.salaireMin }),
       }))
       if (saved.length === 0) {
         localStorage.setItem(demoKey(DEMO_STAFF_VERSION_KEY), String(DEMO_STAFF_VERSION))
