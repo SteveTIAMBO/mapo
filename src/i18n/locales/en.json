@@ -1652,7 +1652,10 @@
     "progressive": "Progressive scale",
     "payDay": "Payment day",
     "payDay25": "25th of each month",
-    "source": "Rate source: {s}"
+    "source": "Rate source: {s}",
+    "contributions": "Contributions",
+    "tax": "Tax",
+    "taxNotDeducted": "Salary tax is not configured for this country: it is NOT deducted from the net amounts below. Enter your rate in Settings › Payroll."
   },
   "sup": {
     "backToChoice": "Back to selection",

@@ -1652,7 +1652,10 @@
     "progressive": "Barème progressif",
     "payDay": "Jour de paiement",
     "payDay25": "25 de chaque mois",
-    "source": "Source des taux : {s}"
+    "source": "Source des taux : {s}",
+    "contributions": "Cotisations",
+    "tax": "Impôt",
+    "taxNotDeducted": "L'impôt sur les salaires n'est pas paramétré pour ce pays : il n'est PAS déduit des nets ci-dessous. Saisissez votre taux dans Paramètres › Paie."
   },
   "sup": {
     "backToChoice": "Retour au choix",

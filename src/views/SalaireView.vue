@@ -39,14 +39,18 @@
         {{ t('sal.paymentHistory') }}
       </h2>
       <div class="card">
+        <p v-if="!paie.paysCouvert" class="paie-avert">{{ t('sal.noScale') }}</p>
+        <p v-else-if="paie.impotNonParametre" class="paie-avert">{{ t('sal.taxNotDeducted') }}</p>
         <div class="table-wrapper">
           <table class="data-table">
             <thead>
               <tr>
                 <th>{{ t('sal.period') }}</th>
                 <th class="text-right">{{ t('sal.gross') }}</th>
-                <th class="text-right">CNPS</th>
-                <th class="text-right">IRF</th>
+                <!-- Libellés génériques : « CNPS » et « IRF » sont camerounais,
+                     ils étaient faux dès qu'une école n'était pas au Cameroun. -->
+                <th class="text-right">{{ t('sal.contributions') }}</th>
+                <th class="text-right">{{ paie.impotLibelle || t('sal.tax') }}</th>
                 <th class="text-right">{{ t('sal.netPaid') }}</th>
                 <th class="text-center">{{ t('sal.status') }}</th>
                 <th class="text-center">{{ t('sal.payslip') }}</th>
@@ -57,7 +61,12 @@
                 <td><strong>{{ p.period }}</strong></td>
                 <td class="text-right font-mono">{{ formatMoney(p.gross) }}</td>
                 <td class="text-right font-mono" style="color:var(--danger);">-{{ formatMoney(p.cnps) }}</td>
-                <td class="text-right font-mono" style="color:var(--danger);">-{{ formatMoney(p.irf) }}</td>
+                <!-- ⚠️ « - 0 » se lit « rien à payer ». Quand l'impôt n'est pas
+                     paramétré, on écrit « — » : on ne sait pas, on le dit. -->
+                <td class="text-right font-mono" style="color:var(--danger);">
+                  <span v-if="paie.impotNonParametre" :title="t('sal.taxNotSet')">—</span>
+                  <span v-else>-{{ formatMoney(p.irf) }}</span>
+                </td>
                 <td class="text-right font-mono" style="font-weight:600;">{{ formatMoney(p.net) }}</td>
                 <td class="text-center">
                   <span class="status-badge" :class="p.paid ? 'status-paid' : 'status-pending'">
@@ -389,6 +398,8 @@ onMounted(async () => {
   font-weight: 600;
   margin-bottom: 12px;
 }
+
+.paie-avert { margin: 0; padding: 12px 16px; font-size: 13px; color: var(--tx2); background: rgba(var(--pr-rgb), 0.06); border-radius: 10px 10px 0 0; }
 
 .info-source { margin: 14px 0 0; font-size: 12px; color: var(--tx3); }
 

@@ -38,7 +38,7 @@ export const BAREMES_PAIE = {
   // documentées comme SIMPLIFIÉES ; on conserve la mention, on ne la masque pas.
   CM: {
     simplifie: true,
-    source: 'Barème simplifié historique du dépôt (CNPS / IRPP / CAC).',
+    source: 'Barème simplifié (CNPS / IRPP / CAC) — à faire confirmer par votre comptable.',
     cotisations: [
       pct('CNPS', 'CNPS (part salariale)', 0.042, 750000),
     ],
