@@ -4018,7 +4018,19 @@
     "secMiapoRef": "MIAPO — school examples",
     "miapoRefHint": "Paste past assignment or exam papers here, by subject. MIAPO uses them (style, level, format) to generate content aligned with your school — without copying them.",
     "miapoRefPh": "Paste one or more sample papers for this subject…",
-    "miapoRefNoSubjects": "Add subjects first to personalize MIAPO."
+    "miapoRefNoSubjects": "Add subjects first to personalize MIAPO.",
+    "periodSystem": "Year structure",
+    "periodTri": "Terms",
+    "periodSem": "Semesters",
+    "periodsEmpty": "No period is defined yet. Generate a starting calendar, then adjust the dates to your school.",
+    "periodsGenerate": "Generate calendar",
+    "periodsGenerated": "{n} periods created. Adjust the dates, then save.",
+    "periodAdd": "Add a period",
+    "periodRemove": "Remove the last one",
+    "periodAdded": "{p} added.",
+    "periodRemoved": "{p} removed.",
+    "periodLastOne": "A school has at least one period.",
+    "periodHasNotes": "{p} holds {n} grade(s): delete them first, otherwise they would become unreachable."
   },
   "onb": {
     "welcome": "Welcome! How would you like to start?",
@@ -4084,7 +4096,13 @@
     "previous": "Previous",
     "next": "Next",
     "starting": "Starting...",
-    "startApp": "Start MAPO"
+    "startApp": "Start MAPO",
+    "periodSystem": "Year structure",
+    "periodHint": "How does your school divide the academic year?",
+    "periodTriTitle": "Terms",
+    "periodTriDesc": "Three periods, with an end-of-term report card.",
+    "periodSemTitle": "Semesters",
+    "periodSemDesc": "Two periods, with an end-of-semester report card."
   },
   "rt": {
     "adminEdufrem": "EDUFREM Administration",
@@ -5751,5 +5769,11 @@
     "parentOk": "Done. They sign in with {p} and their code.",
     "parentTaken": "The login name {p} is already taken. Try another one, for instance by adding a digit.",
     "parentErr": "Saving failed. Please try again in a moment."
+  },
+  "periode": {
+    "trimestre": "Term {n} | Term {n}",
+    "semestre": "Semester {n} | Semester {n}",
+    "sequence": "Sequence {n} | Sequence {n}",
+    "annuel": "Annual report"
   }
 }

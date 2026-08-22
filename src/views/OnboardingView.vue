@@ -180,6 +180,30 @@
               </div>
             </div>
 
+            <!-- Découpage de l'année : trimestres ou semestres. Sans ce choix,
+                 toute école recevait trois trimestres, y compris celles qui
+                 fonctionnent au semestre. -->
+            <div class="form-group full-width">
+              <label class="form-label">{{ t('onb.periodSystem') }}</label>
+              <p class="field-hint">{{ t('onb.periodHint') }}</p>
+              <div class="radio-group">
+                <label class="radio-item" :class="{ 'radio-selected': formData.decoupage === 'trimestres' }">
+                  <input v-model="formData.decoupage" type="radio" name="decoupage" value="trimestres" />
+                  <div class="radio-content">
+                    <span class="radio-title">{{ t('onb.periodTriTitle') }}</span>
+                    <span class="radio-desc">{{ t('onb.periodTriDesc') }}</span>
+                  </div>
+                </label>
+                <label class="radio-item" :class="{ 'radio-selected': formData.decoupage === 'semestres' }">
+                  <input v-model="formData.decoupage" type="radio" name="decoupage" value="semestres" />
+                  <div class="radio-content">
+                    <span class="radio-title">{{ t('onb.periodSemTitle') }}</span>
+                    <span class="radio-desc">{{ t('onb.periodSemDesc') }}</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div class="form-group full-width">
               <label class="form-label">{{ t('onb.evalSystem') }}</label>
               <p class="field-hint">{{ t('onb.evalHint') }}</p>
@@ -400,6 +424,7 @@ import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
+import { periodesParDefaut } from '../utils/periodes'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -427,6 +452,7 @@ const formData = ref({
   cycles: ['college'],
   language: 'fr',
   evaluationType: '2_sequences',
+  decoupage: 'trimestres',
   directorName: 'Steve TIAMBO',
   directorPhone: '',
   directorEmail: '',
@@ -620,8 +646,18 @@ async function onConfigFile(e) {
 const startMAP = async () => {
   isSubmitting.value = true
   try {
+    // ⚠️ L'onboarding n'écrivait AUCUNE période. L'école arrivait ensuite dans
+    // Paramètres sur une section « Périodes scolaires » vide, sans aucun bouton
+    // pour en créer une : son calendrier était insaisissable. On écrit donc un
+    // calendrier de départ, que l'école corrige ensuite — on ne peut corriger
+    // que ce qui existe.
     await schoolStore.saveSettings({
       ...formData.value,
+      periods: periodesParDefaut({
+        decoupage: formData.value.decoupage,
+        evaluationType: formData.value.evaluationType,
+        academicYear: formData.value.academicYear,
+      }),
       setupCompleted: true
     })
     router.push('/dashboard')

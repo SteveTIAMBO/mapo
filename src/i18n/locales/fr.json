@@ -4018,7 +4018,19 @@
     "secMiapoRef": "MIAPO — exemples de l'école",
     "miapoRefHint": "Collez ici des sujets de devoirs ou d'examens des années précédentes, par matière. MIAPO s'en inspire (style, niveau, format) pour générer des sujets alignés sur votre établissement — sans les recopier.",
     "miapoRefPh": "Collez un ou plusieurs sujets types pour cette matière…",
-    "miapoRefNoSubjects": "Ajoutez d'abord des matières pour personnaliser MIAPO."
+    "miapoRefNoSubjects": "Ajoutez d'abord des matières pour personnaliser MIAPO.",
+    "periodSystem": "Découpage de l'année",
+    "periodTri": "Trimestres",
+    "periodSem": "Semestres",
+    "periodsEmpty": "Aucune période n'est définie. Générez un calendrier de départ, puis ajustez les dates à votre établissement.",
+    "periodsGenerate": "Générer le calendrier",
+    "periodsGenerated": "{n} périodes créées. Ajustez les dates, puis enregistrez.",
+    "periodAdd": "Ajouter une période",
+    "periodRemove": "Retirer la dernière",
+    "periodAdded": "{p} ajouté.",
+    "periodRemoved": "{p} retiré.",
+    "periodLastOne": "Une école a au moins une période.",
+    "periodHasNotes": "{p} porte {n} note(s) : supprimez-les d'abord, sinon elles deviendraient introuvables."
   },
   "onb": {
     "welcome": "Bienvenue ! Comment démarrer ?",
@@ -4084,7 +4096,13 @@
     "previous": "Précédent",
     "next": "Suivant",
     "starting": "Démarrage...",
-    "startApp": "Démarrer MAPO"
+    "startApp": "Démarrer MAPO",
+    "periodSystem": "Découpage de l'année",
+    "periodHint": "Comment votre établissement découpe-t-il l'année scolaire ?",
+    "periodTriTitle": "Trimestres",
+    "periodTriDesc": "Trois périodes, du bulletin de fin de trimestre.",
+    "periodSemTitle": "Semestres",
+    "periodSemDesc": "Deux périodes, du bulletin de fin de semestre."
   },
   "rt": {
     "adminEdufrem": "Administration EDUFREM",
@@ -5751,5 +5769,11 @@
     "parentOk": "C'est fait. Il se connecte avec {p} et son code.",
     "parentTaken": "L'identifiant {p} est déjà pris. Essayez-en un autre, par exemple en ajoutant un chiffre.",
     "parentErr": "L'enregistrement a échoué. Réessayez dans un instant."
+  },
+  "periode": {
+    "trimestre": "1er trimestre | {n}ème trimestre",
+    "semestre": "1er semestre | {n}ème semestre",
+    "sequence": "Séquence {n} | Séquence {n}",
+    "annuel": "Bilan annuel"
   }
 }

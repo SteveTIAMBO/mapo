@@ -11,6 +11,12 @@ import { getDefaultHoursForLevel, getSubjectHoursKey } from './emploi-du-temps'
 import { useSubjectsStore } from './subjects'
 
 // ── Structure : Sequence 1 + Sequence 2 = Trimestre. T1+T2+T3 = Année ──
+//
+// ⚠️ Ces trois tables sont le découpage PAR DÉFAUT (camerounais), plus la source
+// des écrans. Depuis le 22/08/2026, les périodes affichées viennent de l'école,
+// via `src/utils/periodes.js` : une école au semestre, ou qui n'évalue qu'une
+// fois par période, n'avait sinon aucune issue. On les garde comme référence du
+// modèle et pour les tests de calcul.
 
 export const SEQUENCES = [
   { value: 'S1', label: 'Séquence 1', trimester: 'T1' },
@@ -762,6 +768,29 @@ export const useNotesStore = defineStore('notes', () => {
   }
 
   /** Nombre de notes réellement saisies. Sert à ne prévenir que s'il y a de quoi. */
+  /**
+   * Combien de notes sont saisies pour une période (ou l'une de ses séquences) ?
+   *
+   * Sert à REFUSER la suppression d'une période qui porte des notes. Sans ce
+   * garde-fou, retirer une période laisserait ses notes orphelines dans le
+   * stockage : invisibles à l'écran, jamais recalculées, et impossibles à
+   * retrouver. Une donnée qui disparaît de la vue sans disparaître du disque est
+   * pire qu'une donnée supprimée.
+   */
+  function compterNotesPeriode(codePeriode, sequences = []) {
+    const cibles = new Set([codePeriode, ...sequences])
+    let n = 0
+    for (const key of Object.keys(notes.value)) {
+      // La clé est `classe_matiere_periode` : la période est le dernier segment.
+      const periode = key.slice(key.lastIndexOf('_') + 1)
+      if (!cibles.has(periode)) continue
+      for (const v of Object.values(notes.value[key] || {})) {
+        if (v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v))) n++
+      }
+    }
+    return n
+  }
+
   function compterNotesSaisies() {
     let n = 0
     for (const key of Object.keys(notes.value)) {
@@ -1070,7 +1099,7 @@ export const useNotesStore = defineStore('notes', () => {
     getGeneralTrimesterAvg, getGeneralAnnualAvg,
     getClassRanking, getClassAnnualRanking,
     getSequenceStats,
-    loadNotes, saveAllNotes, convertirNotes, compterNotesSaisies, completeSetup,
+    loadNotes, saveAllNotes, convertirNotes, compterNotesSaisies, compterNotesPeriode, completeSetup,
     erreurStockage,
     // Mentions
     getCustomMention, setCustomMention,

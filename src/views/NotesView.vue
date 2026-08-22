@@ -85,23 +85,13 @@
           </div>
           <div class="field" style="margin-bottom:0; min-width:200px;">
             <label>{{ t('notes.periodLabel') }}</label>
+            <!-- La liste suit le découpage de l'école (trimestres ou semestres,
+                 avec ou sans séquences). Elle était écrite en dur sur trois
+                 trimestres et six séquences. -->
             <select v-model="selectedPeriod" class="input">
-              <template v-if="!isSingleEval">
-                <option value="S1">{{ t('notes.periods.S1') }}</option>
-                <option value="S2">{{ t('notes.periods.S2') }}</option>
+              <template v-for="p in SIGN_PERIODS" :key="p.value">
+                <option v-if="!(isSingleEval && p.type === 'sequence')" :value="p.value">{{ p.label }}</option>
               </template>
-              <option value="T1">{{ t('notes.periods.T1') }}</option>
-              <template v-if="!isSingleEval">
-                <option value="S3">{{ t('notes.periods.S3') }}</option>
-                <option value="S4">{{ t('notes.periods.S4') }}</option>
-              </template>
-              <option value="T2">{{ t('notes.periods.T2') }}</option>
-              <template v-if="!isSingleEval">
-                <option value="S5">{{ t('notes.periods.S5') }}</option>
-                <option value="S6">{{ t('notes.periods.S6') }}</option>
-              </template>
-              <option value="T3">{{ t('notes.periods.T3') }}</option>
-              <option value="annual">{{ t('notes.periods.annual') }}</option>
             </select>
           </div>
           <div class="toolbar-spacer"></div>
@@ -184,7 +174,7 @@
         <!-- Notes grid -->
         <div v-if="selectedSubject" class="card">
           <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-            <h3>{{ selectedSubject }} - {{ selectedClassName }} - {{ t('notes.periods.' + selectedTrimester) }}</h3>
+            <h3>{{ selectedSubject }} - {{ selectedClassName }} - {{ libellePeriodeCode(selectedTrimester) }}</h3>
             <div style="display:flex; gap:8px; align-items:center;">
               <span v-if="isDirty" class="unsaved-badge">{{ t('notes.unsaved') }}</span>
               <button v-if="isDirty" class="btn btn-primary btn-sm" @click="saveNotes">
@@ -350,7 +340,7 @@
           <div class="batch-modal">
             <h3 class="batch-modal-title">{{ t('notes.batchTitle') }}</h3>
             <p class="batch-modal-text">
-              {{ t('notes.batchText', { n: batchTargets.length, className: selectedClassObj?.name, period: t('notes.periods.' + selectedPeriod), tone: toneLabel(appreciationTon) }) }}
+              {{ t('notes.batchText', { n: batchTargets.length, className: selectedClassObj?.name, period: libellePeriodeCode(selectedPeriod), tone: toneLabel(appreciationTon) }) }}
             </p>
             <label class="batch-check">
               <input type="checkbox" v-model="batchSkipExisting" />
@@ -386,7 +376,7 @@
               </div>
               <div class="bulletin-title">
                 <h2>{{ t('notes.docTitle') }}</h2>
-                <span>{{ t('notes.periods.' + selectedPeriod) }}</span>
+                <span>{{ libellePeriodeCode(selectedPeriod) }}</span>
               </div>
             </div>
 
@@ -801,7 +791,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, reactive } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useNotesStore, SEQUENCES, TRIMESTERS, SIGN_PERIODS, VALIDATION_STATUS, getAppreciation, getMention, getDecision, baremeEcole } from '../stores/notes'
+import { useNotesStore, VALIDATION_STATUS, getAppreciation, getMention, getDecision, baremeEcole } from '../stores/notes'
+import { listePeriodes, listeSequences, listeSignPeriodes } from '../utils/periodes'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
 import { usePersonnelStore, SUBJECTS_BY_CYCLE } from '../stores/personnel'
@@ -827,6 +818,26 @@ const classesStore = useClassesStore()
 const elevesStore = useElevesStore()
 const personnelStore = usePersonnelStore()
 const schoolStore = useSchoolStore()
+
+/**
+ * Périodes, séquences et périodes signables : DÉRIVÉES DE L'ÉCOLE.
+ *
+ * C'étaient trois constantes figées à trois trimestres et six séquences. Une
+ * école au semestre n'avait aucune issue, et les libellés français étaient écrits
+ * en dur, donc jamais traduits.
+ */
+const TRIMESTERS = computed(() => listePeriodes(schoolStore.schoolSettings, t))
+const SEQUENCES = computed(() => listeSequences(schoolStore.schoolSettings, t))
+const SIGN_PERIODS = computed(() => listeSignPeriodes(schoolStore.schoolSettings, t))
+
+/**
+ * Libellé d'une période quelconque. Les écrans appelaient `t('notes.periods.' + code)`,
+ * une clé qui n'existe que pour S1..S6 et T1..T3 : une école à quatre périodes
+ * aurait vu « notes.periods.T4 » écrit tel quel sur son bulletin.
+ */
+function libellePeriodeCode(code) {
+  return SIGN_PERIODS.value.find((p) => p.value === code)?.label || code
+}
 const authStore = useAuthStore()
 const inscriptionsStore = useInscriptionsStore()
 const subjectsStore = useSubjectsStore()
@@ -861,7 +872,7 @@ const selectedTrimester = computed(() => {
   if (p === 'annual') return 'annual'
   if (p.startsWith('T')) return p
   // Sequence: derive trimester
-  const seq = SEQUENCES.find(s => s.value === p)
+  const seq = SEQUENCES.value.find(s => s.value === p)
   return seq?.trimester || 'T1'
 })
 
@@ -1017,7 +1028,7 @@ function exportNotesPdf() {
 // ── Computed ──
 const selectedClassObj = computed(() => classesStore.classes.find(c => c.id === selectedClass.value))
 const selectedClassName = computed(() => selectedClassObj.value?.name || '')
-const currentTrimester = computed(() => TRIMESTERS.find(tr => tr.value === selectedTrimester.value))
+const currentTrimester = computed(() => TRIMESTERS.value.find(tr => tr.value === selectedTrimester.value))
 
 function toneLabel(v) {
   if (v === 'bienveillant') return t('notes.toneKind')
@@ -1118,7 +1129,7 @@ const selectedEleveObj = computed(() => classEleves.value.find(e => e.id === sel
 // Label for selected period (used in bulletin title)
 const currentPeriodLabel = computed(() => {
   const p = selectedPeriod.value
-  const match = SIGN_PERIODS.find(sp => sp.value === p)
+  const match = SIGN_PERIODS.value.find(sp => sp.value === p)
   return match?.label || p
 })
 
@@ -1196,7 +1207,7 @@ const unsignedBulletins = computed(() => {
   return notesStore.getUnsignedBulletins(signingClassId.value, signingPeriod.value)
 })
 const currentSigningEleve = computed(() => unsignedBulletins.value[signingCurrentIndex.value] || null)
-const signingPeriodLabel = computed(() => SIGN_PERIODS.find(p => p.value === signingPeriod.value)?.label || signingPeriod.value)
+const signingPeriodLabel = computed(() => SIGN_PERIODS.value.find(p => p.value === signingPeriod.value)?.label || signingPeriod.value)
 
 // Has director signature configured?
 const hasDirectorSignature = computed(() => !!schoolStore.schoolSettings?.directorSignature)
@@ -1204,9 +1215,9 @@ const hasDirectorSignature = computed(() => !!schoolStore.schoolSettings?.direct
 // Available sign periods (filter sequences if single eval mode)
 const availableSignPeriods = computed(() => {
   if (isSingleEval.value) {
-    return SIGN_PERIODS.filter(p => p.type !== 'sequence')
+    return SIGN_PERIODS.value.filter(p => p.type !== 'sequence')
   }
-  return SIGN_PERIODS
+  return SIGN_PERIODS.value
 })
 
 // Class signing status for moyennes tab
@@ -1921,8 +1932,8 @@ async function massPrintBulletins(format = 'papier') {
       return
     }
 
-    const triLabel = TRIMESTERS.find(t => t.value === trimester)?.label || trimester
-    const seqValues = TRIMESTERS.find(t => t.value === trimester)?.sequences || []
+    const triLabel = TRIMESTERS.value.find(t => t.value === trimester)?.label || trimester
+    const seqValues = TRIMESTERS.value.find(t => t.value === trimester)?.sequences || []
     const subjects = notesStore.getClassSubjects(cls)
     const allEleveIds = allClassEleves.map(e => e.id)
     const ranking = notesStore.getClassRanking(cls.id, trimester, allEleveIds, cls)
@@ -1930,7 +1941,7 @@ async function massPrintBulletins(format = 'papier') {
     const validation = notesStore.getValidation(cls.id, trimester)
 
     const seqObjects = seqValues.map(s => {
-      const seqDef = SEQUENCES.find(sq => sq.value === s)
+      const seqDef = SEQUENCES.value.find(sq => sq.value === s)
       return { value: s, shortLabel: seqDef ? seqDef.label.replace('Séquence ', 'Seq. ') : s }
     })
 

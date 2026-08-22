@@ -31,19 +31,15 @@
         <div class="card-header">
           <h3>{{ t('parent.notesForPeriod', { period: periodLabel }) }}</h3>
           <div class="card-header-actions">
+            <!-- Les périodes viennent de l'école : six séquences et trois
+                 trimestres étaient écrits en dur, y compris pour une école au
+                 semestre ou qui n'évalue qu'une fois par période. -->
             <select v-model="selectedPeriod" class="select">
-              <optgroup :label="t('parent.seqGroup')">
-                <option value="S1">{{ t('parent.sequence', { n: 1 }) }}</option>
-                <option value="S2">{{ t('parent.sequence', { n: 2 }) }}</option>
-                <option value="S3">{{ t('parent.sequence', { n: 3 }) }}</option>
-                <option value="S4">{{ t('parent.sequence', { n: 4 }) }}</option>
-                <option value="S5">{{ t('parent.sequence', { n: 5 }) }}</option>
-                <option value="S6">{{ t('parent.sequence', { n: 6 }) }}</option>
+              <optgroup v-if="sequencesEcole.length" :label="t('parent.seqGroup')">
+                <option v-for="s in sequencesEcole" :key="s.value" :value="s.value">{{ s.label }}</option>
               </optgroup>
               <optgroup :label="t('parent.triGroup')">
-                <option value="T1">{{ t('eleve.trimester', { n: 1 }) }}</option>
-                <option value="T2">{{ t('eleve.trimester', { n: 2 }) }}</option>
-                <option value="T3">{{ t('eleve.trimester', { n: 3 }) }}</option>
+                <option v-for="p in periodesEcole" :key="p.value" :value="p.value">{{ p.label }}</option>
               </optgroup>
               <option value="annual">{{ t('parent.annual') }}</option>
             </select>
@@ -142,7 +138,8 @@ import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
 import { useElevesStore } from '../stores/eleves'
 import { useParentChildrenStore } from '../stores/parentChildren'
-import { useNotesStore, getAppreciation, getMention as mentionEcole, baremeEcole, SEQUENCES, TRIMESTERS } from '../stores/notes'
+import { useNotesStore, getAppreciation, getMention as mentionEcole, baremeEcole } from '../stores/notes'
+import { listePeriodes, listeSequences } from '../utils/periodes'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
 import { usePersonnelStore } from '../stores/personnel'
@@ -167,13 +164,17 @@ const selectedChildId = computed({
 const selectedPeriod = ref('S1')
 
 // Period type helpers
+// Périodes et séquences de l'école, et non plus trois trimestres en dur.
+const periodesEcole = computed(() => listePeriodes(schoolStore.schoolSettings, t))
+const sequencesEcole = computed(() => listeSequences(schoolStore.schoolSettings, t))
+
 const isSequence = computed(() => selectedPeriod.value.startsWith('S'))
 const isTrimester = computed(() => selectedPeriod.value.startsWith('T'))
 const isAnnual = computed(() => selectedPeriod.value === 'annual')
 
 // Determine the parent trimester of a sequence
 function getParentTrimester(seqValue) {
-  return TRIMESTERS.find(t => t.sequences.includes(seqValue))
+  return periodesEcole.value.find((p) => p.sequences.includes(seqValue))
 }
 
 const children = computed(() => parentChildren.children)
@@ -186,8 +187,8 @@ const childClass = computed(() => {
 
 const periodLabel = computed(() => {
   if (isAnnual.value) return t('parent.annual')
-  if (isSequence.value) return t('parent.sequence', { n: selectedPeriod.value.slice(1) })
-  return t('eleve.trimester', { n: selectedPeriod.value.slice(1) })
+  const trouve = [...sequencesEcole.value, ...periodesEcole.value].find((p) => p.value === selectedPeriod.value)
+  return trouve?.label || selectedPeriod.value
 })
 
 // Sequences shown as sub-columns in the table
@@ -197,12 +198,12 @@ const currentSequences = computed(() => {
     return []
   }
   if (isAnnual.value) {
-    return SEQUENCES.map(s => ({ ...s, shortLabel: s.label.replace('Séquence ', 'Seq. ') }))
+    return sequencesEcole.value.map(s => ({ ...s, shortLabel: s.label.replace('Séquence ', 'Seq. ') }))
   }
-  // Trimester: show the 2 sequences
-  const tri = TRIMESTERS.find(t => t.value === selectedPeriod.value)
+  // Période : ses séquences, quel qu'en soit le nombre
+  const tri = periodesEcole.value.find((p) => p.value === selectedPeriod.value)
   if (!tri) return []
-  return SEQUENCES
+  return sequencesEcole.value
     .filter(s => tri.sequences.includes(s.value))
     .map(s => ({ ...s, shortLabel: s.label.replace('Séquence ', 'Seq. ') }))
 })

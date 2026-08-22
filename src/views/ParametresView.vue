@@ -307,6 +307,24 @@
               {{ t('param.periodsHint') }}
             </p>
 
+            <!-- Découpage de l'année : trimestres ou semestres -->
+            <div class="field" style="max-width: 320px; margin-bottom: 16px;">
+              <label>{{ t('param.periodSystem') }}</label>
+              <select v-model="form.decoupage" class="input">
+                <option value="trimestres">{{ t('param.periodTri') }}</option>
+                <option value="semestres">{{ t('param.periodSem') }}</option>
+              </select>
+            </div>
+
+            <!-- État vide : une école sans période ne pouvait RIEN saisir ici.
+                 On propose de générer un calendrier de départ, qu'elle corrige. -->
+            <div v-if="!nbPeriodes" class="periods-empty">
+              <p>{{ t('param.periodsEmpty') }}</p>
+              <button type="button" class="btn btn-primary btn-sm" @click="genererPeriodes">
+                <Plus :size="15" /><span>{{ t('param.periodsGenerate') }}</span>
+              </button>
+            </div>
+
             <!-- Timeline visuelle -->
             <div v-if="form.periods && Object.keys(form.periods).length > 0" class="timeline-wrapper">
               <div class="academic-year-timeline">
@@ -322,7 +340,8 @@
             <div class="periods-grid">
               <div v-for="(trimData, trimCode) in form.periods" :key="trimCode" class="period-card">
                 <div class="period-header">
-                  <h4>{{ trimCode }}</h4>
+                  <h4>{{ libellePeriode(trimCode, form.decoupage, t) }}</h4>
+                  <span class="period-code">{{ trimCode }}</span>
                 </div>
                 <div class="period-body">
                   <!-- Trimester dates -->
@@ -355,6 +374,18 @@
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div v-if="nbPeriodes" class="periods-actions">
+              <button type="button" class="btn btn-outline btn-sm" @click="ajouterUnePeriode">
+                <Plus :size="15" /><span>{{ t('param.periodAdd') }}</span>
+              </button>
+              <button type="button" class="btn btn-outline btn-sm" :disabled="nbPeriodes <= 1" @click="retirerUnePeriode">
+                <Trash2 :size="15" /><span>{{ t('param.periodRemove') }}</span>
+              </button>
+              <!-- Le refus de suppression est DIT, jamais silencieux : un bouton
+                   sans effet fait croire à une panne. -->
+              <span v-if="messagePeriodes" class="periods-msg">{{ messagePeriodes }}</span>
             </div>
           </div>
         </section>
@@ -414,6 +445,8 @@ import { DEFAULT_SERVICES } from '../stores/messages'
 import { sendFeedback, feedbackMailto } from '../services/feedback'
 import { useSubjectsStore } from '../stores/subjects'
 import { useMiapoRefStore } from '../stores/miapoRef'
+import { useNotesStore } from '../stores/notes'
+import { periodesParDefaut, ajouterPeriode, retirerDernierePeriode, libellePeriode, listePeriodes } from '../utils/periodes'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const schoolStore = useSchoolStore()
@@ -483,8 +516,52 @@ const form = reactive({
   gradingMode: 'notes',
   primaryColor: '#0A84FF',
   services: DEFAULT_SERVICES.map(s => ({ ...s })),
+  decoupage: 'trimestres',
   periods: {},
 })
+
+const notesStore = useNotesStore()
+const messagePeriodes = ref('')
+const nbPeriodes = computed(() => Object.keys(form.periods || {}).length)
+
+/** Écrit un calendrier de départ quand l'école n'en a aucun. */
+function genererPeriodes() {
+  form.periods = periodesParDefaut({
+    decoupage: form.decoupage,
+    evaluationType: schoolStore.schoolSettings?.evaluationType || '2_sequences',
+    academicYear: form.academicYear,
+  })
+  messagePeriodes.value = t('param.periodsGenerated', { n: Object.keys(form.periods).length })
+}
+
+function ajouterUnePeriode() {
+  const code = ajouterPeriode(form.periods, {
+    evaluationType: schoolStore.schoolSettings?.evaluationType || '2_sequences',
+  })
+  messagePeriodes.value = code ? t('param.periodAdded', { p: libellePeriode(code, form.decoupage, t) }) : ''
+}
+
+/**
+ * Retire la dernière période — SAUF si elle porte des notes.
+ *
+ * Sans ce garde-fou, les notes de la période supprimée resteraient dans le
+ * stockage sans plus jamais être affichées ni recalculées : invisibles et
+ * irrécupérables. On refuse, et on DIT pourquoi.
+ */
+function retirerUnePeriode() {
+  const codes = listePeriodes({ ...form, decoupage: form.decoupage })
+  const derniere = codes[codes.length - 1]
+  if (!derniere) return
+  const n = notesStore.compterNotesPeriode?.(derniere.value, derniere.sequences) || 0
+  if (n > 0) {
+    messagePeriodes.value = t('param.periodHasNotes', { p: derniere.label, n })
+    return
+  }
+  const code = retirerDernierePeriode(form.periods)
+  messagePeriodes.value = code
+    ? t('param.periodRemoved', { p: libellePeriode(code, form.decoupage, t) })
+    : t('param.periodLastOne')
+}
 
 onMounted(async () => {
   await schoolStore.loadSettings()
@@ -1136,6 +1213,16 @@ const saveSettings = async () => {
 }
 
 /* Periods grid */
+.periods-empty {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  padding: 16px; border: 1px dashed var(--bd, #d8d8d8); border-radius: 12px;
+  background: rgba(var(--pr-rgb), 0.04);
+}
+.periods-empty p { margin: 0; font-size: 13.5px; color: var(--tx2); }
+.periods-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+.periods-msg { font-size: 13px; color: var(--tx2); }
+.period-code { font-size: 11.5px; color: var(--tx3); letter-spacing: .04em; }
+
 .periods-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
