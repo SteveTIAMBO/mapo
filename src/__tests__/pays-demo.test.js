@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries, directeurDuPays, montantDemo } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
+import { demoKey, setPaysDemo, paysDemo } from '../utils/demoScope'
 
 /**
  * Démonstration multi-pays : on choisit un pays sur l'écran de connexion et
@@ -146,21 +147,29 @@ describe('liste de référence', () => {
 })
 
 describe('isolation du stockage par pays', () => {
+  /**
+   * ⚠️ Ces deux tests importaient `demoScope` DYNAMIQUEMENT, après un
+   * `vi.resetModules()`. Ils passaient seuls et tombaient en timeout dès qu'ils
+   * partageaient un worker chargé : réimporter tout le graphe de modules prenait
+   * plus que les 5 secondes allouées. Un test dont le résultat dépend de la
+   * charge de la machine est pire qu'une absence de test — il apprend à ignorer
+   * le rouge.
+   *
+   * L'import est donc statique, et le reset de modules inutile : `paysDemo()`
+   * relit localStorage à CHAQUE appel, il ne met rien en cache.
+   */
   beforeEach(() => {
-    vi.resetModules()
     localStorage.clear()
   })
 
-  it('les clés de démo portent le suffixe du pays', async () => {
-    const { demoKey, setPaysDemo, paysDemo } = await import('../utils/demoScope')
+  it('les clés de démo portent le suffixe du pays', () => {
     expect(paysDemo()).toBe('CM')
     expect(demoKey('mapo_demo_classes')).toBe('mapo_demo_classes')
     setPaysDemo('CG')
     expect(demoKey('mapo_demo_classes')).toBe('mapo_demo_classes_cg')
   })
 
-  it('un pays inconnu ne fabrique pas un suffixe fantaisiste', async () => {
-    const { demoKey, setPaysDemo } = await import('../utils/demoScope')
+  it('un pays inconnu ne fabrique pas un suffixe fantaisiste', () => {
     setPaysDemo('XX')
     expect(demoKey('mapo_demo_classes')).toBe('mapo_demo_classes')
   })
