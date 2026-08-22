@@ -13,7 +13,7 @@ import {
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
 import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
-import { packPays } from '../data/paysDemo'
+import { packPays, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 export const GENDERS = [
@@ -43,6 +43,14 @@ export const VULNERABILITY_TYPES = [
 // Prenoms camerounais courants
 const FIRST_NAMES_M = ['Jean', 'Paul', 'Samuel', 'David', 'Emmanuel', 'Patrick', 'François', 'Daniel', 'Joseph', 'Albert', 'Pierre', 'Henri', 'Marc', 'Stéphane', 'Kevin', 'Yannick', 'Olivier', 'Christian', 'Éric', 'Joël', 'Isaac', 'Benjamin', 'Armand', 'Cédric', 'Fabrice']
 const FIRST_NAMES_F = ['Marie', 'Claire', 'Hélène', 'Brigitte', 'Sylvie', 'Rose', 'Jeanne', 'Bernadette', 'Julienne', 'Victoire', 'Anne', 'Céline', 'Sandrine', 'Florence', 'Grâce', 'Esther', 'Ruth', 'Vanessa', 'Christelle', 'Nadège', 'Pauline', 'Viviane', 'Colette', 'Irène', 'Monique']
+/**
+ * Données de démonstration localisées selon le pays choisi.
+ * Passe unique et générique : voir `localiserDonnees` dans data/paysDemo.js.
+ */
+function localiser(v) {
+  return localiserDonnees(v, NOMS_REFERENCE, packPays(paysDemo()))
+}
+
 /**
  * Noms de famille des élèves de démonstration — CEUX DU PAYS CHOISI.
  *

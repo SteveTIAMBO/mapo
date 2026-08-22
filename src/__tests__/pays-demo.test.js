@@ -165,3 +165,30 @@ describe('isolation du stockage par pays', () => {
     expect(demoKey('mapo_demo_classes')).toBe('mapo_demo_classes')
   })
 })
+
+describe('garde-fou : le helper de localisation est défini là où il est appelé', () => {
+  /**
+   * Défaut vécu le 22/08 : dans `stores/eleves.js`, l'appel à `localiser()` a été
+   * posé sans son import ni sa définition — parce que le fichier importait DÉJÀ
+   * `data/paysDemo`, ce qui a fait sauter l'insertion.
+   *
+   * Conséquence : `localiser is not defined`, l'exception remontait dans un
+   * chargement asynchrone, et l'écran Élèves affichait une LISTE VIDE, sans le
+   * moindre message. Ni le build ni les tests unitaires ne l'ont vu — seule la
+   * démo l'a montré. Ce test est le filet.
+   */
+  it('aucun store n’appelle localiser() sans le définir', async () => {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const { fileURLToPath } = await import('node:url')
+    const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'stores')
+
+    const fautifs = []
+    for (const f of fs.readdirSync(dir).filter((n) => n.endsWith('.js'))) {
+      const src = fs.readFileSync(path.join(dir, f), 'utf8')
+      if (!/[^a-zA-Z]localiser\s*\(/.test(src)) continue
+      if (!/function localiser\s*\(/.test(src)) fautifs.push(f)
+    }
+    expect(fautifs).toEqual([])
+  })
+})
