@@ -160,6 +160,58 @@ describe('le circuit, MODULE PAR MODULE', () => {
   })
 })
 
+describe('un module REFUSÉ sort de l’avancement', () => {
+  /**
+   * Règle donnée par Steve le 19/08/2026 : « quand c'est refusé ça veut dire on
+   * laisse tomber, on propose autre chose, donc ça sort de l'avancement ».
+   * Le laisser au dénominateur ferait baisser le pourcentage d'un enseignant à
+   * cause d'un module qu'on lui a justement demandé de NE PAS traiter.
+   */
+  let store, f, m1, m2, m3
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = usePreparationStore()
+    store.fiches = []
+    f = nouvelleFiche(store)
+    m1 = store.ajouterModule(f.id, { titre: 'Module 1' })
+    m2 = store.ajouterModule(f.id, { titre: 'Module 2' })
+    m3 = store.ajouterModule(f.id, { titre: 'Module 3' })
+    store.soumettreTout(f.id)
+  })
+
+  it('sort du dénominateur : 1 fait sur 2 restants = 50 %, pas 33 %', () => {
+    store.deciderModule(f.id, m3.id, 'refuse', 'Hors programme.')
+    store.marquerFait(f.id, m1.id, true)
+    expect(store.avancement(f)).toBe(50)
+  })
+
+  it('une fiche dont tout le reste est traité affiche 100 %', () => {
+    store.deciderModule(f.id, m3.id, 'refuse', 'Hors programme.')
+    store.marquerFait(f.id, m1.id, true)
+    store.marquerFait(f.id, m2.id, true)
+    expect(store.avancement(f)).toBe(100)
+  })
+
+  it('tous les modules refusés : 0 %, et surtout aucune division par zéro', () => {
+    for (const m of [m1, m2, m3]) store.deciderModule(f.id, m.id, 'refuse', 'Non')
+    expect(store.avancement(f)).toBe(0)
+    expect(Number.isNaN(store.avancement(f))).toBe(false)
+  })
+
+  it('un module refusé ne peut plus être coché comme traité', () => {
+    // Sinon un module abandonné pourrait être déclaré fait, ce qui n'a pas de
+    // sens et rendrait le compteur incompréhensible.
+    store.deciderModule(f.id, m2.id, 'refuse', 'Non')
+    store.marquerFait(f.id, m2.id, true)
+    expect(m2.fait).toBe(false)
+  })
+
+  it('modulesComptes ne retient que ce qui reste au programme', () => {
+    store.deciderModule(f.id, m2.id, 'refuse', 'Non')
+    expect(store.modulesComptes(f).map((m) => m.titre)).toEqual(['Module 1', 'Module 3'])
+  })
+})
+
 describe('état de synthèse de la fiche', () => {
   let store, f
   beforeEach(() => {

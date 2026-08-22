@@ -62,7 +62,13 @@
         </div>
         <div class="prep-tile-right">
           <span class="prep-badge" :class="'prep-badge-' + etatFiche(f)">{{ libelleStatut(etatFiche(f)) }}</span>
-          <span class="prep-progress">{{ t('prep.progress', { n: store.avancement(f) }) }}</span>
+          <!-- Le nombre de refusés est affiché à côté du pourcentage : sans lui,
+               « 100 % » sur une fiche de 4 modules dont 1 refusé serait
+               incompréhensible pour la direction. -->
+          <span class="prep-progress">
+            {{ t('prep.progress', { n: store.avancement(f) }) }}
+            <em v-if="nbRefuses(f)" class="prep-progress-note">{{ t('prep.progressExcl', { n: nbRefuses(f) }) }}</em>
+          </span>
         </div>
       </div>
 
@@ -75,9 +81,11 @@
 
       <!-- Modules -->
       <ol v-if="f.modules.length" class="prep-modules">
-        <li v-for="m in f.modules" :key="m.id" class="prep-module">
+        <li v-for="m in f.modules" :key="m.id" class="prep-module" :class="{ 'prep-abandonne': m.statut === 'refuse' }">
           <label class="prep-check">
-            <input type="checkbox" :checked="m.fait" :disabled="!peutSuivre(f)" @change="store.marquerFait(f.id, m.id, $event.target.checked)" />
+            <!-- Un module refusé ne se coche pas : il ne sera pas traité, et il ne
+                 compte plus dans l'avancement. -->
+            <input type="checkbox" :checked="m.fait" :disabled="!peutSuivre(f) || m.statut === 'refuse'" @change="store.marquerFait(f.id, m.id, $event.target.checked)" />
           </label>
           <button class="prep-module-body" @click="ouvrirDetail(f, m)" :title="t('prep.seeDetails')">
             <div class="prep-module-titre" :class="{ 'prep-fait': m.fait }">
@@ -89,7 +97,10 @@
           </button>
           <span v-if="m.semaines" class="prep-sem">{{ t('prep.weeks', { w: m.semaines }) }}</span>
           <div v-if="peutEditer(f)" class="prep-module-actions">
-            <button class="btn btn-ghost btn-sm" :title="t('prep.edit')" @click="ouvrirEdition(f, m)"><Pencil :size="15" /></button>
+            <!-- Pas de crayon sur un module refusé : le retoucher le laisserait
+                 refusé, donc invisible dans l'avancement, sans rien dire. On le
+                 retire et on en propose un autre. -->
+            <button v-if="m.statut !== 'refuse'" class="btn btn-ghost btn-sm" :title="t('prep.edit')" @click="ouvrirEdition(f, m)"><Pencil :size="15" /></button>
             <button class="btn btn-ghost btn-sm" :title="t('prep.moveUp')" @click="store.deplacerModule(f.id, m.id, 'haut')"><ChevronUp :size="15" /></button>
             <button class="btn btn-ghost btn-sm" :title="t('prep.moveDown')" @click="store.deplacerModule(f.id, m.id, 'bas')"><ChevronDown :size="15" /></button>
             <button class="btn btn-ghost btn-sm" :title="t('prep.remove')" @click="store.retirerModule(f.id, m.id)"><Trash2 :size="15" /></button>
@@ -299,6 +310,9 @@ function peutEditer(f) {
 }
 function peutSuivre(f) { return peutEditer(f) || isDirection.value }
 
+/** Modules refusés d'une fiche : ils sortent de l'avancement, on le dit. */
+function nbRefuses(f) { return (f?.modules || []).filter((m) => m.statut === 'refuse').length }
+
 function aSoumettre(f) { return f.modules.filter(attendEnseignant).length }
 function enAttente(f) { return f.modules.filter(attendDirection).length }
 
@@ -418,6 +432,10 @@ onMounted(async () => {
 .prep-module-body { flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; cursor: pointer; font: inherit; }
 .prep-module-titre { font-size: 14px; color: var(--tx1); }
 .prep-fait { color: var(--tx3); text-decoration: line-through; }
+.prep-progress-note { font-style: normal; color: var(--tx3); opacity: .75; }
+/* Un module abandonné reste lisible mais s'efface : il ne pèse plus sur le plan. */
+.prep-abandonne .prep-module-titre { color: var(--tx3); }
+.prep-abandonne { opacity: .72; }
 .prep-module-obj { margin-top: 2px; font-size: 12.5px; color: var(--tx3); }
 .prep-module-motif { display: flex; align-items: center; gap: 5px; margin-top: 4px; font-size: 12.5px; color: #A35B15; }
 .prep-sem { font-size: 12px; color: var(--tx3); white-space: nowrap; padding-top: 2px; }

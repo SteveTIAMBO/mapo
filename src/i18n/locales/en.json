@@ -747,6 +747,7 @@
     "empty": "No plan for this period.",
     "noModule": "No module yet. Add the first one below.",
     "progress": "{n}% covered",
+    "progressExcl": "· {n} dropped",
     "newModule": "New module",
     "editModule": "Edit module",
     "moduleTitle": "Module or chapter",

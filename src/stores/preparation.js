@@ -317,15 +317,29 @@ export const usePreparationStore = defineStore('preparation', () => {
    */
   function marquerFait(ficheId, moduleId, fait) {
     const m = trouverModule(ficheId, moduleId)
-    if (!m) return
+    // Un module refusé ne sera pas traité : le cocher n'aurait aucun sens.
+    if (!m || m.statut === 'refuse') return
     m.fait = !!fait
     _touche(trouver(ficheId))
   }
 
+/**
+ * Modules qui comptent dans l'avancement.
+ *
+ * ⚠️ Un module REFUSÉ en sort, numérateur ET dénominateur. Décision de Steve :
+ * refuser veut dire « on laisse tomber, on propose autre chose ». Le garder au
+ * dénominateur ferait baisser l'avancement d'un enseignant à cause d'un module
+ * qu'on lui a justement demandé de ne pas traiter.
+ */
+  function modulesComptes(fiche) {
+    return (fiche?.modules || []).filter((m) => m.statut !== 'refuse')
+  }
+
   /** Avancement d'une fiche, en pourcentage de modules traités. */
   function avancement(fiche) {
-    if (!fiche?.modules?.length) return 0
-    return Math.round((fiche.modules.filter((m) => m.fait).length / fiche.modules.length) * 100)
+    const comptes = modulesComptes(fiche)
+    if (!comptes.length) return 0
+    return Math.round((comptes.filter((m) => m.fait).length / comptes.length) * 100)
   }
 
   /** Modules en attente de la direction, toutes fiches confondues. */
@@ -363,6 +377,6 @@ export const usePreparationStore = defineStore('preparation', () => {
     load, save, trouver, trouverModule, ouvrirFiche,
     ajouterModule, modifierModule, retirerModule, deplacerModule,
     soumettreModule, soumettreTout, validerModule, validerTout, deciderModule,
-    marquerFait, avancement,
+    marquerFait, avancement, modulesComptes,
   }
 })
