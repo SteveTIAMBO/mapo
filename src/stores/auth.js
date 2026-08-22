@@ -25,6 +25,9 @@ import {
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { identifierToEmail, isSyntheticEmail, pseudoToEmail, isPseudoValide, normalizePseudo } from '../utils/identifier'
 import { currentLang } from '../i18n'
+import { paysDemo, demoKey } from '../utils/demoScope'
+import { packPays, localiserNom } from '../data/paysDemo'
+import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 // Comptes demo SECONDAIRE (pas de Firebase, bypass complet, mot de passe requis)
 const DEMO_ACCOUNTS = {
@@ -39,6 +42,26 @@ const DEMO_ACCOUNTS = {
   // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).
   // → espace groupe consolidé (/complexe). En démo, complexeId 'demo' = seed d'exemple.
   complexe: { uid: 'demo-complexe', firstName: 'Rose', lastName: 'Ngo Bell', role: 'directeur_complexe', email: 'complexe@demo', complexeId: 'demo' },
+}
+
+/**
+ * Localise le nom d'un compte de démonstration selon le pays choisi.
+ *
+ * ⚠️ Sans cela, l'écran affichait « Collège EDUFREM Pointe-Noire » en haut et
+ * « Teussop Michel, Directeur » en bas : le compte connecté vient d'ici, pas
+ * des réglages de l'école. Un hybride visible au premier coup d'œil, et
+ * exactement ce qu'un prospect congolais aurait remarqué avant nous.
+ *
+ * Le prénom ne bouge pas — seul le nom de famille est marqué géographiquement.
+ * Un compte dont le nom est absent de la liste de référence (« Ngo Bell »)
+ * reste tel quel plutôt que d'être remplacé au hasard.
+ */
+function localiserCompte(account) {
+  if (!account) return account
+  const pack = packPays(paysDemo())
+  if (!pack.nomsFamille) return account
+  const lastName = localiserNom(account.lastName, NOMS_REFERENCE, pack)
+  return lastName === account.lastName ? account : { ...account, lastName }
 }
 
 // Comptes demo SUPERIEUR (clic = login, pas de mot de passe).
@@ -91,6 +114,17 @@ const DEMO_PASSWORD = 'demo1234'
 const DEMO_STORAGE_KEY = 'mapo_demo_session'
 const DEMO_PROFILES_KEY = 'mapo_demo_profiles'
 
+/**
+ * Profils de démo modifiés — PAR PAYS.
+ *
+ * Un profil enregistré prime sur le compte de base. Sans suffixe de pays, un
+ * profil retouché côté Cameroun réapparaîtrait tel quel dans la démo
+ * congolaise et y réinstallerait « Teussop Michel », par-dessus la
+ * localisation. Le Cameroun garde un suffixe vide : ses profils déjà
+ * enregistrés restent lisibles.
+ */
+function profilsKey() { return demoKey(DEMO_PROFILES_KEY) }
+
 // Helpers localStorage pour la demo
 function saveDemoSession(profileData) {
   try {
@@ -110,7 +144,7 @@ function loadDemoSession() {
     // Expire apres 24h
     if (Date.now() - session.timestamp > 24 * 60 * 60 * 1000) {
       localStorage.removeItem(DEMO_STORAGE_KEY)
-      localStorage.removeItem(DEMO_PROFILES_KEY)
+      localStorage.removeItem(profilsKey())
       return null
     }
     return session.profile
@@ -120,7 +154,7 @@ function loadDemoSession() {
 function clearDemoSession() {
   try {
     localStorage.removeItem(DEMO_STORAGE_KEY)
-    localStorage.removeItem(DEMO_PROFILES_KEY)
+    localStorage.removeItem(profilsKey())
   } catch (e) { /* silent */ }
 }
 
@@ -143,13 +177,13 @@ function clearDemoBleedKeys() {
 // Sauvegarder les profils demo modifies (partages entre comptes)
 function saveDemoProfiles(profiles) {
   try {
-    localStorage.setItem(DEMO_PROFILES_KEY, JSON.stringify(profiles))
+    localStorage.setItem(profilsKey(), JSON.stringify(profiles))
   } catch (e) { /* silent */ }
 }
 
 function loadDemoProfiles() {
   try {
-    const raw = localStorage.getItem(DEMO_PROFILES_KEY)
+    const raw = localStorage.getItem(profilsKey())
     return raw ? JSON.parse(raw) : {}
   } catch (e) { return {} }
 }
@@ -241,7 +275,7 @@ export const useAuthStore = defineStore('auth', () => {
       return { success: false, error: 'La démonstration n\'est pas disponible sur cette instance.' }
     }
     const key = username.trim().toLowerCase()
-    const account = DEMO_ACCOUNTS[key]
+    const account = localiserCompte(DEMO_ACCOUNTS[key])
     if (!account) {
       return { success: false, error: 'Identifiant demo inconnu. Utilisez : directeur, enseignant, parent ou eleve.' }
     }
