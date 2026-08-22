@@ -17,7 +17,11 @@
            une question de chat coûte quelques milliers de crédits, soit
            quelques pour cent, et l'utilisateur conclut que rien n'a bougé. Le
            chiffre exact tranche, lui, sans ambiguïté. -->
-      <p class="conso-ligne">{{ t('mia.usageConsomme', { n: fmtNombre(abo.utilise), total: fmtNombre(abo.cap) }) }}</p>
+      <!-- Le total affiché suit la MÊME référence que la jauge : le plafond
+           pour un enfant rationné, sinon la dotation complète (quota + crédits
+           achetés ou offerts). Afficher « 24 600 / 25 000 » à côté d'une jauge
+           à 49 % rendait les deux chiffres incompréhensibles ensemble. -->
+      <p class="conso-ligne">{{ t('mia.usageConsomme', { n: fmtNombre(abo.jaugeUtilise), total: fmtNombre(abo.jaugeTotal) }) }}</p>
       <p class="muted xsmall">{{ t('mia.aboWeeklyReset') }}</p>
       <p class="muted xsmall">{{ t('mia.usageOrdre') }}</p>
       <p v-if="abo.renewAt" class="muted small">{{ t('mia.aboRenew', { date: dateFr(abo.renewAt) }) }}</p>

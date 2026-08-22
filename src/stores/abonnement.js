@@ -58,9 +58,27 @@ export const useAbonnementStore = defineStore('abonnement', () => {
   const relanceWhatsappDispo = computed(() => !!offre.value?.whatsapp)
   /** Affine la devise selon le pays du profil (sinon fuseau/langue). */
   function refreshDevise(pays) { devise.value = detectDevise(pays) }
-  const restant = computed(() => Math.max(0, tokens.value))
-  const utilise = computed(() => Math.max(0, cap.value - tokens.value))
-  const pourcentage = computed(() => (cap.value ? Math.min(100, Math.round((utilise.value / cap.value) * 100)) : 0))
+  // ⚠️ La jauge doit regarder ce que le SERVEUR regarde (mc_hasTokens) :
+  // le quota de la semaine, PLUS les crédits achetés ou offerts, PLUS le pot de
+  // la famille pour un enfant. Elle ne comptait que le quota hebdomadaire : une
+  // enfant dont le parent venait de créditer 100 000 crédits voyait « il te
+  // reste peu de crédits, ton parent est prévenu » alors qu'elle pouvait réviser
+  // pendant des semaines. Le blocage, lui, était correct (`épuisé` additionnait
+  // déjà les trois) — seul l'AFFICHAGE mentait, ce qui est le pire cas : rien
+  // n'était cassé, tout paraissait l'être.
+  const disponible = computed(() => tokens.value + bonus.value + potFamille.value)
+  const dotation = computed(() => cap.value + bonus.value + potFamille.value)
+  const restant = computed(() => Math.max(0, disponible.value))
+  const utilise = computed(() => Math.max(0, dotation.value - disponible.value))
+  // Pour un enfant RATIONNÉ par son parent, la limite qui le concerne n'est pas
+  // le quota de la famille mais le plafond qu'on lui a fixé. C'est ce chiffre
+  // qui doit remplir sa jauge, sinon elle reste plate et ne l'informe de rien.
+  const rationne = computed(() => estEnfant.value && plafond.value > 0)
+  const jaugeTotal = computed(() => (rationne.value ? plafond.value : dotation.value))
+  const jaugeUtilise = computed(() => (rationne.value ? conso.value : utilise.value))
+  const pourcentage = computed(() => (jaugeTotal.value
+    ? Math.min(100, Math.round((jaugeUtilise.value / jaugeTotal.value) * 100))
+    : 0))
   // « Pas assez pour la dernière action tentée ». DISTINCT de « solde nul » :
   // un reste de 1 000 ne paie pas un quiz à 2 500, alors que la jauge affiche
   // encore quelque chose. Sans cette distinction, le client remettait sa jauge
@@ -274,5 +292,5 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     saveLocal()
   }
 
-  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, épuisé, insuffisant, plafondAtteint, estEnfant, conso, plafond, enfantsUsage, potFamille, fetchEnfantsUsage, definirPlafondEnfant, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
+  return { isDemo, offreId, tokens, cap, bonus, renewAt, remiseFamille, devise, packs, offres, offre, offresPayantes, guichet, relanceWhatsappDispo, refreshDevise, restant, utilise, pourcentage, jaugeTotal, jaugeUtilise, rationne, disponible, épuisé, insuffisant, plafondAtteint, estEnfant, conso, plafond, enfantsUsage, potFamille, fetchEnfantsUsage, definirPlafondEnfant, load, fetchState, activerDemo, activerDemoCredits, majJauge, marquerEpuise, utiliserCodeCredits }
 })
