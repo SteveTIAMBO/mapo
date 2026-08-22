@@ -4,7 +4,8 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { isMapoPlusTenant } from '../utils/tenantContext'
 import { enregistrerActivite, hydraterRecompenses } from '../utils/recompenses'
-import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, palierApresReussite, niveauSuivant } from '../utils/progressionNiveau'
+import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, niveauSuivant } from '../utils/progressionNiveau'
+import { appliquerSeance } from '../utils/jaugeNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
@@ -544,19 +545,23 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const prevLevel = Math.min(PALIERS_PAR_CLASSE, Math.max(1, prev.level || 1))
     // Maîtrise = moyenne mobile (donne du poids à la dernière session)
     const mastery = Math.round(prev.attempts ? prev.mastery * 0.5 + scorePercent * 0.5 : scorePercent)
-    // Difficulté ADAPTATIVE : on réussit bien → on monte ; on bute → on consolide.
-    let level = prevLevel
+    // Difficulté ADAPTATIVE, mais qui se MÉRITE. Avant le 22/08/2026, un seul
+    // quiz à 80 % faisait monter d'un palier : quatre bonnes séances suffisaient
+    // à épuiser les 5 paliers d'une classe et à se voir proposer l'année
+    // suivante. La progression enregistrait une performance ponctuelle, pas un
+    // apprentissage. Elle passe désormais par une jauge qui se remplit séance
+    // après séance et se vide en cas d'échec — voir utils/jaugeNiveau.js.
     let pretPourAnneeSuivante = !!prev.pretPourAnneeSuivante
-    if (scorePercent >= 80) {
-      const r = palierApresReussite(prevLevel)
-      level = r.palier
-      // Une seule réussite au sommet suffit à déclencher la PROPOSITION. Elle
-      // reste posée jusqu'à ce que l'apprenant l'accepte ou la refuse : on ne
-      // la redemande pas à chaque quiz.
-      if (r.pretPourAnneeSuivante) pretPourAnneeSuivante = true
-    } else if (scorePercent < 50) {
-      level = Math.max(1, prevLevel - 1)
-    }
+    const prog = appliquerSeance(
+      { palier: prevLevel, jauge: prev.jauge || 0 },
+      scorePercent,
+      PALIERS_PAR_CLASSE,
+    )
+    const level = prog.palier
+    // Jauge pleine AU SOMMET de la classe : c'est ce qui déclenche la
+    // PROPOSITION de changer de programme. Elle reste posée jusqu'à ce que
+    // l'apprenant l'accepte ou la refuse, on ne la redemande pas à chaque quiz.
+    if (prog.auSommet) pretPourAnneeSuivante = true
     const levelChange = level - prevLevel // +1 monté, -1 redescendu, 0 stable
     // Intervalle selon le score : faible → revoir vite, fort → espacer
     const days = scorePercent >= 80 ? 7 : scorePercent >= 50 ? 3 : 1
@@ -566,6 +571,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
       mastery,
       lastScore: scorePercent,
       level,
+      // Avancement DANS le palier courant (0..100). Le palier seul ne dit pas
+      // où en est l'apprenant : entre « vient d'arriver au palier 3 » et « à
+      // deux séances du palier 4 », il y a des semaines de travail.
+      jauge: prog.jauge,
       // Programme sur lequel l'apprenant révise CETTE matière. Vide = celui de
       // sa classe. Il ne change QUE s'il accepte explicitement de passer à
       // l'année suivante : un élève peut être en avance en anglais et à sa
@@ -586,7 +595,9 @@ export const useTuteurStore = defineStore('tuteur', () => {
     if (isMapoPlusTenant()) {
       try { useMiapoAnalyticsStore().recordQuiz({ subject: subjectName, scorePct: scorePercent, level }) } catch { /* best-effort */ }
     }
-    return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL, pretPourAnneeSuivante }
+    // `deltaJauge` remonte à l'écran de résultat : voir sa jauge bouger est
+    // TOUT l'intérêt du mécanisme. Une progression invisible ne motive personne.
+    return { ...data[subjectId], levelChange, maxLevel: MAX_LEVEL, pretPourAnneeSuivante, deltaJauge: prog.delta }
   }
 
   // ── Historique des révisions (rejouable, économe : pas de re-génération IA) ──
@@ -708,7 +719,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
     const base = e.programme || classeActuelle
     const suivant = niveauSuivant(base, pays)
     if (!suivant) return null // déjà en haut de l'échelle : rien à proposer
-    data[subjectId] = { ...e, programme: suivant, level: PALIER_APRES_CHANGEMENT, pretPourAnneeSuivante: false }
+    // Jauge remise à zéro : nouveau programme, nouveau palier, nouvelle
+    // conquête. Reporter l'avancement de l'année précédente n'aurait aucun sens
+    // — ce n'est pas la même matière qu'on maîtrise.
+    data[subjectId] = { ...e, programme: suivant, level: PALIER_APRES_CHANGEMENT, jauge: 0, pretPourAnneeSuivante: false }
     saveRevisions(studentId, data)
     revisionsVersion.value++
     return suivant

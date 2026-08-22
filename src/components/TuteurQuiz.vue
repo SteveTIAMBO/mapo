@@ -81,7 +81,7 @@
         <button type="button" class="tq-info" :class="{ on: showCourse }"
           :title="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
           :aria-label="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
-          @click="showCourse = !showCourse">
+          @click="basculerAide">
           <Info :size="17" />
         </button>
       </div>
@@ -92,7 +92,7 @@
         <div class="tq-course-head"><Lightbulb :size="15" /> <strong>{{ locale.startsWith('en') ? 'Hint for this question' : 'Indice pour cette question' }}</strong></div>
         <p v-if="current.hint" class="tq-course-key">{{ current.hint }}</p>
         <p v-else class="tq-course-key tq-course-fallback">{{ locale.startsWith('en') ? 'Re-read the question and rule out the impossible answers.' : 'Relis la question et élimine les réponses impossibles.' }}</p>
-        <button v-if="coursMatiere" type="button" class="tq-course-more" @click="showFullCourse = !showFullCourse">
+        <button v-if="coursMatiere" type="button" class="tq-course-more" @click="basculerCours">
           <BookOpen :size="13" /> <span>{{ showFullCourse ? (locale.startsWith('en') ? 'Hide the lesson' : 'Masquer le cours') : (locale.startsWith('en') ? 'Re-read the whole lesson' : 'Relire tout le cours') }}</span>
         </button>
         <div v-if="coursMatiere && showFullCourse" class="tq-course-body">{{ coursMatiere }}</div>
@@ -189,6 +189,23 @@
       </div>
       <p v-if="meilleureSerie >= 2" class="tq-serie-fin"><Flame :size="15" /> {{ locale.startsWith('en') ? `Best streak: ${meilleureSerie}` : `Meilleure série : ${meilleureSerie} d'affilée` }}</p>
 
+      <!-- JAUGE DU PALIER. Voir la barre avancer est tout l'intérêt du
+           mécanisme : franchir un palier demande des dizaines de séances, et
+           une progression invisible sur cette durée ne motive personne.
+           On montre le mouvement, JAMAIS la pondération par question — un élève
+           qui apprend que l'indice coûte 0,2 cesse de le consulter, alors que
+           le consulter est un bon réflexe d'apprentissage. -->
+      <div v-if="lastResult" class="tq-jauge">
+        <div class="tq-jauge-head">
+          <span>{{ niveauLabel }}</span>
+          <span v-if="deltaJaugeSeance" class="tq-jauge-delta" :class="deltaJaugeSeance > 0 ? 'up' : 'down'">
+            {{ deltaJaugeSeance > 0 ? '+' : '' }}{{ deltaJaugeSeance }}
+          </span>
+          <span v-else class="tq-jauge-delta neutre">{{ locale.startsWith('en') ? 'no change' : 'inchangé' }}</span>
+        </div>
+        <div class="tq-jauge-bar"><div class="tq-jauge-fill" :style="{ width: jaugePct + '%' }"></div></div>
+      </div>
+
       <!-- Feedback de progression adaptative -->
       <div v-if="lastResult" class="tq-level-fb" :class="levelFb.tone">
         <component :is="levelFb.icon" :size="18" />
@@ -266,6 +283,7 @@ import { useRecompensesPointsStore } from '../stores/recompensesPoints'
 import { serieActuelle } from '../utils/recompenses'
 import { useLigueStore } from '../stores/ligue'
 import { niveauSuivant, PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
+import { noteQuestion } from '../utils/jaugeNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -520,6 +538,9 @@ const estIA = computed(() => lastMode.value === 'ia' || lastMode.value === 'banq
 // L'infobulle le dit, sinon « 3/5 » ressemble à une fin de parcours.
 const niveauLabel = computed(() => (locale.value.startsWith('en') ? 'Level ' : 'Niveau ')
   + level.value + '/' + PALIERS_PAR_CLASSE)
+// Avancement DANS le palier courant, et ce que la séance vient d'y changer.
+const jaugePct = computed(() => Math.max(0, Math.min(100, Number(lastResult.value?.jauge) || 0)))
+const deltaJaugeSeance = computed(() => Number(lastResult.value?.deltaJauge) || 0)
 const niveauTitre = computed(() => (locale.value.startsWith('en')
   ? `Difficulty ${level.value} of ${PALIERS_PAR_CLASSE} within the ${programmeActuel.value} curriculum. At the top, MIAPO offers the next year's curriculum.`
   : `Difficulté ${level.value} sur ${PALIERS_PAR_CLASSE} dans le programme de ${programmeActuel.value}. Au sommet, MIAPO propose le programme de l'année suivante.`))
@@ -608,6 +629,19 @@ const wrongSet = ref(new Set())
 // (montée/descente de niveau), sans jamais afficher le détail des points.
 const qGrade = ref(0)
 const grades = ref([])
+// Aide consultée POUR LA QUESTION EN COURS. On mémorise le fait qu'elle a été
+// ouverte, pas son état à l'instant de la réponse : refermer le panneau juste
+// avant de répondre ne doit pas effacer l'aide reçue.
+const aideOuverte = ref(false)
+const coursOuvert = ref(false)
+function basculerAide() {
+  showCourse.value = !showCourse.value
+  if (showCourse.value) aideOuverte.value = true
+}
+function basculerCours() {
+  showFullCourse.value = !showFullCourse.value
+  if (showFullCourse.value) coursOuvert.value = true
+}
 
 const current = computed(() => questions.value[index.value] || { q: '', choices: [], answer: 0 })
 
@@ -742,14 +776,22 @@ function resetQ() {
   // c'est tout son intérêt.
   phase.value = 'answering'; revealed.value = false; firstTry.value = false; qGrade.value = 0
   attempts.value = 0; wrongSet.value = new Set()
+  aideOuverte.value = false; coursOuvert.value = false
 }
 
 function select(i) {
   if (revealed.value) return
   if (i === current.value.answer) {
     revealed.value = true; phase.value = 'revealed'; firstTry.value = attempts.value === 0
-    // Trouvé : 1 point au 1er coup, 0.5 au 2e (note graduée cachée).
-    qGrade.value = attempts.value === 0 ? 1 : 0.5
+    // Note graduée CACHÉE. Trouver seul, trouver avec l'indice, trouver après
+    // avoir relu le cours et trouver au 2e essai ne disent pas la même chose
+    // d'une maîtrise — et c'est cette note qui remplit la jauge de progression.
+    qGrade.value = noteQuestion({
+      juste: true,
+      premierEssai: attempts.value === 0,
+      indiceOuvert: aideOuverte.value,
+      coursOuvert: coursOuvert.value,
+    })
     // La série ne compte que les réussites DU PREMIER COUP : trouver après deux
     // essais, c'est bien, mais ce n'est pas la même chose.
     if (firstTry.value) {
@@ -941,6 +983,16 @@ onMounted(start)
 
 /* Échec de préparation : sobre, centré, sans dramatisation. L'action évidente
    (Réessayer) est mise en avant ; Retour reste disponible. */
+/* Jauge du palier : sobre, sans bordure gauche colorée (règle maison). */
+.tq-jauge { margin: 14px auto 0; max-width: 340px; }
+.tq-jauge-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; font-size: 13px; color: var(--tx2, #4b5563); }
+.tq-jauge-delta { font-weight: 700; font-variant-numeric: tabular-nums; }
+.tq-jauge-delta.up { color: #15803d; }
+.tq-jauge-delta.down { color: #b4791a; }
+.tq-jauge-delta.neutre { color: var(--tx3, #9ca3af); font-weight: 500; }
+.tq-jauge-bar { height: 8px; border-radius: 99px; background: rgba(var(--pr-rgb,21,88,176),.12); overflow: hidden; }
+.tq-jauge-fill { height: 100%; border-radius: 99px; background: var(--pr); transition: width .5s ease; }
+
 .tq-echec { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 48px 20px; }
 .tq-echec svg { color: var(--tx3, #9ca3af); }
 .tq-echec h2 { margin: 4px 0 0; font-size: 18px; font-weight: 650; }
