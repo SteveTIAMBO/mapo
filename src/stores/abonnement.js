@@ -196,7 +196,22 @@ export const useAbonnementStore = defineStore('abonnement', () => {
     try {
       const { useEnfantsAutonomesStore } = await import('./enfantsAutonomes')
       const e = useEnfantsAutonomesStore()
-      watch(() => e.linkedEnfantId, (id) => { if (id) fetchState() })
+      // ⚠️ `immediate`, et c'est tout le sujet. Le premier fetchState() part
+      // souvent AVANT que le lien familial soit chargé : sans déclaration de
+      // famille, le serveur ne reconnaît pas le compte enfant et répond un état
+      // par défaut (quota plein, estEnfant faux). L'observateur devait rattraper
+      // ce cas — mais il ne surveillait qu'un CHANGEMENT. Quand le lien était
+      // déjà là au moment de sa pose, il ne se déclenchait jamais, et l'état
+      // erroné restait figé pour toute la session.
+      // Conséquence vécue le 22/08 : jauge pleine pour une enfant rationnée à
+      // 24 600/50 000 — et, à l'autre extrême, « plus de crédits » alors que son
+      // parent venait d'en offrir 100 000.
+      // On surveille les DEUX identifiants : `famille()` exige les deux.
+      watch(
+        () => `${e.linkedOwnerUid || ''}|${e.linkedEnfantId || ''}`,
+        () => { if (e.linkedOwnerUid && e.linkedEnfantId && !estEnfant.value) fetchState() },
+        { immediate: true },
+      )
     } catch { /* sans effet : on garde l'état déjà chargé */ }
   }
 
