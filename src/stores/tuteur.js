@@ -708,6 +708,19 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
 
   /**
+   * Avancement DANS le palier courant (0..100).
+   *
+   * Les profils antérieurs à la jauge n'ont pas ce champ : ils repartent de 0
+   * sur le palier où l'ancienne règle les avait laissés. C'est le comportement
+   * voulu — on ne leur retire pas un palier acquis, mais le suivant se mérite.
+   */
+  function getJauge(studentId, subjectId) {
+    const data = loadRevisions(studentId)
+    const j = Number((data[subjectId] || {}).jauge) || 0
+    return Math.max(0, Math.min(100, j))
+  }
+
+  /**
    * L'apprenant accepte de passer au programme de l'année suivante pour CETTE
    * matière. On repart au palier du milieu : il vient de prouver qu'il maîtrise
    * l'année précédente, le renvoyer aux bases serait décourageant et faux.
@@ -1445,7 +1458,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
 
   return {
     generating, planning, lastMode, lastReason, revisionsVersion, conversationsVersion,
-    generateQuiz, recordResult, getLevel, getRevisionState, getDueSubjects, syncFromCloud,
+    generateQuiz, recordResult, getLevel, getJauge, getRevisionState, getDueSubjects, syncFromCloud,
     accepterAnneeSuivante, refuserAnneeSuivante, getProgramme,
     genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,

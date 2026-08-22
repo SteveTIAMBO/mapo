@@ -695,7 +695,7 @@
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
-                <span class="prog-bar"><span class="prog-bar-fill" :style="{ width: Math.min(100, p.level * 20) + '%' }"></span></span>
+                <span class="prog-bar" :title="t('mia.levelN', { n: p.level }) + ' — ' + Math.round(p.jauge) + '%'"><span class="prog-bar-fill" :style="{ width: avancementPct(p) + '%' }"></span></span>
                 <span v-if="p.trend" class="prog-trend" :class="p.trend" :title="t('mia.trendHint')">
                   <TrendingUp v-if="p.trend === 'up'" :size="12" />
                   <TrendingDown v-else-if="p.trend === 'down'" :size="12" />
@@ -1296,6 +1296,7 @@ import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, Trending
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
+import { PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
 import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo'
@@ -2483,6 +2484,20 @@ function noteClass(valeur) {
   return a < cible ? 'low' : a < cible + 0.1 ? 'mid' : 'ok'
 }
 function levelFor(matiere) { return activeEnfant.value ? tuteur.getLevel(activeEnfant.value.id, 'auto-' + matiere) : 1 }
+function jaugeFor(matiere) { return activeEnfant.value ? tuteur.getJauge(activeEnfant.value.id, 'auto-' + matiere) : 0 }
+/**
+ * Avancement DANS LE PROGRAMME DE LA CLASSE, paliers ET jauge confondus.
+ *
+ * La barre valait `niveau × 20` : elle était donc PLEINE dès le palier 5, alors
+ * qu'il reste toute la jauge de ce palier à remplir avant d'être prêt pour
+ * l'année suivante. Elle annonçait une fin de parcours qui n'existait pas.
+ */
+function avancementPct(p) {
+  const paliers = PALIERS_PAR_CLASSE
+  const acquis = Math.max(0, Math.min(paliers, Number(p.level) || 1) - 1)
+  const encours = Math.max(0, Math.min(100, Number(p.jauge) || 0)) / 100
+  return Math.round(((acquis + encours) / paliers) * 100)
+}
 
 // Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
 // hors-catalogue qui a renseigné ses modules, on pilote toute la boucle
@@ -2696,7 +2711,7 @@ const progression = computed(() => {
     const attempts = st && st.attempts ? st.attempts : 0
     const tr = attempts ? tendanceElo(e.id, m) : 0
     const trend = attempts >= 3 ? (tr >= 15 ? 'up' : (tr <= -15 ? 'down' : 'stable')) : null
-    return { matiere: m, level: levelFor(m), hasElo: attempts > 0, trend }
+    return { matiere: m, level: levelFor(m), jauge: jaugeFor(m), hasElo: attempts > 0, trend }
   }).sort((a, b) => b.level - a.level)
 })
 // DÉMO uniquement : amorce des tendances Elo lisibles (progresse / stable / à

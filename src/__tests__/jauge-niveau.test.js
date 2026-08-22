@@ -120,3 +120,35 @@ describe('Passage de palier', () => {
     expect(r.delta).toBe(0)
   })
 })
+
+/**
+ * Barre du module « Ma progression ».
+ *
+ * Elle valait `niveau × 20`, donc PLEINE dès le palier 5 — alors qu'il reste
+ * toute la jauge de ce palier à remplir avant d'être prêt pour l'année
+ * suivante. Steve : « je vois juste qu'elle est déjà au niveau 5 en anglais ».
+ */
+function avancementPct(level, jauge, paliers = 5) {
+  const acquis = Math.max(0, Math.min(paliers, level) - 1)
+  const encours = Math.max(0, Math.min(100, jauge)) / 100
+  return Math.round(((acquis + encours) / paliers) * 100)
+}
+
+describe('Avancement affiché dans le programme de la classe', () => {
+  it('arriver au palier 5 ne remplit PAS la barre : la jauge reste à faire', () => {
+    expect(avancementPct(5, 0)).toBe(80)
+    expect(avancementPct(5, 0)).toBeLessThan(100)
+  })
+
+  it('la barre n’est pleine qu’au sommet ET jauge pleine', () => {
+    expect(avancementPct(5, 100)).toBe(100)
+  })
+
+  it('la jauge fait bouger la barre à l’intérieur d’un palier', () => {
+    expect(avancementPct(3, 50)).toBeGreaterThan(avancementPct(3, 0))
+  })
+
+  it('un profil hérité sans jauge repart du début de son palier', () => {
+    expect(avancementPct(5, 0)).toBe(80) // palier conservé, jauge à zéro
+  })
+})
