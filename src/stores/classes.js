@@ -12,7 +12,7 @@ import {
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
 import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
-import { packPays, localiserNomComplet } from '../data/paysDemo'
+import { packPays, localiserNomComplet, appliquerSeries, PAYS_DEMO } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 import { useNiveauxStore } from './niveaux'
 
@@ -59,9 +59,49 @@ export const LEVELS_PRIMAIRE_CG = [
   { value: 'CM2', label: 'CM2', cycle: 'primaire' },
 ]
 
+/**
+ * Niveaux de l'ÉLÉMENTAIRE au Sénégal — CI → CM2, six ans.
+ *
+ * Le Sénégal commence au cours d'initiation (CI) là où le Cameroun a la SIL et
+ * le Congo le CP1 : trois pays, trois noms pour la première année d'école.
+ * Source : ministère de l'Éducation nationale (education.sn) et
+ * senegalecoles.com/systeme-educatif-2-enseignement-elementaire.html — six ans,
+ * de 7 à 12 ans, CI, CP, CE1, CE2, CM1, CM2.
+ */
+export const LEVELS_PRIMAIRE_SN = [
+  { value: 'CI', label: 'CI', cycle: 'primaire' },
+  { value: 'CP', label: 'CP', cycle: 'primaire' },
+  { value: 'CE1', label: 'CE1', cycle: 'primaire' },
+  { value: 'CE2', label: 'CE2', cycle: 'primaire' },
+  { value: 'CM1', label: 'CM1', cycle: 'primaire' },
+  { value: 'CM2', label: 'CM2', cycle: 'primaire' },
+]
+
+/**
+ * Niveaux de l'école ÉLÉMENTAIRE en France — CP → CM2, CINQ ans.
+ *
+ * ⚠️ Une année de moins que partout ailleurs dans cette liste : la grande
+ * section de maternelle n'est pas de l'élémentaire. Servir une liste de six
+ * niveaux à une école française lui ferait inventer une classe qui n'existe pas.
+ * Source : education.gouv.fr, « L'école élémentaire ».
+ */
+export const LEVELS_PRIMAIRE_FR = [
+  { value: 'CP', label: 'CP', cycle: 'primaire' },
+  { value: 'CE1', label: 'CE1', cycle: 'primaire' },
+  { value: 'CE2', label: 'CE2', cycle: 'primaire' },
+  { value: 'CM1', label: 'CM1', cycle: 'primaire' },
+  { value: 'CM2', label: 'CM2', cycle: 'primaire' },
+]
+
+const PRIMAIRE_PAR_PAYS = {
+  CG: LEVELS_PRIMAIRE_CG,
+  SN: LEVELS_PRIMAIRE_SN,
+  FR: LEVELS_PRIMAIRE_FR,
+}
+
 /** Niveaux du primaire du pays de l'école. Pays sans liste propre → Cameroun. */
 export function levelsPrimairePour(pays) {
-  return pays === 'CG' ? LEVELS_PRIMAIRE_CG : LEVELS_PRIMAIRE
+  return PRIMAIRE_PAR_PAYS[pays] || LEVELS_PRIMAIRE
 }
 
 /**
@@ -69,9 +109,16 @@ export function levelsPrimairePour(pays) {
  * un niveau saisi ou importé — jamais à en proposer une liste à l'écran, sinon on
  * remettrait sous les yeux d'une école congolaise la SIL camerounaise.
  */
-export const LEVELS_TOUS = [...LEVELS, ...LEVELS_PRIMAIRE, ...LEVELS_PRIMAIRE_CG.filter(
-  (l) => !LEVELS_PRIMAIRE.some((p) => p.value === l.value),
-)]
+export const LEVELS_TOUS = (() => {
+  const vus = new Set()
+  const out = []
+  for (const l of [...LEVELS, ...LEVELS_PRIMAIRE, ...Object.values(PRIMAIRE_PAR_PAYS).flat()]) {
+    if (vus.has(l.value)) continue
+    vus.add(l.value)
+    out.push(l)
+  }
+  return out
+})()
 
 export const SECTIONS = [
   { value: 'A', label: 'A' },
@@ -214,7 +261,11 @@ export const useClassesStore = defineStore('classes', () => {
       const pack = packPays(paysDemo())
       const base = ed.isPrimaire
         ? (pack.classesPrimaire || DEMO_CLASSES_PRIMAIRE)
-        : DEMO_CLASSES.map((c) => ({ ...c, homeroomTeacher: localiserNomComplet(c.homeroomTeacher, NOMS_REFERENCE, pack) }))
+        : appliquerSeries(
+            DEMO_CLASSES.map((c) => ({ ...c, homeroomTeacher: localiserNomComplet(c.homeroomTeacher, NOMS_REFERENCE, pack) })),
+            PAYS_DEMO.CM,
+            pack,
+          )
       classes.value = saved || base.map((c) => ({ ...c }))
       if (!saved) {
         localStorage.setItem(DEMO_CLASSES_VERSION_KEY + demoSuffix(), String(DEMO_CLASSES_VERSION))

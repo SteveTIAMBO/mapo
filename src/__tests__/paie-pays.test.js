@@ -62,8 +62,9 @@ describe('Cameroun : le barème historique est conservé', () => {
 })
 
 describe('un pays sans barème ne reçoit pas celui du voisin', () => {
-  it('aucune retenue inventée pour la Côte d’Ivoire ou le Sénégal', () => {
-    for (const pays of ['CI', 'SN', 'CD', '']) {
+  it('aucune retenue inventée pour la Côte d’Ivoire ou la RD Congo', () => {
+    // Le Sénégal figurait ici avant le 22/08 ; il est désormais sourcé.
+    for (const pays of ['CI', 'CD', '']) {
       const d = calculPaie({ brut: 300000, pays })
       expect(d.paysCouvert).toBe(false)
       expect(d.net).toBe(300000)      // on n'invente rien
@@ -74,6 +75,8 @@ describe('un pays sans barème ne reçoit pas celui du voisin', () => {
   it('paysCouvert permet à l’écran de le DIRE plutôt que d’afficher un faux bulletin', () => {
     expect(paysCouvert('CG')).toBe(true)
     expect(paysCouvert('cg')).toBe(true) // insensible à la casse
+    expect(paysCouvert('SN')).toBe(true)
+    expect(paysCouvert('FR')).toBe(true)
     expect(paysCouvert('CI')).toBe(false)
   })
 
@@ -88,5 +91,73 @@ describe('affichage des taux', () => {
     expect(fmtTaux(0.0227)).toBe('2,27 %')
     expect(fmtTaux(0.04)).toBe('4 %')
     expect(fmtTaux(0.1003)).toBe('10,03 %')
+  })
+})
+
+describe('Sénégal : cotisations CLEISS 2026 + impôt du CGI', () => {
+  it('IPRES 5,6 % plafonnée à 432 000', () => {
+    expect(calculPaie({ brut: 400000, pays: 'SN' }).totalCotisations).toBe(22400)
+    expect(calculPaie({ brut: 1000000, pays: 'SN' }).totalCotisations).toBe(24192) // plafonnée
+  })
+
+  it('⚠️ la cotisation maladie IPM n’est PAS codée : c’est une FOURCHETTE', () => {
+    // Le CLEISS donne 2 % à 7,5 % côté salarié, selon l'institution dont relève
+    // l'entreprise. Une fourchette n'est pas un taux : en retenir un au hasard
+    // donnerait un net faux avec l'apparence de l'exactitude.
+    const codes = calculPaie({ brut: 400000, pays: 'SN' }).lignes.map((l) => l.code)
+    expect(codes).toEqual(['IPRES'])
+  })
+
+  it('applique un barème ANNUEL à un salaire mensuel', () => {
+    // L'appliquer tel quel placerait tout le monde dans la tranche à 0 %.
+    const d = calculPaie({ brut: 400000, pays: 'SN' })
+    expect(d.impot).toBeGreaterThan(0)
+    // 400 000 − 22 400 = 377 600/mois → 4 531 200/an ; abattement plafonné à
+    // 900 000 → assiette 3 631 200 ; barème → 813 360/an, soit 67 780/mois.
+    expect(d.impot).toBe(67780)
+  })
+
+  it('l’abattement de 30 % est PLAFONNÉ à 900 000 par an', () => {
+    // Sans plafond, les hauts salaires seraient nettement sous-imposés.
+    const petit = calculPaie({ brut: 150000, pays: 'SN' })
+    const gros = calculPaie({ brut: 2000000, pays: 'SN' })
+    expect(gros.impot / gros.brut).toBeGreaterThan(petit.impot / petit.brut)
+  })
+})
+
+describe('France : tranches et assiette partielle', () => {
+  it('la CSG porte sur 98,25 % du brut, pas sur 100 %', () => {
+    const csg = calculPaie({ brut: 3000, pays: 'FR' }).lignes.find((l) => l.code === 'CSG_CRDS')
+    expect(csg.assiette).toBeCloseTo(3000 * 0.9825, 2)
+    expect(csg.montant).toBe(Math.round(3000 * 0.9825 * 0.097))
+  })
+
+  it('la tranche 2 de retraite ne porte QUE sur la part au-dessus du plafond', () => {
+    // Sans plancher, elle porterait sur le salaire entier : un cadre verrait une
+    // retenue largement surestimée.
+    const sous = calculPaie({ brut: 3000, pays: 'FR' }).lignes.find((l) => l.code === 'RETR_T2')
+    const dessus = calculPaie({ brut: 5000, pays: 'FR' }).lignes.find((l) => l.code === 'RETR_T2')
+    expect(sous.montant).toBe(0)
+    expect(dessus.montant).toBe(Math.round((5000 - 4005) * 0.0864))
+  })
+
+  it('un net plausible : environ 21 % de retenues sur un salaire courant', () => {
+    const d = calculPaie({ brut: 3000, pays: 'FR' })
+    expect(d.totalCotisations / d.brut).toBeGreaterThan(0.19)
+    expect(d.totalCotisations / d.brut).toBeLessThan(0.23)
+  })
+
+  it('⚠️ pas de barème d’impôt, et ce n’est pas un manque', () => {
+    // Prélèvement à la source : l'employeur applique un taux PROPRE À CHAQUE
+    // salarié, transmis par l'administration. Aucun barème ne peut le remplacer.
+    const d = calculPaie({ brut: 3000, pays: 'FR' })
+    expect(d.impotNonParametre).toBe(true)
+    expect(calculPaie({ brut: 3000, pays: 'FR', tauxImpotEcole: 0.06 }).impot).toBeGreaterThan(0)
+  })
+
+  it('les charges patronales françaises ne sont pas affirmées', () => {
+    // Leurs taux dépendent du salaire, de l'effectif et du secteur : une liste
+    // « moyenne » serait fausse pour tout le monde.
+    expect(calculPaie({ brut: 3000, pays: 'FR' }).employeur).toEqual([])
   })
 })

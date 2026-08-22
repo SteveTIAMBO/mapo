@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees } from '../data/paysDemo'
+import { PAYS_DEMO, CODES_PAYS_DEMO, packPays, localiserNom, localiserNomComplet, localiserTexte, localiserDonnees, appliquerSeries } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
 /**
@@ -190,5 +190,82 @@ describe('garde-fou : le helper de localisation est défini là où il est appel
       if (!/function localiser\s*\(/.test(src)) fautifs.push(f)
     }
     expect(fautifs).toEqual([])
+  })
+})
+
+describe('Sénégal et France', () => {
+  it('quatre pays, quatre espaces de stockage', () => {
+    expect(CODES_PAYS_DEMO).toEqual(['CM', 'CG', 'SN', 'FR'])
+  })
+
+  it('le Sénégal est en zone UEMOA : XOF, pas XAF', () => {
+    // Même valeur face à l'euro, deux monnaies distinctes. Facturer une
+    // scolarité dakaroise en franc CFA d'Afrique CENTRALE serait faux.
+    expect(PAYS_DEMO.SN.ecole.currency).toBe('XOF')
+    expect(PAYS_DEMO.CG.ecole.currency).toBe('XAF')
+    expect(PAYS_DEMO.FR.ecole.currency).toBe('EUR')
+  })
+
+  it('l’élémentaire sénégalais commence au CI, jamais à la SIL ni au CP1', () => {
+    const n = PAYS_DEMO.SN.classesPrimaire.map((c) => c.level)
+    expect(n[0]).toBe('CI')
+    expect(n).not.toContain('SIL')
+    expect(n).not.toContain('CP1')
+  })
+
+  it('⚠️ l’élémentaire français a CINQ niveaux, pas six', () => {
+    // Une année de moins que partout ailleurs : la grande section de maternelle
+    // n'est pas de l'élémentaire. Six niveaux feraient inventer une classe.
+    const n = PAYS_DEMO.FR.classesPrimaire.map((c) => c.level)
+    expect(new Set(n).size).toBe(5)
+    expect(n[0]).toBe('CP')
+  })
+
+  it('chaque pays couvre toute la liste de référence, sans doublon', () => {
+    for (const code of CODES_PAYS_DEMO) {
+      const noms = PAYS_DEMO[code].nomsFamille
+      if (!noms) continue
+      expect(noms.length).toBe(NOMS_REFERENCE.length)
+      expect(new Set(noms).size).toBe(noms.length)
+    }
+  })
+})
+
+describe('séries du lycée : elles changent de pays en pays', () => {
+  const classes = [
+    { id: 'c-1a', name: '1ère A', level: '1ere', serie: 'A', section: 'A' },
+    { id: 'c-tc', name: 'Tle C', level: 'Tle', serie: 'C', section: 'C' },
+    { id: 'c-6a', name: '6ème A', level: '6e', section: 'A' },
+  ]
+
+  it('le Sénégal a L2, S1, S2 — pas A, C, D', () => {
+    const r = appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO.SN)
+    expect(r[0].name).toBe('1ère L2')
+    expect(r[1].name).toBe('Tle S1')
+  })
+
+  it('⚠️ la France n’a PLUS de séries depuis le bac 2021 : on numérote', () => {
+    // Afficher « 1ère A » à un lycée français serait daté de trente ans.
+    const r = appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO.FR)
+    expect(r[0].name).toBe('1ère 1')
+    expect(r[0].serie).toBe('')
+  })
+
+  it('les IDENTIFIANTS ne bougent jamais', () => {
+    // Emplois du temps, notes et affectations référencent ces identifiants :
+    // les renommer viderait la démo sans afficher la moindre erreur.
+    for (const code of ['CG', 'SN', 'FR']) {
+      const r = appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO[code])
+      expect(r.map((c) => c.id)).toEqual(['c-1a', 'c-tc', 'c-6a'])
+    }
+  })
+
+  it('ne touche pas aux classes sans série', () => {
+    const r = appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO.SN)
+    expect(r[2].name).toBe('6ème A')
+  })
+
+  it('le Congo garde A, C, D : rien à renommer', () => {
+    expect(appliquerSeries(classes, PAYS_DEMO.CM, PAYS_DEMO.CG)).toBe(classes)
   })
 })
