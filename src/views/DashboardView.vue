@@ -147,6 +147,7 @@ import {
 } from 'chart.js'
 import { useAuthStore } from '../stores/auth'
 import { useSchoolStore } from '../stores/school'
+import { symboleDevise } from '../utils/monnaie'
 import { usePersonnelStore } from '../stores/personnel'
 import { useClassesStore } from '../stores/classes'
 import { useElevesStore } from '../stores/eleves'
@@ -524,7 +525,7 @@ const paymentChartData = computed(() => {
     labels: months,
     datasets: [
       {
-        label: 'Montant collecté (XAF)',
+        label: `Montant collecté (${symboleDevise(schoolStore.schoolSettings?.currency)})`,
         data: values,
         borderColor: 'var(--pr)',
         backgroundColor: 'rgba(var(--pr-rgb),.06)',
@@ -588,7 +589,7 @@ const paymentChartOptions = {
       type: 'linear',
       display: true,
       position: 'left',
-      title: { display: true, text: 'Montant (XAF)', font: { size: 11 }, color: '#94a3b8' },
+      title: { display: true, text: `Montant (${symboleDevise(schoolStore.schoolSettings?.currency)})`, font: { size: 11 }, color: '#94a3b8' },
       ticks: {
         callback: function(value) {
           if (value >= 1000000) return (value / 1000000).toFixed(0) + 'M'
@@ -797,11 +798,19 @@ const searchResults = computed(() => {
 })
 
 // ═══ HELPERS ═══
+/**
+ * Montant abrégé du bloc Finances.
+ *
+ * ⚠️ « XAF » était écrit en dur, quatre fois. Le tableau de bord d'une école
+ * française affichait donc « 2M XAF » — des francs CFA d'Afrique centrale à
+ * Lyon. La devise suit désormais l'école, comme partout ailleurs.
+ */
 function formatFinanceMoney(val) {
-  if (!val) return '0 XAF'
-  if (val >= 1000000) return (val / 1000000).toFixed(1).replace('.0', '') + 'M XAF'
-  if (val >= 1000) return Math.round(val / 1000) + 'K XAF'
-  return val.toLocaleString('fr-FR') + ' XAF'
+  const d = symboleDevise(schoolStore.schoolSettings?.currency)
+  if (!val) return `0 ${d}`
+  if (val >= 1000000) return (val / 1000000).toFixed(1).replace('.0', '') + `M ${d}`
+  if (val >= 1000) return Math.round(val / 1000) + `K ${d}`
+  return val.toLocaleString('fr-FR') + ` ${d}`
 }
 
 function formatActivityTime(dateStr) {

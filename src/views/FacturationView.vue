@@ -748,7 +748,7 @@
               </select>
             </div>
             <div class="field">
-              <label>{{ t('fact.amountXAF') }}</label>
+              <label>{{ t('fact.amountXAF', { d: symboleDevise(schoolStore.schoolSettings?.currency) }) }}</label>
               <input v-model.number="payForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
           </div>
@@ -806,7 +806,7 @@
               </select>
             </div>
             <div class="field">
-              <label>{{ t('fact.amountXAF') }}</label>
+              <label>{{ t('fact.amountXAF', { d: symboleDevise(schoolStore.schoolSettings?.currency) }) }}</label>
               <input v-model.number="feeForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
           </div>
@@ -889,7 +889,7 @@
           </div>
           <div class="field-row">
             <div class="field">
-              <label>{{ t('fact.amountXAF') }}</label>
+              <label>{{ t('fact.amountXAF', { d: symboleDevise(schoolStore.schoolSettings?.currency) }) }}</label>
               <input v-model.number="salaryPayForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
             <div class="field">
@@ -981,7 +981,7 @@
           </div>
           <div class="field-row">
             <div class="field">
-              <label>{{ t('fact.amountXAF') }}</label>
+              <label>{{ t('fact.amountXAF', { d: symboleDevise(schoolStore.schoolSettings?.currency) }) }}</label>
               <input v-model.number="chargeForm.amount" type="number" class="input" placeholder="0" min="0" />
             </div>
             <div class="field">
@@ -1202,6 +1202,7 @@ import { useFacturationStore, FEE_TYPES, PAYMENT_METHODS, PAYMENT_STATUS } from 
 import { useElevesStore } from '../stores/eleves'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import { symboleDevise } from '../utils/monnaie'
 import { fmtMontant } from '../utils/monnaie'
 import { usePersonnelStore } from '../stores/personnel'
 import { useAuthStore } from '../stores/auth'

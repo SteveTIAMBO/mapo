@@ -4665,7 +4665,7 @@
     "paymentType": "Type de paiement",
     "fullPayment": "Paiement intégral",
     "other": "Autre",
-    "amountXAF": "Montant (XAF)",
+    "amountXAF": "Montant ({d})",
     "paymentMethod": "Mode de paiement",
     "dateLabel": "Date",
     "notesLabel": "Notes",

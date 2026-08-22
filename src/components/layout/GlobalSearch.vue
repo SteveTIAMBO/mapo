@@ -226,6 +226,8 @@ import { useElevesStore } from '../../stores/eleves'
 import { usePersonnelStore } from '../../stores/personnel'
 import { useClassesStore } from '../../stores/classes'
 import { useFacturationStore } from '../../stores/facturation'
+import { useSchoolStore } from '../../stores/school'
+import { fmtMontant } from '../../utils/monnaie'
 import { useDisciplineStore } from '../../stores/discipline'
 import { useAuthStore } from '../../stores/auth'
 import { useEnfantsAutonomesStore } from '../../stores/enfantsAutonomes'
@@ -507,7 +509,8 @@ const handleKeydown = (e) => {
 
 function formatPaymentAmount(val) {
   if (!val) return ''
-  return val.toLocaleString('fr-FR') + ' XAF'
+  // « XAF » était écrit en dur : faux dès qu'une école n'est pas en zone CEMAC.
+  return fmtMontant(val, useSchoolStore().schoolSettings?.currency)
 }
 
 onMounted(() => {
