@@ -217,12 +217,19 @@ export const NIVEAUX_SECONDAIRE_CI = [
 
 // EDHC (Éducation aux Droits de l'Homme et à la Citoyenneté) est la matière
 // civique ivoirienne — ce n'est pas l'ECM camerounaise, ni l'EMC française.
-// Le DPFC publie un programme d'arts plastiques ET d'éducation musicale pour
-// chacune des quatre classes du collège : ils manquaient au tronc commun.
-const COMMUN_CI = [
-  'Français', 'Anglais', 'Histoire-Géographie', 'Mathématiques', 'EDHC',
-  'Arts plastiques', 'Éducation musicale', 'Éducation physique et sportive (EPS)',
-]
+// Tronc commun du LYCÉE. Inchangé : l'index du DPFC n'expose pas de créneau
+// lycée pour EDHC, l'éducation musicale ni l'EPS, mais une absence dans un
+// index de publication ne prouve pas qu'une matière n'est pas enseignée — au
+// collège les créneaux existent tous, ce qui rend l'absence parlante ; au lycée
+// l'index est lacunaire. On ne retire donc rien ici sans source positive.
+const COMMUN_CI = ['Français', 'Anglais', 'Histoire-Géographie', 'Mathématiques', 'EDHC', 'Éducation physique et sportive (EPS)']
+/**
+ * Tronc commun du COLLÈGE (6è-3è).
+ * Le DPFC publie un programme d'arts plastiques ET d'éducation musicale pour
+ * chacune des quatre classes : ils manquaient. ⚠️ Ils ne remontent PAS au
+ * lycée — l'éducation musicale n'y a aucun créneau dans l'index.
+ */
+const COMMUN_CI_COLLEGE = [...COMMUN_CI, 'Arts plastiques', 'Éducation musicale']
 /**
  * CÔTE D'IVOIRE — la LV2 commence en 4ème.
  * Le DPFC ne publie l'espagnol et l'allemand qu'à partir de la 4ème
@@ -241,15 +248,15 @@ const DOMINANTES_CI = {
 /** Matières d'un niveau ivoirien. */
 export function matieresCI(niveau) {
   const n = String(niveau || '')
-  if (['6e', '5e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
-  if (['4e', '3e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie', ...LV2_CI]
+  if (['6e', '5e'].includes(n)) return [...COMMUN_CI_COLLEGE, 'SVT', 'Physique-Chimie']
+  if (['4e', '3e'].includes(n)) return [...COMMUN_CI_COLLEGE, 'SVT', 'Physique-Chimie', ...LV2_CI]
   if (/^2nde/.test(n)) {
     const base = /C$/.test(n) ? ['Mathématiques', 'Physique-Chimie', 'SVT'] : ['Français', 'Philosophie', 'Espagnol']
     return [...new Set([...base, ...COMMUN_CI])]
   }
   const serie = Object.keys(DOMINANTES_CI).find((k) => n.endsWith(' ' + k))
   if (serie) return [...new Set([...DOMINANTES_CI[serie], ...COMMUN_CI])]
-  return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
+  return [...COMMUN_CI_COLLEGE, 'SVT', 'Physique-Chimie']
 }
 
 // Apprenant adulte / autonome dont le cursus n'est PAS au catalogue scolaire
@@ -269,7 +276,11 @@ export const PAYS = [
   { code: 'CM', label: 'Cameroun' },
   { code: 'SN', label: 'Sénégal' },
   { code: 'CI', label: "Côte d'Ivoire" },
-  { code: 'CD', label: 'RD Congo' },
+  // ⚠️ DEUX Congo, à ne jamais confondre : « Congo-Brazzaville » (CG, +242,
+  // Pointe-Noire, XAF) et « RD Congo » (CD, +243, Kinshasa, CDF). Les libellés
+  // sont explicites pour que le parent ne se trompe pas de pays.
+  { code: 'CG', label: 'Congo-Brazzaville' },
+  { code: 'CD', label: 'RD Congo (Kinshasa)' },
   { code: 'FR', label: 'France' },
   { code: 'autre', label: 'Autre' },
 ]
@@ -333,6 +344,35 @@ export const MATIERES_SERIE_D = [
   'Éducation à la citoyenneté et à la morale (ECM)', 'Éducation physique et sportive (EPS)',
 ]
 const NIVEAUX_PREMIER_CYCLE = ['6ème', '5ème', '4ème', '3ème']
+
+/**
+ * CONGO-BRAZZAVILLE — structure sourcée, PROGRAMME NON SOURCÉ.
+ *
+ * Ce que l'on sait : primaire CP1→CM2 (MEPSA 2008, repris par l'ODSEF),
+ * secondaire 6e→Tle, notation sur 20 (décret n° 2013-295 du 25 juin 2013).
+ * Tout cela vient du travail déjà fait côté ERP, on ne le refait pas.
+ *
+ * Ce que l'on ne sait PAS : la liste officielle des matières par classe. Les
+ * trois portails du ministère sont hors service (enseignement-general.gouv.cg
+ * et e-meppsa.net ne résolvent plus, meppsa.cg répond « deployment paused »).
+ *
+ * On ne fabrique donc pas un programme congolais. On propose un socle réduit
+ * aux matières qu'aucune source ne contredit — celles qui structurent tout
+ * collège d'enseignement général francophone, dont la géographie, attestée
+ * comme discipline propre par le programme congolais publié par l'UNESCO —
+ * et l'apprenant complète lui-même. ⚠️ Ne PAS gonfler cette liste par
+ * analogie avec le Cameroun : c'est exactement l'erreur du référentiel
+ * primaire camerounais imposé aux autres pays.
+ */
+export const MATIERES_PRIMAIRE_CG = [
+  'Français', 'Mathématiques', 'Histoire', 'Géographie',
+  'Éducation physique et sportive (EPS)',
+]
+export const MATIERES_SECONDAIRE_CG = [
+  'Français', 'Mathématiques', 'Anglais', 'Histoire', 'Géographie',
+  'Éducation physique et sportive (EPS)',
+]
+const NIVEAUX_PRIMAIRE_CG = ['CP1', 'CP2', 'CE1', 'CE2', 'CM1', 'CM2']
 
 // ── Référentiel FRANCE (Éducation nationale) — même programme public/privé sous contrat ──
 export const MATIERES_PRIMAIRE_FR = [
@@ -418,6 +458,10 @@ export function matieresPourNiveau(niveau, pays) {
   if (pays === 'CI') {
     if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
     return matieresCI(niveau)
+  }
+  if (pays === 'CG') {
+    if (NIVEAUX_PRIMAIRE_CG.includes(niveau)) return MATIERES_PRIMAIRE_CG
+    return MATIERES_SECONDAIRE_CG
   }
   if (pays === 'CD') {
     if (NIVEAUX_PRIMAIRE_CD.includes(niveau)) return MATIERES_PRIMAIRE_CD

@@ -9,7 +9,7 @@
  * le programme du collège. Ces tests l'empêchent de revenir.
  */
 import { describe, it, expect } from 'vitest'
-import { matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { matieresPourNiveau, PAYS } from '../stores/enfantsAutonomes'
 
 const en6e = () => matieresPourNiveau('6e', 'FR')
 const en5e = () => matieresPourNiveau('5e', 'FR')
@@ -112,5 +112,68 @@ describe('Côte d’Ivoire — LV2 en 4ème, arts dès la 6ème', () => {
   it('⚠️ physique-chimie et SVT existent DÈS la 6ème : ne pas uniformiser avec la France', () => {
     expect(ci('6e')).toContain('Physique-Chimie')
     expect(ci('6e')).toContain('SVT')
+  })
+})
+
+/**
+ * ⚠️ Régression que j'ai moi-même introduite en ajoutant les arts au tronc
+ * commun ivoirien : `COMMUN_CI` sert AUSSI au lycée. L'éducation musicale
+ * s'est donc retrouvée en Terminale, où l'index du DPFC ne lui donne aucun
+ * créneau. Une correction de programme peut en casser un autre.
+ */
+describe('Côte d’Ivoire — les arts ne remontent pas au lycée', () => {
+  const ci = (n) => matieresPourNiveau(n, 'CI')
+
+  it('l’éducation musicale reste au collège', () => {
+    expect(ci('3e')).toContain('Éducation musicale')
+    for (const n of ['2nde C', '1ère D', 'Tle A1']) {
+      expect(ci(n)).not.toContain('Éducation musicale')
+    }
+  })
+
+  it('le tronc commun du lycée n’a pas été élargi au passage', () => {
+    expect(ci('Tle A1')).not.toContain('Arts plastiques')
+  })
+})
+
+/**
+ * CONGO-BRAZZAVILLE — structure sourcée, programme NON sourcé.
+ *
+ * Steve : « rajoute le congo (celui où il y a la ville Pointe-Noire) ». C'est
+ * la République du Congo (+242), à ne pas confondre avec la RD Congo.
+ * Les trois portails du ministère congolais sont hors service : on n'invente
+ * donc pas de programme, on pose un socle minimal que l'apprenant complète.
+ */
+describe('Congo-Brazzaville — présent, sans programme inventé', () => {
+  const cg = (n) => matieresPourNiveau(n, 'CG')
+
+  it('les deux Congo sont distincts et explicites dans la liste des pays', () => {
+    const codes = PAYS.map((p) => p.code)
+    expect(codes).toContain('CG')
+    expect(codes).toContain('CD')
+    const cgLabel = PAYS.find((p) => p.code === 'CG').label
+    const cdLabel = PAYS.find((p) => p.code === 'CD').label
+    expect(cgLabel).not.toBe(cdLabel)
+    expect(/Brazzaville/i.test(cgLabel)).toBe(true)
+    expect(/Kinshasa|RD/i.test(cdLabel)).toBe(true)
+  })
+
+  it('le primaire congolais va de CP1 à CM2, pas de SIL', () => {
+    expect(cg('CP1')).toEqual(cg('CM2'))
+    expect(cg('CP1')).not.toEqual(cg('6e'))
+  })
+
+  it('⚠️ on ne sert PAS le programme camerounais au Congo', () => {
+    const cm6 = matieresPourNiveau('6ème', 'CM')
+    expect(cg('6e')).not.toEqual(cm6)
+    // Aucune matière propre au Cameroun ne doit fuiter.
+    expect(cg('6e').some((m) => /ECM|PCT|Langues et cultures nationales/.test(m))).toBe(false)
+  })
+
+  it('le socle reste minimal : ce qu’aucune source ne contredit', () => {
+    for (const m of ['Français', 'Mathématiques', 'Histoire', 'Géographie']) {
+      expect(cg('6e')).toContain(m)
+    }
+    expect(cg('6e').length).toBeLessThan(10) // pas de liste inventée
   })
 })
