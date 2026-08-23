@@ -308,6 +308,32 @@ export const MATIERES_PRIMAIRE_FR = [
   'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
   'Éducation physique et sportive (EPS)', 'Arts plastiques', 'Éducation musicale',
 ]
+/**
+ * 6e — DERNIÈRE ANNÉE DU CYCLE 3, et non première année du collège.
+ *
+ * C'est la source d'une erreur facile : la 6e se trouve au collège, donc on lui
+ * sert le programme du collège. Or elle appartient au cycle 3, avec le CM1 et
+ * le CM2. Deux conséquences que mes propres référentiels confirment :
+ *
+ *   • pas de LV2. L'enseignement d'une deuxième langue vivante commence en 5e
+ *     (les classes bilangues sont une option, pas la règle) ;
+ *   • « Sciences et technologie » est UNE matière, pas trois. SVT,
+ *     physique-chimie et technologie ne se séparent qu'au cycle 4 — d'où les
+ *     fichiers svt-cycle4, physique-chimie-cycle4 et technologie-cycle4, sans
+ *     équivalent en 6e, face à sciences-technologie-cycle3.
+ *
+ * L'histoire des arts est également un enseignement de cycle 4 (référentiel
+ * histoire-des-arts-cycle4 : 5e, 4e, 3e).
+ *
+ * Une 6e bilangue reste possible : l'apprenant AJOUTE la langue à son profil.
+ * Le catalogue donne le cas général, pas la liste des exceptions.
+ */
+export const MATIERES_6E_FR = [
+  'Français', 'Mathématiques', 'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
+  'Anglais (LV1)', 'Sciences et technologie',
+  'Éducation physique et sportive (EPS)', 'Arts plastiques', 'Éducation musicale',
+]
+/** 5e, 4e, 3e — cycle 4 : la LV2 apparaît, les sciences se séparent. */
 export const MATIERES_COLLEGE_FR = [
   'Français', 'Mathématiques', 'Histoire-Géographie', 'Enseignement moral et civique (EMC)',
   'Anglais (LV1)', 'Espagnol (LV2)', 'Allemand (LV2)', 'Italien (LV2)',
@@ -341,7 +367,8 @@ export const SPECIALITES_LYCEE_GENERAL_FR = [
 ]
 function matieresFR(niveau) {
   if (NIVEAUX_PRIMAIRE_FR.includes(niveau)) return MATIERES_PRIMAIRE_FR
-  if (['6e', '5e', '4e', '3e'].includes(niveau)) return MATIERES_COLLEGE_FR
+  if (niveau === '6e') return MATIERES_6E_FR // cycle 3, pas cycle 4
+  if (['5e', '4e', '3e'].includes(niveau)) return MATIERES_COLLEGE_FR
   if (niveau === '2nde') return MATIERES_LYCEE_2NDE_FR
   if (niveau === '1re') return MATIERES_LYCEE_CYCLE_TERMINAL_FR.filter((m) => m !== 'Philosophie')
   if (niveau === 'Terminale') return MATIERES_LYCEE_CYCLE_TERMINAL_FR.filter((m) => m !== 'Français')
