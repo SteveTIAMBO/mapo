@@ -112,6 +112,44 @@ export const useFacturationStore = defineStore('facturation', () => {
     return getTotalFeesForLevel(level) - getEleveTotalPaid(eleveId)
   }
 
+  /**
+   * Élèves EN RETARD DE PAIEMENT — la définition, une seule fois.
+   *
+   * ⚠️ Il y en avait deux, et elles ne pouvaient pas coïncider :
+   *   - le tableau de bord comptait les élèves ayant payé ZÉRO (`unpaidCount`) ;
+   *   - le modal de relance listait tous ceux dont le SOLDE restait positif.
+   * Le directeur lisait donc « 48 familles en retard », cliquait, et tombait sur
+   * une liste plus longue. Un compteur qui n'ouvre pas sur ce qu'il annonce
+   * abîme la confiance dans tous les autres chiffres de l'écran.
+   *
+   * La bonne définition est celle du solde : une famille qui a payé la moitié
+   * doit encore l'autre moitié, elle est bien en retard.
+   *
+   * ⚠️ `due > 0` n'est pas décoratif : tant que l'école n'a pas configuré ses
+   * frais, `due` vaut 0 et TOUS les élèves basculaient dans « impayés ». Rien
+   * n'est dû, donc personne n'est en retard — un zéro n'est pas une dette.
+   */
+  const elevesEnRetard = computed(() => {
+    const classesStore = useClassesStore()
+    const elevesStore = useElevesStore()
+    const out = []
+    for (const eleve of elevesStore.eleves) {
+      if (eleve.status !== 'inscrit') continue
+      const cls = classesStore.classes.find(c => c.name === eleve.className)
+      if (!cls) continue
+      const due = getTotalFeesForLevel(cls.level)
+      if (!(due > 0)) continue
+      const paid = getEleveTotalPaid(eleve.id)
+      const balance = due - paid
+      if (balance <= 0) continue
+      out.push({ eleve, due, paid, balance, level: cls.level })
+    }
+    return out.sort((a, b) => b.balance - a.balance)
+  })
+
+  /** Nombre de familles en retard — le MÊME que la liste ci-dessus. */
+  const retardCount = computed(() => elevesEnRetard.value.length)
+
   // Stats globales
   const globalStats = computed(() => {
     const classesStore = useClassesStore()
@@ -145,6 +183,9 @@ export const useFacturationStore = defineStore('facturation', () => {
       paidCount,
       partialCount,
       unpaidCount,
+      // Familles en retard : solde restant dû. À ne pas confondre avec
+      // `unpaidCount`, qui ne compte que celles n'ayant RIEN payé.
+      retardCount: elevesEnRetard.value.length,
       totalEleves: inscrits.length,
     }
   })
@@ -593,7 +634,7 @@ export const useFacturationStore = defineStore('facturation', () => {
     feeStructure, payments, echeances, salaryPayments, charges, loading, setupDone,
     getFeesForLevel, getTotalFeesForLevel,
     getElevePayments, getEleveTotalPaid, getElevePaymentStatus, getEleveBalance,
-    globalStats, financialSynthesis,
+    globalStats, financialSynthesis, elevesEnRetard, retardCount,
     addFee, updateFee, deleteFee,
     addPayment, deletePayment,
     addEcheance, updateEcheance, deleteEcheance,

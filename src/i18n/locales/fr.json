@@ -4719,7 +4719,8 @@
     "toPayDetail": "Reste à payer",
     "paymentHistory": "Historique des versements",
     "noteLabel": "Note",
-    "close": "Fermer"
+    "close": "Fermer",
+    "chipRetard": "En retard ({n})"
   },
   "edt": {
     "setupTitle": "Configurer l'emploi du temps",

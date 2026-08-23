@@ -4719,7 +4719,8 @@
     "toPayDetail": "Left to pay",
     "paymentHistory": "Payment history",
     "noteLabel": "Note",
-    "close": "Close"
+    "close": "Close",
+    "chipRetard": "Overdue ({n})"
   },
   "edt": {
     "setupTitle": "Set up the timetable",

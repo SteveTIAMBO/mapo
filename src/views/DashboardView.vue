@@ -314,7 +314,11 @@ const agendaItems = computed(() => {
   }
   const pending = disciplineStore.stats?.pending || 0
   if (pending > 0) items.push({ time: '—', title: `${pending} ${pending > 1 ? t('dashboard.disciplineFiles') : t('dashboard.disciplineFile')}`, sub: t('dashboard.toProcess'), pill: t('dashboard.schoolLife'), tone: 'blue' })
-  const unpaid = factStore.globalStats?.unpaidCount || 0
+  // ⚠️ `unpaidCount` ne compte que les familles ayant payé ZÉRO, alors que la
+  // liste de relance montre toutes celles qui doivent encore quelque chose. Le
+  // directeur cliquait sur « 48 » et tombait sur une liste plus longue. Une
+  // seule définition, celle du store : `retardCount`.
+  const unpaid = factStore.retardCount || 0
   if (unpaid > 0) items.push({ time: '—', title: `${unpaid} ${unpaid > 1 ? t('dashboard.familiesUnpaid') : t('dashboard.familyUnpaid')}`, sub: t('dashboard.feeReminders'), pill: t('dashboard.deadline'), tone: 'amber' })
   return items
 })
@@ -672,7 +676,7 @@ const attentionItems = computed(() => {
   if (unpaid > 0) items.push({
     key: 'unpaid', icon: CreditCard, tone: 'amber', priority: 3,
     title: t('dashboard.attn.unpaidTitle', { n: unpaid }), detail: t('dashboard.attn.unpaidDetail'),
-    cta: t('dashboard.attn.relaunch'), to: '/facturation', query: { focus: 'impayes', relance: '1' },
+    cta: t('dashboard.attn.relaunch'), to: '/facturation', query: { focus: 'retard', relance: '1' },
   })
   const rate = factStore.globalStats?.collectionRate
   if (factStore.setupDone && rate != null && rate < 50) items.push({

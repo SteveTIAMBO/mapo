@@ -160,6 +160,9 @@
           <button class="status-chip chip-partial" :class="{ active: filterStatus === 'partiel' }" @click="filterStatus = filterStatus === 'partiel' ? '' : 'partiel'">
             {{ t('fact.partialPlural') }} ({{ displayStats.partialCount }})
           </button>
+          <button class="status-chip chip-unpaid" :class="{ active: filterStatus === FILTRE_RETARD }" @click="filterStatus = filterStatus === FILTRE_RETARD ? '' : FILTRE_RETARD">
+            {{ t('fact.chipRetard', { n: factStore.retardCount }) }}
+          </button>
           <button class="status-chip chip-unpaid" :class="{ active: filterStatus === 'impayé' }" @click="filterStatus = filterStatus === 'impayé' ? '' : 'impayé'">
             {{ t('fact.unpaidPlural') }} ({{ displayStats.unpaidCount }})
           </button>
@@ -1244,6 +1247,13 @@ function statusText(s) {
   if (s === 'impayé') return t('fact.statusUnpaid')
   return s
 }
+/**
+ * Valeur de filtre « en retard de paiement ».
+ * Ce n'est pas un statut d'élève mais un CROISEMENT (impayé + partiel) : d'où
+ * une constante distincte de PAYMENT_STATUS, qui, lui, décrit un seul état.
+ */
+const FILTRE_RETARD = 'retard'
+
 const activeTab = ref('eleves')
 const searchQuery = ref('')
 const filterClass = ref('')
@@ -1443,7 +1453,11 @@ const filteredEleves = computed(() => {
   if (filterClass.value) {
     list = list.filter(r => r.eleve.className === filterClass.value)
   }
-  if (filterStatus.value) {
+  if (filterStatus.value === FILTRE_RETARD) {
+    // « En retard » = il reste quelque chose à payer. C'est la définition du
+    // tableau de bord ET de la relance : les trois écrans disent la même chose.
+    list = list.filter(r => r.balance > 0)
+  } else if (filterStatus.value) {
     list = list.filter(r => r.status === filterStatus.value)
   }
   return list
@@ -1924,14 +1938,19 @@ const ecoleName = computed(() => schoolStore.schoolSettings?.schoolName || (loca
 const fmtMoney = (n) => fmtMontant(n, schoolStore.schoolSettings?.currency)
 const fmtDate = (iso) => { try { return new Date(iso).toLocaleDateString(locale.value === 'en' ? 'en-GB' : 'fr-FR') } catch { return '' } }
 
-const relanceCandidates = computed(() => elevesWithPayments.value
-  .filter(r => r.balance > 0)
-  .map(r => {
-    const e = r.eleve
-    const parent = (e.parentLastName && e.parentFirstName) ? `${e.parentFirstName} ${e.parentLastName}` : (e.parentName || '')
-    return { eleve: e, balance: r.balance, parent, phone: (e.parentPhone || '').trim(), lastRelance: factStore.getLastRelance(e.id) }
-  })
-  .sort((a, b) => b.balance - a.balance))
+/**
+ * Familles à relancer — la MÊME liste que celle annoncée par le tableau de bord.
+ *
+ * ⚠️ Elle était recalculée ici avec sa propre règle, pendant que le tableau de
+ * bord comptait autre chose. Le directeur cliquait sur « 48 familles en retard »
+ * et tombait sur une liste plus longue. La définition vit désormais dans le
+ * store, une seule fois : `elevesEnRetard`.
+ */
+const relanceCandidates = computed(() => factStore.elevesEnRetard.map((r) => {
+  const e = r.eleve
+  const parent = (e.parentLastName && e.parentFirstName) ? `${e.parentFirstName} ${e.parentLastName}` : (e.parentName || '')
+  return { eleve: e, balance: r.balance, parent, phone: (e.parentPhone || '').trim(), lastRelance: factStore.getLastRelance(e.id) }
+}))
 
 const selectableCount = computed(() => relanceCandidates.value.filter(r => r.phone).length)
 const selectedCount = computed(() => relanceCandidates.value.filter(r => relanceSel.value[r.eleve.id]).length)
@@ -1993,12 +2012,26 @@ async function sendRelances() {
 
 // ── Copilote MIAPO : applique les filtres passés en query (?focus/classe/q) ──
 const route = useRoute()
+/**
+ * Applique le filtre demandé par l'écran d'où l'on vient.
+ *
+ * ⚠️ Cette fonction commençait par `if (!q.miapo) return`. Le tableau de bord,
+ * lui, envoie `{ focus, relance }` SANS `miapo` : tout était donc ignoré en
+ * silence. Le directeur cliquait sur « 48 familles en retard » et arrivait sur
+ * la liste complète, non filtrée, sans que la fenêtre de relance s'ouvre.
+ * Un bouton qui n'ouvre pas ce qu'il annonce est pire qu'un bouton absent.
+ *
+ * On réagit désormais aux paramètres eux-mêmes, quelle que soit leur origine.
+ */
 function applyMiapoQuery() {
-  const q = route.query
-  if (!q || !q.miapo) return
-  activeTab.value = 'eleves'
+  const q = route.query || {}
   const focus = String(q.focus || '')
-  if (focus === 'impayes') filterStatus.value = PAYMENT_STATUS.UNPAID
+  if (!focus && !q.classe && !q.q && !q.relance) return
+
+  activeTab.value = 'eleves'
+  // « retard » et « impayes » désignent la même chose côté utilisateur : il
+  // reste quelque chose à payer. `impayes` est conservé pour les anciens liens.
+  if (focus === 'retard' || focus === 'impayes') filterStatus.value = FILTRE_RETARD
   else if (focus === 'partiels') filterStatus.value = PAYMENT_STATUS.PARTIAL
   else if (focus === 'payes') filterStatus.value = PAYMENT_STATUS.PAID
   if (q.classe) filterClass.value = String(q.classe)
