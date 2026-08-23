@@ -213,7 +213,7 @@ if (!empty($r['ok'])) {
         (string) ($data['niveau'] ?? ''),
         $model
       );
-      $j['questions'] = array_values($gardees);
+      $j['questions'] = array_values(array_map('mapo_quiz_nettoyer', $gardees));
       // On ANNONCE le tri. Sans ce compte, un quiz raccourci passerait pour un
       // quiz normal et personne ne saurait jamais que le contrôle travaille.
       $j['verifies'] = count($gardees);
@@ -922,6 +922,40 @@ function buildExtractModulesPrompts($d) {
 // banque partagée : la question vérifiée est ensuite servie à tous. C'est le
 // prix d'une promesse qu'on peut tenir.
 
+/**
+ * Nettoie le balisage mathématique qu'aucun écran ne sait rendre.
+ *
+ * L'application n'embarque ni KaTeX ni MathJax : une question de 3e revenait
+ * donc à l'élève sous la forme littérale « $A = (2x - 3)(x + 5)$ ». Le prompt
+ * l'interdit désormais, mais un modèle finit toujours par en remettre — d'où
+ * ce filet. On retire les délimiteurs et on traduit le strict nécessaire.
+ */
+function mapo_texte_lisible($t) {
+  $t = (string) $t;
+  if (strpos($t, '$') === false && strpos($t, '\\') === false) return $t;
+  $t = preg_replace('/\$([^$]*)\$/u', '$1', $t);       // $...$ → contenu nu
+  $t = preg_replace('/\\frac\{([^}]*)\}\{([^}]*)\}/u', '$1/$2', $t);
+  $t = preg_replace('/\\sqrt\{([^}]*)\}/u', '√($1)', $t);
+  $t = preg_replace('/\\(times|cdot)\b/u', '×', $t);
+  $t = preg_replace('/\\[a-zA-Z]+/u', '', $t);         // autres commandes
+  $t = str_replace(['^{2}', '^2'], '²', $t);
+  $t = str_replace(['^{3}', '^3'], '³', $t);
+  $t = str_replace(['{', '}'], '', $t);
+  return trim(preg_replace('/\s{2,}/u', ' ', $t));
+}
+
+/** Applique le nettoyage à tous les champs visibles d'une question. */
+function mapo_quiz_nettoyer($q) {
+  if (!is_array($q)) return $q;
+  foreach (['q', 'hint', 'explanation'] as $k) {
+    if (isset($q[$k])) $q[$k] = mapo_texte_lisible($q[$k]);
+  }
+  if (isset($q['choices']) && is_array($q['choices'])) {
+    $q['choices'] = array_map('mapo_texte_lisible', $q['choices']);
+  }
+  return $q;
+}
+
 /** Contrôles de forme. Renvoie true si la question est structurellement saine. */
 function mapo_quiz_forme_ok($q) {
   if (!is_array($q)) return false;
@@ -1086,6 +1120,7 @@ function buildTutorQuizPrompts($d) {
     . "PRIORITÉ À LA SOURCE : si un COURS DE L'ÉLÈVE est fourni ci-dessous, tire les questions EN PRIORITÉ de son contenu (notions, exemples, formules qui y figurent) ; complète par le programme officiel seulement si nécessaire. Si AUCUN cours n'est fourni, appuie-toi sur le programme officiel (référentiel national/manuels validés). "
     . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
+    . "AUCUN LaTeX ni balisage : rien entre dollars, pas de \\frac, pas de ^{}. L'application affiche du TEXTE BRUT — un élève qui lit « \$2x^2 + 7x\$ » ne voit pas une formule, il voit des symboles. Écris 2x² + 7x, 3/4, √9, 5 × 4. "
     . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
     . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition. "
     // ── AUTO-VÉRIFICATION OBLIGATOIRE ───────────────────────────────────────

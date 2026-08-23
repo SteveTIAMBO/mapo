@@ -405,8 +405,17 @@ export const useTuteurStore = defineStore('tuteur', () => {
           // cadré la génération. Sans lui, la source honnête est le modèle
           // lui-même — l'ancienne étiquette laissait croire à un sourçage
           // officiel qui n'existait pas.
+          // ⚠️ La provenance ne se DEMANDE PAS au modèle. On lisait le champ
+          // `source` qu'il renvoie et il écrasait notre calcul : mesuré le
+          // 22/08, un quiz de maths de 3e — classe pour laquelle aucun
+          // programme n'est applicable cette année — s'annonçait « referentiel ».
+          // L'élève lisait « Questions basées sur le référentiel national »
+          // pour des questions que rien n'avait cadrées.
+          // Seul le CLIENT sait s'il a envoyé des notions officielles.
           let source = cours ? 'cours' : (refSource ? 'referentiel' : 'ia')
-          try { const o = parseJsonObject(json.text); if (o && o.source) source = String(o.source) } catch { /* défaut */ }
+          // Un cours importé PEUT être complété par le programme : dans ce cas
+          // seulement, la mention « mix » est méritée.
+          if (cours && refSource) source = 'mix'
           // Alimente la banque partagée SEULEMENT pour un quiz générique (pas de cours perso).
           if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
           // Socle validé d'abord, complément frais ensuite, sans doublon. Le
