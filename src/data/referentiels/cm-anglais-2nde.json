@@ -1,0 +1,92 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun-archive.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-23",
+  "cycle": "Seconde (toutes séries)",
+  "bo": "Programme of study: English to francophones, MINESEC, 2018",
+  "matiere": "Anglais",
+  "arrete": "Programme d'études MINESEC — le document publié ne porte aucun numéro d'arrêté",
+  "urlPdf": "https://files.minesec.gov.cm",
+  "_note": "« ENGLISH TO FRANCOPHONES » : c'est bien l'anglais langue seconde du sous-système francophone. À ne pas confondre avec le SBEP (Special Bilingual Education Programme), qui est un autre programme.",
+  "classes": {
+    "2nde A": {
+      "enVigueurRentree": 2018,
+      "notions": [
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about locations, emergency help and volunteering"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to elucidate procedures used to purchase goods and services"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safety measures and health risks"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to examine civic and legal rights, responsibilities, and infractions (common offences and crimes)"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safe and responsible use of ICTs"
+        }
+      ]
+    },
+    "2nde C": {
+      "enVigueurRentree": 2018,
+      "notions": [
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about locations, emergency help and volunteering"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to elucidate procedures used to purchase goods and services"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safety measures and health risks"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to examine civic and legal rights, responsibilities, and infractions (common offences and crimes)"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safe and responsible use of ICTs"
+        }
+      ]
+    },
+    "2nde D": {
+      "enVigueurRentree": 2018,
+      "notions": [
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to talk about locations, emergency help and volunteering"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to elucidate procedures used to purchase goods and services"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safety measures and health risks"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to examine civic and legal rights, responsibilities, and infractions (common offences and crimes)"
+        },
+        {
+          "domaine": "Anglais",
+          "notion": "Using language to explore safe and responsible use of ICTs"
+        }
+      ]
+    }
+  }
+}

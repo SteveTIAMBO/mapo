@@ -1,0 +1,50 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun-archive.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-23",
+  "cycle": "Premier cycle du secondaire général (4ème et 3ème)",
+  "bo": "Programmes d'études APC, MINESEC, août 2014",
+  "matiere": "Éducation artistique",
+  "arrete": "Programme d'études MINESEC — le document publié ne porte aucun numéro d'arrêté",
+  "urlPdf": "https://files.minesec.gov.cm",
+  "classes": {
+    "4ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS SCENIQUES I (OU ARTS DRAMATIQUES I / ARTS D’INTERPRETATIONI)"
+        },
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS PLASTIQUES I (OU ARTS VISUELS I)"
+        },
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS MUSICAUX I"
+        }
+      ]
+    },
+    "3ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS SCENIQUES II (OU ARTS DRAMATIQUES II / ARTS D’INTERPRETATION II)"
+        },
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS PLASTIQUES II (OU ARTS VISUELS II)"
+        },
+        {
+          "domaine": "Éducation artistique",
+          "notion": "ARTS MUSICAUX II"
+        }
+      ]
+    }
+  }
+}

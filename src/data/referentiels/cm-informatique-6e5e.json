@@ -1,0 +1,43 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun-archive.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-23",
+  "cycle": "Premier cycle du secondaire général (6ème et 5ème)",
+  "bo": "Programmes d'études APC, MINESEC, août 2014",
+  "matiere": "Informatique",
+  "arrete": "Programme d'études MINESEC — le document publié ne porte aucun numéro d'arrêté",
+  "urlPdf": "https://files.minesec.gov.cm",
+  "_note": "La couverture du PDF est anglophone (« CURRICULUM FORM ONE AND FORM TWO ») mais le corps du document est en français et explicitement découpé en classes de 6ème et de 5ème.",
+  "classes": {
+    "6ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Informatique",
+          "notion": "ENVIRONNEMENT INFORMATIQUE"
+        },
+        {
+          "domaine": "Informatique",
+          "notion": "ARCHITECTURE DE BASE DES MATERIELS ET DES LOGICIELS"
+        }
+      ]
+    },
+    "5ème": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Informatique",
+          "notion": "TRAITEMENT DE L’INFORMATION ET PRODUCTION DES DOCUMENTS"
+        },
+        {
+          "domaine": "Informatique",
+          "notion": "RECHERCHE ET COMMUNICATION SUR INTERNET"
+        }
+      ]
+    }
+  }
+}

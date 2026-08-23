@@ -1,0 +1,68 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun-archive.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-23",
+  "cycle": "Terminale (toutes séries)",
+  "bo": "Programme d'études des classes de terminale ESG, MINESEC, août 2020",
+  "matiere": "Histoire",
+  "arrete": "Programme d'études MINESEC — le document publié ne porte aucun numéro d'arrêté",
+  "urlPdf": "https://files.minesec.gov.cm",
+  "_note": "Version ESG (enseignement secondaire général). L'archive contient aussi une version EST pour l'enseignement technique.",
+  "classes": {
+    "Tle A": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Le monde en pleine mutation"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Les révolutions scientifiques et techniques des XXe et XXIe siècles"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Le Cameroun : de la tutelle à nos jours"
+        }
+      ]
+    },
+    "Tle C": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Le monde en pleine mutation"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Les révolutions scientifiques et techniques des XXe et XXIe siècles"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Le Cameroun : de la tutelle à nos jours"
+        }
+      ]
+    },
+    "Tle D": {
+      "enVigueurRentree": 2020,
+      "notions": [
+        {
+          "domaine": "Histoire",
+          "notion": "Le monde en pleine mutation"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Les révolutions scientifiques et techniques des XXe et XXIe siècles"
+        },
+        {
+          "domaine": "Histoire",
+          "notion": "Le Cameroun : de la tutelle à nos jours"
+        }
+      ]
+    }
+  }
+}

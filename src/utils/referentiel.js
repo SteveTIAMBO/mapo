@@ -108,6 +108,26 @@ import cmFrancais43 from '../data/referentiels/cm-francais-4e3e.json'
 import cmAnglais43 from '../data/referentiels/cm-anglais-4e3e.json'
 import cmInfoTleA from '../data/referentiels/cm-informatique-tle-a.json'
 import cmInfoTleCD from '../data/referentiels/cm-informatique-tle-cd.json'
+// Extraits de l'archive complète du MINESEC (23-8-2026), cf.
+// outils/extraire-cameroun-archive.py. ⚠️ L'archive ne contient RIEN pour la
+// 1ère, ni pour les sciences de terminale, ni pour les PCT/SVT de 4ème-3ème :
+// ces dossiers existent sur le site du ministère mais sont vides.
+import cmArts43 from '../data/referentiels/cm-arts-4e3e.json'
+import cmAllemand43 from '../data/referentiels/cm-allemand-4e3e.json'
+import cmArabe43 from '../data/referentiels/cm-arabe-4e3e.json'
+import cmChinois43 from '../data/referentiels/cm-chinois-4e3e.json'
+import cmEspagnol43 from '../data/referentiels/cm-espagnol-4e3e.json'
+import cmLatin43 from '../data/referentiels/cm-latin-4e3e.json'
+import cmGrec43 from '../data/referentiels/cm-grec-4e3e.json'
+import cmInfo65 from '../data/referentiels/cm-informatique-6e5e.json'
+import cmAnglais2nde from '../data/referentiels/cm-anglais-2nde.json'
+import cmInfo2ndeA from '../data/referentiels/cm-informatique-2nde-a.json'
+import cmInfo2ndeC from '../data/referentiels/cm-informatique-2nde-c.json'
+import cmSvt2nde from '../data/referentiels/cm-svt-2nde.json'
+import cmPhysique2nde from '../data/referentiels/cm-physique-2nde.json'
+import cmChimie2nde from '../data/referentiels/cm-chimie-2nde.json'
+import cmHistoireTle from '../data/referentiels/cm-histoire-tle.json'
+import cmGeographieTle from '../data/referentiels/cm-geographie-tle.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -122,7 +142,10 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, mathsCycle4_2020, francaisCycle4
   espagnolCollege, espagnolLycee, italienCollege, italienLycee, hdaCycle4,
   cmMaths, cmSciences, cmHistoire, cmGeographie, cmEcm,
   cmMaths43, cmHistoire43, cmGeographie43, cmEcm43, cmFrancais43,
-  cmAnglais43, cmInfoTleA, cmInfoTleCD]
+  cmAnglais43, cmInfoTleA, cmInfoTleCD,
+  cmArts43, cmAllemand43, cmArabe43, cmChinois43, cmEspagnol43, cmLatin43, cmGrec43,
+  cmInfo65, cmAnglais2nde, cmInfo2ndeA, cmInfo2ndeC,
+  cmSvt2nde, cmPhysique2nde, cmChimie2nde, cmHistoireTle, cmGeographieTle]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

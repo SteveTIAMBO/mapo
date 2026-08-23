@@ -1,0 +1,30 @@
+{
+  "_licence": "Texte officiel camerounais. Loi n° 2000/011 du 19-12-2000 relative au droit d'auteur, art. 4(b) : les textes officiels ne sont pas protégés.",
+  "_attribution": "Source : MINESEC — Inspection Générale des Enseignements, programmes d'études de l'enseignement secondaire général.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MINESEC. Seuls les intitulés de modules sont repris ; les PDF officiels ne sont pas rediffusés.",
+  "_extraitPar": "outils/extraire-cameroun-archive.py — intitulés de modules, vérifiés mot pour mot dans le PDF du MINESEC.",
+  "pays": "CM",
+  "url": "https://files.minesec.gov.cm",
+  "extraitLe": "2026-08-23",
+  "cycle": "Seconde C",
+  "bo": "Programme de chimie, MINESEC",
+  "matiere": "Chimie",
+  "arrete": "Programme d'études MINESEC — le document publié ne porte aucun numéro d'arrêté",
+  "urlPdf": "https://files.minesec.gov.cm",
+  "_note": "Le fichier du ministère s'intitule « Projet de programme … Final » : statut ambigu, mais c'est le seul document publié pour cette classe. Le document ne porte aucune date ; 2014 (refonte APC) est retenu pour ne jamais masquer un millésime plus récent.",
+  "classes": {
+    "2nde C": {
+      "enVigueurRentree": 2014,
+      "notions": [
+        {
+          "domaine": "Chimie",
+          "notion": "STRUCTURE DE LA MATIÈRE ET ANALYSE ÉLÉMENTAIRE DES COMPOSÉS ORGANIQUES"
+        },
+        {
+          "domaine": "Chimie",
+          "notion": "SOLUTIONS AQUEUSES"
+        }
+      ]
+    }
+  }
+}

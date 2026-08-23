@@ -322,6 +322,16 @@ export const MATIERES_SECONDAIRE_1ER_CYCLE = [
   'Français', 'Anglais', 'Mathématiques', 'Physique-Chimie-Technologie (PCT)',
   'SVT', 'Histoire', 'Géographie', 'Éducation à la citoyenneté et à la morale (ECM)',
   'Informatique', 'Éducation physique et sportive (EPS)',
+  // Le MINESEC publie « Programme Education artistique 4e 3e » dans IP-LAL :
+  // la matière existe bien à ces deux niveaux, elle manquait au catalogue.
+  // ⚠️ On ne l'ajoute PAS en 6ème-5ème : le dossier correspondant du ministère
+  // ne contient qu'un guide pédagogique, donc rien ne l'atteste à ce niveau.
+  'Éducation artistique',
+  // ⚠️ Libellé conservé tel quel : des profils existants l'ont enregistré sous
+  // cette chaîne exacte. Le ministère publie en réalité QUATRE langues
+  // secondes (allemand, arabe, chinois, espagnol) plus les lettres classiques
+  // (latin, grec) ; les moins courantes passent par « ajouter une matière »,
+  // où leur référentiel est retrouvé par son nom.
   'Deuxième langue (Espagnol/Allemand)', 'Langues et cultures nationales',
 ]
 // Second cycle — série A (littéraire).
