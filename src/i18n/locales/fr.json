@@ -681,7 +681,9 @@
     "rename": "Renommer",
     "remove": "Retirer",
     "moveUp": "Monter",
-    "moveDown": "Descendre"
+    "moveDown": "Descendre",
+    "titlePrimaireSimple": "Disciplines du primaire",
+    "subPrimaireSimple": "{n} disciplines enseignées dans votre école. L'évaluation se fait par compétences (A / ECA / NA) ou en notes, selon votre réglage — sans coefficients."
   },
   "presence": {
     "title": "Présences",

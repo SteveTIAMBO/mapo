@@ -681,7 +681,9 @@
     "rename": "Rename",
     "remove": "Remove",
     "moveUp": "Move up",
-    "moveDown": "Move down"
+    "moveDown": "Move down",
+    "titlePrimaireSimple": "Primary subjects",
+    "subPrimaireSimple": "{n} subjects taught in your school. Assessment is by competency (A / ECA / NA) or by marks, depending on your setting — without coefficients."
   },
   "presence": {
     "title": "Attendance",

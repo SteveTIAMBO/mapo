@@ -2,8 +2,10 @@
   <div class="matieres-page">
     <div class="page-header">
       <div class="page-header-text">
-        <h1>{{ isPrimaire ? t('matieres.titlePrimaire') : t('matieres.titleSecondaire') }}</h1>
-        <p v-if="isPrimaire">{{ t('matieres.subPrimaire') }}</p>
+        <!-- Titre et sous-titre suivaient le référentiel camerounais, quel que
+             soit le pays : ils contredisaient le bandeau juste en dessous. -->
+        <h1>{{ isPrimaire ? (discPrimaire.avecDomaines ? t('matieres.titlePrimaire') : t('matieres.titlePrimaireSimple')) : t('matieres.titleSecondaire') }}</h1>
+        <p v-if="isPrimaire">{{ discPrimaire.avecDomaines ? t('matieres.subPrimaire') : t('matieres.subPrimaireSimple', { n: discPrimaire.disciplines.length }) }}</p>
         <p v-else>{{ t('matieres.subSecondaire') }}</p>
       </div>
       <!-- Le bouton était masqué en primaire (`v-if="!isPrimaire"`) : l'école ne
