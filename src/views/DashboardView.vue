@@ -83,7 +83,11 @@
               </div>
             </div>
             <div class="fin-line"><span class="l">{{ t('dashboard.netResult') }}</span><span class="v" :class="(factStore.financialSynthesis && factStore.financialSynthesis.resultatActuel) >= 0 ? 'pos' : 'neg'">{{ formatFinanceMoney(factStore.financialSynthesis ? factStore.financialSynthesis.resultatActuel : 0) }}</span></div>
-            <div class="fin-line"><span class="l">{{ t('dashboard.unpaidPending') }}</span><span class="v warn">{{ factStore.globalStats.unpaidCount }} {{ factStore.globalStats.unpaidCount > 1 ? t('dashboard.families') : t('dashboard.family') }}</span></div>
+            <!-- ⚠️ Cette ligne affichait `unpaidCount` (payé ZÉRO) pendant que le bloc
+                 MIAPO, juste en dessous, annonçait les familles en retard. Deux
+                 chiffres différents sur le même écran, sans rien pour les
+                 départager : le directeur ne sait plus lequel croire. -->
+            <div class="fin-line"><span class="l">{{ t('dashboard.unpaidPending') }}</span><span class="v warn">{{ factStore.retardCount }} {{ factStore.retardCount > 1 ? t('dashboard.families') : t('dashboard.family') }}</span></div>
           </div>
           <div v-else class="fin">
             <div class="mini-empty">{{ t('dashboard.accountingNotConfigured') }} <RouterLink to="/facturation" class="more">{{ t('dashboard.configure') }}</RouterLink></div>
@@ -672,7 +676,10 @@ const unresolvedIncidentsCount = computed(() => unresolvedIncidents.value.length
 const attentionItems = computed(() => {
   if (authStore.isTeacher) return []
   const items = []
-  const unpaid = factStore.globalStats?.unpaidCount || 0
+  // ⚠️ La MÊME expression existe deux fois dans ce fichier : l'agenda plus haut,
+  // et ce bloc MIAPO. C'est celui-ci qui porte le bouton « Relancer », donc
+  // celui dont le nombre doit correspondre à la liste ouverte.
+  const unpaid = factStore.retardCount || 0
   if (unpaid > 0) items.push({
     key: 'unpaid', icon: CreditCard, tone: 'amber', priority: 3,
     title: t('dashboard.attn.unpaidTitle', { n: unpaid }), detail: t('dashboard.attn.unpaidDetail'),

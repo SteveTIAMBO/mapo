@@ -320,7 +320,7 @@
     "accounting": "Accounting",
     "collectionRate": "Collection rate",
     "netResult": "Net result (to date)",
-    "unpaidPending": "Outstanding payments",
+    "unpaidPending": "Families overdue",
     "family": "family",
     "families": "families",
     "accountingNotConfigured": "Accounting not set up.",

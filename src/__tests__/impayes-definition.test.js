@@ -93,3 +93,27 @@ describe('qui est « en retard » ?', () => {
     expect(soldes).toEqual([...soldes].sort((a, b) => b - a))
   })
 })
+
+describe('garde-fou : le tableau de bord ne parle QUE de « retard »', () => {
+  /**
+   * Défaut vécu le 23/08 : la même expression `factStore.globalStats.unpaidCount`
+   * apparaissait à TROIS endroits de DashboardView. J'en ai corrigé une, et
+   * l'écran a continué d'afficher l'ancien chiffre — le bloc qui porte le bouton
+   * « Relancer » était plus bas dans le fichier.
+   *
+   * Seule la vérification à l'écran l'a montré : le store disait 209, l'écran
+   * affichait 78. Ce test empêche le retour de la divergence.
+   */
+  it('aucune trace de `unpaidCount` dans DashboardView', async () => {
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+    const { fileURLToPath } = await import('node:url')
+    const vue = path.join(
+      path.dirname(fileURLToPath(import.meta.url)), '..', 'views', 'DashboardView.vue',
+    )
+    const src = fs.readFileSync(vue, 'utf8')
+    // Les commentaires expliquent le défaut : on ne compte que le CODE.
+    const code = src.replace(/\/\/[^\n]*/g, '').replace(/<!--[\s\S]*?-->/g, '')
+    expect(code).not.toContain('unpaidCount')
+  })
+})
