@@ -73,8 +73,25 @@ export const useDisciplinesPrimaireStore = defineStore('disciplinesPrimaire', ()
 
   function _ref(sid) { return doc(db, 'schools', sid, 'config', 'disciplinesPrimaire') }
 
+  /**
+   * Pays de l'école — ou chaîne vide tant qu'on ne le SAIT pas.
+   *
+   * ⚠️ `country` vaut « CM » dans l'état initial du store, avant tout
+   * chargement. Vérifié en démonstration le 23/08 : sur un accès direct à
+   * /matieres, les réglages n'étaient pas encore chargés et une école de Dakar
+   * se voyait servir les domaines pondérés de l'APC camerounais — « je ne sais
+   * pas » était indistinguable de « Cameroun ».
+   *
+   * `schoolName` vide veut dire « rien n'est chargé » : on répond alors « je ne
+   * sais pas », ce qui fait tomber du côté prudent (liste modifiable, aucune
+   * affirmation de conformité) plutôt que du côté camerounais.
+   */
   function pays() {
-    try { return useSchoolStore().schoolSettings?.country } catch (e) { return '' }
+    try {
+      const s = useSchoolStore().schoolSettings
+      if (!s?.schoolName) return ''
+      return s.country || ''
+    } catch (e) { return '' }
   }
 
   /** Disciplines effectives : celles de l'école, sinon l'amorce de son pays. */

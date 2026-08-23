@@ -120,3 +120,25 @@ describe('l’école modifie sa liste', () => {
     expect(store.noms).not.toContain('Wolof')
   })
 })
+
+describe('⚠️ « je ne sais pas » n’est pas « Cameroun »', () => {
+  /**
+   * Défaut vu à l'écran le 23/08 : sur un accès direct à /matieres, les réglages
+   * de l'école n'étaient pas chargés. `country` vaut « CM » dans l'état initial
+   * du store — une école de Dakar se voyait donc servir les domaines pondérés de
+   * l'APC camerounais, avec la mention « référentiel officiel ».
+   *
+   * Tant que rien n'est chargé, on répond « je ne sais pas », ce qui fait tomber
+   * du côté prudent : liste modifiable, aucune affirmation de conformité.
+   */
+  it('un pays vide ou inconnu ne déclenche jamais le programme officiel', () => {
+    expect(programmeOfficiel('')).toBe(false)
+    expect(programmeOfficiel(null)).toBe(false)
+    expect(programmeOfficiel(undefined)).toBe(false)
+  })
+
+  it('et son amorce est la liste neutre, pas la camerounaise', () => {
+    const noms = amorcePays('').map((d) => d.name)
+    expect(noms).toEqual(DISCIPLINES_PRIMAIRE_NEUTRE.map((d) => d.name))
+  })
+})

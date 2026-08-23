@@ -294,6 +294,7 @@ import { useI18n } from 'vue-i18n'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
+import { useSchoolStore } from '../stores/school'
 import { DOMAINES_PRIMAIRE } from '../data/primaire'
 import { useDisciplinesPrimaireStore } from '../stores/disciplinesPrimaire'
 import { useNiveauxStore } from '../stores/niveaux'
@@ -303,6 +304,7 @@ const { t } = useI18n({ useScope: 'global' })
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const editionStore = useEditionStore()
+const schoolStore = useSchoolStore()
 
 // Primaire : on n'affiche PAS la grille de coefficients du secondaire mais le
 // référentiel APC (disciplines groupées par domaine pondéré, lecture seule).
@@ -482,6 +484,10 @@ function doDelete() {
 // ── Lifecycle ──
 onMounted(async () => {
   discPrimaire.load()
+  // Les réglages de l'école ne sont pas chargés sur un accès direct à cette
+  // route : sans cet appel, le pays reste inconnu et l'écran reste prudent,
+  // mais une école camerounaise ne verrait jamais ses domaines pondérés.
+  schoolStore.loadSettings?.()
   loading.value = true
   niveauxStore.load()
   await subjectsStore.loadSubjects()
