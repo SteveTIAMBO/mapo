@@ -31,19 +31,10 @@ const authStore = useAuthStore()
 // par routes de l'édition Secondaire/Primaire (partagée par les 2 éditions).
 const items = computed(() => {
   const role = authStore.userProfile?.role
-  if (role === 'eleve') return [
-    { to: '/espace-eleve', icon: LayoutDashboard, label: 'bbar.accueil' },
-    { to: '/eleve/notes', icon: FileText, label: 'bbar.notes' },
-    { to: '/eleve/emploi-du-temps', icon: Clock, label: 'bbar.edt' },
-    { to: '/eleve/revisions', icon: Sparkles, label: 'bbar.revisions' },
-    { to: '/eleve/messagerie', icon: MessageSquare, label: 'bbar.messages' },
-  ]
+  // Parent : MAPO+ uniquement (le portail parent de l'ERP a été retiré le
+  // 23/08/2026). Le rôle élève n'a plus d'espace côté école.
   if (role === 'parent') return [
-    { to: '/espace-parent', icon: LayoutDashboard, label: 'bbar.accueil' },
-    { to: '/parent/notes', icon: FileText, label: 'bbar.notes' },
-    { to: '/parent/finances', icon: CreditCard, label: 'bbar.paiements' },
     { to: '/mon-espace', icon: Sparkles, label: 'bbar.miapo' },
-    { to: '/parent/messagerie', icon: MessageSquare, label: 'bbar.messages' },
   ]
   if (role === 'comptable') return [
     { to: '/dashboard', icon: LayoutDashboard, label: 'bbar.accueil' },

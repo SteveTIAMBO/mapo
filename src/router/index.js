@@ -241,31 +241,6 @@ const routes = [
         component: () => import('../views/DashboardView.vue'),
         meta: { title: 'Tableau de bord' }
       },
-      // === Parent routes (modulaires) ===
-      {
-        path: 'espace-parent',
-        name: 'ParentDashboard',
-        component: () => import('../views/ParentDashboardView.vue'),
-        meta: { title: 'Tableau de bord', parentOnly: true }
-      },
-      {
-        path: 'parent/notes',
-        name: 'ParentNotes',
-        component: () => import('../views/ParentNotesView.vue'),
-        meta: { title: 'Notes & Bulletins', parentOnly: true }
-      },
-      {
-        path: 'parent/presences',
-        name: 'ParentPresences',
-        component: () => import('../views/ParentPresencesView.vue'),
-        meta: { title: 'Présences', parentOnly: true }
-      },
-      {
-        path: 'parent/finances',
-        name: 'ParentFinances',
-        component: () => import('../views/ParentFinancesView.vue'),
-        meta: { title: 'Paiements', parentOnly: true }
-      },
       {
         // Espace MAPO+ (B2C). URL neutre « /mon-espace » : convient au parent qui
         // suit un enfant COMME à l'apprenant qui pilote son propre apprentissage —
@@ -275,73 +250,6 @@ const routes = [
         name: 'ParentMiapo',
         component: () => import('../views/ParentMiapoView.vue'),
         meta: { title: 'MAPO+', parentOnly: true }
-      },
-      {
-        path: 'parent/messagerie',
-        name: 'ParentMessages',
-        component: () => import('../views/ParentMessagesView.vue'),
-        meta: { title: 'Messagerie', parentOnly: true }
-      },
-      {
-        path: 'parent/inscriptions',
-        name: 'ParentInscriptions',
-        component: () => import('../views/ParentInscriptionsView.vue'),
-        meta: { title: 'Inscriptions', parentOnly: true }
-      },
-      {
-        path: 'parent/emploi-du-temps',
-        name: 'ParentEmploiDuTemps',
-        component: () => import('../views/ParentEmploiDuTempsView.vue'),
-        meta: { title: 'Emploi du temps', parentOnly: true }
-      },
-      {
-        path: 'parent/devoirs',
-        name: 'ParentDevoirs',
-        component: () => import('../views/ParentDevoirsView.vue'),
-        meta: { title: 'Devoirs', parentOnly: true }
-      },
-      // === Eleve (student) routes ===
-      {
-        path: 'espace-eleve',
-        name: 'EleveDashboard',
-        component: () => import('../views/EleveDashboardView.vue'),
-        meta: { title: 'Mon espace', eleveOnly: true }
-      },
-      {
-        path: 'eleve/notes',
-        name: 'EleveNotes',
-        component: () => import('../views/EleveNotesView.vue'),
-        meta: { title: 'Mes notes', eleveOnly: true }
-      },
-      {
-        path: 'eleve/revisions',
-        name: 'EleveRevisions',
-        component: () => import('../views/EleveRevisionsView.vue'),
-        meta: { title: 'Révisions', eleveOnly: true }
-      },
-      {
-        path: 'eleve/emploi-du-temps',
-        name: 'EleveEmploiDuTemps',
-        component: () => import('../views/EleveEmploiDuTempsView.vue'),
-        meta: { title: 'Emploi du temps', eleveOnly: true }
-      },
-      {
-        path: 'eleve/presences',
-        name: 'ElevePresences',
-        component: () => import('../views/ElevePresencesView.vue'),
-        meta: { title: 'Mes présences', eleveOnly: true }
-      },
-      {
-        path: 'eleve/messagerie',
-        name: 'EleveMessages',
-        component: () => import('../views/EleveMessagesView.vue'),
-        meta: { title: 'Messagerie', eleveOnly: true }
-      },
-      {
-        path: 'eleve/cours',
-        name: 'EleveCours',
-        component: () => import('../views/EleveCoursView.vue'),
-        meta: { title: 'Cours', eleveOnly: true }
       },
       // === Staff routes ===
       {
@@ -686,41 +594,33 @@ router.beforeEach(async (to) => {
     if (editionStore.isSuperieur) return { name: 'Superieur' }
   }
 
+  /**
+   * ⚠️ Depuis le 23/08/2026, MAPO n'a plus de portail parent ni d'espace élève :
+   * les familles sont servies par MAPO+. Le rôle `parent` subsiste UNIQUEMENT
+   * pour MAPO+ (`/mon-espace`), servi par ce même dépôt.
+   *
+   * Un compte `eleve` ne peut donc plus exister côté école. S'il en traîne un
+   * d'une session ancienne, on ne le laisse pas errer sur des écrans de
+   * personnel : il est renvoyé sur son profil, seul endroit qui ait un sens
+   * pour lui. Le renvoyer vers une route supprimée provoquerait une boucle.
+   */
   const isParent = authStore.userProfile?.role === 'parent'
   const isEleve = authStore.userProfile?.role === 'eleve'
-  // Parent B2C autonome (hors école) : son accueil est l'espace MAPO+.
-  const isB2C = !!authStore.userProfile?.b2c
-  const parentHome = isB2C ? 'ParentMiapo' : 'ParentDashboard'
+  const parentHome = 'ParentMiapo'
 
   if (to.name === 'Login' && isLoggedIn) {
-    if (isEleve) return { name: 'EleveDashboard' }
+    if (isEleve) return { name: 'Profil' }
     if (isParent) return { name: parentHome }
     return { name: 'Dashboard' }
   }
 
-  // Eleves : rediriger vers l'espace élève
-  if (isEleve && to.name === 'Dashboard') {
-    return { name: 'EleveDashboard' }
+  // Compte élève résiduel : confiné à son profil.
+  if (isEleve && to.name !== 'Profil') {
+    return { name: 'Profil' }
   }
 
-  // Eleves ne peuvent pas accéder aux routes staff ou parent
-  if (isEleve && !to.meta.eleveOnly && to.path !== '/dashboard' && to.path !== '/profil' && to.path !== '/') {
-    return { name: 'EleveDashboard' }
-  }
-
-  // Parents : rediriger vers l'espace parent s'ils essaient d'acceder au dashboard normal
-  if (isParent && to.name === 'Dashboard') {
-    return { name: parentHome }
-  }
-
-  // Parent B2C autonome : confiné à MAPO+ (et son profil). Les autres espaces
-  // parent dépendent d'une école et seraient vides/cassés en mode autonome.
-  if (isParent && isB2C && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
-    return { name: 'ParentMiapo' }
-  }
-
-  // Parents ne peuvent pas acceder aux routes staff
-  if (isParent && !to.meta.parentOnly && to.path !== '/dashboard' && to.path !== '/profil' && to.path !== '/') {
+  // Parent : son seul espace est MAPO+ (et son profil).
+  if (isParent && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
     return { name: parentHome }
   }
 
@@ -743,20 +643,14 @@ router.beforeEach(async (to) => {
   if (isLoggedIn) {
     const schoolIdentity = useSchoolIdentityStore()
     const segments = to.path.split('/').filter(Boolean)
-    let moduleKey = null
-    if (segments[0] === 'eleve' || segments[0] === 'parent') {
-      const subMap = {
-        'notes': 'notes', 'presences': 'presences',
-        'emploi-du-temps': 'emploi-du-temps', 'messagerie': 'messagerie',
-        'devoirs': 'devoirs', 'finances': 'facturation',
-      }
-      moduleKey = subMap[segments[1]] || null
-    } else {
-      moduleKey = ROUTE_MODULE_MAP[segments[0]] || null
-    }
+    // ⚠️ Il y avait ici une correspondance pour les URL `/parent/...` et
+    // `/eleve/...`, suivie de deux redirections vers `ParentDashboard` et
+    // `EleveDashboard`. Ces routes ont été supprimées le 23/08/2026 : y
+    // renvoyer aurait produit une boucle de redirection MUETTE — aucune erreur,
+    // l'écran précédent qui reste affiché. Le portail des familles vit
+    // désormais dans MAPO+, et le garde plus haut y confine déjà ces comptes.
+    const moduleKey = ROUTE_MODULE_MAP[segments[0]] || null
     if (moduleKey && !schoolIdentity.isModuleActif(moduleKey)) {
-      if (isEleve) return { name: 'EleveDashboard' }
-      if (isParent) return { name: 'ParentDashboard' }
       // Depuis la suppression du socle, le tableau de bord lui-même peut être
       // décoché. Y renvoyer produirait une boucle de redirection SILENCIEUSE :
       // aucune erreur, l'écran précédent reste affiché. On cherche donc la

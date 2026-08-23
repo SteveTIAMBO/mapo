@@ -129,16 +129,19 @@ export const DEFAULT_ROLES = {
       facturation: 'full', rapports: 'read', import: 'none', parametres: 'none', roles: 'none',
     },
   },
-  parent: {
-    label: 'Parent / Tuteur',
-    description: 'Notes, emploi du temps et présences de ses enfants',
-    editable: true,
-    permissions: {
-      dashboard: 'read', personnel: 'none', eleves: 'own', classes: 'none', matieres: 'none',
-      notes: 'own', presences: 'own', 'emploi-du-temps': 'read', discipline: 'own',
-      facturation: 'own', rapports: 'none', import: 'none', parametres: 'none', roles: 'none',
-    },
-  },
+  /**
+   * ⚠️ Le rôle « Parent / Tuteur » a été RETIRÉ le 23/08/2026.
+   *
+   * Les parents et les élèves ne sont plus gérés par l'ERP : ils passent par
+   * MAPO+, avec une connexion initiée par l'école. Le rôle survivait ici en
+   * proposant au directeur de régler des permissions (« notes : ses enfants »,
+   * « présences : ses enfants ») vers des écrans qui n'existent plus — un
+   * réglage qu'on enregistre et que personne ne relit jamais.
+   *
+   * Le rôle applicatif `parent` reste valide côté MAPO+ : il vient du profil
+   * d'authentification, pas de cette table. Il n'en a jamais eu besoin, car le
+   * garde de navigation confine ces comptes à `/mon-espace`, hors RBAC.
+   */
   cantine: {
     label: 'Responsable cantine',
     description: 'Liste des élèves et facturation cantine',
@@ -203,8 +206,15 @@ export const usePermissionsStore = defineStore('permissions', () => {
         const stored = localStorage.getItem(demoKey(DEMO_ROLES_KEY))
         if (stored) {
           const parsed = JSON.parse(stored)
-          // Fusionner avec les défauts pour ne pas perdre les nouveaux rôles
-          roles.value = { ...DEFAULT_ROLES, ...parsed }
+          // Fusionner avec les défauts pour ne pas perdre les nouveaux rôles.
+          // ⚠️ Mais on n'accepte QUE les rôles qui existent encore : une copie
+          // enregistrée dans le navigateur avant le retrait d'un rôle le ferait
+          // sinon réapparaître à l'écran, sans que rien ne l'explique.
+          const retenus = {}
+          for (const [k, v] of Object.entries(parsed || {})) {
+            if (DEFAULT_ROLES[k]) retenus[k] = v
+          }
+          roles.value = { ...DEFAULT_ROLES, ...retenus }
         }
       } catch (e) { /* silent */ }
       return

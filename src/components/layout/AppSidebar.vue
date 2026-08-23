@@ -263,35 +263,16 @@ const GROUP_ORDER = ['principal', 'scolarite', 'evaluation', 'vieScolaire', 'ges
 // navSections : tableau de { label, items }. label=null → pas d'en-tête de section.
 const navSections = computed(() => {
   const role = authStore.userProfile?.role
-  if (role === 'eleve') {
-    const items = [
-      { to: '/espace-eleve', icon: Home, label: 'nav.monEspace' },
-      { key: 'notes', to: '/eleve/notes', icon: FileText, label: 'nav.mesNotes' },
-      { to: '/eleve/cours', icon: NotebookPen, label: 'nav.cours' },
-      { to: '/eleve/revisions', icon: Sparkles, label: 'nav.revisions' },
-      { key: 'emploi-du-temps', to: '/eleve/emploi-du-temps', icon: Clock, label: 'nav.edt' },
-      { key: 'presences', to: '/eleve/presences', icon: CalendarCheck, label: 'nav.mesPresences' },
-      { key: 'messagerie', to: '/eleve/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
-    ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
-    return [{ label: null, items }]
-  }
-
+  /**
+   * ⚠️ Les menus PARENT et ÉLÈVE de l'ERP ont été retirés le 23/08/2026 : MAPO
+   * est l'outil de l'école et de son personnel. Les familles passent par MAPO+.
+   *
+   * Un compte `parent` ne subsiste que pour MAPO+ : son unique entrée est donc
+   * l'espace MAPO+. Le rôle `eleve`, lui, n'a plus d'espace côté école — le
+   * garde du routeur le confine à son profil.
+   */
   if (role === 'parent') {
-    // Parent B2C autonome (hors école) : on ne montre QUE MAPO+.
-    if (authStore.isB2C) {
-      return [{ label: null, items: [{ to: '/mon-espace', icon: Sparkles, label: 'MAPO+' }] }]
-    }
-    const items = [
-      { to: '/espace-parent', icon: Home, label: 'nav.dashboard' },
-      { to: '/parent/inscriptions', icon: ClipboardList, label: 'nav.inscriptions' },
-      { key: 'notes', to: '/parent/notes', icon: BookOpen, label: 'nav.notes' },
-      { key: 'presences', to: '/parent/presences', icon: CalendarCheck, label: 'nav.presences' },
-      { key: 'emploi-du-temps', to: '/parent/emploi-du-temps', icon: Clock, label: 'nav.edt' },
-      { key: 'devoirs', to: '/parent/devoirs', icon: ClipboardCheck, label: 'nav.devoirs' },
-      { key: 'facturation', to: '/parent/finances', icon: CreditCard, label: 'nav.paiements' },
-      { key: 'messagerie', to: '/parent/messagerie', icon: MessageSquare, label: 'nav.messagerie' },
-    ].filter(item => !item.key || schoolIdentityStore.isModuleActif(item.key))
-    return [{ label: null, items }]
+    return [{ label: null, items: [{ to: '/mon-espace', icon: Sparkles, label: 'MAPO+' }] }]
   }
 
   // Staff : groupé par thèmes (#26)
