@@ -6,7 +6,9 @@
         <p v-if="isPrimaire">{{ t('matieres.subPrimaire') }}</p>
         <p v-else>{{ t('matieres.subSecondaire') }}</p>
       </div>
-      <button v-if="!isPrimaire" class="btn btn-primary btn-sm" @click="openAddModal" style="display:inline-flex;align-items:center;gap:6px;">
+      <!-- Le bouton était masqué en primaire (`v-if="!isPrimaire"`) : l'école ne
+           pouvait NI reconnaître son programme, NI le corriger. -->
+      <button class="btn btn-primary btn-sm" @click="isPrimaire ? ouvrirAjoutPrimaire() : openAddModal()" style="display:inline-flex;align-items:center;gap:6px;">
         <Plus :size="16" />
         <span>{{ t('matieres.addSubject') }}</span>
       </button>
@@ -14,17 +16,48 @@
 
     <!-- ── Primaire : référentiel APC en lecture seule (pas de coefficients) ── -->
     <div v-if="isPrimaire" class="primaire-domaines">
+      <!-- ⚠️ Le bandeau annonçait « le référentiel officiel » à TOUTE école
+           primaire, y compris à Dakar ou à Lyon. On ne l'affirme que pour le
+           pays dont le programme est réellement sourcé. -->
       <div class="info-banner" style="margin-bottom:16px;">
         <Info :size="16" />
-        <span>{{ t('matieres.bannerPrimaire') }}</span>
+        <span>{{ discPrimaire.avecDomaines ? t('matieres.bannerPrimaire') : t('matieres.bannerPrimaireAmorce') }}</span>
       </div>
-      <div v-for="dom in primaireDomaines" :key="dom.key" class="card domaine-card">
-        <div class="domaine-head">
-          <span class="domaine-name">{{ dom.label }}</span>
-          <span class="domaine-poids">{{ dom.poids }} %</span>
+
+      <!-- Cameroun, programme non modifié : les domaines pondérés de l'APC -->
+      <template v-if="discPrimaire.avecDomaines">
+        <div v-for="dom in primaireDomaines" :key="dom.key" class="card domaine-card">
+          <div class="domaine-head">
+            <span class="domaine-name">{{ dom.label }}</span>
+            <span class="domaine-poids">{{ dom.poids }} %</span>
+          </div>
+          <div class="domaine-disciplines">
+            <span v-for="d in dom.disciplines" :key="d.name" class="discipline-chip">{{ d.name }}</span>
+          </div>
         </div>
-        <div class="domaine-disciplines">
-          <span v-for="d in dom.disciplines" :key="d.name" class="discipline-chip">{{ d.name }}</span>
+        <p class="prim-aide">{{ t('matieres.primaireModifiable') }}</p>
+      </template>
+
+      <!-- Liste modifiable : l'ordre est celui des bulletins -->
+      <div v-else class="card">
+        <ol class="prim-liste">
+          <li v-for="d in discPrimaire.disciplines" :key="d.name" class="prim-item">
+            <span class="prim-nom">{{ d.name }}</span>
+            <div class="prim-actions">
+              <button class="btn btn-ghost btn-sm" :title="t('matieres.rename')" @click="renommerPrimaire(d.name)"><Pencil :size="15" /></button>
+              <button class="btn btn-ghost btn-sm" :title="t('matieres.moveUp')" @click="discPrimaire.deplacer(d.name, 'haut')"><ChevronUp :size="15" /></button>
+              <button class="btn btn-ghost btn-sm" :title="t('matieres.moveDown')" @click="discPrimaire.deplacer(d.name, 'bas')"><ChevronDown :size="15" /></button>
+              <button class="btn btn-ghost btn-sm" :title="t('matieres.remove')" @click="retirerPrimaire(d.name)"><Trash2 :size="15" /></button>
+            </div>
+          </li>
+        </ol>
+        <div class="prim-pied">
+          <button v-if="discPrimaire.personnalise" class="btn btn-outline btn-sm" @click="discPrimaire.reinitialiser()">
+            {{ t('matieres.resetPrimaire') }}
+          </button>
+          <!-- Un refus DIT est un refus compris : sans message, le bouton
+               paraîtrait sans effet sur un doublon. -->
+          <span v-if="messagePrimaire" class="prim-msg">{{ messagePrimaire }}</span>
         </div>
       </div>
     </div>
@@ -259,9 +292,10 @@ import { useI18n } from 'vue-i18n'
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useEditionStore } from '../stores/edition'
-import { DOMAINES_PRIMAIRE, DISCIPLINES_PRIMAIRE } from '../data/primaire'
+import { DOMAINES_PRIMAIRE } from '../data/primaire'
+import { useDisciplinesPrimaireStore } from '../stores/disciplinesPrimaire'
 import { useNiveauxStore } from '../stores/niveaux'
-import { Plus, BookOpen, Pencil, Trash2, Save, X, Loader2, Info } from 'lucide-vue-next'
+import { Plus, BookOpen, Pencil, Trash2, Save, X, Loader2, Info, ChevronUp, ChevronDown } from 'lucide-vue-next'
 
 const { t } = useI18n({ useScope: 'global' })
 const subjectsStore = useSubjectsStore()
@@ -271,12 +305,40 @@ const editionStore = useEditionStore()
 // Primaire : on n'affiche PAS la grille de coefficients du secondaire mais le
 // référentiel APC (disciplines groupées par domaine pondéré, lecture seule).
 const isPrimaire = computed(() => editionStore.isPrimaire)
+const discPrimaire = useDisciplinesPrimaireStore()
+const messagePrimaire = ref('')
+
 const primaireDomaines = computed(() =>
   DOMAINES_PRIMAIRE.map((dom) => ({
     ...dom,
-    disciplines: DISCIPLINES_PRIMAIRE.filter((d) => d.domaine === dom.key),
+    disciplines: discPrimaire.disciplines.filter((d) => d.domaine === dom.key),
   }))
 )
+
+/** Ajoute une discipline au primaire. Le refus (doublon, nom vide) est DIT. */
+function ouvrirAjoutPrimaire() {
+  const nom = window.prompt(t('matieres.promptAdd'))
+  if (nom === null) return
+  messagePrimaire.value = discPrimaire.ajouter(nom)
+    ? t('matieres.added', { n: nom.trim() })
+    : t('matieres.refusedAdd')
+}
+
+function renommerPrimaire(ancien) {
+  const nom = window.prompt(t('matieres.promptRename'), ancien)
+  if (nom === null) return
+  messagePrimaire.value = discPrimaire.renommer(ancien, nom)
+    ? t('matieres.renamed')
+    : t('matieres.refusedRename')
+}
+
+function retirerPrimaire(nom) {
+  // Une école garde au moins une matière : sinon emploi du temps et bulletins
+  // se vident sans que rien ne l'explique.
+  messagePrimaire.value = discPrimaire.retirer(nom)
+    ? t('matieres.removed', { n: nom })
+    : t('matieres.refusedRemove')
+}
 
 const loading = ref(true)
 const activeFilter = ref('all')
@@ -417,6 +479,7 @@ function doDelete() {
 
 // ── Lifecycle ──
 onMounted(async () => {
+  discPrimaire.load()
   loading.value = true
   niveauxStore.load()
   await subjectsStore.loadSubjects()
@@ -566,6 +629,18 @@ onMounted(async () => {
 }
 
 /* ── Primaire : cartes domaine (référentiel APC) ── */
+.prim-liste { list-style: none; margin: 0; padding: 0; }
+.prim-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid rgba(0,0,0,.05);
+}
+.prim-item:last-child { border-bottom: none; }
+.prim-nom { flex: 1; font-size: 14px; }
+.prim-actions { display: inline-flex; gap: 2px; }
+.prim-pied { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 14px; }
+.prim-msg { font-size: 13px; color: var(--tx2); }
+.prim-aide { margin: 12px 0 0; font-size: 13px; color: var(--tx3); }
+
 .domaine-card { margin-bottom: 12px; padding: 16px 18px; }
 .domaine-head {
   display: flex; align-items: center; justify-content: space-between;

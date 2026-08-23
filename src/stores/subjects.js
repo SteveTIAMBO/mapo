@@ -5,7 +5,8 @@ import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey } from '../utils/demoScope'
 import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
-import { LEVELS_PRIMAIRE, LEVELS_PRIMAIRE_CG } from './classes'
+import { LEVELS_PRIMAIRE_TOUS } from './classes'
+import { useDisciplinesPrimaireStore } from './disciplinesPrimaire'
 import { useNiveauxStore } from './niveaux'
 
 // Version de demo pour reset quand la structure change
@@ -74,17 +75,27 @@ const DEFAULT_SUBJECTS = [
 // C'est ce qui arrivait à un CP1 congolais ou ivoirien, absent de la liste
 // camerounaise SIL/CP. On la construit donc à partir des niveaux du primaire de
 // TOUS les pays connus, jamais d'un seul.
-const PRIMAIRE_LEVELS = [...new Set(
-  [...LEVELS_PRIMAIRE, ...LEVELS_PRIMAIRE_CG].map((l) => l.value),
-)]
-const PRIMAIRE_SUBJECT_OBJECTS = DISCIPLINES_PRIMAIRE.map((d, i) => ({
-  id: 'sp-' + i,
-  name: d.name,
-  domaine: d.domaine,
-  cycles: ['primaire'],
-  coefficients: {},
-  color: SUBJECT_DEFAULT_COLORS[d.name] || '#CBD5E1',
-}))
+const PRIMAIRE_LEVELS = LEVELS_PRIMAIRE_TOUS.map((l) => l.value)
+
+/**
+ * Disciplines du primaire DE L'ÉCOLE.
+ *
+ * ⚠️ C'était la liste camerounaise en dur, servie à toute école primaire — une
+ * école de Dakar recevait « Langues et cultures nationales ». Elle vient
+ * maintenant du store, qui part d'une amorce et que l'école corrige.
+ */
+function primaireSubjectObjects() {
+  let liste = DISCIPLINES_PRIMAIRE
+  try { liste = useDisciplinesPrimaireStore().disciplines } catch (e) { /* hors app */ }
+  return liste.map((d, i) => ({
+    id: 'sp-' + i,
+    name: d.name,
+    domaine: d.domaine || '',
+    cycles: ['primaire'],
+    coefficients: {},
+    color: SUBJECT_DEFAULT_COLORS[d.name] || '#CBD5E1',
+  }))
+}
 
 export const useSubjectsStore = defineStore('subjects', () => {
   const subjects = ref([]) // Array of subject objects
@@ -133,7 +144,7 @@ export const useSubjectsStore = defineStore('subjects', () => {
     if (!cls) return []
     const level = cls.level || ''
     const cycle = cycleMatieres(level)
-    if (cycle === 'primaire') return PRIMAIRE_SUBJECT_OBJECTS.map(s => s.name)
+    if (cycle === 'primaire') return primaireSubjectObjects().map(s => s.name)
     return matieresDuCycle(cycle, level).map(s => s.name)
   }
 
@@ -142,7 +153,7 @@ export const useSubjectsStore = defineStore('subjects', () => {
     if (!cls) return []
     const level = cls.level || ''
     const cycle = cycleMatieres(level)
-    if (cycle === 'primaire') return PRIMAIRE_SUBJECT_OBJECTS
+    if (cycle === 'primaire') return primaireSubjectObjects()
     return matieresDuCycle(cycle, level)
   }
 

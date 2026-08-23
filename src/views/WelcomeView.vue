@@ -31,7 +31,7 @@
             </svg>
           </span>
           <span class="choice-name">{{ t('wv.primary') }}</span>
-          <span class="choice-tagline">{{ t('wv.primaryTag') }}</span>
+          <span class="choice-tagline">{{ t('wv.primaryTag', { de: bornesPrimaire.debut, a: bornesPrimaire.fin }) }}</span>
           <span class="choice-context">
             {{ t('wv.primaryContext') }}
           </span>
@@ -103,6 +103,20 @@
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEditionStore } from '../stores/edition'
+import { computed } from 'vue'
+import { levelsPrimairePour } from '../stores/classes'
+import { paysDemo } from '../utils/demoScope'
+
+// ⚠️ Cet écran annonçait « Écoles primaires (SIL → CM2) — Programme officiel
+// camerounais (APC) » à TOUT visiteur, y compris sénégalais ou français. La SIL
+// n'existe qu'au Cameroun, et nous n'avons de programme officiel sourcé que pour
+// lui. Les bornes suivent donc le pays choisi, et la phrase n'affirme plus une
+// conformité que nous ne pouvons pas tenir partout.
+const bornesPrimaire = computed(() => {
+  const niveaux = levelsPrimairePour(paysDemo())
+  return { debut: niveaux[0]?.label || '', fin: niveaux[niveaux.length - 1]?.label || '' }
+})
+
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()

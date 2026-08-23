@@ -99,6 +99,25 @@ const PRIMAIRE_PAR_PAYS = {
   FR: LEVELS_PRIMAIRE_FR,
 }
 
+/**
+ * Niveaux du primaire de TOUS les pays connus, sans doublon.
+ *
+ * ⚠️ `stores/subjects.js` gardait sa PROPRE union, figée sur le Cameroun et le
+ * Congo. En ajoutant le Sénégal le 22/08, son cours d'initiation (CI) n'y est
+ * pas entré : un niveau non reconnu comme primaire bascule dans la logique du
+ * secondaire et reçoit les matières du collège. Une source unique, ici.
+ */
+export const LEVELS_PRIMAIRE_TOUS = (() => {
+  const vus = new Set()
+  const out = []
+  for (const l of [...LEVELS_PRIMAIRE, ...Object.values(PRIMAIRE_PAR_PAYS).flat()]) {
+    if (vus.has(l.value)) continue
+    vus.add(l.value)
+    out.push(l)
+  }
+  return out
+})()
+
 /** Niveaux du primaire du pays de l'école. Pays sans liste propre → Cameroun. */
 export function levelsPrimairePour(pays) {
   return PRIMAIRE_PAR_PAYS[pays] || LEVELS_PRIMAIRE
