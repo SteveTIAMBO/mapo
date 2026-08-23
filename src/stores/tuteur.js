@@ -170,6 +170,53 @@ function normQuestion(t) {
   return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
+/**
+ * Mélange les propositions d'une question et déplace la bonne réponse avec.
+ *
+ * MESURÉ EN PRODUCTION le 23/08, sur les 166 questions de la banque partagée :
+ * la bonne réponse tombait en position 2 dans 52 % des cas, et en position 4
+ * dans 2 % seulement (χ² = 84,6 pour 3 degrés de liberté — le seuil à 0,1 %
+ * est 16,3 ; l'hypothèse du hasard est intenable).
+ *
+ * Et à l'échelle d'UN lot c'est pire que la moyenne ne le dit : plusieurs
+ * documents ont leurs réponses TOUTES au même rang (7 sur 7 en position 1,
+ * 10 sur 10 en position 2). Un apprenant qui remarque le motif coche la même
+ * colonne et « réussit » sa séance sans rien savoir — ce qui fait monter la
+ * jauge de niveau, donc le fait changer de classe. Le score cessait de vouloir
+ * dire quelque chose.
+ *
+ * Personne ne mélangeait : `shuffleLocal` ne servait qu'au jeu de paires, et
+ * le tri de `readBankQuiz` ne brasse que l'ORDRE DES QUESTIONS, pas les choix
+ * à l'intérieur d'une question. Le rang de la bonne réponse était donc celui
+ * que le modèle avait produit, tel quel.
+ *
+ * On mélange à la LECTURE, pas à l'écriture : la même question resservie plus
+ * tard au même apprenant ne retombe pas au même endroit.
+ */
+export function melangerChoix(question) {
+  const q = question || {}
+  const choix = q.choices
+  // ⚠️ Pas de Number() ici : `Number('1')` vaut 1 et laissait passer une
+  // réponse de type chaîne, qu'on renvoyait alors convertie. On ne répare rien,
+  // donc on ne convertit rien.
+  const bonne = q.answer
+  // Une question mal formée n'est pas réparée ici — le contrôle de forme est
+  // ailleurs. On la rend telle quelle plutôt que d'en fabriquer une fausse.
+  if (!Array.isArray(choix) || choix.length < 2) return q
+  if (!Number.isInteger(bonne) || bonne < 0 || bonne >= choix.length) return q
+  const rangs = choix.map((_, i) => i)
+  for (let i = rangs.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[rangs[i], rangs[j]] = [rangs[j], rangs[i]]
+  }
+  return { ...q, choices: rangs.map((r) => choix[r]), answer: rangs.indexOf(bonne) }
+}
+
+/** Idem sur un lot entier. Sert à chaque sortie de séance, banque comprise. */
+export function melangerLot(questions) {
+  return Array.isArray(questions) ? questions.map(melangerChoix) : questions
+}
+
 async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues }) {
   if (!cloudUid()) return null // démo / non connecté : pas de banque cloud
   try {
@@ -338,7 +385,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
         // matière qui n'en a aucun — le correctif du 19/08 n'avait touché que
         // la génération fraîche. Une question ressortie de la banque n'est pas
         // mieux sourcée qu'une neuve : elle a la provenance de sa matière.
-        return { ok: true, questions: socleBanque.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
+        return { ok: true, questions: melangerLot(socleBanque.slice(0, nombre)), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
       }
     }
     // Confidentialité + frugalité : le digest (profil PRIVÉ de l'apprenant) ne
@@ -440,7 +487,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
             }
           }
           generating.value = false
-          return { ok: true, questions: retenues.slice(0, nombre), mode: 'ia', reason: '', source }
+          return { ok: true, questions: melangerLot(retenues.slice(0, nombre)), mode: 'ia', reason: '', source }
         }
         // Aucune question retenue : lot entièrement rejeté par le solveur, ou
         // réponse illisible. Cas typiquement transitoire → on retente.
@@ -471,7 +518,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       lastMode.value = 'banque'
       // Même quand un cours était prioritaire : l'IA n'ayant rien rendu, le
       // programme officiel de la classe reste la meilleure séance disponible.
-      return { ok: true, questions: banqueDispo.slice(0, nombre), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
+      return { ok: true, questions: melangerLot(banqueDispo.slice(0, nombre)), mode: 'banque', reason: '', source: refSource ? 'referentiel' : 'ia' }
     }
     // Deux tentatives infructueuses et rien en banque. On ne fabrique RIEN pour
     // combler : l'appelant affiche un écran d'échec avec « Réessayer ». Un
@@ -782,7 +829,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
       }
       if (json && json.ok && json.text) {
         const valides = parsePositionnement(json.text)
-        if (valides.length) return { ok: true, questions: valides }
+        // Le positionnement ne passe pas par generateQuiz, et c'est lui qui
+        // FIXE le niveau de départ de l'apprenant : le biais de position y
+        // coûtait le plus cher.
+        if (valides.length) return { ok: true, questions: melangerLot(valides) }
       }
       return { ok: false, reason: 'indisponible' }
     } catch {
