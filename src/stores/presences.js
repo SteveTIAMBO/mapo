@@ -19,7 +19,28 @@ export const ATTENDANCE_STATUS = [
 
 const DEMO_PRESENCES_KEY = 'mapo_demo_presences'
 const DEMO_PRESENCES_VERSION_KEY = 'mapo_demo_presences_version'
-const DEMO_PRESENCES_VERSION = 6 // v6: reseed (cohérence avec les élèves démo actuels — alimente le Suivi du décrochage)
+const DEMO_PRESENCES_VERSION = 7 // v7: graine + delta (voir ci-dessous)
+
+/**
+ * ⚠️ LES PRÉSENCES DE DÉMO NE SONT PLUS STOCKÉES EN ENTIER.
+ *
+ * Mesuré le 23/08/2026 : 20 jours ouvrés × ~500 élèves = 10 000 lignes, soit
+ * 1,5 Mo de localStorage PAR PAYS. Avec la démo multi-pays, deux pays visités
+ * suffisaient à occuper 2,9 Mo des 5 Mo qu'accorde un navigateur — et un
+ * prospect qui explore les quatre finissait par saturer son stockage.
+ *
+ * Le générateur étant DÉTERMINISTE (`seededRandom`, jamais `Math.random`), la
+ * même graine redonne exactement les mêmes présences. On ne conserve donc que
+ * les JOURS RÉELLEMENT MODIFIÉS pendant la démonstration, indexés par date et
+ * par classe. Quelques kilo-octets au lieu d'un méga-octet et demi.
+ *
+ * Indexer par (date, classe) plutôt que par ligne n'est pas un détail : une
+ * saisie peut RETIRER un élève d'un appel. Un delta ligne à ligne ne saurait
+ * pas exprimer cette absence, et la graine la ferait réapparaître.
+ */
+const DEMO_DELTA_KEY = 'mapo_demo_presences_delta'
+
+function cleJour(date, className) { return `${date}|${className}` }
 
 // Générer des données de présence de démo pour les 20 derniers jours ouvrés (4 semaines)
 function generateDemoPresences(eleves) {
@@ -127,32 +148,51 @@ export const usePresencesStore = defineStore('presences', () => {
     return { total, presents, absents, retards, excuses, taux }
   }
 
-  // Sauvegarde locale demo
-  function saveDemoPresences() {
+  // ── Delta de démonstration : seuls les jours modifiés sont conservés ──
+  function lireDelta() {
     try {
-      localStorage.setItem(demoKey(DEMO_PRESENCES_KEY), JSON.stringify(presences.value))
-    } catch (e) { /* silent */ }
+      const brut = localStorage.getItem(demoKey(DEMO_DELTA_KEY))
+      const d = brut ? JSON.parse(brut) : {}
+      return d && typeof d === 'object' ? d : {}
+    } catch (e) { return {} }
   }
 
-  function loadDemoPresences() {
+  function ecrireDelta(delta) {
     try {
-      const stored = localStorage.getItem(demoKey(DEMO_PRESENCES_KEY))
-      if (stored) return JSON.parse(stored)
-    } catch (e) { /* silent */ }
-    return null
+      localStorage.setItem(demoKey(DEMO_DELTA_KEY), JSON.stringify(delta))
+    } catch (e) { /* quota : la démo reste utilisable, la graine suffit */ }
+  }
+
+  /** Enregistre UN jour de classe modifié, pas les 10 000 lignes générées. */
+  function enregistrerJourDemo(date, className, entries) {
+    const delta = lireDelta()
+    delta[cleJour(date, className)] = entries
+    ecrireDelta(delta)
+  }
+
+  /** Rejoue les jours modifiés par-dessus la graine. */
+  function appliquerDelta(base) {
+    const delta = lireDelta()
+    const cles = Object.keys(delta)
+    if (!cles.length) return base
+    const touches = new Set(cles)
+    // On retire d'abord TOUTES les lignes générées des jours touchés : c'est
+    // ce qui permet à une saisie d'avoir retiré un élève de l'appel.
+    const garde = base.filter((p) => !touches.has(cleJour(p.date, p.className)))
+    for (const c of cles) garde.push(...(Array.isArray(delta[c]) ? delta[c] : []))
+    return garde
   }
 
   const loadPresences = async (elevesData = []) => {
     loading.value = true
     if (authStore.isDemo) {
-      const savedVersion = localStorage.getItem(demoKey(DEMO_PRESENCES_VERSION_KEY))
-      const saved = (savedVersion === String(DEMO_PRESENCES_VERSION)) ? loadDemoPresences() : null
-      if (saved && saved.length > 0) {
-        presences.value = saved
-      } else if (elevesData.length > 0) {
-        presences.value = generateDemoPresences(elevesData)
-        localStorage.setItem(demoKey(DEMO_PRESENCES_VERSION_KEY), String(DEMO_PRESENCES_VERSION))
-        saveDemoPresences()
+      // L'ancienne clé contenait les 10 000 lignes générées : 1,5 Mo par pays,
+      // régénérables à l'identique. On la supprime pour rendre la place.
+      try { localStorage.removeItem(demoKey(DEMO_PRESENCES_KEY)) } catch (e) { /* silent */ }
+
+      if (elevesData.length > 0) {
+        presences.value = appliquerDelta(generateDemoPresences(elevesData))
+        try { localStorage.setItem(demoKey(DEMO_PRESENCES_VERSION_KEY), String(DEMO_PRESENCES_VERSION)) } catch (e) { /* quota */ }
       }
       loading.value = false
       return
@@ -195,7 +235,7 @@ export const usePresencesStore = defineStore('presences', () => {
     presences.value.push(...newEntries)
 
     if (authStore.isDemo) {
-      saveDemoPresences()
+      enregistrerJourDemo(date, className, newEntries)
       return
     }
 
