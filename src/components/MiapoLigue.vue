@@ -1,5 +1,10 @@
 <template>
-  <div class="lg">
+  <!-- Ligue MASQUÉE tant que la population est trop faible pour qu'un
+       classement veuille dire quelque chose. « 1er sur 1 » ne motive personne
+       et donne l'image d'un produit vide, précisément aux premiers arrivés.
+       ⚠️ Les points continuent d'être comptés : le jour de l'ouverture,
+       personne ne repart de zéro. Voir MIN_LIGUE_VISIBLE. -->
+  <div v-if="ligueVisible" class="lg">
     <div class="card">
       <div class="card-head">
         <Trophy :size="18" />
@@ -68,7 +73,7 @@ import { computed, onMounted, watch } from 'vue'
 import { Trophy, Sparkles } from 'lucide-vue-next'
 import { auth } from '../firebase'
 import { useLigueStore } from '../stores/ligue'
-import { zoneClassement, PROMUS, RELEGUES, TAILLE_LIGUE, MIN_LIGUE_CLASSANTE } from '../utils/pointsEffort'
+import { zoneClassement, PROMUS, RELEGUES, TAILLE_LIGUE, MIN_LIGUE_CLASSANTE, MIN_LIGUE_VISIBLE } from '../utils/pointsEffort'
 
 const props = defineProps({
   niveau: { type: String, default: '' },
@@ -79,6 +84,10 @@ const props = defineProps({
 const ligue = useLigueStore()
 const monUid = computed(() => (auth.currentUser ? auth.currentUser.uid : null))
 function zone(rang) { return zoneClassement(rang, ligue.membres.length) }
+
+// Le classement ne s'affiche qu'à partir d'une population qui le rend sensé.
+// On charge la ligue quand même : c'est elle qui nous dit combien ils sont.
+const ligueVisible = computed(() => ligue.membres.length >= MIN_LIGUE_VISIBLE)
 
 onMounted(() => ligue.charger(props.niveau))
 // Changer d'enfant depuis l'espace parent change de ligue : sans ça on

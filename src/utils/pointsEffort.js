@@ -98,6 +98,20 @@ export const RELEGUES = 5
 export const MIN_LIGUE_CLASSANTE = PROMUS * 2
 
 /**
+ * En dessous de cette population, on n'AFFICHE PAS la ligue du tout.
+ *
+ * Distinct de MIN_LIGUE_CLASSANTE, qui décide s'il y a des promus : ici il
+ * s'agit de savoir si le classement a un sens à montrer. Se voir « 1er sur 1 »
+ * ne motive personne et donne l'image d'un produit vide — le pire accueil pour
+ * les tout premiers utilisateurs, justement ceux qu'il faut garder.
+ *
+ * ⚠️ Les points continuent d'être COMPTÉS pendant ce temps. Le jour où la ligue
+ * s'ouvre, personne ne repart de zéro et l'historique existe déjà. Ne pas
+ * confondre « masquer l'écran » et « suspendre le mécanisme ».
+ */
+export const MIN_LIGUE_VISIBLE = 100
+
+/**
  * Zone d'un rang : promotion, maintien ou relégation.
  *
  * Sur une cohorte qui démarre — le cas de tout nouveau pays — personne ne monte

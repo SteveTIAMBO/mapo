@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest'
 import {
   pointsSeance, idLigue, zoneClassement,
   POINTS_REVISION, POINTS_PALIER, MAX_POINTS_COMBO, MAX_JOURS_SERIE_COMPTES,
-  TAILLE_LIGUE, MIN_LIGUE_CLASSANTE,
+  TAILLE_LIGUE, MIN_LIGUE_CLASSANTE, MIN_LIGUE_VISIBLE,
 } from '../utils/pointsEffort'
 
 describe('Points — le score n’entre PAS dans le calcul', () => {
@@ -114,5 +114,32 @@ describe('Ligues — on ne relègue pas dans une cohorte qui démarre', () => {
   it('le classement s’active dès que la place se dispute', () => {
     expect(zoneClassement(1, MIN_LIGUE_CLASSANTE)).toBe('promotion')
     expect(zoneClassement(MIN_LIGUE_CLASSANTE, MIN_LIGUE_CLASSANTE)).toBe('maintien')
+  })
+})
+
+/**
+ * Ouverture de la ligue.
+ *
+ * Décision Steve (22/08) : tant qu'il n'y a qu'une poignée d'apprenants, le
+ * classement ne classe rien. On le masque, mais on continue de COMPTER les
+ * points — sinon les premiers arrivés repartiraient de zéro le jour du
+ * lancement, et ce sont justement ceux qu'il faut garder.
+ */
+describe('Seuil d’affichage de la ligue', () => {
+  it('une poignée d’apprenants ne suffit pas à afficher un classement', () => {
+    expect(1 >= MIN_LIGUE_VISIBLE).toBe(false)
+    expect(30 >= MIN_LIGUE_VISIBLE).toBe(false)
+  })
+
+  it('le seuil d’affichage est BIEN plus haut que le seuil de classement', () => {
+    // Deux notions distinctes : « y a-t-il des promus » et « faut-il montrer
+    // l'écran ». Les confondre rouvrirait la ligue à 10 participants.
+    expect(MIN_LIGUE_VISIBLE).toBeGreaterThan(MIN_LIGUE_CLASSANTE)
+  })
+
+  it('les points restent comptés quand la ligue est masquée', () => {
+    // Masquer l'écran ne doit pas suspendre le barème : une révision vaut
+    // toujours ses points, ligue visible ou non.
+    expect(POINTS_REVISION).toBeGreaterThan(0)
   })
 })
