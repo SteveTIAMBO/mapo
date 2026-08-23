@@ -31,6 +31,15 @@
  * programme : aucun extrait d'œuvre n'est extrait ni stocké.
  */
 import mathsCycle4 from '../data/referentiels/fr-mathematiques-cycle4.json'
+// Programmes de cycle 4 ENCORE EN VIGUEUR (BO n° 31 du 30-7-2020). Les
+// nouveaux n'entrent qu'en 2027 (4e) puis 2028 (3e) : sans ces quatre
+// fichiers, ces deux classes n'ont AUCUN programme applicable cette année et
+// révisent en génération libre. `trouver()` prend le plus récent DÉJÀ
+// applicable, donc la 5e continue de recevoir le nouveau programme.
+import mathsCycle4_2020 from '../data/referentiels/fr-mathematiques-cycle4-2020.json'
+import francaisCycle4_2020 from '../data/referentiels/fr-francais-cycle4-2020.json'
+import lv1Cycle4_2020 from '../data/referentiels/fr-lv1-cycle4-2020.json'
+import lv2Cycle4_2020 from '../data/referentiels/fr-lv2-cycle4-2020.json'
 import mathsCycle3 from '../data/referentiels/fr-mathematiques-cycle3.json'
 import hgCycle4 from '../data/referentiels/fr-histoire-geographie-cycle4.json'
 import pcCycle4 from '../data/referentiels/fr-physique-chimie-cycle4.json'
@@ -102,7 +111,8 @@ import cmInfoTleCD from '../data/referentiels/cm-informatique-tle-cd.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
-const REFERENTIELS = [mathsCycle3, mathsCycle4, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4,
+const REFERENTIELS = [mathsCycle3, mathsCycle4, mathsCycle4_2020, francaisCycle4_2020,
+  lv1Cycle4_2020, lv2Cycle4_2020, hgCycle4, pcCycle4, svtCycle4, techCycle4, fraCycle3, fraCycle4,
   maths2nde, maths1re, mathsTle, mathsTle2027, pc2nde, pc1re, pcTle, svt2nde, svt1re, svtTle,
   hg2nde, hg1re, hgTle, es1re, esTle, fra2nde, fra1re, philoTle, ses2nde, ses1re, sesTle, snt2nde,
   hggsp1re, hggspTle, hlp1re, hlpTle, nsi1re, nsiTle, emc,

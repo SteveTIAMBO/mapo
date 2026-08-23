@@ -1,0 +1,159 @@
+{
+ "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+ "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+ "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+ "_granularite": "cycle",
+ "_noteGranularite": "Attendus définis pour l'ENSEMBLE du cycle 4 : la répartition sur les trois années relève de l'établissement.",
+ "pays": "FR",
+ "cycle": "Cycle 4",
+ "arrete": "Arrêté du 9-11-2015 modifié par l'arrêté du 17-7-2020",
+ "bo": "BO n° 31 du 30-7-2020",
+ "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+ "urlPdf": "https://eduscol.education.fr/document/621/download",
+ "extraitLe": "2026-08-23",
+ "matiere": "Espagnol",
+ "matiereAussi": [
+  "Espagnol (LV2)",
+  "Allemand",
+  "Allemand (LV2)",
+  "Italien",
+  "Italien (LV2)"
+ ],
+ "classes": {
+  "5e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre des mots familiers et des expressions courantes sur lui-même, sa famille et son environnement"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre des textes très courts et très simples, phrase par phrase, en relevant des noms, des mots familiers et des expressions très élémentaires et en relisant si nécessaire"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir brièvement dans des situations déjà connues en utilisant des mots et expressions simples et avec un débit lent"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut produire des expressions simples, isolées, sur les gens et les choses"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire des expressions et phrases simples isolées"
+    },
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre une intervention brève si elle est claire et simple"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre de courts textes simples sur des sujets concrets courants avec une fréquence élevée de langue quotidienne"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir avec une aisance raisonnable dans des situations bien structurées et de courtes conversations à condition que le locuteur apporte de l’aide le cas échéant"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut décrire ou présenter simplement des gens, des conditions de vie, des activités quotidiennes, ce qu’on aime ou pas, par de courtes séries d’expressions ou de phrases"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire une série d’expressions et de phrases simples reliées par des connecteurs simples tels que « et », « mais » et « parce que »"
+    }
+   ]
+  },
+  "4e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre des mots familiers et des expressions courantes sur lui-même, sa famille et son environnement"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre des textes très courts et très simples, phrase par phrase, en relevant des noms, des mots familiers et des expressions très élémentaires et en relisant si nécessaire"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir brièvement dans des situations déjà connues en utilisant des mots et expressions simples et avec un débit lent"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut produire des expressions simples, isolées, sur les gens et les choses"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire des expressions et phrases simples isolées"
+    },
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre une intervention brève si elle est claire et simple"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre de courts textes simples sur des sujets concrets courants avec une fréquence élevée de langue quotidienne"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir avec une aisance raisonnable dans des situations bien structurées et de courtes conversations à condition que le locuteur apporte de l’aide le cas échéant"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut décrire ou présenter simplement des gens, des conditions de vie, des activités quotidiennes, ce qu’on aime ou pas, par de courtes séries d’expressions ou de phrases"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire une série d’expressions et de phrases simples reliées par des connecteurs simples tels que « et », « mais » et « parce que »"
+    }
+   ]
+  },
+  "3e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre des mots familiers et des expressions courantes sur lui-même, sa famille et son environnement"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre des textes très courts et très simples, phrase par phrase, en relevant des noms, des mots familiers et des expressions très élémentaires et en relisant si nécessaire"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir brièvement dans des situations déjà connues en utilisant des mots et expressions simples et avec un débit lent"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut produire des expressions simples, isolées, sur les gens et les choses"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire des expressions et phrases simples isolées"
+    },
+    {
+     "domaine": "Écouter et comprendre",
+     "notion": "Peut comprendre une intervention brève si elle est claire et simple"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Peut comprendre de courts textes simples sur des sujets concrets courants avec une fréquence élevée de langue quotidienne"
+    },
+    {
+     "domaine": "Réagir et dialoguer",
+     "notion": "Peut interagir avec une aisance raisonnable dans des situations bien structurées et de courtes conversations à condition que le locuteur apporte de l’aide le cas échéant"
+    },
+    {
+     "domaine": "Parler en continu",
+     "notion": "Peut décrire ou présenter simplement des gens, des conditions de vie, des activités quotidiennes, ce qu’on aime ou pas, par de courtes séries d’expressions ou de phrases"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Peut écrire une série d’expressions et de phrases simples reliées par des connecteurs simples tels que « et », « mais » et « parce que »"
+    }
+   ]
+  }
+ }
+}

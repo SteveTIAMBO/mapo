@@ -1,0 +1,224 @@
+{
+ "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+ "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+ "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+ "_granularite": "cycle",
+ "_noteGranularite": "Attendus définis pour l'ENSEMBLE du cycle 4 : la répartition sur les trois années relève de l'établissement.",
+ "pays": "FR",
+ "cycle": "Cycle 4",
+ "arrete": "Arrêté du 9-11-2015 modifié par l'arrêté du 17-7-2020",
+ "bo": "BO n° 31 du 30-7-2020",
+ "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+ "urlPdf": "https://eduscol.education.fr/document/621/download",
+ "extraitLe": "2026-08-23",
+ "matiere": "Français",
+ "classes": {
+  "5e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Comprendre et interpréter des discours oraux élaborés (récit, exposé magistral, émission documentaire, journal d’information, etc.)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Élaborer et prononcer une intervention orale continue de cinq à dix minutes (présentation d’une œuvre littéraire ou artistique, exposé des résultats d'une recherche, défense argumentée d’un point de vue)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Participer à un débat de manière constructive et en respectant la parole de l'autre"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Lire un texte à haute voix de manière claire et intelligible ; dire de mémoire un texte littéraire ; s’engager dans un jeu théâtral"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre en autonomie des textes variés, des images et des documents composites, sur différents supports (papier, numérique)"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire, comprendre et interpréter des textes littéraires en fondant l’interprétation sur quelques outils d’analyse simples"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Situer les textes littéraires dans leur contexte historique et culturel"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire une œuvre complète et rendre compte oralement de sa lecture"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre, pour chaque niveau du cycle, au moins trois œuvres complètes du patrimoine étudiées en classe, trois œuvres complètes, notamment de littérature de jeunesse, en lecture cursive, et trois groupements de textes (lecture analytique ou cursive)"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Communiquer par écrit et sur des supports variés (papier, numérique) un sentiment, un point de vue, un jugement argumenté en tenant compte du destinataire et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Formuler par écrit sa réception d’une œuvre littéraire ou artistique"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Rédiger, en réponse à une consigne d’écriture, un écrit d’invention s’inscrivant dans un genre littéraire du programme, en s’assurant de sa cohérence et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Utiliser l’écrit pour réfléchir, se donner des outils de travail"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Mobiliser les connaissances orthographiques, syntaxiques et lexicales en expression écrite et orale ainsi qu’en révision de texte, dans des contextes variés"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’analyser les principaux constituants d’une phrase simple et complexe"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’orthographier les mots d’usage courant, de conjuguer correctement les verbes, de pratiquer les accords dans le groupe nominal"
+    }
+   ]
+  },
+  "4e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Comprendre et interpréter des discours oraux élaborés (récit, exposé magistral, émission documentaire, journal d’information, etc.)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Élaborer et prononcer une intervention orale continue de cinq à dix minutes (présentation d’une œuvre littéraire ou artistique, exposé des résultats d'une recherche, défense argumentée d’un point de vue)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Participer à un débat de manière constructive et en respectant la parole de l'autre"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Lire un texte à haute voix de manière claire et intelligible ; dire de mémoire un texte littéraire ; s’engager dans un jeu théâtral"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre en autonomie des textes variés, des images et des documents composites, sur différents supports (papier, numérique)"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire, comprendre et interpréter des textes littéraires en fondant l’interprétation sur quelques outils d’analyse simples"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Situer les textes littéraires dans leur contexte historique et culturel"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire une œuvre complète et rendre compte oralement de sa lecture"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre, pour chaque niveau du cycle, au moins trois œuvres complètes du patrimoine étudiées en classe, trois œuvres complètes, notamment de littérature de jeunesse, en lecture cursive, et trois groupements de textes (lecture analytique ou cursive)"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Communiquer par écrit et sur des supports variés (papier, numérique) un sentiment, un point de vue, un jugement argumenté en tenant compte du destinataire et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Formuler par écrit sa réception d’une œuvre littéraire ou artistique"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Rédiger, en réponse à une consigne d’écriture, un écrit d’invention s’inscrivant dans un genre littéraire du programme, en s’assurant de sa cohérence et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Utiliser l’écrit pour réfléchir, se donner des outils de travail"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Mobiliser les connaissances orthographiques, syntaxiques et lexicales en expression écrite et orale ainsi qu’en révision de texte, dans des contextes variés"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’analyser les principaux constituants d’une phrase simple et complexe"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’orthographier les mots d’usage courant, de conjuguer correctement les verbes, de pratiquer les accords dans le groupe nominal"
+    }
+   ]
+  },
+  "3e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Comprendre et interpréter des discours oraux élaborés (récit, exposé magistral, émission documentaire, journal d’information, etc.)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Élaborer et prononcer une intervention orale continue de cinq à dix minutes (présentation d’une œuvre littéraire ou artistique, exposé des résultats d'une recherche, défense argumentée d’un point de vue)"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Participer à un débat de manière constructive et en respectant la parole de l'autre"
+    },
+    {
+     "domaine": "Comprendre et s'exprimer à l'oral",
+     "notion": "Lire un texte à haute voix de manière claire et intelligible ; dire de mémoire un texte littéraire ; s’engager dans un jeu théâtral"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre en autonomie des textes variés, des images et des documents composites, sur différents supports (papier, numérique)"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire, comprendre et interpréter des textes littéraires en fondant l’interprétation sur quelques outils d’analyse simples"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Situer les textes littéraires dans leur contexte historique et culturel"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire une œuvre complète et rendre compte oralement de sa lecture"
+    },
+    {
+     "domaine": "Lire",
+     "notion": "Lire et comprendre, pour chaque niveau du cycle, au moins trois œuvres complètes du patrimoine étudiées en classe, trois œuvres complètes, notamment de littérature de jeunesse, en lecture cursive, et trois groupements de textes (lecture analytique ou cursive)"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Communiquer par écrit et sur des supports variés (papier, numérique) un sentiment, un point de vue, un jugement argumenté en tenant compte du destinataire et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Formuler par écrit sa réception d’une œuvre littéraire ou artistique"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Rédiger, en réponse à une consigne d’écriture, un écrit d’invention s’inscrivant dans un genre littéraire du programme, en s’assurant de sa cohérence et en respectant les principales normes de la langue écrite"
+    },
+    {
+     "domaine": "Écrire",
+     "notion": "Utiliser l’écrit pour réfléchir, se donner des outils de travail"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Mobiliser les connaissances orthographiques, syntaxiques et lexicales en expression écrite et orale ainsi qu’en révision de texte, dans des contextes variés"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’analyser les principaux constituants d’une phrase simple et complexe"
+    },
+    {
+     "domaine": "Comprendre le fonctionnement de la langue",
+     "notion": "Être capable d’orthographier les mots d’usage courant, de conjuguer correctement les verbes, de pratiquer les accords dans le groupe nominal"
+    }
+   ]
+  }
+ }
+}

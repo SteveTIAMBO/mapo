@@ -32,12 +32,19 @@ describe('Millésime — on ne sert QUE ce qui est applicable', () => {
     expect(n.map((x) => x.notion)).toContain('Nombres relatifs')
   })
 
-  it('4e en 2026 : RIEN — le programme n’entre en vigueur qu’en 2027', () => {
-    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+  // ⚠️ Ces deux tests exigeaient AUTREFOIS un tableau vide en 4e et en 3e.
+  // C'était juste sur la mécanique — le nouveau programme n'entre qu'en 2027
+  // et 2028 — mais cela figeait un TROU : deux classes entières révisaient
+  // sans aucun programme. Le millésime 2020, lui, est toujours en vigueur : il
+  // a été intégré à côté, et c'est LUI qu'on doit servir en attendant.
+  it('4e en 2026 : le millésime 2020, encore en vigueur', () => {
+    const n = notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Mathématiques', date: en(2026) })
+    expect(n.length).toBeGreaterThan(5)
+    expect(sourceOfficielle({ pays: 'FR', niveau: '4e', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/2020/)
   })
 
-  it('3e en 2026 : RIEN non plus — entrée en vigueur en 2028', () => {
-    expect(notionsOfficielles({ pays: 'FR', niveau: '3e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+  it('3e en 2026 : le millésime 2020 également', () => {
+    expect(sourceOfficielle({ pays: 'FR', niveau: '3e', matiere: 'Mathématiques', date: en(2026) }).bo).toMatch(/2020/)
   })
 
   it('4e en 2027 : le programme devient applicable, sans rien changer au code', () => {
@@ -197,7 +204,8 @@ describe('Attribution — obligation de la Licence Ouverte', () => {
   })
 
   it('pas de notion servie, pas de provenance affichée', () => {
-    expect(sourceOfficielle({ pays: 'FR', niveau: '4e', matiere: 'Mathématiques', date: en(2026) })).toBeNull()
+    // Une matière sans aucun programme, à aucun millésime : l'EPS.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '4e', matiere: 'Éducation physique et sportive (EPS)', date: en(2026) })).toBeNull()
   })
 })
 
@@ -309,8 +317,9 @@ describe('Français — intitulés d’entrées seulement, jamais d’extraits d
   })
 
   it('le millésime du cycle 4 s’applique aussi au français', () => {
-    // Même arrêté que les maths : 5e en 2026, 4e en 2027, 3e en 2028.
-    expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Français', date: en(2026) })).toEqual([])
+    // Même arrêté que les maths : le nouveau programme prend la 4e en 2027.
+    // D'ici là, la 4e reçoit les attendus de 2020 — jamais rien.
+    expect(sourceOfficielle({ pays: 'FR', niveau: '4e', matiere: 'Français', date: en(2026) }).bo).toMatch(/2020/)
     expect(notionsOfficielles({ pays: 'FR', niveau: '4e', matiere: 'Français', date: en(2027) })).toHaveLength(4)
   })
 
@@ -586,7 +595,10 @@ describe('Anglais — les repères culturels, pas les savoir-faire', () => {
   it('la 6e et la 5e sont passées au programme de 2025, la 4e et la 3e pas encore', () => {
     expect(n('6e').length).toBeGreaterThan(4)
     expect(n('5e').length).toBeGreaterThan(4)
-    expect(n('4e')).toEqual([])
+    // La 4e n'est pas encore au programme de 2025, mais elle n'est pas nue
+    // pour autant : les attendus de langue vivante de 2020 la couvrent.
+    expect(n('4e').length).toBeGreaterThan(4)
+    expect(sourceOfficielle({ pays: 'FR', niveau: '4e', matiere: 'Anglais (LV1)', date: en(2026) }).bo).toMatch(/2020/)
     expect(n('4e', 2027).length).toBeGreaterThan(4)
     expect(n('3e', 2028).length).toBeGreaterThan(4)
   })

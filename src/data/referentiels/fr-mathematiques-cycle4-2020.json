@@ -1,0 +1,176 @@
+{
+ "_licence": "Licence Ouverte / Open Licence 2.0 (Etalab)",
+ "_attribution": "Source : ministère de l'Éducation nationale — Licence Ouverte 2.0",
+ "_avertissement": "MAPO+ n'est ni édité ni approuvé par le ministère.",
+ "_granularite": "cycle",
+ "_noteGranularite": "Attendus définis pour l'ENSEMBLE du cycle 4 : la répartition sur les trois années relève de l'établissement.",
+ "pays": "FR",
+ "cycle": "Cycle 4",
+ "arrete": "Arrêté du 9-11-2015 modifié par l'arrêté du 17-7-2020",
+ "bo": "BO n° 31 du 30-7-2020",
+ "url": "https://www.education.gouv.fr/bo/20/Hebdo31/MENE2018714A.htm",
+ "urlPdf": "https://eduscol.education.fr/document/621/download",
+ "extraitLe": "2026-08-23",
+ "matiere": "Mathématiques",
+ "classes": {
+  "5e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser les nombres pour comparer, calculer et résoudre des problèmes"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Comprendre et utiliser les notions de divisibilité et de nombres premiers"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser le calcul littéral"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Interpréter, représenter et traiter des données"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser des notions élémentaires de probabilités"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Résoudre des problèmes de proportionnalité"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser la notion de fonction"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Calculer avec des grandeurs mesurables ; exprimer les résultats dans les unités adaptées"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Comprendre l’effet de quelques transformations sur les figures géométriques"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Représenter l’espace"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Utiliser les notions de géométrie plane pour démontrer"
+    },
+    {
+     "domaine": "Algorithmique et programmation",
+     "notion": "Écrire, mettre au point et exécuter un programme simple"
+    }
+   ]
+  },
+  "4e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser les nombres pour comparer, calculer et résoudre des problèmes"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Comprendre et utiliser les notions de divisibilité et de nombres premiers"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser le calcul littéral"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Interpréter, représenter et traiter des données"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser des notions élémentaires de probabilités"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Résoudre des problèmes de proportionnalité"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser la notion de fonction"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Calculer avec des grandeurs mesurables ; exprimer les résultats dans les unités adaptées"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Comprendre l’effet de quelques transformations sur les figures géométriques"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Représenter l’espace"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Utiliser les notions de géométrie plane pour démontrer"
+    },
+    {
+     "domaine": "Algorithmique et programmation",
+     "notion": "Écrire, mettre au point et exécuter un programme simple"
+    }
+   ]
+  },
+  "3e": {
+   "enVigueurRentree": 2020,
+   "notions": [
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser les nombres pour comparer, calculer et résoudre des problèmes"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Comprendre et utiliser les notions de divisibilité et de nombres premiers"
+    },
+    {
+     "domaine": "Nombres et calculs",
+     "notion": "Utiliser le calcul littéral"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Interpréter, représenter et traiter des données"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser des notions élémentaires de probabilités"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Résoudre des problèmes de proportionnalité"
+    },
+    {
+     "domaine": "Organisation et gestion de données, fonctions",
+     "notion": "Comprendre et utiliser la notion de fonction"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Calculer avec des grandeurs mesurables ; exprimer les résultats dans les unités adaptées"
+    },
+    {
+     "domaine": "Grandeurs et mesures",
+     "notion": "Comprendre l’effet de quelques transformations sur les figures géométriques"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Représenter l’espace"
+    },
+    {
+     "domaine": "Espace et géométrie",
+     "notion": "Utiliser les notions de géométrie plane pour démontrer"
+    },
+    {
+     "domaine": "Algorithmique et programmation",
+     "notion": "Écrire, mettre au point et exécuter un programme simple"
+    }
+   ]
+  }
+ }
+}
