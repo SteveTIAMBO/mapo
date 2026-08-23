@@ -59,3 +59,58 @@ describe('6e France — enseignements de cycle 4 exclus', () => {
     }
   })
 })
+
+/**
+ * CAMEROUN — le MINESEC publie DEUX jeux de programmes pour le 1er cycle :
+ * « 6ème-5ème » et « 4ème-3ème ». Notre catalogue n'en servait qu'un.
+ *
+ * Sources : l'arborescence officielle files.minesec.gov.cm (1er cycle →
+ * 6ème-5ème / 4ème-3ème), l'absence de tout programme de langue seconde dans
+ * IP-LAL 6ème-5ème, et programme_Espagnol_4eme3eme.pdf.
+ */
+describe('Cameroun — 6ème/5ème ≠ 4ème/3ème', () => {
+  const cm = (n) => matieresPourNiveau(n, 'CM')
+
+  it('« Sciences » est UNE matière en 6ème et 5ème', () => {
+    expect(cm('6ème')).toContain('Sciences')
+    expect(cm('6ème').some((m) => /PCT|SVT/.test(m))).toBe(false)
+  })
+
+  it('PCT et SVT se séparent en 4ème', () => {
+    expect(cm('4ème').some((m) => /PCT/.test(m))).toBe(true)
+    expect(cm('4ème')).toContain('SVT')
+  })
+
+  it('aucune deuxième langue en 6ème/5ème, elle arrive en 4ème', () => {
+    expect(cm('6ème').some((m) => /Deuxième langue/i.test(m))).toBe(false)
+    expect(cm('5ème').some((m) => /Deuxième langue/i.test(m))).toBe(false)
+    expect(cm('4ème').some((m) => /Deuxième langue/i.test(m))).toBe(true)
+  })
+})
+
+/**
+ * CÔTE D'IVOIRE — index officiel DPFC (dpfc-ci.net) : l'espagnol et l'allemand
+ * ne sont publiés qu'à partir de la 4ème, alors que les arts plastiques et
+ * l'éducation musicale existent dans les QUATRE classes du collège.
+ */
+describe('Côte d’Ivoire — LV2 en 4ème, arts dès la 6ème', () => {
+  const ci = (n) => matieresPourNiveau(n, 'CI')
+
+  it('pas de LV2 en 6ème/5ème, mais espagnol et allemand en 4ème/3ème', () => {
+    expect(ci('6e').some((m) => /Espagnol|Allemand/.test(m))).toBe(false)
+    expect(ci('4e').some((m) => /Espagnol/.test(m))).toBe(true)
+    expect(ci('3e').some((m) => /Allemand/.test(m))).toBe(true)
+  })
+
+  it('arts plastiques et éducation musicale sont au programme du collège', () => {
+    for (const n of ['6e', '5e', '4e', '3e']) {
+      expect(ci(n)).toContain('Arts plastiques')
+      expect(ci(n)).toContain('Éducation musicale')
+    }
+  })
+
+  it('⚠️ physique-chimie et SVT existent DÈS la 6ème : ne pas uniformiser avec la France', () => {
+    expect(ci('6e')).toContain('Physique-Chimie')
+    expect(ci('6e')).toContain('SVT')
+  })
+})

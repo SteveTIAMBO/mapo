@@ -217,7 +217,20 @@ export const NIVEAUX_SECONDAIRE_CI = [
 
 // EDHC (Éducation aux Droits de l'Homme et à la Citoyenneté) est la matière
 // civique ivoirienne — ce n'est pas l'ECM camerounaise, ni l'EMC française.
-const COMMUN_CI = ['Français', 'Anglais', 'Histoire-Géographie', 'Mathématiques', 'EDHC', 'Éducation physique et sportive (EPS)']
+// Le DPFC publie un programme d'arts plastiques ET d'éducation musicale pour
+// chacune des quatre classes du collège : ils manquaient au tronc commun.
+const COMMUN_CI = [
+  'Français', 'Anglais', 'Histoire-Géographie', 'Mathématiques', 'EDHC',
+  'Arts plastiques', 'Éducation musicale', 'Éducation physique et sportive (EPS)',
+]
+/**
+ * CÔTE D'IVOIRE — la LV2 commence en 4ème.
+ * Le DPFC ne publie l'espagnol et l'allemand qu'à partir de la 4ème
+ * (ESPAGNOL_4eme.pdf, ALLEMAND_4eme.pdf), alors que l'anglais existe dès la 6ème.
+ * ⚠️ En revanche, physique-chimie et SVT existent bien DÈS LA 6ÈME en Côte
+ * d'Ivoire — contrairement à la France et au Cameroun. Ne pas uniformiser.
+ */
+const LV2_CI = ['Espagnol (LV2)', 'Allemand (LV2)']
 const DOMINANTES_CI = {
   A1: ['Français', 'Philosophie', 'Anglais', 'Espagnol'],
   A2: ['Philosophie', 'Histoire-Géographie', 'Français', 'Anglais'],
@@ -228,7 +241,8 @@ const DOMINANTES_CI = {
 /** Matières d'un niveau ivoirien. */
 export function matieresCI(niveau) {
   const n = String(niveau || '')
-  if (['6e', '5e', '4e', '3e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
+  if (['6e', '5e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie']
+  if (['4e', '3e'].includes(n)) return [...COMMUN_CI, 'SVT', 'Physique-Chimie', ...LV2_CI]
   if (/^2nde/.test(n)) {
     const base = /C$/.test(n) ? ['Mathématiques', 'Physique-Chimie', 'SVT'] : ['Français', 'Philosophie', 'Espagnol']
     return [...new Set([...base, ...COMMUN_CI])]
@@ -274,7 +288,25 @@ export const MATIERES_PRIMAIRE = [
   'Informatique (TIC)', 'Langues et cultures nationales',
   'Éducation artistique', 'Éducation physique et sportive (EPS)',
 ]
-// Secondaire 1er cycle (6e-3e) — tronc commun MINESEC (sanction : BEPC).
+/**
+ * CAMEROUN, 6ème-5ème — le MINESEC publie DEUX jeux de programmes pour le 1er
+ * cycle : « 6ème-5ème » et « 4ème-3ème ». Ce ne sont pas les mêmes matières.
+ *
+ *   • « Sciences » est UNE matière en 6ème-5ème ; elle se sépare en PCT et SVT
+ *     en 4ème-3ème. Notre propre référentiel le dit déjà : cm-sciences porte
+ *     matiereAussi = ['Physique-Chimie-Technologie (PCT)', 'SVT'] et ne couvre
+ *     que 6ème et 5ème.
+ *   • pas de LV2. Le MINESEC ne publie un programme d'espagnol que pour les
+ *     4ème-3ème (programme_Espagnol_4eme3eme.pdf), et le dossier IP-LAL des
+ *     6ème-5ème ne contient aucun programme de langue seconde.
+ */
+export const MATIERES_CM_6E_5E = [
+  'Français', 'Anglais', 'Mathématiques', 'Sciences',
+  'Histoire', 'Géographie', 'Éducation à la citoyenneté et à la morale (ECM)',
+  'Informatique', 'Éducation physique et sportive (EPS)',
+  'Langues et cultures nationales',
+]
+// Secondaire 1er cycle, 4ème-3ème — PCT et SVT séparés, LV2 introduite.
 export const MATIERES_SECONDAIRE_1ER_CYCLE = [
   'Français', 'Anglais', 'Mathématiques', 'Physique-Chimie-Technologie (PCT)',
   'SVT', 'Histoire', 'Géographie', 'Éducation à la citoyenneté et à la morale (ECM)',
@@ -394,6 +426,7 @@ export function matieresPourNiveau(niveau, pays) {
     return MATIERES_HUMANITES_CD
   }
   if (NIVEAUX_PRIMAIRE.includes(niveau)) return MATIERES_PRIMAIRE
+  if (['6ème', '5ème'].includes(niveau)) return MATIERES_CM_6E_5E // « Sciences », pas de LV2
   if (NIVEAUX_PREMIER_CYCLE.includes(niveau)) return MATIERES_SECONDAIRE_1ER_CYCLE
   if (typeof niveau === 'string') {
     let liste = null
