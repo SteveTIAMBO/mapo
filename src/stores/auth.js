@@ -35,8 +35,16 @@ const DEMO_ACCOUNTS = {
   // Jean Kamga : prof principal de 6ème A, enseigne les Mathématiques (il ne
   // peut publier des cours QUE dans sa/ses matière(s)). Hélène est son élève.
   enseignant: { uid: 'demo-enseignant', firstName: 'Jean', lastName: 'Kamga', role: 'enseignant', email: 'enseignant@demo', subjects: ['Mathématiques'], className: '6ème A' },
-  parent: { uid: 'demo-parent', firstName: 'Thomas', lastName: 'Mbarga', role: 'parent', email: 'parent@demo' },
-  eleve: { uid: 'demo-eleve', firstName: 'Hélène', lastName: 'Mbarga', role: 'eleve', email: 'eleve@demo', className: '6ème A' },
+  // ⚠️ Les profils de démonstration PARENT et ÉLÈVE ont été retirés le
+  // 23/08/2026, sur décision de Steve : MAPO est l'outil de l'ÉCOLE et de son
+  // personnel. Les familles et les élèves vivent dans MAPO+, qui se reliera à
+  // l'école. Montrer deux portes d'entrée pour la même personne brouillait le
+  // discours en rendez-vous.
+  //
+  // Ce qui n'a PAS été supprimé, volontairement : les rôles `parent` et `eleve`
+  // eux-mêmes, leurs écrans et leurs routes. Des écoles réelles ont pu inviter
+  // des familles ; les retirer les mettrait dehors sans préavis. C'est une
+  // décision de produit distincte de celle-ci.
   // MAPO+ = édition B2C (famille/tuteur autonome) : profil parent b2c → espace MAPO+ seul.
   miapo: { uid: 'demo-miapo', firstName: 'Mariam', lastName: 'Nkeng', role: 'parent', email: 'miapo@demo', b2c: true },
   // Directeur de COMPLEXE scolaire : gère plusieurs écoles rattachées (complexeId).
@@ -277,7 +285,7 @@ export const useAuthStore = defineStore('auth', () => {
     const key = username.trim().toLowerCase()
     const account = localiserCompte(DEMO_ACCOUNTS[key])
     if (!account) {
-      return { success: false, error: 'Identifiant demo inconnu. Utilisez : directeur, enseignant, parent ou eleve.' }
+      return { success: false, error: 'Identifiant demo inconnu. Utilisez : directeur, enseignant ou complexe.' }
     }
     if (password !== DEMO_PASSWORD) {
       return { success: false, error: 'Mot de passe incorrect. Le mot de passe demo est : demo1234' }
