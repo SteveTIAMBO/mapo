@@ -107,6 +107,7 @@ import {
   PAYS, paysParDefaut, setPaysParDefaut,
   niveauxPrimairePays, niveauxSecondairePays, NIVEAUX_SUPERIEUR, NIVEAU_HORS_CATALOGUE,
 } from '../stores/enfantsAutonomes'
+import { lirePrefill, oublierPrefill } from '../utils/prefillInscription'
 
 const emit = defineEmits(['done'])
 const { t } = useI18n({ useScope: 'global' })
@@ -115,8 +116,7 @@ const store = useEnfantsAutonomesStore()
 
 // Pré-remplissage éventuel depuis l'inscription : l'apprenant a pu saisir son
 // prénom + niveau/formation dès la création du compte → onboarding plus rapide.
-let _prefill = {}
-try { _prefill = JSON.parse(localStorage.getItem('mapo_signup_prefill') || '{}') } catch { _prefill = {} }
+const _prefill = lirePrefill() || {}
 
 // Si le persona a déjà été choisi à l'inscription, on saute l'étape « qui es-tu »
 // (l'utilisateur peut toujours revenir en arrière pour la changer).
@@ -156,7 +156,7 @@ function finish() {
     ecole: isHC ? '' : ecole.value.trim(),
     formation: isHC ? formation.value.trim() : '',
   })
-  try { localStorage.removeItem('mapo_signup_prefill') } catch { /* ignore */ }
+  oublierPrefill()
   emit('done')
 }
 </script>

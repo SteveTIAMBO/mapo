@@ -1231,6 +1231,7 @@
 import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { setLang } from '../i18n'
+import { lirePrefill, prefillComplet, oublierPrefill } from '../utils/prefillInscription'
 import { TEINTES, TEINTE_PAR_DEFAUT, appliquerTeinte } from '../utils/themeB2C'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
@@ -3074,9 +3075,8 @@ onMounted(async () => {
   // Préconfiguration depuis l'inscription : si l'apprenant a déjà choisi son
   // persona + niveau à la création du compte, on crée directement son profil et
   // on SAUTE l'onboarding (pas de question redondante).
-  let _pf = null
-  try { _pf = JSON.parse(localStorage.getItem('mapo_signup_prefill') || 'null') } catch { _pf = null }
-  const _pfComplete = _pf && _pf.persona === 'apprenant' && _pf.firstName && (_pf.niveau || _pf.formation)
+  const _pf = lirePrefill()
+  const _pfComplete = prefillComplet(_pf)
   if (_pfComplete && !authStore.isDemo && enfants.value.length === 0) {
     const isHC = _pf.niveau === NIVEAU_HORS_CATALOGUE || (!_pf.niveau && _pf.formation)
     store.setMode('apprenant')
@@ -3088,7 +3088,7 @@ onMounted(async () => {
       ecole: '',
       formation: isHC ? (_pf.formation || '') : '',
     })
-    try { localStorage.removeItem('mapo_signup_prefill') } catch { /* silent */ }
+    oublierPrefill()
     showOnboarding.value = false
   } else {
     // Onboarding guidé au 1er lancement : nouveau compte B2C sans aucun profil.

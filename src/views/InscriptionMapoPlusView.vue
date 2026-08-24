@@ -69,14 +69,17 @@
             </div>
             <div v-if="signupCycle !== 'autres'" class="auth-field">
               <label class="auth-label">{{ t('login.classLabel') }}</label>
-              <select v-model="signupNiveau" class="auth-input">
+              <!-- `required` : sans lui, la valeur de depart etant vide, un
+                   apprenant pouvait creer son compte sans jamais ouvrir ce menu
+                   - et se voyait tout redemander a la connexion suivante. -->
+              <select v-model="signupNiveau" class="auth-input" required>
                 <option value="" disabled>{{ t('login.classPlaceholder') }}</option>
                 <option v-for="n in niveauOptions" :key="n" :value="n">{{ n }}</option>
               </select>
             </div>
             <div v-else class="auth-field">
               <label class="auth-label">{{ t('login.formationName') }}</label>
-              <input v-model="signupFormation" type="text" class="auth-input" :placeholder="t('login.formationPlaceholder')" />
+              <input v-model="signupFormation" type="text" class="auth-input" :placeholder="t('login.formationPlaceholder')" required />
             </div>
           </template>
 
@@ -141,6 +144,7 @@ import {
   niveauxSecondairePays, NIVEAUX_SUPERIEUR, NIVEAU_HORS_CATALOGUE,
 } from '../stores/enfantsAutonomes'
 import { setLang } from '../i18n'
+import { CLE_PREFILL } from '../utils/prefillInscription'
 
 const { t, locale } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -198,7 +202,7 @@ async function handleSignUp() {
       pf.niveau = signupCycle.value === 'autres' ? NIVEAU_HORS_CATALOGUE : (signupNiveau.value || '')
       pf.formation = signupCycle.value === 'autres' ? signupFormation.value.trim() : ''
     }
-    localStorage.setItem('mapo_signup_prefill', JSON.stringify(pf))
+    localStorage.setItem(CLE_PREFILL, JSON.stringify(pf))
   } catch (e) { /* stockage indisponible : sans gravité */ }
 
   const result = await authStore.signUpWithEmail(signupEmail.value.trim(), signupPassword.value, displayName, meta)
