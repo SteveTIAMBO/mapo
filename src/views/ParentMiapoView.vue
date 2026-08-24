@@ -554,8 +554,19 @@
                l'onglet où l'afficher. -->
           <MiapoMesCours :enfant="activeEnfant">
             <template #ajouter-matiere>
+              <!-- Formation hors catalogue ou supérieur : les matières viennent de
+                   `formationModules`, pas d'un référentiel. MiapoAjouterMatiere y
+                   était doublement inerte — son catalogue (`matieresProgramme`) est
+                   VIDE, et ce qu'il écrit (`matieresSup`) n'est pas lu par
+                   `matieresList` dès que `formationModules` est renseigné. On sert
+                   donc l'éditeur de modules, seul capable d'en RETIRER un. -->
+              <MiapoModulesFormation
+                v-if="activeEnfant && sansReferentiel"
+                :valeur="activeEnfant.formationModules || ''"
+                @changer="majModulesFormation"
+              />
               <MiapoAjouterMatiere
-                v-if="activeEnfant"
+                v-else-if="activeEnfant"
                 :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
                 @changer="majMatieresSup"
               />
@@ -1282,6 +1293,8 @@ import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoChapitre from '../components/MiapoChapitre.vue'
 import MiapoTabBar from '../components/MiapoTabBar.vue'
 import MiapoAjouterMatiere from '../components/MiapoAjouterMatiere.vue'
+import MiapoModulesFormation from '../components/MiapoModulesFormation.vue'
+import { listeModules } from '../utils/modulesFormation'
 import { fusionnerMatieres } from '../utils/matieresSup'
 import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
@@ -1787,6 +1800,19 @@ function onOnboardingDone() {
   startFirstRunFlow()
 }
 
+// Profil dont les matières ne viennent d'AUCUN référentiel national : c'est
+// l'apprenant qui les définit (MBA, BTS, concours, supérieur). Nommé une seule
+// fois — la même condition était écrite en trois endroits.
+const sansReferentiel = computed(() => {
+  const e = activeEnfant.value
+  return !!e && (isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE)
+})
+
+function majModulesFormation(texte) {
+  if (!activeEnfant.value) return
+  store.updateEnfant(activeEnfant.value.id, { formationModules: texte })
+}
+
 // ───────── 3e onboarding : configuration de la formation ─────────
 // Apprenant en formation / supérieur dont MAPO ne connaît pas le programme :
 // on lui fait renseigner école + lien + modules (proposés par l'IA, qu'il valide)
@@ -1795,9 +1821,7 @@ const showFormationSetup = ref(false)
 function needsModulesSetup() {
   const e = activeEnfant.value
   if (!isApprenant.value || !e) return false
-  const sansReferentiel = isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE
-  const sansModules = !e.formationModules || !e.formationModules.split(',').map((s) => s.trim()).filter(Boolean).length
-  return sansReferentiel && sansModules
+  return sansReferentiel.value && !listeModules(e.formationModules).length
 }
 function formSetupKey() { return 'mapo_formsetup_skip_' + (activeEnfant.value?.id || 'x') }
 function formSetupSkipped() { try { return localStorage.getItem(formSetupKey()) === '1' } catch { return false } }
@@ -2507,7 +2531,7 @@ function avancementPct(p) {
 // non retirable, et qui sert à ne pas reproposer une matière déjà suivie.
 const matieresProgramme = computed(() => {
   const e = activeEnfant.value
-  if (!e || isNiveauSuperieur(e.niveau) || e.niveau === NIVEAU_HORS_CATALOGUE) return []
+  if (!e || sansReferentiel.value) return []
   return matieresPourNiveau(e.niveau, e.pays) || []
 })
 function majMatieresSup(liste) {
@@ -2517,8 +2541,10 @@ function majMatieresSup(liste) {
 const matieresList = computed(() => {
   const e = activeEnfant.value
   // Matières personnalisées (supérieur, hors-catalogue, ou secondaire édité) : priorité.
+  // MÊME lecture que l'éditeur de modules : sans cela, un doublon ou une case
+  // vide corrigés dans l'éditeur pouvaient réapparaître dans cette liste.
   if (e && e.formationModules) {
-    const mods = e.formationModules.split(',').map((m) => m.trim()).filter(Boolean)
+    const mods = listeModules(e.formationModules)
     if (mods.length) return mods
   }
   // Référentiel national fiable UNIQUEMENT pour le primaire / secondaire. Pour le

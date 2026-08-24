@@ -118,6 +118,32 @@
     "errService": "The service is temporarily unavailable. Try again shortly or ask your parent.",
     "errInvalid": "This link is no longer valid. Ask your parent to generate a new one."
   },
+  "rejEcole": {
+    "checking": "Checking your link…",
+    "yourSchool": "Your school",
+    "yourChild": "your child",
+    "intro": "Your school is opening a MAPO+ space for {prenom}: guided revision, homework, marks and messaging with the school.",
+    "pupil": "Pupil",
+    "klass": "Class",
+    "school": "School",
+    "onlyPassword": "Your school has filled everything in. Just pick a username and a password.",
+    "identifier": "Phone or email",
+    "identifierPh": "+237 6 99 12 34 56",
+    "identifierHint": "A phone number is enough — no email address required.",
+    "password": "Password",
+    "passwordPh": "6 characters minimum",
+    "cta": "Open my space",
+    "opening": "Opening your space…",
+    "stepAccount": "Creating your account…",
+    "stepLink": "Linking to your school…",
+    "stepProfile": "Setting up your space…",
+    "premium": "Premium free for 3 months, courtesy of your school, then the Discovery plan.",
+    "errId": "Enter a phone number or an email address.",
+    "errPw": "The password must be at least 6 characters.",
+    "errAccount": "Account creation failed.",
+    "errUsed": "This link has already been used. Ask your school for a new one.",
+    "errExpired": "This link has expired. Ask your school for a new one."
+  },
   "miaOnb": {
     "lead": "Welcome to MAPO+!",
     "personaQ": "You're using MAPO+ to…",
@@ -476,7 +502,11 @@
       "scholarship": "Scholarship",
       "vulnerable": "Vulnerable",
       "parentPhone": "Parent phone"
-    }
+    },
+    "mapoplusWa": "Send on WhatsApp",
+    "mapoplusWaMsg": "Hello, {ecole} is opening a MAPO+ space for {prenom}: homework, marks, reports and a private tutor available around the clock. Tap to activate it: {lien}",
+    "mapoplusCopyLink": "Copy link",
+    "mapoplusHintLien": "The link opens a space already attached to your school. It works once and expires after 30 days."
   },
   "pagination": {
     "of": "of",
@@ -5703,7 +5733,16 @@
     "saved2": "Apply",
     "epuisePlafondEnfant": "You have reached the limit your parent set for this week.",
     "accessSons": "Quiz sounds",
-    "accessSonsDesc": "A short sound on correct answers and streaks. Nothing harsh."
+    "accessSonsDesc": "A short sound on correct answers and streaks. Nothing harsh.",
+    "myModules": "My modules",
+    "modulesHint": "For a course we do not know, MIAPO suggests the modules from its title alone: correct them, they are what frames your revision.",
+    "modulesEmpty": "No modules yet. Add them below, or have them suggested from your profile.",
+    "modulePlaceholder": "New module…",
+    "moduleAdd": "Add",
+    "moduleRemove": "Remove",
+    "moduleRename": "Rename this module",
+    "moduleSave": "Save",
+    "moduleCancel": "Cancel"
   },
   "cx": {
     "appTitle": "Complex workspace",

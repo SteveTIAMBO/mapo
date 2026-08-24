@@ -118,6 +118,32 @@
     "errService": "Le service est momentanément indisponible. Réessaie dans un instant ou demande à ton parent.",
     "errInvalid": "Ce lien n'est plus valide. Demande à ton parent de t'en générer un nouveau."
   },
+  "rejEcole": {
+    "checking": "Vérification du lien…",
+    "yourSchool": "Votre école",
+    "yourChild": "votre enfant",
+    "intro": "Votre établissement ouvre un espace MAPO+ pour {prenom} : révisions guidées, devoirs, notes et messagerie avec l'école.",
+    "pupil": "Élève",
+    "klass": "Classe",
+    "school": "Établissement",
+    "onlyPassword": "Tout est déjà rempli par votre école. Choisissez simplement un identifiant et un mot de passe.",
+    "identifier": "Téléphone ou e-mail",
+    "identifierPh": "+237 6 99 12 34 56",
+    "identifierHint": "Le téléphone suffit : aucune adresse e-mail n'est nécessaire.",
+    "password": "Mot de passe",
+    "passwordPh": "6 caractères minimum",
+    "cta": "Ouvrir mon espace",
+    "opening": "Ouverture de votre espace…",
+    "stepAccount": "Création de votre compte…",
+    "stepLink": "Rattachement à votre école…",
+    "stepProfile": "Préparation de l'espace…",
+    "premium": "Premium offert pendant 3 mois par votre école, puis l'offre Découverte.",
+    "errId": "Indiquez un téléphone ou une adresse e-mail.",
+    "errPw": "Le mot de passe doit faire au moins 6 caractères.",
+    "errAccount": "La création du compte a échoué.",
+    "errUsed": "Ce lien a déjà servi à ouvrir un espace. Demandez-en un nouveau à votre école.",
+    "errExpired": "Ce lien a expiré. Demandez-en un nouveau à votre école."
+  },
   "miaOnb": {
     "lead": "Bienvenue sur MAPO+ !",
     "personaQ": "Tu utilises MAPO+ pour…",
@@ -476,7 +502,11 @@
       "scholarship": "Boursier",
       "vulnerable": "Vulnérable",
       "parentPhone": "Tél parent"
-    }
+    },
+    "mapoplusWa": "Envoyer sur WhatsApp",
+    "mapoplusWaMsg": "Bonjour, {ecole} vous ouvre un espace MAPO+ pour {prenom} : devoirs, notes, bulletins et un professeur particulier disponible à toute heure. Cliquez pour l'activer : {lien}",
+    "mapoplusCopyLink": "Copier le lien",
+    "mapoplusHintLien": "Le lien ouvre un espace déjà rattaché à votre école. Il ne sert qu'une fois et expire au bout de 30 jours."
   },
   "pagination": {
     "of": "sur",
@@ -5703,7 +5733,16 @@
     "saved2": "Appliquer",
     "epuisePlafondEnfant": "Tu as atteint la limite que ton parent a fixée pour cette semaine.",
     "accessSons": "Sons du quiz",
-    "accessSonsDesc": "Un son court quand la réponse est juste, et sur les séries. Rien de strident."
+    "accessSonsDesc": "Un son court quand la réponse est juste, et sur les séries. Rien de strident.",
+    "myModules": "Mes modules",
+    "modulesHint": "Les modules d'une formation hors catalogue sont proposés par MIAPO à partir de son intitulé : corrige-les, ce sont eux qui cadrent tes révisions.",
+    "modulesEmpty": "Aucun module pour l'instant. Ajoute-les ci-dessous, ou fais-les proposer depuis ton profil.",
+    "modulePlaceholder": "Nouveau module…",
+    "moduleAdd": "Ajouter",
+    "moduleRemove": "Retirer",
+    "moduleRename": "Renommer ce module",
+    "moduleSave": "Enregistrer",
+    "moduleCancel": "Annuler"
   },
   "cx": {
     "appTitle": "Espace complexe",
