@@ -10,6 +10,9 @@
  * eu l'air de marcher.
  */
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   densiteProgramme, resumerProgramme, refusFichier,
   BUDGET_TEXTE, MAX_OCTETS,
@@ -77,6 +80,35 @@ describe('⚠️ on garde la maquette, pas la couverture', () => {
     const enorme = bourrage(MAQUETTE + COUVERTURE, 400)
     expect(enorme.length).toBeGreaterThan(200000) // ~230 000 caractères
     expect(resumerProgramme(enorme).length).toBeLessThanOrEqual(BUDGET_TEXTE)
+  })
+})
+
+/**
+ * pdf.js coûte 427 Ko. Ce qui se paie n'est pas le chunk : c'est le
+ * PRÉCHARGEMENT du PWA, imposé à chaque installation. Mesuré le 24/08 : le
+ * précache passait de 7 909 à 8 350 Kio, soit +441 Kio pour une fonction que la
+ * plupart des apprenants n'utiliseront jamais. Sur un forfait data africain,
+ * c'est un motif de désinstallation.
+ */
+describe('le PDF ne se paie qu’à l’usage', () => {
+  const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+  const SRC = readFileSync(resolve(RACINE, 'src/utils/pdfProgramme.js'), 'utf8')
+  const VITE = readFileSync(resolve(RACINE, 'vite.config.js'), 'utf8')
+
+  it('la bibliothèque est chargée à la demande, jamais au démarrage', () => {
+    expect(SRC).toContain("await import('pdfjs-dist')")
+    // Un import statique la ferait entrer dans le bundle principal.
+    expect(SRC).not.toMatch(/^import .* from 'pdfjs-dist'/m)
+  })
+
+  it('⚠️ et elle est exclue du préchargement du PWA', () => {
+    expect(VITE).toContain("globIgnores: ['**/pdf-*.js', '**/pdf.worker*']")
+  })
+
+  it('les PDF que l’app GÉNÈRE ne sont pas concernés', () => {
+    // `pdfBulletin-*.js` et jspdf servent aux bulletins et aux exports : eux
+    // doivent rester hors ligne. Le motif `pdf-*` ne les attrape pas.
+    expect('pdfBulletin-abc.js'.startsWith('pdf-')).toBe(false)
   })
 })
 

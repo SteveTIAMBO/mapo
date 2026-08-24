@@ -235,7 +235,14 @@
     "or": "or",
     "modulesPlaceholder": "e.g. Accounting, Marketing, Business law…",
     "validate": "Confirm",
-    "later": "Later"
+    "later": "Later",
+    "pdfImport": "Import the course PDF",
+    "pdfImporting": "Reading the PDF…",
+    "pdfRead": "PDF read: {pages} page(s). The passage closest to a course outline was kept below.",
+    "pdfErrFormat": "This file is not a PDF.",
+    "pdfErrTaille": "This PDF is too large (15 MB maximum).",
+    "pdfErrScanne": "This PDF is a scan: it contains no readable text. Paste the outline, or enter your modules by hand.",
+    "pdfErrIllisible": "This PDF could not be opened."
   },
   "header": {
     "menu": "Menu",

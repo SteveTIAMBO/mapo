@@ -44,6 +44,18 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // ⚠️ pdf.js est EXCLU du préchargement, et c'est délibéré.
+        //
+        // La lecture d'un PDF de programme (import de maquette) tire une
+        // bibliothèque de 427 Ko. Précachée, elle s'imposait à CHAQUE
+        // installation : +441 Kio mesurés, soit 5 % de plus, pour une fonction
+        // que la plupart des apprenants n'utiliseront jamais. Sur un forfait
+        // data africain, c'est le genre de détail qui décide d'une désinstallation.
+        //
+        // Elle est donc chargée à la demande, au premier import. L'opération est
+        // de toute façon EN LIGNE (elle appelle l'IA derrière), donc ne pas
+        // l'avoir hors connexion ne retire rien.
+        globIgnores: ['**/pdf-*.js', '**/pdf.worker*'],
         cleanupOutdatedCaches: true,
         // Greffe les handlers push/notificationclick en tête du SW généré,
         // sans avoir à passer en injectManifest (on garde generateSW).

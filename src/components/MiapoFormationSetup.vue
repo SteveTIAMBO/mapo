@@ -21,6 +21,23 @@
         <label class="fs-label">{{ t('miaForm.url') }} <span class="fs-opt">{{ t('miaForm.optional') }}</span></label>
         <input v-model="url" class="fs-input" type="url" :placeholder="t('miaForm.urlPlaceholder')" />
       </div>
+      <!-- Le PDF de l'ecole fait foi la ou une page web est un argumentaire.
+           Il alimente le meme champ que le copier-coller : l'apprenant VOIT donc
+           ce qui part a l'IA, et peut le corriger. -->
+      <div class="fs-field">
+        <input
+          ref="champPdf" type="file" accept="application/pdf,.pdf"
+          class="fs-file" @change="importerPdf"
+        />
+        <button type="button" class="fs-btn propose" :disabled="lecturePdf" @click="ouvrirPdf">
+          <span v-if="lecturePdf" class="fs-spin"></span>
+          <FileText v-else :size="15" />
+          <span>{{ lecturePdf ? t('miaForm.pdfImporting') : t('miaForm.pdfImport') }}</span>
+        </button>
+        <p v-if="pdfInfo" class="fs-ok">{{ pdfInfo }}</p>
+        <p v-if="pdfErreur" class="fs-err">{{ pdfErreur }}</p>
+      </div>
+
       <div class="fs-field">
         <label class="fs-label">{{ t('miaForm.paste') }} <span class="fs-opt">{{ t('miaForm.optional') }}</span></label>
         <textarea v-model="texte" class="fs-input" rows="2" :placeholder="t('miaForm.pastePlaceholder')"></textarea>
@@ -55,8 +72,10 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { FileText } from 'lucide-vue-next'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
+import { extraireTextePdf, resumerProgramme } from '../utils/pdfProgramme'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 const emit = defineEmits(['done', 'skip'])
@@ -72,6 +91,44 @@ const modules = ref((props.enfant.formationModules || ''))
 const loading = ref(false)
 const error = ref('')
 const proposed = ref(false)
+const champPdf = ref(null)
+const lecturePdf = ref(false)
+const pdfInfo = ref('')
+const pdfErreur = ref('')
+
+function ouvrirPdf() { champPdf.value?.click() }
+
+/**
+ * Lit le PDF du programme et en garde le passage le plus proche d'une maquette.
+ *
+ * Le serveur ne retient que 4 000 caracteres du descriptif : tronquer au debut
+ * aurait envoye la couverture et le mot du directeur, c'est-a-dire exactement
+ * la partie sans modules — et l'IA serait retombee sur l'invention, avec
+ * l'apparence d'un import reussi.
+ *
+ * On enchaine sur la proposition : importer un programme puis devoir cliquer
+ * un second bouton n'aurait aucun sens.
+ */
+async function importerPdf(ev) {
+  const file = ev?.target?.files?.[0]
+  if (ev?.target) ev.target.value = '' // reimporter le meme fichier reste possible
+  if (!file) return
+  lecturePdf.value = true; pdfInfo.value = ''; pdfErreur.value = ''; error.value = ''
+  try {
+    const res = await extraireTextePdf(file)
+    if (!res.ok) {
+      const messages = {
+        format: 'pdfErrFormat', taille: 'pdfErrTaille',
+        scanne: 'pdfErrScanne', illisible: 'pdfErrIllisible',
+      }
+      pdfErreur.value = t('miaForm.' + (messages[res.raison] || 'pdfErrIllisible'))
+      return
+    }
+    texte.value = resumerProgramme(res.texte)
+    pdfInfo.value = t('miaForm.pdfRead', { pages: res.pages })
+  } finally { lecturePdf.value = false }
+  if (formation.value.trim()) await propose()
+}
 
 const moduleChips = computed(() => modules.value.split(',').map((m) => m.trim()).filter(Boolean))
 const canSave = computed(() => moduleChips.value.length > 0)
@@ -160,6 +217,8 @@ function skip() { emit('skip') }
   box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
 }
 .fs-btn.ghost { color: #565b68; background: #eef0f5; }
+.fs-file { display: none; }
+.fs-ok { font-size: 13px; font-weight: 600; color: #1f6b3a; background: #e9f7ef; border-radius: 10px; padding: 8px 11px; margin: 8px 0 0; }
 .fs-err { font-size: 13px; font-weight: 600; color: #b4560a; background: #fff3e6; border-radius: 10px; padding: 8px 11px; margin: 4px 0 0; }
 .fs-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
 .fs-chip { font-size: 12.5px; font-weight: 600; color: #5b3a8e; background: linear-gradient(rgba(var(--pr-rgb, 124, 58, 237), 0.12), rgba(var(--pr-rgb, 124, 58, 237), 0.12)), #fff; border-radius: 999px; padding: 4px 10px; }

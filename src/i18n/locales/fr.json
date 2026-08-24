@@ -235,7 +235,14 @@
     "or": "ou",
     "modulesPlaceholder": "Ex. Comptabilité, Marketing, Droit des affaires…",
     "validate": "Valider",
-    "later": "Plus tard"
+    "later": "Plus tard",
+    "pdfImport": "Importer le PDF du programme",
+    "pdfImporting": "Lecture du PDF…",
+    "pdfRead": "PDF lu : {pages} page(s). Le passage le plus proche d’une maquette a été retenu ci-dessous.",
+    "pdfErrFormat": "Ce fichier n'est pas un PDF.",
+    "pdfErrTaille": "Ce PDF est trop lourd (15 Mo maximum).",
+    "pdfErrScanne": "Ce PDF est un scan : il ne contient aucun texte à lire. Collez le programme, ou saisissez vos modules à la main.",
+    "pdfErrIllisible": "Ce PDF n'a pas pu être ouvert."
   },
   "header": {
     "menu": "Menu",
