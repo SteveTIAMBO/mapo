@@ -142,7 +142,8 @@
     "errPw": "The password must be at least 6 characters.",
     "errAccount": "Account creation failed.",
     "errUsed": "This link has already been used. Ask your school for a new one.",
-    "errExpired": "This link has expired. Ask your school for a new one."
+    "errExpired": "This link has expired. Ask your school for a new one.",
+    "errInvalid": "This link is no longer valid. Ask your school's office for a new one."
   },
   "miaOnb": {
     "lead": "Welcome to MAPO+!",

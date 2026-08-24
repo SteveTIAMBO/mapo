@@ -164,6 +164,10 @@ const errorMsg = computed(() => {
   if (r === 'code_deja_utilise') return t('rejEcole.errUsed')
   if (r === 'code_expire') return t('rejEcole.errExpired')
   if (TEMP.has(r)) return t('rejoindre.errService')
+  // ⚠️ Le message par défaut disait « demande à ton parent de t'en générer un
+  // nouveau » — vu à l'écran sur une invitation d'ÉCOLE, où il envoie la famille
+  // solliciter la mauvaise personne. Le texte suit la provenance du lien.
+  if (estInvitationEcole) return t('rejEcole.errInvalid')
   return t('rejoindre.errInvalid') // code_inconnu / code_incomplet / code_invalide / empty
 })
 
