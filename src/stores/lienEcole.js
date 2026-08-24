@@ -44,6 +44,38 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     }
   }
 
+  /**
+   * Aperçu d'une invitation d'école, AVANT tout compte et SANS la consommer.
+   *
+   * Sert la page d'arrivée : la famille voit le nom de son école, le prénom de
+   * l'enfant et sa classe, donc elle sait qu'elle est au bon endroit avant de
+   * choisir un mot de passe. Pas de jeton ici — par construction, la personne
+   * n'a pas encore de compte.
+   */
+  async function apercuCode(code) {
+    const c = String(code || '').trim()
+    if (!c) return { ok: false, reason: 'code_vide' }
+    if (isDemo()) {
+      return { ok: true, apercu: {
+        ecole: DEMO_LIEN.ecole || 'Collège EDUFREM', prenom: 'Awa',
+        classe: DEMO_LIEN.className || '3ème', cycle: 'secondaire', pays: 'CM',
+        destinataire: 'apprenant', utilise: false, perime: false,
+      } }
+    }
+    try {
+      const res = await fetch(LIEN_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'apercu', code: c }),
+      })
+      const json = await res.json().catch(() => null)
+      if (json && json.ok) return json
+      return { ok: false, reason: (json && json.error) || ('http_' + res.status) }
+    } catch {
+      return { ok: false, reason: 'reseau' }
+    }
+  }
+
   /** Échange le code d'autorisation de l'école contre le lien scellé (côté serveur). */
   async function redeemCode(code) {
     const c = String(code || '').trim()
@@ -169,7 +201,7 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
   }
 
   return {
-    busy, redeemCode,
+    busy, redeemCode, apercuCode,
     fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl,
     fetchPeriodes, fetchNotes,
     fetchMessages, fetchDestinataires, sendMessage, pushSuivi,

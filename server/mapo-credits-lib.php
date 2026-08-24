@@ -186,14 +186,45 @@ if (!function_exists('mc_path')) {
     return $out;
   }
 
-  /** Accorde une offre (APRÈS paiement confirmé) : palier valable 1 mois, jauge
-   *  pleine. Le solde bonus déjà acheté est conservé. */
-  function mc_grant($uid, $offreId) {
+  /** Accorde une offre (APRÈS paiement confirmé) : palier valable 1 mois par
+   *  défaut, jauge pleine. Le solde bonus déjà acheté est conservé.
+   *
+   *  `$jours` permet une durée différente du cycle de l'offre — c'est le cas de
+   *  la bienvenue scolaire (Premium 3 mois offert par l'école, cf. mapo-lien.php).
+   *  Aucune mécanique de retour au gratuit n'est nécessaire : `mc_state()` voit
+   *  `tierExpiry` dépassée et rend `mc_free()`, donc l'offre Découverte. */
+  function mc_grant($uid, $offreId, $jours = 0) {
     $o = mapo_offre($offreId);
-    $exp = gmdate('c', time() + ((int) ($o['cycleJours'] ?? 30)) * 86400);
+    $j = (int) $jours > 0 ? (int) $jours : (int) ($o['cycleJours'] ?? 30);
+    $exp = gmdate('c', time() + $j * 86400);
     return mc_mutate($uid, function ($e) use ($o, $exp) {
       return mc_fresh($o['id'], $exp, (int) ($e['bonus'] ?? 0));
     });
+  }
+
+  /**
+   * Bienvenue scolaire : Premium offert, sans jamais RÉTROGRADER quelqu'un.
+   *
+   * ⚠️ Le piège que ça évite : une famille qui a PAYÉ Premium au mois, puis
+   * reçoit l'invitation de son école, verrait son échéance remplacée par celle
+   * de l'offre — et perdrait des jours qu'elle a payés. Pire dans l'autre sens :
+   * un appel répété (double clic, relance de l'école) repousserait l'échéance
+   * indéfiniment. On n'accorde donc QUE si la nouvelle échéance est plus
+   * lointaine que l'actuelle, et on le DIT à l'appelant.
+   *
+   * Renvoie [accorde(bool), tierExpiry(string)].
+   */
+  function mc_bienvenueEcole($uid, $offreId, $jours) {
+    $cible = time() + max(1, (int) $jours) * 86400;
+    $st = mc_state($uid);
+    $exp = (string) ($st['tierExpiry'] ?? '');
+    $actuelle = $exp !== '' ? strtotime($exp) : 0;
+    if ($actuelle !== false && $actuelle >= $cible) return [false, $exp];
+    $e = mc_grant($uid, $offreId, (int) $jours);
+    // `mc_mutate` rend `null` si le registre n'a pas pu être ouvert. Répondre
+    // « accordé » dans ce cas ferait croire à un Premium qui n'existe pas.
+    if (!is_array($e)) return [false, $exp];
+    return [true, (string) ($e['tierExpiry'] ?? '')];
   }
 
   /** Ajoute des crédits au solde bonus (APRÈS paiement d'une recharge confirmé). */

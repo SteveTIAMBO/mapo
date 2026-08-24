@@ -407,11 +407,19 @@
           <button v-if="!mapoCode" class="btn btn-outline btn-sm" :disabled="mapoBusy" @click="genererCodeMapoPlus">
             <Link2 :size="14" /> {{ mapoBusy ? t('eleves.mapoplusGen') : t('eleves.mapoplusAuth') }}
           </button>
+          <!-- Ce que l'école partage est un LIEN, plus un code à dicter. Le code
+               reste affiché en repli : au téléphone, une famille sans lien
+               cliquable peut encore le saisir dans MAPO+. -->
           <div v-else class="mpz-code-row">
-            <code class="mpz-code">{{ mapoCode }}</code>
-            <button class="btn btn-outline btn-sm" @click="copierCodeMapoPlus"><Copy :size="14" /> {{ mapoCopied ? t('eleves.mapoplusCopied') : t('eleves.mapoplusCopy') }}</button>
+            <a v-if="mapoTel" class="btn btn-primary btn-sm" :href="mapoWaHref" target="_blank" rel="noopener">
+              <Send :size="14" /> {{ t('eleves.mapoplusWa') }}
+            </a>
+            <button class="btn btn-outline btn-sm" @click="copierLienMapoPlus">
+              <Copy :size="14" /> {{ mapoCopied ? t('eleves.mapoplusCopied') : t('eleves.mapoplusCopyLink') }}
+            </button>
           </div>
-          <p v-if="mapoCode" class="mpz-hint">{{ t('eleves.mapoplusHint') }}</p>
+          <p v-if="mapoCode" class="mpz-hint">{{ t('eleves.mapoplusHintLien') }}</p>
+          <p v-if="mapoCode" class="mpz-hint"><code class="mpz-code">{{ mapoCode }}</code></p>
           <p v-if="mapoErr" class="mpz-err">{{ mapoErr }}</p>
         </div>
 
@@ -431,7 +439,7 @@ import { useSchoolStore } from '../stores/school'
 import { onMounted, ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
-import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye, School, Link2, Copy } from 'lucide-vue-next'
+import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye, School, Link2, Copy, Send } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
@@ -439,6 +447,7 @@ import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
 import ExportMenu from '../components/ExportMenu.vue'
+import { lienPartage, lienWhatsapp, canauxDisponibles } from '../utils/invitationMapoPlus'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
@@ -703,9 +712,23 @@ async function genererCodeMapoPlus() {
   if (res && res.ok) mapoCode.value = res.code
   else mapoErr.value = t('eleves.mapoplusErr')
 }
-async function copierCodeMapoPlus() {
-  if (!mapoCode.value) return
-  try { await navigator.clipboard.writeText(mapoCode.value); mapoCopied.value = true; setTimeout(() => { mapoCopied.value = false }, 1800) } catch { /* clipboard indispo : l'utilisateur copie à la main */ }
+// Lien de partage (passe par /inviter, pour l'aperçu WhatsApp) et numéro du
+// parent tel qu'il a été saisi sur la fiche de l'élève.
+const mapoLien = computed(() => (mapoCode.value ? lienPartage(mapoCode.value) : ''))
+const mapoTel = computed(() => canauxDisponibles({
+  parentPhone: detailEleve.value?.parentPhone || '',
+}).whatsapp)
+const mapoWaHref = computed(() => (mapoTel.value && mapoLien.value
+  ? lienWhatsapp(mapoTel.value, t('eleves.mapoplusWaMsg', {
+      prenom: detailEleve.value?.firstName || '',
+      ecole: schoolStore.schoolSettings?.schoolName || schoolStore.schoolSettings?.name || '',
+      lien: mapoLien.value,
+    }))
+  : ''))
+
+async function copierLienMapoPlus() {
+  if (!mapoLien.value) return
+  try { await navigator.clipboard.writeText(mapoLien.value); mapoCopied.value = true; setTimeout(() => { mapoCopied.value = false }, 1800) } catch { /* presse-papiers indispo : le code reste affiché en dessous */ }
 }
 
 const openDeleteConfirm = (eleve) => { deletingEleve.value = eleve; showDeleteConfirm.value = true }

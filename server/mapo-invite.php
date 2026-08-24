@@ -19,16 +19,39 @@
  * à y faire. C'est aussi pour cela que l'URL ne porte que le code.
  */
 
-$code = isset($_GET['c']) ? strtoupper(trim($_GET['c'])) : '';
-// On ne valide pas le code ici (c'est le rôle de mapo-famille.php) : on vérifie
-// seulement sa FORME, pour ne jamais réinjecter n'importe quoi dans une URL.
-if (!preg_match('/^[A-Z0-9]{4,16}$/', $code)) $code = '';
+// Deux invitations arrivent ici, et il ne faut surtout pas les traiter pareil :
+//   - FAMILLE : 8 caractères, alphabet lisible (« KMPQ2R7X »), partagée par un
+//     parent à son enfant.
+//   - ÉCOLE   : « {slug}~{aléatoire} », slug en MINUSCULES
+//     (« stjoseph~KMPQ2R7X »), émise par l'établissement à l'inscription.
+//
+// ⚠️ Le code de l'école ne survivait PAS à cette page : `strtoupper` détruisait
+// son slug et le filtre `[A-Z0-9]` le rejetait, donc le code était effacé en
+// silence. La famille arrivait sur /rejoindre sans invitation — un lien qui a
+// l'air de fonctionner et ne fait rien.
+$brut = isset($_GET['c']) ? trim($_GET['c']) : '';
+$code = '';
+$type = '';
+if (preg_match('/^([a-z0-9-]{2,40})~([A-Za-z0-9]{8,40})$/i', $brut, $m)) {
+  $code = strtolower($m[1]) . '~' . strtoupper($m[2]);   // le slug reste minuscule
+  $type = 'ecole';
+} elseif (preg_match('/^[A-Za-z0-9]{4,16}$/', $brut)) {
+  $code = strtoupper($brut);
+  $type = 'famille';
+}
 
 $base = 'https://mapoplus.app-edufrem.com';
 $cible = $base . '/rejoindre' . ($code !== '' ? '?c=' . rawurlencode($code) : '');
 
-$titre = 'MAPO+ — ton espace de révision t’attend';
-$desc  = "Ton parent t'a créé un espace MAPO+. Clique pour l'ouvrir : révisions guidées, suivi de tes progrès et aide de MIAPO, ton professeur particulier.";
+// L'aperçu ne nomme JAMAIS l'établissement ni l'élève : il est visible de tous
+// ceux à qui le message est transféré. Il dit d'où vient le lien, pas qui.
+if ($type === 'ecole') {
+  $titre = 'MAPO+ — votre école vous ouvre un espace';
+  $desc  = "Votre établissement vous ouvre un espace MAPO+ : devoirs, notes, bulletins et un professeur particulier disponible à toute heure. Cliquez pour l'activer.";
+} else {
+  $titre = 'MAPO+ — ton espace de révision t’attend';
+  $desc  = "Ton parent t'a créé un espace MAPO+. Clique pour l'ouvrir : révisions guidées, suivi de tes progrès et aide de MIAPO, ton professeur particulier.";
+}
 $image = $base . '/icon-mapoplus-512.png';
 
 header('Content-Type: text/html; charset=utf-8');

@@ -521,6 +521,12 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function sendWelcomeVerification(fbUser) {
     if (!fbUser) return false
+    // ⚠️ Un identifiant TÉLÉPHONE est stocké sous forme d'e-mail de synthèse
+    // (« +237…@… »). Lui envoyer un e-mail d'activation n'a pas de destinataire :
+    // l'envoi échoue, et surtout la personne reste sur « vérifiez votre boîte »
+    // sans boîte à vérifier. C'est le cas courant des familles invitées par leur
+    // école, qui s'inscrivent au numéro de téléphone.
+    try { if (isSyntheticEmail(fbUser.email || '')) return false } catch { /* continue */ }
     try {
       // Langue de l'e-mail = langue de l'app (modèles FR/EN de la console).
       try { auth.languageCode = currentLang() === 'en' ? 'en' : 'fr' } catch { /* défaut projet */ }

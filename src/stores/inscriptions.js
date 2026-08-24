@@ -15,6 +15,9 @@ import { useElevesStore } from './eleves'
 import { useFacturationStore } from './facturation'
 import { packPays, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
+import {
+  destinataireParCycle, canauxDisponibles, lienInvitation,
+} from '../utils/invitationMapoPlus'
 
 /**
  * Données de démonstration localisées selon le pays choisi.
@@ -497,6 +500,73 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     } catch {}
   }
 
+  /**
+   * Cycle, pays et nom de l'école — ce que l'invitation doit transporter pour
+   * que la famille n'ait rien à ressaisir.
+   *
+   * ⚠️ Le cycle vient de l'ÉDITION déclarée de l'école, pas d'une déduction sur
+   * le nom de la classe : « 6ème » existe au primaire comme au secondaire selon
+   * les pays, et se tromper enverrait les bulletins au mauvais destinataire.
+   * Import tardif pour ne pas créer de dépendance circulaire entre stores.
+   */
+  const contexteEcole = async () => {
+    let cycle = ''
+    let pays = ''
+    let ecole = ''
+    try {
+      const { useSchoolIdentityStore } = await import('./schoolIdentity')
+      const ident = useSchoolIdentityStore()
+      cycle = ident.edition || ''
+      ecole = ident.nom || ''
+    } catch { /* pas de tenant école (démo) */ }
+    if (!cycle) {
+      try {
+        const { useEditionStore } = await import('./edition')
+        cycle = useEditionStore().current || ''
+      } catch { /* silent */ }
+    }
+    try {
+      const { useSchoolStore } = await import('./school')
+      const s = useSchoolStore().schoolSettings || {}
+      pays = s.country || ''
+      if (!ecole) ecole = s.schoolName || s.name || ''
+    } catch { /* silent */ }
+    // En démonstration, le pays de référence est celui du sélecteur.
+    if (!pays) { try { pays = paysDemo() } catch { /* silent */ } }
+    return { cycle, pays, ecole }
+  }
+
+  /**
+   * Ouvre l'accès MAPO+ d'un élève fraîchement inscrit.
+   *
+   * Renvoie toujours un objet DÉCRIVANT ce qui s'est passé — jamais `null` en cas
+   * d'échec silencieux. L'école doit pouvoir lire « envoyé à ce parent » ou
+   * « aucune adresse, lien à partager », et agir en conséquence.
+   */
+  const ouvrirAccesMapoPlus = async (eleveId, dossier) => {
+    const elevesStore = useElevesStore()
+    const { cycle, pays, ecole } = await contexteEcole()
+    const destinataire = destinataireParCycle(cycle)
+    const canaux = canauxDisponibles({
+      parentEmail: dossier.parentEmail, parentPhone: dossier.parentPhone,
+    })
+    const res = await elevesStore.autoriserMapoPlus(eleveId, {
+      cycle, pays, ecole, destinataire,
+      origine: 'inscription_validee',
+      email: canaux.email,
+    })
+    if (!res || !res.ok) return { ok: false, reason: res?.reason || 'inconnu' }
+    return {
+      ok: true, code: res.code, destinataire, cycle,
+      lien: lienInvitation(res.code, dossier.firstName),
+      // `envoye` dit la VÉRITÉ sur le canal : sans adresse e-mail, rien n'est
+      // parti tout seul et l'école doit partager le lien (un geste, pas un code).
+      envoye: canaux.automatique ? 'email' : '',
+      email: canaux.email, telephone: canaux.whatsapp,
+      demo: !!res.demo,
+    }
+  }
+
   const validateDossier = async (id, validatedBy) => {
     const dossier = dossiers.value.find(d => d.id === id)
     if (!dossier) return
@@ -536,6 +606,26 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
       })
     } catch {}
 
+    // ── Ouverture automatique de l'accès MAPO+ ────────────────────────────
+    //
+    // Décision de Steve du 23/08/2026 : l'école ne doit plus « se casser la tête
+    // à générer un code ». L'invitation naît donc ICI, au moment où l'inscription
+    // devient réelle, et non plus d'un clic dans la fiche de l'élève.
+    //
+    // Le destinataire dépend du cycle : au primaire c'est le parent, à partir du
+    // secondaire c'est l'apprenant (cf. utils/invitationMapoPlus).
+    //
+    // ⚠️ Un échec ici ne doit JAMAIS annuler la validation : l'élève est inscrit,
+    // sa scolarité ne dépend pas de MAPO+. On enregistre le résultat sur le
+    // dossier pour que l'école VOIE ce qui s'est passé — un envoi silencieusement
+    // manqué serait pire qu'un envoi manuel.
+    let invitation = null
+    try {
+      invitation = await ouvrirAccesMapoPlus(eleveId, dossier)
+    } catch (e) {
+      invitation = { ok: false, reason: 'exception' }
+    }
+
     // Update dossier
     await updateDossier(id, {
       status: DOSSIER_STATUS.VALIDE,
@@ -543,6 +633,9 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
       validatedAt: new Date().toISOString(),
       validatedBy,
       inscriptionFeePaid: true,
+      // Trace de l'invitation : code, destinataire, canal réellement utilisé.
+      // C'est ce qui permet à l'école de renvoyer le lien sans le régénérer.
+      mapoplus: invitation,
     })
 
     // Log activity
@@ -663,7 +756,7 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     // CRUD
     createDossier, updateDossier, deleteDossier,
     // Workflow
-    submitDossier, validateDossier, rejectDossier,
+    submitDossier, validateDossier, rejectDossier, ouvrirAccesMapoPlus,
     markComplete, markIncomplete,
     // Attachments
     addAttachment, removeAttachment,

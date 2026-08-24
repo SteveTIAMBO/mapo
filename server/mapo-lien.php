@@ -47,6 +47,15 @@ if (is_file($cfg)) require_once $cfg;
 if (!defined('FIREBASE_PROJECT')) define('FIREBASE_PROJECT', 'mapo-edufrem');
 if (!defined('SA_KEY_FILE')) define('SA_KEY_FILE', __DIR__ . '/mapo-sa-key.json');
 
+// Bienvenue scolaire : ce que reçoit une famille invitée par son école.
+// `illimite` est l'identifiant interne de l'offre Premium (cf. mapo-offres-data.php)
+// — ne pas le renommer « premium » ici, ce nom n'existe pas côté offres.
+// 90 jours plutôt que « 3 mois » : une durée en jours ne dépend pas du mois de
+// l'inscription, donc deux familles inscrites en février et en juillet reçoivent
+// exactement la même chose.
+if (!defined('MAPO_BIENVENUE_OFFRE')) define('MAPO_BIENVENUE_OFFRE', 'illimite');
+if (!defined('MAPO_BIENVENUE_JOURS')) define('MAPO_BIENVENUE_JOURS', 90);
+
 // Logique pure (encode/décode Firestore + tranchage) — testée à part.
 require_once __DIR__ . '/mapo-lien-lib.php';
 
@@ -83,6 +92,47 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') { http_response_code(405); echo json_
 
 $body = json_decode(file_get_contents('php://input'), true) ?: [];
 $action = $body['action'] ?? '';
+
+// ════════════════════════════════════════════════════════════════════
+//  APERÇU d'une invitation — SANS jeton, et SANS la consommer.
+// ════════════════════════════════════════════════════════════════════
+// Pourquoi avant l'authentification : la famille invitée par son école n'a pas
+// encore de compte. Sans cet aperçu, elle arriverait sur un formulaire anonyme
+// (« créez un compte »), sans savoir si le lien est le bon ni de quel enfant il
+// s'agit — et devrait ressaisir ce que l'école connaît déjà.
+//
+// Ce qui est renvoyé est délibérément réduit : nom de l'école, PRÉNOM de
+// l'élève, classe. Ni nom de famille, ni matricule, ni contact. Quelqu'un qui
+// détient le code sait déjà tout cela ; personne d'autre n'apprend rien
+// d'exploitable. Le code n'est PAS consommé : ouvrir le lien deux fois, ou le
+// voir déplié par un aperçu WhatsApp, ne doit pas brûler l'invitation.
+if ($action === 'apercu') {
+  if (!rateLimitOk()) { http_response_code(429); echo json_encode(['error' => 'trop_de_tentatives']); exit; }
+  $code = trim((string)($body['code'] ?? ''));
+  if (!preg_match('/^([a-z0-9-]{2,40})~([A-Za-z0-9]{8,40})$/', $code, $m)) {
+    http_response_code(400); echo json_encode(['error' => 'code_invalide']); exit;
+  }
+  list($tk, $tkErr) = getGoogleAccessToken('https://www.googleapis.com/auth/datastore');
+  if (!$tk) { http_response_code(503); echo json_encode(['error' => 'admin_indisponible']); exit; }
+  list($inv, $c) = fsGet("schools/{$m[1]}/mapoplus_invites/" . rawurlencode($code), $tk);
+  if ($c !== 200 || !$inv) { http_response_code(404); echo json_encode(['error' => 'code_introuvable']); exit; }
+  $f = fsDecodeFields($inv['fields'] ?? []);
+  // Un code déjà utilisé ou périmé se DIT, avec son motif : « ce lien a déjà
+  // servi » est actionnable, « code invalide » envoie la famille au support.
+  $exp = (string)($f['expiresAt'] ?? '');
+  $perime = $exp !== '' && ($t = strtotime($exp)) !== false && $t < time();
+  echo json_encode(['ok' => true, 'apercu' => [
+    'ecole' => (string)($f['ecole'] ?? ''),
+    'prenom' => (string)($f['firstName'] ?? ''),
+    'classe' => (string)($f['className'] ?? ''),
+    'cycle' => (string)($f['cycle'] ?? ''),
+    'pays' => (string)($f['pays'] ?? ''),
+    'destinataire' => (string)($f['destinataire'] ?? 'parent'),
+    'utilise' => !empty($f['used']),
+    'perime' => $perime,
+  ]]);
+  exit;
+}
 
 // ── 1. Vérifier le jeton Firebase de l'apprenant → uid ────────────────
 $uid = verifyFirebaseUid();
@@ -150,11 +200,35 @@ if ($action === 'redeem') {
     http_response_code(502); echo json_encode(['error' => 'lien_non_scelle', 'detail' => $wCode]); exit;
   }
 
+  // ── Bienvenue scolaire : Premium offert 3 mois ────────────────────────
+  //
+  // ⚠️ Accordé ICI, côté serveur, et nulle part ailleurs. Un droit demandé par
+  // le navigateur est un droit forgeable : c'est exactement la faille qui avait
+  // permis d'acheter Premium pour 1 FCFA. Le seul fait qui l'autorise est
+  // l'invitation de l'école, que nous venons de consommer de façon atomique.
+  //
+  // Aucun mécanisme de « retour au gratuit » n'est à écrire : passé l'échéance,
+  // `mc_state()` rend l'offre Découverte de lui-même.
+  $bienvenue = null;
+  try {
+    require_once __DIR__ . '/mapo-credits-lib.php';
+    list($accorde, $jusquau) = mc_bienvenueEcole($uid, MAPO_BIENVENUE_OFFRE, MAPO_BIENVENUE_JOURS);
+    $bienvenue = ['offre' => MAPO_BIENVENUE_OFFRE, 'accorde' => $accorde, 'jusquau' => $jusquau];
+  } catch (Throwable $e) {
+    // Le lien scolaire, lui, EST scellé. Échouer ici ne doit pas défaire un
+    // rattachement réussi : la famille entre, avec l'offre Découverte.
+    $bienvenue = ['offre' => MAPO_BIENVENUE_OFFRE, 'accorde' => false, 'erreur' => 'indisponible'];
+  }
+
   echo json_encode(['ok' => true, 'lien' => [
     'schoolId' => $schoolId, 'eleveId' => $eleveId, 'className' => $className,
     'classId' => $classId, 'matricule' => $matricule,
     'firstName' => $firstName, 'lastName' => $lastName, 'ecole' => (string)($invF['ecole'] ?? ''),
-  ]]);
+    // Contexte de pré-remplissage du profil MAPO+ (cycle, pays, destinataire) :
+    // c'est ce qui évite de redemander à la famille ce que l'école sait déjà.
+    'cycle' => (string)($invF['cycle'] ?? ''), 'pays' => (string)($invF['pays'] ?? ''),
+    'destinataire' => (string)($invF['destinataire'] ?? 'parent'),
+  ], 'bienvenue' => $bienvenue]);
   exit;
 }
 
@@ -469,6 +543,29 @@ exit;
 // ════════════════════════════════════════════════════════════════════
 //  Helpers : jeton Firebase, compte de service, Firestore REST
 // ════════════════════════════════════════════════════════════════════
+/**
+ * Limiteur par IP, pour l'aperçu d'invitation qui est le SEUL point ouvert sans
+ * jeton. Un code fait 8 caractères sur un alphabet de 31 (~8 × 10^11
+ * combinaisons) : le devinage n'est pas la menace réaliste, l'usage abusif du
+ * point d'entrée l'est. Fichier temporaire, volontairement rustique — la
+ * précision n'a pas d'importance ici, la borne oui.
+ */
+function rateLimitOk() {
+  $limit = defined('LIEN_HOURLY_LIMIT') ? (int) LIEN_HOURLY_LIMIT : 120;
+  $ip = $_SERVER['REMOTE_ADDR'] ?? '0';
+  $file = sys_get_temp_dir() . '/mapo_lien_rl_' . md5($ip) . '.json';
+  $now = time();
+  $hits = [];
+  if (file_exists($file)) {
+    $hits = json_decode(@file_get_contents($file), true) ?: [];
+    $hits = array_values(array_filter($hits, function ($t) use ($now) { return $t > $now - 3600; }));
+  }
+  if (count($hits) >= $limit) return false;
+  $hits[] = $now;
+  @file_put_contents($file, json_encode($hits));
+  return true;
+}
+
 function b64url_decode($s) { return base64_decode(strtr($s, '-_', '+/')); }
 
 /** Vérifie le jeton Firebase (RS256 + aud + iss + exp) et renvoie l'uid ou null. */

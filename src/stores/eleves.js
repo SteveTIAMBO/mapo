@@ -432,6 +432,22 @@ export const useElevesStore = defineStore('eleves', () => {
       ecole: opts.ecole || '', used: false, createdAt: new Date().toISOString(),
       // Le code expire au bout de 30 jours (le pont serveur refuse au-delà).
       expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+      // Contexte de PRÉ-REMPLISSAGE du profil MAPO+ : ce que l'école sait déjà
+      // ne doit pas être redemandé à la famille. Le pont serveur les relit et
+      // les renvoie au formulaire d'arrivée.
+      cycle: opts.cycle || '',
+      pays: opts.pays || '',
+      // 'parent' | 'apprenant' — qui est censé ouvrir ce lien (cf. utils/invitationMapoPlus).
+      destinataire: opts.destinataire || 'parent',
+      // Adresse de destination, écrite ICI par l'école.
+      // ⚠️ C'est volontaire et c'est le point de sécurité : quand le serveur
+      // enverra l'invitation, il lira cette adresse dans Firestore et IGNORERA
+      // celle que porterait la requête. Sans ça, le point d'envoi deviendrait un
+      // relais ouvert : « envoie ce message à l'adresse que je te donne ».
+      email: opts.email || '',
+      // Traçabilité : émise à la main depuis la fiche élève, ou automatiquement
+      // à la validation de l'inscription. Sert à comprendre un envoi en double.
+      origine: opts.origine || 'fiche_eleve',
     }
     // Démo : pas de vraie école → code illustratif, aucune écriture Firestore.
     if (authStore.isDemo || !authStore.schoolId) return { ok: true, code, demo: true }
