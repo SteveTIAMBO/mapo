@@ -614,13 +614,38 @@ router.beforeEach(async (to) => {
     return { name: 'Dashboard' }
   }
 
+  /**
+   * ⚠️ Les PAGES PUBLIQUES échappent au confinement — vérifié à l'écran le
+   * 23/08/2026, où l'échec était parfaitement muet.
+   *
+   * Un parent déjà connecté à MAPO+ sur son téléphone qui ouvrait le lien
+   * d'invitation de son école (`/rejoindre?c=…`) était renvoyé vers son espace :
+   * page blanche, aucune erreur, et l'invitation JAMAIS consommée. Or c'est le
+   * cas le plus courant — on clique le lien depuis le téléphone où l'on est déjà
+   * connecté. Même effet sur `/verifier-email`, `/inscription` et le retour
+   * OAuth de Carré : autant de portes d'entrée qui se refermaient en silence.
+   *
+   * On énumère ces routes plutôt que de prendre tout `requiresAuth === false` :
+   * l'accueil et la vitrine sont publics eux aussi, et y renvoyer un parent
+   * connecté vers son espace est le comportement VOULU. Une liste nommée dit
+   * l'intention — « ces pages doivent aboutir » — là où un critère large
+   * changerait en silence l'atterrissage de tout le monde.
+   */
+  const ROUTES_ACTION_PUBLIQUES = new Set([
+    'Rejoindre',        // invitation d'une école, ou lien magique famille
+    'VerifierEmail',    // activation du compte
+    'CarreCallback',    // retour du flux OAuth Carré
+    'VerifierDiplome',  // outil public de vérification
+  ])
+  const routePublique = ROUTES_ACTION_PUBLIQUES.has(to.name)
+
   // Compte élève résiduel : confiné à son profil.
-  if (isEleve && to.name !== 'Profil') {
+  if (isEleve && !routePublique && to.name !== 'Profil') {
     return { name: 'Profil' }
   }
 
   // Parent : son seul espace est MAPO+ (et son profil).
-  if (isParent && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
+  if (isParent && !routePublique && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
     return { name: parentHome }
   }
 

@@ -184,6 +184,42 @@ describe('le droit Premium offert ne peut pas être réclamé par le client', ()
   })
 })
 
+describe('⚠️ le garde ne referme pas les portes d’entrée', () => {
+  /**
+   * Défaut vu à l'écran le 23/08/2026, et parfaitement muet : un parent déjà
+   * connecté à MAPO+ sur son téléphone qui ouvrait le lien d'invitation de son
+   * école était renvoyé vers son espace. Page blanche, aucune erreur, et
+   * l'invitation JAMAIS consommée — alors que c'est le cas le plus courant.
+   */
+  const routeur = lire('router/index.js')
+
+  it('les routes d’action publiques échappent au confinement', () => {
+    expect(routeur).toContain('ROUTES_ACTION_PUBLIQUES')
+    for (const nom of ['Rejoindre', 'VerifierEmail', 'CarreCallback']) {
+      const i = routeur.indexOf('ROUTES_ACTION_PUBLIQUES = new Set([')
+      const bloc = routeur.slice(i, routeur.indexOf('])', i))
+      expect(bloc, `${nom} devrait rester atteignable`).toContain(`'${nom}'`)
+    }
+  })
+
+  it('le confinement parent ET élève consulte bien cette exception', () => {
+    const src = sansCommentaires(routeur)
+    for (const garde of ['isEleve && ', 'isParent && ']) {
+      const i = src.indexOf(garde + '!routePublique')
+      expect(i, `le garde « ${garde} » ignore les routes d'action`).toBeGreaterThan(0)
+    }
+  })
+
+  it('l’accueil et la vitrine, eux, RESTENT confinés', () => {
+    // Y laisser un parent connecté changerait l'atterrissage de tout le monde.
+    const i = routeur.indexOf('ROUTES_ACTION_PUBLIQUES = new Set([')
+    const bloc = routeur.slice(i, routeur.indexOf('])', i))
+    for (const nom of ['Home', 'Welcome', 'Demo', 'Dashboard']) {
+      expect(bloc, `${nom} ne doit pas figurer dans les exceptions`).not.toContain(`'${nom}'`)
+    }
+  })
+})
+
 describe('l’invitation part de l’école, et se raconte', () => {
   it('la validation d’une inscription ouvre l’accès MAPO+', () => {
     const src = lire('stores/inscriptions.js')
