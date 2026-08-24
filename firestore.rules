@@ -45,10 +45,35 @@ rules_version = '2';
 //   get b2c/enfant_ea-A → AUTORISÉ · get b2c/enfant_ea-B (le frère) → REFUSÉ.
 // Le refus du `list` n'a PAS pu être simulé (le bac à sable n'offre que
 // get/create/update/delete) — il est déduit de la règle, pas mesuré.
-// La base Firebase `mapo-edufrem` est PARTAGÉE avec un autre produit
-// (collections community_posts, cf_dates, requests… + fonctions mobi*) :
-// publier ce fichier sans comparaison risquerait d'écraser leurs règles.
-// RÈGLE : toujours COMPARER avec la console avant de publier.
+// ── ÉTAT MESURÉ EN CONSOLE LE 2026-08-23 ──────────────────────────
+//
+// Ce fichier disait que la base `mapo-edufrem` était PARTAGÉE avec un autre
+// produit, et qu'un copier-coller écraserait ses règles. C'était FAUX, et cette
+// phrase a servi deux fois à refuser un travail légitime. Comparaison faite
+// bloc par bloc avec la production :
+//
+//   • 25 des 28 blocs `match` sont IDENTIQUES au caractère près.
+//   • Les 3 écarts sont cosmétiques, à sens constant :
+//       - `/b2c/` : les fonctions `estMonProfil` et `scolariteInchangee` sont
+//         dans l'ordre inverse (contenu identique, longueur identique) ;
+//       - `/users/` : ne diffère QUE parce que `/b2c/` y est imbriqué ;
+//       - `/mapoplus_users/` : la prod inline les aides (`request.auth != null`
+//         et un `exists(...superAdmins...)`) au lieu d'appeler `isSignedIn()`
+//         et `isSuperAdmin()`.
+//   • La prod a UN bloc en plus : `match /users/{userId}/{sub}/{docId=**}`,
+//     doublon exact de la règle imbriquée `/{sub}/{docId=**}` — inerte.
+//
+// Autrement dit : ce fichier EST déployable. La comparaison reste une bonne
+// habitude, ce n'est plus un interdit.
+//
+// ⚠️ En revanche, les collections MOBI (admins, students, requests,
+// community_posts, cf_dates, testimonials, articles, events) et
+// `paiements_scolarite` N'EXISTENT PAS dans cette base : les données mesurées
+// se réduisent à ligues, mapoplus_users, quizBank, superAdmins et users (et
+// pas encore `schools`, aucune école n'étant déployée). Les règles MOBI
+// ci-dessous ne gardent donc RIEN — vestige d'une migration jamais faite.
+// Les garder est un risque dormant : elles autoriseraient des écritures le jour
+// où quelque chose créerait ces collections.
 // ═══════════════════════════════════════════════════════════════════
 
 service cloud.firestore {

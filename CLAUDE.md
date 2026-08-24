@@ -13,8 +13,12 @@ Ne demande plus à Steve de téléverser les fichiers — c'était la consigne d
 - **Permissions sur le serveur** : endpoints publics en `644`, **configs secrètes en `600`** (c'est la convention déjà en place dans `mapo/`). Après un déploiement front, purger le service worker avant de tester.
 - **Règles Firestore** : jamais déployées par la CI. Voir la section dédiée ci-dessous.
 
-## Règles Firestore : remplacement chirurgical UNIQUEMENT
-La base `mapo-edufrem` est **partagée avec un autre produit** (MOBI : `community_posts`, `cf_dates`, `requests`…). Coller `firestore.rules` du repo dans la console **écraserait leurs règles**. Le fichier du repo est une documentation, pas la source déployée : la prod a un ordre de blocs différent et des règles en plus. Toujours comparer avec la console, puis ne remplacer que le bloc visé. Console : compte `contact@edufrem.com`, profil `u/4`.
+## Règles Firestore (comparé en console le 23/08/2026)
+La base `mapo-edufrem` n'est **PAS** partagée avec MOBI — Steve l'avait déjà corrigé le 05/08, et la mesure le confirme : les collections MOBI (`admins`, `students`, `requests`, `community_posts`, `cf_dates`…) et `paiements_scolarite` **n'existent pas** dans cette base. Les données s'y réduisent à `ligues`, `mapoplus_users`, `quizBank`, `superAdmins`, `users` (pas encore `schools`, aucune école déployée), et le projet ne déclare qu'**une seule application**.
+
+Comparaison bloc par bloc : **25 des 28 blocs `match` sont identiques au caractère près**. Les 3 écarts sont cosmétiques (ordre de deux fonctions dans `/b2c/`, aides inlinées dans `/mapoplus_users/`), plus un doublon inerte en prod. **`firestore.rules` du dépôt est donc déployable** ; comparer reste une bonne habitude, ce n'est plus un interdit. Console : compte `contact@edufrem.com`, profil `u/4`.
+
+⚠️ Les règles MOBI encore présentes ne gardent aucune donnée : vestige d'une migration jamais faite, et risque dormant si quelque chose créait ces collections. À trancher avec Steve avant de les retirer.
 
 ## Tests
 `node tests/enfants-stockage.test.mjs` — vérifie le stockage MAPO+ (1 doc par enfant, migration, isolement du compte enfant) contre un faux Firestore, sans compte ni réseau. À lancer après toute modification de `src/stores/enfantsAutonomes.js`.
