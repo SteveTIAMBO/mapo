@@ -242,7 +242,15 @@
     "pdfErrFormat": "Ce fichier n'est pas un PDF.",
     "pdfErrTaille": "Ce PDF est trop lourd (15 Mo maximum).",
     "pdfErrScanne": "Ce PDF est un scan : il ne contient aucun texte à lire. Collez le programme, ou saisissez vos modules à la main.",
-    "pdfErrIllisible": "Ce PDF n'a pas pu être ouvert."
+    "pdfErrIllisible": "Ce PDF n'a pas pu être ouvert.",
+    "urlLire": "Lire cette page",
+    "urlReading": "Lecture de la page…",
+    "urlRead": "Page lue. Le passage le plus proche d’une maquette a été retenu ci-dessous.",
+    "urlErrHttps": "Seules les adresses en https sont acceptées.",
+    "urlErrInvalide": "Cette adresse n’est pas valide.",
+    "urlErrInterne": "Cette adresse pointe vers un réseau interne : elle est refusée.",
+    "urlErrInjoignable": "Cette page n’a pas pu être ouverte.",
+    "urlErrVide": "Cette page ne contient presque pas de texte — beaucoup de sites d’écoles s’affichent en JavaScript. Essayez le PDF du programme, ou collez-le."
   },
   "header": {
     "menu": "Menu",

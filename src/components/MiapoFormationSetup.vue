@@ -20,6 +20,17 @@
       <div class="fs-field">
         <label class="fs-label">{{ t('miaForm.url') }} <span class="fs-opt">{{ t('miaForm.optional') }}</span></label>
         <input v-model="url" class="fs-input" type="url" :placeholder="t('miaForm.urlPlaceholder')" />
+        <!-- Ce champ etait saisi, enregistre... et relu par RIEN. Il sert enfin. -->
+        <button
+          type="button" class="fs-btn propose fs-lire"
+          :disabled="!url.trim() || lectureUrl" @click="lireUrl"
+        >
+          <span v-if="lectureUrl" class="fs-spin"></span>
+          <Globe v-else :size="15" />
+          <span>{{ lectureUrl ? t('miaForm.urlReading') : t('miaForm.urlLire') }}</span>
+        </button>
+        <p v-if="urlInfo" class="fs-ok">{{ urlInfo }}</p>
+        <p v-if="urlErreur" class="fs-err">{{ urlErreur }}</p>
       </div>
       <!-- Le PDF de l'ecole fait foi la ou une page web est un argumentaire.
            Il alimente le meme champ que le copier-coller : l'apprenant VOIT donc
@@ -72,7 +83,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { FileText } from 'lucide-vue-next'
+import { FileText, Globe } from 'lucide-vue-next'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
 import { extraireTextePdf, resumerProgramme } from '../utils/pdfProgramme'
@@ -95,6 +106,40 @@ const champPdf = ref(null)
 const lecturePdf = ref(false)
 const pdfInfo = ref('')
 const pdfErreur = ref('')
+
+const lectureUrl = ref(false)
+const urlInfo = ref('')
+const urlErreur = ref('')
+
+/**
+ * Va chercher la page du programme et en garde la partie utile.
+ *
+ * Meme chemin que l'import PDF : le texte atterrit dans le champ visible, donc
+ * l'apprenant VOIT ce qui part a l'IA, puis la proposition s'enchaine.
+ *
+ * ⚠️ Beaucoup de sites d'ecoles s'affichent en JavaScript : la page recuperee
+ * est alors une coquille. Le serveur refuse en dessous de 400 caracteres, et on
+ * oriente vers le PDF plutot que de soumettre du bruit au modele.
+ */
+async function lireUrl() {
+  if (!url.value.trim() || lectureUrl.value) return
+  lectureUrl.value = true; urlInfo.value = ''; urlErreur.value = ''; error.value = ''
+  try {
+    const res = await tuteur.lireProgrammeUrl(url.value)
+    if (!res.ok) {
+      const messages = {
+        https_requis: 'urlErrHttps', url_invalide: 'urlErrInvalide', port_interdit: 'urlErrInvalide',
+        hote_interdit: 'urlErrInvalide', adresse_interne: 'urlErrInterne', dns: 'urlErrInjoignable',
+        page_vide: 'urlErrVide', pas_une_page: 'urlErrVide',
+      }
+      urlErreur.value = t('miaForm.' + (messages[res.reason] || 'urlErrInjoignable'))
+      return
+    }
+    texte.value = resumerProgramme(res.texte)
+    urlInfo.value = t('miaForm.urlRead')
+  } finally { lectureUrl.value = false }
+  if (formation.value.trim()) await propose()
+}
 
 function ouvrirPdf() { champPdf.value?.click() }
 
@@ -218,6 +263,7 @@ function skip() { emit('skip') }
 }
 .fs-btn.ghost { color: #565b68; background: #eef0f5; }
 .fs-file { display: none; }
+.fs-lire { margin-top: 8px; }
 .fs-ok { font-size: 13px; font-weight: 600; color: #1f6b3a; background: #e9f7ef; border-radius: 10px; padding: 8px 11px; margin: 8px 0 0; }
 .fs-err { font-size: 13px; font-weight: 600; color: #b4560a; background: #fff3e6; border-radius: 10px; padding: 8px 11px; margin: 4px 0 0; }
 .fs-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }

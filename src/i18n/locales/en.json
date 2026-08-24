@@ -242,7 +242,15 @@
     "pdfErrFormat": "This file is not a PDF.",
     "pdfErrTaille": "This PDF is too large (15 MB maximum).",
     "pdfErrScanne": "This PDF is a scan: it contains no readable text. Paste the outline, or enter your modules by hand.",
-    "pdfErrIllisible": "This PDF could not be opened."
+    "pdfErrIllisible": "This PDF could not be opened.",
+    "urlLire": "Read this page",
+    "urlReading": "Reading the page…",
+    "urlRead": "Page read. The passage closest to a course outline was kept below.",
+    "urlErrHttps": "Only https addresses are accepted.",
+    "urlErrInvalide": "This address is not valid.",
+    "urlErrInterne": "This address points to an internal network: it is refused.",
+    "urlErrInjoignable": "This page could not be opened.",
+    "urlErrVide": "This page holds almost no text — many school websites render in JavaScript. Try the course PDF, or paste it."
   },
   "header": {
     "menu": "Menu",

@@ -1395,6 +1395,38 @@ export const useTuteurStore = defineStore('tuteur', () => {
   // Propose/extrait les modules d'une formation (nom + établissement + descriptif
   // optionnel). Sans descriptif : MIAPO propose les modules typiques ; l'apprenant
   // complète / modifie / valide.
+  /**
+   * Lit la page du programme d'une formation et en rend le texte.
+   *
+   * Le champ « lien du programme » existait depuis des mois : saisi,
+   * enregistré, affiché — et relu par RIEN. Les modules étaient donc devinés
+   * depuis le seul intitulé de la formation, d'où des programmes plausibles et
+   * faux. La récupération se fait CÔTÉ SERVEUR (le navigateur ne peut pas lire
+   * une page d'un autre domaine), avec les gardes SSRF de `mapo-ia.php`.
+   *
+   * Aucun modèle n'est appelé ici : la tâche ne coûte aucun crédit. C'est
+   * l'appel suivant, `extraireModules`, qui en consomme.
+   */
+  async function lireProgrammeUrl(url) {
+    const propre = String(url || '').trim()
+    if (!propre) return { ok: false, reason: 'url_invalide' }
+    try {
+      const user = fbAuth.currentUser
+      const token = user ? await user.getIdToken().catch(() => null) : null
+      const headers = { 'Content-Type': 'application/json' }
+      if (token) headers['Authorization'] = 'Bearer ' + token
+      const res = await fetch(IA_URL, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'fetch_programme', data: { url: propre } }),
+      })
+      const json = await res.json().catch(() => null)
+      noteCredits(json)
+      if (json && json.ok && json.texte) return { ok: true, texte: String(json.texte) }
+      return { ok: false, reason: (json && json.error) || 'injoignable' }
+    } catch { return { ok: false, reason: 'reseau' } }
+  }
+
   async function extraireModules({ formation, ecole = '', texte = '' }) {
     try {
       const user = fbAuth.currentUser
@@ -1522,7 +1554,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
-    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
+    getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, lireProgrammeUrl, evaluerReponse, chatTuteur, translateUI,
   }
 })
 
