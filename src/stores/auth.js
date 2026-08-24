@@ -480,7 +480,12 @@ export const useAuthStore = defineStore('auth', () => {
             displayName: (displayName || '').trim(),
             firstName: prenom || '',
             lastName: reste.join(' '),
-            role: 'parent',
+            // ⚠️ Ce champ valait 'parent' EN DUR : un apprenant qui avait
+            // explicitement coché « pour moi » à l'inscription se retrouvait
+            // enregistre comme parent. Le confinement a MAPO+ ne s'appuie plus
+            // sur ce role mais sur `b2c` (cf. router/index.js), donc le dire
+            // vrai ne change plus rien a la navigation.
+            role: meta.role === 'apprenant' ? 'apprenant' : 'parent',
             b2c: true,
             schoolId: null,
             status: 'active',

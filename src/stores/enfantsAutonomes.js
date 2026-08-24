@@ -566,8 +566,21 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     mode.value = m === 'apprenant' ? 'apprenant' : 'parent'
     try { localStorage.setItem(MODE_KEY(owner.value), mode.value) } catch { /* quota : on garde en mémoire */ }
   }
+  /**
+   * Le point de vue choisi vit en LOCAL, donc il ne suit pas l'utilisateur d'un
+   * appareil à l'autre : un apprenant qui se reconnecte ailleurs retombait en
+   * mode « parent », et se voyait proposer d'ajouter un enfant.
+   *
+   * Le profil du compte porte désormais le rôle réellement choisi à
+   * l'inscription : il sert de repli quand aucun choix local n'existe. Le choix
+   * local reste PRIORITAIRE — c'est lui qui porte la bascule « je confie le
+   * téléphone », qui ne doit pas être annulée par le profil.
+   */
   function loadMode() {
-    try { mode.value = localStorage.getItem(MODE_KEY(owner.value)) === 'apprenant' ? 'apprenant' : 'parent' } catch { mode.value = 'parent' }
+    let local = null
+    try { local = localStorage.getItem(MODE_KEY(owner.value)) } catch { local = null }
+    if (local === 'apprenant' || local === 'parent') mode.value = local
+    else mode.value = authStore.userProfile?.role === 'apprenant' ? 'apprenant' : 'parent'
     loadSession()
   }
 

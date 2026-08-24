@@ -606,11 +606,24 @@ router.beforeEach(async (to) => {
    */
   const isParent = authStore.userProfile?.role === 'parent'
   const isEleve = authStore.userProfile?.role === 'eleve'
+  /**
+   * Compte MAPO+ (B2C), quel que soit son point de vue.
+   *
+   * ⚠️ Le confinement s'appuyait sur `role === 'parent'` — ce qui marchait par
+   * ACCIDENT : l'inscription écrivait 'parent' en dur, même pour un apprenant.
+   * En rendant ce rôle sincère, ce garde aurait laissé un apprenant errer dans
+   * l'ERP, puis le RBAC l'aurait renvoyé au Dashboard : une boucle, et l'écran
+   * précédent serait resté affiché sans la moindre erreur.
+   *
+   * On teste donc ce qui définit vraiment ces comptes. Le repli sur `isParent`
+   * couvre les comptes créés AVANT que `b2c` n'existe.
+   */
+  const isB2C = authStore.userProfile?.b2c === true || isParent
   const parentHome = 'ParentMiapo'
 
   if (to.name === 'Login' && isLoggedIn) {
     if (isEleve) return { name: 'Profil' }
-    if (isParent) return { name: parentHome }
+    if (isB2C) return { name: parentHome }
     return { name: 'Dashboard' }
   }
 
@@ -644,13 +657,13 @@ router.beforeEach(async (to) => {
     return { name: 'Profil' }
   }
 
-  // Parent : son seul espace est MAPO+ (et son profil).
-  if (isParent && !routePublique && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
+  // Compte MAPO+ (parent OU apprenant) : son seul espace est MAPO+ et son profil.
+  if (isB2C && !routePublique && to.name !== 'ParentMiapo' && to.name !== 'Profil') {
     return { name: parentHome }
   }
 
   // Vérification des permissions par module (route guard RBAC)
-  if (isLoggedIn && !isParent) {
+  if (isLoggedIn && !isB2C) {
     const routeSegment = to.path.split('/').filter(Boolean)[0]
     const moduleKey = ROUTE_PERMISSION_MAP[routeSegment]
     if (moduleKey) {
