@@ -14,7 +14,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  densiteProgramme, resumerProgramme, refusFichier,
+  densiteProgramme, resumerProgramme, refusFichier, contientMaquette,
   BUDGET_TEXTE, MAX_OCTETS,
 } from '../utils/pdfProgramme'
 
@@ -109,6 +109,70 @@ describe('le PDF ne se paie qu’à l’usage', () => {
     // `pdfBulletin-*.js` et jspdf servent aux bulletins et aux exports : eux
     // doivent rester hors ligne. Le motif `pdf-*` ne les attrape pas.
     expect('pdfBulletin-abc.js'.startsWith('pdf-')).toBe(false)
+  })
+})
+
+/**
+ * ⚠️ MESURÉ EN PRODUCTION le 24/08, sur la page réelle d'un Executive MBA :
+ * 23 920 caractères de VRAI contenu — mission, valeurs, conditions d'admission,
+ * contact — et AUCUNE liste de modules. Les seules occurrences d'« ECTS » et de
+ * « Module » étaient dans les prérequis (« 180 crédits ECTS ») et dans le menu
+ * du pied de page (« Modules courts et Bootcamps »).
+ *
+ * La densité de vocabulaire, elle, valait 26 sur ce menu : aussi haute que sur
+ * une vraie maquette. Elle ne pouvait donc pas trancher.
+ */
+describe('plaquette commerciale ou vraie maquette ?', () => {
+  const PLAQUETTE = "IRIIG - Executive MBA - Corporate Entrepreneurship & Innovation. "
+    + 'Missions et valeurs. Mission & Pédagogie. Compétences & Valeurs. Diversité & Inclusion. '
+    + "Qui sommes-nous ? Nous rejoindre. Programmes. Masters of Science. MSc – Management des "
+    + "Projets d'Innovation. MSc - Financement de l'Innovation. Candidature. "
+    + "Professionnels ayant validé un bac+3/bac+4, soit au moins 180 crédits ECTS, avec minimum "
+    + "5 ans d'expérience professionnelle. Modules courts et Bootcamps. Contactez-nous."
+
+  const MAQUETTE = 'Semestre 1 : UE1 Stratégie d’entreprise 6 ECTS, UE2 Comptabilité 4 crédits, '
+    + 'UE3 Marketing digital 5 ECTS. Semestre 2 : UE4 Droit des affaires 30 h, '
+    + 'UE5 Gestion de projet, coefficient 2.'
+
+  it('⚠️ la plaquette est REFUSÉE, malgré ses 180 crédits ECTS', () => {
+    // Un seul marqueur, dans les prérequis : ce n'est pas une maquette.
+    expect(contientMaquette(PLAQUETTE)).toBe(false)
+  })
+
+  it('une vraie maquette est acceptée', () => {
+    expect(contientMaquette(MAQUETTE)).toBe(true)
+  })
+
+  it('la DENSITÉ, elle, ne savait pas les distinguer', () => {
+    // C'est la raison d'être de ce second contrôle : le menu d'un site d'école
+    // est saturé de « programme », « cours », « module ».
+    expect(densiteProgramme(PLAQUETTE)).toBeGreaterThan(3)
+  })
+
+  it('rien du tout est refusé, sans exploser', () => {
+    for (const x of [null, undefined, '', 'Bienvenue sur notre site.']) {
+      expect(contientMaquette(x)).toBe(false)
+    }
+  })
+
+  it('⚠️ l’heure des PORTES OUVERTES n’est pas un volume horaire', () => {
+    // Première version du contrôle, prise en défaut sur la vraie page : elle
+    // comptait « Portes Ouvertes - samedi 12 septembre à 10h » DEUX fois, et
+    // ces deux occurrences plus « 180 crédits ECTS » atteignaient le seuil.
+    // La plaquette passait donc pour une maquette.
+    expect(contientMaquette(
+      'Prochaine rentrée le 13 octobre 2026. IMMERSION : Matinée Portes Ouvertes '
+      + "samedi 12 septembre à 10h. Ouvert de 9 h à 18 h. Au moins 180 crédits ECTS requis.",
+    )).toBe(false)
+  })
+
+  it('un seul « 180 crédits ECTS » dans les prérequis ne suffit pas', () => {
+    expect(contientMaquette('Admission : bac+3, soit 180 crédits ECTS, et 5 ans d’expérience.')).toBe(false)
+  })
+
+  it('une énumération, même sans ECTS, suffit', () => {
+    // Beaucoup de maquettes africaines numérotent leurs UE sans parler d'ECTS.
+    expect(contientMaquette('UE1 Comptabilité générale. UE2 Fiscalité. UE3 Audit.')).toBe(true)
   })
 })
 

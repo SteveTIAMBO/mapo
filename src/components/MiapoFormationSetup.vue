@@ -86,7 +86,7 @@ import { useI18n } from 'vue-i18n'
 import { FileText, Globe } from 'lucide-vue-next'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useTuteurStore } from '../stores/tuteur'
-import { extraireTextePdf, resumerProgramme } from '../utils/pdfProgramme'
+import { extraireTextePdf, resumerProgramme, contientMaquette } from '../utils/pdfProgramme'
 
 const props = defineProps({ enfant: { type: Object, required: true } })
 const emit = defineEmits(['done', 'skip'])
@@ -135,6 +135,11 @@ async function lireUrl() {
       urlErreur.value = t('miaForm.' + (messages[res.reason] || 'urlErrInjoignable'))
       return
     }
+    // ⚠️ Une page d'ecole est une PLAQUETTE, pas une maquette. Mesure sur un
+    // vrai Executive MBA : 23 920 caracteres de mission, valeurs et conditions
+    // d'admission, et pas une seule liste de modules. La soumettre au modele
+    // l'aurait fait inventer en ayant l'air d'avoir lu la page.
+    if (!contientMaquette(res.texte)) { urlErreur.value = t('miaForm.urlErrSansMaquette'); return }
     texte.value = resumerProgramme(res.texte)
     urlInfo.value = t('miaForm.urlRead')
   } finally { lectureUrl.value = false }

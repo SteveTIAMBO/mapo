@@ -250,7 +250,8 @@
     "urlErrInvalide": "Cette adresse n’est pas valide.",
     "urlErrInterne": "Cette adresse pointe vers un réseau interne : elle est refusée.",
     "urlErrInjoignable": "Cette page n’a pas pu être ouverte.",
-    "urlErrVide": "Cette page ne contient presque pas de texte — beaucoup de sites d’écoles s’affichent en JavaScript. Essayez le PDF du programme, ou collez-le."
+    "urlErrVide": "Cette page ne contient presque pas de texte — beaucoup de sites d’écoles s’affichent en JavaScript. Essayez le PDF du programme, ou collez-le.",
+    "urlErrSansMaquette": "Cette page présente la formation, mais ne publie pas la liste des modules — c'est le cas de beaucoup de sites d'écoles. Importez le PDF du programme, ou saisissez vos modules."
   },
   "header": {
     "menu": "Menu",

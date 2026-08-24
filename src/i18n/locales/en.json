@@ -250,7 +250,8 @@
     "urlErrInvalide": "This address is not valid.",
     "urlErrInterne": "This address points to an internal network: it is refused.",
     "urlErrInjoignable": "This page could not be opened.",
-    "urlErrVide": "This page holds almost no text — many school websites render in JavaScript. Try the course PDF, or paste it."
+    "urlErrVide": "This page holds almost no text — many school websites render in JavaScript. Try the course PDF, or paste it.",
+    "urlErrSansMaquette": "This page presents the course but does not publish its module list — as most school websites do. Import the course PDF, or enter your modules."
   },
   "header": {
     "menu": "Menu",

@@ -76,6 +76,41 @@ export function resumerProgramme(texte, budget = BUDGET_TEXTE) {
   return t.slice(meilleurDebut, meilleurDebut + budget).trim()
 }
 
+/**
+ * Le texte ressemble-t-il à une MAQUETTE, ou à une plaquette commerciale ?
+ *
+ * MESURÉ le 24/08 sur la page réelle d'un Executive MBA : 23 920 caractères de
+ * vrai contenu — mission, valeurs, conditions d'admission, contact — et AUCUNE
+ * liste de modules. Les seules occurrences d'« ECTS » et de « Module » étaient
+ * dans les critères d'entrée (« 180 crédits ECTS ») et dans le menu du pied de
+ * page (« Modules courts et Bootcamps »).
+ *
+ * ⚠️ La densité de vocabulaire ne suffit donc PAS : un menu de site d'école est
+ * saturé de « programme », « cours », « module ». Ce qui distingue une maquette,
+ * c'est l'ÉNUMÉRATION — « UE1, UE2 », « Semestre 1 », « 6 ECTS », « 30 h ». On
+ * compte ces marqueurs numérotés, pas les mots isolés.
+ *
+ * Sans ce contrôle, on aurait soumis un menu au modèle, qui serait retombé sur
+ * l'invention en ayant l'air d'avoir lu la page — exactement le défaut qu'on
+ * cherchait à corriger.
+ */
+export function contientMaquette(texte) {
+  const t = String(texte || '')
+  const compte = (re) => (t.match(re) || []).length
+  // FORT : une ÉNUMÉRATION. C'est le seul signal qu'une plaquette n'imite pas.
+  const fort = compte(/\b(UE|Module|Bloc|Semestre|Unité d'enseignement)\s*n?°?\s*\d/gi)
+  // APPUI : corrobore, mais ne suffit jamais seul — « 180 crédits ECTS » figure
+  // dans les CONDITIONS D'ADMISSION de n'importe quelle plaquette.
+  const appui = compte(/\b\d+\s*(ECTS|crédits?)\b/gi)
+    + compte(/\bcoefficient\s*\d/gi)
+    + compte(/\bvolume horaire\b/gi)
+  // ⚠️ Pas de « \d+ h » nu dans les marqueurs : première version, il comptait
+  // « Portes Ouvertes à 10h » comme un volume horaire — mesuré sur une vraie
+  // page d'école, où ces deux occurrences suffisaient à faire passer une
+  // plaquette pour une maquette.
+  return fort >= 2 || (fort >= 1 && appui >= 1) || appui >= 3
+}
+
 /** Le fichier est-il exploitable ? Renvoie un motif de refus, ou ''. */
 export function refusFichier(file) {
   if (!file) return 'aucun'
