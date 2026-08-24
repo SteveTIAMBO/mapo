@@ -204,7 +204,10 @@ describe('⚠️ le garde ne referme pas les portes d’entrée', () => {
 
   it('le confinement parent ET élève consulte bien cette exception', () => {
     const src = sansCommentaires(routeur)
-    for (const garde of ['isEleve && ', 'isParent && ']) {
+    // `isParent` est devenu `isB2C` le 24/08 : le confinement portait sur le
+    // LIBELLÉ du rôle, ce qui ne marchait que parce que l'inscription écrivait
+    // 'parent' en dur, même pour un apprenant. Il porte désormais sur `b2c`.
+    for (const garde of ['isEleve && ', 'isB2C && ']) {
       const i = src.indexOf(garde + '!routePublique')
       expect(i, `le garde « ${garde} » ignore les routes d'action`).toBeGreaterThan(0)
     }

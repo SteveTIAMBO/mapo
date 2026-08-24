@@ -16,7 +16,7 @@ import { useFacturationStore } from './facturation'
 import { packPays, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 import {
-  destinataireParCycle, canauxDisponibles, lienInvitation,
+  DESTINATAIRE, canauxDisponibles, lienInvitation,
 } from '../utils/invitationMapoPlus'
 
 /**
@@ -506,7 +506,7 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
    *
    * ⚠️ Le cycle vient de l'ÉDITION déclarée de l'école, pas d'une déduction sur
    * le nom de la classe : « 6ème » existe au primaire comme au secondaire selon
-   * les pays, et se tromper enverrait les bulletins au mauvais destinataire.
+   * les pays, et le cycle sert à pré-remplir le profil de l'enfant.
    * Import tardif pour ne pas créer de dépendance circulaire entre stores.
    */
   const contexteEcole = async () => {
@@ -546,18 +546,17 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
   const ouvrirAccesMapoPlus = async (eleveId, dossier) => {
     const elevesStore = useElevesStore()
     const { cycle, pays, ecole } = await contexteEcole()
-    const destinataire = destinataireParCycle(cycle)
     const canaux = canauxDisponibles({
       parentEmail: dossier.parentEmail, parentPhone: dossier.parentPhone,
     })
     const res = await elevesStore.autoriserMapoPlus(eleveId, {
-      cycle, pays, ecole, destinataire,
+      cycle, pays, ecole,
       origine: 'inscription_validee',
       email: canaux.email,
     })
     if (!res || !res.ok) return { ok: false, reason: res?.reason || 'inconnu' }
     return {
-      ok: true, code: res.code, destinataire, cycle,
+      ok: true, code: res.code, destinataire: DESTINATAIRE, cycle,
       lien: lienInvitation(res.code, dossier.firstName),
       // `envoye` dit la VÉRITÉ sur le canal : sans adresse e-mail, rien n'est
       // parti tout seul et l'école doit partager le lien (un geste, pas un code).
@@ -612,8 +611,9 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     // à générer un code ». L'invitation naît donc ICI, au moment où l'inscription
     // devient réelle, et non plus d'un clic dans la fiche de l'élève.
     //
-    // Le destinataire dépend du cycle : au primaire c'est le parent, à partir du
-    // secondaire c'est l'apprenant (cf. utils/invitationMapoPlus).
+    // Le destinataire est TOUJOURS le parent ou tuteur : c'est le compte de la
+    // famille. Depuis MAPO+, le parent crée ensuite le profil de son enfant et
+    // lui donne un accès indépendant s'il le souhaite (cf. invitationMapoPlus).
     //
     // ⚠️ Un échec ici ne doit JAMAIS annuler la validation : l'élève est inscrit,
     // sa scolarité ne dépend pas de MAPO+. On enregistre le résultat sur le

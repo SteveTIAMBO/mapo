@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest'
 import {
-  destinataireParCycle, inviteParentEnSecond, lienInvitation, canauxDisponibles,
+  DESTINATAIRE, lienInvitation, lienPartage, canauxDisponibles,
   typeDeCode, normaliserCode, lienWhatsapp,
   CODE_ECOLE, CODE_FAMILLE, MAPOPLUS_ORIGINE,
 } from '../utils/invitationMapoPlus'
+import * as utils from '../utils/invitationMapoPlus'
 
 /**
  * Invitation MAPO+ émise par l'école (23/08/2026).
@@ -14,28 +15,21 @@ import {
  */
 
 describe('qui reçoit l’accès', () => {
-  it('au primaire, c’est le parent', () => {
-    expect(destinataireParCycle('primaire')).toBe('parent')
-    expect(inviteParentEnSecond('primaire')).toBe(false)
+  it('TOUJOURS le parent ou tuteur, quel que soit le cycle', () => {
+    // Tranché par Steve le 23/08/2026, contre ma première version qui donnait un
+    // compte propre à l'apprenant dès le secondaire. Le compte ouvert par l'école
+    // est celui de la FAMILLE ; depuis MAPO+, le parent crée le profil de son
+    // enfant et lui donne un accès indépendant s'il le souhaite.
+    expect(DESTINATAIRE).toBe('parent')
   })
 
-  it('à partir du secondaire, c’est l’apprenant — et le parent en second', () => {
-    for (const c of ['secondaire', 'superieur']) {
-      expect(destinataireParCycle(c)).toBe('apprenant')
-      expect(inviteParentEnSecond(c)).toBe(true)
+  it('⚠️ aucune fonction ne fait dépendre le destinataire du cycle', () => {
+    // Une fonction qui répondrait toujours « parent » serait un faux paramètre :
+    // le cycle continuerait d'être saisi, enregistré, et relu par personne.
+    const mod = utils
+    for (const nom of ['destinataireParCycle', 'inviteParentEnSecond']) {
+      expect(mod[nom], `${nom} ne doit pas revenir`).toBeUndefined()
     }
-  })
-
-  it('⚠️ un cycle inconnu retombe sur le PARENT, pas sur l’apprenant', () => {
-    // Le choix prudent : un compte parent mal ciblé se transmet à l'enfant ;
-    // l'inverse donne les bulletins à un enfant dont personne n'a voulu ça.
-    for (const c of ['', null, undefined, 'college', 'inconnu']) {
-      expect(destinataireParCycle(c)).toBe('parent')
-    }
-  })
-
-  it('la casse du cycle n’a pas d’effet', () => {
-    expect(destinataireParCycle('SECONDAIRE')).toBe('apprenant')
   })
 })
 

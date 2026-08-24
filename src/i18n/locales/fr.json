@@ -143,7 +143,8 @@
     "errAccount": "La création du compte a échoué.",
     "errUsed": "Ce lien a déjà servi à ouvrir un espace. Demandez-en un nouveau à votre école.",
     "errExpired": "Ce lien a expiré. Demandez-en un nouveau à votre école.",
-    "errInvalid": "Ce lien n'est plus valide. Demandez-en un nouveau au secrétariat de votre établissement."
+    "errInvalid": "Ce lien n'est plus valide. Demandez-en un nouveau au secrétariat de votre établissement.",
+    "childLater": "Vous ouvrez VOTRE espace famille. Depuis MAPO+, vous pourrez donner à votre enfant son propre accès, s'il travaille seul."
   },
   "miaOnb": {
     "lead": "Bienvenue sur MAPO+ !",

@@ -437,8 +437,10 @@ export const useElevesStore = defineStore('eleves', () => {
       // les renvoie au formulaire d'arrivée.
       cycle: opts.cycle || '',
       pays: opts.pays || '',
-      // 'parent' | 'apprenant' — qui est censé ouvrir ce lien (cf. utils/invitationMapoPlus).
-      destinataire: opts.destinataire || 'parent',
+      // Le lien est toujours destiné au parent ou tuteur (cf. invitationMapoPlus).
+      // Champ conservé pour que le pont serveur et l'écran d'arrivée lisent un
+      // fait explicite plutôt qu'une valeur implicite.
+      destinataire: 'parent',
       // Adresse de destination, écrite ICI par l'école.
       // ⚠️ C'est volontaire et c'est le point de sécurité : quand le serveur
       // enverra l'invitation, il lira cette adresse dans Firestore et IGNORERA

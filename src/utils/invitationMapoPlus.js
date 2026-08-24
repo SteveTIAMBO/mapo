@@ -16,31 +16,27 @@ const ROOT_DOMAIN = 'app-edufrem.com'
 export const MAPOPLUS_ORIGINE = `https://mapoplus.${ROOT_DOMAIN}`
 
 /**
- * Qui reçoit l'accès, selon le cycle — décision de Steve du 23/08/2026.
+ * QUI REÇOIT L'ACCÈS : toujours le parent ou tuteur. Tranché par Steve le
+ * 23/08/2026, après une première version qui distinguait les cycles.
  *
- * Au primaire, l'élève n'a ni téléphone ni autonomie : le compte est celui du
- * parent, qui ouvrira ensuite l'accès de son enfant avec le lien magique
- * famille déjà en place. À partir du secondaire, l'apprenant EST l'utilisateur
- * du tuteur : lui donner un compte de plein droit, et au parent un accès en
- * second, correspond à ce qui se passe réellement.
+ * Pourquoi une règle unique plutôt qu'un aiguillage par cycle : le compte
+ * ouvert par l'école est celui de la FAMILLE. Depuis MAPO+, le parent crée
+ * ensuite le profil de son enfant, et lui donne un accès indépendant s'il le
+ * souhaite — le lien magique famille existe déjà pour ça. L'autonomie de
+ * l'adolescent est donc une décision de la famille, pas de l'établissement.
  *
- * ⚠️ Un cycle inconnu ou vide renvoie « parent », pas « apprenant » : c'est le
- * choix prudent. Un compte parent mal ciblé se transmet à l'enfant ; l'inverse
- * donne les bulletins à un enfant dont personne n'a voulu ça.
+ * ⚠️ Ne PAS réintroduire de `destinataireParCycle()` : une fonction qui répond
+ * toujours la même chose est un faux paramètre, et le cycle continuerait d'être
+ * saisi, enregistré et relu par personne. Le cycle reste transporté par
+ * l'invitation, mais pour PRÉ-REMPLIR le profil de l'enfant — pas pour choisir
+ * un destinataire.
+ *
+ * ⚠️ Portée : l'invitation automatique ne concerne que l'inscription K-12
+ * (`stores/inscriptions.js`). L'édition Supérieur a son propre flux
+ * (`superieurInscriptions.js`), qui n'y est pas branché — un étudiant majeur
+ * n'aurait de toute façon pas à passer par un parent.
  */
-export function destinataireParCycle(cycle) {
-  const c = String(cycle || '').toLowerCase()
-  return (c === 'secondaire' || c === 'superieur') ? 'apprenant' : 'parent'
-}
-
-/**
- * Le parent doit-il recevoir sa propre invitation, en plus de l'apprenant ?
- * Oui dès que l'apprenant est le destinataire principal : la famille garde un
- * accès au suivi. Au primaire il n'y a qu'une invitation, celle du parent.
- */
-export function inviteParentEnSecond(cycle) {
-  return destinataireParCycle(cycle) === 'apprenant'
-}
+export const DESTINATAIRE = 'parent'
 
 /**
  * URL d'arrivée. Le code voyage en clair dans le lien : c'est assumé — il est à

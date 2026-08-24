@@ -59,7 +59,7 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
       return { ok: true, apercu: {
         ecole: DEMO_LIEN.ecole || 'Collège EDUFREM', prenom: 'Awa',
         classe: DEMO_LIEN.className || '3ème', cycle: 'secondaire', pays: 'CM',
-        destinataire: 'apprenant', utilise: false, perime: false,
+        destinataire: 'parent', utilise: false, perime: false,
       } }
     }
     try {

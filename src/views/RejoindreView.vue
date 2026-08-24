@@ -39,6 +39,9 @@
         </div>
 
         <p class="rj-hint">{{ t('rejEcole.onlyPassword') }}</p>
+        <!-- Dit explicitement de QUI est ce compte, et que l'autonomie de
+             l'enfant reste une décision de la famille, pas de l'école. -->
+        <p class="rj-hint small">{{ t('rejEcole.childLater') }}</p>
 
         <label class="rj-label" for="rj-id">{{ t('rejEcole.identifier') }}</label>
         <input id="rj-id" v-model="identifiant" class="rj-input" type="text"
@@ -115,7 +118,7 @@ import { useAuthStore } from '../stores/auth'
 import { useEnfantsComptesStore } from '../stores/enfantsComptes'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useLienEcoleStore } from '../stores/lienEcole'
-import { normaliserCode, typeDeCode, CODE_ECOLE } from '../utils/invitationMapoPlus'
+import { normaliserCode, typeDeCode, CODE_ECOLE, DESTINATAIRE } from '../utils/invitationMapoPlus'
 import { identifierToEmail } from '../utils/identifier'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -240,7 +243,8 @@ async function rejoindreEcole() {
   try {
     etape.value = t('rejEcole.stepAccount')
     const email = identifierToEmail(id)
-    const role = ap.value.destinataire === 'apprenant' ? 'apprenant' : 'parent'
+    // Le compte ouvert par l'école est celui de la FAMILLE, sans exception.
+    const role = DESTINATAIRE
     const nomAffiche = [ap.value.prenom].filter(Boolean).join(' ')
     const insc = await authStore.signUpWithEmail(email, pw, nomAffiche, {
       b2c: true, role, pays: ap.value.pays || '',
