@@ -70,14 +70,43 @@ if ($action === 'init') {
   $offre = preg_replace('/[^a-z]/', '', strtolower((string) ($body['subscriptionOffer'] ?? '')));
   $pack = preg_replace('/[^a-z_]/', '', strtolower((string) ($body['creditPack'] ?? '')));
   $packData = $pack !== '' ? mapo_credit_pack($pack) : null;
-  // Montant attendu = prix serveur de l'offre / du pack (on ne fait PAS confiance au front).
-  $o = $offre !== '' ? mapo_offre($offre) : null;
-  $eur = $packData ? (float) ($packData['prixEur'] ?? 0) : ($o ? (float) ($o['prixEur'] ?? 0) : (float) ($body['amount'] ?? 0));
+  // Montant attendu = prix serveur de l'offre / du pack. On ne fait PAS confiance
+  // au front — et surtout, on ne se rabat PAS sur ce qu'il propose.
+  //
+  // ⚠️ TROU MESURE EN PRODUCTION le 25/08 : sans offre ni pack, `$eur` retombait
+  // sur `$body['amount']` et `$desc` sur `$body['description']`. Un compte
+  // authentifie pouvait donc fabriquer des pages Stripe sur le compte EDUFREM
+  // avec SON montant et SON intitule — verifie : { amount: 0.5, description:
+  // 'Renouvellement urgent — EDUFREM' } renvoyait ok:true et une URL de
+  // paiement. Payer cette session n'accordait rien (aucun `pending` n'etait
+  // ecrit), donc pas de vol d'abonnement ; mais en mode LIVE c'est une page de
+  // hameconnage hebergee sous notre marque, et l'argent encaisse — ainsi que
+  // les impayes qui suivent — atterrit sur notre compte marchand.
+  //
+  // Meme regle que Tranzak, qui l'avait deja : le montant vient du SERVEUR,
+  // jamais du client. Ici il fallait aussi supprimer le REPLI.
+  $o = null;
+  if ($offre !== '') {
+    $candidat = mapo_offre($offre);
+    // mapo_offre() se rabat SILENCIEUSEMENT sur l'offre gratuite quand l'id est
+    // inconnu : sans cette comparaison, une offre bidon passait pour valide et
+    // echouait plus loin sur un « montant invalide » incomprehensible.
+    if ($candidat && ($candidat['id'] ?? '') === $offre) $o = $candidat;
+  }
+  if (!$packData && !$o) {
+    http_response_code(400); echo json_encode(['ok' => false, 'error' => 'offre_inconnue']); exit;
+  }
+  $eur = $packData ? (float) ($packData['prixEur'] ?? 0) : (float) ($o['prixEur'] ?? 0);
   $cents = (int) round($eur * 100);
   if ($cents < 50) { // Stripe : minimum ~0,50 €
     http_response_code(400); echo json_encode(['ok' => false, 'error' => 'montant_invalide']); exit;
   }
-  $desc = trim(mb_substr((string) ($body['description'] ?? 'Abonnement MAPO+'), 0, 120)) ?: 'Abonnement MAPO+';
+  // L'intitule affiche sur la page de paiement vient du CATALOGUE, jamais du
+  // client : c'est lui qui rendait le hameconnage credible.
+  $desc = $packData
+    ? ('Credits MAPO+ — ' . ($packData['nom'] ?? 'recharge'))
+    : ('Abonnement MAPO+ ' . ($o['nom'] ?? ''));
+  $desc = trim(mb_substr($desc, 0, 120)) ?: 'Abonnement MAPO+';
 
   if (!$configured) { // pas de clé Stripe → parcours démo côté app
     echo json_encode(['ok' => false, 'error' => 'not_configured']); exit;
