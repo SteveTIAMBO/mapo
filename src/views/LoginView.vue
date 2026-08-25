@@ -43,21 +43,33 @@
         <button type="button" :class="{ on: locale === 'en' }" @click="setLang('en')">EN</button>
       </div>
       <!-- Logo -->
+      <!-- Sur le sous-domaine d'une école, c'est SON identité qui accueille :
+           le document `schools/{id}` est en lecture publique précisément pour
+           permettre cet affichage avant authentification. Un directeur qui
+           arrive doit reconnaître son établissement, pas notre marque. -->
       <div class="auth-logo">
-        <div class="auth-logo-mark">{{ isMiapoMode ? 'M+' : 'M' }}</div>
+        <img v-if="isEcoleTenant && identity.logoUrl" class="auth-logo-img" :src="identity.logoUrl" :alt="identity.nom" />
+        <div v-else class="auth-logo-mark">{{ marqueCourte }}</div>
         <div>
-          <div class="auth-logo-title">{{ isMiapoMode ? 'MAPO+' : 'MAPO' }}</div>
-          <div class="auth-logo-sub">{{ isMiapoMode ? t('login.taglineMiapo') : t('login.tagline') }}</div>
+          <div class="auth-logo-title">{{ titrePrincipal }}</div>
+          <div class="auth-logo-sub">{{ sousTitre }}</div>
         </div>
       </div>
 
-      <!-- Edition badge -->
+      <!-- ══ Édition ═══════════════════════════════════════════════════
+           ⚠️ Sur le sous-domaine d'une ÉCOLE, ce bloc affichait l'édition
+           rangée dans le localStorage DU VISITEUR — donc « Supérieur » sur une
+           école primaire, selon ce qu'il avait consulté ailleurs. Et le bouton
+           « Changer » proposait de modifier une préférence locale en donnant
+           l'impression de changer l'établissement. Un réglage affiché comme
+           s'il décrivait l'école alors qu'il ne décrit que le visiteur.
+           Sur un tenant école, l'édition vient de l'ÉCOLE, et ne se change pas. -->
       <div v-if="!isMiapoMode" class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
-          {{ t('login.version', { name: editionStore.meta?.name || 'Secondaire' }) }}
+          {{ t('login.version', { name: nomEdition }) }}
         </span>
-        <button type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
+        <button v-if="!isEcoleTenant" type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
       </div>
 
       <!-- Connexion / Inscription (comptes EN LIGNE — live) -->
@@ -205,11 +217,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { useEditionStore } from '../stores/edition'
+import { useEditionStore, EDITIONS } from '../stores/edition'
+import { useSchoolIdentityStore } from '../stores/schoolIdentity'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 import { paysDemo, setPaysDemo } from '../utils/demoScope'
@@ -227,6 +240,69 @@ const isMiapoMode = isMapoPlusTenant()
 // démonstration « staff » : seul le formulaire compte en ligne est proposé
 // (la démo MAPO+ s'entre par les cartes Parent / Élève de l'accueil).
 const isSchoolTenantMode = isSchoolTenant() || isMapoPlusTenant()
+
+// ── Identité de l'école, sur SON sous-domaine ─────────────────────────
+const identity = useSchoolIdentityStore()
+const isEcoleTenant = isSchoolTenant()
+
+/** Initiales de l'école, à défaut de logo. Deux lettres, jamais plus. */
+const marqueCourte = computed(() => {
+  if (isMiapoMode) return 'M+'
+  if (!isEcoleTenant) return 'M'
+  const source = identity.sigle || identity.nom || ''
+  const mots = source.replace(/["'«»]/g, ' ').split(/[\s-]+/).filter(Boolean)
+  const ini = mots.slice(0, 2).map((m) => m[0]).join('').toUpperCase()
+  return ini || 'M'
+})
+
+const titrePrincipal = computed(() => {
+  if (isMiapoMode) return 'MAPO+'
+  // ⚠️ Tant que l'école n'est pas chargée, on garde « MAPO » plutôt qu'un vide :
+  // un titre absent puis qui apparaît fait clignoter la page.
+  return (isEcoleTenant && identity.nom) ? identity.nom : 'MAPO'
+})
+
+const sousTitre = computed(() => {
+  if (isMiapoMode) return t('login.taglineMiapo')
+  if (isEcoleTenant && identity.nom) {
+    return [identity.ville, nomEdition.value].filter(Boolean).join(' · ')
+  }
+  return t('login.tagline')
+})
+
+/**
+ * Nom de l'édition affiché.
+ *
+ * Sur un tenant école, il vient de l'ÉCOLE. Ailleurs (démo, vitrine), du choix
+ * local du visiteur, qui est alors la seule information disponible.
+ */
+const nomEdition = computed(() => {
+  if (isEcoleTenant && identity.edition) {
+    return EDITIONS[identity.edition]?.name || identity.edition
+  }
+  return editionStore.meta?.name || 'Secondaire'
+})
+
+/**
+ * Couleur d'accent de l'école, appliquée AVANT connexion.
+ *
+ * La couleur des réglages vit dans la configuration privée, illisible ici :
+ * c'est la copie publique du document école qui sert. Sans elle, la page de
+ * connexion resterait au bleu MAPO alors que tout le reste de l'application
+ * porte les couleurs de l'établissement.
+ */
+watch(() => identity.couleur, (hex) => {
+  if (!isEcoleTenant || !hex || typeof document === 'undefined') return
+  const h = String(hex).replace('#', '')
+  if (h.length !== 6) return
+  const [R, G, B] = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16))
+  if ([R, G, B].some(Number.isNaN)) return
+  const root = document.documentElement.style
+  root.setProperty('--pr', '#' + h)
+  root.setProperty('--pr-rgb', `${R}, ${G}, ${B}`)
+  root.setProperty('--pr-light', `rgba(${R}, ${G}, ${B}, 0.10)`)
+  root.setProperty('--pr-glow', `rgba(${R}, ${G}, ${B}, 0.28)`)
+}, { immediate: true })
 
 function changerVersion() {
   editionStore.clearEdition()
@@ -511,6 +587,10 @@ function resetDemo() {
   color: #fff;
 }
 
+.auth-logo-img {
+  width: 40px; height: 40px; border-radius: 11px; object-fit: contain;
+  background: #fff; border: 1px solid rgba(20, 22, 30, 0.08);
+}
 .auth-edition {
   display: flex;
   align-items: center;

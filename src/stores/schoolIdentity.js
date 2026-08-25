@@ -83,6 +83,18 @@ export const useSchoolIdentityStore = defineStore('schoolIdentity', () => {
   const sigle = computed(() => school.value?.sigle || '')
   const edition = computed(() => school.value?.edition || null)
   const logoUrl = computed(() => school.value?.logoUrl || null)
+  /**
+   * Couleur d'accent de l'école, lisible AVANT connexion.
+   *
+   * `saveSettings` fusionne les réglages directement sur le document `schools/{id}`,
+   * qui est en lecture publique — la couleur y est donc déjà, sous le nom
+   * `primaryColor` (c'est aussi ce que l'import du classeur écrit).
+   *
+   * ⚠️ Ne PAS créer un second champ « couleur » : deux champs pour la même
+   * information divergent toujours, et c'est celui que personne ne met à jour
+   * qui finit par être lu. On lit la source existante.
+   */
+  const couleur = computed(() => school.value?.primaryColor || null)
   const anneeAcademique = computed(() => school.value?.anneeAcademique || '')
   const modulesActifs = computed(() => school.value?.modulesActifs || null)
   // Modèle de modules porté par le document école. Absent = ancien modèle, où le
@@ -138,7 +150,7 @@ export const useSchoolIdentityStore = defineStore('schoolIdentity', () => {
 
   return {
     school, isLoading, loadError, isReady,
-    nom, sigle, edition, logoUrl, anneeAcademique, modulesActifs, modulesVersion,
+    nom, sigle, edition, logoUrl, couleur, anneeAcademique, modulesActifs, modulesVersion,
     aucunModuleActif,
     pack, trialUntil, isTrialActive,
     isTenantSchool, isDemoTenant,
