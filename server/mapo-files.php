@@ -33,7 +33,22 @@ $ALLOWED = [
   'pdf'  => 'application/pdf',
   'ppt'  => 'application/vnd.ms-powerpoint',
   'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  // Images des pages de cours (24/08/2026). Ajoutées pour que l'enseignant
+  // illustre son cours — un schéma vaut souvent le paragraphe qui l'explique.
+  //
+  // ⚠️ Le navigateur les RECOMPRESSE avant l'envoi (cf. utils/imageCompression.js) :
+  // le marché visé est en 3G avec des coupures, et une photo de téléphone brute
+  // pèse plusieurs mégaoctets. Le plafond ci-dessous est un garde-fou de dernier
+  // recours, pas la taille attendue.
+  'webp' => 'image/webp',
+  'jpg'  => 'image/jpeg',
+  'jpeg' => 'image/jpeg',
+  'png'  => 'image/png',
 ];
+
+/** Plafond spécifique aux images : bien plus bas que les 25 Mo des documents. */
+if (!defined('MAPO_MAX_IMAGE_BYTES')) define('MAPO_MAX_IMAGE_BYTES', 600 * 1024); // 600 Ko
+$IMAGE_EXT = ['webp', 'jpg', 'jpeg', 'png'];
 
 $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
 if (preg_match('#^https://([a-z0-9-]+\.)?app-edufrem\.com$#', $origin)) {
@@ -74,13 +89,33 @@ function handleUpload($ALLOWED) {
     echo json_encode(['ok' => false, 'error' => 'no_file']); return;
   }
   $f = $_FILES['file'];
-  if ($f['size'] > MAPO_MAX_BYTES) { echo json_encode(['ok' => false, 'error' => 'too_large']); return; }
   $ext = strtolower(pathinfo($f['name'], PATHINFO_EXTENSION));
   if (!isset($ALLOWED[$ext])) { echo json_encode(['ok' => false, 'error' => 'bad_type']); return; }
+
+  // Une image obéit à un plafond BEAUCOUP plus bas qu'un document : elle est
+  // rechargée à chaque affichage de la page de cours, sur un réseau lent.
+  $estImage = in_array($ext, ['webp', 'jpg', 'jpeg', 'png'], true);
+  $plafond = $estImage ? MAPO_MAX_IMAGE_BYTES : MAPO_MAX_BYTES;
+  if ($f['size'] > $plafond) { echo json_encode(['ok' => false, 'error' => 'too_large', 'max' => $plafond]); return; }
+
+  // ⚠️ L'extension ne prouve rien : n'importe quoi peut s'appeler « .png ».
+  // Pour une image on vérifie le CONTENU (en-tête réel), sinon le dossier
+  // d'envoi devient un hébergement de fichiers arbitraires.
+  if ($estImage) {
+    $info = @getimagesize($f['tmp_name']);
+    $typesOk = [IMAGETYPE_JPEG, IMAGETYPE_PNG, IMAGETYPE_WEBP];
+    if (!$info || !in_array($info[2] ?? 0, $typesOk, true)) {
+      echo json_encode(['ok' => false, 'error' => 'pas_une_image']); return;
+    }
+  }
 
   $id = bin2hex(random_bytes(12));
   $dest = MAPO_UPLOAD_DIR . '/' . $id . '.' . $ext;
   if (!move_uploaded_file($f['tmp_name'], $dest)) { echo json_encode(['ok' => false, 'error' => 'store_failed']); return; }
+
+  // Une image n'a pas de version PDF, et il ne faut surtout pas lancer
+  // LibreOffice dessus : conversion inutile, et lente sur un hébergement mutualisé.
+  if ($estImage) { echo json_encode(['ok' => true, 'id' => $id, 'ext' => $ext, 'image' => true]); return; }
 
   $hasPdf = ($ext === 'pdf');
   if (!$hasPdf) {

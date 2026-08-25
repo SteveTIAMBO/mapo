@@ -4,6 +4,7 @@ import { db, auth } from '../firebase'
 import { doc, getDoc, setDoc } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey } from '../utils/demoScope'
+import { pagesDe, normaliserPage, projeterContenu } from '../utils/coursPages'
 
 /**
  * Store « Cours » — contenus pédagogiques publiés par les enseignants et mis à
@@ -52,16 +53,19 @@ export const useCoursStore = defineStore('cours', () => {
     } catch (e) { console.error('Erreur sauvegarde cours:', e) }
   }
 
-  function publish({ matiere, classe = '', type = 'cours', titre, contenu = '', corrige = '', url = '', fileId = '', fileName = '', fileExt = '', fileData = '', fileViewable = false }) {
+  function publish({ matiere, classe = '', type = 'cours', titre, contenu = '', corrige = '', url = '', fileId = '', fileName = '', fileExt = '', fileData = '', fileViewable = false, pages = null }) {
     const authStore = useAuthStore()
     const p = authStore.userProfile || {}
+    // Pages fournies → elles font foi, et `contenu` en est la projection.
+    const lesPages = Array.isArray(pages) && pages.length ? pages.map(normaliserPage) : null
     const item = {
       id: 'co-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
       matiere: String(matiere || '').trim(),
       classe: String(classe || '').trim(),
       type: ['cours', 'devoir', 'examen', 'ressource'].includes(type) ? type : 'cours',
       titre: String(titre || '').trim(),
-      contenu: String(contenu || '').trim(),
+      pages: lesPages,
+      contenu: lesPages ? projeterContenu(lesPages) : String(contenu || '').trim(),
       corrige: String(corrige || '').trim(),
       url: String(url || '').trim(),
       // Fichier joint (PDF/PPT) : fileId côté serveur LWS, OU fileData (data URL, démo).
@@ -80,6 +84,33 @@ export const useCoursStore = defineStore('cours', () => {
   }
 
   function remove(id) { items.value = items.value.filter((x) => x.id !== id); save() }
+
+  /**
+   * Enregistre les pages d'un cours.
+   *
+   * ⚠️ La projection `contenu` est recalculée ICI, au même endroit et au même
+   * moment que l'écriture des pages. C'est ce qui empêche les deux champs de
+   * diverger : le pont serveur envoie `contenu` aux familles, et une page
+   * modifiée sans reprojection donnerait à l'enseignant un cours à jour et à
+   * l'élève l'ancienne version — sans que rien ne le signale.
+   */
+  function setPages(id, pages) {
+    const item = items.value.find((x) => x.id === id)
+    if (!item) return false
+    const l = (Array.isArray(pages) ? pages : []).filter(Boolean).map(normaliserPage)
+    if (!l.length) return false
+    item.pages = l
+    item.contenu = projeterContenu(l)
+    item.majAt = new Date().toISOString()
+    save()
+    return true
+  }
+
+  /** Pages d'un cours (migre à la volée un ancien cours plat, sans l'enregistrer). */
+  function pages(id) {
+    const item = items.value.find((x) => x.id === id)
+    return item ? pagesDe(item) : []
+  }
 
   /** Items visibles pour une classe donnée (ceux sans classe = pour tous). */
   function forClasse(classe) {
@@ -123,7 +154,7 @@ export const useCoursStore = defineStore('cours', () => {
     }
   }
 
-  return { items, loaded, preparing, load, save, publish, remove, forClasse, forAuteur, preparerAvecMiapo }
+  return { items, loaded, preparing, load, save, publish, remove, setPages, pages, forClasse, forAuteur, preparerAvecMiapo }
 })
 
 function parseJsonObject(text) {

@@ -10,6 +10,7 @@
 
 import { auth } from '../firebase'
 import { useAuthStore } from '../stores/auth'
+import { compresserImage } from '../utils/imageCompression'
 
 const FILES_URL = '/mapo-files.php'
 const DEMO_MAX = 3 * 1024 * 1024 // 3 Mo en démo (limite localStorage)
@@ -49,6 +50,57 @@ export async function uploadCoursFile(file) {
   } catch {
     return { ok: false, reason: 'network' }
   }
+}
+
+/**
+ * Dépose une IMAGE de page de cours, après recompression dans le navigateur.
+ *
+ * ⚠️ La compression n'est pas un confort : une photo de tableau pèse 3 à 8 Mo,
+ * le serveur plafonne les images à 600 Ko, et surtout l'image est retéléchargée
+ * par chaque élève à chaque ouverture, sur un réseau 3G qui coupe. Envoyer
+ * l'original « parce que ça marche chez nous » casserait le module là où il doit
+ * servir.
+ *
+ * @returns {Promise<{ok, image?, reason?}>} — `image` = { fileId | dataUrl, fileName }
+ */
+export async function uploadImagePage(file) {
+  const c = await compresserImage(file)
+  if (!c.ok) return { ok: false, reason: c.reason }
+
+  const authStore = useAuthStore()
+  const nom = (String(file?.name || 'image').replace(/\.[^.]+$/, '') || 'image') + '.' + c.ext
+
+  // Démo : aucun serveur, l'image vit en data URL dans l'item. Elle est déjà
+  // compressée, donc compatible avec le budget localStorage.
+  if (authStore.isDemo) {
+    const dataUrl = await readAsDataUrl(c.blob)
+    return { ok: true, image: { dataUrl, fileName: nom, poids: c.poids } }
+  }
+
+  const token = await idToken()
+  if (!token) return { ok: false, reason: 'auth' }
+  const fd = new FormData()
+  fd.append('file', new File([c.blob], nom, { type: c.blob.type }))
+  try {
+    const res = await fetch(FILES_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+    const json = await res.json().catch(() => null)
+    if (json && json.ok) return { ok: true, image: { fileId: json.id, fileName: nom, poids: c.poids } }
+    return { ok: false, reason: (json && json.error) || 'upload_failed' }
+  } catch {
+    return { ok: false, reason: 'network' }
+  }
+}
+
+/** URL affichable d'une image de page (data URL en démo, blob authentifié sinon). */
+export async function imagePageUrl(img) {
+  if (img?.dataUrl) return img.dataUrl
+  if (!img?.fileId) return ''
+  const token = await idToken()
+  const res = await fetch(FILES_URL + '?id=' + encodeURIComponent(img.fileId), {
+    headers: token ? { Authorization: 'Bearer ' + token } : {},
+  })
+  if (!res.ok) return ''
+  return URL.createObjectURL(await res.blob())
 }
 
 async function blobUrl(item, { pdf = false, dl = false } = {}) {

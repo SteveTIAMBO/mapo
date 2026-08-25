@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db, auth as fbAuth } from '../firebase'
 import {
-  collection, doc, getDocs, getCountFromServer, updateDoc,
+  collection, doc, addDoc, getDocs, getCountFromServer, updateDoc,
   writeBatch, serverTimestamp, query, where
 } from 'firebase/firestore'
 import { sendSignInLinkToEmail } from 'firebase/auth'
@@ -681,6 +681,58 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     }
   }
 
+  /**
+   * Ajoute un administrateur à une école DÉJÀ créée.
+   *
+   * Manque révélé le 25/08/2026 : les administrateurs ne pouvaient être désignés
+   * qu'au moment de la création. Une école dont le directeur change, ou à
+   * laquelle EDUFREM doit accéder pour dépanner, n'avait aucun recours — il
+   * aurait fallu supprimer et recréer l'établissement.
+   *
+   * ⚠️ Un super-admin ne suffit PAS pour dépanner : il lit toute la base, mais
+   * n'écrit dans aucune sous-collection d'école (les règles exigent d'en être
+   * MEMBRE) et n'a pas de profil rattaché, donc l'application le renvoie sur
+   * « compte non configuré ». Il faut une vraie invitation.
+   *
+   * Renvoie { ok, reason? } — « deja_invite » quand une invitation en attente
+   * existe déjà, pour ne pas en empiler deux sur la même adresse.
+   */
+  async function ajouterAdministrateur(schoolId, email) {
+    const adresse = String(email || '').trim().toLowerCase()
+    if (!schoolId || !adresse) return { ok: false, reason: 'parametres' }
+    try {
+      const ecole = schools.value.find((s) => s.id === schoolId)
+      const edition = ecole?.edition && EDITIONS[ecole.edition] ? ecole.edition : 'secondaire'
+      const role = EDITIONS[edition].roleAdmin
+
+      const dejaLa = await getDocs(query(
+        collection(db, 'invitations'),
+        where('schoolId', '==', schoolId),
+        where('email', '==', adresse),
+      ))
+      if (!dejaLa.empty) {
+        const enAttente = dejaLa.docs.some((d) => (d.data().status || 'pending') === 'pending')
+        if (enAttente) return { ok: false, reason: 'deja_invite' }
+      }
+
+      const authStore = useAuthStore()
+      await addDoc(collection(db, 'invitations'), {
+        email: adresse,
+        role,
+        schoolId,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        invitedBy: authStore.user?.uid || null,
+        invitedByName: authStore.userProfile?.displayName || 'EDUFREM',
+      })
+      await loadSchools()
+      return { ok: true, role }
+    } catch (e) {
+      console.error('Ajout administrateur échoué:', e)
+      return { ok: false, reason: (e && e.code) || 'ecriture' }
+    }
+  }
+
   return {
     schools,
     syncEcoleMobi,
@@ -691,6 +743,7 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     assignComplexe,
     validateSlug,
     createSchool,
+    ajouterAdministrateur,
     updateSchoolModules,
     updateSchoolPlan,
     deleteSchool,

@@ -145,6 +145,9 @@
                 <a class="ma-btn-ghost" :href="`https://${s.id}.app-edufrem.com`" target="_blank" rel="noopener">
                   Ouvrir
                 </a>
+                <button class="ma-btn-ghost" type="button" @click="inviterAdministrateur(s)" title="Inviter un administrateur supplémentaire (directeur remplaçant, accès EDUFREM)">
+                  + Admin
+                </button>
                 <button class="ma-btn-ghost" type="button" @click="ouvrirPrompt(s)" title="Prompt de configuration cPanel + Firebase">
                   Config
                 </button>
@@ -667,6 +670,22 @@ function anneeParDefaut() {
   return `${y}-${y + 1}`
 }
 
+/**
+ * Adresse d'EDUFREM ajoutée d'office comme administratrice de CHAQUE école.
+ *
+ * Demandé par Steve le 25/08/2026 : « qu'on puisse avoir accès si besoin pour
+ * aider à configurer quelque chose ». Sans ce compte, l'équipe ne peut PAS
+ * intervenir : un super-admin lit toute la base mais n'écrit dans aucune
+ * sous-collection d'école (les règles exigent d'en être MEMBRE), et il n'a pas
+ * de profil rattaché, donc l'application le renvoie sur « compte non
+ * configuré ». Le droit de lecture ne suffit donc pas à dépanner.
+ *
+ * ⚠️ Pré-remplie et non codée en dur à l'envoi : elle reste visible et
+ * retirable dans le formulaire. Une invitation qu'on ne voit pas est une
+ * invitation qu'on oublie d'expliquer à l'école.
+ */
+const ADMIN_EDUFREM = 'contact@edufrem.com'
+
 const form = reactive({
   nom: '',
   sigle: '',
@@ -678,8 +697,37 @@ const form = reactive({
   essai: true,
   modulesActifs: [...EDITIONS.superieur.modulesParDefaut],
   slug: '',
-  adminEmails: [''],
+  adminEmails: ['', ADMIN_EDUFREM],
 })
+
+/**
+ * Invite un administrateur de plus sur une école EXISTANTE.
+ *
+ * Sert deux cas réels : un directeur qui change, et l'accès d'EDUFREM pour
+ * dépanner une configuration. Sans cela, il aurait fallu supprimer et recréer
+ * l'établissement — ce qui déprovisionne son sous-domaine.
+ */
+async function inviterAdministrateur(ecole) {
+  const propose = ADMIN_EDUFREM
+  const saisie = window.prompt(
+    `Inviter un administrateur sur « ${ecole.schoolName || ecole.id} » :`,
+    propose,
+  )
+  if (saisie === null) return
+  const r = await store.ajouterAdministrateur(ecole.id, saisie)
+  if (r.ok) {
+    window.alert(`Invitation créée pour ${saisie.trim().toLowerCase()} (rôle ${r.role}).\nÀ sa première connexion sur ${ecole.id}.app-edufrem.com, le compte devient administrateur.`)
+    return
+  }
+  // Un refus se DIT avec son motif : « déjà invité » n'est pas une erreur, et
+  // laisser croire à un échec ferait recliquer indéfiniment.
+  const motifs = {
+    deja_invite: 'Une invitation est déjà en attente pour cette adresse.',
+    parametres: 'Adresse manquante.',
+    ecriture: "L'écriture a échoué. Réessayez.",
+  }
+  window.alert(motifs[r.reason] || `Échec : ${r.reason}`)
+}
 
 function ajouterAdmin() {
   form.adminEmails.push('')
@@ -751,7 +799,7 @@ function ouvrirCreation() {
     pack: 'premium',
     essai: true,
     modulesActifs: [...EDITIONS.secondaire.modulesParDefaut],
-    slug: '', adminEmails: [''],
+    slug: '', adminEmails: ['', ADMIN_EDUFREM],
   })
   slugManuallyEdited.value = false
   creationError.value = ''
