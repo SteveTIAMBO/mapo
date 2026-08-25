@@ -725,8 +725,17 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
         invitedBy: authStore.user?.uid || null,
         invitedByName: authStore.userProfile?.displayName || 'EDUFREM',
       })
+
+      // ⚠️ L'invitation Firestore ne PRÉVIENT personne. La première version de
+      // cette fonction s'arrêtait ici et annonçait « invitation créée » : rien
+      // n'arrivait jamais dans la boîte de l'intéressé, et l'écran affirmait le
+      // contraire. Une écriture en base n'est pas un envoi.
+      const envoi = await sendAdminInvites([adresse], `${schoolId}.app-edufrem.com`)
+
       await loadSchools()
-      return { ok: true, role }
+      // On rend l'état RÉEL de l'envoi : l'appelant doit pouvoir dire « invitation
+      // enregistrée mais e-mail non parti » plutôt qu'un succès global trompeur.
+      return { ok: true, role, mailEnvoye: envoi.sent > 0, mailErreur: envoi.error || null }
     } catch (e) {
       console.error('Ajout administrateur échoué:', e)
       return { ok: false, reason: (e && e.code) || 'ecriture' }
