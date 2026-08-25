@@ -26,7 +26,7 @@
           <ChevronDown :size="16" class="acc-chev" :class="{ rot: isOpen(o.id) }" />
         </button>
         <ul v-show="isOpen(o.id)" class="of-feats">
-          <li v-for="f in o.avantages" :key="f"><Check :size="14" /> {{ avantageLabel(f) }}</li>
+          <li v-for="f in avantagesVisibles(o)" :key="f"><Check :size="14" /> {{ avantageLabel(f) }}</li>
         </ul>
         <button v-if="o.id === abo.offreId" class="btn btn-ghost btn-sm" disabled>{{ t('mia.aboCurrent') }}</button>
         <button v-else-if="prix(o) > 0" class="btn btn-sm" :class="o.promo ? 'btn-primary' : 'btn-outline'" @click="choisir(o)">{{ t('mia.aboChoose') }}</button>
@@ -119,6 +119,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../stores/auth'
+import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useAbonnementStore } from '../stores/abonnement'
 import { usePaiementStore } from '../stores/paiement'
 import { useFacturationMiapoStore } from '../stores/facturationMiapo'
@@ -136,8 +137,27 @@ const phone = ref('')
 const status = ref('idle') // idle | pending | ok | soon | refused | timeout | error
 const open = ref({})       // accordéons ouverts par id d'offre
 
-const remisePct = computed(() => abo.remiseFamille?.pct || 0)
+/**
+ * ⚠️ La remise famille n'a AUCUN sens pour un apprenant seul.
+ *
+ * Le bandeau s'affichait dès que le serveur annonçait une remise — donc à tout
+ * le monde. Un adulte en MBA, venu chercher ses propres révisions, lisait
+ * « 35 % de réduction dès le 2e enfant ». Ce n'est pas seulement inutile : ça
+ * lui dit que le produit ne s'adresse pas à lui.
+ */
+const eaStore = useEnfantsAutonomesStore()
+const estApprenant = computed(() => eaStore.mode === 'apprenant')
+const remisePct = computed(() => (estApprenant.value ? 0 : abo.remiseFamille?.pct || 0))
 const remiseMin = computed(() => abo.remiseFamille?.minEnfants || 2)
+/**
+ * Un apprenant seul ne doit pas lire « remise famille » dans la liste des
+ * avantages non plus : masquer le bandeau et laisser l'argument dans les offres
+ * aurait juste déplacé l'incohérence.
+ */
+function avantagesVisibles(o) {
+  const liste = o.avantages || []
+  return estApprenant.value ? liste.filter((f) => f !== 'featFamille') : liste
+}
 // « ×N d'usage » relatif à l'offre gratuite (façon Claude) — pas de nombre de crédits.
 const baseCap = computed(() => { const f = abo.offres.find((o) => o.prix === 0) || abo.offres[0]; return (f && f.capTokens) || 1 })
 function multiple(o) { return Math.max(1, Math.round((o.capTokens || 0) / baseCap.value)) }
