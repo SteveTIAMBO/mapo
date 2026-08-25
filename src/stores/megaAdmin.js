@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { db, auth as fbAuth } from '../firebase'
 import {
-  collection, doc, addDoc, getDocs, getCountFromServer, updateDoc,
+  collection, doc, addDoc, getDoc, getDocs, getCountFromServer, updateDoc, setDoc,
   writeBatch, serverTimestamp, query, where
 } from 'firebase/firestore'
 import { sendSignInLinkToEmail } from 'firebase/auth'
@@ -733,6 +733,83 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     }
   }
 
+  // ── Vitrine publique d'une école ────────────────────────────────────────
+  //
+  // Une vitrine est une fiche `vitrines/{schoolId}`. Il n'y a RIEN à déployer
+  // par école : le code de la vitrine est publié une fois pour toutes, et le
+  // site est en ligne dès que la fiche existe, sur `<slug>.app-edufrem.com/site`.
+
+  /** Lit la vitrine d'une école, ou `null` si elle n'existe pas encore. */
+  async function chargerVitrine(schoolId) {
+    try {
+      const snap = await getDoc(doc(db, 'vitrines', schoolId))
+      return snap.exists() ? { id: snap.id, ...snap.data() } : null
+    } catch (e) {
+      console.error('Lecture vitrine échouée:', e)
+      return null
+    }
+  }
+
+  /**
+   * Enregistre la vitrine.
+   *
+   * ⚠️ Les règles Firestore REFUSENT une création directement en « valide » :
+   * une première écriture doit être en brouillon ou en attente. On crée donc
+   * d'abord, on publie ensuite — et c'est voulu : la page publique d'une école
+   * ne se met pas en ligne par inadvertance.
+   */
+  async function enregistrerVitrine(schoolId, cfg) {
+    if (!schoolId || !cfg) return { ok: false, reason: 'parametres' }
+    try {
+      const ref_ = doc(db, 'vitrines', schoolId)
+      const existe = (await getDoc(ref_)).exists()
+      const statut = existe ? (cfg.statut || 'brouillon') : 'brouillon'
+      await setDoc(ref_, { ...cfg, id: schoolId, statut, majAt: serverTimestamp() }, { merge: true })
+      return { ok: true, statut, cree: !existe }
+    } catch (e) {
+      console.error('Enregistrement vitrine échoué:', e)
+      return { ok: false, reason: (e && e.code) || 'ecriture' }
+    }
+  }
+
+  /** Change le seul statut de publication. */
+  async function publierVitrine(schoolId, statut) {
+    if (!['brouillon', 'en_attente', 'valide'].includes(statut)) return { ok: false, reason: 'statut' }
+    try {
+      await updateDoc(doc(db, 'vitrines', schoolId), { statut, majAt: serverTimestamp() })
+      return { ok: true, statut }
+    } catch (e) {
+      console.error('Publication vitrine échouée:', e)
+      return { ok: false, reason: (e && e.code) || 'ecriture' }
+    }
+  }
+
+  /**
+   * Compte ce qu'il faut pour une vitrine honnête : niveaux et effectifs.
+   *
+   * ⚠️ Renvoie `0` quand la lecture échoue, et l'appelant NE DOIT PAS afficher
+   * un zéro comme un effectif : sur la page publique d'une école, « 0 écoliers »
+   * serait faux et humiliant. Zéro ici veut dire « pas encore importé ».
+   */
+  async function mesurerEcole(schoolId) {
+    const out = { niveaux: [], effectif: 0, personnel: 0 }
+    try {
+      const e = await getCountFromServer(collection(db, 'schools', schoolId, 'eleves'))
+      out.effectif = e.data().count || 0
+    } catch (err) { /* module absent ou vide */ }
+    try {
+      const p = await getCountFromServer(collection(db, 'schools', schoolId, 'personnel'))
+      out.personnel = p.data().count || 0
+    } catch (err) { /* silent */ }
+    try {
+      const c = await getDocs(collection(db, 'schools', schoolId, 'classes'))
+      const niveaux = []
+      c.forEach((d) => { const n = (d.data().level || d.data().niveau || '').trim(); if (n && !niveaux.includes(n)) niveaux.push(n) })
+      out.niveaux = niveaux
+    } catch (err) { /* silent */ }
+    return out
+  }
+
   return {
     schools,
     syncEcoleMobi,
@@ -744,6 +821,7 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
     validateSlug,
     createSchool,
     ajouterAdministrateur,
+    chargerVitrine, enregistrerVitrine, publierVitrine, mesurerEcole,
     updateSchoolModules,
     updateSchoolPlan,
     deleteSchool,

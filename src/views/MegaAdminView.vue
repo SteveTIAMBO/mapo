@@ -145,6 +145,9 @@
                 <a class="ma-btn-ghost" :href="`https://${s.id}.app-edufrem.com`" target="_blank" rel="noopener">
                   Ouvrir
                 </a>
+                <button class="ma-btn-ghost" type="button" @click="ouvrirVitrine(s)" title="Site public de l'école">
+                  Site
+                </button>
                 <button class="ma-btn-ghost" type="button" @click="inviterAdministrateur(s)" title="Inviter un administrateur supplémentaire (directeur remplaçant, accès EDUFREM)">
                   + Admin
                 </button>
@@ -517,6 +520,91 @@
 
     <!-- Modale : prompt de configuration manuelle (cPanel + Firebase) -->
     <transition name="ma-fade">
+      <!-- ══ Site public de l'école ═══════════════════════════════════
+           Une vitrine est une fiche `vitrines/{slug}` : rien à déployer par
+           école, le site est en ligne dès que la fiche existe. -->
+      <div v-if="vitrineEdit" class="ma-modal-overlay" @click.self="fermerVitrine">
+        <div class="ma-modal">
+          <div class="ma-modal-head">
+            <h2 class="ma-modal-title">Site public — {{ vitrineEdit.school.schoolName || vitrineEdit.school.nom }}</h2>
+            <button class="ma-modal-close" type="button" @click="fermerVitrine">×</button>
+          </div>
+
+          <p class="ma-hint">
+            Adresse du site :
+            <a :href="`https://${vitrineEdit.school.id}.app-edufrem.com/site/`" target="_blank" rel="noopener">
+              {{ vitrineEdit.school.id }}.app-edufrem.com/site
+            </a>
+          </p>
+
+          <template v-if="vitrineEdit.chargement">
+            <p class="ma-hint">Lecture de la fiche…</p>
+          </template>
+
+          <template v-else>
+            <label class="ma-label">Nom affiché</label>
+            <input v-model="vitrineEdit.cfg.identite.nom" class="ma-input" />
+
+            <label class="ma-label">Slogan</label>
+            <input v-model="vitrineEdit.cfg.identite.slogan" class="ma-input" />
+
+            <label class="ma-label">Présentation</label>
+            <textarea v-model="vitrineEdit.cfg.vision.texte" class="ma-input" rows="4"></textarea>
+
+            <div class="ma-grid2">
+              <div>
+                <label class="ma-label">Couleur principale</label>
+                <input v-model="vitrineEdit.cfg.couleurs.primaire" class="ma-input" placeholder="#8E1B3A" />
+              </div>
+              <div>
+                <label class="ma-label">Adresse publique</label>
+                <input v-model="vitrineEdit.cfg.contact.adresse" class="ma-input" />
+              </div>
+            </div>
+
+            <div class="ma-grid2">
+              <div>
+                <label class="ma-label">Téléphone public</label>
+                <input v-model="vitrineEdit.cfg.contact.telephone" class="ma-input" placeholder="laissé vide = non publié" />
+              </div>
+              <div>
+                <label class="ma-label">E-mail public</label>
+                <input v-model="vitrineEdit.cfg.contact.email" class="ma-input" placeholder="laissé vide = non publié" />
+              </div>
+            </div>
+
+            <!-- ⚠️ Ce qui manque est DIT. Sans cette liste, on croirait la page
+                 terminée simplement parce qu'elle s'affiche. -->
+            <p v-if="vitrineManques.length" class="ma-hint">
+              Encore absent du site : {{ vitrineManques.join(', ') }}.
+              L'école pourra le compléter.
+            </p>
+
+            <label class="ma-label">Publication</label>
+            <select v-model="vitrineEdit.cfg.statut" class="ma-input">
+              <option value="brouillon">Brouillon — visible de nous seuls</option>
+              <option value="en_attente">En attente de validation de l'école</option>
+              <option value="valide">Publié — visible de tous</option>
+            </select>
+            <p v-if="!vitrineEdit.existe && vitrineEdit.cfg.statut === 'valide'" class="ma-hint">
+              La première écriture se fait en brouillon : enregistrez, puis publiez.
+            </p>
+
+            <p v-if="vitrineError" class="ma-error">{{ vitrineError }}</p>
+            <p v-if="vitrineOk" class="ma-ok">{{ vitrineOk }}</p>
+
+            <div class="ma-modal-actions">
+              <button class="ma-btn-ghost" type="button" @click="regenererVitrine">
+                Régénérer depuis les données de l'école
+              </button>
+              <button class="ma-btn" type="button" :disabled="vitrineBusy" @click="enregistrerVitrine">
+                {{ vitrineBusy ? 'Enregistrement…' : 'Enregistrer' }}
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
       <div v-if="promptDialog" class="ma-modal-overlay" @click.self="promptDialog = null">
         <div class="ma-modal ma-modal-prompt">
           <div class="ma-modal-head">
@@ -551,6 +639,7 @@
 import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import { genererVitrine, manquesVitrine } from '../utils/vitrineGeneration'
 import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, MODULES_STRUCTURE, MODULES_PEDAGOGIE, MODULES_SERVICES, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
 import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
@@ -935,6 +1024,89 @@ async function promptComplexe(school) {
   if (!res.success) window.alert(res.error || 'Échec de l\'enregistrement.')
 }
 
+// ── Site public d'une école ───────────────────────────────────────────
+const vitrineEdit = ref(null)
+const vitrineBusy = ref(false)
+const vitrineError = ref('')
+const vitrineOk = ref('')
+
+const vitrineManques = computed(() => (vitrineEdit.value?.cfg ? manquesVitrine(vitrineEdit.value.cfg) : []))
+
+/**
+ * Ouvre le panneau. Si la fiche n'existe pas, elle est GÉNÉRÉE depuis les
+ * données de l'école — jamais un gabarit vide à remplir par un personnel qui
+ * n'en aura pas le temps.
+ */
+async function ouvrirVitrine(school) {
+  vitrineError.value = ''
+  vitrineOk.value = ''
+  vitrineEdit.value = { school, cfg: null, existe: false, chargement: true }
+  const [fiche, mesures] = await Promise.all([
+    store.chargerVitrine(school.id),
+    store.mesurerEcole(school.id),
+  ])
+  const genere = genererVitrine(school, mesures)
+  vitrineEdit.value = {
+    school,
+    // Une fiche existante n'est PAS écrasée par la génération : on garderait
+    // sinon les corrections faites par l'école.
+    cfg: fiche ? { ...genere, ...fiche } : genere,
+    existe: !!fiche,
+    mesures,
+    chargement: false,
+  }
+}
+
+function fermerVitrine() { vitrineEdit.value = null }
+
+/** Repart des données de l'école, en gardant le statut de publication. */
+async function regenererVitrine() {
+  const e = vitrineEdit.value
+  if (!e) return
+  const mesures = e.mesures || await store.mesurerEcole(e.school.id)
+  const statut = e.cfg?.statut || 'brouillon'
+  e.cfg = { ...genererVitrine(e.school, mesures), statut }
+  vitrineOk.value = 'Contenu régénéré depuis les données de l’école.'
+}
+
+async function enregistrerVitrine() {
+  const e = vitrineEdit.value
+  if (!e?.cfg) return
+  vitrineBusy.value = true
+  vitrineError.value = ''
+  vitrineOk.value = ''
+  const voulu = e.cfg.statut
+  const r = await store.enregistrerVitrine(e.school.id, e.cfg)
+  if (!r.ok) {
+    vitrineBusy.value = false
+    vitrineError.value = r.reason === 'permission-denied'
+      ? "Écriture refusée : il faut être super-admin ou administrateur de cette école."
+      : `Échec de l'enregistrement (${r.reason}).`
+    return
+  }
+  e.existe = true
+  // ⚠️ Les règles imposent une CRÉATION en brouillon. Si « publié » était
+  // demandé, la publication est un second appel — sinon l'opérateur croirait
+  // le site en ligne alors qu'il ne l'est pas.
+  if (voulu === 'valide' && r.statut !== 'valide') {
+    const p = await store.publierVitrine(e.school.id, 'valide')
+    vitrineBusy.value = false
+    if (!p.ok) {
+      e.cfg.statut = r.statut
+      vitrineError.value = `Fiche enregistrée en ${r.statut}, mais la publication a échoué (${p.reason}).`
+      return
+    }
+    e.cfg.statut = 'valide'
+    vitrineOk.value = 'Site enregistré et publié.'
+    return
+  }
+  vitrineBusy.value = false
+  e.cfg.statut = r.statut
+  vitrineOk.value = r.statut === 'valide'
+    ? 'Site enregistré et publié.'
+    : `Site enregistré en ${r.statut === 'en_attente' ? 'attente de validation' : 'brouillon'} — pas encore visible du public.`
+}
+
 function ouvrirModules(school) {
   const ed = EDITIONS[school.edition] || EDITIONS.secondaire
   // ⚠️ Migration. Une école créée AVANT la suppression du socle n'a dans sa liste
@@ -1239,6 +1411,18 @@ watch(() => form.slug, (v) => {
 }
 
 /* Modal */
+/* Deux champs cote a cote dans une modale ; empiles sur mobile. */
+.ma-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .ma-grid2 { grid-template-columns: 1fr; } }
+
+/* Confirmation lisible, pendant du .ma-error deja present. */
+.ma-ok {
+  margin: 8px 0 0; padding: 9px 12px; border-radius: 10px;
+  font-size: 13.5px; line-height: 1.45;
+  color: #1b5e20; background: rgba(46, 125, 50, 0.10);
+  border: 1px solid rgba(46, 125, 50, 0.22);
+}
+
 .ma-modal-overlay {
   position: fixed; inset: 0; z-index: 60;
   background: rgba(12, 45, 90, 0.5);
