@@ -522,7 +522,10 @@
     <transition name="ma-fade">
       <!-- ══ Site public de l'école ═══════════════════════════════════
            Une vitrine est une fiche `vitrines/{slug}` : rien à déployer par
-           école, le site est en ligne dès que la fiche existe. -->
+           école, le site est en ligne dès que la fiche existe.
+           ⚠️ Même structure que les autres modales — `.ma-form` en corps et
+           `.ma-field` par champ. Sans eux, les libellés se superposent aux
+           champs et les boutons débordent. -->
       <transition name="ma-fade">
       <div v-if="vitrineEdit" class="ma-modal-overlay" @click.self="fermerVitrine">
         <div class="ma-modal">
@@ -536,9 +539,7 @@
           <div class="ma-form">
             <p class="ma-hint">
               Adresse du site :
-              <a :href="`https://${vitrineEdit.school.id}.app-edufrem.com/site/`" target="_blank" rel="noopener">
-                {{ vitrineEdit.school.id }}.app-edufrem.com/site
-              </a>
+              <a :href="`https://${vitrineEdit.school.id}.app-edufrem.com/site/`" target="_blank" rel="noopener">{{ vitrineEdit.school.id }}.app-edufrem.com/site</a>
             </p>
 
             <p v-if="vitrineEdit.chargement" class="ma-hint">Lecture de la fiche…</p>
@@ -548,17 +549,14 @@
                 <label class="ma-label">Nom affiché</label>
                 <input v-model="vitrineEdit.cfg.identite.nom" type="text" class="ma-input" />
               </div>
-
               <div class="ma-field">
                 <label class="ma-label">Slogan</label>
                 <input v-model="vitrineEdit.cfg.identite.slogan" type="text" class="ma-input" />
               </div>
-
               <div class="ma-field">
                 <label class="ma-label">Présentation</label>
                 <textarea v-model="vitrineEdit.cfg.vision.texte" class="ma-input" rows="4"></textarea>
               </div>
-
               <div class="ma-row">
                 <div class="ma-field">
                   <label class="ma-label">Couleur principale</label>
@@ -569,7 +567,6 @@
                   <input v-model="vitrineEdit.cfg.contact.adresse" type="text" class="ma-input" />
                 </div>
               </div>
-
               <div class="ma-row">
                 <div class="ma-field">
                   <label class="ma-label">Téléphone public</label>
@@ -581,8 +578,6 @@
                 </div>
               </div>
 
-              <!-- ⚠️ Ce qui manque est DIT : sans cette liste, on croirait la
-                   page terminée simplement parce qu'elle s'affiche. -->
               <p v-if="vitrineManques.length" class="ma-hint">
                 Encore absent du site : {{ vitrineManques.join(', ') }}.
               </p>
@@ -617,7 +612,7 @@
       <!-- ══ Inviter un administrateur ════════════════════════════════
            ⚠️ Remplace un `window.prompt` : une boîte du NAVIGATEUR au milieu
            d'une application soignée fait douter de tout le reste, et elle ne
-           peut afficher ni contexte ni résultat d'envoi. -->
+           peut afficher ni le contexte ni le résultat de l'envoi. -->
       <transition name="ma-fade">
       <div v-if="adminDialog" class="ma-modal-overlay" @click.self="adminDialog = null">
         <div class="ma-modal">
@@ -630,8 +625,7 @@
           <div class="ma-form">
             <p class="ma-hint">
               Sur <strong>{{ adminDialog.school.schoolName || adminDialog.school.nom }}</strong>.
-              À sa première connexion sur {{ adminDialog.school.id }}.app-edufrem.com,
-              le compte devient administrateur de l'établissement.
+              À sa première connexion sur {{ adminDialog.school.id }}.app-edufrem.com, le compte devient administrateur.
             </p>
             <div class="ma-field">
               <label class="ma-label">Adresse e-mail</label>
@@ -862,16 +856,222 @@ async function confirmerAdministrateur() {
     d.error = motifs[r.reason] || `Échec : ${r.reason}`
     return
   }
-  // ⚠️ On distingue « invitation enregistrée » de « e-mail parti ». Les
-  // confondre laissait croire à un envoi qui n'avait jamais eu lieu — c'est
-  // exactement ce qui s'est produit le 25/08.
-  d.ok = r.mailEnvoye
-    ? `Invitation enregistrée et lien de connexion envoyé à ${d.email}.`
-    : `Invitation enregistrée (rôle ${r.role}).`
-  if (!r.mailEnvoye) {
+  // ⚠️ « Invitation enregistrée » et « e-mail parti » sont DEUX choses. Les
+  // confondre a laissé Steve attendre un message qui n'était jamais parti.
+  if (r.mailEnvoye) {
+    d.ok = `Invitation enregistrée et lien de connexion envoyé à ${d.email}.`
+  } else {
+    d.ok = `Invitation enregistrée (rôle ${r.role}).`
     d.error = `L'e-mail n'a PAS pu être envoyé${r.mailErreur ? ` (${r.mailErreur})` : ''}. `
-      + `La personne peut quand même se connecter sur ${d.school.id}.app-edufrem.com avec cette adresse.`
+      + `La personne peut se connecter sur ${d.school.id}.app-edufrem.com avec cette adresse.`
   }
+}
+
+
+function ajouterAdmin() {
+  form.adminEmails.push('')
+}
+function retirerAdmin(i) {
+  form.adminEmails.splice(i, 1)
+  if (!form.adminEmails.length) form.adminEmails.push('')
+}
+const slugManuallyEdited = ref(false)
+
+// Listes pour le formulaire
+const editions = computed(() => Object.values(EDITIONS))
+const modulesDisponibles = computed(() => {
+  const ed = EDITIONS[form.edition]
+  if (!ed) return []
+  return ed.modulesDisponibles.map((k) => ({ key: k, ...MODULES_INFO[k] }))
+})
+const packsDisponibles = computed(() => PACKS[form.edition] || PACKS.secondaire)
+
+// Aperçu de la date de fin d'essai affiché dans le formulaire
+const apercuFinEssai = computed(() => formatDate(computeTrialUntil()))
+
+function formatDate(iso) {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  } catch { return iso }
+}
+
+function initModulesParDefaut() {
+  const ed = EDITIONS[form.edition]
+  form.modulesActifs = ed ? [...ed.modulesParDefaut] : []
+  // Repartir sur le pack le plus complet de l'édition choisie
+  const packs = PACKS[form.edition] || PACKS.secondaire
+  form.pack = packs[packs.length - 1].key
+}
+
+// Helpers d'affichage liste
+function editionLabel(key) {
+  return EDITIONS[key]?.label || key
+}
+function moduleShortLabel(key) {
+  return MODULES_INFO[key]?.label || key
+}
+function packLabel(school) {
+  const packs = PACKS[school.edition] || PACKS.secondaire
+  return packs.find((p) => p.key === school.pack)?.label || school.pack
+}
+function essaiActif(school) {
+  if (!school.trialUntil) return false
+  try { return new Date(school.trialUntil).getTime() > Date.now() } catch { return false }
+}
+
+const totalEleves = computed(() => store.schools.reduce((s, x) => s + (x.nbEleves || 0), 0))
+const totalPersonnel = computed(() => store.schools.reduce((s, x) => s + (x.nbPersonnel || 0), 0))
+const totalInvitations = computed(() => store.schools.reduce((s, x) => s + (x.nbInvitations || 0), 0))
+
+const fmt = (n) => (n ?? 0).toLocaleString('fr-FR')
+
+function suggererSlug() {
+  if (!slugManuallyEdited.value) form.slug = slugify(form.nom)
+}
+
+function ouvrirCreation() {
+  Object.assign(form, {
+    nom: '', sigle: '', ville: '', type: '',
+    edition: 'secondaire',
+    anneeAcademique: anneeParDefaut(),
+    pack: 'premium',
+    essai: true,
+    modulesActifs: [...EDITIONS.secondaire.modulesParDefaut],
+    slug: '', adminEmails: ['', ADMIN_EDUFREM],
+  })
+  slugManuallyEdited.value = false
+  creationError.value = ''
+  creationOuverte.value = true
+}
+function fermerCreation() {
+  if (creating.value) return
+  creationOuverte.value = false
+}
+
+async function soumettreCreation() {
+  creating.value = true
+  creationError.value = ''
+
+  // Barre de progression simulée : la création est un seul appel asynchrone,
+  // on fait monter la barre vers 90 % puis on la termine à 100 % à la réponse.
+  creationProgress.value = 6
+  creationStepLabel.value = "Création de l'école…"
+  clearInterval(creationTimer)
+  creationTimer = setInterval(() => {
+    const p = creationProgress.value
+    if (p < 92) {
+      const inc = p < 35 ? 5 : (p < 65 ? 2.5 : 1)
+      creationProgress.value = Math.min(92, p + inc)
+      if (creationProgress.value >= 30 && creationProgress.value < 62) creationStepLabel.value = 'Configuration du sous-domaine…'
+      else if (creationProgress.value >= 62) creationStepLabel.value = 'Activation de la connexion et finalisation…'
+    }
+  }, 240)
+
+  let r
+  try {
+    r = await store.createSchool({
+      slug: form.slug.trim().toLowerCase(),
+      nom: form.nom.trim(),
+      sigle: form.sigle.trim(),
+      ville: form.ville.trim(),
+      type: form.type.trim(),
+      edition: form.edition,
+      pack: form.pack,
+      essai: form.essai,
+      modulesActifs: form.modulesActifs,
+      anneeAcademique: form.anneeAcademique.trim(),
+      adminEmails: form.adminEmails.map((e) => e.trim().toLowerCase()).filter(Boolean),
+    })
+  } finally {
+    clearInterval(creationTimer)
+  }
+
+  creationProgress.value = 100
+  creationStepLabel.value = r && r.success ? 'Terminé' : 'Échec'
+  await new Promise((res) => setTimeout(res, 450)) // laisser voir le 100 %
+
+  creating.value = false
+  creationProgress.value = 0
+  if (r && r.success) {
+    creationOuverte.value = false
+    creationOk.value = {
+      slug: r.slug,
+      subdomain: r.subdomain,
+      role: r.role,
+      adminEmail: r.adminEmail,
+      adminEmails: r.adminEmails,
+      subdomainCreated: r.subdomainCreated,
+      subdomainError: r.subdomainError,
+      authDomainAdded: r.authDomainAdded,
+      authDomainError: r.authDomainError,
+      emailsSent: r.emailsSent,
+      emailsTotal: r.emailsTotal,
+      emailError: r.emailError,
+    }
+  } else {
+    creationError.value = (r && r.error) || "La création de l'école a échoué."
+  }
+}
+
+// ── Gestion du plan (pack, modules, essai) d'une école existante ──
+const modulesEdit = ref(null)
+const modulesSaving = ref(false)
+const modulesError = ref('')
+
+const modulesEditDisponibles = computed(() => {
+  if (!modulesEdit.value) return []
+  const ed = EDITIONS[modulesEdit.value.school.edition] || EDITIONS.secondaire
+  return ed.modulesDisponibles.map((k) => ({ key: k, ...MODULES_INFO[k] }))
+})
+
+/** Regroupe une liste de clés en familles, pour un écran lisible. */
+function grouper(cles) {
+  const dans = (fam) => cles.filter((k) => fam.includes(k)).map((k) => ({ key: k, ...MODULES_INFO[k] }))
+  const autres = cles.filter((k) => ![...MODULES_STRUCTURE, ...MODULES_PEDAGOGIE, ...MODULES_SERVICES].includes(k))
+  return [
+    { titre: 'Structure de l’établissement', modules: dans(MODULES_STRUCTURE) },
+    { titre: 'Pédagogie et vie scolaire', modules: dans(MODULES_PEDAGOGIE) },
+    { titre: 'Services', modules: dans(MODULES_SERVICES) },
+    { titre: 'Enseignement supérieur', modules: autres.map((k) => ({ key: k, ...MODULES_INFO[k] })) },
+  ].filter((g) => g.modules.length)
+}
+
+const groupesModules = computed(() => grouper(modulesDisponibles.value.map((m) => m.key)))
+const groupesModulesEdit = computed(() => grouper(modulesEditDisponibles.value.map((m) => m.key)))
+
+function toutCocher(cible) {
+  cible.modulesActifs = modulesDisponibles.value.map((m) => m.key)
+  cible.pack = 'custom'
+}
+function toutDecocher(cible) {
+  cible.modulesActifs = []
+  cible.pack = 'custom'
+}
+function toutCocherEdit() {
+  modulesEdit.value.selection = modulesEditDisponibles.value.map((m) => m.key)
+  modulesEdit.value.pack = 'custom'
+}
+
+const modulesEditPacks = computed(() => {
+  if (!modulesEdit.value) return []
+  return PACKS[modulesEdit.value.school.edition] || PACKS.secondaire
+})
+
+// Rattache une école à un complexe scolaire (directeur multi-écoles).
+// Prompt léger (outil interne) : identifiant partagé + nom du complexe.
+async function promptComplexe(school) {
+  const cid = window.prompt(
+    'Identifiant du complexe (partagé par toutes les écoles du groupe ET le compte du directeur de complexe).\nLaisser vide pour détacher cette école.',
+    school.complexeId || ''
+  )
+  if (cid === null) return
+  let name = school.complexeName || ''
+  if (cid.trim()) {
+    name = window.prompt('Nom du complexe (affiché) :', name || school.nom || school.schoolName || '') || name
+  }
+  const res = await store.assignComplexe(school.id, cid, name)
+  if (!res.success) window.alert(res.error || 'Échec de l\'enregistrement.')
 }
 
 // ── Site public d'une école ───────────────────────────────────────────
@@ -1261,6 +1461,10 @@ watch(() => form.slug, (v) => {
 }
 
 /* Modal */
+/* Deux champs cote a cote dans une modale ; empiles sur mobile. */
+.ma-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 640px) { .ma-grid2 { grid-template-columns: 1fr; } }
+
 /* Confirmation lisible, pendant du .ma-error deja present. */
 .ma-ok {
   margin: 8px 0 0; padding: 9px 12px; border-radius: 10px;
