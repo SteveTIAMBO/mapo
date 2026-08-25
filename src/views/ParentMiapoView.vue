@@ -560,11 +560,20 @@
                    VIDE, et ce qu'il écrit (`matieresSup`) n'est pas lu par
                    `matieresList` dès que `formationModules` est renseigné. On sert
                    donc l'éditeur de modules, seul capable d'en RETIRER un. -->
-              <MiapoModulesFormation
-                v-if="activeEnfant && sansReferentiel"
-                :valeur="activeEnfant.formationModules || ''"
-                @changer="majModulesFormation"
-              />
+              <template v-if="activeEnfant && sansReferentiel">
+                <MiapoModulesFormation
+                  :valeur="activeEnfant.formationModules || ''"
+                  @changer="majModulesFormation"
+                />
+                <!-- ⚠️ L'import du programme n'etait atteignable QUE depuis un
+                     ecran vide : un apprenant dont les modules etaient deja
+                     remplis — par une proposition de l'IA, donc peut-etre a
+                     cote — ne pouvait plus jamais importer le PDF de son
+                     ecole. Il lui fallait d'abord tout effacer. -->
+                <button type="button" class="btn btn-outline btn-sm mods-import" @click="openFormationSetup">
+                  <Sparkles :size="15" /> <span>{{ t('mia.importProgramme') }}</span>
+                </button>
+              </template>
               <MiapoAjouterMatiere
                 v-else-if="activeEnfant"
                 :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
@@ -1044,7 +1053,6 @@
               </div>
               <div class="form-row">
                 <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="profil.formation" :disabled="scolariteVerrouillee" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
-                <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="profil.formationUrl" :disabled="scolariteVerrouillee" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
               </div>
               <div class="form-group"><label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label><textarea v-model="profil.formationModules" :disabled="scolariteVerrouillee" class="input" rows="2" :placeholder="t('mia.modulesPlaceholder')"></textarea></div>
               <!-- Moteur de cours : MIAPO décompose la formation en modules + plan -->
@@ -1195,7 +1203,6 @@
           <template v-if="form.niveau === NIVEAU_HORS_CATALOGUE">
             <div class="form-group"><label class="form-label">{{ t('mia.formationName') }}</label><input v-model="form.formation" class="input" :placeholder="t('mia.formationPlaceholder')" /></div>
             <div class="form-group"><label class="form-label">{{ t('mia.school') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.ecole" class="input" :placeholder="t('mia.schoolPlaceholder')" /></div>
-            <div class="form-group"><label class="form-label">{{ t('mia.programUrl') }} <span class="muted small">{{ t('mia.optional') }}</span></label><input v-model="form.formationUrl" class="input" type="url" :placeholder="t('mia.programUrlPlaceholder')" /></div>
             <div class="form-group">
               <label class="form-label">{{ t('mia.modulesSubjects') }} <span class="muted small">{{ t('mia.commaSeparated') }}</span></label>
               <textarea v-model="form.formationModules" class="input" rows="2" :placeholder="t('mia.modulesPlaceholderShort')"></textarea>
@@ -2007,7 +2014,7 @@ onMounted(() => { window.addEventListener('online', _majEnLigne); window.addEven
 onUnmounted(() => { window.removeEventListener('online', _majEnLigne); window.removeEventListener('offline', _majEnLigne) })
 
 // ── Profil (configuration : nom, photo, cycle, classe, pays, école) ──
-const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', photoURL: '', objectifNote: 10, bareme: '', catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
+const profil = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '3ème', pays: 'CM', ecole: '', filiere: '', formation: '', formationModules: '', photoURL: '', objectifNote: 10, bareme: '', catEcole: '', catFormation: '', certifId: '', organisme: '', certifDate: '' })
 // Objectif de note de l'enfant actif : toute note en dessous part en révision.
 const objectif = computed(() => store.objectifDe(activeEnfant.value))
 // Barème de l'apprenant : le primaire sénégalais et ivoirien note sur 10, pas 20.
@@ -2069,7 +2076,7 @@ function syncProfil() {
   profil.value = {
     firstName: e.firstName || '', lastName: e.lastName || '', gender: e.gender || 'M',
     cycle: e.cycle || cycleDuNiveau(e.niveau, e.pays || 'CM'), niveau: e.niveau || '', pays: e.pays || 'CM',
-    ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationUrl: e.formationUrl || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
+    ecole: e.ecole || '', filiere: e.filiere || '', formation: e.formation || '', formationModules: e.formationModules || '', photoURL: e.photoURL || '',
     objectifNote: store.objectifDe(e),
     bareme: e.bareme || '',
     catEcole: e.catEcole || '', catFormation: e.catFormation || '',
@@ -2148,7 +2155,7 @@ async function genererPlanCours() {
   coursLoading.value = true
   coursMsg.value = ''
   // Persiste d'abord le nom/URL de la formation saisis (contexte de génération).
-  store.updateEnfant(e.id, { formation: profil.value.formation, formationUrl: profil.value.formationUrl })
+  store.updateEnfant(e.id, { formation: profil.value.formation })
   const r = await tuteur.generateCoursePlan({
     formation: profil.value.formation.trim(),
     programme: coursProgramme.value.trim(),
@@ -2445,7 +2452,7 @@ function demanderRevision() {
 }
 
 const showAdd = ref(false)
-const form = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '', catEcole: '', catFormation: '' })
+const form = ref({ firstName: '', lastName: '', gender: 'M', cycle: '', niveau: '', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationModules: '', catEcole: '', catFormation: '' })
 // ── Catalogue école → formation → préchargement du programme (apprenant supérieur) ──
 function ecoleCatalogueObj(o) { return (o.catEcole && o.catEcole !== 'autre') ? ecoleCatalogue(o.catEcole) : null }
 function onCatEcole(o) {
@@ -2829,7 +2836,7 @@ const vigilanceTop = computed(() => {
   return { text: t('mia.insightGoodParent', { name: e.firstName }), go: () => (section.value = 'enfants') }
 })
 
-function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationUrl: '', formationModules: '' }; showAdd.value = true }
+function openAdd() { form.value = { firstName: '', lastName: '', gender: 'M', niveau: '3ème', pays: paysParDefaut(), ecole: '', filiere: '', formation: '', formationModules: '' }; showAdd.value = true }
 function doAdd() {
   if (!form.value.firstName.trim()) return
   activeId.value = store.addEnfant(form.value)
@@ -3563,6 +3570,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .rt-active { margin-top: 12px; }
 .rt-back { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 12px -4px; padding: 5px 10px; border: none; background: none; color: var(--tx3, #6b7280); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 8px; }
 .rt-back:hover { background: var(--input-bg, #f1f3f5); color: var(--tx, #1f2937); }
+.mods-import { margin-top: 12px; }
 .modules-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 2px; }
 .modules-empty .muted { margin: 0; }
 

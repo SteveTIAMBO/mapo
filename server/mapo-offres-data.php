@@ -74,9 +74,6 @@ function mapo_cout_action() {
     'prepa_examen'    => 2000,
     'course_plan'     => 2500,
     'extract_modules' => 2000,
-    // Lecture d'une page web : aucun appel de modèle, donc aucun crédit. Sans
-    // cette ligne, le défaut prudent de mapo_cout_task() la facturerait 2 500.
-    'fetch_programme' => 0,
     'pedagogie'       => 2500,
     'commande'        => 700,
     'tuteur_chat'     => 1200,

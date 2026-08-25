@@ -85,7 +85,7 @@ if (!is_array($body)) { http_response_code(400); echo json_encode(['ok' => false
 // appréciation de bulletin. L'échec ressemble donc au succès. Ajouter la tâche
 // ICI en même temps que son buildXxxPrompts().
 $data = is_array($body['data'] ?? null) ? $body['data'] : [];
-$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'positionnement', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'fetch_programme', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'dictee_correction', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
+$task = in_array(($body['task'] ?? 'appreciation'), ['appreciation', 'tutor_quiz', 'positionnement', 'dictee', 'vision_copie', 'vision_cours', 'vision_registre', 'vision_bulletin', 'vision_edt', 'extract_modules', 'orientation', 'orientation6c', 'bilan6c', 'prepa_examen', 'course_plan', 'commande', 'pedagogie', 'eval_reponse', 'dictee_correction', 'tuteur_chat', 'translate'], true) ? $body['task'] : 'appreciation';
 
 // ── 2. Authentification : jeton Firebase OU démo plafonnée ────────────
 $uid = verifyFirebaseToken();
@@ -176,22 +176,6 @@ if ($metered) {
       'cout' => (int) $coutTokens,
     ]); exit;
   }
-}
-
-// ── 2 bis. Lecture d'une page de programme (aucune IA appelée) ────────
-// Placée APRÈS l'authentification et le contrôle de crédits, pour qu'un
-// inconnu ne puisse pas se servir de notre serveur comme d'un relais.
-// Le texte revient au client, qui en garde la partie utile et la soumet
-// ensuite à `extract_modules` — c'est le MÊME chemin que l'import PDF.
-if ($task === 'fetch_programme') {
-  $r = mapo_lire_page((string) ($data['url'] ?? ''));
-  if (!$r['ok']) { echo json_encode(['ok' => false, 'error' => $r['raison']]); exit; }
-  $texte = mapo_html_en_texte($r['html']);
-  // Une page rendue en JavaScript renvoie une coquille : quelques mots de
-  // menu, aucun contenu. Le DIRE, plutôt que de soumettre ce bruit à l'IA,
-  // qui retomberait sur l'invention en ayant l'air d'avoir lu la page.
-  if (mb_strlen($texte) < 400) { echo json_encode(['ok' => false, 'error' => 'page_vide']); exit; }
-  echo json_encode(['ok' => true, 'texte' => mb_substr($texte, 0, 60000)]); exit;
 }
 
 // ── 3. Construire les prompts (selon la tâche) ────────────────────────
@@ -1764,129 +1748,4 @@ function buildEvalReponsePrompts($d) {
   $u .= "\nEvalue au format JSON demande.";
 
   return [$system, $u, 1200, true, null];
-}
-
-/* ─────────────────────────────────────────────────────────────────────────
- * LECTURE DE LA PAGE D'UNE FORMATION (tâche `fetch_programme`)
- *
- * POURQUOI. Le champ « lien du programme » était saisi, enregistré, affiché —
- * et relu par RIEN. Les modules d'une formation hors catalogue étaient donc
- * devinés depuis son seul intitulé : plausibles, et faux. Un faux paramètre,
- * réglé puis ignoré, est pire qu'une absence de champ, parce que l'apprenant
- * croit avoir informé le système.
- *
- * ⚠️ ALLER CHERCHER UNE URL FOURNIE PAR L'UTILISATEUR, DEPUIS NOTRE SERVEUR,
- * EST UNE PORTE (SSRF). Sans garde, elle donne à n'importe qui un moyen de
- * faire émettre des requêtes par notre machine : réseau interne de
- * l'hébergeur, boucle locale, et surtout `169.254.169.254`, l'adresse de
- * métadonnées des fournisseurs cloud, qui rend des identifiants.
- *
- * D'où, dans l'ordre :
- *   1. `https` uniquement, port 443, aucun `user:pass@` dans l'URL ;
- *   2. résolution DNS, puis REFUS de toute adresse privée ou réservée ;
- *   3. connexion ÉPINGLÉE sur l'IP validée (CURLOPT_RESOLVE) — sans quoi un
- *      nom de domaine peut répondre « adresse publique » à la vérification
- *      puis « 127.0.0.1 » à la connexion (rebinding DNS) ;
- *   4. redirections suivies À LA MAIN, chaque saut étant revalidé — une
- *      redirection vers l'interne annulerait tout le reste ;
- *   5. délai, taille et nombre de sauts bornés.
- *
- * On ne renvoie QUE du texte : jamais les en-têtes, jamais le corps brut.
- * ───────────────────────────────────────────────────────────────────────── */
-
-/** Adresse joignable depuis l'extérieur ? (privée ou réservée = non) */
-function mapo_ip_publique($ip) {
-  // Le filtre natif couvre 10/8, 172.16/12, 192.168/16, fc00::/7 (privées) et
-  // 0/8, 127/8, 169.254/16, 240/4, ::1, ::, ::ffff:0:0/96, fe80::/10 (réservées).
-  $ok = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-  if ($ok === false) return false;
-  // Deux trous connus du filtre natif, à combler à la main.
-  $n = ip2long($ip);
-  if ($n !== false) {
-    if (($n & 0xFFC00000) === 0x64400000) return false; // 100.64.0.0/10 (CGNAT)
-    if (($n & 0xFFFFFF00) === 0xC0000000) return false; // 192.0.0.0/24 (IETF)
-    if (($n & 0xFFFE0000) === 0xC6120000) return false; // 198.18.0.0/15 (bancs de test)
-  }
-  return true;
-}
-
-/** URL acceptable, et IP publique sur laquelle épingler la connexion. */
-function mapo_url_sure($url) {
-  $p = parse_url((string) $url);
-  if (!is_array($p) || empty($p['host'])) return ['ok' => false, 'raison' => 'url_invalide'];
-  if (($p['scheme'] ?? '') !== 'https') return ['ok' => false, 'raison' => 'https_requis'];
-  // `user:pass@` sert à faire passer une URL pour ce qu'elle n'est pas.
-  if (isset($p['user']) || isset($p['pass'])) return ['ok' => false, 'raison' => 'url_invalide'];
-  $port = (int) ($p['port'] ?? 443);
-  if ($port !== 443) return ['ok' => false, 'raison' => 'port_interdit'];
-
-  $host = $p['host'];
-  // Un littéral IPv6 entre crochets : on refuse, aucun site d'école n'en a.
-  if (strpos($host, ':') !== false) return ['ok' => false, 'raison' => 'hote_interdit'];
-
-  $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : @gethostbynamel($host);
-  if (!$ips) return ['ok' => false, 'raison' => 'dns'];
-  // TOUTES les adresses doivent être publiques : une seule interne suffirait.
-  foreach ($ips as $ip) if (!mapo_ip_publique($ip)) return ['ok' => false, 'raison' => 'adresse_interne'];
-  return ['ok' => true, 'raison' => '', 'host' => $host, 'ip' => $ips[0], 'port' => $port];
-}
-
-/** Récupère la page, redirections revalidées une par une. */
-function mapo_lire_page($url, $maxSauts = 3, $maxOctets = 2097152, $delai = 8) {
-  if (!function_exists('curl_init')) return ['ok' => false, 'raison' => 'indisponible'];
-  for ($saut = 0; $saut <= $maxSauts; $saut++) {
-    $v = mapo_url_sure($url);
-    if (!$v['ok']) return ['ok' => false, 'raison' => $v['raison']];
-    $ch = curl_init($url);
-    curl_setopt_array($ch, [
-      CURLOPT_RETURNTRANSFER => true,
-      CURLOPT_FOLLOWLOCATION => false,     // on suit à la main, en revalidant
-      CURLOPT_HEADER         => true,
-      CURLOPT_TIMEOUT        => $delai,
-      CURLOPT_CONNECTTIMEOUT => 5,
-      CURLOPT_COOKIEFILE     => '',        // aucune session ne fuite
-      CURLOPT_USERAGENT      => 'MAPO+/1.0 (+https://mapoplus.app-edufrem.com)',
-      // Épinglage : on parle à l'IP validée, pas à ce que le DNS redira.
-      CURLOPT_RESOLVE        => [$v['host'] . ':' . $v['port'] . ':' . $v['ip']],
-      CURLOPT_BUFFERSIZE     => 16384,
-      CURLOPT_NOPROGRESS     => false,
-      CURLOPT_PROGRESSFUNCTION => function ($r, $dlTotal, $dlNow) use ($maxOctets) {
-        return ($dlNow > $maxOctets || $dlTotal > $maxOctets) ? 1 : 0; // 1 = on coupe
-      },
-    ]);
-    $rep = curl_exec($ch);
-    $code = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    $tailleEntetes = (int) curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-    $type = (string) curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
-    curl_close($ch);
-    if ($rep === false) return ['ok' => false, 'raison' => 'injoignable'];
-
-    $entetes = substr($rep, 0, $tailleEntetes);
-    $corps   = substr($rep, $tailleEntetes);
-    if ($code >= 300 && $code < 400) {
-      if (!preg_match('/^Location:\s*(.+)$/mi', $entetes, $m)) return ['ok' => false, 'raison' => 'injoignable'];
-      $suivant = trim($m[1]);
-      // Une redirection relative reste sur le même hôte, déjà validé.
-      if (strpos($suivant, 'http') !== 0) $suivant = 'https://' . $v['host'] . '/' . ltrim($suivant, '/');
-      $url = $suivant;
-      continue;
-    }
-    if ($code !== 200) return ['ok' => false, 'raison' => 'injoignable'];
-    if ($type !== '' && stripos($type, 'html') === false && stripos($type, 'text') === false) {
-      return ['ok' => false, 'raison' => 'pas_une_page'];
-    }
-    return ['ok' => true, 'raison' => '', 'html' => $corps];
-  }
-  return ['ok' => false, 'raison' => 'trop_de_redirections'];
-}
-
-/** HTML → texte lisible. Scripts et styles sont du bruit, pas du contenu. */
-function mapo_html_en_texte($html) {
-  $t = preg_replace('#<(script|style|noscript|svg)\b[^>]*>.*?</\1>#is', ' ', (string) $html);
-  $t = preg_replace('#<(br|/p|/div|/li|/h[1-6]|/tr)\b[^>]*>#i', "\n", $t);
-  $t = strip_tags($t);
-  $t = html_entity_decode($t, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-  $t = preg_replace('/[ \t\x{00A0}]+/u', ' ', $t);
-  $t = preg_replace('/\n\s*\n\s*/u', "\n", $t);
-  return trim($t);
 }

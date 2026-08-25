@@ -220,8 +220,6 @@
     "schoolPlaceholder": "e.g. HEC, university, centre…",
     "formation": "Programme name",
     "formationPlaceholder": "e.g. MBA, Accounting diploma…",
-    "url": "Programme website link",
-    "urlPlaceholder": "https://…",
     "optional": "optional",
     "paste": "Paste the curriculum",
     "pastePlaceholder": "Paste the list of subjects / the curriculum here, if you have it.",
@@ -243,15 +241,7 @@
     "pdfErrTaille": "This PDF is too large (15 MB maximum).",
     "pdfErrScanne": "This PDF is a scan: it contains no readable text. Paste the outline, or enter your modules by hand.",
     "pdfErrIllisible": "This PDF could not be opened.",
-    "urlLire": "Read this page",
-    "urlReading": "Reading the page…",
-    "urlRead": "Page read. The passage closest to a course outline was kept below.",
-    "urlErrHttps": "Only https addresses are accepted.",
-    "urlErrInvalide": "This address is not valid.",
-    "urlErrInterne": "This address points to an internal network: it is refused.",
-    "urlErrInjoignable": "This page could not be opened.",
-    "urlErrVide": "This page holds almost no text — many school websites render in JavaScript. Try the course PDF, or paste it.",
-    "urlErrSansMaquette": "This page presents the course but does not publish its module list — as most school websites do. Import the course PDF, or enter your modules."
+    "pdfErrSansMaquette": "This PDF presents the course but does not list its modules — marketing brochures often do not. Ask your school for the detailed syllabus, or enter your modules below."
   },
   "header": {
     "menu": "Menu",
@@ -5513,9 +5503,7 @@
     "classLabel": "Class",
     "formationName": "Programme name",
     "formationPlaceholder": "e.g. Executive MBA — IRIIG",
-    "programUrl": "Programme URL",
     "optional": "(optional)",
-    "programUrlPlaceholder": "https://… programme page",
     "modulesSubjects": "Modules / subjects",
     "proposeModules": "Suggest the modules (MIAPO)",
     "proposing": "MIAPO is thinking…",
@@ -5760,7 +5748,8 @@
     "moduleRemove": "Remove",
     "moduleRename": "Rename this module",
     "moduleSave": "Save",
-    "moduleCancel": "Cancel"
+    "moduleCancel": "Cancel",
+    "importProgramme": "Import the syllabus (PDF)"
   },
   "cx": {
     "appTitle": "Complex workspace",

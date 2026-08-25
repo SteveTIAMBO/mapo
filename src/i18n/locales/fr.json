@@ -220,8 +220,6 @@
     "schoolPlaceholder": "Ex. HEC, université, centre…",
     "formation": "Nom de la formation",
     "formationPlaceholder": "Ex. MBA, BTS Comptabilité…",
-    "url": "Lien du site de la formation",
-    "urlPlaceholder": "https://…",
     "optional": "facultatif",
     "paste": "Coller le programme",
     "pastePlaceholder": "Colle ici la liste des matières / le programme, si tu l'as.",
@@ -243,15 +241,7 @@
     "pdfErrTaille": "Ce PDF est trop lourd (15 Mo maximum).",
     "pdfErrScanne": "Ce PDF est un scan : il ne contient aucun texte à lire. Collez le programme, ou saisissez vos modules à la main.",
     "pdfErrIllisible": "Ce PDF n'a pas pu être ouvert.",
-    "urlLire": "Lire cette page",
-    "urlReading": "Lecture de la page…",
-    "urlRead": "Page lue. Le passage le plus proche d’une maquette a été retenu ci-dessous.",
-    "urlErrHttps": "Seules les adresses en https sont acceptées.",
-    "urlErrInvalide": "Cette adresse n’est pas valide.",
-    "urlErrInterne": "Cette adresse pointe vers un réseau interne : elle est refusée.",
-    "urlErrInjoignable": "Cette page n’a pas pu être ouverte.",
-    "urlErrVide": "Cette page ne contient presque pas de texte — beaucoup de sites d’écoles s’affichent en JavaScript. Essayez le PDF du programme, ou collez-le.",
-    "urlErrSansMaquette": "Cette page présente la formation, mais ne publie pas la liste des modules — c'est le cas de beaucoup de sites d'écoles. Importez le PDF du programme, ou saisissez vos modules."
+    "pdfErrSansMaquette": "Ce PDF présente la formation mais ne liste pas ses modules — c'est souvent le cas des plaquettes commerciales. Demandez à votre école le programme détaillé, ou saisissez vos modules ci-dessous."
   },
   "header": {
     "menu": "Menu",
@@ -5513,9 +5503,7 @@
     "classLabel": "Classe",
     "formationName": "Nom de la formation",
     "formationPlaceholder": "Ex : Executive MBA — IRIIG",
-    "programUrl": "URL du programme",
     "optional": "(optionnel)",
-    "programUrlPlaceholder": "https://… page de la formation",
     "modulesSubjects": "Modules / matières",
     "proposeModules": "Proposer les modules (MIAPO)",
     "proposing": "MIAPO réfléchit…",
@@ -5760,7 +5748,8 @@
     "moduleRemove": "Retirer",
     "moduleRename": "Renommer ce module",
     "moduleSave": "Enregistrer",
-    "moduleCancel": "Annuler"
+    "moduleCancel": "Annuler",
+    "importProgramme": "Importer le programme (PDF)"
   },
   "cx": {
     "appTitle": "Espace complexe",

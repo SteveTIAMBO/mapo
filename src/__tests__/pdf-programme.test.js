@@ -176,6 +176,46 @@ describe('plaquette commerciale ou vraie maquette ?', () => {
   })
 })
 
+/**
+ * Le PDF est la SEULE source d'import — décision de Steve le 24/08, après avoir
+ * vu que la page web de sa propre école ne publiait pas sa maquette. Ne garder
+ * que le PDF invite la personne à le prendre sur le site de son école, ou à le
+ * DEMANDER à son école : c'est le document qui fait foi.
+ */
+describe('le PDF est la seule source, et il reste atteignable', () => {
+  const RACINE2 = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+  const SETUP = readFileSync(resolve(RACINE2, 'src/components/MiapoFormationSetup.vue'), 'utf8')
+  const VUE = readFileSync(resolve(RACINE2, 'src/views/ParentMiapoView.vue'), 'utf8')
+  const IA = readFileSync(resolve(RACINE2, 'server/mapo-ia.php'), 'utf8')
+  const TUTEUR = readFileSync(resolve(RACINE2, 'src/stores/tuteur.js'), 'utf8')
+
+  it('⚠️ une plaquette est refusée AUSSI en PDF', () => {
+    // « J'ai la plaquette de mon MBA » — le mot dit tout : une brochure
+    // commerciale présente la formation sans lister ses modules.
+    expect(SETUP).toContain("if (!contientMaquette(res.texte)) { pdfErreur.value = t('miaForm.pdfErrSansMaquette'); return }")
+  })
+
+  it('⚠️ l’import est atteignable même quand des modules existent DÉJÀ', () => {
+    // Il ne l'était que depuis un écran vide : un apprenant dont les modules
+    // avaient été devinés par l'IA devait TOUT effacer pour importer son PDF.
+    const i = VUE.indexOf('<MiapoModulesFormation')
+    const j = VUE.indexOf('</template>', i)
+    expect(VUE.slice(i, j)).toContain('@click="openFormationSetup"')
+  })
+
+  it('la lecture d’URL a bien été retirée partout', () => {
+    // Elle marchait techniquement, mais les pages d'écoles ne publient pas
+    // leurs maquettes : deux chemins dont un aboutit rarement valent moins
+    // qu'un seul qui dit clairement quoi faire.
+    expect(SETUP).not.toContain('formationUrl')
+    expect(VUE).not.toContain('formationUrl')
+    expect(TUTEUR).not.toContain('lireProgrammeUrl')
+    // Et avec elle, toute la surface SSRF côté serveur.
+    expect(IA).not.toContain('fetch_programme')
+    expect(IA).not.toContain('CURLOPT_RESOLVE')
+  })
+})
+
 describe('ce qu’on refuse, et ce qu’on en dit', () => {
   const fichier = (nom, type, size = 1000) => ({ name: nom, type, size })
 
