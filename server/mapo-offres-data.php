@@ -25,12 +25,22 @@
  * Chiffres ajustables ici.
  */
 
+/**
+ * ⚠️ LES DEUX GRILLES NE SE CONVERTISSENT PAS L'UNE DANS L'AUTRE.
+ *
+ * `prix` (XAF) et `prixEur` sont deux DÉCISIONS COMMERCIALES distinctes, pas un
+ * taux de change : au 25/08/2026 Steve a fixé le marché français à 5 / 12 / 19 €
+ * là où le Cameroun reste à 3 500 / 6 500 / 10 000 XAF (soit ~5,3 / 9,9 / 15,2 €).
+ * Le Français paie donc plus cher le MÊME quota de jetons, et c'est voulu.
+ *
+ * Ne « corrigez » donc jamais l'un pour l'aligner sur l'autre.
+ */
 function mapo_offres() {
   return [
     ['id' => 'decouverte', 'nom' => 'Découverte', 'prix' => 0,     'prixEur' => 0,     'capTokens' => 25000,  'cycleJours' => 30, 'promo' => false, 'whatsapp' => false],
-    ['id' => 'essentiel',  'nom' => 'Essentiel',  'prix' => 3500,  'prixEur' => 5.49,  'capTokens' => 125000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => false],
-    ['id' => 'avance',     'nom' => 'Avancé',     'prix' => 6500,  'prixEur' => 9.99,  'capTokens' => 300000, 'cycleJours' => 30, 'promo' => true,  'whatsapp' => true],
-    ['id' => 'illimite',   'nom' => 'Premium',    'prix' => 10000, 'prixEur' => 14.99, 'capTokens' => 600000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => true],
+    ['id' => 'essentiel',  'nom' => 'Essentiel',  'prix' => 3500,  'prixEur' => 5.00,  'capTokens' => 125000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => false],
+    ['id' => 'avance',     'nom' => 'Avancé',     'prix' => 6500,  'prixEur' => 12.00,  'capTokens' => 300000, 'cycleJours' => 30, 'promo' => true,  'whatsapp' => true],
+    ['id' => 'illimite',   'nom' => 'Premium',    'prix' => 10000, 'prixEur' => 19.00, 'capTokens' => 600000, 'cycleJours' => 30, 'promo' => false, 'whatsapp' => true],
   ];
 }
 
