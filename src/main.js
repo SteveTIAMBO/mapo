@@ -7,6 +7,7 @@ import { useEditionStore } from './stores/edition'
 import { useSchoolIdentityStore } from './stores/schoolIdentity'
 import { getTenant } from './utils/tenantContext'
 import { i18n, setLang } from './i18n'
+import { surveillerMisesAJour } from './utils/majApp'
 import './assets/main.css'
 
 // ── Correctif d'affichage des nombres ───────────────────────────────────────
@@ -101,19 +102,18 @@ try {
 const authStore = useAuthStore()
 authStore.init()
 
-// PWA — mise à jour automatique « sans manip » : dès qu'un NOUVEAU service worker
-// prend la main (nouvelle version déployée + activée via autoUpdate/skipWaiting),
-// on recharge une seule fois → l'utilisateur a la dernière version dès le 1er
-// rechargement. On ne recharge PAS au tout 1er install : on ne réagit qu'à un
-// changement de contrôleur quand un contrôleur existait déjà au chargement.
-if ('serviceWorker' in navigator) {
-  const hadController = !!navigator.serviceWorker.controller
-  let refreshing = false
-  navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!hadController || refreshing) return
-    refreshing = true
-    window.location.reload()
-  })
-}
+// PWA — mise à jour sans aucune manip (ni Cmd+Shift+R, ni « vider le cache »).
+//
+// Ce bloc rechargeait au `controllerchange`, mais RIEN n'allait chercher les
+// nouvelles versions : le navigateur ne relit `sw.js` qu'à une navigation, ou
+// de lui-même une fois par 24 h. Une PWA installée reste ouverte des jours —
+// personne ne navigue — donc on pouvait rester une journée en arrière sans
+// qu'aucun geste n'y change quoi que ce soit.
+//
+// `surveillerMisesAJour` interroge au retour dans l'application et
+// périodiquement, ET ne recharge que quand ça ne coûte rien (onglet masqué, ou
+// retour après une absence) : recharger au milieu d'un quiz effacerait la
+// séance en cours. Voir utils/majApp.js pour ce qui existait déjà.
+surveillerMisesAJour()
 
 app.mount('#app')
