@@ -69,8 +69,10 @@ describe('l’école se reconnaît avant de se connecter', () => {
     const i = src.indexOf('const marqueCourte')
     expect(i).toBeGreaterThan(0)
     const bloc = src.slice(i, i + 420)
-    expect(bloc).toContain('identity.sigle')
-    expect(bloc).toContain('identity.nom')
+    // Depuis le 27/08, la forme courte de l'école passe par UNE définition
+    // partagée (`schoolIdentity.nomAffiche`) : le nom légal complet debordait
+    // sur deux lignes, et deux pages de connexion la calculaient chacune.
+    expect(bloc).toContain('identity.nomAffiche')
   })
 })
 
@@ -95,8 +97,13 @@ describe('⚠️ la couleur de l’école, et pas un second champ', () => {
   })
 
   it('la page de connexion applique la couleur avant authentification', () => {
+    // L'écriture des variables CSS vit désormais dans `utils/accentEcole.js` :
+    // il existe DEUX pages de connexion (secondaire et supérieur), et recopier
+    // ces lignes garantissait qu'une des deux resterait bleue — c'est ce qui
+    // était arrivé, et Steve l'a vu sur la page du supérieur.
     const src = sansCommentaires(lire('views/LoginView.vue'))
     expect(src).toContain('identity.couleur')
-    expect(src).toContain("setProperty('--pr'")
+    expect(src).toContain('appliquerAccentEcole')
+    expect(sansCommentaires(lire('utils/accentEcole.js'))).toContain("setProperty('--pr'")
   })
 })

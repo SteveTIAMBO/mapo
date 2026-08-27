@@ -64,7 +64,7 @@
            l'impression de changer l'établissement. Un réglage affiché comme
            s'il décrivait l'école alors qu'il ne décrit que le visiteur.
            Sur un tenant école, l'édition vient de l'ÉCOLE, et ne se change pas. -->
-      <div v-if="!isMiapoMode" class="auth-edition">
+      <div v-if="!isMiapoMode && editionConnue" class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
           {{ t('login.version', { name: nomEdition }) }}
@@ -223,6 +223,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore, EDITIONS } from '../stores/edition'
 import { useSchoolIdentityStore } from '../stores/schoolIdentity'
+import { appliquerAccentEcole } from '../utils/accentEcole'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
 import { setLang } from '../i18n'
 import { paysDemo, setPaysDemo } from '../utils/demoScope'
@@ -249,7 +250,7 @@ const isEcoleTenant = isSchoolTenant()
 const marqueCourte = computed(() => {
   if (isMiapoMode) return 'M+'
   if (!isEcoleTenant) return 'M'
-  const source = identity.sigle || identity.nom || ''
+  const source = identity.nomAffiche || ''
   const mots = source.replace(/["'«»]/g, ' ').split(/[\s-]+/).filter(Boolean)
   const ini = mots.slice(0, 2).map((m) => m[0]).join('').toUpperCase()
   return ini || 'M'
@@ -259,12 +260,14 @@ const titrePrincipal = computed(() => {
   if (isMiapoMode) return 'MAPO+'
   // ⚠️ Tant que l'école n'est pas chargée, on garde « MAPO » plutôt qu'un vide :
   // un titre absent puis qui apparaît fait clignoter la page.
-  return (isEcoleTenant && identity.nom) ? identity.nom : 'MAPO'
+  // `nomAffiche` prend la forme courte de l'école si elle en a déclaré une : le
+  // nom légal complet debordait sur deux lignes.
+  return (isEcoleTenant && identity.nomAffiche) ? identity.nomAffiche : 'MAPO'
 })
 
 const sousTitre = computed(() => {
   if (isMiapoMode) return t('login.taglineMiapo')
-  if (isEcoleTenant && identity.nom) {
+  if (isEcoleTenant && identity.nomAffiche) {
     return [identity.ville, nomEdition.value].filter(Boolean).join(' · ')
   }
   return t('login.tagline')
@@ -276,6 +279,19 @@ const sousTitre = computed(() => {
  * Sur un tenant école, il vient de l'ÉCOLE. Ailleurs (démo, vitrine), du choix
  * local du visiteur, qui est alors la seule information disponible.
  */
+/**
+ * Sait-on quelle édition afficher ?
+ *
+ * Sur un tenant école, l'édition vient du document Firestore, qui arrive après
+ * le premier rendu. Afficher « Version Secondaire » en attendant serait une
+ * affirmation fausse une fois sur deux — et c'est exactement ce genre de
+ * remplissage plausible qui a fait croire pendant des semaines que l'école de
+ * Garoua était une école supérieure.
+ */
+const editionConnue = computed(() =>
+  isEcoleTenant ? !!identity.edition : editionStore.isChosen,
+)
+
 const nomEdition = computed(() => {
   if (isEcoleTenant && identity.edition) {
     return EDITIONS[identity.edition]?.name || identity.edition
@@ -283,25 +299,10 @@ const nomEdition = computed(() => {
   return editionStore.meta?.name || 'Secondaire'
 })
 
-/**
- * Couleur d'accent de l'école, appliquée AVANT connexion.
- *
- * La couleur des réglages vit dans la configuration privée, illisible ici :
- * c'est la copie publique du document école qui sert. Sans elle, la page de
- * connexion resterait au bleu MAPO alors que tout le reste de l'application
- * porte les couleurs de l'établissement.
- */
+// Couleur de l'école, appliquée dès que le document école arrive (voir
+// `utils/accentEcole.js` : la même fonction sert à la connexion du supérieur).
 watch(() => identity.couleur, (hex) => {
-  if (!isEcoleTenant || !hex || typeof document === 'undefined') return
-  const h = String(hex).replace('#', '')
-  if (h.length !== 6) return
-  const [R, G, B] = [0, 2, 4].map((i) => parseInt(h.substr(i, 2), 16))
-  if ([R, G, B].some(Number.isNaN)) return
-  const root = document.documentElement.style
-  root.setProperty('--pr', '#' + h)
-  root.setProperty('--pr-rgb', `${R}, ${G}, ${B}`)
-  root.setProperty('--pr-light', `rgba(${R}, ${G}, ${B}, 0.10)`)
-  root.setProperty('--pr-glow', `rgba(${R}, ${G}, ${B}, 0.28)`)
+  if (isEcoleTenant) appliquerAccentEcole(hex)
 }, { immediate: true })
 
 function changerVersion() {

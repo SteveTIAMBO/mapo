@@ -540,11 +540,17 @@ router.beforeEach(async (to) => {
   // pour décider où envoyer le visiteur.
   if (tenant.mode === 'school' && to.name === 'Welcome') {
     const schoolIdentity = useSchoolIdentityStore()
-    // Tant qu'on ne connaît pas l'edition (Firestore pas encore chargé),
-    // on suppose 'superieur' pour ENTPE (premier client). Sera affiné dès
-    // que le doc school sera disponible.
-    if (schoolIdentity.edition === 'secondaire') return { name: 'Login' }
-    return { name: 'Superieur' }
+    // ⚠️ 27/08/2026 — la règle était inversée : tout ce qui n'était pas
+    // 'secondaire' partait au Supérieur, « pour ENTPE ». Une école PRIMAIRE
+    // atterrissait donc sur la connexion du supérieur, badge et lien « Changer »
+    // compris. Seule l'édition supérieur mène au Supérieur.
+    //
+    // Édition encore inconnue (Firestore n'a pas répondu) : on envoie sur la
+    // page de connexion ordinaire, et le watch de `main.js` corrige dès que le
+    // document école arrive. Le mauvais pari est ainsi le moins fréquent, et il
+    // se répare tout seul.
+    if (schoolIdentity.edition === 'superieur') return { name: 'Superieur' }
+    return { name: 'Login' }
   }
   // En mode école, on force l'edition côté store (utile aux vues secondaires
   // qui s'appuient encore sur editionStore).
@@ -583,14 +589,17 @@ router.beforeEach(async (to) => {
 
   // Pas connecté + route protégée → diriger selon l'édition choisie
   if (requiresAuth && !isLoggedIn) {
-    if (!editionStore.isChosen) return { name: 'Welcome' }
+    // ⚠️ Sur un sous-domaine d'école, Welcome renvoie sur Login : y envoyer un
+    // visiteur dont l'édition n'est pas encore connue ferait une BOUCLE, et une
+    // boucle de redirection ne lève aucune erreur — l'échec ressemble au succès.
+    if (!editionStore.isChosen && tenant.mode !== 'school') return { name: 'Welcome' }
     if (editionStore.isSuperieur) return { name: 'Superieur' }
     return { name: 'Login' }
   }
 
   // La page de connexion est réservée à l'édition secondaire pour l'instant
   if (to.name === 'Login' && !isLoggedIn) {
-    if (!editionStore.isChosen) return { name: 'Welcome' }
+    if (!editionStore.isChosen && tenant.mode !== 'school') return { name: 'Welcome' }
     if (editionStore.isSuperieur) return { name: 'Superieur' }
   }
 

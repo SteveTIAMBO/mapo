@@ -13,10 +13,11 @@
 
       <!-- Logo -->
       <div class="auth-logo">
-        <img v-if="isSchoolTenantMode && schoolIdentity.logoUrl" :src="schoolIdentity.logoUrl" :alt="schoolIdentity.sigle" class="auth-logo-img" />
-        <div v-else class="auth-logo-mark">M</div>
+        <img v-if="isSchoolTenantMode && schoolIdentity.logoUrl" :src="schoolIdentity.logoUrl" :alt="schoolIdentity.nomAffiche" class="auth-logo-img" />
+        <div v-else class="auth-logo-mark">{{ marqueCourte }}</div>
         <div>
-          <div class="auth-logo-title">{{ isSchoolTenantMode ? (schoolIdentity.nom || 'MAPO') : 'MAPO' }}</div>
+          <!-- Forme courte de l'école : le nom légal debordait sur deux lignes. -->
+          <div class="auth-logo-title">{{ isSchoolTenantMode ? (schoolIdentity.nomAffiche || 'MAPO') : 'MAPO' }}</div>
           <div class="auth-logo-sub">{{ t('login.tagline') }}</div>
         </div>
       </div>
@@ -27,7 +28,10 @@
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
           {{ t('login.version', { name: editionStore.meta?.name || 'Enseignement Supérieur' }) }}
         </span>
-        <button type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
+        <!-- ⚠️ Sur le sous-domaine d'une école, l'édition vient de L'ÉCOLE et ne
+             se change pas : « Changer » modifiait une préférence locale du
+             visiteur en donnant l'impression de changer l'établissement. -->
+        <button v-if="!isSchoolTenantMode" type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
       </div>
 
       <!-- Connexion / réinitialisation (comptes EN LIGNE — vraie école supérieure) -->
@@ -128,7 +132,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useSuperieurAuthStore } from '../../stores/superieurAuth'
@@ -136,6 +140,7 @@ import { useEditionStore } from '../../stores/edition'
 import { useAuthStore } from '../../stores/auth'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
 import { isSchoolTenant } from '../../utils/tenantContext'
+import { appliquerAccentEcole } from '../../utils/accentEcole'
 import { setLang } from '../../i18n'
 
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -149,6 +154,20 @@ const emit = defineEmits(['logged-in'])
 // Sur l'instance d'une vraie école supérieure, on masque les profils de démo :
 // seul le formulaire compte en ligne est proposé.
 const isSchoolTenantMode = isSchoolTenant()
+
+/** Initiales de l'école, à défaut de logo. Deux lettres, jamais plus. */
+const marqueCourte = computed(() => {
+  if (!isSchoolTenantMode) return 'M'
+  const mots = String(schoolIdentity.nomAffiche || '')
+    .replace(/["'«»]/g, ' ').split(/[\s-]+/).filter(Boolean)
+  return mots.slice(0, 2).map((m) => m[0]).join('').toUpperCase() || 'M'
+})
+
+// Couleur de l'école appliquée AVANT connexion — la même fonction que la page
+// de connexion du secondaire. Sans elle, cette page restait au bleu MAPO.
+watch(() => schoolIdentity.couleur, (hex) => {
+  if (isSchoolTenantMode) appliquerAccentEcole(hex)
+}, { immediate: true })
 
 // Profils de démonstration. Pour le Supérieur, on ne propose que les profils
 // déjà travaillés : Directeur (espace admin complet) et Enseignant. Parent,

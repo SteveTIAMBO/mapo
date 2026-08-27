@@ -1,4 +1,4 @@
-import { createApp } from 'vue'
+import { createApp, watch } from 'vue'
 import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
@@ -60,10 +60,27 @@ const tenant = getTenant()
 const schoolIdentity = useSchoolIdentityStore()
 if (tenant.mode === 'school') {
   schoolIdentity.init()
-  // Édition par défaut tant qu'on n'a pas la réponse Firestore : on
-  // suppose 'superieur' (ENTPE est le premier client). Sera réécrit dès
-  // que schoolIdentity reçoit le doc (via watch dans le router guard).
-  editionStore.setEdition('superieur')
+  /**
+   * ⚠️ 27/08/2026 — ON NE SUPPOSE PLUS L'ÉDITION.
+   *
+   * Cette ligne valait `setEdition('superieur')`, « puisque ENTPE est le premier
+   * client ». Conséquence mesurée sur la première école PRIMAIRE réelle :
+   * `epc1.app-edufrem.com` renvoyait vers `/superieur`, servait la page de
+   * connexion du supérieur avec le badge « Version Enseignement Supérieur » et
+   * un lien « Changer », et l'accent restait au bleu MAPO. Rien ne corrigeait
+   * l'erreur après la réponse Firestore : le visiteur restait sur la mauvaise
+   * page, sans une seule erreur à l'écran.
+   *
+   * On attend donc de SAVOIR, puis on corrige — y compris la page déjà
+   * affichée, parce que le garde de route ne se rejoue pas tout seul.
+   */
+  watch(() => schoolIdentity.edition, (ed) => {
+    if (!ed) return
+    if (editionStore.current !== ed) editionStore.setEdition(ed)
+    const actuelle = router.currentRoute.value?.name
+    if (ed === 'superieur' && actuelle === 'Login') router.replace({ name: 'Superieur' })
+    if (ed !== 'superieur' && actuelle === 'Superieur') router.replace({ name: 'Login' })
+  }, { immediate: true })
 }
 
 // Branding MAPO+ standalone : favicon, manifest et thème dédiés (sinon le PWA

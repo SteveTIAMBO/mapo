@@ -81,6 +81,22 @@ export const useSchoolIdentityStore = defineStore('schoolIdentity', () => {
 
   const nom = computed(() => school.value?.nom || '')
   const sigle = computed(() => school.value?.sigle || '')
+  /**
+   * Nom AFFICHÉ sur les écrans d'entrée.
+   *
+   * Le nom légal d'un établissement est souvent illisible sur une carte de
+   * connexion : « EPPI "LES CHAMPIONS-FCB" DE GAROUA G1 » débordait sur deux
+   * lignes (constaté par Steve le 27/08/2026). On préfère donc la forme courte
+   * quand l'école en a déclaré une, et on garde le nom légal partout où il
+   * engage l'école — bulletins, diplômes, reçus.
+   *
+   * ⚠️ On ne crée PAS un troisième champ. `sigle` et `acronym` existent déjà et
+   * disent la même chose ; `MegaAdminView` les fusionne déjà de cette façon. Un
+   * champ de plus, et c'est celui que personne ne remplit qui finit par être lu.
+   */
+  const nomAffiche = computed(() =>
+    school.value?.sigle || school.value?.acronym || school.value?.nom || '',
+  )
   const edition = computed(() => school.value?.edition || null)
   const logoUrl = computed(() => school.value?.logoUrl || null)
   /**
@@ -150,7 +166,7 @@ export const useSchoolIdentityStore = defineStore('schoolIdentity', () => {
 
   return {
     school, isLoading, loadError, isReady,
-    nom, sigle, edition, logoUrl, couleur, anneeAcademique, modulesActifs, modulesVersion,
+    nom, sigle, nomAffiche, edition, logoUrl, couleur, anneeAcademique, modulesActifs, modulesVersion,
     aucunModuleActif,
     pack, trialUntil, isTrialActive,
     isTenantSchool, isDemoTenant,
