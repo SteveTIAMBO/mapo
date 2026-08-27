@@ -5771,7 +5771,15 @@
     "moduleRename": "Renommer ce module",
     "moduleSave": "Enregistrer",
     "moduleCancel": "Annuler",
-    "importProgramme": "Importer le programme (PDF)"
+    "importProgramme": "Importer le programme (PDF)",
+    "mcAdd": "Ajouter un cours",
+    "mcAddToSubject": "Ajouter un document à cette matière",
+    "mcEdit": "Modifier",
+    "mcEditTitle": "Modifier le cours",
+    "mcNoSubject": "Sans matière",
+    "mcSubjectsTitle": "Mes matières",
+    "mcConfirmDel": "Supprimer « {name} » ?",
+    "close": "Fermer"
   },
   "cx": {
     "appTitle": "Espace complexe",

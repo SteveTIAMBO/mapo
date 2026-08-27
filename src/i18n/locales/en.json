@@ -5771,7 +5771,15 @@
     "moduleRename": "Rename this module",
     "moduleSave": "Save",
     "moduleCancel": "Cancel",
-    "importProgramme": "Import the syllabus (PDF)"
+    "importProgramme": "Import the syllabus (PDF)",
+    "mcAdd": "Add a course",
+    "mcAddToSubject": "Add a document to this subject",
+    "mcEdit": "Edit",
+    "mcEditTitle": "Edit course",
+    "mcNoSubject": "No subject",
+    "mcSubjectsTitle": "My subjects",
+    "mcConfirmDel": "Delete “{name}”?",
+    "close": "Close"
   },
   "cx": {
     "appTitle": "Complex workspace",

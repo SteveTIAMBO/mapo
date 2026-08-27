@@ -39,6 +39,53 @@ export function removeCoursPerso(enfantId, id) {
   save(enfantId, listCoursPerso(enfantId).filter((c) => c.id !== id))
 }
 
+/**
+ * Modifie un cours déjà enregistré (matière, titre, contenu).
+ *
+ * ⚠️ Il n'y avait AUCUN moyen de corriger un cours : on ne pouvait que le
+ * supprimer et tout réimporter. Or le contenu vient souvent d'une photo
+ * transcrite par l'IA — donc avec des coquilles — et c'est ce texte qui sert
+ * ensuite à ancrer les révisions. Ne pas pouvoir le corriger, c'est laisser une
+ * erreur se propager dans toutes les séances qui s'appuient dessus.
+ *
+ * Renvoie l'entrée mise à jour, ou `null` si l'identifiant est inconnu.
+ * Un contenu vidé est REFUSÉ : ce serait une suppression déguisée, et la
+ * suppression a son propre bouton.
+ */
+export function updateCoursPerso(enfantId, id, patch = {}) {
+  const list = listCoursPerso(enfantId)
+  const i = list.findIndex((c) => c.id === id)
+  if (i === -1) return null
+  const cible = list[i]
+  if ('contenu' in patch) {
+    const c = String(patch.contenu || '').trim()
+    if (!c) return null
+    cible.contenu = c.slice(0, 20000)
+  }
+  if ('matiere' in patch) cible.matiere = String(patch.matiere || '').trim()
+  if ('titre' in patch) cible.titre = String(patch.titre || '').trim()
+  cible.majAt = new Date().toISOString()
+  save(enfantId, list)
+  return cible
+}
+
+/**
+ * Cours regroupés par matière, pour l'affichage en bibliothèque.
+ * Les cours sans matière sont rassemblés sous une clé vide, en DERNIER : ils
+ * existent (import rapide sans choisir), mais ne doivent pas ouvrir la liste.
+ */
+export function coursParMatiere(enfantId) {
+  const groupes = new Map()
+  for (const c of listCoursPerso(enfantId)) {
+    const k = (c.matiere || '').trim()
+    if (!groupes.has(k)) groupes.set(k, [])
+    groupes.get(k).push(c)
+  }
+  const nommees = [...groupes.keys()].filter(Boolean).sort((a, b) => a.localeCompare(b, 'fr'))
+  const ordre = groupes.has('') ? [...nommees, ''] : nommees
+  return ordre.map((matiere) => ({ matiere, docs: groupes.get(matiere) }))
+}
+
 // Texte des cours d'une matière (pour ancrer une révision ciblée), tronqué.
 export function coursTexteMatiere(enfantId, matiere, cap = 6000) {
   const m = String(matiere || '').toLowerCase().trim()
