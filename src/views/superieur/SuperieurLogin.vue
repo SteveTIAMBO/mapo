@@ -23,7 +23,11 @@
       </div>
 
       <!-- Badge édition -->
-      <div class="auth-edition">
+      <!-- Badge d'édition : utile sur la DÉMO, où le visiteur choisit ce qu'il
+           regarde. Sur une école installée, il n'y a rien à choisir et rien à
+           préciser : l'établissement n'a qu'une édition, et la nommer n'apporte
+           qu'un mot de jargon sur sa page d'accueil. -->
+      <div v-if="!isSchoolTenantMode" class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
           {{ t('login.version', { name: editionStore.meta?.name || 'Enseignement Supérieur' }) }}

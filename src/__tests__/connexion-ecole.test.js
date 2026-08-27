@@ -38,9 +38,13 @@ describe('l’édition affichée vient de l’ÉCOLE', () => {
     expect(bloc).toContain('identity.edition')
   })
 
-  it('⚠️ « Changer » disparaît sur le sous-domaine d’une école', () => {
-    // Il n'y a rien à changer : l'édition appartient à l'établissement.
-    expect(src).toContain('v-if="!isEcoleTenant" type="button" class="auth-edition-change"')
+  it('⚠️ le bloc « édition » disparaît sur le sous-domaine d’une école', () => {
+    // Il n'y avait rien à changer : l'édition appartient à l'établissement.
+    // Depuis le 27/08, c'est le BLOC ENTIER qui saute et non le seul bouton :
+    // sur une école installée, nommer l'édition n'apporte qu'un mot de jargon.
+    const i = src.indexOf('class="auth-edition"')
+    expect(i).toBeGreaterThan(0)
+    expect(src.slice(i - 120, i)).toContain('!isEcoleTenant')
   })
 })
 

@@ -56,20 +56,24 @@
         </div>
       </div>
 
-      <!-- ══ Édition ═══════════════════════════════════════════════════
-           ⚠️ Sur le sous-domaine d'une ÉCOLE, ce bloc affichait l'édition
-           rangée dans le localStorage DU VISITEUR — donc « Supérieur » sur une
-           école primaire, selon ce qu'il avait consulté ailleurs. Et le bouton
+      <!-- ══ Édition — DÉMO SEULEMENT ══════════════════════════════════
+           Ce bloc n'a de sens que sur la démo, où le visiteur choisit ce qu'il
+           regarde et peut vouloir en changer. Sur une école installée, il n'y a
+           rien à choisir : l'établissement n'a qu'une édition, et la nommer
+           n'ajoute qu'un mot de jargon sur sa page d'accueil (décision de Steve,
+           27/08/2026).
+
+           ⚠️ Historique, pour ne pas refaire l'erreur : ce bloc affichait
+           l'édition rangée dans le localStorage DU VISITEUR — donc « Supérieur »
+           sur une école primaire, selon ce qu'il avait consulté ailleurs. Et
            « Changer » proposait de modifier une préférence locale en donnant
-           l'impression de changer l'établissement. Un réglage affiché comme
-           s'il décrivait l'école alors qu'il ne décrit que le visiteur.
-           Sur un tenant école, l'édition vient de l'ÉCOLE, et ne se change pas. -->
-      <div v-if="!isMiapoMode && editionConnue" class="auth-edition">
+           l'impression de changer l'établissement. -->
+      <div v-if="!isMiapoMode && !isEcoleTenant" class="auth-edition">
         <span class="auth-edition-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-5h6v5"/></svg>
           {{ t('login.version', { name: nomEdition }) }}
         </span>
-        <button v-if="!isEcoleTenant" type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
+        <button type="button" class="auth-edition-change" @click="changerVersion">{{ t('login.change') }}</button>
       </div>
 
       <!-- Connexion / Inscription (comptes EN LIGNE — live) -->
@@ -279,19 +283,6 @@ const sousTitre = computed(() => {
  * Sur un tenant école, il vient de l'ÉCOLE. Ailleurs (démo, vitrine), du choix
  * local du visiteur, qui est alors la seule information disponible.
  */
-/**
- * Sait-on quelle édition afficher ?
- *
- * Sur un tenant école, l'édition vient du document Firestore, qui arrive après
- * le premier rendu. Afficher « Version Secondaire » en attendant serait une
- * affirmation fausse une fois sur deux — et c'est exactement ce genre de
- * remplissage plausible qui a fait croire pendant des semaines que l'école de
- * Garoua était une école supérieure.
- */
-const editionConnue = computed(() =>
-  isEcoleTenant ? !!identity.edition : editionStore.isChosen,
-)
-
 const nomEdition = computed(() => {
   if (isEcoleTenant && identity.edition) {
     return EDITIONS[identity.edition]?.name || identity.edition

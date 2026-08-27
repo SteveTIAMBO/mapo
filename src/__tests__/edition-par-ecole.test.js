@@ -104,17 +104,23 @@ describe('le garde de route achemine sur l’édition réelle', () => {
 })
 
 describe('les écrans d’entrée n’affirment que ce qu’ils savent', () => {
-  it('le badge d’édition est masqué tant que l’édition est inconnue', () => {
-    expect(login).toContain('editionConnue')
-    const i = login.indexOf('const editionConnue')
-    expect(login.slice(i, i + 260)).toContain('identity.edition')
+  it('⚠️ aucune mention d’édition sur une école installée', () => {
+    // Décision de Steve (27/08) : le badge n'a de sens que sur la DÉMO, où le
+    // visiteur choisit ce qu'il regarde. Une école n'a qu'une édition ; la
+    // nommer sur sa page d'accueil n'ajoute qu'un mot de jargon.
+    // Le bloc entier disparaît, badge ET bouton : masquer le seul bouton
+    // laissait un libellé que personne n'avait demandé.
+    const blocLogin = login.slice(login.indexOf('class="auth-edition"') - 120, login.indexOf('class="auth-edition"'))
+    expect(blocLogin).toContain('!isEcoleTenant')
+    const blocSup = supLogin.slice(supLogin.indexOf('class="auth-edition"') - 120, supLogin.indexOf('class="auth-edition"'))
+    expect(blocSup).toContain('!isSchoolTenantMode')
   })
 
-  it('« Changer » est masqué sur les DEUX pages de connexion d’une école', () => {
-    // Corrigé côté secondaire le 26/08, oublié côté supérieur : c'est le lien
-    // que Steve a vu. Une correction faite une fois sur deux ne se voit pas.
-    expect(login).toContain('v-if="!isEcoleTenant" type="button" class="auth-edition-change"')
-    expect(supLogin).toContain('v-if="!isSchoolTenantMode" type="button" class="auth-edition-change"')
+  it('le badge reste sur la démo, avec son bouton « Changer »', () => {
+    // C'est là qu'il sert : le visiteur compare les trois éditions.
+    expect(login).toContain("t('login.version'")
+    expect(login).toContain('auth-edition-change')
+    expect(supLogin).toContain('auth-edition-change')
   })
 
   it('la couleur de l’école est appliquée sur les DEUX pages', () => {
