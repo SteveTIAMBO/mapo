@@ -40,14 +40,16 @@
       </div>
       <textarea v-model="contenu" class="course-input" rows="6" :placeholder="t('mia.mcPastePh')"></textarea>
       <div class="mc-actions">
-        <button class="btn btn-outline btn-sm" :disabled="importing" @click="pickFile">
-          <Upload :size="14" /> <span>{{ importing ? t('mia.mcImporting') : t('mia.mcImport') }}</span>
-        </button>
-        <input ref="fileInput" type="file" accept=".pdf,.txt,text/plain,application/pdf" class="hidden-file" @change="onFile" />
-        <button class="btn btn-outline btn-sm" :disabled="importing" @click="pickPhoto">
-          <Camera :size="14" /> <span>{{ t('mia.mcPhoto') }}</span>
-        </button>
-        <input ref="photoInput" type="file" accept="image/*" capture="environment" class="hidden-file" @change="onPhoto" />
+        <!-- Un seul geste, comme partout ailleurs dans MAPO+ (Steve, 27/08) :
+             deux boutons côte à côte obligeaient à choisir le chemin AVANT de
+             savoir ce qu'on avait sous la main. -->
+        <MiapoBoutonImport
+          :label="t('mia.mcImport')" :label-occupe="t('mia.mcImporting')"
+          :aide-fichier="t('mia.impHintCours')"
+          accept=".pdf,.txt,text/plain,application/pdf,image/*"
+          :busy="importing"
+          @fichier="importerDocument"
+        />
         <span v-if="info" class="muted small mc-info">{{ info }}</span>
         <button class="btn btn-primary btn-sm mc-save" :disabled="!contenu.trim()" @click="save">
           <Plus :size="14" /> <span>{{ t('mia.mcSave') }}</span>
@@ -115,7 +117,8 @@ import { fileToText } from '../utils/pdfText'
 import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useTuteurStore } from '../stores/tuteur'
-import { FolderOpen, Layers, Upload, Plus, Trash2, ShieldCheck, ExternalLink, Link2, Camera } from 'lucide-vue-next'
+import { FolderOpen, Layers, Plus, Trash2, ShieldCheck, ExternalLink, Link2 } from 'lucide-vue-next'
+import MiapoBoutonImport from './MiapoBoutonImport.vue'
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -147,7 +150,6 @@ const titre = ref('')
 const contenu = ref('')
 const importing = ref(false)
 const info = ref('')
-const fileInput = ref(null)
 const docs = ref([])
 
 // « + Nouvelle matière » dans le sélecteur → bascule en saisie libre.
@@ -161,13 +163,19 @@ function refresh() { docs.value = listCoursPerso(enfantId.value) }
 onMounted(refresh)
 watch(enfantId, refresh)
 
-const photoInput = ref(null)
-function pickPhoto() { photoInput.value?.click() }
+/**
+ * Aiguillage d'un document déposé : une IMAGE se transcrit (IA), un PDF ou un
+ * texte se lit directement. C'est le geste qui a changé, pas les traitements —
+ * ils restent séparés parce qu'ils n'ont ni le même coût ni le même résultat.
+ */
+function importerDocument(file) {
+  if (!file) return
+  const estImage = (file.type || '').startsWith('image/') || /\.(png|jpe?g|webp|heic|heif)$/i.test(file.name || '')
+  return estImage ? transcrirePhoto(file) : lireFichier(file)
+}
 // Photo d'un cours → transcription IA en texte (l'image n'est pas conservée ;
 // les données personnelles sont ignorées côté serveur).
-async function onPhoto(e) {
-  const file = e.target.files && e.target.files[0]
-  if (!file) return
+async function transcrirePhoto(file) {
   importing.value = true; info.value = ''
   try {
     // Photo nettoyée AVANT envoi : le ré-encodage canvas retire les métadonnées
@@ -186,14 +194,10 @@ async function onPhoto(e) {
     info.value = t('mia.mcImportError')
   } finally {
     importing.value = false
-    if (photoInput.value) photoInput.value.value = ''
   }
 }
 
-function pickFile() { fileInput.value?.click() }
-async function onFile(e) {
-  const file = e.target.files && e.target.files[0]
-  if (!file) return
+async function lireFichier(file) {
   importing.value = true; info.value = ''
   try {
     const text = (await fileToText(file)).trim()
@@ -208,7 +212,6 @@ async function onFile(e) {
     info.value = t('mia.mcImportError')
   } finally {
     importing.value = false
-    if (fileInput.value) fileInput.value.value = ''
   }
 }
 
@@ -267,7 +270,6 @@ function fmt(iso) {
 .mc-privacy { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--tx3, #6b7280); margin: 8px 0 0; }
 .mc-privacy svg { flex-shrink: 0; margin-top: 1px; color: #1B8A5A; }
 .mc-save { margin-left: auto; }
-.hidden-file { display: none; }
 .mc-list { display: flex; flex-direction: column; gap: 8px; }
 .mc-item { display: flex; align-items: center; gap: 12px; padding: 10px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 12px; }
 .mc-item-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }

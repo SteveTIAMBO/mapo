@@ -23,10 +23,30 @@ export function dayKey(d) {
   return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}`
 }
 
-// A-t-on déjà demandé l'humeur aujourd'hui pour cet apprenant ?
+/**
+ * ⚠️ « Plus tard » ne comptait pas comme une demande — corrigé le 27/08.
+ *
+ * Cette fonction ne regardait que les humeurs RÉPONDUES. Le garde qui devait
+ * éviter d'insister (`humeurOffered`) était un `ref` en mémoire, donc effacé à
+ * chaque rechargement de page. Résultat, remonté par Steve : refuser une fois
+ * garantissait qu'on la redemanderait au rechargement suivant, indéfiniment.
+ * Le seul moyen d'en être débarrassé était de répondre — ce qui transforme une
+ * question facultative en péage.
+ *
+ * On enregistre donc aussi les REFUS, avec la même clé de jour.
+ */
+const PKEY = (sid) => `mapo_b2c_humeur_proposee_v1_${sid || 'me'}`
+
+/** Mémorise qu'on a proposé le check-in aujourd'hui, répondu ou non. */
+export function marquerHumeurProposee(sid) {
+  try { localStorage.setItem(PKEY(sid), dayKey()) } catch { /* quota : on réessaiera demain */ }
+}
+
+// A-t-on déjà PROPOSÉ l'humeur aujourd'hui pour cet apprenant ? (répondue OU refusée)
 export function humeurDemandeeAujourdhui(sid) {
   const last = load(sid)[0]
-  return !!(last && last.day === dayKey())
+  if (last && last.day === dayKey()) return true
+  try { return localStorage.getItem(PKEY(sid)) === dayKey() } catch { return false }
 }
 
 // Enregistre une humeur (valeur 1..10). `dow` = jour de semaine (0=lundi..6=dim)

@@ -255,7 +255,14 @@
 
         <!-- ========== MES ENFANTS ========== -->
         <section v-else-if="section === 'enfants'" class="sec">
-          <div class="card">
+          <!-- ⚠️ La carte de profils est MASQUÉE à un apprenant (Steve, 27/08) :
+               « c'est Djany qui est connectée, elle le sait », donc lui montrer
+               sa propre fiche n'apprend rien.
+               Exception assumée : dès qu'il y a PLUSIEURS fiches, c'est une
+               anomalie (doublon créé à l'inscription) et il lui faut un moyen de
+               la résoudre. La suppression d'une fiche unique, elle, vit
+               désormais dans Paramètres → Mon profil. -->
+          <div v-if="!isApprenant || enfants.length > 1" class="card">
             <div class="card-head"><Users :size="18" /><h3><DualText :text="isApprenant ? t('mia.myProfileTitle') : t('mia.profilesTitle')" /></h3></div>
             <div class="enfant-list">
               <button v-for="e in enfants" :key="e.id" class="enfant-row" :class="{ active: e.id === activeId }" @click="activeId = e.id">
@@ -316,7 +323,11 @@
             <div class="card-head"><Camera :size="18" /><h3><DualText :text="t('mia.readExamCopy')" /></h3></div>
             <div v-if="visionState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.visionPickHint') }}</p>
-              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseTakePhoto') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickCopie" /></label>
+              <MiapoBoutonImport
+                :label="t('mia.chooseTakePhoto')" :aide-fichier="t('mia.impHintDoc')"
+                accept="image/*,application/pdf,.pdf"
+                @fichier="importerCopie"
+              />
               <p class="vision-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
             </div>
             <div v-else-if="visionState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.visionLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
@@ -339,7 +350,11 @@
             <div class="card-head"><Camera :size="18" /><h3><DualText :text="t('mia.readReportCard')" /></h3></div>
             <div v-if="bulletinState === 'idle'" class="vision-pick">
               <p class="muted">{{ t('mia.bulletinPickHint') }}</p>
-              <label class="btn btn-primary vision-btn"><Camera :size="16" /> <span>{{ t('mia.chooseBulletinFile') }}</span><input type="file" accept="image/*,application/pdf" style="display:none" @change="onPickBulletin" /></label>
+              <MiapoBoutonImport
+                :label="t('mia.chooseBulletinFile')" :aide-fichier="t('mia.impHintDoc')"
+                accept="image/*,application/pdf,.pdf"
+                @fichier="importerBulletin"
+              />
               <p class="vision-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
             </div>
             <div v-else-if="bulletinState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.bulletinLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
@@ -789,7 +804,19 @@
           </div>
 
           <div class="card">
-            <div class="card-head"><CalendarDays :size="18" /><h3><DualText :text="t('mia.edtTitle')" /></h3></div>
+            <!-- Le bouton d'import est posé DANS l'en-tête, à droite (Steve, 27/08) :
+                 c'est l'action principale de l'écran, elle ne doit pas se chercher
+                 au milieu du formulaire de saisie manuelle. -->
+            <div class="card-head card-head-act">
+              <CalendarDays :size="18" /><h3><DualText :text="t('mia.edtTitle')" /></h3>
+              <MiapoBoutonImport
+                class="ch-act"
+                accept="image/*,application/pdf,.pdf,text/calendar,.ics"
+                :aide-fichier="t('mia.impHintEdt')"
+                :busy="edtScanning"
+                @fichier="importerEdt"
+              />
+            </div>
             <p class="muted small">{{ t('mia.edtHint') }}</p>
 
             <div class="edt-add">
@@ -800,7 +827,6 @@
               <button class="btn btn-primary btn-sm" :disabled="!crJour || !crMatiere.trim()" @click="ajouterCreneau"><Plus :size="15" /></button>
             </div>
 
-            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*,application/pdf,.pdf,text/calendar,.ics" style="display:none" @change="onPickEdt" /></label>
             <p v-if="edtError" class="err-txt small">{{ edtError }}</p>
             <p v-if="edtNotice" class="muted small">{{ edtNotice }}</p>
 
@@ -1151,6 +1177,15 @@
             <div class="compose-actions">
               <button class="btn btn-primary" @click="saveProfil"><Check :size="16" /> <span>{{ t('mia.save') }}</span></button>
               <span v-if="profilSaved" class="muted small saved-ok">{{ t('mia.saved') }}</span>
+              <!-- ⚠️ La corbeille vivait dans la carte de profils de « Mes
+                   résultats », qu'on vient de masquer à un apprenant. Sans ce
+                   bouton, supprimer une fiche redeviendrait impossible depuis
+                   l'application — c'est exactement ce qui a bloqué Steve sur le
+                   doublon de Djany le 27/08. Discret et à droite : c'est une
+                   sortie, pas une action courante. -->
+              <button v-if="isApprenant" class="btn btn-ghost btn-sm pp-del" @click="confirmRemove">
+                <Trash2 :size="15" /> <span>{{ t('mia.deleteProfile') }}</span>
+              </button>
             </div>
           </div>
           </div>
@@ -1269,6 +1304,7 @@ import TuteurQuiz from '../components/TuteurQuiz.vue'
 import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
 import MiapoMonProfil from '../components/MiapoMonProfil.vue'
+import MiapoBoutonImport from '../components/MiapoBoutonImport.vue'
 import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
@@ -1310,7 +1346,7 @@ import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
 import MiapoLienEcole from '../components/MiapoLienEcole.vue'
-import { humeurDemandeeAujourdhui, humeurDuJour } from '../utils/humeur'
+import { humeurDemandeeAujourdhui, humeurDuJour, marquerHumeurProposee } from '../utils/humeur'
 import DualText from '../components/DualText.vue'
 import MiapoOnboarding from '../components/MiapoOnboarding.vue'
 import MiapoTour from '../components/MiapoTour.vue'
@@ -1504,6 +1540,34 @@ function toggleGroup(g) {
   try { localStorage.setItem('mapo_miapo_group', openGroup.value) } catch { /* silent */ }
 }
 const section = ref('accueil')
+/**
+ * La page où l'on était, retrouvée après un rechargement (Steve, 27/08).
+ *
+ * MAPO+ tient sur UNE seule route (`/mon-espace`) : la « page » courante n'est
+ * qu'un `ref`, donc invisible de l'URL et perdue à chaque F5. Quelqu'un qui
+ * rechargeait au milieu de son emploi du temps repartait de l'accueil — et se
+ * voyait redemander son humeur par-dessus le marché.
+ *
+ * ⚠️ Deux sections ne se restaurent PAS. `fiches` est un écran de passage,
+ * atteint depuis un quiz : y rouvrir hors contexte n'a aucun sens. `profil`
+ * (les Paramètres) non plus — rouvrir quelqu'un dans ses réglages laisse penser
+ * qu'il y a quelque chose à y régler.
+ */
+const CLE_SECTION = 'mapo_miapo_section'
+const SECTIONS_NON_RESTAURABLES = new Set(['fiches', 'profil'])
+function restaurerSection() {
+  let voulue = ''
+  try { voulue = localStorage.getItem(CLE_SECTION) || '' } catch { return }
+  if (!voulue || SECTIONS_NON_RESTAURABLES.has(voulue)) return
+  // Le menu dépend du mode et du niveau : une section absente afficherait une
+  // page vide. On ne restaure que ce qui est réellement atteignable.
+  if (!SECTIONS.value.some((s) => s.key === voulue)) return
+  section.value = voulue
+}
+watch(section, (v) => {
+  if (SECTIONS_NON_RESTAURABLES.has(v)) return
+  try { localStorage.setItem(CLE_SECTION, v) } catch { /* quota : sans gravité */ }
+})
 // Sous-menu de la section « Paramètres » (profil / abonnement / notifications).
 const sousSection = ref('profil')
 // Paramètres : le sous-menu prend la place du menu principal (Steve, 16/08 —
@@ -1968,6 +2032,10 @@ function maybeAskHumeur() {
   if (humeurDemandeeAujourdhui(activeEnfant.value.id)) return
   humeurOffered.value = true
   showHumeur.value = true
+  // On note la proposition TOUT DE SUITE, pas à la réponse : `humeurOffered` ne
+  // survit pas à un rechargement, donc sans cette trace la question revenait à
+  // chaque F5 tant qu'on n'y avait pas répondu.
+  marquerHumeurProposee(activeEnfant.value.id)
 }
 // Quand tous les écrans d'accueil (onboarding / formation / visite) se ferment,
 // on propose le check-in — une seule fois par session.
@@ -2930,8 +2998,7 @@ async function pdfToImageDataUrl(file, maxDim = 1600) {
   await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise
   return { dataUrl: canvas.toDataURL('image/jpeg', 0.85), pages }
 }
-async function onPickBulletin(e) {
-  const file = e.target.files?.[0]; if (e.target) e.target.value = ''
+async function importerBulletin(file) {
   if (!file || !activeEnfant.value) return
   bulletinState.value = 'loading'; bulletinError.value = ''
   try {
@@ -2990,8 +3057,7 @@ function ajouterCreneau() {
  * temps est un tableau, son texte sort sans géométrie et le rattachement d'une
  * matière à son jour deviendrait du devinement.
  */
-async function onPickEdt(e) {
-  const file = e.target.files?.[0]; if (e.target) e.target.value = ''
+async function importerEdt(file) {
   if (!file || !activeEnfant.value) return
   edtScanning.value = true; edtError.value = ''; edtNotice.value = ''
   try {
@@ -3072,12 +3138,15 @@ function downscaleImage(file, maxDim = 1100, quality = 0.8) {
     img.src = url
   })
 }
-async function onPickCopie(e) {
-  const file = e.target.files?.[0]; e.target.value = ''
+async function importerCopie(file) {
   if (!file || !activeEnfant.value) return
   visionState.value = 'loading'
   try {
-    const dataUrl = await downscaleImage(file)
+    // ⚠️ Une copie d'examen arrive aussi en PDF (devoir rendu en ligne, copie
+    // scannée par l'école). L'écran ne proposait QUE l'appareil photo : il
+    // fallait photographier son écran. Même rendu en image que le bulletin.
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
+    const dataUrl = isPdf ? (await pdfToImageDataUrl(file)).dataUrl : await downscaleImage(file)
     const res = await tuteur.analyserCopie({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
     if (res.ok && res.analyse) { visionResult.value = res.analyse; visionState.value = 'done' }
     else { visionError.value = res.reason || t('mia.visionUnreadable'); visionState.value = 'error' }
@@ -3226,6 +3295,7 @@ onMounted(async () => {
   window.addEventListener('open-miapo-settings', onOpenSettings)
   window.addEventListener('miapo-b2c-action', onB2CAction)
   window.addEventListener('miapo-goto', onGoto)
+  restaurerSection()
   try { voletCollapsed.value = localStorage.getItem('mapo_miapo_volet_collapsed') === '1' } catch { /* silent */ }
   try { agendaUrl.value = localStorage.getItem('mapo_miapo_agenda_url') || '' } catch { /* silent */ }
   // ── Suivi d'adoption MAPO+ (B2C) ── best-effort : sans compte (démo) = ignoré.
@@ -3493,6 +3563,11 @@ onUnmounted(() => {
 .card { background: #fff; border: 1px solid var(--bd, #e5e7eb); border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); }
 .card-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }
 .card-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+/* En-tête portant une ACTION à droite (import…). `margin-left:auto` sur
+   l'action plutôt qu'un `space-between` sur le conteneur : l'icône et le titre
+   doivent rester collés l'un à l'autre, seule l'action est repoussée. */
+.card-head-act { flex-wrap: wrap; }
+.card-head-act > .ch-act { margin-left: auto; }
 .pdf-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; background: rgba(var(--pr-rgb), .1); color: var(--pr); border: none; border-radius: 9px; padding: 7px 12px; font-size: 13px; font-weight: 600; cursor: pointer; }
 .pdf-btn:hover { background: rgba(var(--pr-rgb), .18); }
 .rappel-card { display: block; width: 100%; text-align: left; cursor: pointer; border: 1px solid rgba(var(--pr-rgb), .28); background: linear-gradient(180deg, rgba(var(--pr-rgb), .06), rgba(var(--pr-rgb), .02)); }
@@ -3688,7 +3763,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .bloq-pct { font-size: 13px; font-weight: 800; color: #D93025; }
 .bloq-row svg { color: var(--pr); flex-shrink: 0; }
 
-.vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); } .vision-btn { cursor: pointer; }
+.vision-card { background: rgba(var(--pr-rgb,21,88,176),.04); }
 .vision-privacy { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; line-height: 1.4; color: var(--tx3, #6b7280); margin: 10px 0 0; }
 .vision-privacy svg { flex-shrink: 0; margin-top: 1px; color: #1B8A5A; }
 .loading { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 20px; text-align: center; } .loading p { margin: 0; font-size: 14px; } .loading small { color: var(--tx3); }
@@ -3703,7 +3778,6 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .edt-add { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
 .edt-add .input { flex: 1; min-width: 120px; }
 .edt-add .edt-time { flex: 0 0 auto; max-width: 120px; }
-.edt-scan { margin-bottom: 4px; }
 .edt-week { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .edt-day-h { font-family: var(--font-display, 'Poppins'), sans-serif; font-weight: 700; font-size: 13.5px; color: var(--pr); margin-bottom: 4px; }
 .edt-cr { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--divider, #eee); }
