@@ -61,6 +61,19 @@ const schoolIdentity = useSchoolIdentityStore()
 if (tenant.mode === 'school') {
   schoolIdentity.init()
   /**
+   * ⚠️ On OUBLIE l'édition mémorisée par le visiteur.
+   *
+   * `editionStore.init()` la restaure depuis le localStorage. Sur le
+   * sous-domaine d'une école, cette préférence ne décrit PAS l'établissement :
+   * elle décrit ce que la personne a consulté ailleurs. Steve, qui avait ouvert
+   * la démo Supérieur, arrivait sur son école primaire et voyait la connexion
+   * du Supérieur — le premier rendu obéissait à son localStorage, pas à l'école.
+   *
+   * On repart donc de « je ne sais pas », et on n'affiche l'édition qu'une fois
+   * le document école lu.
+   */
+  editionStore.clearEdition()
+  /**
    * ⚠️ 27/08/2026 — ON NE SUPPOSE PLUS L'ÉDITION.
    *
    * Cette ligne valait `setEdition('superieur')`, « puisque ENTPE est le premier

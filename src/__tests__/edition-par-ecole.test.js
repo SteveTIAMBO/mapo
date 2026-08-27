@@ -37,6 +37,20 @@ describe('on ne suppose plus l’édition d’une école', () => {
     expect(main).not.toContain("setEdition('superieur')")
   })
 
+  it('⚠️ la préférence mémorisée du VISITEUR est oubliée', () => {
+    // `editionStore.init()` restaure l'édition depuis le localStorage. Sur le
+    // sous-domaine d'une école, cette valeur ne décrit pas l'établissement,
+    // elle décrit ce que la personne a consulté ailleurs. C'est elle qui
+    // envoyait Steve sur la connexion du Supérieur au premier rendu, APRÈS la
+    // correction de main.js — le défaut avait deux causes, pas une.
+    const i = main.indexOf("tenant.mode === 'school'")
+    expect(i).toBeGreaterThan(0)
+    const bloc = main.slice(i, i + 1400)
+    expect(bloc).toContain('editionStore.clearEdition()')
+    expect(bloc.indexOf('editionStore.clearEdition()'))
+      .toBeLessThan(bloc.indexOf('watch(() => schoolIdentity.edition'))
+  })
+
   it('l’édition est posée dès qu’elle est CONNUE, pas avant', () => {
     const i = main.indexOf('watch(() => schoolIdentity.edition')
     expect(i, 'watch sur schoolIdentity.edition introuvable').toBeGreaterThan(0)
