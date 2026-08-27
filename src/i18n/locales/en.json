@@ -5008,7 +5008,7 @@
     "secProgress": "Progress",
     "secTimetable": "Timetable",
     "edtTitle": "My timetable",
-    "edtHint": "Enter or scan your timetable. MAPO+ will suggest revising the day before each class.",
+    "edtHint": "Enter your timetable, or import it: photo, PDF or calendar file (.ics). MAPO+ will suggest revising the day before each class.",
     "edtDay": "Day",
     "edtSubject": "Subject",
     "edtScan": "Import or photograph",

@@ -800,7 +800,7 @@
               <button class="btn btn-primary btn-sm" :disabled="!crJour || !crMatiere.trim()" @click="ajouterCreneau"><Plus :size="15" /></button>
             </div>
 
-            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*,application/pdf,.pdf" style="display:none" @change="onPickEdt" /></label>
+            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*,application/pdf,.pdf,text/calendar,.ics" style="display:none" @change="onPickEdt" /></label>
             <p v-if="edtError" class="err-txt small">{{ edtError }}</p>
             <p v-if="edtNotice" class="muted small">{{ edtNotice }}</p>
 
@@ -1304,6 +1304,7 @@ import MiapoTabBar from '../components/MiapoTabBar.vue'
 import MiapoAjouterMatiere from '../components/MiapoAjouterMatiere.vue'
 import MiapoModulesFormation from '../components/MiapoModulesFormation.vue'
 import { listeModules } from '../utils/modulesFormation'
+import { parserIcs } from '../utils/icsEdt'
 import { fusionnerMatieres } from '../utils/matieresSup'
 import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
@@ -2994,12 +2995,29 @@ async function onPickEdt(e) {
   if (!file || !activeEnfant.value) return
   edtScanning.value = true; edtError.value = ''; edtNotice.value = ''
   try {
+    const isIcs = file.type === 'text/calendar' || /\.ics$/i.test(file.name || '')
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
-    const rendu = isPdf
-      ? await pdfToImageDataUrl(file)
-      : { dataUrl: await downscaleImage(file, 1400, 0.82), pages: 1 }
-    const res = await analyserEdt({ imageDataUrl: rendu.dataUrl, niveau: activeEnfant.value.niveau })
-    if (!res.ok || !res.creneaux.length) { edtError.value = res.reason || t('mia.edtFail'); return }
+    let creneaux = []
+    let apres = ''   // ce qu'on dira APRÈS l'import, une fois qu'il a réussi
+    if (isIcs) {
+      // Chemin gratuit et instantané : un `.ics` se lit dans le navigateur, il
+      // ne passe par aucun appel IA et ne coûte donc aucun crédit.
+      const r = parserIcs(await file.text())
+      if (!r.creneaux.length) { edtError.value = t('mia.edtIcsEmpty'); return }
+      creneaux = r.creneaux
+      const bouts = []
+      if (r.semaines > 1) bouts.push(t('mia.edtIcsWeeks', { n: r.semaines }))
+      if (r.ignoresSansHeure) bouts.push(t('mia.edtIcsSkipped', { n: r.ignoresSansHeure }))
+      apres = bouts.join(' ')
+    } else {
+      const rendu = isPdf
+        ? await pdfToImageDataUrl(file)
+        : { dataUrl: await downscaleImage(file, 1400, 0.82), pages: 1 }
+      const res = await analyserEdt({ imageDataUrl: rendu.dataUrl, niveau: activeEnfant.value.niveau })
+      if (!res.ok || !res.creneaux.length) { edtError.value = res.reason || t('mia.edtFail'); return }
+      creneaux = res.creneaux
+      if (rendu.pages > 1) apres = t('mia.edtPdfPages', { n: rendu.pages })
+    }
     // ⚠️ `setEdt` REMPLACE toute la semaine. Tant que la seule source était une
     // photo prise à l'instant, l'intention était claire ; avec un fichier choisi
     // dans le téléphone, se tromper de document effacerait sans prévenir un
@@ -3007,8 +3025,8 @@ async function onPickEdt(e) {
     // quelque chose à perdre.
     const actuels = (activeEnfant.value.edt || []).length
     if (actuels && !confirm(t('mia.edtReplace', { n: actuels }))) return
-    store.setEdt(activeEnfant.value.id, res.creneaux)
-    if (rendu.pages > 1) edtNotice.value = t('mia.edtPdfPages', { n: rendu.pages })
+    store.setEdt(activeEnfant.value.id, creneaux)
+    edtNotice.value = apres
   } catch { edtError.value = t('mia.visionBlurry') } finally { edtScanning.value = false }
 }
 const edtParJour = computed(() => {

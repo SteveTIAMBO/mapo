@@ -5008,7 +5008,7 @@
     "secProgress": "Progression",
     "secTimetable": "Emploi du temps",
     "edtTitle": "Mon emploi du temps",
-    "edtHint": "Saisissez ou scannez votre emploi du temps. MAPO+ vous proposera de réviser la veille de chaque cours.",
+    "edtHint": "Saisissez votre emploi du temps, ou importez-le : photo, PDF ou fichier calendrier (.ics). MAPO+ vous proposera de réviser la veille de chaque cours.",
     "edtDay": "Jour",
     "edtSubject": "Matière",
     "edtScan": "Importer ou photographier",
