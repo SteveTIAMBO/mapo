@@ -4996,7 +4996,7 @@
     "mcHint": "Add your courses (by subject): MIAPO uses them to personalize YOUR revisions.",
     "mcTitlePh": "Title (e.g. Chapter 4 — Fractions)",
     "mcPastePh": "Paste your course here, or import a PDF/TXT file…",
-    "mcImport": "Import PDF/TXT",
+    "mcImport": "Import",
     "mcImporting": "Extracting…",
     "mcImported": "Imported: {name}",
     "mcImportError": "Couldn't read this file. Paste the text instead.",

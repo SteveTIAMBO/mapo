@@ -4996,7 +4996,7 @@
     "mcHint": "Ajoute tes cours (par matière) : MIAPO s'appuie dessus pour personnaliser TES révisions.",
     "mcTitlePh": "Titre (ex. Chapitre 4 — Les fractions)",
     "mcPastePh": "Colle ton cours ici, ou importe un fichier PDF/TXT…",
-    "mcImport": "Importer PDF/TXT",
+    "mcImport": "Importer",
     "mcImporting": "Extraction…",
     "mcImported": "Importé : {name}",
     "mcImportError": "Impossible de lire ce fichier. Colle le texte à la place.",
