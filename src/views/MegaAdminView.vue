@@ -660,9 +660,31 @@
             </button>
           </div>
           <div class="ma-form">
+            <!-- ⚠️ Vécu le 27/08/2026 : le sous-domaine d'epc1 existait, mais il
+                 n'était PAS dans les « domaines autorisés » de Firebase Auth.
+                 Conséquence invisible depuis la console : « Continuer avec
+                 Google » et les liens de connexion par e-mail échouaient avec
+                 « domaine non autorisé ». Le mot de passe, lui, marchait — d'où
+                 une école qui paraissait fonctionnelle. Ce bouton rejoue le
+                 provisioning, qui est idempotent. -->
+            <div class="ma-field">
+              <label>Infrastructure</label>
+              <p class="ma-hint">
+                Le sous-domaine et l'autorisation Firebase sont créés automatiquement
+                à la création de l'école. Si l'autorisation manque,
+                <strong>« Continuer avec Google » et les liens de connexion envoyés par
+                e-mail échouent</strong> avec « domaine non autorisé » — seul le mot de
+                passe fonctionne encore, ce qui masque le problème.
+              </p>
+              <button type="button" class="ma-btn" :disabled="infraBusy" @click="reparerInfra">
+                {{ infraBusy ? 'Vérification…' : 'Vérifier et réparer' }}
+              </button>
+              <p v-if="infraMsg" class="ma-hint" :class="{ 'ma-hint-warn': infraErr }">{{ infraMsg }}</p>
+            </div>
             <p class="ma-hint">
-              Copie ce prompt et confie-le à une IA pilotant le navigateur (cPanel + Firebase) :
-              elle créera le sous-domaine <strong>{{ promptDialog.slug }}.app-edufrem.com</strong> et l'autorisation Firebase.
+              À défaut, copie ce prompt et confie-le à une IA pilotant le navigateur
+              (cPanel + Firebase) : elle créera le sous-domaine
+              <strong>{{ promptDialog.slug }}.app-edufrem.com</strong> et l'autorisation Firebase.
               Le dossier <code>/public_html/mapo</code> (partagé par toutes les écoles) n'est jamais touché.
             </p>
             <div class="ma-prompt-tabs">
@@ -686,7 +708,7 @@ import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { genererVitrine, manquesVitrine } from '../utils/vitrineGeneration'
-import { useMegaAdminStore, slugify, EDITIONS, MODULES_INFO, MODULES_STRUCTURE, MODULES_PEDAGOGIE, MODULES_SERVICES, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
+import { useMegaAdminStore, provisionSubdomain, slugify, EDITIONS, MODULES_INFO, MODULES_STRUCTURE, MODULES_PEDAGOGIE, MODULES_SERVICES, PACKS, packModules, computeTrialUntil, TRIAL_MONTHS } from '../stores/megaAdmin'
 import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
 import MegaMapoplusUsers from './admin/MegaMapoplusUsers.vue'
@@ -768,8 +790,43 @@ Terminé : ${sub} est désinstallé.`
   return { install, remove }
 }
 
+/**
+ * Rejoue le provisioning d'infrastructure : sous-domaine cPanel + domaine
+ * autorisé Firebase. Les deux opérations sont IDEMPOTENTES côté serveur, donc
+ * ce bouton est sans risque sur une école déjà en ligne.
+ *
+ * On dit précisément ce qui a été fait, y compris « c'était déjà bon » :
+ * un message unique « terminé » ne permettrait pas de distinguer une réparation
+ * d'un échec silencieux.
+ */
+const infraBusy = ref(false)
+const infraMsg = ref('')
+const infraErr = ref(false)
+
+async function reparerInfra() {
+  const slug = promptDialog.value?.slug
+  if (!slug) return
+  infraBusy.value = true; infraMsg.value = ''; infraErr.value = false
+  const r = await provisionSubdomain(slug)
+  infraBusy.value = false
+  if (!r.success) {
+    infraErr.value = true
+    infraMsg.value = `Échec : ${r.error || 'appel impossible'}. Utilise le prompt ci-dessous.`
+    return
+  }
+  const bouts = [
+    r.already ? 'sous-domaine déjà en place' : 'sous-domaine créé',
+    r.authDomainAdded
+      ? 'domaine autorisé dans Firebase'
+      : `autorisation Firebase NON faite${r.authDomainError ? ` (${r.authDomainError})` : ''}`,
+  ]
+  infraErr.value = !r.authDomainAdded
+  infraMsg.value = bouts.join(' · ') + '.'
+}
+
 function ouvrirPrompt(data) {
   if (!data) return
+  infraMsg.value = ''; infraErr.value = false
   const slug = data.slug || data.id
   const nom = data.nom || data.schoolName || slug
   const adminEmail = data.adminEmail || (Array.isArray(data.adminEmails) && data.adminEmails[0]) || ''

@@ -390,7 +390,8 @@ async function lancerReset() {
   font-family: 'Poppins', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;
   transition: background 0.2s ease; margin-top: 4px;
 }
-.auth-btn-primary:hover:not(:disabled) { background: #0E3F7E; }
+/* Teinte foncée de l'accent, pas un bleu en dur (cf. LoginView). */
+.auth-btn-primary:hover:not(:disabled) { background: var(--pr-dark); }
 .auth-btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* ── Google ── */

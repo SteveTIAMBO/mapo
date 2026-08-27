@@ -123,6 +123,16 @@ describe('les écrans d’entrée n’affirment que ce qu’ils savent', () => {
     expect(supLogin).toContain('auth-edition-change')
   })
 
+  it('⚠️ le sous-titre ne nomme pas l’édition non plus', () => {
+    // Retirer le badge et laisser « Primaire » juste en dessous, c'est déplacer
+    // le jargon, pas le supprimer.
+    const i = login.indexOf('const sousTitre')
+    expect(i).toBeGreaterThan(0)
+    const bloc = login.slice(i, login.indexOf('\n})', i))
+    expect(bloc).toContain('identity.ville')
+    expect(bloc).not.toContain('nomEdition')
+  })
+
   it('la couleur de l’école est appliquée sur les DEUX pages', () => {
     for (const [nom, src] of [['LoginView', login], ['SuperieurLogin', supLogin]]) {
       expect(src, nom).toContain('appliquerAccentEcole')
@@ -152,6 +162,21 @@ describe('appliquerAccentEcole — comportement réel', () => {
     const st = document.documentElement.style
     expect(st.getPropertyValue('--pr')).toBe('#8E1B3A')
     expect(st.getPropertyValue('--pr-rgb')).toBe('142, 27, 58')
+  })
+
+  it('⚠️ la teinte de SURVOL suit l’école, elle aussi', () => {
+    // Vu à l'écran : au repos le bouton était bordeaux, au survol il repassait
+    // au bleu marine MAPO (`#0E3F7E` en dur). Une couleur d'école appliquée à
+    // 90 % se remarque plus qu'une couleur pas appliquée du tout.
+    appliquerAccentEcole('#8E1B3A')
+    const dark = document.documentElement.style.getPropertyValue('--pr-dark')
+    expect(dark).toBe('rgb(111, 21, 45)')
+    for (const src of [
+      fs.readFileSync(path.join(racine, 'views/LoginView.vue'), 'utf8'),
+      fs.readFileSync(path.join(racine, 'views/superieur/SuperieurLogin.vue'), 'utf8'),
+    ]) {
+      expect(src).not.toContain('#0E3F7E')
+    }
   })
 
   it('accepte la forme sans dièse', () => {

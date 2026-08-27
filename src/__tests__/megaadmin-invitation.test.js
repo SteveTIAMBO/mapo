@@ -151,3 +151,50 @@ describe('⚠️ chaque modale a SA transition, jamais imbriquée', () => {
     }
   })
 })
+
+describe('⚠️ l’autorisation Firebase manquait, sans que rien ne le dise', () => {
+  /**
+   * Vécu le 27/08/2026 : `epc1.app-edufrem.com` existait comme sous-domaine mais
+   * n'était PAS dans les « domaines autorisés » de Firebase Auth. Conséquence
+   * invisible depuis la console : « Continuer avec Google » et les liens de
+   * connexion par e-mail échouaient avec « domaine non autorisé », tandis que le
+   * mot de passe continuait de marcher — l'école paraissait donc fonctionnelle.
+   *
+   * Le provisioning le fait automatiquement et le rapporte déjà
+   * (`authDomainAdded` / `authDomainError`), mais il n'offrait aucun RECOURS :
+   * juste une ligne de liste à faire soi-même.
+   */
+  const vue = lire('views/MegaAdminView.vue')
+  const store = lire('stores/megaAdmin.js')
+
+  it('la console peut rejouer le provisioning', () => {
+    expect(vue).toContain('async function reparerInfra')
+    expect(vue).toContain('provisionSubdomain(slug)')
+  })
+
+  it('les deux opérations serveur sont idempotentes', () => {
+    // Sans quoi ce bouton serait un piège sur une école en production.
+    const php = fs.readFileSync(path.join(racine, '../server/mapo-provision.php'), 'utf8')
+    expect(php).toContain("'already' => true")
+    expect(php).toContain('in_array($fullDomain, $domains, true)')
+  })
+
+  it('le résultat distingue « déjà bon » de « réparé » et de « échoué »', () => {
+    const i = vue.indexOf('async function reparerInfra')
+    const bloc = vue.slice(i, i + 1200)
+    expect(bloc).toContain('r.already')
+    expect(bloc).toContain('r.authDomainAdded')
+    expect(bloc).toContain('r.authDomainError')
+  })
+
+  it('la CONSÉQUENCE est écrite, pas seulement l’action', () => {
+    // « Ajouter aux domaines autorisés » ne dit pas ce qu'on casse en l'omettant.
+    expect(vue).toContain('domaine non autorisé')
+    expect(vue).toMatch(/Continuer avec Google/)
+  })
+
+  it('l’état de l’autorisation est déjà remonté à la création', () => {
+    expect(store).toContain('authDomainAdded')
+    expect(store).toContain('authDomainError')
+  })
+})

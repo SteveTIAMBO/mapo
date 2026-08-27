@@ -271,8 +271,12 @@ const titrePrincipal = computed(() => {
 
 const sousTitre = computed(() => {
   if (isMiapoMode) return t('login.taglineMiapo')
+  // ⚠️ Plus de mention d'édition ici non plus (décision Steve, 27/08) : retirer
+  // le badge et laisser « Primaire » en sous-titre, c'est déplacer le jargon,
+  // pas le supprimer. Sur une école installée on affiche sa VILLE, un fait qui
+  // parle aux parents. Ville inconnue : la signature MAPO, jamais un vide.
   if (isEcoleTenant && identity.nomAffiche) {
-    return [identity.ville, nomEdition.value].filter(Boolean).join(' · ')
+    return String(identity.ville || '').trim() || t('login.tagline')
   }
   return t('login.tagline')
 })
@@ -741,7 +745,9 @@ function resetDemo() {
   margin-top: 4px;
 }
 .auth-btn-primary:hover:not(:disabled) {
-  background: #0E3F7E;
+  /* Teinte foncée de l'ACCENT, pas un bleu marine en dur : sur une école
+     bordeaux, le survol repassait au bleu MAPO. */
+  background: var(--pr-dark);
 }
 .auth-btn-primary:disabled {
   opacity: 0.55;

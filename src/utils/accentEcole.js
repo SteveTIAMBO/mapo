@@ -30,5 +30,11 @@ export function appliquerAccentEcole(hex) {
   root.setProperty('--pr-rgb', `${R}, ${G}, ${B}`)
   root.setProperty('--pr-light', `rgba(${R}, ${G}, ${B}, 0.10)`)
   root.setProperty('--pr-glow', `rgba(${R}, ${G}, ${B}, 0.28)`)
+  // ⚠️ `--pr-dark` aussi, sinon le SURVOL repasse au bleu MAPO. Vu à l'écran le
+  // 27/08 sur une école bordeaux : au repos le bouton était bordeaux, au survol
+  // il devenait bleu marine. Une couleur d'école appliquée à 90 % se remarque
+  // plus qu'une couleur pas appliquée du tout.
+  const assombri = [R, G, B].map((c) => Math.round(c * 0.78))
+  root.setProperty('--pr-dark', `rgb(${assombri.join(', ')})`)
   return true
 }
