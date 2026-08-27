@@ -103,3 +103,51 @@ describe('⚠️ la modale Site respecte la structure des autres', () => {
     expect(bloc).toContain('<transition name="ma-fade">')
   })
 })
+
+describe('⚠️ chaque modale a SA transition, jamais imbriquée', () => {
+  /**
+   * Défaut vu en production : ma modale « Inviter un administrateur » était
+   * insérée à l'intérieur de la `<transition>` d'une AUTRE modale. Or une
+   * `<transition>` ne rend QU'UN enfant : le bouton fonctionnait, la fonction
+   * s'exécutait, aucune erreur n'était levée — et rien n'apparaissait.
+   *
+   * Le point d'insertion était le `<div>` intérieur au lieu de la transition.
+   * Un test structurel l'attrape là où la lecture ne l'attrape pas.
+   */
+  const lignes = lire('views/MegaAdminView.vue').split('\n')
+
+  function chaineAncetres(motif) {
+    const cible = lignes.findIndex((l) => l.includes(motif))
+    expect(cible, `${motif} introuvable`).toBeGreaterThan(0)
+    const pile = []
+    const vides = new Set(['br', 'img', 'input', 'path', 'circle', 'svg', 'meta', 'link'])
+    for (const l of lignes.slice(0, cible + 1)) {
+      for (const m of l.matchAll(/<(\/?)([a-zA-Z][\w-]*)([^>]*?)(\/?)>/g)) {
+        const [, fermant, tag, , auto] = m
+        if (auto || vides.has(tag)) continue
+        if (fermant) { if (pile[pile.length - 1] === tag) pile.pop() }
+        else pile.push(tag)
+      }
+    }
+    return pile
+  }
+
+  const MODALES = [
+    'v-if="creationOuverte"', 'v-if="modulesEdit"', 'v-if="vitrineEdit"',
+    'v-if="adminDialog"', 'v-if="promptDialog"',
+  ]
+
+  it('aucune modale n’est enfermée dans la transition d’une autre', () => {
+    for (const m of MODALES) {
+      const pile = chaineAncetres(m)
+      const n = pile.filter((t) => t === 'transition').length
+      expect(n, `${m} : ${n} transitions dans sa chaîne (${pile.join(' > ')})`).toBe(1)
+    }
+  })
+
+  it('toutes suivent la même chaîne : template > div > transition > div', () => {
+    for (const m of MODALES) {
+      expect(chaineAncetres(m).join(' > '), m).toBe('template > div > transition > div')
+    }
+  })
+})

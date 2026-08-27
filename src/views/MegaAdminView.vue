@@ -518,132 +518,132 @@
       </div>
     </transition>
 
-    <!-- Modale : prompt de configuration manuelle (cPanel + Firebase) -->
+    <!-- ══ Site public de l'école ═══════════════════════════════════
+         Une vitrine est une fiche `vitrines/{slug}` : rien à déployer par
+         école, le site est en ligne dès que la fiche existe.
+         ⚠️ Même structure que les autres modales — `.ma-form` en corps et
+         `.ma-field` par champ. Sans eux, les libellés se superposent aux
+         champs et les boutons débordent. -->
     <transition name="ma-fade">
-      <!-- ══ Site public de l'école ═══════════════════════════════════
-           Une vitrine est une fiche `vitrines/{slug}` : rien à déployer par
-           école, le site est en ligne dès que la fiche existe.
-           ⚠️ Même structure que les autres modales — `.ma-form` en corps et
-           `.ma-field` par champ. Sans eux, les libellés se superposent aux
-           champs et les boutons débordent. -->
-      <transition name="ma-fade">
-      <div v-if="vitrineEdit" class="ma-modal-overlay" @click.self="fermerVitrine">
-        <div class="ma-modal">
-          <div class="ma-modal-head">
-            <h2 class="ma-modal-title">Site public — {{ vitrineEdit.school.schoolName || vitrineEdit.school.nom }}</h2>
-            <button class="ma-modal-close" type="button" @click="fermerVitrine">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-
-          <div class="ma-form">
-            <p class="ma-hint">
-              Adresse du site :
-              <a :href="`https://${vitrineEdit.school.id}.app-edufrem.com/site/`" target="_blank" rel="noopener">{{ vitrineEdit.school.id }}.app-edufrem.com/site</a>
-            </p>
-
-            <p v-if="vitrineEdit.chargement" class="ma-hint">Lecture de la fiche…</p>
-
-            <template v-else>
-              <div class="ma-field">
-                <label class="ma-label">Nom affiché</label>
-                <input v-model="vitrineEdit.cfg.identite.nom" type="text" class="ma-input" />
-              </div>
-              <div class="ma-field">
-                <label class="ma-label">Slogan</label>
-                <input v-model="vitrineEdit.cfg.identite.slogan" type="text" class="ma-input" />
-              </div>
-              <div class="ma-field">
-                <label class="ma-label">Présentation</label>
-                <textarea v-model="vitrineEdit.cfg.vision.texte" class="ma-input" rows="4"></textarea>
-              </div>
-              <div class="ma-row">
-                <div class="ma-field">
-                  <label class="ma-label">Couleur principale</label>
-                  <input v-model="vitrineEdit.cfg.couleurs.primaire" type="text" class="ma-input" placeholder="#8E1B3A" />
-                </div>
-                <div class="ma-field">
-                  <label class="ma-label">Adresse publique</label>
-                  <input v-model="vitrineEdit.cfg.contact.adresse" type="text" class="ma-input" />
-                </div>
-              </div>
-              <div class="ma-row">
-                <div class="ma-field">
-                  <label class="ma-label">Téléphone public</label>
-                  <input v-model="vitrineEdit.cfg.contact.telephone" type="text" class="ma-input" placeholder="vide = non publié" />
-                </div>
-                <div class="ma-field">
-                  <label class="ma-label">E-mail public</label>
-                  <input v-model="vitrineEdit.cfg.contact.email" type="text" class="ma-input" placeholder="vide = non publié" />
-                </div>
-              </div>
-
-              <p v-if="vitrineManques.length" class="ma-hint">
-                Encore absent du site : {{ vitrineManques.join(', ') }}.
-              </p>
-
-              <div class="ma-field">
-                <label class="ma-label">Publication</label>
-                <select v-model="vitrineEdit.cfg.statut" class="ma-input">
-                  <option value="brouillon">Brouillon — visible de nous seuls</option>
-                  <option value="en_attente">En attente de validation de l'école</option>
-                  <option value="valide">Publié — visible de tous</option>
-                </select>
-                <p v-if="!vitrineEdit.existe && vitrineEdit.cfg.statut === 'valide'" class="ma-hint">
-                  La première écriture se fait en brouillon : enregistrez, puis publiez.
-                </p>
-              </div>
-
-              <p v-if="vitrineError" class="ma-error">{{ vitrineError }}</p>
-              <p v-if="vitrineOk" class="ma-ok">{{ vitrineOk }}</p>
-
-              <div class="ma-modal-actions">
-                <button class="ma-btn-ghost" type="button" @click="regenererVitrine">Régénérer</button>
-                <button class="ma-btn" type="button" :disabled="vitrineBusy" @click="enregistrerVitrine">
-                  {{ vitrineBusy ? 'Enregistrement…' : 'Enregistrer' }}
-                </button>
-              </div>
-            </template>
-          </div>
+    <div v-if="vitrineEdit" class="ma-modal-overlay" @click.self="fermerVitrine">
+      <div class="ma-modal">
+        <div class="ma-modal-head">
+          <h2 class="ma-modal-title">Site public — {{ vitrineEdit.school.schoolName || vitrineEdit.school.nom }}</h2>
+          <button class="ma-modal-close" type="button" @click="fermerVitrine">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
         </div>
-      </div>
-      </transition>
 
-      <!-- ══ Inviter un administrateur ════════════════════════════════
-           ⚠️ Remplace un `window.prompt` : une boîte du NAVIGATEUR au milieu
-           d'une application soignée fait douter de tout le reste, et elle ne
-           peut afficher ni le contexte ni le résultat de l'envoi. -->
-      <transition name="ma-fade">
-      <div v-if="adminDialog" class="ma-modal-overlay" @click.self="adminDialog = null">
-        <div class="ma-modal">
-          <div class="ma-modal-head">
-            <h2 class="ma-modal-title">Inviter un administrateur</h2>
-            <button class="ma-modal-close" type="button" @click="adminDialog = null">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
-            </button>
-          </div>
-          <div class="ma-form">
-            <p class="ma-hint">
-              Sur <strong>{{ adminDialog.school.schoolName || adminDialog.school.nom }}</strong>.
-              À sa première connexion sur {{ adminDialog.school.id }}.app-edufrem.com, le compte devient administrateur.
-            </p>
+        <div class="ma-form">
+          <p class="ma-hint">
+            Adresse du site :
+            <a :href="`https://${vitrineEdit.school.id}.app-edufrem.com/site/`" target="_blank" rel="noopener">{{ vitrineEdit.school.id }}.app-edufrem.com/site</a>
+          </p>
+
+          <p v-if="vitrineEdit.chargement" class="ma-hint">Lecture de la fiche…</p>
+
+          <template v-else>
             <div class="ma-field">
-              <label class="ma-label">Adresse e-mail</label>
-              <input v-model="adminDialog.email" type="email" class="ma-input" placeholder="admin@ecole.com" />
+              <label class="ma-label">Nom affiché</label>
+              <input v-model="vitrineEdit.cfg.identite.nom" type="text" class="ma-input" />
             </div>
-            <p v-if="adminDialog.error" class="ma-error">{{ adminDialog.error }}</p>
-            <p v-if="adminDialog.ok" class="ma-ok">{{ adminDialog.ok }}</p>
+            <div class="ma-field">
+              <label class="ma-label">Slogan</label>
+              <input v-model="vitrineEdit.cfg.identite.slogan" type="text" class="ma-input" />
+            </div>
+            <div class="ma-field">
+              <label class="ma-label">Présentation</label>
+              <textarea v-model="vitrineEdit.cfg.vision.texte" class="ma-input" rows="4"></textarea>
+            </div>
+            <div class="ma-row">
+              <div class="ma-field">
+                <label class="ma-label">Couleur principale</label>
+                <input v-model="vitrineEdit.cfg.couleurs.primaire" type="text" class="ma-input" placeholder="#8E1B3A" />
+              </div>
+              <div class="ma-field">
+                <label class="ma-label">Adresse publique</label>
+                <input v-model="vitrineEdit.cfg.contact.adresse" type="text" class="ma-input" />
+              </div>
+            </div>
+            <div class="ma-row">
+              <div class="ma-field">
+                <label class="ma-label">Téléphone public</label>
+                <input v-model="vitrineEdit.cfg.contact.telephone" type="text" class="ma-input" placeholder="vide = non publié" />
+              </div>
+              <div class="ma-field">
+                <label class="ma-label">E-mail public</label>
+                <input v-model="vitrineEdit.cfg.contact.email" type="text" class="ma-input" placeholder="vide = non publié" />
+              </div>
+            </div>
+
+            <p v-if="vitrineManques.length" class="ma-hint">
+              Encore absent du site : {{ vitrineManques.join(', ') }}.
+            </p>
+
+            <div class="ma-field">
+              <label class="ma-label">Publication</label>
+              <select v-model="vitrineEdit.cfg.statut" class="ma-input">
+                <option value="brouillon">Brouillon — visible de nous seuls</option>
+                <option value="en_attente">En attente de validation de l'école</option>
+                <option value="valide">Publié — visible de tous</option>
+              </select>
+              <p v-if="!vitrineEdit.existe && vitrineEdit.cfg.statut === 'valide'" class="ma-hint">
+                La première écriture se fait en brouillon : enregistrez, puis publiez.
+              </p>
+            </div>
+
+            <p v-if="vitrineError" class="ma-error">{{ vitrineError }}</p>
+            <p v-if="vitrineOk" class="ma-ok">{{ vitrineOk }}</p>
+
             <div class="ma-modal-actions">
-              <button class="ma-btn-ghost" type="button" @click="adminDialog = null">Fermer</button>
-              <button class="ma-btn" type="button" :disabled="adminDialog.busy" @click="confirmerAdministrateur">
-                {{ adminDialog.busy ? 'Envoi…' : 'Inviter' }}
+              <button class="ma-btn-ghost" type="button" @click="regenererVitrine">Régénérer</button>
+              <button class="ma-btn" type="button" :disabled="vitrineBusy" @click="enregistrerVitrine">
+                {{ vitrineBusy ? 'Enregistrement…' : 'Enregistrer' }}
               </button>
             </div>
+          </template>
+        </div>
+      </div>
+    </div>
+    </transition>
+
+    <!-- ══ Inviter un administrateur ════════════════════════════════
+         ⚠️ Remplace un `window.prompt` : une boîte du NAVIGATEUR au milieu
+         d'une application soignée fait douter de tout le reste, et elle ne
+         peut afficher ni le contexte ni le résultat de l'envoi. -->
+    <transition name="ma-fade">
+    <div v-if="adminDialog" class="ma-modal-overlay" @click.self="adminDialog = null">
+      <div class="ma-modal">
+        <div class="ma-modal-head">
+          <h2 class="ma-modal-title">Inviter un administrateur</h2>
+          <button class="ma-modal-close" type="button" @click="adminDialog = null">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="ma-form">
+          <p class="ma-hint">
+            Sur <strong>{{ adminDialog.school.schoolName || adminDialog.school.nom }}</strong>.
+            À sa première connexion sur {{ adminDialog.school.id }}.app-edufrem.com, le compte devient administrateur.
+          </p>
+          <div class="ma-field">
+            <label class="ma-label">Adresse e-mail</label>
+            <input v-model="adminDialog.email" type="email" class="ma-input" placeholder="admin@ecole.com" />
+          </div>
+          <p v-if="adminDialog.error" class="ma-error">{{ adminDialog.error }}</p>
+          <p v-if="adminDialog.ok" class="ma-ok">{{ adminDialog.ok }}</p>
+          <div class="ma-modal-actions">
+            <button class="ma-btn-ghost" type="button" @click="adminDialog = null">Fermer</button>
+            <button class="ma-btn" type="button" :disabled="adminDialog.busy" @click="confirmerAdministrateur">
+              {{ adminDialog.busy ? 'Envoi…' : 'Inviter' }}
+            </button>
           </div>
         </div>
       </div>
-      </transition>
+    </div>
+    </transition>
 
+    <!-- Modale : prompt de configuration manuelle (cPanel + Firebase) -->
+    <transition name="ma-fade">
       <div v-if="promptDialog" class="ma-modal-overlay" @click.self="promptDialog = null">
         <div class="ma-modal ma-modal-prompt">
           <div class="ma-modal-head">

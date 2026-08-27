@@ -344,6 +344,7 @@
             </div>
             <div v-else-if="bulletinState === 'loading'" class="loading"><Loader2 :size="32" class="spin" /><p>{{ t('mia.bulletinLoading') }}</p><small>{{ t('mia.fewSeconds') }}</small></div>
             <div v-else-if="bulletinState === 'done'" class="vision-result">
+              <p v-if="bulletinNotice" class="muted small">{{ bulletinNotice }}</p>
               <p v-if="!bulletinRows.length" class="muted">{{ t('mia.bulletinEmpty') }}</p>
               <template v-else>
                 <p class="reco-lab">{{ t('mia.bulletinReview', { n: bulletinRows.length }) }}<span v-if="bulletinMoyenne !== null"> · {{ t('mia.bulletinAvg', { m: bulletinMoyenne }) }}</span></p>
@@ -799,8 +800,9 @@
               <button class="btn btn-primary btn-sm" :disabled="!crJour || !crMatiere.trim()" @click="ajouterCreneau"><Plus :size="15" /></button>
             </div>
 
-            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*" capture="environment" style="display:none" @change="onPickEdt" /></label>
+            <label class="btn btn-outline btn-sm edt-scan"><Camera :size="15" /> <span>{{ edtScanning ? t('mia.edtScanning') : t('mia.edtScan') }}</span><input type="file" accept="image/*,application/pdf,.pdf" style="display:none" @change="onPickEdt" /></label>
             <p v-if="edtError" class="err-txt small">{{ edtError }}</p>
+            <p v-if="edtNotice" class="muted small">{{ edtNotice }}</p>
 
             <div v-if="edtParJour.length" class="edt-week">
               <div v-for="d in edtParJour" :key="d.key" class="edt-day">
@@ -2885,7 +2887,10 @@ const bulletinState = ref('idle')   // idle | loading | done | error
 const bulletinRows = ref([])        // [{ matiere, note }]
 const bulletinMoyenne = ref(null)
 const bulletinError = ref('')
-function resetBulletin() { bulletinState.value = 'idle'; bulletinRows.value = []; bulletinMoyenne.value = null; bulletinError.value = '' }
+// Avertissement NON bloquant : `bulletinError` ne s'affiche qu'en état 'error',
+// il ne pouvait donc pas porter un message d'une lecture réussie mais partielle.
+const bulletinNotice = ref('')
+function resetBulletin() { bulletinState.value = 'idle'; bulletinRows.value = []; bulletinMoyenne.value = null; bulletinError.value = ''; bulletinNotice.value = '' }
 // pdf.js chargé à la demande (CDN) : convertit la 1re page d'un bulletin PDF en
 // image, réutilisée telle quelle par le pipeline vision existant (serveur inchangé).
 let _pdfjs = null
@@ -2900,10 +2905,21 @@ async function loadPdfjs() {
   _pdfjs = lib
   return lib
 }
+/**
+ * 1re page d'un PDF → image JPEG, pour le pipeline vision existant.
+ *
+ * ⚠️ On rend la page en IMAGE, on n'en extrait pas le texte. Un bulletin comme
+ * un emploi du temps sont des TABLEAUX : le texte en sort sans géométrie, et le
+ * rattachement d'une matière à sa case (ou à son jour) devient du devinement.
+ *
+ * Renvoie aussi `pages` : la fonction ne lisait que la première et ne le disait
+ * pas. Un EDT sur deux pages était donc à moitié importé, en silence.
+ */
 async function pdfToImageDataUrl(file, maxDim = 1600) {
   const lib = await loadPdfjs()
   const data = await file.arrayBuffer()
   const pdf = await lib.getDocument({ data }).promise
+  const pages = pdf.numPages || 1
   const page = await pdf.getPage(1)
   let vp = page.getViewport({ scale: 1 })
   const scale = Math.min(maxDim / vp.width, maxDim / vp.height, 3)
@@ -2911,7 +2927,7 @@ async function pdfToImageDataUrl(file, maxDim = 1600) {
   const canvas = document.createElement('canvas')
   canvas.width = vp.width; canvas.height = vp.height
   await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise
-  return canvas.toDataURL('image/jpeg', 0.85)
+  return { dataUrl: canvas.toDataURL('image/jpeg', 0.85), pages }
 }
 async function onPickBulletin(e) {
   const file = e.target.files?.[0]; if (e.target) e.target.value = ''
@@ -2919,9 +2935,13 @@ async function onPickBulletin(e) {
   bulletinState.value = 'loading'; bulletinError.value = ''
   try {
     const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
-    const dataUrl = isPdf ? await pdfToImageDataUrl(file) : await downscaleImage(file)
-    const res = await analyserBulletin({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
-    if (res.ok) { bulletinRows.value = res.matieres || []; bulletinMoyenne.value = res.moyenne ?? null; bulletinState.value = 'done' }
+    const rendu = isPdf ? await pdfToImageDataUrl(file) : { dataUrl: await downscaleImage(file), pages: 1 }
+    const res = await analyserBulletin({ imageDataUrl: rendu.dataUrl, niveau: activeEnfant.value.niveau })
+    if (res.ok) {
+      bulletinRows.value = res.matieres || []; bulletinMoyenne.value = res.moyenne ?? null; bulletinState.value = 'done'
+      // Un bulletin sur plusieurs pages n'était lu qu'à moitié, sans le dire.
+      if (rendu.pages > 1) bulletinNotice.value = t('mia.edtPdfPages', { n: rendu.pages })
+    }
     else { bulletinError.value = res.reason || t('mia.bulletinFail'); bulletinState.value = 'error' }
   } catch { bulletinError.value = t('mia.visionBlurry'); bulletinState.value = 'error' }
 }
@@ -2950,20 +2970,45 @@ const crHeure = ref('')
 const crMatiere = ref('')
 const edtScanning = ref(false)
 const edtError = ref('')
+const edtNotice = ref('')   // lecture réussie mais partielle (PDF multi-pages)
 function ajouterCreneau() {
   if (!activeEnfant.value || !crJour.value || !crMatiere.value.trim()) return
   store.addCreneau(activeEnfant.value.id, { jour: crJour.value, heure: crHeure.value, matiere: crMatiere.value })
   crMatiere.value = ''; crHeure.value = ''
 }
+/**
+ * Import de l'emploi du temps : PDF **ou** image.
+ *
+ * L'entrée était `accept="image/*" capture="environment"` : sur mobile elle
+ * ouvrait directement l'appareil photo et REFUSAIT un PDF. Or un EDT arrive
+ * presque toujours en PDF de l'école ou en capture WhatsApp — il fallait donc
+ * photographier son propre écran. Retirer `capture` ne retire pas l'appareil
+ * photo : le sélecteur du téléphone le propose toujours, parmi les fichiers.
+ *
+ * Le PDF est RENDU EN IMAGE (pdf.js), jamais lu comme du texte : un emploi du
+ * temps est un tableau, son texte sort sans géométrie et le rattachement d'une
+ * matière à son jour deviendrait du devinement.
+ */
 async function onPickEdt(e) {
   const file = e.target.files?.[0]; if (e.target) e.target.value = ''
   if (!file || !activeEnfant.value) return
-  edtScanning.value = true; edtError.value = ''
+  edtScanning.value = true; edtError.value = ''; edtNotice.value = ''
   try {
-    const dataUrl = await downscaleImage(file, 1400, 0.82)
-    const res = await analyserEdt({ imageDataUrl: dataUrl, niveau: activeEnfant.value.niveau })
-    if (res.ok && res.creneaux.length) store.setEdt(activeEnfant.value.id, res.creneaux)
-    else edtError.value = res.reason || t('mia.edtFail')
+    const isPdf = file.type === 'application/pdf' || /\.pdf$/i.test(file.name || '')
+    const rendu = isPdf
+      ? await pdfToImageDataUrl(file)
+      : { dataUrl: await downscaleImage(file, 1400, 0.82), pages: 1 }
+    const res = await analyserEdt({ imageDataUrl: rendu.dataUrl, niveau: activeEnfant.value.niveau })
+    if (!res.ok || !res.creneaux.length) { edtError.value = res.reason || t('mia.edtFail'); return }
+    // ⚠️ `setEdt` REMPLACE toute la semaine. Tant que la seule source était une
+    // photo prise à l'instant, l'intention était claire ; avec un fichier choisi
+    // dans le téléphone, se tromper de document effacerait sans prévenir un
+    // emploi du temps saisi à la main. On demande donc — mais seulement s'il y a
+    // quelque chose à perdre.
+    const actuels = (activeEnfant.value.edt || []).length
+    if (actuels && !confirm(t('mia.edtReplace', { n: actuels }))) return
+    store.setEdt(activeEnfant.value.id, res.creneaux)
+    if (rendu.pages > 1) edtNotice.value = t('mia.edtPdfPages', { n: rendu.pages })
   } catch { edtError.value = t('mia.visionBlurry') } finally { edtScanning.value = false }
 }
 const edtParJour = computed(() => {
