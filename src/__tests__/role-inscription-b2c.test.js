@@ -24,8 +24,11 @@ const ROUTEUR = lire('router/index.js')
 const STORE = lire('stores/enfantsAutonomes.js')
 
 describe('l’inscription enregistre le rôle réellement choisi', () => {
+  // 27/08 : les littéraux sont devenus des constantes (utils/typeProfil.js), le
+  // temps d'ajouter un TROISIÈME rôle — l'enfant autonome. On assert donc sur la
+  // forme, pas sur les chaînes : le comportement testé est inchangé.
   it('le profil reçoit « apprenant » quand c’est ce qui a été coché', () => {
-    expect(AUTH).toContain("role: meta.role === 'apprenant' ? 'apprenant' : 'parent',")
+    expect(AUTH).toContain('role: meta.role === ROLE_APPRENANT ? ROLE_APPRENANT : ROLE_PARENT,')
   })
 
   it('⚠️ plus aucun rôle écrit en dur dans la création de compte B2C', () => {
@@ -36,7 +39,7 @@ describe('l’inscription enregistre le rôle réellement choisi', () => {
 
   it('le suivi d’adoption reste cohérent avec le profil', () => {
     // `mapoplus_users.persona` disait déjà vrai : c'est le profil qui mentait.
-    expect(AUTH).toContain("persona: meta.role === 'apprenant' ? 'apprenant' : 'parent',")
+    expect(AUTH).toContain('persona: meta.role === ROLE_APPRENANT ? ROLE_APPRENANT : ROLE_PARENT,')
   })
 })
 
@@ -63,7 +66,9 @@ describe('le confinement MAPO+ ne repose plus sur le libellé du rôle', () => {
 
 describe('le point de vue suit l’apprenant d’un appareil à l’autre', () => {
   it('à défaut de choix local, le rôle du profil décide', () => {
-    expect(STORE).toContain("mode.value = authStore.userProfile?.role === 'apprenant' ? 'apprenant' : 'parent'")
+    // ⚠️ Élargi le 27/08 : l'enfant autonome apprend lui aussi. Le test porte
+    // désormais sur la LISTE des rôles apprenants — cf. type-profil.test.js.
+    expect(STORE).toContain("mode.value = ROLES_APPRENANTS.includes(authStore.userProfile?.role) ? 'apprenant' : 'parent'")
   })
 
   it('⚠️ mais le choix LOCAL reste prioritaire', () => {

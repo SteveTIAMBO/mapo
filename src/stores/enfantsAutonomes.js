@@ -7,6 +7,10 @@ import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso } from '../utils/coursPerso'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
 import { baremePour, versAcquisition, maxDe, paliersDe } from '../data/baremes'
+import { ROLE_ENFANT, ROLE_APPRENANT, typeProfilPour, typeProfilDe } from '../utils/typeProfil'
+
+// Les rôles dont le titulaire APPREND (par opposition au parent qui suit).
+const ROLES_APPRENANTS = [ROLE_APPRENANT, ROLE_ENFANT]
 
 // Persistance Firestore (durable + multi-appareils) pour les VRAIS comptes B2C.
 // La démo (fbAuth.currentUser === null) reste en localStorage (offline, gratuit).
@@ -580,7 +584,11 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     let local = null
     try { local = localStorage.getItem(MODE_KEY(owner.value)) } catch { local = null }
     if (local === 'apprenant' || local === 'parent') mode.value = local
-    else mode.value = authStore.userProfile?.role === 'apprenant' ? 'apprenant' : 'parent'
+    // ⚠️ DEUX rôles apprennent : l'apprenant majeur qui gère son compte, et
+    // l'enfant autonome à qui son parent a généré un accès. Ne tester que
+    // 'apprenant' rangeait l'enfant du côté parent le temps qu'hydrate() lise
+    // `b2c/link` — soit un espace parent affiché à un enfant à chaque ouverture.
+    else mode.value = ROLES_APPRENANTS.includes(authStore.userProfile?.role) ? 'apprenant' : 'parent'
     loadSession()
   }
 
@@ -655,7 +663,11 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     const at = new Date().toISOString()
     const cibles = enfantId ? enfants.value.filter((e) => e.id === enfantId) : enfants.value
     for (const e of cibles) {
-      setDoc(enfantDocRef(uid, e.id), { enfant: e, updatedAt: at })
+      // `typeProfil` est répété À LA RACINE du document, à côté de `updatedAt` :
+      // c'est la seule ligne visible sans déplier la carte `enfant` dans la
+      // console Firestore. La duplication est assumée — elle sert exactement à
+      // ce qu'un humain qui regarde la base sache ce qu'il regarde.
+      setDoc(enfantDocRef(uid, e.id), { enfant: e, typeProfil: typeProfilDe(e, authStore.userProfile?.role), updatedAt: at })
         .catch(() => { /* offline : le cache Firestore réessaiera */ })
     }
     // Repli : l'ancien document groupé continue d'être écrit. Un appareil qui
@@ -733,6 +745,16 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       if (profils.length) {
         enfants.value = profils
         cacheLocal()
+        // Rattrapage des fiches créées avant l'existence du champ : on le pose
+        // une fois, puis on n'a plus jamais à le déduire. Silencieux et
+        // idempotent — dès la 2e ouverture, `manquants` est vide.
+        const manquants = profils.filter((p) => !p.typeProfil)
+        if (manquants.length) {
+          const t = typeProfilPour(authStore.userProfile?.role)
+          for (const p of manquants) p.typeProfil = t
+          cacheLocal()
+          for (const p of manquants) persist(p.id)
+        }
         return
       }
       // Migration (idempotente) : aucun document éclaté → on reprend l'ancien
@@ -750,6 +772,12 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function addEnfant({ firstName, lastName, gender, niveau, pays, age, cycle, ecole, ecoleReliee, matricule, filiere, photoURL, formation, formationUrl, formationModules }) {
     const enfant = {
       id: localId('ea-'),
+      // ⚠️ QUI est décrit par cette fiche. L'identifiant du document
+      // (`b2c/enfant_<id>`) est une CLÉ TECHNIQUE, pas une information : la
+      // fiche d'un adulte en MBA s'y appelait aussi « enfant_… », et personne,
+      // en ouvrant la console Firestore, ne pouvait faire la différence.
+      // On l'écrit donc à la création, une fois pour toutes.
+      typeProfil: typeProfilPour(authStore.userProfile?.role),
       firstName: (firstName || '').trim(),
       lastName: (lastName || '').trim(),
       gender: gender === 'F' ? 'F' : 'M',

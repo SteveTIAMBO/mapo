@@ -43,6 +43,7 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
       compte: { uid: u, email: auth.currentUser.email || null },
       profil: null,
       b2c: {},
+      revisions: {},
       registreMapoPlus: null,
       // Données locales à l'appareil : elles n'existent que dans ce navigateur,
       // mais elles font partie de ce que la personne peut légitimement réclamer.
@@ -55,6 +56,14 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
     try {
       const snap = await getDocs(collection(db, 'users', u, 'b2c'))
       for (const d of snap.docs) paquet.b2c[d.id] = d.data()
+    } catch { /* idem */ }
+    // ⚠️ L'historique de révisions manquait à l'export. C'est pourtant la donnée
+    // la plus parlante du compte : ce que la personne a travaillé, quel jour,
+    // avec quels résultats. Un export qui l'omet n'est pas « tout ce que
+    // l'application détient », contrairement à ce que la page annonce.
+    try {
+      const snap = await getDocs(collection(db, 'users', u, 'revisions'))
+      for (const d of snap.docs) paquet.revisions[d.id] = d.data()
     } catch { /* idem */ }
     try {
       const s = await getDoc(doc(db, 'mapoplus_users', u))
@@ -158,6 +167,17 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
       // 1. La sous-collection b2c : profils enfants, lien co-parent, compte enfant.
       try {
         const snap = await getDocs(collection(db, 'users', u, 'b2c'))
+        for (const d of snap.docs) await deleteDoc(d.ref)
+      } catch { /* déjà vide ou hors ligne */ }
+      // 1 bis. L'HISTORIQUE DE RÉVISIONS (`users/{uid}/revisions/*`).
+      //    ⚠️ Il survivait à la suppression du compte. Supprimer le document
+      //    parent `users/{uid}` ne supprime PAS ses sous-collections : Firestore
+      //    n'a pas de suppression en cascade, et un document parent effacé
+      //    laisse ses enfants intacts et lisibles par chemin direct. On avait
+      //    donc un « effacement » (art. 17) qui laissait derrière lui le détail
+      //    de ce que la personne avait révisé, jour par jour.
+      try {
+        const snap = await getDocs(collection(db, 'users', u, 'revisions'))
         for (const d of snap.docs) await deleteDoc(d.ref)
       } catch { /* déjà vide ou hors ligne */ }
       // 2. Le registre d'inscription B2C (suivi d'adoption côté EDUFREM).

@@ -1460,7 +1460,15 @@ const SECTIONS = computed(() => {
     ...ecoleEntry('apprendre'),
     ...ecoleGroup,
     // « Mes notes » manuelles masquées quand l'école est reliée (le bulletin école prend le relais).
-    ...(ecoleLie ? [] : [{ key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' }]),
+    // ⚠️ Cette entrée héberge AUSSI la liste des fiches et sa corbeille. Quand
+    // l'école est reliée, elle disparaît — et avec elle le seul endroit d'où un
+    // apprenant pouvait supprimer une fiche en double (constaté sur le compte de
+    // Djany, qui en avait deux). Une fiche unique est le cas normal et n'a pas
+    // besoin d'une liste ; DEUX est une anomalie qu'il faut pouvoir résoudre.
+    // L'entrée s'efface donc d'elle-même une fois le doublon supprimé.
+    ...(ecoleLie
+      ? (enfants.value.length > 1 ? [{ key: 'enfants', label: t('mia.myProfileTitle'), icon: Users, group: 'suivi' }] : [])
+      : [{ key: 'enfants', label: t('mia.secMyNotes'), icon: FileText, group: 'suivi' }]),
     progress, planning, edt,
     { key: 'profil6c', label: t('mia.sec6c'), icon: Target, group: 'orientation' },
     ...(estClasseOrientation(activeEnfant.value) ? [orient] : []),

@@ -23,6 +23,7 @@ import {
   collection, query, where, getDocs, serverTimestamp
 } from 'firebase/firestore'
 import { isSchoolTenant, isMapoPlusTenant } from '../utils/tenantContext'
+import { deduireRoleCompte, ROLE_APPRENANT, ROLE_PARENT } from '../utils/typeProfil'
 import { identifierToEmail, isSyntheticEmail, pseudoToEmail, isPseudoValide, normalizePseudo } from '../utils/identifier'
 import { currentLang } from '../i18n'
 import { paysDemo, demoKey } from '../utils/demoScope'
@@ -460,7 +461,11 @@ export const useAuthStore = defineStore('auth', () => {
             uid: result.user.uid,
             email: email.trim(),
             displayName: (displayName || '').trim(),
-            persona: meta.role === 'apprenant' ? 'apprenant' : 'parent',
+            // ⚠️ Ce champ n'est PAS décoratif : c'est lui qui permet à
+            // loadUserProfile de retrouver le rôle si l'écriture de
+            // `users/{uid}` ci-dessous échoue. Les deux écritures sont
+            // indépendantes, donc l'une rattrape l'autre.
+            persona: meta.role === ROLE_APPRENANT ? ROLE_APPRENANT : ROLE_PARENT,
             pays: meta.pays || '',
             source: 'mapo+',
             activated: false,
@@ -485,7 +490,7 @@ export const useAuthStore = defineStore('auth', () => {
             // enregistre comme parent. Le confinement a MAPO+ ne s'appuie plus
             // sur ce role mais sur `b2c` (cf. router/index.js), donc le dire
             // vrai ne change plus rien a la navigation.
-            role: meta.role === 'apprenant' ? 'apprenant' : 'parent',
+            role: meta.role === ROLE_APPRENANT ? ROLE_APPRENANT : ROLE_PARENT,
             b2c: true,
             schoolId: null,
             status: 'active',
@@ -871,24 +876,63 @@ export const useAuthStore = defineStore('auth', () => {
       return
     }
 
-    // 4) Aucune école / invitation → compte PARENT B2C AUTONOME (« école-optionnel »).
-    // Le parent accède directement à l'espace MAPO+ (tuteur, suivi de son enfant)
-    // sans dépendre d'un établissement. Ses données vivent sous users/{uid}/...
+    // 4) Aucune école / invitation → compte B2C AUTONOME (« école-optionnel »).
+    // L'accès à MAPO+ est direct (tuteur, suivi) sans dépendre d'un
+    // établissement. Les données vivent sous users/{uid}/...
     // Le prénom et le nom sont dérivés du displayName quand aucun document de
     // profil n'existe (compte créé avant que l'inscription ne les enregistre).
+    //
+    // ⚠️⚠️ CE BLOC A CASSÉ UN COMPTE (Djany, 26/08/2026), de deux façons :
+    //
+    //  a) il écrivait `role: 'parent'` EN DUR. Une adulte inscrite « pour moi »
+    //     et un enfant disposant de son propre accès y étaient donc rangés au
+    //     même endroit : parent. Le mode apprenant n'a plus aucun repli fiable
+    //     (cf. enfantsAutonomes.loadMode) et l'espace parle de « ton enfant » ;
+    //  b) il ne PERSISTAIT rien. Le profil n'existait qu'en mémoire, reconstruit
+    //     à l'identique à chaque connexion. Quand l'écriture de l'inscription
+    //     avait échoué (silencieusement, voir signUpWithEmail), le compte
+    //     restait donc faux POUR TOUJOURS, sans que rien ne le signale — et
+    //     sans qu'aucun écran ne permette de le corriger.
+    //
+    // On classe donc pour de bon, puis on écrit. `deduireRoleCompte` n'est que
+    // le rattrapage des comptes déjà cassés : dès la première connexion réparée,
+    // le document fait foi et la branche 2) reprend la main.
     const nomComplet = (firebaseUser.displayName || '').trim()
     const [prenomAuto, ...resteAuto] = nomComplet ? nomComplet.split(/\s+/) : ['']
-    userProfile.value = {
+    let lien = null
+    let persona = ''
+    try {
+      const ls = await getDoc(doc(db, 'users', firebaseUser.uid, 'b2c', 'link'))
+      if (ls.exists()) lien = ls.data()
+    } catch { /* règle ou hors ligne : on classera sans cet indice */ }
+    try {
+      const ms = await getDoc(doc(db, 'mapoplus_users', firebaseUser.uid))
+      if (ms.exists()) persona = ms.data()?.persona || ''
+    } catch { /* idem */ }
+    const roleDeduit = deduireRoleCompte({ lien, persona })
+    const profilB2C = {
       uid: firebaseUser.uid,
       email: firebaseUser.email,
       displayName: firebaseUser.displayName || firebaseUser.email,
       firstName: prenomAuto || '',
       lastName: resteAuto.join(' '),
       photoURL: firebaseUser.photoURL || null,
-      role: 'parent',
+      role: roleDeduit,
       schoolId: null,
-      b2c: true, // marqueur : compte parent autonome (hors école)
+      b2c: true, // marqueur : compte autonome (hors école)
       status: 'active',
+    }
+    userProfile.value = profilB2C
+    // Réparation durable — UNIQUEMENT sur MAPO+. Sur le domaine de l'ERP, un
+    // compte sans profil peut être quelqu'un dont l'invitation d'école n'est pas
+    // encore émise : figer un profil B2C lui interdirait à jamais l'étape 3,
+    // qui ne s'exécute que tant qu'aucun document `users/{uid}` n'existe.
+    if (isMapoPlusTenant()) {
+      try {
+        await setDoc(doc(db, 'users', firebaseUser.uid), { ...profilB2C, createdAt: serverTimestamp() }, { merge: true })
+      } catch (e) {
+        console.warn('[profil] réparation impossible:', e && e.code)
+      }
     }
     notProvisioned.value = false
   }
