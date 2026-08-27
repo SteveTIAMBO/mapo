@@ -633,7 +633,14 @@
           <p v-if="adminDialog.ok" class="ma-ok">{{ adminDialog.ok }}</p>
           <div class="ma-modal-actions">
             <button class="ma-btn-ghost" type="button" @click="adminDialog = null">Fermer</button>
-            <button class="ma-btn" type="button" :disabled="adminDialog.busy" @click="confirmerAdministrateur">
+            <!-- Apparaît quand l'invitation existe déjà : sans ce recours, une
+                 invitation dont l'e-mail n'est jamais parti laisse la personne
+                 attendre un message qui n'arrivera pas. -->
+            <button v-if="adminDialog.dejaInvite" class="ma-btn" type="button"
+                    :disabled="adminDialog.busy" @click="confirmerAdministrateur(true)">
+              {{ adminDialog.busy ? 'Envoi…' : 'Renvoyer le lien' }}
+            </button>
+            <button v-else class="ma-btn" type="button" :disabled="adminDialog.busy" @click="confirmerAdministrateur(false)">
               {{ adminDialog.busy ? 'Envoi…' : 'Inviter' }}
             </button>
           </div>
@@ -838,14 +845,14 @@ const adminDialog = ref(null)
  * déprovisionner son sous-domaine.
  */
 function inviterAdministrateur(ecole) {
-  adminDialog.value = { school: ecole, email: ADMIN_EDUFREM, busy: false, error: '', ok: '' }
+  adminDialog.value = { school: ecole, email: ADMIN_EDUFREM, busy: false, error: '', ok: '', dejaInvite: false }
 }
 
-async function confirmerAdministrateur() {
+async function confirmerAdministrateur(renvoyer = false) {
   const d = adminDialog.value
   if (!d) return
   d.busy = true; d.error = ''; d.ok = ''
-  const r = await store.ajouterAdministrateur(d.school.id, d.email)
+  const r = await store.ajouterAdministrateur(d.school.id, d.email, { renvoyer })
   d.busy = false
   if (!r.ok) {
     const motifs = {
@@ -854,12 +861,16 @@ async function confirmerAdministrateur() {
       ecriture: "L'écriture a échoué. Réessayez.",
     }
     d.error = motifs[r.reason] || `Échec : ${r.reason}`
+    // On propose alors le RENVOI, au lieu de laisser l'opérateur sans issue.
+    if (r.reason === 'deja_invite') d.dejaInvite = true
     return
   }
   // ⚠️ « Invitation enregistrée » et « e-mail parti » sont DEUX choses. Les
   // confondre a laissé Steve attendre un message qui n'était jamais parti.
   if (r.mailEnvoye) {
-    d.ok = `Invitation enregistrée et lien de connexion envoyé à ${d.email}.`
+    d.ok = r.renvoi
+      ? `Lien de connexion renvoyé à ${d.email}.`
+      : `Invitation enregistrée et lien de connexion envoyé à ${d.email}.`
   } else {
     d.ok = `Invitation enregistrée (rôle ${r.role}).`
     d.error = `L'e-mail n'a PAS pu être envoyé${r.mailErreur ? ` (${r.mailErreur})` : ''}. `

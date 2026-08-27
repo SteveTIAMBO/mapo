@@ -697,7 +697,7 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
    * Renvoie { ok, reason? } — « deja_invite » quand une invitation en attente
    * existe déjà, pour ne pas en empiler deux sur la même adresse.
    */
-  async function ajouterAdministrateur(schoolId, email) {
+  async function ajouterAdministrateur(schoolId, email, { renvoyer = false } = {}) {
     const adresse = String(email || '').trim().toLowerCase()
     if (!schoolId || !adresse) return { ok: false, reason: 'parametres' }
     try {
@@ -712,7 +712,15 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
       ))
       if (!dejaLa.empty) {
         const enAttente = dejaLa.docs.some((d) => (d.data().status || 'pending') === 'pending')
-        if (enAttente) return { ok: false, reason: 'deja_invite' }
+        if (enAttente) {
+          // ⚠️ Une invitation qui existe déjà mais dont l'e-mail n'est jamais
+          // parti laissait l'opérateur sans recours : le garde refusait, et la
+          // personne attendait un message qui n'arriverait pas. On peut donc
+          // RENVOYER le lien sans réécrire l'invitation.
+          if (!renvoyer) return { ok: false, reason: 'deja_invite' }
+          const r = await sendAdminInvites([adresse], `${schoolId}.app-edufrem.com`)
+          return { ok: true, role, renvoi: true, mailEnvoye: r.sent > 0, mailErreur: r.error || null }
+        }
       }
 
       const authStore = useAuthStore()
