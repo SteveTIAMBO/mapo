@@ -394,7 +394,9 @@ const modules = [
     desc: 'Importer la liste des élèves avec leurs informations.',
     columns: [
       { key: 'lastName', label: 'Nom', required: true },
-      { key: 'firstName', label: 'Prénom', required: true },
+      // Prénom facultatif : un nom unique est courant dans les registres du
+      // Nord-Cameroun. Au moins un des deux est exigé (cf. validateRow).
+      { key: 'firstName', label: 'Prénom', required: false },
       { key: 'gender', label: 'Sexe (M/F)', required: true },
       { key: 'dateOfBirth', label: 'Date naissance', required: false },
       { key: 'niveau', label: 'Niveau', required: false },
@@ -433,7 +435,8 @@ const modules = [
     desc: 'Importer la liste du personnel enseignant et administratif.',
     columns: [
       { key: 'lastName', label: 'Nom', required: true },
-      { key: 'firstName', label: 'Prénom', required: true },
+      // Idem élèves : le directeur de la première école réelle n'a qu'un nom.
+      { key: 'firstName', label: 'Prénom', required: false },
       { key: 'category', label: 'Catégorie', required: true },
       { key: 'role', label: 'Fonction', required: false },
       { key: 'gender', label: 'Sexe (M/F)', required: false },
@@ -674,6 +677,28 @@ function validateRow(row, mod) {
   for (const col of mod.columns) {
     if (col.required && !row[col.key]) {
       errors.push(col.key)
+    }
+  }
+
+  // ⚠️ Un nom unique n'est pas un nom incomplet (27/08/2026).
+  //
+  // Mesuré sur le registre de la première école réelle (Garoua) : 6 écoliers sur
+  // 447 et LE DIRECTEUR lui-même sont inscrits sous un seul nom. Exiger un
+  // prénom, c'est imposer une convention occidentale et refuser des gens qui
+  // existent — le directeur de l'école serait le premier rejeté.
+  //
+  // On exige donc « au moins un des deux » plutôt que les deux.
+  if (mod.id === 'eleves' || mod.id === 'personnel') {
+    const nom = String(row.lastName || '').trim()
+    const prenom = String(row.firstName || '').trim()
+    if (!nom && !prenom) {
+      if (!errors.includes('lastName')) errors.push('lastName')
+    } else {
+      // Le champ manquant n'est pas une erreur : on retire le grief éventuel.
+      for (const cle of ['lastName', 'firstName']) {
+        const i = errors.indexOf(cle)
+        if (i >= 0) errors.splice(i, 1)
+      }
     }
   }
 

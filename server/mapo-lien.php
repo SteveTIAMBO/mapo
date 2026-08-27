@@ -121,6 +121,11 @@ if ($action === 'apercu') {
   // servi » est actionnable, « code invalide » envoie la famille au support.
   $exp = (string)($f['expiresAt'] ?? '');
   $perime = $exp !== '' && ($t = strtotime($exp)) !== false && $t < time();
+  // ⚠️ Ne RIEN ajouter d'identifiant ici : cette réponse est servie AVANT
+  // l'authentification, à quiconque détient le code. Un enfant à nom unique
+  // (registres du Nord-Cameroun) est traité en amont — l'école écrit son nom
+  // unique dans `firstName` de l'invitation — précisément pour ne pas avoir à
+  // lire `lastName` sur un point d'entrée public.
   echo json_encode(['ok' => true, 'apercu' => [
     'ecole' => (string)($f['ecole'] ?? ''),
     'prenom' => (string)($f['firstName'] ?? ''),

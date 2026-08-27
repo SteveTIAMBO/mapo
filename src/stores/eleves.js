@@ -426,9 +426,15 @@ export const useElevesStore = defineStore('eleves', () => {
     const AL = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
     const rnd = Array.from({ length: 8 }, () => AL[Math.floor(Math.random() * AL.length)]).join('')
     const code = `${sid}~${rnd}`
+    // ⚠️ Un écolier peut n'avoir QU'UN nom (registres du Nord-Cameroun : 6 sur
+    // 447 dans la première école réelle). L'aperçu envoyé à la famille n'affiche
+    // que le prénom — et ne DOIT pas lire le nom de famille, puisqu'il répond
+    // avant toute authentification. On écrit donc ici le nom unique dans
+    // `firstName` : la famille voit un nom, l'aperçu public n'en expose pas plus.
+    const prenomInvite = String(el.firstName || '').trim() || String(el.lastName || '').trim()
     const invite = {
       eleveId, className: el.className || '', classId: opts.classId || '',
-      matricule: el.matricule || '', firstName: el.firstName || '', lastName: el.lastName || '',
+      matricule: el.matricule || '', firstName: prenomInvite, lastName: el.lastName || '',
       ecole: opts.ecole || '', used: false, createdAt: new Date().toISOString(),
       // Le code expire au bout de 30 jours (le pont serveur refuse au-delà).
       expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),

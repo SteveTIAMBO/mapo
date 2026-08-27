@@ -244,7 +244,12 @@ describe('l’invitation part de l’école, et se raconte', () => {
     // Sans cela, le point d'envoi deviendrait un relais ouvert.
     const src = lire('stores/eleves.js')
     const i = src.indexOf('const autoriserMapoPlus')
-    const bloc = src.slice(i, i + 2000)
+    expect(i).toBeGreaterThan(0)
+    // Fenêtre bornée par la FIN de la fonction, pas par un nombre de caractères :
+    // une fenêtre fixe faisait échouer ce test à la seule ajoutée d'un commentaire
+    // au-dessus, en laissant croire que le champ avait disparu.
+    const fin = src.indexOf('\n  }\n', src.indexOf('const invite = {', i))
+    const bloc = src.slice(i, fin > i ? fin : i + 2000)
     expect(bloc).toContain('email: opts.email')
   })
 })
