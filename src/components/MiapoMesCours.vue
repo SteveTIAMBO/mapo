@@ -296,6 +296,19 @@ function fmt(iso) {
 <style scoped>
 .mescours { display: flex; flex-direction: column; gap: 14px; }
 
+/**
+ * ⚠️ `.card-head` est défini dans le CSS SCOPÉ de ParentMiapoView : il ne
+ * traverse PAS jusqu'ici. Mesuré en production le 27/08 — `display: block` au
+ * lieu de `flex` — l'icône, le titre et le bouton s'empilaient sur trois
+ * lignes. On redéfinit donc la mise en page dans ce composant, au lieu de
+ * compter sur une classe qui ne l'atteint pas.
+ */
+.mescours :deep(.card-head),
+.mc-head { display: flex; align-items: center; gap: 9px; margin-bottom: 13px; color: var(--pr); }
+.mescours :deep(.card-head) h3,
+.mc-head h3 { font-size: 16px; font-weight: 600; margin: 0; color: var(--tx); }
+.mescours :deep(.card-head) > svg,
+.mc-head > svg { flex: 0 0 auto; }
 .mc-head { flex-wrap: wrap; }
 .mc-head > .mc-add { margin-left: auto; }
 .mc-vide { margin: 2px 0 4px; }
