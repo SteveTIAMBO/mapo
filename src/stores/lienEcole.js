@@ -4,7 +4,7 @@ import { auth as fbAuth } from '../firebase'
 import { useAuthStore } from './auth'
 import {
   DEMO_LINK_CODE, DEMO_LIEN,
-  demoDevoirs, demoCours, demoBulletin, demoPeriodes, demoMessages, demoDestinataires,
+  demoDevoirs, demoCours, demoEdt, demoBulletin, demoPeriodes, demoMessages, demoDestinataires,
 } from '../data/demoEcoleLiee'
 
 // Client du PONT de liaison école ↔ MAPO+ (#124). Toute la donnée école transite
@@ -115,6 +115,20 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
   }
 
   /**
+   * Emploi du temps de la classe de l'élève lié.
+   *
+   * ⚠️ Le pont servait cours, devoirs, notes, messages et périodes — mais PAS
+   * l'emploi du temps, alors que l'ERP le détient (profs et horaires compris).
+   * Un élève d'une école MAPO photographiait donc une feuille que son
+   * établissement avait lui-même saisie, et payait un appel IA pour la relire.
+   */
+  async function fetchEdt(schoolId, eleveId) {
+    if (isDemo()) return { ok: true, className: DEMO_LIEN.className, creneaux: demoEdt() }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'edt', schoolId, eleveId })
+  }
+
+  /**
    * URL (blob objectURL) d'un fichier de cours streamé par le pont (jeton dans
    * l'en-tête, l'id du fichier reste côté serveur). À révoquer après usage.
    */
@@ -202,7 +216,7 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
 
   return {
     busy, redeemCode, apercuCode,
-    fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl,
+    fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl, fetchEdt,
     fetchPeriodes, fetchNotes,
     fetchMessages, fetchDestinataires, sendMessage, pushSuivi,
   }

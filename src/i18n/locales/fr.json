@@ -5779,7 +5779,10 @@
     "mcNoSubject": "Sans matière",
     "mcSubjectsTitle": "Mes matières",
     "mcConfirmDel": "Supprimer « {name} » ?",
-    "close": "Fermer"
+    "close": "Fermer",
+    "edtFromSchool": "Depuis mon école",
+    "edtFromSchoolOk": "{n} créneaux récupérés auprès de ton école ({classe}).",
+    "edtSchoolEmpty": "Ton école n'a pas encore publié l'emploi du temps de ta classe."
   },
   "cx": {
     "appTitle": "Espace complexe",

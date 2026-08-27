@@ -116,6 +116,69 @@ function sliceCours($items, $className) {
   return $out;
 }
 
+/**
+ * EMPLOI DU TEMPS — la tranche d'UNE classe, au format que MAPO+ sait lire.
+ *
+ * L'école saisit déjà son emploi du temps dans l'ERP
+ * (`schools/{id}/emploi-du-temps/data`, cf. src/stores/emploi-du-temps.js).
+ * Sans cette action, un élève d'une école MAPO devait PHOTOGRAPHIER une feuille
+ * que son établissement avait lui-même saisie — et payer un appel IA pour la
+ * relire.
+ *
+ * Deux modèles à réconcilier :
+ *   ERP    { day, slotIndex, slotStart, slotEnd, className, subjectId, teacherName }
+ *   MAPO+  { jour, heure, matiere }   (grille hebdomadaire, cf. utils/icsEdt.js)
+ *
+ * ⚠️ UNE ENTRÉE SANS CLASSE EST ÉCARTÉE — contrairement à `sliceCours()`, où
+ * une classe vide signifie « toutes classes », c'est-à-dire une diffusion
+ * VOULUE par l'enseignant. Un créneau d'emploi du temps, lui, est toujours
+ * engendré POUR une classe : une classe vide n'est pas une diffusion, c'est une
+ * donnée corrompue. La traiter comme « toutes » ferait apparaître le cours
+ * d'une autre classe dans la semaine de cet élève.
+ *
+ * ⚠️ Un créneau sans HEURE ou sans MATIÈRE est écarté aussi : le seul usage
+ * côté MAPO+ est « demain tu as maths, révise ce soir ». Sans l'un des deux,
+ * la ligne ne peut rien déclencher et ne ferait qu'encombrer la semaine.
+ */
+function edtJourRang($j) {
+  $ordre = ['lundi' => 1, 'mardi' => 2, 'mercredi' => 3, 'jeudi' => 4, 'vendredi' => 5, 'samedi' => 6, 'dimanche' => 7];
+  return $ordre[strtolower(trim((string)$j))] ?? 99;
+}
+
+function sliceEdt($data, $className) {
+  $out = [];
+  if (!is_array($data)) return $out;
+  $sched = $data['schedule'] ?? null;
+  if (!is_array($sched)) return $out;
+  $cible = trim((string)$className);
+  if ($cible === '') return $out;
+
+  foreach ($sched as $e) {
+    if (!is_array($e)) continue;
+    if (trim((string)($e['className'] ?? '')) !== $cible) continue;
+    $jour = strtolower(trim((string)($e['day'] ?? '')));
+    $heure = trim((string)($e['slotStart'] ?? ''));
+    $matiere = trim((string)($e['subjectId'] ?? ''));
+    if ($jour === '' || $heure === '' || $matiere === '') continue;
+    if (edtJourRang($jour) === 99) continue;
+    $out[] = [
+      'jour' => $jour,
+      'heure' => $heure,
+      'fin' => trim((string)($e['slotEnd'] ?? '')),
+      'matiere' => $matiere,
+      // « Non assigné » est un remplissage de l'ERP, pas un nom : ne pas le
+      // transmettre, l'élève lirait le nom d'un professeur qui n'existe pas.
+      'prof' => (trim((string)($e['teacherName'] ?? '')) === 'Non assigné') ? '' : trim((string)($e['teacherName'] ?? '')),
+    ];
+  }
+
+  usort($out, function ($a, $b) {
+    $d = edtJourRang($a['jour']) - edtJourRang($b['jour']);
+    return $d !== 0 ? $d : strcmp($a['heure'], $b['heure']);
+  });
+  return array_slice($out, 0, 60);
+}
+
 // ══════════════════════════════════════════════════════════════════════
 //  BULLETINS — calcul PUR (miroir fidèle de src/stores/notes.js)
 //  Ne renvoie JAMAIS que la tranche de l'élève lié : le rang et la moyenne

@@ -66,6 +66,28 @@ export function demoCours() {
   ]
 }
 
+/**
+ * Emploi du temps de la classe, tel que le pont le renvoie.
+ * Même forme que `sliceEdt()` côté serveur : { jour, heure, fin, matiere, prof }.
+ * Une semaine crédible de 5ème camerounaise — pas un échantillon de deux lignes,
+ * sinon la démo ne montre pas ce que la fonction sait faire.
+ */
+export function demoEdt() {
+  return [
+    { jour: 'lundi', heure: '07:30', fin: '08:25', matiere: 'Mathématiques', prof: 'M. Fotso' },
+    { jour: 'lundi', heure: '08:25', fin: '09:20', matiere: 'Français', prof: 'Mme Abena' },
+    { jour: 'lundi', heure: '10:20', fin: '11:15', matiere: 'Anglais', prof: 'M. Eyong' },
+    { jour: 'mardi', heure: '07:30', fin: '08:25', matiere: 'SVT', prof: 'Mme Ngo' },
+    { jour: 'mardi', heure: '09:20', fin: '10:05', matiere: 'Histoire-Géographie', prof: 'M. Bello' },
+    { jour: 'mercredi', heure: '07:30', fin: '08:25', matiere: 'Mathématiques', prof: 'M. Fotso' },
+    { jour: 'mercredi', heure: '08:25', fin: '09:20', matiere: 'PCT', prof: 'M. Tchoumi' },
+    { jour: 'jeudi', heure: '07:30', fin: '08:25', matiere: 'Français', prof: 'Mme Abena' },
+    { jour: 'jeudi', heure: '10:20', fin: '11:15', matiere: 'ECM', prof: 'M. Bello' },
+    { jour: 'vendredi', heure: '07:30', fin: '08:25', matiere: 'Anglais', prof: 'M. Eyong' },
+    { jour: 'vendredi', heure: '08:25', fin: '09:20', matiere: 'SVT', prof: 'Mme Ngo' },
+  ]
+}
+
 // Les « moments du bulletin » disponibles (comme au collège : séquences + trimestre).
 export function demoPeriodes() {
   return [

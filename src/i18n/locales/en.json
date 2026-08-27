@@ -5779,7 +5779,10 @@
     "mcNoSubject": "No subject",
     "mcSubjectsTitle": "My subjects",
     "mcConfirmDel": "Delete “{name}”?",
-    "close": "Close"
+    "close": "Close",
+    "edtFromSchool": "From my school",
+    "edtFromSchoolOk": "{n} slots retrieved from your school ({classe}).",
+    "edtSchoolEmpty": "Your school hasn't published your class timetable yet."
   },
   "cx": {
     "appTitle": "Complex workspace",

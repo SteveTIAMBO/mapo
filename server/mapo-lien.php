@@ -301,6 +301,45 @@ if ($action === 'cours') {
   exit;
 }
 
+/**
+ * EMPLOI DU TEMPS de la classe de l'élève lié.
+ *
+ * ⚠️ Le pont servait déjà cours, devoirs, notes, messages et périodes — mais
+ * PAS l'emploi du temps, alors que l'ERP le détient. Un élève d'une école MAPO
+ * photographiait donc une feuille que son établissement avait lui-même saisie,
+ * et payait un appel IA pour la relire.
+ *
+ * Mêmes gardes que `cours` : lien vérifié, classe relue sur la FICHE ÉLÈVE (un
+ * redoublement ou un changement de classe rendrait périmée celle du lien).
+ */
+if ($action === 'edt') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  list($lk, $lkCode) = fsGet("schools/{$schoolId}/liens_mapoplus/" . rawurlencode($uid . '__' . $eleveId), $saToken);
+  if ($lkCode !== 200 || !$lk) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+  $lkF = fsDecodeFields($lk['fields'] ?? []);
+  $linkClass = (string)($lkF['className'] ?? '');
+  list($el, $elCode) = fsGet("schools/{$schoolId}/eleves/" . rawurlencode($eleveId), $saToken);
+  $className = ($elCode === 200 && $el) ? (string)(fsDecodeFields($el['fields'] ?? [])['className'] ?? '') : '';
+  if ($className === '') $className = $linkClass;
+  if ($className === '') { http_response_code(422); echo json_encode(['error' => 'lien_incomplet']); exit; }
+
+  list($doc, $dCode) = fsGet("schools/{$schoolId}/emploi-du-temps/data", $saToken);
+  // ⚠️ Aucun emploi du temps saisi par l'école N'EST PAS une erreur : c'est le
+  // cas de toutes celles qui n'ont pas encore fait la génération. On répond
+  // `ok` avec une liste vide, et l'écran le DIT — un 404 ferait croire à une
+  // panne du pont et enverrait l'élève rouvrir son appareil photo.
+  if ($dCode !== 200 || !$doc) { echo json_encode(['ok' => true, 'className' => $className, 'creneaux' => []]); exit; }
+  $data = fsDecodeFields($doc['fields'] ?? []);
+
+  $out = sliceEdt($data, $className);
+  echo json_encode(['ok' => true, 'className' => $className, 'creneaux' => $out]);
+  exit;
+}
+
 // ════════════════════════════════════════════════════════════════════
 //  Streaming d'un fichier de cours (PDF du prof) : autorisé PAR le pont, l'id
 //  du fichier ne sort JAMAIS côté client. Sortie BINAIRE (pas JSON).

@@ -809,6 +809,16 @@
                  au milieu du formulaire de saisie manuelle. -->
             <div class="card-head card-head-act">
               <CalendarDays :size="18" /><h3><DualText :text="t('mia.edtTitle')" /></h3>
+              <!-- École reliée : elle a DÉJÀ saisi l'emploi du temps. Le proposer
+                   d'abord, avant l'import — photographier une feuille que son
+                   établissement a lui-même remplie n'a pas de sens, et coûte en
+                   plus un appel IA. -->
+              <button
+                v-if="ecoleLieActive" class="btn btn-primary btn-sm ch-act"
+                :disabled="edtEcoleEnCours" @click="recupererEdtEcole"
+              >
+                <School :size="15" /> <span>{{ edtEcoleEnCours ? t('mia.edtScanning') : t('mia.edtFromSchool') }}</span>
+              </button>
               <MiapoBoutonImport
                 class="ch-act"
                 accept="image/*,application/pdf,.pdf,text/calendar,.ics"
@@ -3039,6 +3049,38 @@ const crMatiere = ref('')
 const edtScanning = ref(false)
 const edtError = ref('')
 const edtNotice = ref('')   // lecture réussie mais partielle (PDF multi-pages)
+const edtEcoleEnCours = ref(false)
+
+/**
+ * Récupère l'emploi du temps DEPUIS L'ÉCOLE (pont `mapo-lien.php`, action `edt`).
+ *
+ * ⚠️ Le pont servait cours, devoirs, notes, messages et périodes — mais pas
+ * l'emploi du temps, que l'ERP détient pourtant, profs et horaires compris.
+ */
+async function recupererEdtEcole() {
+  const e = activeEnfant.value
+  if (!e || !e.lienEcole) return
+  edtEcoleEnCours.value = true; edtError.value = ''; edtNotice.value = ''
+  try {
+    const r = await lienEcole.fetchEdt(e.lienEcole.schoolId, e.lienEcole.eleveId)
+    if (!r.ok) { edtError.value = t('mia.edtFail'); return }
+    if (!r.creneaux || !r.creneaux.length) {
+      // ⚠️ Une école qui n'a pas encore généré son emploi du temps N'EST PAS une
+      // panne. Le dire, plutôt qu'afficher une erreur qui renverrait l'élève
+      // rouvrir son appareil photo pour rien.
+      edtNotice.value = t('mia.edtSchoolEmpty')
+      return
+    }
+    const actuels = (e.edt || []).length
+    if (actuels && !confirm(t('mia.edtReplace', { n: actuels }))) return
+    store.setEdt(e.id, r.creneaux)
+    edtNotice.value = t('mia.edtFromSchoolOk', { n: r.creneaux.length, classe: r.className || '' })
+  } catch {
+    edtError.value = t('mia.edtFail')
+  } finally {
+    edtEcoleEnCours.value = false
+  }
+}
 function ajouterCreneau() {
   if (!activeEnfant.value || !crJour.value || !crMatiere.value.trim()) return
   store.addCreneau(activeEnfant.value.id, { jour: crJour.value, heure: crHeure.value, matiere: crMatiere.value })
