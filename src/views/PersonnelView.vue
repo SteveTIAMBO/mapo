@@ -274,6 +274,22 @@
             </p>
           </div>
 
+          <!-- Classe tenue : au primaire, un enseignant tient une CLASSE, pas une
+               matière. Le bloc d'affectation ci-dessous était conditionné à
+               `formData.subjects.length` : un instituteur ne pouvait donc être
+               rattaché à rien, et son nom n'apparaissait nulle part. -->
+          <div v-if="formData.category === 'enseignement'" class="field">
+            <label>{{ t('pers.homeroomTitle') }}</label>
+            <p class="teach-hint">{{ t('pers.homeroomHint') }}</p>
+            <div v-if="classesStore.classes.length" class="teach-classes">
+              <label v-for="c in classesStore.classes" :key="c.id" class="teach-class">
+                <input type="checkbox" :checked="formData.classesTenues.includes(c.id)" @change="toggleClasseTenue(c.id)" />
+                <span>{{ c.name }}</span>
+              </label>
+            </div>
+            <p v-else class="teach-empty">{{ t('pers.teachingNoClasses') }}</p>
+          </div>
+
           <!-- Affectations : pour chaque matière, les classes où le prof l'enseigne -->
           <div v-if="formData.category === 'enseignement' && formData.subjects.length" class="field">
             <label>{{ t('pers.teachingTitle') }}</label>
@@ -399,6 +415,15 @@
             </div>
           </div>
 
+          <!-- Classe(s) tenue(s) : sans cette section, l'affectation d'un
+               instituteur du primaire ne serait visible nulle part. -->
+          <div v-if="nomsClassesTenues.length" class="detail-section">
+            <h4 class="detail-section-title">{{ t('pers.homeroomTitle') }}</h4>
+            <div class="detail-subjects">
+              <span v-for="n in nomsClassesTenues" :key="n" class="badge badge-subject">{{ n }}</span>
+            </div>
+          </div>
+
           <!-- Matières -->
           <div v-if="detailMember.subjects && detailMember.subjects.length > 0" class="detail-section">
             <h4 class="detail-section-title">{{ t('pers.subjectsTaught') }}</h4>
@@ -432,6 +457,8 @@ import { usePersonnelStore, STAFF_CATEGORIES, STAFF_ROLES, SUBJECTS_BY_CYCLE, QU
 import { useSubjectsStore } from '../stores/subjects'
 import { useClassesStore } from '../stores/classes'
 import { useSchoolStore } from '../stores/school'
+import { useEditionStore } from '../stores/edition'
+import { useDisciplinesPrimaireStore } from '../stores/disciplinesPrimaire'
 import { fmtMontant } from '../utils/monnaie'
 import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -443,6 +470,8 @@ const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
+const editionStore = useEditionStore()
+const discPrimaire = useDisciplinesPrimaireStore()
 const searchQuery = ref('')
 const selectedCategory = ref('')
 const currentPage = ref(1)
@@ -463,7 +492,10 @@ const categoryFilters = computed(() => [
 
 const formData = reactive({
   firstName: '', lastName: '', gender: '', category: '', role: '',
-  subjects: [], classesBySubject: {}, phone: '', email: '', status: 'Actif',
+  // `classesTenues` et `classesBySubject` ne disent PAS la même chose : tenir une
+  // classe (titulaire) n'est pas y enseigner une matière. Deux faits distincts,
+  // deux champs — et non deux copies d'un même fait, qui finiraient par diverger.
+  subjects: [], classesTenues: [], classesBySubject: {}, phone: '', email: '', status: 'Actif',
   contractType: '', qualification: '', experienceYears: null, handicap: false,
 })
 
@@ -473,13 +505,24 @@ const populatingForm = ref(false)
 
 const availableRoles = computed(() => formData.category ? (STAFF_ROLES[formData.category] || []) : [])
 
-// Merge all subjects from both cycles without duplicates
+/**
+ * Les matières proposées sont celles DE L'ÉCOLE.
+ *
+ * ⚠️ Défaut mesuré le 27/08/2026 sur la première école primaire réelle : sur une
+ * école neuve, `loadSubjects()` sème `DEFAULT_SUBJECTS`, qui est la liste du
+ * SECONDAIRE. On proposait donc à un instituteur de Garoua « PCT »,
+ * « Philosophie », « SVT », « Espagnol ». MAPO n'a pas de programme à imposer :
+ * c'est l'école qui nomme ses matières.
+ *
+ * L'ordre n'est pas alphabétique en primaire : c'est celui que l'école a fixé,
+ * et c'est aussi l'ordre des bulletins.
+ */
 const allSubjectsList = computed(() => {
-  // Try dynamic subjects store first
+  if (editionStore.isPrimaire) return [...discPrimaire.noms]
   if (subjectsStore.loaded && subjectsStore.subjects.length > 0) {
     return [...new Set(subjectsStore.allSubjectNames)].sort()
   }
-  // Fallback
+  // Repli : l'école n'a encore rien déclaré.
   const all = new Set([...SUBJECTS_BY_CYCLE.college, ...SUBJECTS_BY_CYCLE.lycee])
   return [...all].sort()
 })
@@ -492,6 +535,26 @@ const toggleSubject = (subject) => {
   } else {
     formData.subjects.push(subject)
   }
+}
+
+/**
+ * Noms des classes tenues par le membre affiché.
+ * On affiche le NOM, jamais l'identifiant : une classe supprimée depuis
+ * l'affectation disparaît simplement de la liste, sans afficher un code brut
+ * que personne ne peut interpréter.
+ */
+const nomsClassesTenues = computed(() => {
+  const ids = detailMember.value?.classesTenues || []
+  return ids
+    .map((id) => classesStore.classes.find((c) => c.id === id)?.name)
+    .filter(Boolean)
+})
+
+// Coche/décoche une classe TENUE (titulaire), indépendamment des matières.
+const toggleClasseTenue = (classId) => {
+  const i = formData.classesTenues.indexOf(classId)
+  if (i > -1) formData.classesTenues.splice(i, 1)
+  else formData.classesTenues.push(classId)
 }
 
 // Coche/décoche une classe pour une matière enseignée (affectation).
@@ -525,7 +588,11 @@ const paginatedStaff = computed(() => {
 })
 
 watch([searchQuery, selectedCategory, perPage], () => { currentPage.value = 1 })
-watch(() => formData.category, () => { if (populatingForm.value) return; formData.role = ''; formData.subjects = []; formData.classesBySubject = {} })
+watch(() => formData.category, () => {
+  if (populatingForm.value) return
+  formData.role = ''; formData.subjects = []
+  formData.classesTenues = []; formData.classesBySubject = {}
+})
 
 const getInitials = (m) => ((m.lastName?.[0] || '') + (m.firstName?.[0] || '')).toUpperCase()
 const getCategoryColor = (cat) => {
@@ -557,7 +624,8 @@ const getQualificationLabel = (val) => {
 
 const resetForm = () => {
   formData.firstName = ''; formData.lastName = ''; formData.gender = ''; formData.category = ''
-  formData.role = ''; formData.subjects = []; formData.classesBySubject = {}; formData.phone = ''
+  formData.role = ''; formData.subjects = []
+  formData.classesTenues = []; formData.classesBySubject = {}; formData.phone = ''
   formData.email = ''; formData.status = 'Actif'
   formData.contractType = ''; formData.qualification = ''; formData.experienceYears = null
   formData.handicap = false
@@ -574,6 +642,7 @@ const openEditModal = (member) => {
   formData.category = member.category || ''
   formData.role = member.role || ''
   formData.subjects = [...(member.subjects || [])]
+  formData.classesTenues = [...(member.classesTenues || [])]
   formData.classesBySubject = member.classesBySubject ? JSON.parse(JSON.stringify(member.classesBySubject)) : {}
   formData.phone = member.phone || ''
   formData.email = member.email || ''
@@ -594,6 +663,7 @@ const saveMember = async () => {
     gender: formData.gender || null,
     category: formData.category, role: formData.role,
     subjects: formData.category === 'enseignement' ? [...formData.subjects] : [],
+    classesTenues: formData.category === 'enseignement' ? [...formData.classesTenues] : [],
     classesBySubject: formData.category === 'enseignement'
       ? Object.fromEntries(formData.subjects.map((s) => [s, [...(formData.classesBySubject[s] || [])]]).filter(([, arr]) => arr.length))
       : {},
@@ -623,7 +693,12 @@ const closeDetailModal = () => { showDetailModal.value = false; detailMember.val
 
 const formatMoney = (v) => fmtMontant(v, schoolStore.schoolSettings?.currency)
 
-onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); classesStore.loadClasses() })
+// `discPrimaire.load()` : sans lui, la liste des matières du primaire resterait
+// l'amorce du pays au lieu de celle que l'école a déclarée.
+onMounted(() => {
+  personnelStore.loadStaff(); subjectsStore.loadSubjects()
+  classesStore.loadClasses(); discPrimaire.load()
+})
 </script>
 
 <style scoped>
@@ -848,7 +923,7 @@ onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); clas
 .teach-hint { font-size: 12px; color: var(--tx3); margin: 0 0 10px; }
 .teach-block { padding: 12px 14px; border: 1px solid var(--divider); border-radius: 10px; margin-bottom: 8px; background: rgba(0,0,0,.02); }
 .teach-block:last-child { margin-bottom: 0; }
-.teach-subject { font-size: 13px; font-weight: 700; color: var(--pr); margin-bottom: 8px; }
+.teach-subject { font-size: 13px; font-weight: 700; color: var(--pr); margin-bottom: 8px; text-transform: uppercase; letter-spacing: .02em; }
 .teach-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 6px 14px; }
 .teach-class { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--tx); cursor: pointer; }
 .teach-empty { font-size: 12px; color: var(--tx3); margin: 0; }
@@ -877,8 +952,12 @@ onMounted(() => { personnelStore.loadStaff(); subjectsStore.loadSubjects(); clas
   transition: background 0.1s ease;
   white-space: nowrap;
 }
+/* Capitales : choix d'AFFICHAGE. L'école écrit « français », MAPO l'affiche
+   « FRANÇAIS » — la donnée enregistrée reste celle de l'école, au caractère. */
 .subject-check-label span {
   margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: .02em;
 }
 .subject-check-label:hover { background: rgba(0,0,0,.04); }
 .subject-check-label input[type="checkbox"] {

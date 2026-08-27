@@ -3981,6 +3981,8 @@
     "subjectsTaught": "Subjects taught",
     "teachingTitle": "Teaching (subject → classes)",
     "teachingHint": "For each subject, tick the classes this teacher works with. This is what limits their access (courses, homework, classes) to their real scope.",
+    "homeroomTitle": "Class(es) held",
+    "homeroomHint": "The teacher is the form teacher of these classes. In primary school this is the main assignment: it does not depend on any subject.",
     "teachingNoClasses": "No classes created yet.",
     "subjectsSelectedOne": "{n} subject selected",
     "subjectsSelectedMany": "{n} subjects selected",
@@ -4333,7 +4335,13 @@
     "updatedSuffix": ", {n} updated",
     "skippedSuffix": ", {n} skipped",
     "resultErrTitle": "Import error",
-    "errUnknown": "Unknown error"
+    "errUnknown": "Unknown error",
+    "constatTitle": "Subjects: what your file says",
+    "constatAjoutees": "{n} subject(s) added to your list, exactly as you wrote them:",
+    "constatAucuneNouvelle": "No new subject: every one in the file already existed.",
+    "constatPasDeReferentiel": "No official curriculum is sourced for this country, so no comparison was made. That is not a problem — your list is what counts.",
+    "constatHorsRef": "{n} label(s) are not in the country's official curriculum. Nothing is blocked, it is your call:",
+    "constatConforme": "Every label matches the country's official curriculum."
   },
   "insc": {
     "title": "Enrolment",

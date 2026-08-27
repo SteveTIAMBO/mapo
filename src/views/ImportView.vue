@@ -229,6 +229,29 @@
         <p class="result-detail">{{ importResult.detail }}</p>
       </div>
     </div>
+
+    <!-- Constat sur les matières : jamais bloquant, jamais présenté en erreur.
+         Ce sont les intitulés de l'école qui font foi ; MIAPO ne fait que dire
+         ce qui ne figure pas au programme officiel, quand il en existe un. -->
+    <div v-if="constatMatieres" class="card constat-card">
+      <Sparkles :size="18" />
+      <div>
+        <p class="result-title">{{ t('imp.constatTitle') }}</p>
+        <p v-if="constatMatieres.ajoutees.length" class="result-detail">
+          {{ t('imp.constatAjoutees', { n: constatMatieres.ajoutees.length }) }}
+          <strong>{{ constatMatieres.ajoutees.join(' · ') }}</strong>
+        </p>
+        <p v-else class="result-detail">{{ t('imp.constatAucuneNouvelle') }}</p>
+        <p v-if="!constatMatieres.comparaisonPossible" class="result-detail">
+          {{ t('imp.constatPasDeReferentiel') }}
+        </p>
+        <p v-else-if="constatMatieres.horsReferentiel.length" class="result-detail">
+          {{ t('imp.constatHorsRef', { n: constatMatieres.horsReferentiel.length }) }}
+          <strong>{{ constatMatieres.horsReferentiel.join(' · ') }}</strong>
+        </p>
+        <p v-else class="result-detail">{{ t('imp.constatConforme') }}</p>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -254,6 +277,7 @@ import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
 import { useEditionStore } from '../stores/edition'
+import { useDisciplinesPrimaireStore, amorcePays, programmeOfficiel } from '../stores/disciplinesPrimaire'
 
 const { t } = useI18n({ useScope: 'global' })
 const elevesStore = useElevesStore()
@@ -263,6 +287,7 @@ const subjectsStore = useSubjectsStore()
 const activityStore = useActivityStore()
 const schoolStore = useSchoolStore()
 const editionStore = useEditionStore()
+const discPrimaire = useDisciplinesPrimaireStore()
 
 // ── Setup express : photo d'un registre → élèves (MIAPO vision) ──
 // MIAPO lit la photo, le directeur RELIT/corrige le tableau, puis valide la
@@ -566,6 +591,9 @@ const parseError = ref('')
 const importMode = ref('add')
 const importing = ref(false)
 const importResult = ref(null)
+// Constat sur les matières après un import de personnel. Volontairement séparé
+// de `importResult` : ce n'est ni un succès ni une erreur, c'est une remarque.
+const constatMatieres = ref(null)
 const maxPreview = 20
 
 const currentModule = computed(() => modules.find(m => m.id === activeModule.value))
@@ -579,6 +607,10 @@ const errorCount = computed(() => parsedData.value.filter(r => r._errors?.length
 function switchModule(id) {
   activeModule.value = id
   clearImport()
+  // En changeant d'onglet, le compte rendu de l'import précédent n'a plus de
+  // sens : il porterait sur un autre module.
+  importResult.value = null
+  constatMatieres.value = null
 }
 
 // ── File handling ──────────────────────────────────────
@@ -670,6 +702,69 @@ function parseFile(file) {
     }
   }
   reader.readAsArrayBuffer(file)
+}
+
+/** Compare deux intitulés sans se laisser piéger par la casse ni les accents. */
+function cleMatiere(nom) {
+  return String(nom || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
+/**
+ * Enregistre les matières ÉCRITES PAR L'ÉCOLE, telles quelles.
+ *
+ * MAPO n'a pas de programme à imposer : c'est l'école qui nomme ses matières.
+ * Avant le 27/08/2026, les intitulés du fichier étaient posés sur la fiche de
+ * l'enseignant sans devenir des matières de l'école — l'établissement se
+ * retrouvait avec des enseignants rattachés à des matières inexistantes, et une
+ * liste de matières qui n'était pas la sienne.
+ *
+ * On n'ALIGNE rien, on ne renomme rien, on ne bloque rien. On se contente de
+ * dire, à la fin, ce qui ne figure pas au programme officiel du pays — quand un
+ * programme officiel est réellement sourcé, ce qui n'est pas le cas partout.
+ *
+ * Renvoie `{ ajoutees, horsReferentiel, comparaisonPossible, pays }` ou `null`
+ * si le fichier ne déclare aucune matière.
+ */
+async function enregistrerMatieresEcole(libellesBruts) {
+  const libelles = [...new Map(
+    libellesBruts
+      .map((s) => String(s || '').trim())
+      .filter(Boolean)
+      .map((s) => [cleMatiere(s), s]),
+  ).values()]
+  if (!libelles.length) return null
+
+  const pays = schoolStore.schoolSettings?.country || ''
+  const ajoutees = []
+
+  if (editionStore.isPrimaire) {
+    await discPrimaire.load()
+    // `ajouter` renvoie false sur doublon : on ne compte que les vraies ajouts.
+    for (const nom of libelles) if (discPrimaire.ajouter(nom)) ajoutees.push(nom)
+  } else {
+    await subjectsStore.loadSubjects()
+    for (const nom of libelles) {
+      if (subjectsStore.getSubjectByName(nom)) continue
+      subjectsStore.addSubject({
+        name: nom, cycles: ['college', 'lycee'], coefficients: {},
+        color: SUBJECT_DEFAULT_COLORS[nom] || '#CBD5E1',
+      })
+      ajoutees.push(nom)
+    }
+  }
+
+  // ⚠️ Ne comparer QUE s'il existe un programme officiel sourcé. Signaler
+  // « hors référentiel » en s'appuyant sur une simple amorce serait une
+  // affirmation sans source — et une école de Dakar verrait sa liste entière
+  // déclarée non conforme à un programme camerounais.
+  const comparaisonPossible = editionStore.isPrimaire && programmeOfficiel(pays)
+  let horsReferentiel = []
+  if (comparaisonPossible) {
+    const officiel = new Set(amorcePays(pays).map((d) => cleMatiere(d.name)))
+    horsReferentiel = libelles.filter((n) => !officiel.has(cleMatiere(n)))
+  }
+  return { ajoutees, horsReferentiel, comparaisonPossible, pays }
 }
 
 function validateRow(row, mod) {
@@ -813,11 +908,19 @@ function validateRow(row, mod) {
   return row
 }
 
+/**
+ * Vide l'ÉTAT DU FICHIER — pas le compte rendu de l'import.
+ *
+ * ⚠️ Défaut trouvé le 27/08/2026 : cette fonction remettait aussi
+ * `importResult` à null, et elle est appelée juste APRÈS l'avoir renseigné en
+ * fin d'import. Résultat : le bandeau « 447 ajoutés » s'effaçait dans le même
+ * tick. L'école lançait un import de 447 écoliers et n'obtenait RIEN à
+ * l'écran — un succès indistinguable d'un échec.
+ */
 function clearImport() {
   parsedData.value = []
   fileName.value = ''
   parseError.value = ''
-  importResult.value = null
 }
 
 // ── Template download ──────────────────────────────────
@@ -952,6 +1055,7 @@ async function downloadStarterWorkbook() {
 async function executeImport() {
   importing.value = true
   importResult.value = null
+  constatMatieres.value = null
 
   try {
     const validRows = parsedData.value.filter(r => !r._errors?.length)
@@ -1032,6 +1136,11 @@ async function executeImport() {
 
     else if (activeModule.value === 'personnel') {
       await personnelStore.loadStaff()
+      // Les intitulés du fichier sont enregistrés AVANT la boucle : les fiches
+      // du personnel doivent pointer sur des matières qui existent déjà.
+      constatMatieres.value = await enregistrerMatieresEcole(
+        validRows.flatMap((r) => r._subjectsList || []),
+      )
       for (const row of validRows) {
         const data = { ...row }
         delete data._errors
@@ -1383,6 +1492,20 @@ async function executeImport() {
 }
 .result-title { font-weight: 600; font-size: 14px; margin: 0 0 2px; }
 .result-detail { font-size: 13px; margin: 0; opacity: 0.8; }
+
+/* Constat sur les matières : ni vert ni rouge — ce n'est pas un verdict.
+   Teinte d'accent de l'école, comme les autres remarques informatives. */
+.constat-card {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 18px; margin-top: 12px;
+  background: rgba(var(--pr-rgb), .06);
+  border-color: rgba(var(--pr-rgb), .22);
+  color: var(--tx);
+}
+.constat-card .result-detail { margin-top: 4px; }
+/* Les intitulés de l'école en capitales : choix d'AFFICHAGE seulement, la donnée
+   reste écrite telle que l'école l'a saisie. */
+.constat-card strong { text-transform: uppercase; letter-spacing: .02em; }
 
 /* Spin animation */
 .spin-icon { animation: spin 1s linear infinite; }

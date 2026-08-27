@@ -3981,6 +3981,8 @@
     "subjectsTaught": "Matières enseignées",
     "teachingTitle": "Enseignements (matière → classes)",
     "teachingHint": "Cochez, pour chaque matière, les classes où cet enseignant intervient. C'est ce qui limite son accès (cours, devoirs, classes) à son périmètre réel.",
+    "homeroomTitle": "Classe(s) tenue(s)",
+    "homeroomHint": "L'enseignant est titulaire de ces classes. Au primaire, c'est l'affectation principale : elle ne dépend d'aucune matière.",
     "teachingNoClasses": "Aucune classe créée pour l'instant.",
     "subjectsSelectedOne": "{n} matière sélectionnée",
     "subjectsSelectedMany": "{n} matières sélectionnées",
@@ -4333,7 +4335,13 @@
     "updatedSuffix": ", {n} mis à jour",
     "skippedSuffix": ", {n} ignoré(s)",
     "resultErrTitle": "Erreur lors de l'import",
-    "errUnknown": "Erreur inconnue"
+    "errUnknown": "Erreur inconnue",
+    "constatTitle": "Matières : ce que dit votre fichier",
+    "constatAjoutees": "{n} matière(s) ajoutée(s) à votre liste, telles que vous les avez écrites :",
+    "constatAucuneNouvelle": "Aucune nouvelle matière : toutes celles du fichier existaient déjà.",
+    "constatPasDeReferentiel": "Aucun programme officiel n'est sourcé pour ce pays : aucune comparaison n'a été faite. Ce n'est pas un problème — c'est votre liste qui fait foi.",
+    "constatHorsRef": "{n} intitulé(s) ne figurent pas au programme officiel du pays. Rien n'est bloqué, à vous de juger :",
+    "constatConforme": "Tous les intitulés correspondent au programme officiel du pays."
   },
   "insc": {
     "title": "Inscriptions",
