@@ -2858,7 +2858,17 @@ function addNote() {
 }
 function confirmRemove() {
   if (!activeEnfant.value) return
-  if (confirm(t('mia.confirmRemoveProfile', { name: activeEnfant.value.firstName }))) {
+  // ⚠️ Mesuré sur le compte de Djany le 27/08 : ses DEUX fiches s'appelaient
+  // « Djany », et la confirmation demandait « Retirer le profil de Djany ? ».
+  // Elle ne disait donc pas laquelle on s'apprêtait à supprimer — au seul moment
+  // où il fallait le savoir. On nomme ce qui DISTINGUE : la formation, sinon la
+  // classe. Le prénom ne reste qu'en dernier recours.
+  // Le prénom suffit s'il est unique (le cas d'un parent) ; sinon on nomme ce
+  // qui distingue vraiment — la formation, à défaut la classe.
+  const e = activeEnfant.value
+  const homonymes = enfants.value.filter((x) => x.firstName === e.firstName).length > 1
+  const quoi = homonymes ? ((e.formation || '').trim() || niveauLabel(e) || e.firstName) : e.firstName
+  if (confirm(t('mia.confirmRemoveProfile', { name: quoi }))) {
     store.removeEnfant(activeEnfant.value.id)
     activeId.value = enfants.value[0]?.id || ''
   }

@@ -833,7 +833,17 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
   function removeEnfant(id) {
     enfants.value = enfants.value.filter((e) => e.id !== id)
     const uid = dataUid()
-    if (uid) deleteDoc(enfantDocRef(uid, id)).catch(() => { /* offline */ })
+    if (uid) {
+      deleteDoc(enfantDocRef(uid, id)).catch(() => { /* offline */ })
+      // ⚠️ La fiche ne vit pas seule : le tuteur écrit QUATRE documents par
+      // apprenant sous `users/{uid}/revisions/` (cf. stores/tuteur.js). Supprimer
+      // la seule fiche laissait donc derrière elle la progression, l'historique
+      // de séances, les conversations et les récompenses — invisibles dans
+      // l'app, mais bien présentes, et rattachables à la personne.
+      for (const n of [id, `history_${id}`, `conversations_${id}`, `recompenses_${id}`]) {
+        deleteDoc(doc(db, 'users', uid, 'revisions', n)).catch(() => { /* absent ou offline */ })
+      }
+    }
     persist()
   }
 
