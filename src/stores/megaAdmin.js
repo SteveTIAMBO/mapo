@@ -694,9 +694,32 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
    * MEMBRE) et n'a pas de profil rattaché, donc l'application le renvoie sur
    * « compte non configuré ». Il faut une vraie invitation.
    *
-   * Renvoie { ok, reason? } — « deja_invite » quand une invitation en attente
-   * existe déjà, pour ne pas en empiler deux sur la même adresse.
+   * Renvoie { ok, reason? } — « deja_membre » quand la personne est déjà
+   * rattachée à l'école, « deja_invite » quand une invitation en attente existe
+   * déjà, pour ne pas en empiler deux sur la même adresse.
    */
+  /**
+   * Passe à « accepted » les invitations encore en attente pour cette adresse
+   * dans cette école. Appelée quand on constate que la personne est déjà
+   * membre : l'invitation ne peut plus rien produire, la garder « pending »
+   * ne ferait que mentir dans les listes.
+   */
+  async function cloturerInvitations(schoolId, adresse) {
+    try {
+      const snap = await getDocs(query(
+        collection(db, 'invitations'),
+        where('schoolId', '==', schoolId),
+        where('email', '==', adresse),
+      ))
+      await Promise.all(snap.docs
+        .filter((d) => (d.data().status || 'pending') === 'pending')
+        .map((d) => updateDoc(d.ref, { status: 'accepted', acceptedAt: serverTimestamp() })))
+    } catch (e) {
+      // Non bloquant : le but premier est de dire la vérité à l'opérateur.
+      console.warn('Clôture des invitations impossible:', e)
+    }
+  }
+
   async function ajouterAdministrateur(schoolId, email, { renvoyer = false } = {}) {
     const adresse = String(email || '').trim().toLowerCase()
     if (!schoolId || !adresse) return { ok: false, reason: 'parametres' }
@@ -704,6 +727,26 @@ export const useMegaAdminStore = defineStore('megaAdmin', () => {
       const ecole = schools.value.find((s) => s.id === schoolId)
       const edition = ecole?.edition && EDITIONS[ecole.edition] ? ecole.edition : 'secondaire'
       const role = EDITIONS[edition].roleAdmin
+
+      // ⚠️ 27/08/2026 — on regarde d'abord si la personne est DÉJÀ membre.
+      // La version précédente n'interrogeait que les invitations : à Steve, déjà
+      // rattaché à epc1, l'écran répondait « invitation déjà envoyée » et lui
+      // proposait un renvoi sans objet. Répondre sur l'invitation quand la
+      // question porte sur l'accès, c'est décrire la boîte aux lettres au lieu
+      // de la serrure.
+      const membres = await getDocs(query(
+        collection(db, 'users'),
+        where('schoolId', '==', schoolId),
+        where('email', '==', adresse),
+      ))
+      const actif = membres.docs.find((d) => (d.data().status || '') === 'active')
+      if (actif) {
+        // L'invitation en attente n'a plus d'objet, et la laisser telle quelle
+        // afficherait indéfiniment un « en attente » pour quelqu'un qui est
+        // entré. On la clôt.
+        await cloturerInvitations(schoolId, adresse)
+        return { ok: false, reason: 'deja_membre', role: actif.data().role || role }
+      }
 
       const dejaLa = await getDocs(query(
         collection(db, 'invitations'),

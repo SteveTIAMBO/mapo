@@ -52,3 +52,46 @@ describe('le court-circuit super-admin ne masque plus l’école', () => {
     expect(brancheSuper).toMatch(/catch\s*\([^)]*\)\s*\{/)
   })
 })
+
+describe('⚠️ « déjà membre » ne se dit pas « invitation déjà envoyée »', () => {
+  /**
+   * Écran vu par Steve le 27/08 : il était rattaché à epc1, et « + Admin »
+   * répondait « une invitation est déjà en attente », en proposant un renvoi
+   * sans objet. La fonction ne regardait que la collection `invitations` — elle
+   * décrivait la boîte aux lettres alors que la question portait sur la serrure.
+   */
+  const store = fs.readFileSync(path.join(racine, 'stores/megaAdmin.js'), 'utf8')
+  const vue = fs.readFileSync(path.join(racine, 'views/MegaAdminView.vue'), 'utf8')
+  const bloc = (() => {
+    const i = store.indexOf('async function ajouterAdministrateur')
+    return store.slice(i, store.indexOf('\n  }\n', store.indexOf('return { ok: true, role, mailEnvoye', i)))
+  })()
+
+  it('l’appartenance est vérifiée AVANT les invitations', () => {
+    const iMembres = bloc.indexOf("collection(db, 'users')")
+    const iInvit = bloc.indexOf("collection(db, 'invitations')")
+    expect(iMembres).toBeGreaterThan(0)
+    expect(iInvit).toBeGreaterThan(0)
+    expect(iMembres).toBeLessThan(iInvit)
+  })
+
+  it('seul un membre ACTIF compte comme rattaché', () => {
+    // Un profil `status: 'pending'` ne donne aucun accès : le confondre avec un
+    // membre ferait refuser l'invitation dont la personne a précisément besoin.
+    expect(bloc).toContain("'active'")
+    expect(bloc).toContain("reason: 'deja_membre'")
+  })
+
+  it('l’invitation devenue inutile est clôturée, pas laissée « en attente »', () => {
+    expect(bloc).toContain('cloturerInvitations(')
+    expect(store).toContain("status: 'accepted'")
+  })
+
+  it('l’écran l’annonce comme une réussite, sans proposer de renvoi', () => {
+    const i = vue.indexOf("r.reason === 'deja_membre'")
+    expect(i).toBeGreaterThan(0)
+    const suite = vue.slice(i, i + 400)
+    expect(suite).toContain('d.ok =')
+    expect(suite).not.toContain('dejaInvite = true')
+  })
+})

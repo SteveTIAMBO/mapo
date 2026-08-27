@@ -855,6 +855,13 @@ async function confirmerAdministrateur(renvoyer = false) {
   const r = await store.ajouterAdministrateur(d.school.id, d.email, { renvoyer })
   d.busy = false
   if (!r.ok) {
+    // « Déjà membre » n'est pas un échec : c'est la réponse attendue. On la dit
+    // dans le bandeau de succès, sans proposer un renvoi qui ne servirait à rien.
+    if (r.reason === 'deja_membre') {
+      d.ok = `${d.email} est déjà rattaché à cette école (rôle ${r.role}). `
+        + `Connexion directe sur ${d.school.id}.app-edufrem.com.`
+      return
+    }
     const motifs = {
       deja_invite: 'Une invitation est déjà en attente pour cette adresse.',
       parametres: 'Indiquez une adresse e-mail.',

@@ -50,6 +50,13 @@
   # (Domaines → Gérer → Remove Domain) : cPanel garantit alors explicitement de
   # NE PAS toucher au répertoire, ce qui est vital ici puisqu'ils le partagent.
 
+  # ⚠️ Ne PAS ajouter non plus de forçage HTTPS (RewriteCond %{HTTPS} off).
+  # Mesuré le 27/08/2026 : l'hébergeur redirige DÉJÀ http → https, sur chaque
+  # hôte (301 vers le même nom). La règle serait inutile — et dangereuse : le
+  # TLS se termine sur le front applicatif, donc %{HTTPS} peut valoir « off »
+  # même pour une requête arrivée en HTTPS. On boucle alors à l'infini, sur
+  # TOUS les sous-domaines à la fois, et l'échec ressemble à un site muet.
+
   # Lien magique famille partagé sur WhatsApp : /inviter?c=CODE est servi par
   # un PHP qui porte les balises d'aperçu MAPO+ (un robot de messagerie n'exécute
   # pas le JavaScript, il ne verrait sinon que celles de l'ERP MAPO), puis
