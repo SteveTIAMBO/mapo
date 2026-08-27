@@ -842,6 +842,27 @@ export const useAuthStore = defineStore('auth', () => {
       const superSnap = await getDoc(doc(db, 'superAdmins', firebaseUser.uid))
       if (superSnap.exists()) {
         isSuperAdmin.value = true
+        /**
+         * ⚠️ Un super-admin PEUT aussi être rattaché à une école.
+         *
+         * Ce court-circuit renvoyait toujours `schoolId: null`, et il sortait
+         * AVANT la lecture du profil d'école. Conséquence vécue le 25/08 :
+         * `contact@edufrem.com` a été invité comme administrateur d'epc1,
+         * l'invitation est restée « en attente » indéfiniment, et aucun envoi
+         * d'e-mail n'y pouvait rien — le provisionnement par invitation
+         * (étape 3) n'était jamais atteint. Écrire le profil à la main
+         * n'aurait pas aidé davantage : il n'était pas lu.
+         *
+         * On lit donc le profil d'école s'il existe, et on le laisse fournir
+         * `schoolId` et `role`. Additif : sans profil, le comportement est
+         * exactement celui d'avant.
+         */
+        let profilEcole = null
+        try {
+          const s = await getDoc(doc(db, 'users', firebaseUser.uid))
+          if (s.exists() && s.data()?.schoolId) profilEcole = s.data()
+        } catch (e) { /* hors ligne : on garde le profil super-admin seul */ }
+
         userProfile.value = {
           uid: firebaseUser.uid,
           email: firebaseUser.email,
@@ -851,6 +872,11 @@ export const useAuthStore = defineStore('auth', () => {
           schoolId: null,
           status: 'active',
           ...superSnap.data(),
+          // Le rattachement à une école prime sur les valeurs neutres
+          // ci-dessus : c'est ce qui permet à l'équipe d'entrer dans une école
+          // pour la dépanner. `isSuperAdmin` reste vrai, donc l'accès au
+          // méga-admin est conservé.
+          ...(profilEcole ? { schoolId: profilEcole.schoolId, role: profilEcole.role } : {}),
         }
         return
       }
