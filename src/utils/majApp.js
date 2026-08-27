@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+
 /**
  * Recevoir une nouvelle version SANS avoir à faire Cmd+Shift+R.
  *
@@ -11,56 +13,54 @@
  *     chaque activation. Le cache est donc déjà « vidé à chaque déploiement » ;
  *   - les navigations passent en `NetworkFirst` → le HTML vient du réseau ;
  *   - `.htaccess` sert `index.html`, `sw.js` et `registerSW.js` en
- *     `no-cache, no-store, must-revalidate` (vérifié sur le serveur) ;
- *   - `main.js` recharge la page au `controllerchange`.
+ *     `no-cache, no-store, must-revalidate` (vérifié sur le serveur).
  *
  * ⛔ On n'ajoute donc PAS un « vidage de tous les caches » : il détruirait le
  * hors-ligne, qui est une fonction du produit (réseau africain, bas débit), et
  * ferait retélécharger 8 Mo à des gens qui paient leur data au mégaoctet.
  *
- * ## LE VRAI TROU : l'application OUVERTE ne cherche jamais de mise à jour
+ * ## LE VRAI TROU : l'application OUVERTE ne cherchait jamais de mise à jour
  *
- * Le navigateur ne va rechercher `sw.js` qu'à une NAVIGATION, ou d'elle-même
+ * Le navigateur ne va rechercher `sw.js` qu'à une NAVIGATION, ou de lui-même
  * environ une fois par 24 h. Or une PWA installée sur un téléphone reste
- * ouverte des jours entiers : personne ne « navigue ». Quelqu'un pouvait donc
- * rester une journée sur l'ancienne version sans que rien ne le lui dise — et
- * sans que recharger y change quoi que ce soit, puisqu'il ne rechargeait pas.
+ * ouverte des jours entiers : personne ne « navigue ». On pouvait donc rester
+ * une journée en arrière — et recharger n'y changeait rien, puisqu'on ne
+ * rechargeait pas.
  *
- * On demande donc explicitement au navigateur de vérifier : au retour dans
- * l'application, et périodiquement tant qu'elle est visible.
+ * ## ⭐ ON PROPOSE, ON N'IMPOSE PAS (choix de Steve, 27/08)
  *
- * ## ET SURTOUT : ne pas recharger au milieu d'un quiz
+ * Ma première version rechargeait d'elle-même dès qu'elle jugeait le moment
+ * opportun. Steve a tranché autrement, et c'est mieux : **un petit bouton
+ * « Recharger »**. Ça supprime la question insoluble « peut-on recharger sans
+ * rien casser ? » — la personne sait, elle, si elle est au milieu d'un quiz.
  *
- * `main.js` rechargeait dès que le contrôleur changeait, quoi que la personne
- * fût en train de faire. Tant que la vérification n'avait lieu qu'au chargement
- * c'était sans conséquence. En vérifiant toutes les 30 minutes, on ferait
- * disparaître une séance en cours — on aurait « corrigé » un cache au prix
- * d'un travail perdu.
+ * Seule exception, invisible par construction : si l'onglet est MASQUÉ, on
+ * recharge sans rien demander. Personne ne regarde, et à son retour la
+ * nouvelle version est simplement là.
  *
- * Le rechargement n'a donc lieu que quand il ne coûte rien : onglet MASQUÉ, ou
- * retour après une absence. Sinon on attend, la version reste prête.
+ * Rythme : une vérification par JOUR tant que l'application reste ouverte
+ * (inutile de harceler le serveur), plus une au retour dans l'application,
+ * throttlée à 30 min pour qu'un aller-retour ne déclenche pas dix requêtes.
  */
 
-/** Délai minimal entre deux interrogations du serveur. */
+/** Vérification périodique tant que l'application reste ouverte. */
+export const INTERVALLE_POLL_MS = 24 * 60 * 60 * 1000 // 1 jour
+/** Délai minimal entre deux interrogations réelles du serveur. */
 export const INTERVALLE_VERIF_MS = 30 * 60 * 1000 // 30 min
-/** Absence au-delà de laquelle un rechargement au retour passe inaperçu. */
-export const ABSENCE_SUFFISANTE_MS = 60 * 1000 // 1 min
+
+/** Vrai quand une nouvelle version est prête et attend un clic. */
+export const majDisponible = ref(false)
 
 /**
- * Faut-il recharger MAINTENANT ?
+ * Faut-il recharger TOUT DE SUITE, sans demander ?
  * Sorti en fonction pure pour être éprouvé sans navigateur.
  *
- * @param {object} o
- * @param {boolean} o.majPrete      un nouveau service worker a pris la main
- * @param {boolean} o.visible       l'onglet est-il au premier plan
- * @param {number}  o.absenceMs     durée de la dernière absence (0 si jamais parti)
+ * ⚠️ Uniquement quand l'onglet est masqué. Sur un onglet visible on NE recharge
+ * jamais de soi-même : c'est le bouton qui décide. Recharger sous les doigts de
+ * quelqu'un effacerait une séance de révision en cours.
  */
-export function doitRecharger({ majPrete, visible, absenceMs = 0 }) {
-  if (!majPrete) return false
-  // Onglet masqué : la personne ne regarde pas, le rechargement est invisible.
-  if (!visible) return true
-  // Elle revient après une vraie absence : elle s'attend à retrouver du frais.
-  return absenceMs >= ABSENCE_SUFFISANTE_MS
+export function doitRecharger({ majPrete, visible }) {
+  return !!majPrete && !visible
 }
 
 /** Peut-on réinterroger le serveur, ou vient-on de le faire ? */
@@ -69,21 +69,25 @@ export function doitVerifier(dernierMs, maintenantMs) {
   return (maintenantMs - dernierMs) >= INTERVALLE_VERIF_MS
 }
 
+/** Applique la mise à jour en attente (appelé par le bouton). */
+export function appliquerMaj() {
+  majDisponible.value = false
+  window.location.reload()
+}
+
 /**
  * Branche la surveillance. Sans effet hors navigateur ou sans service worker
- * (démo locale, test, navigateur ancien) : l'application marche pareil, elle
- * se met simplement à jour au prochain vrai chargement.
+ * (démo locale, test, navigateur ancien) : l'application marche pareil, elle se
+ * met simplement à jour au prochain vrai chargement.
  */
 export function surveillerMisesAJour() {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return () => {}
 
-  let majPrete = false
   let dernierVerif = 0
-  let masqueDepuis = 0
   let rechargement = false
   // ⚠️ Au TOUT premier install, le contrôleur passe de rien à quelque chose :
-  // ce n'est pas une mise à jour, et recharger là ferait clignoter la page
-  // d'accueil de chaque nouveau visiteur.
+  // ce n'est pas une mise à jour, et l'annoncer ferait apparaître « nouvelle
+  // version » à chaque tout premier visiteur.
   const avaitControleur = !!navigator.serviceWorker.controller
 
   function recharger() {
@@ -92,8 +96,8 @@ export function surveillerMisesAJour() {
     window.location.reload()
   }
 
-  function evaluer(absenceMs = 0) {
-    if (doitRecharger({ majPrete, visible: document.visibilityState === 'visible', absenceMs })) recharger()
+  function evaluer() {
+    if (doitRecharger({ majPrete: majDisponible.value, visible: document.visibilityState === 'visible' })) recharger()
   }
 
   async function verifier() {
@@ -108,19 +112,13 @@ export function surveillerMisesAJour() {
 
   function onControllerChange() {
     if (!avaitControleur) return
-    majPrete = true
+    majDisponible.value = true
     evaluer()
   }
 
   function onVisibility() {
-    if (document.visibilityState === 'hidden') {
-      masqueDepuis = Date.now()
-      evaluer()
-      return
-    }
-    const absence = masqueDepuis ? Date.now() - masqueDepuis : 0
-    masqueDepuis = 0
-    evaluer(absence)
+    if (document.visibilityState === 'hidden') { evaluer(); return }
+    evaluer()
     verifier()
   }
 
@@ -128,7 +126,7 @@ export function surveillerMisesAJour() {
   document.addEventListener('visibilitychange', onVisibility)
   const minuteur = setInterval(() => {
     if (document.visibilityState === 'visible') verifier()
-  }, INTERVALLE_VERIF_MS)
+  }, INTERVALLE_POLL_MS)
 
   return () => {
     navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange)

@@ -5879,5 +5879,10 @@
     "semestre": "Semester {n} | Semester {n}",
     "sequence": "Sequence {n} | Sequence {n}",
     "annuel": "Annual report"
+  },
+  "maj": {
+    "ready": "A new version is available.",
+    "reload": "Reload",
+    "later": "Later"
   }
 }

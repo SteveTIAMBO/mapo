@@ -5879,5 +5879,10 @@
     "semestre": "1er semestre | {n}ème semestre",
     "sequence": "Séquence {n} | Séquence {n}",
     "annuel": "Bilan annuel"
+  },
+  "maj": {
+    "ready": "Une nouvelle version est disponible.",
+    "reload": "Recharger",
+    "later": "Plus tard"
   }
 }

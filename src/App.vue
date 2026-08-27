@@ -13,12 +13,16 @@
     </div>
   </div>
   <RouterView v-else />
+  <!-- « Nouvelle version prête » : ici et pas dans une vue, parce que ça
+       concerne l'ERP comme MAPO+. Ne s'affiche que quand une version attend. -->
+  <BandeauMaj />
 </template>
 
 <script setup>
 import { RouterView } from 'vue-router'
 import { useAuthStore } from './stores/auth'
 import { useAccessibiliteStore } from './stores/accessibilite'
+import BandeauMaj from './components/BandeauMaj.vue'
 const authStore = useAuthStore()
 // Applique le mode accessibilité (préférences persistées) dès le démarrage.
 useAccessibiliteStore().init()
