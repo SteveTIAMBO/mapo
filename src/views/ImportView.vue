@@ -286,6 +286,7 @@ import { useClassesStore, LEVELS, LEVELS_TOUS } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
+import { normaliserConfigEcole } from '../utils/normaliserConfigEcole'
 import { useEditionStore } from '../stores/edition'
 import { useDisciplinesPrimaireStore, amorcePays, programmeOfficiel } from '../stores/disciplinesPrimaire'
 
@@ -761,8 +762,13 @@ async function enregistrerMatieresEcole(libellesBruts) {
 
   if (editionStore.isPrimaire) {
     await discPrimaire.load()
-    // `ajouter` renvoie false sur doublon : on ne compte que les vraies ajouts.
-    for (const nom of libelles) if (discPrimaire.ajouter(nom)) ajoutees.push(nom)
+    // ⚠️ PREMIER import : la liste du fichier REMPLACE l'amorce. En l'ajoutant,
+    // l'école héritait de quinze disciplines — les huit de l'amorce plus ses
+    // sept propres, « Éveil scientifique » à côté de « sciences ». L'amorce est
+    // un pis-aller en attendant la liste de l'école, pas une donnée à préserver.
+    // Ensuite seulement on complète, sans jamais écraser son travail.
+    if (discPrimaire.definir(libelles)) ajoutees.push(...libelles)
+    else for (const nom of libelles) if (discPrimaire.ajouter(nom)) ajoutees.push(nom)
   } else {
     await subjectsStore.loadSubjects()
     for (const nom of libelles) {
@@ -1085,6 +1091,8 @@ async function downloadStarterWorkbook() {
  */
 async function importerModule(modId, validRows) {
   let added = 0, updated = 0, skipped = 0
+  // Ce que l'import n'a PAS pu interpréter. Dit à l'écran, jamais avalé.
+  const alertes = []
 
   if (modId === 'ecole') {
     const row = validRows[0]
@@ -1092,15 +1100,21 @@ async function importerModule(modId, validRows) {
       const patch = {}
       const set = (k, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') patch[k] = String(v).trim() }
       set('schoolName', row.schoolName)
-      set('schoolType', row.schoolType)
       set('city', row.city)
-      set('country', row.country)
       set('address', row.address)
       set('phone', row.phone)
       set('email', row.email)
       set('academicYear', row.academicYear)
-      set('currency', row.currency)
       set('primaryColor', row.primaryColor)
+      // ⚠️ Pays, type et devise sont des listes FERMÉES côté application. Le
+      // classeur porte les libellés (« Cameroun », « École primaire », « FCFA »)
+      // ; enregistrés tels quels, les trois listes déroulantes de Paramètres
+      // restaient VIDES — « l'import n'a pas rempli les infos de
+      // l'établissement » — et `country` ne pilotait plus ni le programme du
+      // primaire, ni le barème de paie, ni les niveaux.
+      const { valeurs, avertissements } = normaliserConfigEcole(row)
+      Object.assign(patch, valeurs)
+      alertes.push(...avertissements)
       if (row.directorLastName || row.directorFirstName) {
         set('directorLastName', row.directorLastName)
         set('directorFirstName', row.directorFirstName)
@@ -1238,7 +1252,7 @@ async function importerModule(modId, validRows) {
     activityStore.log('import', `Import classes : ${added} ajoutée(s), ${updated} mise(s) à jour`)
   }
 
-  return { added, updated, skipped }
+  return { added, updated, skipped, alertes }
 }
 
 /**
@@ -1317,10 +1331,11 @@ function onClasseurSelect(e) {
 }
 
 /** Libellé « N ajouté(s), M mis à jour, K ignoré(s) ». */
-function resume({ added, updated, skipped }) {
+function resume({ added, updated, skipped, alertes }) {
   return t('imp.added', { n: added })
     + (updated > 0 ? t('imp.updatedSuffix', { n: updated }) : '')
     + (skipped > 0 ? t('imp.skippedSuffix', { n: skipped }) : '')
+    + (alertes?.length ? ` — ${alertes.join(', ')} : à choisir dans Paramètres` : '')
 }
 
 async function executeImport() {

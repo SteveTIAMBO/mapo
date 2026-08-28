@@ -126,6 +126,37 @@ export const useDisciplinesPrimaireStore = defineStore('disciplinesPrimaire', ()
     return true
   }
 
+  /**
+   * Remplace TOUTE la liste. Réservé au premier import : refusé si l'école a
+   * déjà personnalisé la sienne.
+   *
+   * ⚠️ Mesuré sur la première école réelle (28/08/2026) : l'import AJOUTAIT les
+   * intitulés du classeur à l'amorce, et l'école se retrouvait avec quinze
+   * disciplines — les huit de l'amorce plus ses sept propres, « Éveil
+   * scientifique » à côté de « sciences », « Éducation physique et sportive »
+   * à côté de « EPS ».
+   *
+   * L'amorce n'est pas la donnée de l'école, c'est un pis-aller en attendant la
+   * sienne : la remplacer ne détruit rien. Écraser une liste DÉJÀ personnalisée,
+   * si — un fichier où un seul enseignant déclare « EPS » réduirait le
+   * programme à une ligne. D'où le refus explicite.
+   */
+  function definir(noms) {
+    if (personnalise.value) return false
+    const vus = new Set()
+    const propres = []
+    for (const n of noms || []) {
+      const nom = String(n || '').trim()
+      if (!nom || vus.has(cle(nom))) continue
+      vus.add(cle(nom))
+      propres.push({ name: nom, domaine: '' })
+    }
+    if (!propres.length) return false
+    liste.value = propres
+    save()
+    return true
+  }
+
   /** Renomme une discipline, en refusant un intitulé déjà pris. */
   function renommer(ancien, nouveau) {
     const n = String(nouveau || '').trim()
@@ -212,6 +243,6 @@ export const useDisciplinesPrimaireStore = defineStore('disciplinesPrimaire', ()
 
   return {
     liste, loaded, disciplines, noms, personnalise, avecDomaines,
-    ajouter, renommer, retirer, deplacer, reinitialiser, load, save,
+    ajouter, definir, renommer, retirer, deplacer, reinitialiser, load, save,
   }
 })
