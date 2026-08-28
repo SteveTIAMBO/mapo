@@ -815,7 +815,7 @@
                    plus un appel IA. -->
               <button
                 v-if="ecoleLieActive" class="btn btn-primary btn-sm ch-act"
-                :disabled="edtEcoleEnCours" @click="recupererEdtEcole"
+                :disabled="edtEcoleEnCours" @click="recupererEdtEcole()"
               >
                 <School :size="15" /> <span>{{ edtEcoleEnCours ? t('mia.edtScanning') : t('mia.edtFromSchool') }}</span>
               </button>
@@ -3057,30 +3057,68 @@ const edtEcoleEnCours = ref(false)
  * ⚠️ Le pont servait cours, devoirs, notes, messages et périodes — mais pas
  * l'emploi du temps, que l'ERP détient pourtant, profs et horaires compris.
  */
-async function recupererEdtEcole() {
+async function recupererEdtEcole({ auto = false } = {}) {
   const e = activeEnfant.value
   if (!e || !e.lienEcole) return
-  edtEcoleEnCours.value = true; edtError.value = ''; edtNotice.value = ''
+  edtEcoleEnCours.value = true
+  if (!auto) { edtError.value = ''; edtNotice.value = '' }
   try {
     const r = await lienEcole.fetchEdt(e.lienEcole.schoolId, e.lienEcole.eleveId)
-    if (!r.ok) { edtError.value = t('mia.edtFail'); return }
+    if (!r.ok) { if (!auto) edtError.value = t('mia.edtFail'); return }
     if (!r.creneaux || !r.creneaux.length) {
       // ⚠️ Une école qui n'a pas encore généré son emploi du temps N'EST PAS une
-      // panne. Le dire, plutôt qu'afficher une erreur qui renverrait l'élève
-      // rouvrir son appareil photo pour rien.
-      edtNotice.value = t('mia.edtSchoolEmpty')
+      // panne. Le dire quand on a cliqué ; se taire quand c'est automatique —
+      // un message d'accueil permanent pour une école qui n'a rien publié
+      // ressemblerait à un reproche.
+      if (!auto) edtNotice.value = t('mia.edtSchoolEmpty')
       return
     }
     const actuels = (e.edt || []).length
-    if (actuels && !confirm(t('mia.edtReplace', { n: actuels }))) return
-    store.setEdt(e.id, r.creneaux)
-    edtNotice.value = t('mia.edtFromSchoolOk', { n: r.creneaux.length, classe: r.className || '' })
+    // ⚠️ On ne demande QUE s'il y a quelque chose à perdre : un emploi du temps
+    // qui vient DÉJÀ de l'école se rafraîchit sans rien demander (c'est le but),
+    // mais une saisie manuelle ne se fait pas écraser en silence.
+    const aPerdre = actuels > 0 && e.edtSource !== 'ecole'
+    if (aPerdre) {
+      if (auto) return                    // en automatique on n'interrompt jamais
+      if (!confirm(t('mia.edtReplace', { n: actuels }))) return
+    }
+    store.setEdt(e.id, r.creneaux, 'ecole')
+    if (!auto) edtNotice.value = t('mia.edtFromSchoolOk', { n: r.creneaux.length, classe: r.className || '' })
   } catch {
-    edtError.value = t('mia.edtFail')
+    if (!auto) edtError.value = t('mia.edtFail')
   } finally {
     edtEcoleEnCours.value = false
   }
 }
+
+/**
+ * SYNCHRONISATION AUTOMATIQUE quand l'école est reliée (Steve, 27/08).
+ *
+ * ⚠️ CE QUE ÇA CORRIGE DANS MON PROPRE TRAVAIL. Le pont fonctionne en TIRAGE :
+ * cours, devoirs et bulletins sont relus chez l'école à chaque ouverture
+ * d'écran, donc ils sont toujours justes. J'avais fait de l'emploi du temps une
+ * exception — un import ponctuel qui COPIE. Il se périmait donc en silence :
+ * l'école déplace un cours, la copie garde l'ancien horaire, et la révision de
+ * la veille se déclenche sur un cours qui n'a plus lieu.
+ *
+ * La copie locale reste — elle sert le hors-ligne et la veille — mais elle
+ * devient un CACHE rafraîchi tout seul, plus un import qu'il faut penser à
+ * refaire. Le bouton demeure comme « rafraîchir maintenant ».
+ *
+ * Silencieux par construction : aucun message, aucune interruption. Ni au
+ * premier chargement (l'écran s'affiche d'abord), ni en cas d'échec réseau —
+ * l'emploi du temps en cache reste affiché, ce qui est exactement ce qu'il faut.
+ */
+const DELAI_SYNC_EDT_MS = 10 * 60 * 1000
+let dernierSyncEdt = 0
+watch(section, (s) => {
+  if (s !== 'edt' || !ecoleLieActive.value) return
+  const n = Date.now()
+  // Throttle : revenir trois fois sur l'écran ne doit pas déclencher trois appels.
+  if (dernierSyncEdt && (n - dernierSyncEdt) < DELAI_SYNC_EDT_MS) return
+  dernierSyncEdt = n
+  recupererEdtEcole({ auto: true })
+})
 function ajouterCreneau() {
   if (!activeEnfant.value || !crJour.value || !crMatiere.value.trim()) return
   store.addCreneau(activeEnfant.value.id, { jour: crJour.value, heure: crHeure.value, matiere: crMatiere.value })
@@ -3133,7 +3171,10 @@ async function importerEdt(file) {
     // quelque chose à perdre.
     const actuels = (activeEnfant.value.edt || []).length
     if (actuels && !confirm(t('mia.edtReplace', { n: actuels }))) return
-    store.setEdt(activeEnfant.value.id, creneaux)
+    // 'import' : un fichier apporté par la personne. La synchro école ne
+    // l'écrasera pas toute seule — elle ne remplace en silence que ce qui
+    // venait déjà de l'école.
+    store.setEdt(activeEnfant.value.id, creneaux, 'import')
     edtNotice.value = apres
   } catch { edtError.value = t('mia.visionBlurry') } finally { edtScanning.value = false }
 }

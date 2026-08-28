@@ -958,18 +958,37 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     if (!e) return
     if (!Array.isArray(e.edt)) e.edt = []
     e.edt.push({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: creneau.jour || '', heure: creneau.heure || '', matiere: (creneau.matiere || '').trim() })
+    // ⚠️ Toucher un créneau à la main REPREND la main. Sans ça, la
+    // synchronisation automatique de l'école effacerait la correction au
+    // prochain passage sur l'écran — la personne verrait son ajout disparaître
+    // sans comprendre pourquoi.
+    e.edtSource = 'manuel'
     persist(enfantId)
   }
   function removeCreneau(enfantId, crId) {
     const e = getEnfant(enfantId)
     if (!e || !Array.isArray(e.edt)) return
     e.edt = e.edt.filter((x) => x.id !== crId)
+    e.edtSource = 'manuel' // idem : une suppression est une décision, on la garde
     persist(enfantId)
   }
-  function setEdt(enfantId, creneaux) {
+  /**
+   * Remplace l'emploi du temps.
+   *
+   * ⚠️ `source` : d'OÙ il vient. Sans cette trace, la synchronisation
+   * automatique de l'école écraserait sans prévenir un emploi du temps saisi à
+   * la main — et on ne saurait même pas que c'était le cas.
+   *   'ecole'  → fourni par l'établissement (le pont). Fait autorité, se
+   *              rafraîchit tout seul.
+   *   'import' → photo, PDF ou .ics apporté par la personne.
+   *   'manuel' → saisi créneau par créneau (valeur par défaut, historique).
+   */
+  function setEdt(enfantId, creneaux, source = 'manuel') {
     const e = getEnfant(enfantId)
     if (!e) return
     e.edt = (creneaux || []).map((c) => ({ id: 'cr-' + Date.now().toString(36) + Math.floor(Math.random() * 1e4), jour: c.jour || '', heure: c.heure || '', matiere: (c.matiere || '').trim() })).filter((c) => c.matiere)
+    e.edtSource = source
+    e.edtMajAt = new Date().toISOString()
     persist(enfantId)
   }
 
