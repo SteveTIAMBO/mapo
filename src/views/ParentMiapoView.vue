@@ -586,9 +586,18 @@
                      remplis — par une proposition de l'IA, donc peut-etre a
                      cote — ne pouvait plus jamais importer le PDF de son
                      ecole. Il lui fallait d'abord tout effacer. -->
-                <button type="button" class="btn btn-outline btn-sm mods-import" @click="openFormationSetup">
-                  <Sparkles :size="15" /> <span>{{ t('mia.importProgramme') }}</span>
-                </button>
+                <div class="mods-actions">
+                  <button type="button" class="btn btn-outline btn-sm" @click="openFormationSetup">
+                    <Sparkles :size="15" /> <span>{{ t('mia.importProgramme') }}</span>
+                  </button>
+                  <!-- Carré tient déjà la liste des modules, un dossier par cours :
+                       la lire vaut mieux que la faire deviner par l'IA. -->
+                  <MiapoModulesCarre
+                    v-if="connecteurs.carreConnected"
+                    :valeur="activeEnfant.formationModules || ''"
+                    @changer="majModulesFormation"
+                  />
+                </div>
               </template>
               <MiapoAjouterMatiere
                 v-else-if="activeEnfant"
@@ -1315,6 +1324,7 @@ import MiapoOrientation from '../components/MiapoOrientation.vue'
 import Miapo6C from '../components/Miapo6C.vue'
 import MiapoMonProfil from '../components/MiapoMonProfil.vue'
 import MiapoBoutonImport from '../components/MiapoBoutonImport.vue'
+import MiapoModulesCarre from '../components/MiapoModulesCarre.vue'
 import Radar6C from '../components/Radar6C.vue'
 import MiapoAnnales from '../components/MiapoAnnales.vue'
 import MiapoFiches from '../components/MiapoFiches.vue'
@@ -3809,7 +3819,7 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .rt-active { margin-top: 12px; }
 .rt-back { display: inline-flex; align-items: center; gap: 5px; margin: 0 0 12px -4px; padding: 5px 10px; border: none; background: none; color: var(--tx3, #6b7280); font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 8px; }
 .rt-back:hover { background: var(--input-bg, #f1f3f5); color: var(--tx, #1f2937); }
-.mods-import { margin-top: 12px; }
+.mods-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .modules-empty { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 4px 0 2px; }
 .modules-empty .muted { margin: 0; }
 

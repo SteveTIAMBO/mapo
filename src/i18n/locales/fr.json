@@ -5800,7 +5800,16 @@
     "close": "Fermer",
     "edtFromSchool": "Depuis mon école",
     "edtFromSchoolOk": "{n} créneaux récupérés auprès de ton école ({classe}).",
-    "edtSchoolEmpty": "Ton école n'a pas encore publié l'emploi du temps de ta classe."
+    "edtSchoolEmpty": "Ton école n'a pas encore publié l'emploi du temps de ta classe.",
+    "mcarImport": "Depuis Carré",
+    "mcarLoading": "Lecture…",
+    "mcarTitle": "Mes modules depuis Carré",
+    "mcarHint": "Un dossier par cours. Cochez ceux qui sont des modules de votre formation — les projets et les dossiers de travail n'en sont pas.",
+    "mcarEmpty": "Aucun dossier trouvé dans Carré.",
+    "mcarAll": "Tout cocher",
+    "mcarNone": "Tout décocher",
+    "mcarSelected": "{n} sélectionné(s)",
+    "mcarApply": "Utiliser ces modules"
   },
   "cx": {
     "appTitle": "Espace complexe",

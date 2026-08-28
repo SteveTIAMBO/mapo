@@ -95,6 +95,49 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
 
   // Notes de cours de l'apprenant (pour alimenter le champ « cours » du chat).
   // Renvoie '' si non relié ou en cas d'erreur (MIAPO se rabat sur le reste).
+  /**
+   * Dossiers de classement de Carré, groupés par espace.
+   *
+   * ⚠️ POURQUOI ÇA CHANGE TOUT (mesuré sur le Carré réel de Steve, 28/08).
+   * Son espace « MBA » contient 24 dossiers, et chacun porte le nom d'un
+   * module : Gouvernance, Stratégie financière, Leadership, Droit, Design
+   * Sprint… **La liste des modules de sa formation existe déjà**, écrite par
+   * lui. MAPO+ la faisait DEVINER par l'IA à partir du seul intitulé de la
+   * formation — alors qu'il suffisait de la lire.
+   *
+   * ⚠️ On ne coche RIEN d'office : plusieurs dossiers ne sont pas des modules
+   * (« Pitchs », « KickOff », « Chef d'œuvre », noms de projets), et rien ne
+   * permet de les distinguer automatiquement. On propose, la personne valide.
+   *
+   * Les doublons sont fusionnés : « Leadership » apparaît deux fois dans son
+   * espace, « Entrepreneuriat - Stéphan » aussi.
+   */
+  async function carreFolders() {
+    if (!linked.value || !fbAuth.currentUser) return []
+    try {
+      const h = await authHeaders()
+      const r = await fetch(`${API}?action=folders`, { headers: h })
+      const j = await r.json().catch(() => null)
+      if (!j || !j.ok) { if (j && j.error === 'non_relie') setLinked(false); return [] }
+      const d = j.data || {}
+      const brut = [
+        ...(Array.isArray(d.personal) ? d.personal : []),
+        ...(Array.isArray(d.shared) ? d.shared : []),
+      ]
+      const espaces = new Map()
+      for (const f of brut) {
+        const nom = String(f?.name || '').trim()
+        if (!nom) continue
+        const espace = String(f?.spaceName || '').trim() || 'Mes dossiers'
+        if (!espaces.has(espace)) espaces.set(espace, new Set())
+        espaces.get(espace).add(nom)
+      }
+      return [...espaces.entries()]
+        .map(([espace, noms]) => ({ espace, dossiers: [...noms].sort((a, b) => a.localeCompare(b, 'fr')) }))
+        .sort((a, b) => b.dossiers.length - a.dossiers.length)
+    } catch { return [] }
+  }
+
   async function carreNotesText({ max = 3, q = '' } = {}) {
     if (!linked.value || !fbAuth.currentUser) return ''
     // Périmètre de synchro choisi par l'apprenant (dossier/mot-clé) : évite
@@ -126,6 +169,6 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
 
   return {
     linked, busy, carreAppUrl, carreConnected, carrePreview,
-    refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText,
+    refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText, carreFolders,
   }
 })

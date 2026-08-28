@@ -1,0 +1,155 @@
+<!--
+  « Mes modules, depuis Carré » — on LIT la liste au lieu de la deviner.
+
+  ⚠️ MESURÉ SUR LE CARRÉ RÉEL DE STEVE (28/08). Son espace « MBA » contient 24
+  dossiers, et chacun porte le nom d'un module de sa formation : Gouvernance,
+  Stratégie financière, Leadership, Droit, Design Sprint, Change Mgt, BMC…
+  **La liste existait déjà, écrite par lui.** MAPO+ la faisait pourtant DEVINER
+  par l'IA à partir du seul intitulé de la formation — donc à côté, forcément.
+
+  ⚠️ RIEN N'EST COCHÉ D'OFFICE. Plusieurs dossiers ne sont pas des modules
+  (« Pitchs », « KickOff », « Chef d'œuvre », « ARIIANE » : des projets), et
+  aucune règle ne permet de les distinguer d'un cours. On propose, la personne
+  tranche — c'est elle qui sait ce qu'elle révise.
+-->
+<template>
+  <div class="mcar">
+    <button class="btn btn-outline btn-sm" :disabled="chargement" @click="ouvrir">
+      <span class="mcar-badge">C</span>
+      <span>{{ chargement ? t('mia.mcarLoading') : t('mia.mcarImport') }}</span>
+    </button>
+
+    <div v-if="ouvert" class="mcar-fond" @click.self="ouvert = false">
+      <div class="mcar-modal" role="dialog" aria-modal="true">
+        <div class="mcar-head">
+          <h3>{{ t('mia.mcarTitle') }}</h3>
+          <button class="btn btn-ghost btn-sm" :aria-label="t('mia.close')" @click="ouvert = false"><X :size="18" /></button>
+        </div>
+
+        <div class="mcar-corps">
+          <p v-if="!espaces.length" class="muted">{{ t('mia.mcarEmpty') }}</p>
+          <template v-else>
+            <p class="muted small">{{ t('mia.mcarHint') }}</p>
+            <div v-for="e in espaces" :key="e.espace" class="mcar-espace">
+              <div class="mcar-espace-head">
+                <strong>{{ e.espace }}</strong>
+                <span class="mcar-n">{{ e.dossiers.length }}</span>
+                <button class="lnk mcar-tout" @click="basculerEspace(e)">
+                  {{ toutCoche(e) ? t('mia.mcarNone') : t('mia.mcarAll') }}
+                </button>
+              </div>
+              <label v-for="d in e.dossiers" :key="e.espace + '|' + d" class="mcar-item">
+                <input type="checkbox" :value="d" :checked="choisis.has(d)" @change="basculer(d)" />
+                <span>{{ d }}</span>
+              </label>
+            </div>
+          </template>
+        </div>
+
+        <div class="mcar-pied">
+          <span class="muted small mcar-compte">{{ t('mia.mcarSelected', { n: choisis.size }) }}</span>
+          <button class="btn btn-ghost" @click="ouvert = false">{{ t('mia.cancel') }}</button>
+          <button class="btn btn-primary" :disabled="!choisis.size" @click="valider">
+            <Check :size="16" /> <span>{{ t('mia.mcarApply') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+import { X, Check } from 'lucide-vue-next'
+import { useConnecteursStore } from '../stores/connecteurs'
+import { listeModules } from '../utils/modulesFormation'
+
+const props = defineProps({
+  /** Modules déjà en place (chaîne séparée par des virgules) : on les pré-coche. */
+  valeur: { type: String, default: '' },
+})
+const emit = defineEmits(['changer'])
+const { t } = useI18n({ useScope: 'global' })
+const connecteurs = useConnecteursStore()
+
+const ouvert = ref(false)
+const chargement = ref(false)
+const espaces = ref([])
+const choisis = ref(new Set())
+
+async function ouvrir() {
+  chargement.value = true
+  try {
+    espaces.value = await connecteurs.carreFolders()
+    // Les modules DÉJÀ enregistrés restent cochés : ouvrir la fenêtre ne doit
+    // pas donner l'impression qu'on repart de zéro.
+    choisis.value = new Set(listeModules(props.valeur))
+    ouvert.value = true
+  } finally {
+    chargement.value = false
+  }
+}
+
+function basculer(d) {
+  const s = new Set(choisis.value)
+  if (s.has(d)) s.delete(d); else s.add(d)
+  choisis.value = s
+}
+const toutCoche = (e) => e.dossiers.every((d) => choisis.value.has(d))
+function basculerEspace(e) {
+  const s = new Set(choisis.value)
+  const tout = toutCoche(e)
+  for (const d of e.dossiers) { if (tout) s.delete(d); else s.add(d) }
+  choisis.value = s
+}
+
+function valider() {
+  // ⚠️ La virgule reste le séparateur (cf. utils/modulesFormation.js) : un nom
+  // de dossier qui en contient une casserait la liste. Le nettoyage est fait
+  // là-bas, une seule fois, pour tout le monde.
+  emit('changer', [...choisis.value].join(', '))
+  ouvert.value = false
+}
+</script>
+
+<style scoped>
+.mcar { display: inline-block; }
+.mcar-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 5px; margin-right: 6px;
+  background: var(--pr); color: #fff; font-size: 11px; font-weight: 700;
+}
+.mcar-fond {
+  position: fixed; inset: 0; z-index: 9800;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  background: rgba(20, 22, 28, .42);
+}
+.mcar-modal {
+  width: 100%; max-width: 560px; max-height: 88vh;
+  display: flex; flex-direction: column;
+  background: #fff; border-radius: 16px; box-shadow: 0 18px 50px rgba(0, 0, 0, .24);
+}
+.mcar-head, .mcar-pied { display: flex; align-items: center; gap: 10px; padding: 14px 16px; }
+.mcar-head { border-bottom: 1px solid rgba(0, 0, 0, .07); }
+.mcar-head h3 { flex: 1; margin: 0; font-size: 16px; font-weight: 600; }
+.mcar-corps { padding: 12px 16px; overflow: auto; }
+.mcar-pied { border-top: 1px solid rgba(0, 0, 0, .07); justify-content: flex-end; }
+.mcar-compte { margin-right: auto; }
+
+.mcar-espace + .mcar-espace { margin-top: 14px; }
+.mcar-espace-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 2px; border-bottom: 1px solid rgba(0, 0, 0, .07); margin-bottom: 4px;
+}
+.mcar-n {
+  min-width: 20px; padding: 1px 6px; border-radius: 999px;
+  background: rgba(0, 0, 0, .06); font-size: 11.5px; text-align: center; color: var(--tx3);
+}
+.mcar-tout { margin-left: auto; font-size: 12px; }
+.mcar-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 2px; font-size: 13.5px; cursor: pointer;
+}
+.mcar-item:hover { background: rgba(0, 0, 0, .03); border-radius: 7px; }
+</style>

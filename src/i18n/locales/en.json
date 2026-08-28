@@ -5800,7 +5800,16 @@
     "close": "Close",
     "edtFromSchool": "From my school",
     "edtFromSchoolOk": "{n} slots retrieved from your school ({classe}).",
-    "edtSchoolEmpty": "Your school hasn't published your class timetable yet."
+    "edtSchoolEmpty": "Your school hasn't published your class timetable yet.",
+    "mcarImport": "From Carré",
+    "mcarLoading": "Reading…",
+    "mcarTitle": "My modules from Carré",
+    "mcarHint": "One folder per course. Tick the ones that are modules of your programme — projects and working folders aren't.",
+    "mcarEmpty": "No folder found in Carré.",
+    "mcarAll": "Select all",
+    "mcarNone": "Clear all",
+    "mcarSelected": "{n} selected",
+    "mcarApply": "Use these modules"
   },
   "cx": {
     "appTitle": "Complex workspace",
