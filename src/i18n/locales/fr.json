@@ -4287,7 +4287,7 @@
     "title": "Import de données",
     "subtitle": "Importez des données depuis un fichier Excel (.xlsx)",
     "starterTitle": "Nouvelle école ? Démarrez avec un seul fichier.",
-    "starterDesc": "Téléchargez le classeur complet (configuration, classes, personnel, élèves), remplissez-le sur le terrain, puis importez chaque onglet.",
+    "starterDesc": "Téléchargez le classeur complet (configuration, classes, personnel, élèves), remplissez-le sur le terrain, puis réimportez-le ici : MAPO lit tous les onglets en une fois, dans le bon ordre.",
     "starterBtn": "Classeur de démarrage",
     "expressTitle": "Setup express — photo du registre",
     "expressDesc": "Photographiez la liste ou le registre d'une classe : MIAPO lit les noms, vous corrigez, puis vous créez les élèves en un clic.",
@@ -4341,7 +4341,8 @@
     "constatAucuneNouvelle": "Aucune nouvelle matière : toutes celles du fichier existaient déjà.",
     "constatPasDeReferentiel": "Aucun programme officiel n'est sourcé pour ce pays : aucune comparaison n'a été faite. Ce n'est pas un problème — c'est votre liste qui fait foi.",
     "constatHorsRef": "{n} intitulé(s) ne figurent pas au programme officiel du pays. Rien n'est bloqué, à vous de juger :",
-    "constatConforme": "Tous les intitulés correspondent au programme officiel du pays."
+    "constatConforme": "Tous les intitulés correspondent au programme officiel du pays.",
+    "starterImportBtn": "Importer le classeur"
   },
   "insc": {
     "title": "Inscriptions",

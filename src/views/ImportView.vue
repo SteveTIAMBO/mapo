@@ -16,10 +16,20 @@
           <span>{{ t('imp.starterDesc') }}</span>
         </div>
       </div>
-      <button class="btn btn-primary btn-sm starter-btn" @click="downloadStarterWorkbook" type="button">
-        <Download :size="15" />
-        {{ t('imp.starterBtn') }}
-      </button>
+      <div class="starter-actions">
+        <button class="btn btn-outline btn-sm starter-btn" @click="downloadStarterWorkbook" type="button">
+          <Download :size="15" />
+          {{ t('imp.starterBtn') }}
+        </button>
+        <!-- Le geste que la bannière promettait : UN fichier, tous les onglets.
+             L'ordre d'écriture est décidé par le code (cf. ORDRE_CLASSEUR), pas
+             par l'école — c'est lui qui évite le directeur en double. -->
+        <label class="btn btn-primary btn-sm starter-btn" :class="{ disabled: importing }">
+          <Upload :size="15" />
+          <span>{{ importing ? t('imp.importing') : t('imp.starterImportBtn') }}</span>
+          <input type="file" accept=".xlsx,.xls" style="display:none" :disabled="importing" @change="onClasseurSelect" />
+        </label>
+      </div>
     </div>
 
     <!-- Setup express : photo d'un registre → élèves (MIAPO vision) -->
@@ -625,83 +635,94 @@ function onDrop(e) {
   if (file) parseFile(file)
 }
 
+const normFeuille = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+
+/** Nom de l'onglet correspondant à ce module, ou `null` s'il n'y en a pas. */
+function feuilleDuModule(workbook, mod) {
+  const vises = [normFeuille(mod.label), normFeuille(mod.id)]
+  return workbook.SheetNames.find((n) => vises.includes(normFeuille(n))) || null
+}
+
+/**
+ * Lit UN onglet et rend ses lignes validées pour ce module.
+ *
+ * Extrait de `parseFile` le 27/08/2026 pour servir aussi à l'import du classeur
+ * entier : la bannière promettait « un seul fichier » alors que le bouton ne
+ * faisait que TÉLÉCHARGER le modèle, l'import restant onglet par onglet.
+ *
+ * `exigerFeuille` : en import d'un seul module on accepte le premier onglet
+ * venu (l'école exporte souvent une feuille isolée) ; en import du classeur
+ * complet, non — prendre le premier onglet pour « Classes » importerait le mode
+ * d'emploi comme s'il s'agissait de classes.
+ */
+function lireFeuille(workbook, mod, { exigerFeuille = false } = {}) {
+  const nom = feuilleDuModule(workbook, mod)
+  if (!nom && exigerFeuille) return null
+  const sheet = workbook.Sheets[nom || workbook.SheetNames[0]]
+  const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+  if (!raw.length) return []
+
+  const rawHeaders = Object.keys(raw[0])
+  const mapping = {}
+
+  for (const header of rawHeaders) {
+    // Normalize: lowercase, strip *, _, accents-safe, trim extra spaces
+    const clean = header.toLowerCase().replace(/[*_]/g, '').trim().replace(/\s+/g, ' ')
+    if (mod.headerMap[clean]) {
+      mapping[header] = mod.headerMap[clean]
+    } else {
+      // Fuzzy: check if column label matches (also cleaned)
+      const col = mod.columns.find(c => {
+        const labelClean = c.label.toLowerCase().replace(/[*_]/g, '').trim()
+        return labelClean === clean || c.key.toLowerCase() === clean
+      })
+      if (col) mapping[header] = col.key
+    }
+  }
+
+  // Parse rows — skip instruction rows (OBLIGATOIRE/optionnel)
+  const rows = []
+  for (const rawRow of raw) {
+    // Detect instruction row: first cell value is "OBLIGATOIRE" or "optionnel"
+    const firstVal = String(Object.values(rawRow)[0] || '').toLowerCase().trim()
+    if (firstVal === 'obligatoire' || firstVal === 'optionnel') continue
+
+    const row = {}
+    let hasAnyValue = false
+    for (const [rawKey, fieldKey] of Object.entries(mapping)) {
+      let val = rawRow[rawKey]
+      if (val instanceof Date) {
+        val = `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`
+      }
+      const str = String(val ?? '').trim()
+      row[fieldKey] = str
+      if (str) hasAnyValue = true
+    }
+    // Skip completely empty rows
+    if (hasAnyValue) rows.push(row)
+  }
+
+  return rows.map((row) => validateRow(row, mod))
+}
+
+/** Ouvre le fichier et rend le classeur XLSX. */
+async function ouvrirClasseur(file) {
+  await loadXLSX()
+  const data = await file.arrayBuffer()
+  return XLSX.read(new Uint8Array(data), { type: 'array', cellDates: true })
+}
+
 function parseFile(file) {
   parseError.value = ''
   importResult.value = null
   fileName.value = file.name
-
-  const reader = new FileReader()
-  reader.onload = async (e) => {
-    try {
-      await loadXLSX()
-      const data = new Uint8Array(e.target.result)
-      const workbook = XLSX.read(data, { type: 'array', cellDates: true })
-      // Classeur multi-onglets : on prend l'onglet qui correspond au module
-      // actif (par son nom), sinon le premier. Permet d'importer un module
-      // précis depuis le « classeur de démarrage » complet.
-      const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
-      const mod0 = currentModule.value
-      const wanted = [norm(mod0.label), norm(mod0.id)]
-      const matchName = workbook.SheetNames.find((n) => wanted.includes(norm(n)))
-      const sheetName = matchName || workbook.SheetNames[0]
-      const sheet = workbook.Sheets[sheetName]
-      const raw = XLSX.utils.sheet_to_json(sheet, { defval: '' })
-
-      if (!raw.length) {
-        parseError.value = t('imp.errEmpty')
-        return
-      }
-
-      // Map headers to fields
-      const mod = currentModule.value
-      const rawHeaders = Object.keys(raw[0])
-      const mapping = {}
-
-      for (const header of rawHeaders) {
-        // Normalize: lowercase, strip *, _, accents-safe, trim extra spaces
-        const clean = header.toLowerCase().replace(/[*_]/g, '').trim().replace(/\s+/g, ' ')
-        if (mod.headerMap[clean]) {
-          mapping[header] = mod.headerMap[clean]
-        } else {
-          // Fuzzy: check if column label matches (also cleaned)
-          const col = mod.columns.find(c => {
-            const labelClean = c.label.toLowerCase().replace(/[*_]/g, '').trim()
-            return labelClean === clean || c.key.toLowerCase() === clean
-          })
-          if (col) mapping[header] = col.key
-        }
-      }
-
-      // Parse rows — skip instruction rows (OBLIGATOIRE/optionnel)
-      const rows = []
-      for (const rawRow of raw) {
-        // Detect instruction row: first cell value is "OBLIGATOIRE" or "optionnel"
-        const firstVal = String(Object.values(rawRow)[0] || '').toLowerCase().trim()
-        if (firstVal === 'obligatoire' || firstVal === 'optionnel') continue
-
-        const row = {}
-        let hasAnyValue = false
-        for (const [rawKey, fieldKey] of Object.entries(mapping)) {
-          let val = rawRow[rawKey]
-          if (val instanceof Date) {
-            val = `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`
-          }
-          const str = String(val ?? '').trim()
-          row[fieldKey] = str
-          if (str) hasAnyValue = true
-        }
-        // Skip completely empty rows
-        if (hasAnyValue) rows.push(row)
-      }
-
-      // Validate
-      const validated = rows.map(row => validateRow(row, mod))
-      parsedData.value = validated
-    } catch (err) {
-      parseError.value = t('imp.errRead', { msg: err.message })
-    }
-  }
-  reader.readAsArrayBuffer(file)
+  ouvrirClasseur(file)
+    .then((workbook) => {
+      const lignes = lireFeuille(workbook, currentModule.value)
+      if (!lignes.length) { parseError.value = t('imp.errEmpty'); return }
+      parsedData.value = lignes
+    })
+    .catch((err) => { parseError.value = t('imp.errRead', { msg: err.message }) })
 }
 
 /** Compare deux intitulés sans se laisser piéger par la casse ni les accents. */
@@ -1018,7 +1039,8 @@ async function downloadStarterWorkbook() {
     ['CLASSEUR DE DÉMARRAGE MAPO'],
     [''],
     ["Ce fichier sert à initialiser une école : remplissez les onglets puis"],
-    ['importez-le dans MAPO (menu Import, onglet par onglet).'],
+    ['importez-le dans MAPO : menu Import, bouton « Importer le classeur ».'],
+    ["MAPO lit tous les onglets en une fois et les enregistre dans le bon ordre."],
     [''],
     ['Onglets :'],
     ["   • Configuration — identité de l'école + directeur (1 seule ligne)"],
@@ -1052,180 +1074,269 @@ async function downloadStarterWorkbook() {
 }
 
 // ── Execute import ─────────────────────────────────────
+/**
+ * Importe RÉELLEMENT les lignes valides d'un module. Rend { added, updated,
+ * skipped }.
+ *
+ * Extrait de `executeImport` pour que l'import du classeur entier passe par le
+ * MÊME code que l'import d'un onglet : deux chemins d'écriture pour une même
+ * opération finissent toujours par diverger, et c'est celui qu'on teste le
+ * moins qui casse.
+ */
+async function importerModule(modId, validRows) {
+  let added = 0, updated = 0, skipped = 0
+
+  if (modId === 'ecole') {
+    const row = validRows[0]
+    if (row) {
+      const patch = {}
+      const set = (k, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') patch[k] = String(v).trim() }
+      set('schoolName', row.schoolName)
+      set('schoolType', row.schoolType)
+      set('city', row.city)
+      set('country', row.country)
+      set('address', row.address)
+      set('phone', row.phone)
+      set('email', row.email)
+      set('academicYear', row.academicYear)
+      set('currency', row.currency)
+      set('primaryColor', row.primaryColor)
+      if (row.directorLastName || row.directorFirstName) {
+        set('directorLastName', row.directorLastName)
+        set('directorFirstName', row.directorFirstName)
+        patch.directorName = [row.directorLastName, row.directorFirstName].filter(Boolean).join(' ')
+        patch.directorTitle = 'Directeur'
+      }
+      set('directorPhone', row.directorPhone)
+      set('directorEmail', row.directorEmail)
+      await schoolStore.saveSettings(patch)
+      // Créer le compte directeur dans le personnel (s'il n'existe pas déjà)
+      if (row.directorLastName || row.directorFirstName) {
+        try {
+          await personnelStore.loadStaff()
+          const exists = personnelStore.staff.find(m => (m.role || '').toLowerCase().includes('directeur'))
+          if (!exists) {
+            await personnelStore.addStaff({
+              lastName: row.directorLastName || '', firstName: row.directorFirstName || '',
+              category: 'administration', role: 'Directeur',
+              phone: row.directorPhone || '', email: row.directorEmail || '',
+              subjects: [], status: 'Actif',
+            })
+          }
+        } catch (e) { /* non bloquant */ }
+      }
+      added = 1
+    }
+    activityStore.log('import', `Configuration de l'école importée`)
+  }
+
+  if (modId === 'eleves') {
+    await elevesStore.loadEleves()
+    for (const row of validRows) {
+      // Clean row (remove internal fields)
+      const data = { ...row }
+      delete data._errors
+      delete data.niveau   // intermédiaires : la classe finale est dans className
+      delete data.section
+      data.status = data.status || 'inscrit'
+      if (!data.matricule) data.matricule = elevesStore.generateNextMatricule()
+
+      if (importMode.value === 'update') {
+        const existing = elevesStore.eleves.find(e =>
+          e.lastName?.toLowerCase() === data.lastName?.toLowerCase() &&
+          e.firstName?.toLowerCase() === data.firstName?.toLowerCase() &&
+          e.className === data.className
+        )
+        if (existing) {
+          await elevesStore.updateEleve(existing.id, data)
+          updated++
+          continue
+        }
+      }
+      await elevesStore.addEleve(data)
+      added++
+    }
+    activityStore.log('import', `Import élèves : ${added} ajouté(s), ${updated} mis à jour`)
+  }
+
+  else if (modId === 'personnel') {
+    await personnelStore.loadStaff()
+    // Les intitulés du fichier sont enregistrés AVANT la boucle : les fiches
+    // du personnel doivent pointer sur des matières qui existent déjà.
+    constatMatieres.value = await enregistrerMatieresEcole(
+      validRows.flatMap((r) => r._subjectsList || []),
+    )
+    for (const row of validRows) {
+      const data = { ...row }
+      delete data._errors
+      data.subjects = data._subjectsList || []
+      delete data._subjectsList
+      data.status = 'Actif'
+
+      if (importMode.value === 'update') {
+        const existing = personnelStore.staff.find(m =>
+          m.lastName?.toLowerCase() === data.lastName?.toLowerCase() &&
+          m.firstName?.toLowerCase() === data.firstName?.toLowerCase()
+        )
+        if (existing) {
+          await personnelStore.updateStaff(existing.id, data)
+          updated++
+          continue
+        }
+      }
+      await personnelStore.addStaff(data)
+      added++
+    }
+    activityStore.log('import', `Import personnel : ${added} ajouté(s), ${updated} mis à jour`)
+  }
+
+  else if (modId === 'matieres') {
+    await subjectsStore.loadSubjects()
+    for (const row of validRows) {
+      const data = {
+        name: row.name,
+        cycles: (row._cycles && row._cycles.length) ? row._cycles : ['college', 'lycee'],
+        coefficients: row._coefficients || {},
+        color: SUBJECT_DEFAULT_COLORS[row.name] || '#CBD5E1',
+      }
+      const existing = subjectsStore.getSubjectByName(data.name)
+      if (existing) {
+        if (importMode.value === 'update') {
+          subjectsStore.updateSubject(existing.id, data)
+          updated++
+        } else {
+          skipped++
+        }
+      } else {
+        subjectsStore.addSubject(data)
+        added++
+      }
+    }
+    activityStore.log('import', `Import matières : ${added} ajoutée(s), ${updated} mise(s) à jour`)
+  }
+
+  else if (modId === 'classes') {
+    await classesStore.loadClasses()
+    for (const row of validRows) {
+      const data = { ...row }
+      delete data._errors
+      data.capacity = parseInt(data.capacity, 10) || 60
+
+      if (importMode.value === 'update') {
+        const existing = classesStore.classes.find(c =>
+          c.name?.toLowerCase() === data.name?.toLowerCase()
+        )
+        if (existing) {
+          await classesStore.updateClass(existing.id, data)
+          updated++
+          continue
+        }
+      }
+      await classesStore.addClass(data)
+      added++
+    }
+    activityStore.log('import', `Import classes : ${added} ajoutée(s), ${updated} mise(s) à jour`)
+  }
+
+  return { added, updated, skipped }
+}
+
+/**
+ * ORDRE d'import du classeur complet — il n'est PAS celui des onglets.
+ *
+ * ⚠️ Deux pièges mesurés sur la première école réelle :
+ *   • les élèves sont recalés sur des classes existantes → Classes d'abord ;
+ *   • l'import de Configuration crée un compte directeur s'il n'en existe pas
+ *     encore. En passant Personnel AVANT, le directeur du fichier est reconnu
+ *     et n'est pas créé une seconde fois.
+ * Laisser l'école deviner cet ordre, c'est lui garantir un directeur en double.
+ */
+const ORDRE_CLASSEUR = ['classes', 'personnel', 'ecole', 'eleves']
+
+/**
+ * Importe le CLASSEUR ENTIER, onglet par onglet mais en un seul geste.
+ *
+ * La bannière promettait « un seul fichier » depuis le début, alors que le
+ * bouton ne faisait que TÉLÉCHARGER le modèle. Steve : « je croyais que c'était
+ * le fichier de démarrage à importer via le bouton qui lisait directement tous
+ * les onglets ». Il avait raison de le croire : c'est ce qui était écrit.
+ */
+async function importerClasseur(file) {
+  importing.value = true
+  importResult.value = null
+  constatMatieres.value = null
+  parseError.value = ''
+  fileName.value = file.name
+  const lignes = []
+  try {
+    const workbook = await ouvrirClasseur(file)
+    let touche = 0
+    for (const id of ORDRE_CLASSEUR) {
+      const mod = modules.find((m) => m.id === id)
+      // `exigerFeuille` : sans onglet portant ce nom, on NE PREND PAS le premier
+      // venu — importer le mode d'emploi comme des classes serait pire que rien.
+      const rows = lireFeuille(workbook, mod, { exigerFeuille: true })
+      if (rows === null) { lignes.push(`${mod.label} : onglet absent`); continue }
+      const valides = rows.filter((r) => !r._errors?.length)
+      const refuses = rows.length - valides.length
+      if (!valides.length) {
+        lignes.push(`${mod.label} : ${rows.length ? `${rows.length} ligne(s), aucune valide` : 'vide'}`)
+        continue
+      }
+      // Le module actif suit : le tableau d'aperçu et le constat « matières »
+      // doivent parler du même onglet que ce qu'on est en train d'écrire.
+      activeModule.value = id
+      parsedData.value = rows
+      const bilan = await importerModule(id, valides)
+      touche++
+      lignes.push(`${mod.label} : ${resume(bilan)}${refuses ? ` — ${refuses} ligne(s) en erreur, non importée(s)` : ''}`)
+    }
+    importResult.value = {
+      type: touche ? 'success' : 'error',
+      title: touche ? t('imp.resultDoneTitle') : t('imp.resultErrTitle'),
+      detail: lignes.join(' · '),
+    }
+    clearImport()
+  } catch (err) {
+    // On dit CE QUI A DÉJÀ ÉTÉ ÉCRIT avant l'échec : un simple message d'erreur
+    // laisserait croire que rien n'a été importé, et l'école relancerait tout.
+    importResult.value = {
+      type: 'error',
+      title: t('imp.resultErrTitle'),
+      detail: [err.message || t('imp.errUnknown'), ...lignes].join(' · '),
+    }
+  } finally {
+    importing.value = false
+  }
+}
+
+function onClasseurSelect(e) {
+  const file = e.target.files?.[0]
+  if (file) importerClasseur(file)
+  e.target.value = ''
+}
+
+/** Libellé « N ajouté(s), M mis à jour, K ignoré(s) ». */
+function resume({ added, updated, skipped }) {
+  return t('imp.added', { n: added })
+    + (updated > 0 ? t('imp.updatedSuffix', { n: updated }) : '')
+    + (skipped > 0 ? t('imp.skippedSuffix', { n: skipped }) : '')
+}
+
 async function executeImport() {
   importing.value = true
   importResult.value = null
   constatMatieres.value = null
-
   try {
-    const validRows = parsedData.value.filter(r => !r._errors?.length)
-    let added = 0, updated = 0, skipped = 0
-
-    if (activeModule.value === 'ecole') {
-      const row = validRows[0]
-      if (row) {
-        const patch = {}
-        const set = (k, v) => { if (v !== undefined && v !== null && String(v).trim() !== '') patch[k] = String(v).trim() }
-        set('schoolName', row.schoolName)
-        set('schoolType', row.schoolType)
-        set('city', row.city)
-        set('country', row.country)
-        set('address', row.address)
-        set('phone', row.phone)
-        set('email', row.email)
-        set('academicYear', row.academicYear)
-        set('currency', row.currency)
-        set('primaryColor', row.primaryColor)
-        if (row.directorLastName || row.directorFirstName) {
-          set('directorLastName', row.directorLastName)
-          set('directorFirstName', row.directorFirstName)
-          patch.directorName = [row.directorLastName, row.directorFirstName].filter(Boolean).join(' ')
-          patch.directorTitle = 'Directeur'
-        }
-        set('directorPhone', row.directorPhone)
-        set('directorEmail', row.directorEmail)
-        await schoolStore.saveSettings(patch)
-        // Créer le compte directeur dans le personnel (s'il n'existe pas déjà)
-        if (row.directorLastName || row.directorFirstName) {
-          try {
-            await personnelStore.loadStaff()
-            const exists = personnelStore.staff.find(m => (m.role || '').toLowerCase().includes('directeur'))
-            if (!exists) {
-              await personnelStore.addStaff({
-                lastName: row.directorLastName || '', firstName: row.directorFirstName || '',
-                category: 'administration', role: 'Directeur',
-                phone: row.directorPhone || '', email: row.directorEmail || '',
-                subjects: [], status: 'Actif',
-              })
-            }
-          } catch (e) { /* non bloquant */ }
-        }
-        added = 1
-      }
-      activityStore.log('import', `Configuration de l'école importée`)
-    }
-
-    if (activeModule.value === 'eleves') {
-      await elevesStore.loadEleves()
-      for (const row of validRows) {
-        // Clean row (remove internal fields)
-        const data = { ...row }
-        delete data._errors
-        delete data.niveau   // intermédiaires : la classe finale est dans className
-        delete data.section
-        data.status = data.status || 'inscrit'
-        if (!data.matricule) data.matricule = elevesStore.generateNextMatricule()
-
-        if (importMode.value === 'update') {
-          const existing = elevesStore.eleves.find(e =>
-            e.lastName?.toLowerCase() === data.lastName?.toLowerCase() &&
-            e.firstName?.toLowerCase() === data.firstName?.toLowerCase() &&
-            e.className === data.className
-          )
-          if (existing) {
-            await elevesStore.updateEleve(existing.id, data)
-            updated++
-            continue
-          }
-        }
-        await elevesStore.addEleve(data)
-        added++
-      }
-      activityStore.log('import', `Import élèves : ${added} ajouté(s), ${updated} mis à jour`)
-    }
-
-    else if (activeModule.value === 'personnel') {
-      await personnelStore.loadStaff()
-      // Les intitulés du fichier sont enregistrés AVANT la boucle : les fiches
-      // du personnel doivent pointer sur des matières qui existent déjà.
-      constatMatieres.value = await enregistrerMatieresEcole(
-        validRows.flatMap((r) => r._subjectsList || []),
-      )
-      for (const row of validRows) {
-        const data = { ...row }
-        delete data._errors
-        data.subjects = data._subjectsList || []
-        delete data._subjectsList
-        data.status = 'Actif'
-
-        if (importMode.value === 'update') {
-          const existing = personnelStore.staff.find(m =>
-            m.lastName?.toLowerCase() === data.lastName?.toLowerCase() &&
-            m.firstName?.toLowerCase() === data.firstName?.toLowerCase()
-          )
-          if (existing) {
-            await personnelStore.updateStaff(existing.id, data)
-            updated++
-            continue
-          }
-        }
-        await personnelStore.addStaff(data)
-        added++
-      }
-      activityStore.log('import', `Import personnel : ${added} ajouté(s), ${updated} mis à jour`)
-    }
-
-    else if (activeModule.value === 'matieres') {
-      await subjectsStore.loadSubjects()
-      for (const row of validRows) {
-        const data = {
-          name: row.name,
-          cycles: (row._cycles && row._cycles.length) ? row._cycles : ['college', 'lycee'],
-          coefficients: row._coefficients || {},
-          color: SUBJECT_DEFAULT_COLORS[row.name] || '#CBD5E1',
-        }
-        const existing = subjectsStore.getSubjectByName(data.name)
-        if (existing) {
-          if (importMode.value === 'update') {
-            subjectsStore.updateSubject(existing.id, data)
-            updated++
-          } else {
-            skipped++
-          }
-        } else {
-          subjectsStore.addSubject(data)
-          added++
-        }
-      }
-      activityStore.log('import', `Import matières : ${added} ajoutée(s), ${updated} mise(s) à jour`)
-    }
-
-    else if (activeModule.value === 'classes') {
-      await classesStore.loadClasses()
-      for (const row of validRows) {
-        const data = { ...row }
-        delete data._errors
-        data.capacity = parseInt(data.capacity, 10) || 60
-
-        if (importMode.value === 'update') {
-          const existing = classesStore.classes.find(c =>
-            c.name?.toLowerCase() === data.name?.toLowerCase()
-          )
-          if (existing) {
-            await classesStore.updateClass(existing.id, data)
-            updated++
-            continue
-          }
-        }
-        await classesStore.addClass(data)
-        added++
-      }
-      activityStore.log('import', `Import classes : ${added} ajoutée(s), ${updated} mise(s) à jour`)
-    }
-
-    importResult.value = {
-      type: 'success',
-      title: t('imp.resultDoneTitle'),
-      detail: t('imp.added', { n: added })
-        + (updated > 0 ? t('imp.updatedSuffix', { n: updated }) : '')
-        + (skipped > 0 ? t('imp.skippedSuffix', { n: skipped }) : '')
-    }
+    const validRows = parsedData.value.filter((r) => !r._errors?.length)
+    const bilan = await importerModule(activeModule.value, validRows)
+    importResult.value = { type: 'success', title: t('imp.resultDoneTitle'), detail: resume(bilan) }
     clearImport()
   } catch (err) {
     importResult.value = {
       type: 'error',
       title: t('imp.resultErrTitle'),
-      detail: err.message || t('imp.errUnknown')
+      detail: err.message || t('imp.errUnknown'),
     }
   } finally {
     importing.value = false
@@ -1256,6 +1367,11 @@ async function executeImport() {
 .starter-banner-text strong { display: block; font-size: 14.5px; color: var(--tx); }
 .starter-banner-text span { display: block; font-size: 13px; color: var(--tx2); margin-top: 2px; max-width: 620px; }
 .starter-btn { white-space: nowrap; flex-shrink: 0; }
+.starter-actions { display: flex; gap: 8px; flex-wrap: wrap; flex-shrink: 0; }
+/* Le second bouton est un <label> (il porte un input file caché) : on lui rend
+   le comportement d'un bouton, y compris désactivé pendant un import. */
+.starter-actions label.btn { cursor: pointer; }
+.starter-actions label.btn.disabled { opacity: .6; pointer-events: none; }
 
 .tabs-bar {
   display: flex;

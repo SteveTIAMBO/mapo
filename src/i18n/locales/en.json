@@ -4287,7 +4287,7 @@
     "title": "Data import",
     "subtitle": "Import data from an Excel file (.xlsx)",
     "starterTitle": "New school? Start with a single file.",
-    "starterDesc": "Download the full workbook (configuration, classes, staff, students), fill it in the field, then import each tab.",
+    "starterDesc": "Download the full workbook (configuration, classes, staff, students), fill it in the field, then import it back here: MAPO reads every sheet at once, in the right order.",
     "starterBtn": "Starter workbook",
     "expressTitle": "Express setup — photo of the register",
     "expressDesc": "Photograph a class list or register: MIAPO reads the names, you fix them, then create the students in one click.",
@@ -4341,7 +4341,8 @@
     "constatAucuneNouvelle": "No new subject: every one in the file already existed.",
     "constatPasDeReferentiel": "No official curriculum is sourced for this country, so no comparison was made. That is not a problem — your list is what counts.",
     "constatHorsRef": "{n} label(s) are not in the country's official curriculum. Nothing is blocked, it is your call:",
-    "constatConforme": "Every label matches the country's official curriculum."
+    "constatConforme": "Every label matches the country's official curriculum.",
+    "starterImportBtn": "Import the workbook"
   },
   "insc": {
     "title": "Enrolment",
