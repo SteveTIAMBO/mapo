@@ -14,10 +14,29 @@ const AGE_PAR_NIVEAU = {
   cp: 6, ce1: 7, ce2: 8, cm1: 9, cm2: 10,
   '6e': 11, '5e': 12, '4e': 13, '3e': 14,
   '2nde': 15, '1re': 16, tle: 17,
+  // ⚠️ LE SUPÉRIEUR ET LA FORMATION MANQUAIENT — mesuré le 28/08.
+  //
+  // Sans ces lignes, `ageDepuisNiveau` retombait sur son défaut de 15 ans pour
+  // TOUT le supérieur : un doctorant, un étudiant en Master et un adulte en MBA
+  // étaient rangés dans la bande « ado », celle d'un élève de seconde. Ça ne se
+  // voyait nulle part à l'écran — ni erreur, ni message — mais ça pilote les
+  // recommandations du profil de compétences (Miapo6C) et de l'orientation.
+  //
+  // Les âges ci-dessous sont des ORDRES DE GRANDEUR, pas des vérités : ils
+  // servent uniquement à franchir le seuil « grand » (17+). Un âge saisi dans le
+  // profil les remplace toujours.
+  licence1: 19, licence2: 20, licence3: 21,
+  master1: 22, master2: 23, doctorat: 26,
+  // « Formation (hors catalogue) » : adulte en reconversion, MBA, certification.
+  formationhorscatalogue: 30,
 }
 
 function normNiveau(n = '') {
-  let s = String(n).toLowerCase().replace(/[éèêë]/g, 'e').replace(/\s+/g, '')
+  // ⚠️ Les parenthèses sont retirées : « Formation (hors catalogue) » donnait
+  // `formation(horscatalogue)` et ne correspondait à aucune clé. C'est le genre
+  // de détail qui fait retomber tout un persona sur la valeur par défaut, sans
+  // que rien ne le signale.
+  let s = String(n).toLowerCase().replace(/[éèêë]/g, 'e').replace(/[()]/g, '').replace(/\s+/g, '')
   if (/^t(erminale|erm|le)/.test(s)) return 'tle'
   if (/^2(nde|de)/.test(s)) return '2nde'
   if (/^1(re|ere)/.test(s)) return '1re'
