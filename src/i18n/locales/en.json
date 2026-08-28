@@ -5809,7 +5809,12 @@
     "mcarAll": "Select all",
     "mcarNone": "Clear all",
     "mcarSelected": "{n} selected",
-    "mcarApply": "Use these modules"
+    "mcarApply": "Use these modules",
+    "mcCarreNoFolder": "No folder selected",
+    "mcCarreChoose": "Choose my course folder",
+    "mcCarreChange": "Change",
+    "mcCarreFilter": "Filter folders…",
+    "mcCarreFolderHint": "All your Carré folders, shared and personal. Pick the one where you keep your course notes."
   },
   "cx": {
     "appTitle": "Complex workspace",

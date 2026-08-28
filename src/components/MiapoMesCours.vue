@@ -75,8 +75,20 @@
       </button>
       <div v-if="carreOuvert" class="mc-carre-corps">
         <template v-if="connecteurs.carreConnected">
+          <!-- ⚠️ Remplace un champ de TEXTE LIBRE où il fallait deviner quoi
+               taper sans savoir ce qui existe dans son Carré. On montre ses
+               dossiers, il en choisit un (Steve, 28/08). -->
           <label class="int-label">{{ t('mia.mcCarreScope') }}</label>
-          <input v-model="carreScope" class="input mc-scope" :placeholder="t('mia.mcCarreScopePh')" @change="saveScope" />
+          <div class="mc-dossier">
+            <span v-if="connecteurs.dossierCours" class="mc-dossier-nom">
+              <span v-if="connecteurs.dossierCours.espace" class="mc-dossier-espace">{{ connecteurs.dossierCours.espace }} ›</span>
+              {{ connecteurs.dossierCours.nom }}
+            </span>
+            <span v-else class="muted">{{ t('mia.mcCarreNoFolder') }}</span>
+            <button class="btn btn-outline btn-sm" :disabled="chargementDossiers" @click="ouvrirDossiers">
+              {{ chargementDossiers ? t('mia.mcarLoading') : (connecteurs.dossierCours ? t('mia.mcCarreChange') : t('mia.mcCarreChoose')) }}
+            </button>
+          </div>
           <p class="muted small mc-scope-note">{{ t('mia.mcCarreScopeNote') }}</p>
           <div class="mc-carre-actions">
             <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><ExternalLink :size="15" /> <span>{{ t('mia.carreOpen') }}</span></a>
@@ -86,6 +98,32 @@
         <div v-else class="mc-carre-actions">
           <button class="btn btn-primary btn-sm" @click="connecteurs.connectCarre()"><Link2 :size="15" /> <span>{{ t('mia.carreConnect') }}</span></button>
           <a :href="connecteurs.carreAppUrl" target="_blank" rel="noopener" class="btn btn-outline btn-sm"><ExternalLink :size="15" /> <span>{{ t('mia.carreOpen') }}</span></a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ Modale : où sont tes cours dans Carré ? ══════
+         Liste PLATE de tous les dossiers, partagés et personnels — l'espace
+         seul ne suffit pas : Steve a « MBA » ET « EDUFREM » en partagé. -->
+    <div v-if="dossiersOuvert" class="mc-modal-fond" @click.self="dossiersOuvert = false">
+      <div class="mc-modal mc-modal-etroit" role="dialog" aria-modal="true">
+        <div class="mc-modal-head">
+          <h3>{{ t('mia.mcCarreChoose') }}</h3>
+          <button class="btn btn-ghost btn-sm" :aria-label="t('mia.close')" @click="dossiersOuvert = false"><X :size="18" /></button>
+        </div>
+        <div class="mc-modal-corps">
+          <p class="muted small">{{ t('mia.mcCarreFolderHint') }}</p>
+          <input v-model="filtreDossier" class="input" :placeholder="t('mia.mcCarreFilter')" />
+          <p v-if="!dossiersFiltres.length" class="muted mc-vide">{{ t('mia.mcarEmpty') }}</p>
+          <button
+            v-for="d in dossiersFiltres" :key="d.espace + '|' + d.nom"
+            class="mc-dossier-item" :class="{ actif: estChoisi(d) }"
+            @click="validerDossier(d)"
+          >
+            <FolderOpen :size="15" />
+            <span><small v-if="d.espace">{{ d.espace }} › </small>{{ d.nom }}</span>
+            <Check v-if="estChoisi(d)" :size="15" class="mc-dossier-ok" />
+          </button>
         </div>
       </div>
     </div>
@@ -149,6 +187,7 @@ import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useTuteurStore } from '../stores/tuteur'
 import { FolderOpen, BookPlus, Plus, Pencil, Trash2, Check, X, ShieldCheck, ExternalLink, Link2, ChevronDown } from 'lucide-vue-next'
+// `Check` et `FolderOpen` servent aussi au choix du dossier Carré.
 
 const props = defineProps({ enfant: { type: Object, default: null } })
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -181,9 +220,30 @@ const matieresConnues = computed(() => {
 
 // ── Carré : un réglage, replié par défaut ────────────────────────────────
 const carreOuvert = ref(false)
-const carreScope = ref('')
-try { carreScope.value = localStorage.getItem('mapo_carre_scope') || '' } catch { /* silent */ }
-function saveScope() { try { localStorage.setItem('mapo_carre_scope', (carreScope.value || '').trim()) } catch { /* silent */ } }
+
+// Choix du dossier de cours (remplace l'ancien champ de texte libre).
+const dossiersOuvert = ref(false)
+const chargementDossiers = ref(false)
+const dossiers = ref([])
+const filtreDossier = ref('')
+async function ouvrirDossiers() {
+  chargementDossiers.value = true
+  try {
+    dossiers.value = await connecteurs.carreDossiersPlats()
+    filtreDossier.value = ''
+    dossiersOuvert.value = true
+  } finally { chargementDossiers.value = false }
+}
+const dossiersFiltres = computed(() => {
+  const f = filtreDossier.value.trim().toLowerCase()
+  if (!f) return dossiers.value
+  return dossiers.value.filter((d) => `${d.espace} ${d.nom}`.toLowerCase().includes(f))
+})
+const estChoisi = (d) => connecteurs.dossierCours?.nom === d.nom && (connecteurs.dossierCours?.espace || '') === (d.espace || '')
+function validerDossier(d) {
+  connecteurs.choisirDossier(d)
+  dossiersOuvert.value = false
+}
 
 // ── La modale (ajout ET modification) ────────────────────────────────────
 const modaleOuverte = ref(false)
@@ -363,6 +423,20 @@ function fmt(iso) {
 .mc-carre-chev.ouvert { transform: rotate(180deg); }
 .mc-carre-corps { padding-bottom: 14px; }
 .mc-carre-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.mc-dossier { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 6px; }
+.mc-dossier-nom { font-size: 13.5px; color: var(--tx); }
+.mc-dossier-espace { color: var(--tx3); }
+.mc-modal-etroit { max-width: 480px; }
+.mc-dossier-item {
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  padding: 9px 10px; margin-top: 4px;
+  border: 1px solid rgba(0, 0, 0, .08); border-radius: 10px;
+  background: #fff; text-align: left; cursor: pointer; font-size: 13.5px; color: inherit;
+}
+.mc-dossier-item:hover { background: rgba(0, 0, 0, .035); }
+.mc-dossier-item.actif { border-color: var(--pr); }
+.mc-dossier-item small { color: var(--tx3); }
+.mc-dossier-ok { margin-left: auto; color: var(--pr); }
 .mc-scope { margin-top: 4px; }
 .mc-scope-note { margin: 4px 0 0; }
 

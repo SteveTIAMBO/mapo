@@ -5809,7 +5809,12 @@
     "mcarAll": "Tout cocher",
     "mcarNone": "Tout décocher",
     "mcarSelected": "{n} sélectionné(s)",
-    "mcarApply": "Utiliser ces modules"
+    "mcarApply": "Utiliser ces modules",
+    "mcCarreNoFolder": "Aucun dossier choisi",
+    "mcCarreChoose": "Choisir le dossier de mes cours",
+    "mcCarreChange": "Changer",
+    "mcCarreFilter": "Filtrer les dossiers…",
+    "mcCarreFolderHint": "Tous tes dossiers Carré, partagés et personnels. Choisis celui où tu ranges tes cours."
   },
   "cx": {
     "appTitle": "Espace complexe",

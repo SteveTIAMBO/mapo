@@ -112,6 +112,41 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
    * Les doublons sont fusionnés : « Leadership » apparaît deux fois dans son
    * espace, « Entrepreneuriat - Stéphan » aussi.
    */
+  /**
+   * Dossier de cours choisi par l'apprenant : { id, nom, espace }.
+   *
+   * ⚠️ REMPLACE un champ de TEXTE LIBRE (« périmètre : dossier / mot-clé ») où
+   * il fallait deviner quoi taper, sans savoir ce qui existait dans son Carré.
+   *
+   * ⚠️ LIMITE CONNUE, à lever côté Carré. `id` est enregistré dès aujourd'hui,
+   * mais l'API Carré ne sait pas encore filtrer les notes par dossier
+   * (`/api/v1/notes` n'accepte que `q` et `limit`). En attendant, c'est le NOM
+   * du dossier qui sert de mot-clé — donc un ciblage imparfait : une recherche
+   * « Gouvernance » ramène aussi des comptes rendus de réunion qui contiennent
+   * le mot. Choisir dans une liste reste très supérieur à taper à l'aveugle, et
+   * le jour où l'API accepte `folderId`, l'identifiant est déjà là.
+   * Cf. DEMANDE-CARRE-notes-par-dossier.md.
+   */
+  const CLE_DOSSIER = 'mapo_carre_dossier'
+  const dossierCours = ref(null)
+  try { dossierCours.value = JSON.parse(localStorage.getItem(CLE_DOSSIER) || 'null') } catch { dossierCours.value = null }
+
+  function choisirDossier(d) {
+    dossierCours.value = d && d.nom ? { id: d.id || '', nom: d.nom, espace: d.espace || '' } : null
+    try {
+      if (dossierCours.value) localStorage.setItem(CLE_DOSSIER, JSON.stringify(dossierCours.value))
+      else localStorage.removeItem(CLE_DOSSIER)
+    } catch { /* quota : le choix reste en mémoire pour la session */ }
+  }
+
+  /** Liste PLATE de tous les dossiers (partagés et personnels), pour le choix. */
+  async function carreDossiersPlats() {
+    const groupes = await carreFolders()
+    const out = []
+    for (const g of groupes) for (const nom of g.dossiers) out.push({ espace: g.espace, nom })
+    return out
+  }
+
   async function carreFolders() {
     if (!linked.value || !fbAuth.currentUser) return []
     try {
@@ -142,6 +177,10 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
     if (!linked.value || !fbAuth.currentUser) return ''
     // Périmètre de synchro choisi par l'apprenant (dossier/mot-clé) : évite
     // d'aspirer des notes Carré sans rapport avec les cours. Cf. « Cours ».
+    // Périmètre : le dossier CHOISI d'abord (son nom sert de mot-clé tant que
+    // l'API Carré ne filtre pas par `folderId`), sinon l'ancien champ libre —
+    // gardé pour ne pas casser les comptes qui l'avaient renseigné.
+    if (!q) q = dossierCours.value?.nom || ''
     if (!q) { try { q = localStorage.getItem('mapo_carre_scope') || '' } catch { q = '' } }
     try {
       const h = await authHeaders()
@@ -170,5 +209,6 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
   return {
     linked, busy, carreAppUrl, carreConnected, carrePreview,
     refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText, carreFolders,
+    dossierCours, choisirDossier, carreDossiersPlats,
   }
 })

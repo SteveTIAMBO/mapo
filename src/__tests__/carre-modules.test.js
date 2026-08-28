@@ -131,6 +131,41 @@ describe('le format de sortie reste celui des modules', () => {
   })
 })
 
+describe('⭐ le dossier de cours se CHOISIT dans une liste (Steve, 28/08)', () => {
+  const COURS = readFileSync(resolve(RACINE, 'src/components/MiapoMesCours.vue'), 'utf8')
+
+  it('⚠️ le champ de TEXTE LIBRE a disparu', () => {
+    // Il fallait deviner quoi taper sans savoir ce qui existait dans son Carré.
+    expect(sansCommentaires(COURS)).not.toContain('@change="saveScope"')
+  })
+
+  it('la liste est PLATE : espaces ET dossiers personnels', () => {
+    // « l'espace ça ne suffit pas : dans mon espace partagé j'ai MBA ET
+    //   EDUFREM » — il faut donc voir les dossiers, pas seulement les espaces.
+    expect(STORE).toContain('async function carreDossiersPlats()')
+    expect(sansCommentaires(COURS)).toContain('connecteurs.carreDossiersPlats()')
+  })
+
+  it('le choix est retenu, et relisible au prochain lancement', () => {
+    expect(STORE).toContain("const CLE_DOSSIER = 'mapo_carre_dossier'")
+    expect(STORE).toContain('localStorage.setItem(CLE_DOSSIER, JSON.stringify(dossierCours.value))')
+  })
+
+  it("⭐ l'identifiant du dossier est enregistré DÈS MAINTENANT", () => {
+    // L'API Carré ne sait pas encore filtrer par `folderId` : en attendant,
+    // c'est le NOM qui sert de mot-clé. Mais l'id est déjà là, donc le jour où
+    // l'API l'accepte, il n'y a rien à re-demander à l'utilisateur.
+    expect(STORE).toContain("{ id: d.id || '', nom: d.nom, espace: d.espace || '' }")
+  })
+
+  it('⚠️ le périmètre choisi PRIME sur l’ancien champ libre, qui reste lu', () => {
+    // Ne pas casser les comptes qui avaient renseigné l'ancien champ.
+    const i = STORE.indexOf('async function carreNotesText')
+    const bloc = STORE.slice(i, i + 700)
+    expect(bloc.indexOf('dossierCours.value?.nom')).toBeLessThan(bloc.indexOf('mapo_carre_scope'))
+  })
+})
+
 describe('le store sait lire les dossiers', () => {
   it('l’action `folders` du proxy est enfin utilisée', () => {
     // Elle existait dans mapo-carre.php depuis le début, et personne ne
