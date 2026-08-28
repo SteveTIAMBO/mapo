@@ -173,15 +173,51 @@ describe('règles Firestore', () => {
     expect(bloc).toContain('allow write: if isSuperAdmin()')
   })
 
-  it('⚠️ qui peut valider une inscription peut écrire sa redevance', () => {
+  it('⚠️ qui peut valider une inscription peut CRÉER sa redevance', () => {
     // Une secrétaire valide les inscriptions. Sans ce droit, la validation
     // réussirait et l'écriture de la somme due échouerait, sans erreur visible.
-    const i = regles.indexOf("userDoc().role == 'secretaire'")
-    expect(regles.slice(i, i + 320)).toContain('redevances')
+    // Le droit vit dans le bloc dédié, pas dans `canWrite` : celle-ci autorise
+    // aussi la MODIFICATION, ce qu'on refuse ici.
+    const i = regles.indexOf('match /redevances/{ligne}')
+    const bloc = regles.slice(i, i + 900)
+    expect(bloc).toMatch(/allow create:[\s\S]{0,200}secretaire/)
   })
 
-  it('le comptable peut la marquer versée', () => {
-    const i = regles.indexOf("userDoc().role == 'comptable'")
-    expect(regles.slice(i, i + 200)).toContain('redevances')
+  it('⚠️ l’école ne peut PAS changer le montant qu’elle nous doit', () => {
+    // Une facture ne s'édite pas par le débiteur. Sans ce verrou, un directeur
+    // réécrivait la somme due — les règles s'ADDITIONNANT, il a fallu exclure
+    // `redevances` de `canWrite`, sinon le bloc dédié serait resté inopérant.
+    expect(regles).toContain("return coll != 'redevances' && isMember(schoolId)")
+    const i = regles.indexOf('match /redevances/{ligne}')
+    expect(i).toBeGreaterThan(0)
+    const bloc = regles.slice(i, i + 900)
+    expect(bloc).toContain('request.resource.data.montant == resource.data.montant')
+    expect(bloc).toContain('request.resource.data.taux == resource.data.taux')
+  })
+
+  it('l’école crée la ligne et peut la marquer versée', () => {
+    const i = regles.indexOf('match /redevances/{ligne}')
+    const bloc = regles.slice(i, i + 900)
+    expect(bloc).toMatch(/allow create:[\s\S]{0,160}secretaire/)
+    expect(bloc).toMatch(/allow update:[\s\S]{0,160}comptable/)
+  })
+
+  it('effacer une dette n’est pas une opération d’école', () => {
+    const i = regles.indexOf('match /redevances/{ligne}')
+    const bloc = regles.slice(i, i + 900)
+    expect(bloc).toContain('allow delete: if isSuperAdmin()')
+  })
+})
+
+describe('⚠️ une redevance existante n’est jamais réécrite', () => {
+  const insc = fs.readFileSync(path.join(racine, 'stores/inscriptions.js'), 'utf8')
+
+  it('l’application relit avant d’écrire', () => {
+    // Le montant est figé : c'est une facture, pas un solde recalculé. Et les
+    // règles refusent la modification — écraser produirait une ERREUR.
+    const i = insc.indexOf('async function enregistrerRedevance')
+    const bloc = insc.slice(i, i + 2600)
+    expect(bloc).toContain('dejaLa.exists()')
+    expect(bloc.indexOf('dejaLa.exists()')).toBeLessThan(bloc.indexOf('setDoc('))
   })
 })

@@ -170,20 +170,19 @@ service cloud.firestore {
     //                  finance_relances, finance_alloc_bourses,
     //                  mobilite_dossiers.
     function canWrite(schoolId, coll) {
-      return isMember(schoolId) && (
+      // ⚠️ `redevances` est EXCLUE d'ici et traitée par son propre bloc, plus
+      // bas. Les règles Firestore s'additionnent : laisser la collection dans
+      // cette fonction rendrait le bloc dédié inopérant, et un directeur
+      // pourrait réécrire le montant qu'il nous doit.
+      return coll != 'redevances' && isMember(schoolId) && (
         userDoc().role in ['directeur', 'admin']
         // ── Rôles secondaire ──
-        // ⚠️ `redevances` accompagne `inscriptions` : la redevance EDUFREM est
-        // écrite au moment où le dossier est validé. Sans ce droit, une
-        // secrétaire validerait l'inscription et l'écriture de la somme due
-        // échouerait — du chiffre d'affaires perdu, sans erreur visible.
         || (userDoc().role == 'secretaire'
-            && coll in ['eleves', 'classes', 'inscriptions', 'import', 'matieres',
-                        'redevances'])
+            && coll in ['eleves', 'classes', 'inscriptions', 'import', 'matieres'])
         || (userDoc().role in ['enseignant', 'surveillant']
             && coll in ['notes', 'presences', 'devoirs', 'devoirs-data', 'discipline', 'emploi-du-temps'])
         || (userDoc().role == 'comptable'
-            && coll in ['facturation', 'redevances',
+            && coll in ['facturation',
                         // Finance superieur :
                         'finance_tarifs', 'finance_bourses', 'finance_comptes',
                         'finance_echeances', 'finance_paiements', 'finance_financements',
@@ -492,6 +491,36 @@ service cloud.firestore {
       match /{coll}/{docId=**} {
         allow read: if isMember(schoolId) || isSuperAdmin();
         allow write: if canWrite(schoolId, coll);
+      }
+
+      // ── Redevance EDUFREM ────────────────────────────────────────
+      //
+      // Ce que l'école nous doit. Elle naît au moment où l'inscription est
+      // validée — soit, pour Steve, au premier paiement de la famille, en
+      // général les frais d'inscription. Pas d'inscription : pas d'élève dans
+      // l'outil, pas d'accès MAPO+, et donc pas de commission.
+      //
+      // ⚠️ L'école CRÉE la ligne (c'est son acte qui la déclenche) et peut la
+      // marquer versée, mais elle ne peut PAS en changer le montant, ni la
+      // supprimer. Sans ce verrou, le client fixait lui-même la somme qu'il
+      // nous doit — ce n'est pas une hypothèse de malveillance, c'est
+      // simplement une facture qu'on ne laisse pas éditer par le débiteur.
+      //
+      // Le montant est figé à l'écriture : l'application ne réécrit jamais une
+      // redevance existante, elle la relit.
+      match /redevances/{ligne} {
+        allow read: if isMember(schoolId) || isSuperAdmin();
+        allow create: if isSuperAdmin() || (isMember(schoolId)
+          && userDoc().role in ['directeur', 'admin', 'secretaire', 'comptable']);
+        allow update: if isSuperAdmin() || (isMember(schoolId)
+          && userDoc().role in ['directeur', 'admin', 'comptable']
+          && request.resource.data.montant == resource.data.montant
+          && request.resource.data.base == resource.data.base
+          && request.resource.data.taux == resource.data.taux
+          && request.resource.data.eleveId == resource.data.eleveId
+          && request.resource.data.annee == resource.data.annee);
+        // Effacer une dette n'est pas une opération d'école.
+        allow delete: if isSuperAdmin();
       }
     }
 

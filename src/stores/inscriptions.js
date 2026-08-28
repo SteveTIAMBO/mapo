@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
   setDoc,
+  getDoc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey, paysDemo } from '../utils/demoScope'
@@ -593,6 +594,13 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     // plutôt que d'écrire une dette hors du temps.
     if (!cle) return { ok: false, reason: 'annee_inconnue' }
     if (!schoolId) return { ok: false, reason: 'hors_ecole' }
+
+    // ⚠️ Une redevance déjà écrite ne se réécrit JAMAIS. Son montant est figé :
+    // c'est une facture, pas un solde recalculé. Les règles Firestore refusent
+    // d'ailleurs toute modification du montant — écraser ici produirait une
+    // erreur au lieu d'une opération anodine.
+    const dejaLa = await getDoc(doc(db, 'schools', schoolId, 'redevances', cle))
+    if (dejaLa.exists()) return { ok: true, deja: true, ...dejaLa.data() }
 
     const redevancesStore = useRedevancesStore()
     await redevancesStore.charger()
