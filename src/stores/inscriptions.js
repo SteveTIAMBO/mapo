@@ -8,11 +8,14 @@ import {
   updateDoc,
   deleteDoc,
   doc,
+  setDoc,
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey, paysDemo } from '../utils/demoScope'
 import { useElevesStore } from './eleves'
 import { useFacturationStore } from './facturation'
+import { useRedevancesStore } from './redevances'
+import { idRedevance, calculerRedevance } from '../utils/redevance'
 import { packPays, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 import {
@@ -566,6 +569,57 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
     }
   }
 
+  /**
+   * Écrit la redevance EDUFREM due pour cet élève, sur l'année en cours.
+   *
+   * Identifiant DÉTERMINISTE (`eleveId__annee`) : revalider un dossier écrase
+   * la même ligne au lieu d'en créer une seconde. Une commission facturée deux
+   * fois se remarque, et pas en notre faveur.
+   *
+   * Le montant est FIGÉ à l'écriture. Si l'école change ses frais de scolarité
+   * en février, la redevance déjà due ne bouge pas : on ne réécrit pas une
+   * dette passée.
+   */
+  async function enregistrerRedevance(eleveId, dossier) {
+    const authStore = useAuthStore()
+    const schoolId = authStore.schoolId
+    // Import différé, comme ailleurs dans ce store : `school` importe
+    // `inscriptions` en retour, et un import statique boucle au chargement.
+    const { useSchoolStore } = await import('./school')
+    const schoolStore = useSchoolStore()
+    const annee = schoolStore.schoolSettings?.academicYear || ''
+    const cle = idRedevance(eleveId, annee)
+    // Sans année scolaire, on ne sait pas à quoi rattacher la somme : on refuse
+    // plutôt que d'écrire une dette hors du temps.
+    if (!cle) return { ok: false, reason: 'annee_inconnue' }
+    if (!schoolId) return { ok: false, reason: 'hors_ecole' }
+
+    const redevancesStore = useRedevancesStore()
+    await redevancesStore.charger()
+    const facturationStore = useFacturationStore()
+    const niveau = dossier.niveau || dossier.className || ''
+    const frais = facturationStore.getFeesForLevel(niveau)
+    const bareme = redevancesStore.baremeEcole
+    const calcul = calculerRedevance({ frais, taux: bareme.taux })
+
+    const ligne = {
+      eleveId,
+      annee,
+      niveau,
+      eleveNom: [dossier.lastName, dossier.firstName].filter(Boolean).join(' '),
+      pays: bareme.pays || '',
+      base: calcul.base,
+      taux: calcul.taux,
+      montant: calcul.montant,
+      calculable: calcul.calculable,
+      motif: calcul.motif,
+      statut: 'due',
+      creeLe: new Date().toISOString(),
+    }
+    await setDoc(doc(db, 'schools', schoolId, 'redevances', cle), ligne)
+    return { ok: true, ...calcul }
+  }
+
   const validateDossier = async (id, validatedBy) => {
     const dossier = dossiers.value.find(d => d.id === id)
     if (!dossier) return
@@ -626,6 +680,28 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
       invitation = { ok: false, reason: 'exception' }
     }
 
+    // ── Redevance EDUFREM ─────────────────────────────────────────────────
+    //
+    // Le fait générateur est ICI : l'élève devient « inscrit », ce qui pour
+    // Steve vaut premier paiement encaissé (décision du 28/08/2026).
+    //
+    // ⚠️ Pourquoi un ENREGISTREMENT daté, et non un calcul sur le statut : les
+    // 447 écoliers de la première école réelle ont été importés avec
+    // `status: 'inscrit'`, alors qu'il s'agit des données de l'année PRÉCÉDENTE.
+    // Une redevance déduite du statut aurait affiché une dette immédiate de
+    // 447 × 6 % pour une année déjà écoulée. Elle est donc rattachée à une année
+    // scolaire et écrite au moment de l'acte.
+    //
+    // ⚠️ Un échec n'annule pas l'inscription — la scolarité de l'élève ne dépend
+    // pas de notre facturation. Mais il est TRACÉ sur le dossier : une redevance
+    // silencieusement manquée, c'est du chiffre d'affaires perdu sans trace.
+    let redevance = null
+    try {
+      redevance = await enregistrerRedevance(eleveId, dossier)
+    } catch (e) {
+      redevance = { ok: false, reason: 'exception' }
+    }
+
     // Update dossier
     await updateDossier(id, {
       status: DOSSIER_STATUS.VALIDE,
@@ -636,6 +712,9 @@ export const useInscriptionsStore = defineStore('inscriptions', () => {
       // Trace de l'invitation : code, destinataire, canal réellement utilisé.
       // C'est ce qui permet à l'école de renvoyer le lien sans le régénérer.
       mapoplus: invitation,
+      // Trace de la redevance : montant retenu, ou motif pour lequel il n'a pas
+      // pu être chiffré. Sans cette trace, un manque ne se verrait jamais.
+      redevance,
     })
 
     // Log activity

@@ -121,6 +121,94 @@
           <TableProperties :size="16" />
           <span>{{ t('fact.feeGrid') }}</span>
         </button>
+        <button class="tab-btn" :class="{ active: activeTab === 'edufrem' }" @click="activeTab = 'edufrem'">
+          <Landmark :size="16" />
+          <span>{{ t('fact.tabEdufrem') }}</span>
+        </button>
+      </div>
+
+      <!-- Onglet : dû à EDUFREM ────────────────────────────────────────────
+           La redevance naît quand un élève est marqué « inscrit ». Chaque ligne
+           est un ACTE daté, pas un calcul sur l'effectif : les élèves importés
+           de l'année précédente n'en produisent aucune. -->
+      <div v-if="activeTab === 'edufrem'">
+        <div class="card" style="margin-bottom: 20px;">
+          <div class="ed-totaux">
+            <div class="ed-bloc">
+              <span class="ed-label">{{ t('fact.edufremDue') }}</span>
+              <span class="ed-montant">{{ formatMoney(redevanceTotalDu) }}</span>
+            </div>
+            <div class="ed-bloc">
+              <span class="ed-label">{{ t('fact.edufremPaid') }}</span>
+              <span class="ed-montant ed-verse">{{ formatMoney(redevanceTotalVerse) }}</span>
+            </div>
+            <div class="ed-bloc">
+              <span class="ed-label">{{ t('fact.edufremRate') }}</span>
+              <span class="ed-montant">{{ baremeEdufrem.taux }} %</span>
+            </div>
+          </div>
+
+          <!-- ⚠️ « Rien à chiffrer » n'est pas « rien dû ». Une école qui n'a pas
+               saisi ses frais de scolarité doit le lire, pas voir un zéro. -->
+          <p v-if="redevanceAChiffrer.length" class="ed-avert">
+            {{ t('fact.edufremUnpriced', { n: redevanceAChiffrer.length }) }}
+          </p>
+          <p v-else-if="!redevances.length" class="ed-vide">{{ t('fact.edufremEmpty') }}</p>
+        </div>
+
+        <!-- Où verser. Un champ vide serait indistinguable d'un oubli : on dit
+             explicitement que les coordonnées manquent. -->
+        <div class="card" style="margin-bottom: 20px;">
+          <h3 class="ed-titre">{{ t('fact.edufremWhere') }}</h3>
+          <p v-if="coordonneesManquantes" class="ed-avert">{{ t('fact.edufremNoCoords') }}</p>
+          <div v-else class="ed-coords">
+            <div v-if="baremeEdufrem.rib">
+              <span class="ed-label">{{ t('fact.edufremIban') }}</span>
+              <strong>{{ baremeEdufrem.rib }}</strong>
+              <span v-if="baremeEdufrem.banque" class="ed-sub">{{ baremeEdufrem.banque }}</span>
+            </div>
+            <div v-if="baremeEdufrem.orangeMoney">
+              <span class="ed-label">{{ t('fact.edufremOm') }}</span>
+              <strong>{{ baremeEdufrem.orangeMoney }}</strong>
+            </div>
+            <div v-if="baremeEdufrem.titulaire">
+              <span class="ed-label">{{ t('fact.edufremHolder') }}</span>
+              <strong>{{ baremeEdufrem.titulaire }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="redevances.length" class="card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{{ t('fact.student') }}</th>
+                  <th>{{ t('fact.edufremYear') }}</th>
+                  <th>{{ t('fact.edufremBase') }}</th>
+                  <th>{{ t('fact.edufremAmount') }}</th>
+                  <th>{{ t('fact.status') }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="r in redevances" :key="r.id">
+                  <td>{{ r.eleveNom || r.eleveId }}</td>
+                  <td>{{ r.annee }}</td>
+                  <td>{{ r.calculable ? formatMoney(r.base) : '—' }}</td>
+                  <td>
+                    <strong v-if="r.calculable">{{ formatMoney(r.montant) }}</strong>
+                    <span v-else class="ed-sub">{{ t('fact.edufremNotPriced') }}</span>
+                  </td>
+                  <td>
+                    <span class="badge" :class="r.statut === 'verse' ? 'badge-success' : 'badge-warning'">
+                      {{ r.statut === 'verse' ? t('fact.edufremPaidOne') : t('fact.edufremDueOne') }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
 
       <!-- Tab: Paiements par élève -->
@@ -1213,12 +1301,16 @@ import {
   Plus, Search, X, Pencil, Trash2, CheckCircle2, Settings,
   Users, Receipt, TableProperties, Banknote, Printer,
   ChevronLeft, ChevronRight, Briefcase, BookOpen, Calendar,
-  DollarSign, BarChart3, Sparkles, Send, AlertTriangle
+  DollarSign, BarChart3, Sparkles, Send, AlertTriangle, Landmark
 } from 'lucide-vue-next'
 import { exportToExcel } from '../utils/exportExcel'
 import { exportToPdf } from '../utils/exportPdf'
 import ExportMenu from '../components/ExportMenu.vue'
 import { useNotificationsStore } from '../stores/notifications'
+import { useRedevancesStore } from '../stores/redevances'
+import { totalDu, totalVerse, aChiffrer } from '../utils/redevance'
+import { collection, getDocs } from 'firebase/firestore'
+import { db } from '../firebase'
 
 const CHARGE_CATEGORIES = [
   { value: 'immobilier', label: 'Immobilier' },
@@ -1237,6 +1329,32 @@ const schoolStore = useSchoolStore()
 const personnelStore = usePersonnelStore()
 const authStore = useAuthStore()
 const notif = useNotificationsStore()
+const redevancesStore = useRedevancesStore()
+
+// ── Dû à EDUFREM ───────────────────────────────────────────────────────────
+// Les lignes sont lues telles quelles : chacune a été écrite au moment d'une
+// inscription, avec son montant FIGÉ. On ne recalcule rien ici — un total
+// recalculé après coup changerait une dette déjà notifiée à l'école.
+const redevances = ref([])
+const baremeEdufrem = computed(() => redevancesStore.baremeEcole)
+const coordonneesManquantes = computed(() => redevancesStore.coordonneesManquantes)
+const redevanceTotalDu = computed(() => totalDu(redevances.value))
+const redevanceTotalVerse = computed(() => totalVerse(redevances.value))
+const redevanceAChiffrer = computed(() => aChiffrer(redevances.value))
+
+async function chargerRedevances() {
+  await redevancesStore.charger()
+  const sid = authStore.schoolId
+  if (!sid) return
+  try {
+    const snap = await getDocs(collection(db, 'schools', sid, 'redevances'))
+    redevances.value = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch (e) {
+    // Lecture impossible : on laisse la liste vide, mais le total n'affichera
+    // pas « 0 dû » puisque `redevances` vide déclenche le message « aucune ».
+    console.warn('Lecture des redevances impossible:', e)
+  }
+}
 
 // ── State ──
 const { t, locale } = useI18n({ useScope: 'global' })
@@ -2046,6 +2164,7 @@ onMounted(async () => {
   await elevesStore.loadEleves()
   await personnelStore.loadStaff()
   await factStore.loadFacturation()
+  await chargerRedevances()
   applyMiapoQuery()
 })
 
@@ -2930,4 +3049,25 @@ watch(() => route.query, applyMiapoQuery)
 .relance-done { text-align: center; padding: 18px 8px 8px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .relance-done-title { font-family: var(--font-display); font-weight: 700; font-size: 17px; color: var(--tx); margin: 4px 0 0; }
 .relance-done-text { font-size: 14px; color: var(--tx2); margin: 0; line-height: 1.5; }
+
+/* ── Dû à EDUFREM ─────────────────────────────────────────────────────── */
+.ed-totaux { display: flex; gap: 32px; flex-wrap: wrap; }
+.ed-bloc { display: flex; flex-direction: column; gap: 4px; }
+.ed-label { font-size: 12.5px; color: var(--tx3); }
+.ed-sub { display: block; font-size: 12px; color: var(--tx3); margin-top: 2px; }
+.ed-montant { font-size: 22px; font-weight: 800; color: var(--tx); }
+.ed-verse { color: var(--success); }
+.ed-titre { font-size: 14.5px; font-weight: 700; margin: 0 0 10px; }
+.ed-coords { display: flex; gap: 32px; flex-wrap: wrap; }
+/* Avertissement : ni vert ni rouge — c'est un fait à connaître, pas une erreur
+   de l'école. Le rouge ferait croire à une faute de sa part. */
+.ed-avert {
+  margin: 14px 0 0; padding: 10px 12px; border-radius: 10px;
+  font-size: 13px; line-height: 1.5;
+  background: rgba(var(--pr-rgb), .07); color: var(--tx);
+}
+.ed-vide { margin: 14px 0 0; font-size: 13px; color: var(--tx3); }
+@media (max-width: 640px) {
+  .ed-totaux, .ed-coords { gap: 18px; }
+}
 </style>

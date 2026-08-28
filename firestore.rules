@@ -173,12 +173,17 @@ service cloud.firestore {
       return isMember(schoolId) && (
         userDoc().role in ['directeur', 'admin']
         // ── Rôles secondaire ──
+        // ⚠️ `redevances` accompagne `inscriptions` : la redevance EDUFREM est
+        // écrite au moment où le dossier est validé. Sans ce droit, une
+        // secrétaire validerait l'inscription et l'écriture de la somme due
+        // échouerait — du chiffre d'affaires perdu, sans erreur visible.
         || (userDoc().role == 'secretaire'
-            && coll in ['eleves', 'classes', 'inscriptions', 'import', 'matieres'])
+            && coll in ['eleves', 'classes', 'inscriptions', 'import', 'matieres',
+                        'redevances'])
         || (userDoc().role in ['enseignant', 'surveillant']
             && coll in ['notes', 'presences', 'devoirs', 'devoirs-data', 'discipline', 'emploi-du-temps'])
         || (userDoc().role == 'comptable'
-            && coll in ['facturation',
+            && coll in ['facturation', 'redevances',
                         // Finance superieur :
                         'finance_tarifs', 'finance_bourses', 'finance_comptes',
                         'finance_echeances', 'finance_paiements', 'finance_financements',
@@ -488,6 +493,20 @@ service cloud.firestore {
         allow read: if isMember(schoolId) || isSuperAdmin();
         allow write: if canWrite(schoolId, coll);
       }
+    }
+
+    // ── Barème de redevance EDUFREM, par PAYS ────────────────────────
+    //
+    // Taux de commission et coordonnées de versement (RIB, Orange Money) que
+    // l'équipe EDUFREM tient pour chaque pays. Décision de Steve du 28/08/2026 :
+    // par PAYS, pas par école.
+    //
+    // Lecture ouverte à tout compte connecté : une école doit pouvoir lire le
+    // taux qu'on lui applique et savoir OÙ verser. Écriture réservée à EDUFREM —
+    // c'est notre barème, une école ne fixe pas la commission qu'elle nous doit.
+    match /edufrem/{doc} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
     }
 
     // ── Super admins EDUFREM ─────────────────────────────────────────
