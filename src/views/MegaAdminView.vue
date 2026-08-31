@@ -38,6 +38,10 @@
           class="ma-tab" :class="{ active: tab === 'codes' }"
           role="tab" type="button" @click="tab = 'codes'"
         >Codes crédits</button>
+        <button
+          class="ma-tab" :class="{ active: tab === 'redevances' }"
+          role="tab" type="button" @click="tab = 'redevances'"
+        >Redevance par pays</button>
       </div>
 
       <!-- Vue Paiements scolarité -->
@@ -51,6 +55,9 @@
 
       <!-- Codes de crédits offerts (écoles pilotes, familles témoins, tests) -->
       <MegaCodesCredits v-else-if="tab === 'codes'" />
+
+      <!-- Barème de redevance EDUFREM : taux et coordonnées de versement, PAR PAYS -->
+      <MegaRedevances v-else-if="tab === 'redevances'" />
 
       <!-- Vue Établissements (existante) -->
       <template v-else>
@@ -713,6 +720,7 @@ import MegaPaiementsScolarite from './admin/MegaPaiementsScolarite.vue'
 import MegaMiapoAnalytics from './admin/MegaMiapoAnalytics.vue'
 import MegaMapoplusUsers from './admin/MegaMapoplusUsers.vue'
 import MegaCodesCredits from './admin/MegaCodesCredits.vue'
+import MegaRedevances from './admin/MegaRedevances.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()

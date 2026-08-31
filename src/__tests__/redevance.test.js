@@ -221,3 +221,49 @@ describe('⚠️ une redevance existante n’est jamais réécrite', () => {
     expect(bloc.indexOf('dejaLa.exists()')).toBeLessThan(bloc.indexOf('setDoc('))
   })
 })
+
+describe('écran EDUFREM de saisie du barème', () => {
+  const vue = fs.readFileSync(path.join(racine, 'views/admin/MegaRedevances.vue'), 'utf8')
+  const admin = fs.readFileSync(path.join(racine, 'views/MegaAdminView.vue'), 'utf8')
+
+  it('l’onglet est branché dans la console EDUFREM', () => {
+    expect(admin).toContain("tab === 'redevances'")
+    expect(admin).toContain("import MegaRedevances from './admin/MegaRedevances.vue'")
+  })
+
+  it('la saisie est par PAYS, depuis le catalogue existant', () => {
+    // Même source que la démo et les barèmes de paie : un pays ajouté un jour
+    // apparaît ici sans qu'on y pense.
+    expect(vue).toContain('CODES_PAYS_DEMO')
+    expect(vue).toContain('store.enregistrer(paysActif.value')
+  })
+
+  it('⚠️ aucune coordonnée n’est pré-remplie', () => {
+    // Un RIB plausible mais faux enverrait l'argent d'une école ailleurs.
+    expect(vue).toContain('baremeVide(')
+    expect(vue).not.toMatch(/rib:\s*['"][A-Z0-9]/)
+  })
+
+  it('un pays non renseigné se LIT, il ne se devine pas', () => {
+    expect(vue).toContain('store.paysRenseigne(')
+    expect(vue).toContain('à faire')
+  })
+
+  it('⚠️ « ni RIB ni Orange Money » est dit AVANT d’enregistrer', () => {
+    // Sinon l'école découvre un écran vide et ne sait pas où verser.
+    expect(vue).toContain('const aucunMoyen')
+    expect(vue).toContain('Aucun moyen de versement renseigné')
+  })
+
+  it('un échec nomme son motif', () => {
+    // « Échec » sans raison laisse l'opérateur réessayer à l'identique.
+    const i = vue.indexOf('async function enregistrer')
+    const bloc = vue.slice(i, i + 900)
+    expect(bloc).toContain('taux:')
+    expect(bloc).toContain('interdit:')
+  })
+
+  it('une lecture impossible n’est pas silencieuse', () => {
+    expect(vue).toContain('store.erreur')
+  })
+})
