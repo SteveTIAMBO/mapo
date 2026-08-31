@@ -32,7 +32,7 @@
       <div class="settings-col">
 
         <!-- Informations générales -->
-        <section class="card settings-card">
+        <section id="sec-general" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secGeneral') }}</div>
           </div>
@@ -78,7 +78,7 @@
         </section>
 
         <!-- Contact -->
-        <section class="card settings-card">
+        <section id="sec-contact" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secContact') }}</div>
           </div>
@@ -101,7 +101,7 @@
         </section>
 
         <!-- Paramètres régionaux & scolaires -->
-        <section class="card settings-card">
+        <section id="sec-regional" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secRegional') }}</div>
           </div>
@@ -159,7 +159,7 @@
       <div class="settings-col settings-col-right">
 
         <!-- Identite visuelle -->
-        <section class="card settings-card">
+        <section id="sec-visual" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secVisual') }}</div>
           </div>
@@ -242,7 +242,7 @@
         </section>
 
         <!-- Services de messagerie -->
-        <section class="card settings-card">
+        <section id="sec-services" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secServices') }}</div>
           </div>
@@ -267,7 +267,7 @@
         </section>
 
         <!-- MIAPO — exemples de sujets de l'école (personnalisation de la génération) -->
-        <section v-if="isDirecteur" class="card settings-card">
+        <section id="sec-miapo" v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secMiapoRef') }}</div>
           </div>
@@ -282,7 +282,7 @@
         </section>
 
         <!-- Gestion de l'année scolaire -->
-        <section v-if="isDirecteur" class="card settings-card">
+        <section id="sec-year" v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secYear') }}</div>
           </div>
@@ -298,7 +298,7 @@
         </section>
 
         <!-- Périodes scolaires -->
-        <section v-if="isDirecteur" class="card settings-card">
+        <section id="sec-periods" v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secPeriods') }}</div>
           </div>
@@ -391,7 +391,7 @@
         </section>
 
         <!-- Paie : uniquement ce que le pays ne fournit pas -->
-        <section v-if="isDirecteur" class="card settings-card">
+        <section id="sec-payroll" v-if="isDirecteur" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secPayroll') }}</div>
           </div>
@@ -412,7 +412,7 @@
         </section>
 
         <!-- Feedback / Support -->
-        <section class="card settings-card">
+        <section id="sec-feedback" class="card settings-card">
           <div class="card-header">
             <div class="section-label">{{ t('param.secFeedback') }}</div>
           </div>

@@ -301,7 +301,8 @@
     "mesPresences": "Mes présences",
     "notes": "Notes",
     "paiements": "Paiements",
-    "apee": "APEE"
+    "apee": "APEE",
+    "parametres": "Paramètres"
   },
   "navGroups": {
     "scolarite": "Scolarité",
@@ -325,7 +326,8 @@
       "eleve": "Élève",
       "cantine": "Resp. cantine",
       "surveillant": "Surveillant"
-    }
+    },
+    "backToMenu": "Retour au menu"
   },
   "dashboard": {
     "title": "Tableau de bord",

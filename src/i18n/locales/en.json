@@ -301,7 +301,8 @@
     "mesPresences": "My attendance",
     "notes": "Grades",
     "paiements": "Payments",
-    "apee": "PTA"
+    "apee": "PTA",
+    "parametres": "Settings"
   },
   "navGroups": {
     "scolarite": "Academics",
@@ -325,7 +326,8 @@
       "eleve": "Student",
       "cantine": "Canteen manager",
       "surveillant": "Supervisor"
-    }
+    },
+    "backToMenu": "Back to menu"
   },
   "dashboard": {
     "title": "Dashboard",

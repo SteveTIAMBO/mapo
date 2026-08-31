@@ -31,8 +31,38 @@
       </select>
     </div>
 
+    <!-- ══ Mode PARAMÈTRES ═══════════════════════════════════════════════
+         Demande de Steve (28/08/2026) : dans les paramètres, les sous-sections
+         REMPLACENT le menu principal. Un écran de réglages long se parcourt mal
+         quand la seule navigation est la molette.
+
+         La liste vient de `utils/sectionsParametres.js`, la même que la vue :
+         deux listes parallèles auraient divergé au premier ajout de section. -->
+    <nav v-if="modeParametres" class="sidebar-nav">
+      <button type="button" class="nav-item nav-retour" @click="quitterParametres">
+        <ChevronLeft :size="19" class="nav-icon" />
+        <transition name="fade">
+          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t('sidebar.backToMenu') }}</span>
+        </transition>
+      </button>
+      <div v-if="!collapsed || mobileOpen" class="nav-section-sep"></div>
+      <button
+        v-for="sec in sectionsParametres" :key="sec.id"
+        type="button"
+        class="nav-item"
+        :class="{ active: sectionActive === sec.id }"
+        :title="collapsed && !mobileOpen ? t(sec.label) : undefined"
+        @click="ouvrirSection(sec.id)"
+      >
+        <Settings :size="19" class="nav-icon" />
+        <transition name="fade">
+          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t(sec.label) }}</span>
+        </transition>
+      </button>
+    </nav>
+
     <!-- Navigation principale (groupée par thèmes — #26) -->
-    <nav class="sidebar-nav">
+    <nav v-else class="sidebar-nav">
       <template v-for="(sec, si) in navSections" :key="'sec' + si">
         <!-- En-tête de thème cliquable (accordéon) -->
         <button
@@ -119,10 +149,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { openCarre } from '../../services/carreSso'
+import { sectionsVisibles, allerASection } from '../../utils/sectionsParametres'
 import { useAuthStore } from '../../stores/auth'
 import { usePermissionsStore } from '../../stores/permissions'
 import { useSchoolIdentityStore } from '../../stores/schoolIdentity'
@@ -162,7 +193,8 @@ import {
   HeartHandshake,
   NotebookPen,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  ChevronLeft
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -252,6 +284,9 @@ const STAFF_NAV_ITEMS = [
   { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true, group: 'gestion' },
   { key: 'import', to: '/import', icon: Upload, label: 'nav.import', group: 'gestion' },
   { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'nav.passageAnnee', dirOnly: true, group: 'gestion' },
+  // Paramètres n'était atteignable que par l'engrenage de l'en-tête : invisible
+  // pour qui ne le connaît pas. Demande de Steve du 28/08/2026.
+  { key: 'parametres', to: '/parametres', icon: Settings, label: 'nav.parametres', group: 'gestion' },
   // Pilotage & IA
   { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'nav.rapports', group: 'pilotage' },
   { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'nav.suiviRevisions', group: 'pilotage' },
@@ -294,6 +329,33 @@ const navSections = computed(() => {
   }
   return sections
 })
+
+/**
+ * Mode PARAMÈTRES : les sous-sections remplacent le menu principal.
+ *
+ * On se fie à la ROUTE et non à un clic : arriver sur /parametres par un lien,
+ * un favori ou l'engrenage de l'en-tête doit donner le même menu. Un mode qui
+ * ne s'active qu'au clic laisse la moitié des chemins d'accès sans navigation.
+ */
+const modeParametres = computed(() => route.path.startsWith('/parametres'))
+const sectionsParametres = computed(() => sectionsVisibles(authStore.isDirecteur))
+const sectionActive = ref(null)
+
+function ouvrirSection(id) {
+  sectionActive.value = id
+  // La vue peut ne pas être encore montée (arrivée directe sur l'URL) : on
+  // laisse le rendu se faire avant de défiler, sinon l'ancre n'existe pas.
+  nextTick(() => {
+    if (!allerASection(id)) sectionActive.value = null
+  })
+  emit('navigate')
+}
+
+function quitterParametres() {
+  sectionActive.value = null
+  router.push('/dashboard')
+  emit('navigate')
+}
 
 // ── Accordéon des thèmes : tout fermé par défaut, un seul groupe ouvert à la fois (au clic) ──
 const openGroup = ref(null)
@@ -692,5 +754,26 @@ const handleLogout = async () => {
     padding: 12px 14px;
     font-size: 15px;
   }
+}
+
+/* ── Mode Paramètres : le retour se distingue des sections ─────────────── */
+.nav-retour {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--tx3);
+  font-weight: 600;
+}
+.nav-retour:hover { color: var(--pr); }
+/* Les entrées de section sont des <button> : sans ça elles n'héritent ni de la
+   largeur ni de la typographie des liens du menu. */
+.sidebar-nav > button.nav-item {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
 }
 </style>
