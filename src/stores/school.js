@@ -363,7 +363,50 @@ export const useSchoolStore = defineStore('school', () => {
     if (!schoolSettings.value.academicYear) {
       schoolSettings.value.academicYear = currentAcademicYear.value
     }
+    await migrerLibellesEnCodes()
     applyPrimaryColor()
+  }
+
+  /**
+   * Répare les réglages écrits en LIBELLÉS au lieu de CODES.
+   *
+   * ⚠️ Vécu sur la première école réelle (28/08/2026) : l'import du classeur
+   * avait enregistré `country: "Cameroun"`, `schoolType: "École primaire"` et
+   * `currency: "FCFA"`, alors que l'application attend `CM`, `ecole_primaire`,
+   * `XAF`. Steve a vu trois listes déroulantes VIDES — « l'import n'a pas rempli
+   * les infos de l'établissement » — alors que la donnée était là.
+   *
+   * L'import est corrigé, mais les écoles déjà importées gardaient leurs
+   * libellés. Demander à chacune de réimporter serait leur faire payer notre
+   * défaut : on répare donc à la lecture, et on réécrit UNE fois pour que les
+   * autres modules (paie, programme du primaire, niveaux) lisent enfin un code.
+   *
+   * Ne réécrit que si quelque chose change — sinon chaque ouverture de
+   * l'application déclencherait une écriture inutile.
+   */
+  async function migrerLibellesEnCodes() {
+    const s = schoolSettings.value || {}
+    // Import DIFFÉRÉ : `normaliserConfigEcole` lit `COUNTRY_DEFAULTS` et
+    // `SCHOOL_TYPES` exportés par ce fichier. Un import statique créerait un
+    // cycle, et un cycle ne casse pas le build — il casse au rendu.
+    const { normaliserConfigEcole } = await import('../utils/normaliserConfigEcole')
+    const { valeurs } = normaliserConfigEcole({
+      country: s.country, schoolType: s.schoolType, currency: s.currency,
+    })
+    const patch = {}
+    for (const [cle, valeur] of Object.entries(valeurs)) {
+      if (valeur && valeur !== s[cle]) patch[cle] = valeur
+    }
+    if (!Object.keys(patch).length) return
+    schoolSettings.value = { ...schoolSettings.value, ...patch }
+    try {
+      await saveSettings(patch)
+    } catch (e) {
+      // La valeur est corrigée en mémoire même si l'écriture échoue : l'écran
+      // dit vrai tout de suite, la réparation sera retentée au chargement
+      // suivant. Un échec ici ne doit pas rendre l'école inutilisable.
+      console.warn('Migration des réglages non enregistrée:', e)
+    }
   }
 
   const saveSettings = async (data) => {

@@ -139,3 +139,47 @@ describe('⚠️ la liste des matières de l’école REMPLACE l’amorce au pre
     expect(vue.indexOf('discPrimaire.ajouter(')).toBeGreaterThan(i)
   })
 })
+
+describe('⚠️ les écoles DÉJÀ importées se réparent seules', () => {
+  const store = lire('stores/school.js')
+
+  it('la migration a lieu au chargement des réglages', () => {
+    // Demander à chaque école de réimporter serait lui faire payer notre
+    // défaut. On répare à la lecture.
+    const i = store.indexOf('const loadSettings')
+    const fin = store.indexOf('\n  const saveSettings', i)
+    expect(store.slice(i, fin)).toContain('await migrerLibellesEnCodes()')
+  })
+
+  it('elle réécrit UNE fois, et seulement si quelque chose change', () => {
+    // Sinon chaque ouverture de l'application déclencherait une écriture.
+    const i = store.indexOf('async function migrerLibellesEnCodes')
+    const bloc = store.slice(i, i + 1400)
+    expect(bloc).toContain('if (!Object.keys(patch).length) return')
+    expect(bloc).toContain('saveSettings(patch)')
+  })
+
+  it('un échec d’écriture ne rend pas l’école inutilisable', () => {
+    const i = store.indexOf('async function migrerLibellesEnCodes')
+    const bloc = store.slice(i, i + 1400)
+    // La valeur est corrigée en mémoire AVANT la tentative d'écriture.
+    expect(bloc.indexOf('schoolSettings.value = { ...schoolSettings.value, ...patch }'))
+      .toBeLessThan(bloc.indexOf('saveSettings(patch)'))
+    expect(bloc).toMatch(/catch \(e\)/)
+  })
+
+  it('⚠️ import DIFFÉRÉ : pas de cycle avec le store', () => {
+    // `normaliserConfigEcole` lit COUNTRY_DEFAULTS et SCHOOL_TYPES exportés par
+    // school.js. Un cycle ne casse pas le build — il casse au rendu.
+    expect(store).not.toMatch(/^import .*normaliserConfigEcole/m)
+    const i = store.indexOf('async function migrerLibellesEnCodes')
+    expect(store.slice(i, i + 700)).toContain("await import('../utils/normaliserConfigEcole')")
+  })
+
+  it('rien n’est écrasé quand la valeur est déjà un code', () => {
+    // `normaliserConfigEcole` rend le code tel quel : la comparaison
+    // `valeur !== s[cle]` empêche toute écriture inutile.
+    const i = store.indexOf('async function migrerLibellesEnCodes')
+    expect(store.slice(i, i + 1400)).toContain('valeur !== s[cle]')
+  })
+})
