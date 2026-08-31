@@ -327,7 +327,9 @@
       "cantine": "Canteen manager",
       "surveillant": "Supervisor"
     },
-    "backToMenu": "Back to menu"
+    "backToMenu": "Back to menu",
+    "yearHint": "School's academic year — change it in Settings",
+    "yearUnknown": "Year not set"
   },
   "dashboard": {
     "title": "Dashboard",

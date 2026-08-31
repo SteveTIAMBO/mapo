@@ -327,7 +327,9 @@
       "cantine": "Resp. cantine",
       "surveillant": "Surveillant"
     },
-    "backToMenu": "Retour au menu"
+    "backToMenu": "Retour au menu",
+    "yearHint": "Année scolaire de l'établissement — modifiable dans Paramètres",
+    "yearUnknown": "Année non définie"
   },
   "dashboard": {
     "title": "Tableau de bord",

@@ -24,11 +24,21 @@
         />
         <span class="school-name-sm">{{ schoolStore.schoolSettings?.name || t('sidebar.school') }}</span>
       </div>
-      <select v-model="selectedAcademicYear" class="year-select">
-        <option v-for="year in academicYears" :key="year" :value="year">
-          {{ year }}
-        </option>
-      </select>
+      <!-- ⚠️ C'ÉTAIT une liste déroulante à trois défauts, signalés par Steve le
+           28/08/2026 :
+             • ses options étaient les 4 dernières années civiles calculées
+               depuis la date du jour, sans aucun lien avec l'école ;
+             • l'année RÉELLE d'EPC1 (2026-2027) n'y figurait donc pas — un
+               `select` dont la valeur n'a pas d'option s'affiche VIDE ;
+             • et son `set` ne faisait rien : « lecture seule pour la démo ».
+           Une liste qui propose des années inventées, s'affiche vide sur la
+           vraie, et ignore le choix, c'est trois mensonges dans un seul champ.
+           On affiche donc le FAIT : l'année de l'école. Elle se change dans
+           Paramètres → Année scolaire, où l'opération est réellement traitée. -->
+      <div class="year-label" :title="t('sidebar.yearHint')">
+        <span v-if="anneeEcole">{{ anneeEcole }}</span>
+        <span v-else class="year-unknown">{{ t('sidebar.yearUnknown') }}</span>
+      </div>
     </div>
 
     <!-- ══ Mode PARAMÈTRES ═══════════════════════════════════════════════
@@ -117,6 +127,26 @@
         </div>
       </template>
     </nav>
+
+    <!-- ⚠️ Paramètres vit HORS de l'accordéon.
+         Premier essai : rangé dans le thème « Gestion » — qui est replié par
+         défaut. L'entrée existait donc sans être visible, et Steve a eu raison
+         de dire qu'elle manquait : une entrée qu'il faut déplier pour trouver ne
+         remplit pas la demande « dans le menu latéral ». -->
+    <div v-if="peutVoirParametres" class="sidebar-params">
+      <RouterLink
+        to="/parametres"
+        class="nav-item"
+        :class="{ active: modeParametres }"
+        :title="collapsed && !mobileOpen ? t('nav.parametres') : undefined"
+        @click="$emit('navigate')"
+      >
+        <Settings :size="19" class="nav-icon" />
+        <transition name="fade">
+          <span v-if="!collapsed || mobileOpen" class="nav-label">{{ t('nav.parametres') }}</span>
+        </transition>
+      </RouterLink>
+    </div>
 
     <!-- User profile + logout -->
     <div class="sidebar-footer">
@@ -224,29 +254,23 @@ const roleLabel = computed(() => {
   return lbl === k ? r : lbl
 })
 
-const academicYears = computed(() => {
-  const now = new Date()
-  const currentYear = now.getFullYear()
-  const currentMonth = now.getMonth() + 1
-  let academicYearStart = currentMonth >= 9 ? currentYear : currentYear - 1
-  const years = []
-  for (let i = 0; i < 4; i++) {
-    const start = academicYearStart - i
-    years.push(`${start}-${start + 1}`)
-  }
-  return years
-})
+/**
+ * Année scolaire DE L'ÉCOLE, telle qu'elle l'a déclarée.
+ *
+ * Vide plutôt que devinée : afficher une année calculée depuis la date du jour
+ * ferait croire à un réglage qui n'existe pas, et c'est précisément ce qui
+ * affichait des années de démonstration sur une école réelle.
+ */
+/**
+ * Droit de voir Paramètres — même filtre que les autres entrées du menu :
+ * module activé pour l'école ET permission du rôle. Afficher l'entrée à qui la
+ * route refusera ensuite serait un clic sans effet.
+ */
+const peutVoirParametres = computed(() =>
+  schoolIdentityStore.isModuleActif('parametres') && permissionsStore.hasAccess('parametres'),
+)
 
-const currentAcademicYear = computed(() => {
-  return schoolStore.schoolSettings?.academicYear || academicYears.value[0]
-})
-
-const selectedAcademicYear = computed({
-  get: () => currentAcademicYear.value,
-  set: () => {
-    // Année académique en lecture seule pour la démo
-  }
-})
+const anneeEcole = computed(() => String(schoolStore.schoolSettings?.academicYear || '').trim())
 
 // Menu staff regroupé par thèmes (#26). `group` = clé navGroups.* (i18n).
 const STAFF_NAV_ITEMS = [
@@ -284,9 +308,6 @@ const STAFF_NAV_ITEMS = [
   { key: 'acces', to: '/acces', icon: ShieldCheck, label: 'nav.acces', dirOnly: true, group: 'gestion' },
   { key: 'import', to: '/import', icon: Upload, label: 'nav.import', group: 'gestion' },
   { key: 'transition-annee', to: '/transition-annee', icon: GraduationCap, label: 'nav.passageAnnee', dirOnly: true, group: 'gestion' },
-  // Paramètres n'était atteignable que par l'engrenage de l'en-tête : invisible
-  // pour qui ne le connaît pas. Demande de Steve du 28/08/2026.
-  { key: 'parametres', to: '/parametres', icon: Settings, label: 'nav.parametres', group: 'gestion' },
   // Pilotage & IA
   { key: 'rapports', to: '/rapports', icon: BarChart3, label: 'nav.rapports', group: 'pilotage' },
   { key: 'notes', to: '/suivi-revisions', icon: Sparkles, label: 'nav.suiviRevisions', group: 'pilotage' },
@@ -699,20 +720,22 @@ const handleLogout = async () => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.year-select {
-  background: rgba(255,255,255,.6);
-  border: 1px solid var(--input-border);
-  color: var(--tx2);
+/* L'année scolaire est un FAIT affiché, plus un contrôle : ni curseur de
+   pointage ni effet de survol, pour ne pas promettre une action inexistante. */
+.year-label {
   font-size: 11px;
+  color: var(--tx2);
   padding: 3px 6px;
   border-radius: 6px;
-  cursor: pointer;
+  background: rgba(255,255,255,.6);
+  border: 1px solid var(--input-border);
   width: 100%;
-  outline: none;
+  text-align: center;
 }
-.year-select:hover,
-.year-select:focus { background: rgba(255,255,255,.85); }
-.year-select option { background: #fff; color: var(--tx); }
+.year-unknown { color: var(--tx3); font-style: italic; }
+
+/* Paramètres : hors accordéon, collé au-dessus du bloc utilisateur. */
+.sidebar-params { padding: 0 10px 6px; }
 
 /* Transitions */
 .fade-enter-active,

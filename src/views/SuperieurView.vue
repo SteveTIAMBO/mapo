@@ -442,13 +442,31 @@ const collapsedSections = ref({})
 function toggleSection(name) { collapsedSections.value = { ...collapsedSections.value, [name]: !collapsedSections.value[name] } }
 function isSectionOpen(name) { return sidebarHidden.value ? true : !collapsedSections.value[name] }
 
-// ── Sélecteur d'année académique (lecture seule en démo, comme les autres) ──
+/**
+ * Sélecteur d'année académique.
+ *
+ * ⚠️ 28/08/2026 — même défaut que la barre latérale du secondaire, corrigé en
+ * même temps : la liste ne contenait que les 4 dernières années CIVILES,
+ * calculées depuis la date du jour. L'année réellement déclarée par
+ * l'établissement n'y figurait pas forcément, et un `select` dont la valeur n'a
+ * pas d'option s'affiche VIDE.
+ *
+ * L'année de l'établissement passe donc en tête et devient la sélection par
+ * défaut ; les années calculées ne sont qu'un complément de navigation.
+ */
 const academicYears = computed(() => {
   const now = new Date()
   const start = now.getMonth() + 1 >= 9 ? now.getFullYear() : now.getFullYear() - 1
-  return [0, 1, 2, 3].map((i) => `${start - i}-${start - i + 1}`)
+  const calculees = [0, 1, 2, 3].map((i) => `${start - i}-${start - i + 1}`)
+  const declaree = String(schoolIdentity.anneeAcademique || '').trim()
+  return declaree ? [declaree, ...calculees.filter((y) => y !== declaree)] : calculees
 })
 const selectedYear = ref(academicYears.value[0])
+// L'identité de l'école arrive après le premier rendu : on recale la sélection
+// dès qu'elle est connue, sinon le champ reste sur une année calculée.
+watch(academicYears, (liste) => {
+  if (liste.length && !liste.includes(selectedYear.value)) selectedYear.value = liste[0]
+})
 
 function loadSidebarHidden() {
   try { return localStorage.getItem(SIDEBAR_HIDDEN_KEY) === '1' }

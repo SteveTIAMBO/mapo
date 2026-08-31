@@ -56,9 +56,10 @@ describe('⚠️ UNE liste de sections, deux lecteurs', () => {
 })
 
 describe('la barre latérale bascule en mode Paramètres', () => {
-  it('Paramètres est une entrée du menu principal', () => {
-    expect(sidebar).toContain("to: '/parametres'")
-    expect(sidebar).toContain("label: 'nav.parametres'")
+  it('Paramètres est une entrée du menu latéral', () => {
+    // Hors accordéon depuis la remarque de Steve : voir le describe dédié.
+    expect(sidebar).toContain('to="/parametres"')
+    expect(sidebar).toContain("t('nav.parametres')")
   })
 
   it('⚠️ le mode dépend de la ROUTE, pas d’un clic', () => {
@@ -115,5 +116,72 @@ describe('allerASection — comportement réel', () => {
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/\/\/[^\n]*/g, '')
     expect(src).not.toContain('location.hash')
+  })
+})
+
+describe('⚠️ l’année scolaire affichée était un faux paramètre', () => {
+  /**
+   * Signalé par Steve le 28/08/2026 : « le champ de la date est vide par défaut,
+   * et contient des années héritées de la démo où il n'y a 0 info de l'école ».
+   *
+   * Trois défauts dans un seul contrôle :
+   *   • ses options étaient les 4 dernières années CIVILES calculées depuis la
+   *     date du jour — aucun lien avec l'établissement ;
+   *   • l'année réelle d'EPC1 (2026-2027) n'y figurait pas, et un `select` dont
+   *     la valeur n'a pas d'option s'affiche VIDE ;
+   *   • son `set` ne faisait rien (« lecture seule pour la démo »).
+   */
+  it('la barre latérale affiche l’année DE L’ÉCOLE', () => {
+    expect(sidebar).toContain('const anneeEcole')
+    const i = sidebar.indexOf('const anneeEcole')
+    expect(sidebar.slice(i, i + 200)).toContain('schoolSettings?.academicYear')
+  })
+
+  it('plus de liste d’années inventées, plus de `select` inerte', () => {
+    expect(sidebar).not.toContain('const academicYears')
+    expect(sidebar).not.toContain('selectedAcademicYear')
+    expect(sidebar).not.toContain('class="year-select"')
+  })
+
+  it('⚠️ année inconnue : on le DIT, on n’affiche pas un vide', () => {
+    // Un champ vide est indistinguable d'un bogue d'affichage.
+    expect(sidebar).toContain("t('sidebar.yearUnknown')")
+    for (const loc of ['fr', 'en']) {
+      const d = JSON.parse(lire(`i18n/locales/${loc}.json`))
+      expect(d.sidebar.yearUnknown).toBeTruthy()
+      expect(d.sidebar.yearHint).toBeTruthy()
+    }
+  })
+
+  it('côté Supérieur, l’année déclarée passe en tête et devient la sélection', () => {
+    // Même défaut, corrigé en même temps : sinon on l'aurait redécouvert avec
+    // la première école supérieure.
+    const sup = lire('views/SuperieurView.vue')
+    const i = sup.indexOf('const academicYears')
+    const bloc = sup.slice(i, i + 700)
+    expect(bloc).toContain('schoolIdentity.anneeAcademique')
+    expect(bloc).toContain('[declaree, ...calculees')
+    // L'identité arrive après le premier rendu : sans recalage, le champ reste
+    // sur une année calculée.
+    expect(sup.slice(i, i + 1100)).toContain('watch(academicYears')
+  })
+})
+
+describe('Paramètres est VISIBLE, pas seulement présent', () => {
+  it('l’entrée vit hors de l’accordéon', () => {
+    // Premier essai : rangée dans le thème « Gestion », replié par défaut.
+    // L'entrée existait sans être visible — Steve a eu raison de dire qu'elle
+    // manquait. Une entrée qu'il faut déplier ne remplit pas la demande.
+    expect(sidebar).toContain('class="sidebar-params"')
+    expect(sidebar).not.toMatch(/label: 'nav\.parametres',\s*group:/)
+  })
+
+  it('elle reste soumise au module et au rôle', () => {
+    // Afficher une entrée que la route refusera ensuite, c'est un clic sans effet.
+    expect(sidebar).toContain('const peutVoirParametres')
+    const i = sidebar.indexOf('const peutVoirParametres')
+    const bloc = sidebar.slice(i, i + 300)
+    expect(bloc).toContain("isModuleActif('parametres')")
+    expect(bloc).toContain("hasAccess('parametres')")
   })
 })
