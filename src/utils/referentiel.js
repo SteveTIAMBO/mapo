@@ -199,13 +199,56 @@ const memeMatiere = (ref, demandee) => {
  * On garde donc le plus récent DÉJÀ applicable — un programme futur ne doit
  * jamais être servi par anticipation.
  */
+/**
+ * Écriture canonique d'une classe.
+ *
+ * ⚠️ MÊME FAMILLE DE BUG QUE « SVT » (cf. clesMatiere ci-dessus), mais côté
+ * CLASSE — et resté invisible plus longtemps parce que la comparaison était
+ * exacte, sans normalisation d'aucune sorte.
+ *
+ * Nos référentiels portent les DEUX écritures : « 5e » côté France, « 5ème »
+ * côté Cameroun. Un profil français dont la classe est saisie « 5ème » ne
+ * rencontrait donc jamais le programme français, indexé sur « 5e ». Mesuré le
+ * 01/09/2026 : `{FR, '5ème', Mathématiques}` → **0 notion**, `{FR, '5e', …}` →
+ * 14. Et l'échec est MUET : la séance part en génération libre, elle a l'air
+ * normale. Le registre qualité serveur en donne le prix — **42 % de questions
+ * rejetées sans référentiel, contre 14 % avec**.
+ *
+ * Fusionner les écritures est sans risque : `trouver()` filtre DÉJÀ par pays,
+ * donc un profil camerounais continue de tomber sur le programme camerounais.
+ *
+ * ⚠️ Ne surtout pas confondre « 2nde » avec « 2nde A » ni « Terminale » avec
+ * « Tle C » : ce sont des séries camerounaises distinctes. La normalisation
+ * garde donc le suffixe (`2ndea`, `tlec`), qui ne collisionne avec rien.
+ */
+function cleNiveau(s) {
+  return String(s || '')
+    .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ').trim()
+    .replace(/^(\d+)\s*(eme|e)\b/, '$1e')          // 5ème / 5eme / 5e  → 5e
+    .replace(/^premiere\b|^(1)\s*(ere|re)\b/, '1re')
+    .replace(/^seconde\b|^(2)\s*(nde|de)\b/, '2nde')
+    .replace(/^terminale\b|^term\b|^tle\b/, 'tle')
+    .replace(/\s+/g, '')
+}
+
+/** Entrée `classes` correspondant à ce niveau, quelle qu'en soit l'écriture. */
+function classeDe(ref, niveau) {
+  const cible = cleNiveau(niveau)
+  if (!cible) return null
+  for (const k of Object.keys(ref.classes || {})) {
+    if (cleNiveau(k) === cible) return ref.classes[k]
+  }
+  return null
+}
+
 function trouver({ pays, niveau, matiere, date = new Date() }) {
-  const cl = String(niveau || '').trim()
   const an = anneeScolaire(date)
   return REFERENTIELS
-    .filter((x) => x.pays === pays && memeMatiere(x, matiere) && x.classes[cl])
-    .filter((x) => an >= x.classes[cl].enVigueurRentree)
-    .sort((a, b) => b.classes[cl].enVigueurRentree - a.classes[cl].enVigueurRentree)[0] || null
+    .map((x) => ({ x, cl: classeDe(x, niveau) }))
+    .filter(({ x, cl }) => x.pays === pays && memeMatiere(x, matiere) && cl)
+    .filter(({ cl }) => an >= cl.enVigueurRentree)
+    .sort((a, b) => b.cl.enVigueurRentree - a.cl.enVigueurRentree)[0]?.x || null
 }
 
 /**
@@ -224,7 +267,12 @@ export function anneeScolaire(date = new Date()) {
  */
 export function notionsOfficielles({ pays, niveau, matiere, date = new Date() }) {
   const r = trouver({ pays, niveau, matiere, date })
-  return r ? r.classes[String(niveau || '').trim()].notions : []
+  // ⚠️ On relit la classe par `classeDe`, pas par le libellé brut : c'est
+  // exactement ce qui plantait après avoir rendu `trouver()` tolérant — le
+  // référentiel était bien trouvé, puis `classes['5ème']` valait `undefined`.
+  // Un correctif à moitié appliqué transforme un échec muet en exception.
+  const cl = r ? classeDe(r, niveau) : null
+  return cl ? cl.notions : []
 }
 
 /** Provenance à afficher — l'attribution est une obligation de la licence. */

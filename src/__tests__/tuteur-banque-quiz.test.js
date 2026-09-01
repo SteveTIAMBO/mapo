@@ -107,7 +107,15 @@ const VERSION_BANQUE = (() => {
   const m = src.match(/const BANQUE_VERSION = '([a-z0-9]+)'/)
   return m ? m[1] : ''
 })()
-const cleTest = (suffixe) => VERSION_BANQUE + '__' + suffixe
+/**
+ * ⚠️ LE PAYS EST ENTRÉ DANS LA CLÉ (v7, 01/09/2026). Il n'y était pas : une 5e
+ * française et une 5ème camerounaise n'étaient séparées que par l'ORTHOGRAPHE
+ * de la classe. Une protection accidentelle — et elle tombait dès qu'un profil
+ * camerounais écrivait « 5e ». Le niveau est désormais normalisé lui aussi
+ * (« 5ème » et « 5e » d'un MÊME pays partagent leur banque au lieu de la
+ * scinder en deux documents à moitié remplis).
+ */
+const cleTest = (suffixe, pays = 'fr') => VERSION_BANQUE + '__' + pays + '__' + suffixe
 
 describe('Banque de quiz — la difficulté ne doit plus être plafonnée', () => {
   it('deux niveaux distincts au-delà de 5 lisent DEUX documents différents', async () => {
@@ -115,15 +123,15 @@ describe('Banque de quiz — la difficulté ne doit plus être plafonnée', () =
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 6 })
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 7 })
 
-    const lues = clesLues.filter((k) => k.includes('anglais__5eme'))
-    expect(finit(lues, 'anglais__5eme__d6')).toBe(true)
-    expect(finit(lues, 'anglais__5eme__d7')).toBe(true)
+    const lues = clesLues.filter((k) => k.includes('anglais__5e'))
+    expect(finit(lues, 'anglais__5e__d6')).toBe(true)
+    expect(finit(lues, 'anglais__5e__d7')).toBe(true)
     // Le symptôme exact du bug : tout retombait sur d5.
-    expect(finitAucune(lues, 'anglais__5eme__d5')).toBe(true)
+    expect(finitAucune(lues, 'anglais__5e__d5')).toBe(true)
   })
 
   it('le niveau 12 ne réutilise pas la banque du niveau 5', async () => {
-    banque[cleTest('anglais__5eme__d5')] = questions('Niveau 5', 10)
+    banque[cleTest('anglais__5e__d5')] = questions('Niveau 5', 10)
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 12 })
 
@@ -147,20 +155,20 @@ describe('Banque de quiz — un apprenant ne rejoue pas ses propres questions', 
 
   it('si la banque ne contient que du déjà-vu, on régénère au lieu de resservir', async () => {
     const dejaJouees = questions('Déjà vue', 10)
-    banque[cleTest('anglais__5eme__d3')] = dejaJouees
+    banque[cleTest('anglais__5e__d3')] = dejaJouees
     historique('enf1', 'Anglais', dejaJouees)
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
 
-    expect(finit(clesLues, 'anglais__5eme__d3')).toBe(true) // la banque a bien été consultée
+    expect(finit(clesLues, 'anglais__5e__d3')).toBe(true) // la banque a bien été consultée
     expect(res.mode).toBe('ia')                      // …et écartée : elle n'avait que du déjà-vu
     expect(appelsIA).toHaveLength(1)
   })
 
   it('la banque reste utilisée quand elle a assez de questions neuves', async () => {
     historique('enf1', 'Anglais', questions('Déjà vue', 5))
-    banque[cleTest('anglais__5eme__d3')] = [...questions('Déjà vue', 5), ...questions('Neuve', 10)]
+    banque[cleTest('anglais__5e__d3')] = [...questions('Déjà vue', 5), ...questions('Neuve', 10)]
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -182,7 +190,7 @@ describe('Banque de quiz — un apprenant ne rejoue pas ses propres questions', 
 
   it("l'historique d'une AUTRE matière n'écarte rien", async () => {
     historique('enf1', 'Mathématiques', questions('Déjà vue', 10))
-    banque[cleTest('anglais__5eme__d3')] = questions('Déjà vue', 10)
+    banque[cleTest('anglais__5e__d3')] = questions('Déjà vue', 10)
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -201,7 +209,7 @@ describe('La banque partagée est VERSIONNÉE (purge instantanée)', () => {
   })
 
   it('toute clé lue porte ce préfixe', () => {
-    expect(cleTest('maths__6eme__d1').startsWith(VERSION_BANQUE + '__')).toBe(true)
+    expect(cleTest('maths__6e__d1').startsWith(VERSION_BANQUE + '__')).toBe(true)
   })
 })
 
@@ -235,14 +243,38 @@ describe('Provenance — la banque ne doit pas s’attribuer un programme qu’e
     expect(r.source).toBe('referentiel')
   })
 
-  it('le PAYS de l’enfant compte : « 5e » n’existe pas au Cameroun', async () => {
-    // Même matière, même intitulé de classe, autre pays : le Cameroun écrit
-    // « 5ème ». Annoncer un programme officiel ici serait faux.
+  /**
+   * ⚠️ DÉCISION CHANGÉE LE 01/09/2026 — assumée, pas contournée.
+   *
+   * Ce test affirmait qu'un profil camerounais dont la classe est écrite « 5e »
+   * ne devait recevoir AUCUN programme officiel, au motif que « le Cameroun
+   * écrit 5ème ». C'était traiter une variante d'ÉCRITURE comme une erreur de
+   * fond : un élève camerounais en « 5e » est bien en 5ème camerounaise, et lui
+   * refuser son programme est un faux négatif — exactement le défaut qu'on
+   * venait de corriger côté France (cf. referentiel-libelles.test.js).
+   *
+   * Ce que le test protégeait vraiment reste garanti, et mieux qu'avant : un
+   * profil camerounais ne reçoit jamais le programme FRANÇAIS. `trouver()`
+   * filtre par pays avant de comparer la classe, et depuis la v7 la banque
+   * partagée est elle aussi cloisonnée par pays — elle ne l'était pas, les deux
+   * systèmes n'étaient séparés que par l'orthographe.
+   */
+  it('un profil camerounais reçoit le programme CAMEROUNAIS, même en écrivant « 5e »', async () => {
     enfantCourant = { id: 'e1', pays: 'CM' }
-    banque[cleTest('mathematiques__5e__d3')] = questions('Banque', 10)
+    banque[cleTest('mathematiques__5e__d3', 'cm')] = questions('Banque', 10)
     const tuteur = useTuteurStore()
     const r = await tuteur.generateQuiz({ matiere: 'Mathématiques', niveau: '5e', nombre: 10, difficulte: 3, studentId: 'e1' })
-    expect(r.source).toBe('ia')
+    expect(r.source).toBe('referentiel')
+  })
+
+  it('⚠️ et il ne lit PAS la banque française', async () => {
+    // Le cloisonnement par pays de la clé de banque, vérifié : la banque FR est
+    // garnie, la banque CM est vide → aucune question ne doit en sortir.
+    enfantCourant = { id: 'e1', pays: 'CM' }
+    banque[cleTest('mathematiques__5e__d3', 'fr')] = questions('Banque FR', 10)
+    const tuteur = useTuteurStore()
+    const r = await tuteur.generateQuiz({ matiere: 'Mathématiques', niveau: '5e', nombre: 10, difficulte: 3, studentId: 'e1' })
+    expect((r.questions || []).some((q) => q.q.startsWith('Banque FR'))).toBe(false)
   })
 })
 
@@ -254,7 +286,7 @@ describe('Provenance — la banque ne doit pas s’attribuer un programme qu’e
  */
 describe('Banque partagée — lecture PARTIELLE et complément', () => {
   it('une banque incomplète est SERVIE puis complétée par l’IA, pas jetée', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+    banque[cleTest('anglais__5e__d3')] = questions('Neuve', 6)
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -266,7 +298,7 @@ describe('Banque partagée — lecture PARTIELLE et complément', () => {
   })
 
   it('l’IA n’est sollicitée que pour le COMPLÉMENT, avec une marge de rejet', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+    banque[cleTest('anglais__5e__d3')] = questions('Neuve', 6)
 
     const tuteur = useTuteurStore()
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -277,7 +309,7 @@ describe('Banque partagée — lecture PARTIELLE et complément', () => {
   })
 
   it('les questions déjà fournies par la banque ne sont pas redemandées à l’IA', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 6)
+    banque[cleTest('anglais__5e__d3')] = questions('Neuve', 6)
 
     const tuteur = useTuteurStore()
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -286,7 +318,7 @@ describe('Banque partagée — lecture PARTIELLE et complément', () => {
   })
 
   it('aucun doublon entre le socle de la banque et le complément', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('IA', 4) // mêmes intitulés que le mock IA
+    banque[cleTest('anglais__5e__d3')] = questions('IA', 4) // mêmes intitulés que le mock IA
 
     const tuteur = useTuteurStore()
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1' })
@@ -303,7 +335,7 @@ describe('Banque partagée — lecture PARTIELLE et complément', () => {
  */
 describe('Panne IA — la banque passe avant le repli générique', () => {
   it('IA injoignable et banque partielle : on sert la banque', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Neuve', 3)
+    banque[cleTest('anglais__5e__d3')] = questions('Neuve', 3)
     global.fetch = vi.fn(async () => { throw new Error('proxy injoignable') })
 
     const tuteur = useTuteurStore()
@@ -378,7 +410,7 @@ describe('Panne IA — la banque passe avant le repli générique', () => {
  */
 describe('Cours importé — priorité au cours, complément par le programme', () => {
   it('le cours ne se fait pas voler la place : l’IA est sollicitée pour la séance ENTIÈRE', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+    banque[cleTest('anglais__5e__d3')] = questions('Programme', 10)
 
     const tuteur = useTuteurStore()
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours importé sur les temps verbaux.' })
@@ -390,7 +422,7 @@ describe('Cours importé — priorité au cours, complément par le programme', 
   })
 
   it('séance trop courte après le tri : la banque complète, et on annonce « mix »', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+    banque[cleTest('anglais__5e__d3')] = questions('Programme', 10)
     global.fetch = vi.fn(async (_url, opts) => {
       appelsIA.push(JSON.parse(opts.body))
       // Le solveur n'a laissé passer que 4 questions tirées du cours.
@@ -408,7 +440,7 @@ describe('Cours importé — priorité au cours, complément par le programme', 
   })
 
   it('séance complète depuis le cours : la banque n’intervient pas, la source reste « cours »', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 10)
+    banque[cleTest('anglais__5e__d3')] = questions('Programme', 10)
     global.fetch = vi.fn(async (_url, opts) => {
       appelsIA.push(JSON.parse(opts.body))
       return { json: async () => ({ ok: true, text: JSON.stringify({ source: 'cours', questions: questions('Cours', 10) }) }) }
@@ -418,7 +450,13 @@ describe('Cours importé — priorité au cours, complément par le programme', 
     const res = await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours.' })
 
     expect(res.questions.every((q) => q.q.startsWith('Cours'))).toBe(true)
-    expect(res.source).toBe('cours')
+    // ⚠️ « mix » et non plus « cours » depuis le 01/09. Ce test était vert grâce
+    // à un BUG : « 5ème » ne trouvait aucun référentiel, donc la séance
+    // s'annonçait tirée du seul cours. Le programme officiel est pourtant
+    // transmis au modèle même quand un cours est fourni (test suivant) — la
+    // provenance honnête est donc bien « cours + référentiel ». Les questions,
+    // elles, viennent toujours du cours : la banque n'est pas intervenue.
+    expect(res.source).toBe('mix')
   })
 
   it('le programme officiel est transmis MÊME quand un cours est fourni', async () => {
@@ -432,7 +470,7 @@ describe('Cours importé — priorité au cours, complément par le programme', 
   })
 
   it('les questions de la banque ne sont pas redemandées à l’IA, même en simple complément', async () => {
-    banque[cleTest('anglais__5eme__d3')] = questions('Programme', 6)
+    banque[cleTest('anglais__5e__d3')] = questions('Programme', 6)
 
     const tuteur = useTuteurStore()
     await tuteur.generateQuiz({ matiere: 'Anglais', niveau: '5ème', nombre: 10, difficulte: 3, studentId: 'enf1', cours: 'Mon cours.' })

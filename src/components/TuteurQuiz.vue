@@ -75,6 +75,7 @@
 
       <!-- Disclaimer LÉGER : d'où viennent les exercices (mes cours / référentiel / mix) -->
       <p v-if="sourceLabel && index === 0" class="tq-source"><BookOpen :size="13" /> {{ sourceLabel }}</p>
+      <p v-if="courteLabel && index === 0" class="tq-source"><Info :size="13" /> {{ courteLabel }}</p>
 
       <div class="tq-qrow">
         <h2 class="tq-q">{{ current.q }}</h2>
@@ -529,6 +530,22 @@ const sourceLabel = computed(() => {
   if (sourceRev.value === 'referentiel') return en ? 'Questions based on the national curriculum.' : 'Questions basées sur le référentiel national.'
   return ''
 })
+/**
+ * Séance revenue plus courte que prévu — dit sobrement, sans dramatiser.
+ *
+ * ⚠️ Mesuré le 01/09 : des séances de 5 et 6 questions étaient servies comme
+ * des séances normales. Zéro rejet du solveur : le modèle avait simplement
+ * rendu moins que demandé. Personne ne pouvait le savoir, ni l'apprenant ni
+ * nous. Une séance courte reste une bonne séance — mais elle se dit.
+ */
+const seanceCourte = ref(null)
+const courteLabel = computed(() => {
+  if (!seanceCourte.value) return ''
+  const { livrees } = seanceCourte.value
+  return locale.value.startsWith('en')
+    ? `Shorter session this time: ${livrees} questions.`
+    : `Séance plus courte cette fois : ${livrees} questions.`
+})
 const lastMode = computed(() => tuteur.lastMode)
 // `ia` = généré à l'instant, `banque` = généré par MIAPO puis mis en cache.
 // Les deux sont du vrai contenu ; seul `simulation` est une démo.
@@ -736,6 +753,7 @@ async function start() {
   const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursAncrage, digest, studentId: props.studentId })
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursAncrage ? 'cours' : 'referentiel')
+  seanceCourte.value = (res && res.courte) || null
   questions.value = res.questions || []
   // Aucune question : l'écran de RÉSULTAT s'affichait, avec un score pour une
   // séance jamais jouée — l'échec prenait l'apparence d'une réussite. On le dit,

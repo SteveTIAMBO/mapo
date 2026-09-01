@@ -63,12 +63,29 @@ describe('Absence de référentiel — un résultat vide est LÉGITIME', () => {
     expect(notionsOfficielles({ pays: 'SN', niveau: '5e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
   })
 
-  it('et les classes d’un pays ne s’écrivent pas comme celles d’un autre', () => {
-    // Le Cameroun dit « 6ème », la France « 6e ». Ce ne sont pas les mêmes
-    // clés : demander « 6e » au Cameroun ne doit pas ramener le programme
-    // français par accident, ni l'inverse.
-    expect(notionsOfficielles({ pays: 'CM', niveau: '6e', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
-    expect(notionsOfficielles({ pays: 'FR', niveau: '6ème', matiere: 'Mathématiques', date: en(2026) })).toEqual([])
+  /**
+   * ⚠️ TEST RÉÉCRIT LE 01/09/2026 — il s'appuyait sur la mauvaise barrière.
+   *
+   * Il affirmait que « 6e » au Cameroun devait renvoyer vide, parce que « le
+   * Cameroun dit 6ème ». C'était compter sur l'ORTHOGRAPHE pour séparer deux
+   * systèmes scolaires. Fragile, et surtout faux dans l'autre sens : un élève
+   * français dont la classe est saisie « 6ème » n'avait alors AUCUN programme —
+   * ce qui s'est produit en vrai, en silence, pendant des mois (42 % de
+   * questions rejetées sans référentiel contre 14 % avec).
+   *
+   * La vraie barrière est le PAYS, appliquée avant toute comparaison de classe.
+   * C'est elle qu'on vérifie ici, et elle tient quelle que soit l'écriture.
+   */
+  it('⭐ la barrière entre pays est le PAYS, pas l’orthographe de la classe', () => {
+    const cm = notionsOfficielles({ pays: 'CM', niveau: '6e', matiere: 'Mathématiques', date: en(2026) })
+    const fr = notionsOfficielles({ pays: 'FR', niveau: '6ème', matiere: 'Mathématiques', date: en(2026) })
+    // Chacun trouve son programme, quelle que soit la façon d'écrire la classe…
+    expect(cm.length).toBeGreaterThan(0)
+    expect(fr.length).toBeGreaterThan(0)
+    // …et ce ne sont surtout pas les mêmes.
+    expect(cm).not.toEqual(fr)
+    expect(cm).toEqual(notionsOfficielles({ pays: 'CM', niveau: '6ème', matiere: 'Mathématiques', date: en(2026) }))
+    expect(fr).toEqual(notionsOfficielles({ pays: 'FR', niveau: '6e', matiere: 'Mathématiques', date: en(2026) }))
   })
 
   it('une matière sans référentiel ne renvoie rien', () => {

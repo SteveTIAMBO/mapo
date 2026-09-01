@@ -126,10 +126,20 @@ function revisionDocRef(uid, studentId) {
  * arrêtés du printemps 2026 y changent les programmes de sciences et
  * d'histoire-géographie au CP et au CM1. Là encore, ce qui était en banque
  * portait sur un programme qui n'est plus le bon, ou sur aucun.
+ *
+ * v7 (01-9-2026) : LE PAYS ENTRE DANS LA CLÉ. Il n'y était pas. Deux systèmes
+ * scolaires différents pouvaient donc se partager le même document : une 5e
+ * française et une 5ème camerounaise n'étaient séparées que par l'ORTHOGRAPHE
+ * de la classe — une protection accidentelle, qui tombait dès qu'un profil
+ * camerounais écrivait « 5e ». Le même jour, rendre la recherche de référentiel
+ * tolérante aux variantes d'écriture a rendu ce trou atteignable : les
+ * questions seraient venues de la banque française, annoncées sous le programme
+ * camerounais. On purge donc, comme à chaque renforcement de garantie — le coût
+ * est nul aujourd'hui, la banque ne contenait que deux documents vivants.
  */
-const BANQUE_VERSION = 'v6'
+const BANQUE_VERSION = 'v7'
 
-function bankKey(matiere, niveau, difficulte) {
+function bankKey(matiere, niveau, difficulte, pays) {
   const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   // PAS DE PLAFOND sur la difficulté. Un `min(5, …)` faisait tomber TOUS les
   // niveaux ≥ 5 dans le même document de banque : dès qu'il contenait 10
@@ -137,7 +147,13 @@ function bankKey(matiere, niveau, difficulte) {
   // mêmes questions à difficulté gelée, niveau après niveau. Le serveur, lui,
   // sait déjà calibrer au-delà de 5 (type concours) — c'était la clé qui bridait.
   const d = Math.max(1, Number(difficulte) || 1)
-  return `${BANQUE_VERSION}__${norm(matiere)}__${norm(niveau)}__d${d}`
+  // ⚠️ Le PAYS fait partie de l'identité d'une classe. Sans lui, « 5e » désigne
+  // deux programmes différents selon qu'on est à Lyon ou à Garoua, et les
+  // questions des uns partiraient chez les autres. Le niveau est normalisé au
+  // passage, pour que « 5ème » et « 5e » d'un MÊME pays partagent bien leur
+  // banque au lieu de la scinder en deux.
+  const cl = norm(String(niveau || '').replace(/^(\d+)\s*(ème|eme)\b/i, '$1e'))
+  return `${BANQUE_VERSION}__${norm(pays) || 'xx'}__${norm(matiere)}__${cl}__d${d}`
 }
 function bankDocRef(key) { return doc(db, 'quizBank', key) }
 
@@ -217,10 +233,10 @@ export function melangerLot(questions) {
   return Array.isArray(questions) ? questions.map(melangerChoix) : questions
 }
 
-async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues }) {
+async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues, pays }) {
   if (!cloudUid()) return null // démo / non connecté : pas de banque cloud
   try {
-    const snap = await getDoc(bankDocRef(bankKey(matiere, niveau, difficulte)))
+    const snap = await getDoc(bankDocRef(bankKey(matiere, niveau, difficulte, pays)))
     if (snap.exists()) {
       const qs = Array.isArray(snap.data()?.questions) ? snap.data().questions : []
       const valid = qs.filter((q) => q && q.q && Array.isArray(q.choices) && q.choices.length === 4)
@@ -241,17 +257,17 @@ async function readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues }) {
   } catch { /* règle absente / offline → on régénère */ }
   return null
 }
-async function appendBankQuiz({ matiere, niveau, difficulte, questions }) {
+async function appendBankQuiz({ matiere, niveau, difficulte, questions, pays }) {
   if (!cloudUid() || !Array.isArray(questions) || !questions.length) return
   try {
-    const ref = bankDocRef(bankKey(matiere, niveau, difficulte))
+    const ref = bankDocRef(bankKey(matiere, niveau, difficulte, pays))
     const snap = await getDoc(ref).catch(() => null)
     const existing = snap && snap.exists() && Array.isArray(snap.data()?.questions) ? snap.data().questions : []
     const seen = new Set(existing.map((q) => (q.q || '').trim().toLowerCase()))
     const fresh = questions.filter((q) => q && q.q && Array.isArray(q.choices) && q.choices.length === 4 && !seen.has(q.q.trim().toLowerCase()))
     if (!fresh.length && existing.length) return
     const merged = [...existing, ...fresh].slice(-40) // borne la taille du document
-    await setDoc(ref, { matiere, niveau, difficulte: Number(difficulte) || 1, questions: merged, updatedAt: new Date().toISOString() })
+    await setDoc(ref, { pays: String(pays || ''), matiere, niveau, difficulte: Number(difficulte) || 1, questions: merged, updatedAt: new Date().toISOString() })
   } catch { /* best-effort */ }
 }
 
@@ -350,9 +366,13 @@ export const useTuteurStore = defineStore('tuteur', () => {
     let notions = []
     let refSource = null
     let granularite = 'classe'
+    // Le pays sert DEUX fois : au référentiel, et à la clé de la banque
+    // partagée — deux systèmes scolaires ne doivent pas partager un document.
+    let paysEleve = 'FR'
     try {
       const e = useEnfantsAutonomesStore().enfants.find((x) => x.id === studentId)
-      const args = { pays: e?.pays || 'FR', niveau, matiere }
+      paysEleve = e?.pays || 'FR'
+      const args = { pays: paysEleve, niveau, matiere }
       notions = notionsPourPrompt(args)
       refSource = sourceOfficielle(args)
       granularite = granulariteProgramme(args)
@@ -374,7 +394,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     // Dans les deux cas la banque n'est ALIMENTÉE que par les quiz génériques :
     // le contenu d'un cours personnel n'a rien à faire dans une banque partagée.
     const banqueEnComplement = !!(effThemes || cours)
-    const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues })
+    const fromBank = await readBankQuiz({ matiere, niveau, difficulte, nombre, dejaVues, pays: paysEleve })
     const banqueDispo = Array.isArray(fromBank) ? fromBank : []
     let socleBanque = banqueEnComplement ? [] : banqueDispo
     {
@@ -464,7 +484,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
           // seulement, la mention « mix » est méritée.
           if (cours && refSource) source = 'mix'
           // Alimente la banque partagée SEULEMENT pour un quiz générique (pas de cours perso).
-          if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed })
+          if (!effThemes && !cours) appendBankQuiz({ matiere, niveau, difficulte, questions: parsed, pays: paysEleve })
           // Socle validé d'abord, complément frais ensuite, sans doublon. Le
           // socle vient de la banque : ces questions ont DÉJÀ passé le solveur.
           const vus = new Set()
@@ -478,7 +498,21 @@ export const useTuteurStore = defineStore('tuteur', () => {
           // la complète par le programme officiel (banque partagée, même
           // classe). L'apprenant garde une séance de la bonne longueur sans que
           // le programme ait pris la place de son cours.
-          if (banqueEnComplement && retenues.length < nombre && banqueDispo.length) {
+          // ⚠️ LE COMPLÉMENT NE JOUAIT QUE DANS UN CAS SUR DEUX (corrigé le
+          // 01/09). Il était conditionné à `banqueEnComplement`, c'est-à-dire au
+          // seul cas d'un cours ou d'un thème imposé. Pour une révision
+          // générique, une séance revenue courte partait telle quelle.
+          //
+          // Or c'est justement là que ça arrivait. Mesuré dans le registre
+          // qualité serveur : les séances de 5 et 6 questions ont TOUTES **zéro
+          // rejet** — ce n'est pas le solveur qui coupe, c'est le modèle qui
+          // rend moins que demandé. Toute la mécanique bâtie jusqu'ici (marge de
+          // surgénération, complément, régénération) réagit aux REJETS ; la
+          // sous-production, elle, passait entre les mailles.
+          //
+          // Compléter depuis la banque ne coûte aucun token et ces questions ont
+          // déjà passé le solveur : il n'y a aucune raison de s'en priver.
+          if (retenues.length < nombre && banqueDispo.length) {
             const ajouts = dedoublonne(banqueDispo).slice(0, nombre - retenues.length)
             if (ajouts.length) {
               retenues.push(...ajouts)
@@ -487,7 +521,19 @@ export const useTuteurStore = defineStore('tuteur', () => {
             }
           }
           generating.value = false
-          return { ok: true, questions: melangerLot(retenues.slice(0, nombre)), mode: 'ia', reason: '', source }
+          // ⚠️ Et si elle reste courte, on l'ANNONCE. Une séance de 6 questions
+          // renvoyée en `ok: true` sans un mot ressemble trait pour trait à une
+          // séance normale : ni l'apprenant ni nous ne pouvions le savoir.
+          const attendues = nombre
+          const livrees = Math.min(retenues.length, nombre)
+          return {
+            ok: true,
+            questions: melangerLot(retenues.slice(0, nombre)),
+            mode: 'ia',
+            reason: '',
+            source,
+            courte: livrees < attendues ? { livrees, attendues } : null,
+          }
         }
         // Aucune question retenue : lot entièrement rejeté par le solveur, ou
         // réponse illisible. Cas typiquement transitoire → on retente.
