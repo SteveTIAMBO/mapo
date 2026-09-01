@@ -267,3 +267,34 @@ describe('écran EDUFREM de saisie du barème', () => {
     expect(vue).toContain('store.erreur')
   })
 })
+
+describe('⚠️ le suivi du dû reste ATTEIGNABLE sans grille tarifaire', () => {
+  const vue = fs.readFileSync(path.join(racine, 'views/FacturationView.vue'), 'utf8')
+
+  it('l’onglet « Dû à EDUFREM » existe bien dans la comptabilité', () => {
+    // C'est le SEUL écran où ces sommes se voient : adminmapo ne tient que le
+    // barème par pays, pas les montants dus par école.
+    expect(vue).toContain("activeTab === 'edufrem'")
+  })
+
+  it('la présence de redevances suffit à afficher le contenu', () => {
+    // Mesuré sur EPC1 le 01/09 : la comptabilité n'affichait QUE l'invitation à
+    // configurer la grille, et tout le contenu — onglets compris — était derrière
+    // `setupDone || feeStructure.length`. Or une redevance est écrite à la
+    // validation d'une inscription même SANS grille (elle sort « à chiffrer ») :
+    // ces lignes existaient en base sans aucun écran pour les montrer. De
+    // l'argent dû devenait invisible.
+    const i = vue.indexOf('<template v-if="factStore.setupDone')
+    expect(i).toBeGreaterThan(0)
+    // Fenêtre bornée par la fermeture de l'attribut (`">`) : borner sur le
+    // premier `>` la coupait au `>` de `feeStructure.length > 0`.
+    const condition = vue.slice(i, vue.indexOf('">', i))
+    expect(condition).toContain('redevances.length')
+  })
+
+  it('l’invitation à configurer la grille garde sa propre condition', () => {
+    // La correction est strictement additive : une école sans grille ni
+    // redevance voit exactement ce qu'elle voyait avant.
+    expect(vue).toContain('v-if="!factStore.setupDone && !factStore.loading"')
+  })
+})

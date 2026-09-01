@@ -34,8 +34,16 @@
       </div>
     </div>
 
-    <!-- Contenu principal -->
-    <template v-if="factStore.setupDone || feeStructure.length > 0">
+    <!-- Contenu principal ─────────────────────────────────────────────────
+         ⚠️ `redevances.length` fait partie de la condition : une redevance est
+         écrite à la validation d'une inscription MÊME sans grille tarifaire
+         (elle sort alors « à chiffrer »). Sans ce troisième cas, ces lignes
+         existaient en base pendant que l'écran n'affichait que l'invitation à
+         configurer la grille — et l'onglet « Dû à EDUFREM » est le SEUL endroit
+         où ces sommes se voient. De l'argent dû devenait invisible.
+         L'invitation à configurer la grille reste affichée (bloc ci-dessus,
+         condition indépendante) : rien de ce qui marchait ne change. -->
+    <template v-if="factStore.setupDone || feeStructure.length > 0 || redevances.length > 0">
       <!-- Stats financières -->
       <div class="stat-bar" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
         <div class="stat-bar-item">
