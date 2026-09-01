@@ -1469,8 +1469,11 @@ const bulletinRows = computed(() => {
       row.annualAvg = notesStore.getSubjectAnnualAvg(selectedClass.value, subject, selectedEleve.value)
       mainAvg = row.annualAvg
     } else if (tri) {
-      row.seq1 = notesStore.getNote(selectedClass.value, subject, tri.sequences[0], selectedEleve.value)
-      row.seq2 = notesStore.getNote(selectedClass.value, subject, tri.sequences[1], selectedEleve.value)
+      // `sequencesDe` rend la période elle-même quand aucune séquence n'est
+      // déclarée ; `seq2` reste alors vide, ce qui est exact.
+      const seqs = notesStore.sequencesDe(tri.value)
+      row.seq1 = notesStore.getNote(selectedClass.value, subject, seqs[0], selectedEleve.value)
+      row.seq2 = notesStore.getNote(selectedClass.value, subject, seqs[1], selectedEleve.value)
       row.trimAvg = notesStore.getSubjectTrimesterAvg(selectedClass.value, subject, selectedTrimester.value, selectedEleve.value)
       mainAvg = row.trimAvg
     }
@@ -1717,15 +1720,18 @@ function loadEditingNotes() {
   }
   const tri = currentTrimester.value
   const notes = {}
+  // Même règle que la sauvegarde : sans séquence déclarée, la note appartient
+  // à la période. Lire et écrire par deux chemins différents était le défaut.
+  const seqs = notesStore.sequencesDe(tri.value)
   for (const eleve of classEleves.value) {
     if (isSingleEval.value) {
       notes[eleve.id] = {
-        s1: notesStore.getNote(selectedClass.value, selectedSubject.value, tri.sequences[0], eleve.id) ?? '',
+        s1: notesStore.getNote(selectedClass.value, selectedSubject.value, seqs[0], eleve.id) ?? '',
       }
     } else {
       notes[eleve.id] = {
-        s1: notesStore.getNote(selectedClass.value, selectedSubject.value, tri.sequences[0], eleve.id) ?? '',
-        s2: notesStore.getNote(selectedClass.value, selectedSubject.value, tri.sequences[1], eleve.id) ?? '',
+        s1: notesStore.getNote(selectedClass.value, selectedSubject.value, seqs[0], eleve.id) ?? '',
+        s2: notesStore.getNote(selectedClass.value, selectedSubject.value, seqs[1], eleve.id) ?? '',
       }
     }
   }
@@ -1747,9 +1753,15 @@ async function saveNotes() {
   const tri = currentTrimester.value
 
   for (const [eleveId, vals] of Object.entries(editingNotes.value)) {
-    notesStore.setNote(selectedClass.value, selectedSubject.value, tri.sequences[0], eleveId, vals.s1)
+    // ⚠️ La séquence vient du store, pas de `tri.sequences[0]`. En mode
+    // « 1 évaluation par période » l'école ne déclare AUCUNE séquence : cet
+    // index valait `undefined` et la note partait sous une clé
+    // « classe_matiere_undefined », relue par la même clé fautive — donc
+    // affichée — mais absente de tout calcul de moyenne.
+    const seqs = notesStore.sequencesDe(tri.value)
+    notesStore.setNote(selectedClass.value, selectedSubject.value, seqs[0], eleveId, vals.s1)
     if (!isSingleEval.value) {
-      notesStore.setNote(selectedClass.value, selectedSubject.value, tri.sequences[1], eleveId, vals.s2)
+      notesStore.setNote(selectedClass.value, selectedSubject.value, seqs[1], eleveId, vals.s2)
     }
   }
 

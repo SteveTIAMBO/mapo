@@ -9,6 +9,8 @@ import { usePersonnelStore, SUBJECTS_BY_CYCLE } from './personnel'
 import { useElevesStore } from './eleves'
 import { getDefaultHoursForLevel, getSubjectHoursKey } from './emploi-du-temps'
 import { useSubjectsStore } from './subjects'
+import { useSchoolStore } from './school'
+import { listePeriodes } from '../utils/periodes'
 import { demoKey } from '../utils/demoScope'
 
 // ── Structure : Sequence 1 + Sequence 2 = Trimestre. T1+T2+T3 = Année ──
@@ -176,7 +178,55 @@ export const useNotesStore = defineStore('notes', () => {
   const distributions = ref({})
 
   // ── Helpers ──
+
+  /**
+   * Périodes de l'école, sous la forme `[{ value, sequences }]`.
+   *
+   * ⚠️ Les calculs de moyennes lisaient `TRIMESTERS`, la table camerounaise
+   * figée à T1/T2/T3. Depuis que l'école déclare ses périodes, cette table ne la
+   * décrit plus : une 4e période donnait `find('T4') === undefined`, donc `null`,
+   * donc un bulletin VIDE sans une seule erreur. Les semestres ne fonctionnaient
+   * que par chance, leurs codes étant aussi T1 et T2.
+   *
+   * Repli sur `TRIMESTERS` seulement hors contexte école (tests, MAPO+) : là,
+   * le modèle par défaut est la meilleure réponse disponible.
+   */
+  function periodesEcole() {
+    try {
+      const liste = listePeriodes(useSchoolStore().schoolSettings)
+      if (liste.length) return liste
+    } catch { /* pas de store école ici */ }
+    return TRIMESTERS
+  }
+
+  /**
+   * Séquences d'une période — et la période elle-même quand elle n'en a aucune.
+   *
+   * ⚠️ C'est le cœur du correctif du mode « 1 évaluation par période ». L'école
+   * ne déclare alors AUCUNE séquence, et la saisie écrivait la note sous
+   * `sequences[0]`, soit `undefined` : la clé devenait
+   * « classe_matiere_undefined ». La relecture utilisant la même clé fautive, la
+   * grille réaffichait les notes et l'enregistrement paraissait réussi — mais le
+   * calcul cherchait S1 et S2, ne trouvait rien, et rendait `null`. Moyennes,
+   * classement, mention et bulletin vides, pour un trimestre entier saisi.
+   *
+   * Sans séquence, la note appartient à la PÉRIODE. Un seul endroit le décide,
+   * pour que l'écriture et la lecture ne puissent pas en juger différemment.
+   */
+  function sequencesDe(periode) {
+    const p = periodesEcole().find((x) => x.value === periode)
+    if (!p) return []
+    return p.sequences?.length ? p.sequences : [periode]
+  }
+
+  /**
+   * ⚠️ Une séquence absente produisait la clé « classe_matiere_undefined » :
+   * des notes qui s'écrivent, se relisent, et n'entrent dans aucun calcul. On
+   * rend une clé VIDE, que `setNote` et `getNote` refusent — un refus visible
+   * vaut mieux qu'un enregistrement qui ment.
+   */
   function noteKey(classId, subjectId, sequence) {
+    if (!classId || !subjectId || !sequence) return ''
     return `${classId}_${subjectId}_${sequence}`
   }
 
@@ -213,21 +263,22 @@ export const useNotesStore = defineStore('notes', () => {
   // Note d'un élève pour une séquence
   function getNote(classId, subjectId, sequence, eleveId) {
     const key = noteKey(classId, subjectId, sequence)
+    if (!key) return null
     return notes.value[key]?.[eleveId] ?? null
   }
 
-  // Moyenne d'une matière pour un trimestre (moyenne des 2 séquences)
+  // Moyenne d'une matière pour une période (moyenne de ses séquences)
   function getSubjectTrimesterAvg(classId, subjectId, trimester, eleveId) {
-    const tri = TRIMESTERS.find(t => t.value === trimester)
-    if (!tri) return null
-    const seqNotes = tri.sequences.map(s => getNote(classId, subjectId, s, eleveId)).filter(n => n !== null)
+    const seqs = sequencesDe(trimester)
+    if (!seqs.length) return null
+    const seqNotes = seqs.map(s => getNote(classId, subjectId, s, eleveId)).filter(n => n !== null)
     if (seqNotes.length === 0) return null
     return Math.round((seqNotes.reduce((a, b) => a + b, 0) / seqNotes.length) * 100) / 100
   }
 
-  // Moyenne d'une matière pour l'année (moyenne des 3 trimestres)
+  // Moyenne d'une matière pour l'année (moyenne des périodes DE L'ÉCOLE)
   function getSubjectAnnualAvg(classId, subjectId, eleveId) {
-    const triAvgs = TRIMESTERS.map(t => getSubjectTrimesterAvg(classId, subjectId, t.value, eleveId)).filter(n => n !== null)
+    const triAvgs = periodesEcole().map(t => getSubjectTrimesterAvg(classId, subjectId, t.value, eleveId)).filter(n => n !== null)
     if (triAvgs.length === 0) return null
     return Math.round((triAvgs.reduce((a, b) => a + b, 0) / triAvgs.length) * 100) / 100
   }
@@ -250,9 +301,9 @@ export const useNotesStore = defineStore('notes', () => {
     return Math.round((totalWeighted / totalCoeff) * 100) / 100
   }
 
-  // Moyenne générale annuelle d'un élève
+  // Moyenne générale annuelle d'un élève, sur les périodes DE L'ÉCOLE
   function getGeneralAnnualAvg(classId, eleveId, cls) {
-    const triAvgs = TRIMESTERS.map(t => getGeneralTrimesterAvg(classId, t.value, eleveId, cls)).filter(n => n !== null)
+    const triAvgs = periodesEcole().map(t => getGeneralTrimesterAvg(classId, t.value, eleveId, cls)).filter(n => n !== null)
     if (triAvgs.length === 0) return null
     return Math.round((triAvgs.reduce((a, b) => a + b, 0) / triAvgs.length) * 100) / 100
   }
@@ -761,8 +812,15 @@ export const useNotesStore = defineStore('notes', () => {
 
   function setNote(classId, subjectId, sequence, eleveId, value) {
     const key = noteKey(classId, subjectId, sequence)
+    // Refus explicite : écrire sous une clé incomplète produisait des notes
+    // fantômes, visibles à la saisie et absentes de tout calcul.
+    if (!key) {
+      console.warn('Note ignorée : classe, matière ou période manquante', { classId, subjectId, sequence })
+      return false
+    }
     if (!notes.value[key]) notes.value[key] = {}
     notes.value[key][eleveId] = value === '' || value === null ? null : parseFloat(value)
+    return true
   }
 
   /** Nombre de notes réellement saisies. Sert à ne prévenir que s'il y a de quoi. */
@@ -1093,6 +1151,9 @@ export const useNotesStore = defineStore('notes', () => {
     dirSignatures, distributions,
     noteKey, getClassSubjects, getSubjectCoeff,
     getNote, setNote,
+    // Exposés pour que la SAISIE et le CALCUL désignent la même séquence : deux
+    // règles parallèles étaient précisément la cause du bulletin vide.
+    periodesEcole, sequencesDe,
     getSubjectTrimesterAvg, getSubjectAnnualAvg,
     getGeneralTrimesterAvg, getGeneralAnnualAvg,
     getClassRanking, getClassAnnualRanking,
