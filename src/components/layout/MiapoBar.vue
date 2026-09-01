@@ -816,6 +816,12 @@ async function submitB2C(text, opts = {}) {
   // Ancrage « sous-RAG personnel » : cours importés par l'apprenant (Mes cours)
   // + notes de cours Carré si relié. MIAPO s'appuie dessus EN PRIORITÉ.
   const perso = ctx.id ? coursTexteTous(ctx.id, 4000) : ''
+  // ⚠️ AUCUN mot-clé ici, et c'est le but du cloisonnement (29/08). Le jeton
+  // Carré ne donne accès qu'au dossier de cours choisi à la connexion : les
+  // notes remontées SONT ses cours, sans qu'on ait à deviner un mot à chercher.
+  // (Le chat n'est rattaché à aucun module précis — `learnerCtx` porte la LISTE
+  // des matières, pas celle qu'on révise —, donc il n'y avait de toute façon
+  // rien de fiable à cibler.)
   const carre = await connecteurs.carreNotesText().catch(() => '')
   const cours = [perso, carre].filter(Boolean).join('\n\n').slice(0, 6000)
   // Sous-RAG perso (v1) : digest de l'apprenant (profil, niveaux, forces, forme…)

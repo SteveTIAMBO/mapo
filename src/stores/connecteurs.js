@@ -113,39 +113,18 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
    * espace, « Entrepreneuriat - Stéphan » aussi.
    */
   /**
-   * Dossier de cours choisi par l'apprenant : { id, nom, espace }.
+   * ⚠️ LE CHOIX DU DOSSIER A DÉMÉNAGÉ DANS CARRÉ (29/08/2026).
    *
-   * ⚠️ REMPLACE un champ de TEXTE LIBRE (« périmètre : dossier / mot-clé ») où
-   * il fallait deviner quoi taper, sans savoir ce qui existait dans son Carré.
+   * MAPO+ avait son propre sélecteur de dossier. Carré a livré mieux : le
+   * dossier se choisit **pendant la connexion OAuth**, et le jeton délivré est
+   * CLOISONNÉ dessus, côté serveur. `/notes` et `/folders` ne voient plus que
+   * ce dossier, quels que soient les paramètres envoyés par le client.
    *
-   * ⚠️ LIMITE CONNUE, à lever côté Carré. `id` est enregistré dès aujourd'hui,
-   * mais l'API Carré ne sait pas encore filtrer les notes par dossier
-   * (`/api/v1/notes` n'accepte que `q` et `limit`). En attendant, c'est le NOM
-   * du dossier qui sert de mot-clé — donc un ciblage imparfait : une recherche
-   * « Gouvernance » ramène aussi des comptes rendus de réunion qui contiennent
-   * le mot. Choisir dans une liste reste très supérieur à taper à l'aveugle, et
-   * le jour où l'API accepte `folderId`, l'identifiant est déjà là.
-   * Cf. DEMANDE-CARRE-notes-par-dossier.md.
+   * C'est plus sûr que ce que j'avais fait — un périmètre appliqué côté client
+   * n'est pas un périmètre — et ça supprime tout un écran. Le sélecteur MAPO+ a
+   * donc été retiré : le laisser aurait fait croire qu'on peut changer de
+   * dossier depuis ici, alors qu'il faut refaire la connexion.
    */
-  const CLE_DOSSIER = 'mapo_carre_dossier'
-  const dossierCours = ref(null)
-  try { dossierCours.value = JSON.parse(localStorage.getItem(CLE_DOSSIER) || 'null') } catch { dossierCours.value = null }
-
-  function choisirDossier(d) {
-    dossierCours.value = d && d.nom ? { id: d.id || '', nom: d.nom, espace: d.espace || '' } : null
-    try {
-      if (dossierCours.value) localStorage.setItem(CLE_DOSSIER, JSON.stringify(dossierCours.value))
-      else localStorage.removeItem(CLE_DOSSIER)
-    } catch { /* quota : le choix reste en mémoire pour la session */ }
-  }
-
-  /** Liste PLATE de tous les dossiers (partagés et personnels), pour le choix. */
-  async function carreDossiersPlats() {
-    const groupes = await carreFolders()
-    const out = []
-    for (const g of groupes) for (const nom of g.dossiers) out.push({ espace: g.espace, nom })
-    return out
-  }
 
   async function carreFolders() {
     if (!linked.value || !fbAuth.currentUser) return []
@@ -177,10 +156,17 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
     if (!linked.value || !fbAuth.currentUser) return ''
     // Périmètre de synchro choisi par l'apprenant (dossier/mot-clé) : évite
     // d'aspirer des notes Carré sans rapport avec les cours. Cf. « Cours ».
-    // Périmètre : le dossier CHOISI d'abord (son nom sert de mot-clé tant que
-    // l'API Carré ne filtre pas par `folderId`), sinon l'ancien champ libre —
-    // gardé pour ne pas casser les comptes qui l'avaient renseigné.
-    if (!q) q = dossierCours.value?.nom || ''
+    // ⚠️ `q` n'est PLUS un « périmètre » : c'est le sujet qu'on révise.
+    //
+    // Le périmètre est désormais porté par le JETON (cloisonné sur le dossier
+    // choisi dans Carré à la connexion) : `/notes` ne renvoie que ce dossier,
+    // sans qu'on ait à le demander. `q` ne sert donc plus qu'à cibler À
+    // L'INTÉRIEUR — utile quand le dossier autorisé contient tous les cours.
+    //
+    // L'ancien `mapo_carre_scope` (champ de texte libre) reste lu en dernier
+    // recours, pour les comptes dont le jeton date d'avant le cloisonnement :
+    // sans lui, on leur remonterait les 3 notes les plus RÉCENTES de tout le
+    // compte, ce qui est pire que rien.
     if (!q) { try { q = localStorage.getItem('mapo_carre_scope') || '' } catch { q = '' } }
     try {
       const h = await authHeaders()
@@ -209,6 +195,5 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
   return {
     linked, busy, carreAppUrl, carreConnected, carrePreview,
     refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText, carreFolders,
-    dossierCours, choisirDossier, carreDossiersPlats,
   }
 })

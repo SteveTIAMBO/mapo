@@ -5814,11 +5814,7 @@
     "mcarNone": "Clear all",
     "mcarSelected": "{n} selected",
     "mcarApply": "Use these modules",
-    "mcCarreNoFolder": "No folder selected",
-    "mcCarreChoose": "Choose my course folder",
-    "mcCarreChange": "Change",
-    "mcCarreFilter": "Filter folders…",
-    "mcCarreFolderHint": "All your Carré folders, shared and personal. Pick the one where you keep your course notes."
+    "mcCarreFolderNote": "Your course folder is chosen in Carré, when you connect. To change it, connect again."
   },
   "cx": {
     "appTitle": "Complex workspace",

@@ -30,7 +30,24 @@ const sansCommentaires = (src) => src
   .replace(/\/\*[\s\S]*?\*\//g, ' ')
   .split('\n').map((l) => l.replace(/(^|\s)\/\/.*$/, '')).join('\n')
 
-/** Rejeu du regroupement de `carreFolders()`, sur la vraie réponse de Carré. */
+/**
+ * ⚠️⚠️ ERREUR DE MESURE À CONNAÎTRE (29/08). La forme ci-dessous vient du
+ * connecteur MCP de Carré — un AUTRE client, avec son propre jeton. J'en ai
+ * déduit celle de `/api/v1/folders`, que MAPO+ appelle réellement. C'est faux :
+ * l'équipe Carré a vérifié le fichier en production, cet endpoint ne renvoyait
+ * que les dossiers PERSONNELS (`id`, `name`), en excluant ceux des espaces.
+ *
+ * Autrement dit, l'import des 24 modules du MBA n'a probablement JAMAIS
+ * fonctionné : il ne voyait que les 2 dossiers personnels. Mesurer avec le bon
+ * instrument n'est pas un détail — deux clients d'une même API ne voient pas la
+ * même chose.
+ *
+ * `carreFolders()` reste donc tolérant à plusieurs formes, et le regroupement
+ * ci-dessous continue d'être testé (il est juste, sur cette forme-là). Ce qui
+ * doit être VÉRIFIÉ sur la réponse réelle après reconnexion : quelle forme
+ * arrive vraiment, et combien de dossiers un jeton cloisonné renvoie.
+ */
+/** Rejeu du regroupement de `carreFolders()`. */
 function grouper(data) {
   const brut = [...(data.personal || []), ...(data.shared || [])]
   const espaces = new Map()
@@ -131,38 +148,36 @@ describe('le format de sortie reste celui des modules', () => {
   })
 })
 
-describe('⭐ le dossier de cours se CHOISIT dans une liste (Steve, 28/08)', () => {
+describe('⭐⭐ le périmètre est porté par le JETON, plus par le client (29/08)', () => {
   const COURS = readFileSync(resolve(RACINE, 'src/components/MiapoMesCours.vue'), 'utf8')
+  const BARRE = readFileSync(resolve(RACINE, 'src/components/layout/MiapoBar.vue'), 'utf8')
 
-  it('⚠️ le champ de TEXTE LIBRE a disparu', () => {
-    // Il fallait deviner quoi taper sans savoir ce qui existait dans son Carré.
+  it('⚠️ le sélecteur de dossier de MAPO+ a été RETIRÉ', () => {
+    // Carré a livré mieux : le dossier se choisit pendant la connexion OAuth et
+    // le jeton est cloisonné dessus CÔTÉ SERVEUR. Garder un sélecteur ici
+    // ferait croire qu'on peut changer de dossier depuis MAPO+ — il faut
+    // refaire la connexion. Et un périmètre appliqué côté client n'en est pas un.
+    const code = sansCommentaires(COURS)
+    expect(code).not.toContain('carreDossiersPlats')
+    expect(code).not.toContain('choisirDossier')
+    expect(STORE).not.toContain('async function carreDossiersPlats()')
+  })
+
+  it('⚠️ le champ de TEXTE LIBRE ne revient pas non plus', () => {
     expect(sansCommentaires(COURS)).not.toContain('@change="saveScope"')
   })
 
-  it('la liste est PLATE : espaces ET dossiers personnels', () => {
-    // « l'espace ça ne suffit pas : dans mon espace partagé j'ai MBA ET
-    //   EDUFREM » — il faut donc voir les dossiers, pas seulement les espaces.
-    expect(STORE).toContain('async function carreDossiersPlats()')
-    expect(sansCommentaires(COURS)).toContain('connecteurs.carreDossiersPlats()')
+  it('⭐ le chat n’envoie plus AUCUN mot-clé : le jeton suffit', () => {
+    // C'est tout le bénéfice du cloisonnement — les notes remontées SONT ses
+    // cours, sans qu'on ait à deviner un mot à chercher.
+    expect(sansCommentaires(BARRE)).toContain('connecteurs.carreNotesText().catch')
   })
 
-  it('le choix est retenu, et relisible au prochain lancement', () => {
-    expect(STORE).toContain("const CLE_DOSSIER = 'mapo_carre_dossier'")
-    expect(STORE).toContain('localStorage.setItem(CLE_DOSSIER, JSON.stringify(dossierCours.value))')
-  })
-
-  it("⭐ l'identifiant du dossier est enregistré DÈS MAINTENANT", () => {
-    // L'API Carré ne sait pas encore filtrer par `folderId` : en attendant,
-    // c'est le NOM qui sert de mot-clé. Mais l'id est déjà là, donc le jour où
-    // l'API l'accepte, il n'y a rien à re-demander à l'utilisateur.
-    expect(STORE).toContain("{ id: d.id || '', nom: d.nom, espace: d.espace || '' }")
-  })
-
-  it('⚠️ le périmètre choisi PRIME sur l’ancien champ libre, qui reste lu', () => {
-    // Ne pas casser les comptes qui avaient renseigné l'ancien champ.
-    const i = STORE.indexOf('async function carreNotesText')
-    const bloc = STORE.slice(i, i + 700)
-    expect(bloc.indexOf('dossierCours.value?.nom')).toBeLessThan(bloc.indexOf('mapo_carre_scope'))
+  it('l’ancien périmètre libre reste LU en dernier recours', () => {
+    // Les jetons émis avant le cloisonnement gardent l'accès à tout le compte :
+    // sans ce repli, on leur remonterait les 3 notes les plus RÉCENTES, toutes
+    // catégories — pire que rien.
+    expect(STORE).toContain("localStorage.getItem('mapo_carre_scope')")
   })
 })
 
