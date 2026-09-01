@@ -27,20 +27,20 @@
         </div>
 
         <div class="mcar-corps">
-          <p v-if="!espaces.length" class="muted">{{ t('mia.mcarEmpty') }}</p>
+          <p v-if="!modules.length" class="muted">{{ t('mia.mcarEmpty') }}</p>
           <template v-else>
             <p class="muted small">{{ t('mia.mcarHint') }}</p>
-            <div v-for="e in espaces" :key="e.espace" class="mcar-espace">
+            <div class="mcar-espace">
               <div class="mcar-espace-head">
-                <strong>{{ e.espace }}</strong>
-                <span class="mcar-n">{{ e.dossiers.length }}</span>
-                <button class="lnk mcar-tout" @click="basculerEspace(e)">
-                  {{ toutCoche(e) ? t('mia.mcarNone') : t('mia.mcarAll') }}
+                <strong>{{ racine }}</strong>
+                <span class="mcar-n">{{ modules.length }}</span>
+                <button class="lnk mcar-tout" @click="basculerTout()">
+                  {{ toutCoche() ? t('mia.mcarNone') : t('mia.mcarAll') }}
                 </button>
               </div>
-              <label v-for="d in e.dossiers" :key="e.espace + '|' + d" class="mcar-item">
-                <input type="checkbox" :value="d" :checked="choisis.has(d)" @change="basculer(d)" />
-                <span>{{ d }}</span>
+              <label v-for="d in modules" :key="d.id" class="mcar-item">
+                <input type="checkbox" :value="d.nom" :checked="choisis.has(d.nom)" @change="basculer(d.nom)" />
+                <span>{{ d.nom }}</span>
               </label>
             </div>
           </template>
@@ -75,13 +75,22 @@ const connecteurs = useConnecteursStore()
 
 const ouvert = ref(false)
 const chargement = ref(false)
-const espaces = ref([])
+/**
+ * ⚠️ PLUS D'ESPACES DEPUIS LE 29/08. Le jeton Carré est désormais cloisonné sur
+ * une BRANCHE : le dossier choisi pendant la connexion, et lui seul. `/folders`
+ * ne renvoie donc que cette racine et ses sous-dossiers — un par module. Il n'y
+ * a plus rien à regrouper, la liste est plate.
+ */
+const racine = ref('')
+const modules = ref([])
 const choisis = ref(new Set())
 
 async function ouvrir() {
   chargement.value = true
   try {
-    espaces.value = await connecteurs.carreFolders()
+    const arbre = await connecteurs.carreArborescence()
+    racine.value = arbre.racine ? arbre.racine.nom : ''
+    modules.value = arbre.modules
     // Les modules DÉJÀ enregistrés restent cochés : ouvrir la fenêtre ne doit
     // pas donner l'impression qu'on repart de zéro.
     choisis.value = new Set(listeModules(props.valeur))
@@ -96,11 +105,11 @@ function basculer(d) {
   if (s.has(d)) s.delete(d); else s.add(d)
   choisis.value = s
 }
-const toutCoche = (e) => e.dossiers.every((d) => choisis.value.has(d))
-function basculerEspace(e) {
+const toutCoche = () => modules.value.length > 0 && modules.value.every((d) => choisis.value.has(d.nom))
+function basculerTout() {
   const s = new Set(choisis.value)
-  const tout = toutCoche(e)
-  for (const d of e.dossiers) { if (tout) s.delete(d); else s.add(d) }
+  const tout = toutCoche()
+  for (const d of modules.value) { if (tout) s.delete(d.nom); else s.add(d.nom) }
   choisis.value = s
 }
 

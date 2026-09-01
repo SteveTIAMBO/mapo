@@ -287,6 +287,7 @@ import { noteQuestion } from '../utils/jaugeNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
+import { useConnecteursStore } from '../stores/connecteurs'
 import MiapoCreditsEpuises from './MiapoCreditsEpuises.vue'
 
 const props = defineProps({
@@ -318,6 +319,7 @@ const tuteur = useTuteurStore()
 const ligue = useLigueStore()
 const points = useRecompensesPointsStore()
 const enfantsStore = useEnfantsAutonomesStore()
+const connecteurs = useConnecteursStore()
 // Sous-RAG perso (v1) : digest compact de l'apprenant, calculé au lancement et
 // réutilisé pour la génération du quiz ET l'explication de concept (même profil).
 const learnerDigest = ref('')
@@ -716,9 +718,18 @@ async function start() {
   // de l'année suivante si l'apprenant a accepté de basculer. Un élève peut
   // être en avance en anglais et à sa place en mathématiques.
   const programme = (props.studentId && tuteur.getProgramme(props.studentId, subjectId.value)) || props.niveau
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursMatiere.value, digest, studentId: props.studentId })
+  // ⚠️ LES NOTES CARRÉ N'ARRIVAIENT JAMAIS JUSQU'AU QUIZ (corrigé le 29/08).
+  // Elles n'alimentaient que le chat ; la révision, elle, ne voyait que les
+  // cours saisis à la main dans MAPO+. Tout un MBA rangé dans Carré ne servait
+  // donc à aucune séance. On cible le dossier du module — pas un mot-clé.
+  // Best-effort : Carré indisponible ou module sans dossier → on garde le cours
+  // local et le référentiel, jamais d'écran vide.
+  let coursCarre = ''
+  try { coursCarre = await connecteurs.carreNotesModule(props.matiere) } catch { coursCarre = '' }
+  const coursAncrage = [coursMatiere.value, coursCarre].filter(Boolean).join('\n\n').slice(0, 6000)
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursAncrage, digest, studentId: props.studentId })
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
-  sourceRev.value = res && res.source ? res.source : (coursMatiere.value ? 'cours' : 'referentiel')
+  sourceRev.value = res && res.source ? res.source : (coursAncrage ? 'cours' : 'referentiel')
   questions.value = res.questions || []
   // Aucune question : l'écran de RÉSULTAT s'affichait, avec un score pour une
   // séance jamais jouée — l'échec prenait l'apparence d'une réussite. On le dit,

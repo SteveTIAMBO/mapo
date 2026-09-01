@@ -126,33 +126,63 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
    * dossier depuis ici, alors qu'il faut refaire la connexion.
    */
 
-  async function carreFolders() {
-    if (!linked.value || !fbAuth.currentUser) return []
+  /**
+   * L'arborescence AUTORISÉE : { racine, modules }.
+   *
+   * Le jeton porte une BRANCHE — le dossier choisi à la connexion et tous ses
+   * sous-dossiers. `/folders` renvoie donc :
+   *
+   *   { folders: [ { id, name, parentId, spaceId } ], count }
+   *
+   * La racine est le dossier partagé (« MBA »), ses ENFANTS sont les modules
+   * de la formation (« Gouvernance », « Droit »…). C'est là que MAPO+ trouve
+   * la liste des cours, sans deviner aucun identifiant.
+   *
+   * ⚠️ J'AVAIS CODÉ UNE AUTRE FORME, ET ELLE ÉTAIT FAUSSE. Je l'avais déduite
+   * du connecteur MCP de Carré — un AUTRE client, avec son propre jeton — au
+   * lieu de l'endpoint que MAPO+ appelle vraiment. Deux clients d'une même API
+   * ne voient pas la même chose. Le parseur reste tolérant (tableau nu ou objet
+   * enveloppant), mais la forme de référence est celle ci-dessus.
+   */
+  async function carreArborescence() {
+    const vide = { racine: null, modules: [] }
+    if (!linked.value || !fbAuth.currentUser) return vide
     try {
       const h = await authHeaders()
       const r = await fetch(`${API}?action=folders`, { headers: h })
       const j = await r.json().catch(() => null)
-      if (!j || !j.ok) { if (j && j.error === 'non_relie') setLinked(false); return [] }
-      const d = j.data || {}
-      const brut = [
-        ...(Array.isArray(d.personal) ? d.personal : []),
-        ...(Array.isArray(d.shared) ? d.shared : []),
-      ]
-      const espaces = new Map()
-      for (const f of brut) {
-        const nom = String(f?.name || '').trim()
-        if (!nom) continue
-        const espace = String(f?.spaceName || '').trim() || 'Mes dossiers'
-        if (!espaces.has(espace)) espaces.set(espace, new Set())
-        espaces.get(espace).add(nom)
-      }
-      return [...espaces.entries()]
-        .map(([espace, noms]) => ({ espace, dossiers: [...noms].sort((a, b) => a.localeCompare(b, 'fr')) }))
-        .sort((a, b) => b.dossiers.length - a.dossiers.length)
-    } catch { return [] }
+      if (!j || !j.ok) { if (j && j.error === 'non_relie') setLinked(false); return vide }
+      const d = j.data
+      const brut = Array.isArray(d) ? d
+        : (Array.isArray(d?.folders) ? d.folders : (Array.isArray(d?.personal) ? [...d.personal, ...(d.shared || [])] : []))
+      const dossiers = brut
+        .map((f) => ({ id: String(f?.id || ''), nom: String(f?.name || '').trim(), parentId: f?.parentId ?? null }))
+        .filter((f) => f.nom)
+      if (!dossiers.length) return vide
+      // Racine = le dossier SANS parent. À défaut (forme inattendue), le premier :
+      // mieux vaut un rattachement approximatif qu'une liste vide sans explication.
+      const racine = dossiers.find((f) => !f.parentId) || dossiers[0]
+      // ⚠️ SON CARRÉ CONTIENT DE VRAIS DOUBLONS (mesuré le 28/08 : « Leadership »
+      // et « Entrepreneuriat - Stéphan » deux fois). Deux cases identiques dans
+      // la liste seraient cochées ensemble — on n'en garde qu'une. Conséquence
+      // assumée : `carreNotesModule` ne lira que le PREMIER des deux dossiers.
+      const vus = new Set()
+      const modules = dossiers
+        .filter((f) => f.id !== racine.id)
+        .filter((f) => { const c = f.nom.toLowerCase(); if (vus.has(c)) return false; vus.add(c); return true })
+        .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+      return { racine, modules }
+    } catch { return vide }
   }
 
-  async function carreNotesText({ max = 3, q = '' } = {}) {
+  /**
+   * Notes de cours en texte, pour ancrer une révision.
+   *
+   * `folderId` cible UN module précis à l'intérieur de la branche autorisée —
+   * c'est ce qui remplace enfin la recherche par mot-clé, dont j'avais mesuré
+   * qu'elle ramenait des comptes rendus de réunion contenant le mot cherché.
+   */
+  async function carreNotesText({ max = 3, q = '', folderId = '' } = {}) {
     if (!linked.value || !fbAuth.currentUser) return ''
     // Périmètre de synchro choisi par l'apprenant (dossier/mot-clé) : évite
     // d'aspirer des notes Carré sans rapport avec les cours. Cf. « Cours ».
@@ -167,10 +197,14 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
     // recours, pour les comptes dont le jeton date d'avant le cloisonnement :
     // sans lui, on leur remonterait les 3 notes les plus RÉCENTES de tout le
     // compte, ce qui est pire que rien.
-    if (!q) { try { q = localStorage.getItem('mapo_carre_scope') || '' } catch { q = '' } }
+    // ⚠️ Le repli par mot-clé ne sert QUE faute de dossier ciblé : c'est lui
+    // qui ramenait des comptes rendus de réunion.
+    if (!q && !folderId) { try { q = localStorage.getItem('mapo_carre_scope') || '' } catch { q = '' } }
     try {
       const h = await authHeaders()
-      const url = `${API}?action=notes&limit=${max}${q ? '&q=' + encodeURIComponent(q) : ''}`
+      const url = `${API}?action=notes&limit=${max}`
+        + (q ? '&q=' + encodeURIComponent(q) : '')
+        + (folderId ? '&folderId=' + encodeURIComponent(folderId) : '')
       const r = await fetch(url, { headers: h })
       const j = await r.json().catch(() => null)
       if (!j || !j.ok) { if (j && j.error === 'non_relie') setLinked(false); return '' }
@@ -192,8 +226,31 @@ export const useConnecteursStore = defineStore('connecteurs', () => {
     } catch { return '' }
   }
 
+  /**
+   * Notes du module dont le nom correspond à `matiere`, dans la branche Carré.
+   *
+   * ⚠️ C'EST LE MAILLON QUI MANQUAIT. Les notes Carré n'alimentaient que le
+   * CHAT ; le quiz, lui, ne voyait que les cours importés à la main dans MAPO+.
+   * Autrement dit, tout le contenu du MBA rangé dans Carré ne servait à aucune
+   * révision.
+   *
+   * Le rapprochement se fait sur le NOM du dossier, insensible à la casse et
+   * aux accents. Pas de correspondance → on ne renvoie rien : mieux vaut un
+   * quiz cadré par le référentiel qu'un quiz ancré sur le mauvais module.
+   */
+  async function carreNotesModule(matiere, { max = 3 } = {}) {
+    const m = String(matiere || '').trim()
+    if (!m || !linked.value) return ''
+    const cle = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim()
+    const { modules } = await carreArborescence()
+    const trouve = modules.find((d) => cle(d.nom) === cle(m))
+    if (!trouve || !trouve.id) return ''
+    return carreNotesText({ max, folderId: trouve.id })
+  }
+
   return {
     linked, busy, carreAppUrl, carreConnected, carrePreview,
-    refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText, carreFolders,
+    refreshStatus, connectCarre, completeCallback, disconnectCarre, carreNotesText,
+    carreArborescence, carreNotesModule,
   }
 })

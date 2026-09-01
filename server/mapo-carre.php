@@ -22,7 +22,7 @@
  *   callback (POST)  → { code, state } : échange le code contre les jetons.
  *   status (GET)     → { linked: bool }.
  *   unlink (POST)    → supprime les jetons stockés.
- *   notes (GET)      → proxy /api/v1/notes (?q=&limit=).
+ *   notes (GET)      → proxy /api/v1/notes (?q=&limit=&folderId=).
  *   note (GET)       → proxy /api/v1/notes/{id} (?id=).
  *   folders (GET)    → proxy /api/v1/folders.
  */
@@ -76,7 +76,11 @@ switch ($action) {
   case 'callback': echo json_encode(carre_callback($uid, $body)); break;
   case 'status':   echo json_encode(carre_status($uid)); break;
   case 'unlink':   echo json_encode(carre_unlink($uid)); break;
-  case 'notes':    echo json_encode(carre_proxy($uid, '/notes', ['q' => $_GET['q'] ?? '', 'limit' => $_GET['limit'] ?? '20'])); break;
+  // `folderId` (29/08) : cible UN dossier de la branche autorisee — c'est ce
+  // qui remplace la recherche par mot-cle, qui ramenait des comptes rendus de
+  // reunion contenant le mot cherche. Carre borne de toute facon a la branche
+  // du jeton : un id hors branche repond 404, jamais une liste vide.
+  case 'notes':    echo json_encode(carre_proxy($uid, '/notes', ['q' => $_GET['q'] ?? '', 'limit' => $_GET['limit'] ?? '20', 'folderId' => $_GET['folderId'] ?? ''])); break;
   case 'note':     echo json_encode(carre_proxy($uid, '/notes/' . rawurlencode((string) ($_GET['id'] ?? '')), [])); break;
   case 'folders':  echo json_encode(carre_proxy($uid, '/folders', [])); break;
   default:         http_response_code(400); echo json_encode(['ok' => false, 'error' => 'action_invalide']);

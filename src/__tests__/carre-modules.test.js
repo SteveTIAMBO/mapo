@@ -1,8 +1,8 @@
 /**
  * Les modules d'une formation, LUS dans Carré au lieu d'être devinés.
  *
- * ⚠️ MESURÉ SUR LE CARRÉ RÉEL DE STEVE (28/08), pas imaginé. Son espace « MBA »
- * contient 24 dossiers, un par cours : Gouvernance, Stratégie financière,
+ * ⚠️ MESURÉ SUR LE CARRÉ RÉEL DE STEVE (28/08), pas imaginé. Son dossier « MBA »
+ * contient 24 sous-dossiers, un par cours : Gouvernance, Stratégie financière,
  * Leadership, Droit, Design Sprint, Change Mgt, BMC, Marketing…
  * **La liste des modules existait déjà, écrite par lui.** MAPO+ la faisait
  * pourtant DEVINER par l'IA à partir du seul intitulé de la formation — donc à
@@ -11,10 +11,16 @@
  * Deux constats du terrain que le code doit encaisser :
  *
  *  - **des doublons** : « Leadership » et « Entrepreneuriat - Stéphan »
- *    apparaissent DEUX fois dans son espace ;
+ *    apparaissent DEUX fois chez lui ;
  *  - **tout dossier n'est pas un module** : « Pitchs », « KickOff »,
  *    « Chef d'œuvre », « ARIIANE » sont des projets. Aucune règle ne permet de
  *    les distinguer d'un cours → on ne coche RIEN d'office, la personne tranche.
+ *
+ * ⚠️⚠️ ERREUR DE MESURE À NE PAS REFAIRE (29/08). J'avais déduit la forme de
+ * `/api/v1/folders` du connecteur MCP de Carré — un AUTRE client, avec son
+ * propre jeton. C'était faux : en production, cet endpoint ne renvoyait que les
+ * dossiers PERSONNELS. L'import des 24 modules du MBA n'a donc probablement
+ * JAMAIS fonctionné. **Deux clients d'une même API ne voient pas la même chose.**
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
@@ -31,84 +37,81 @@ const sansCommentaires = (src) => src
   .split('\n').map((l) => l.replace(/(^|\s)\/\/.*$/, '')).join('\n')
 
 /**
- * ⚠️⚠️ ERREUR DE MESURE À CONNAÎTRE (29/08). La forme ci-dessous vient du
- * connecteur MCP de Carré — un AUTRE client, avec son propre jeton. J'en ai
- * déduit celle de `/api/v1/folders`, que MAPO+ appelle réellement. C'est faux :
- * l'équipe Carré a vérifié le fichier en production, cet endpoint ne renvoyait
- * que les dossiers PERSONNELS (`id`, `name`), en excluant ceux des espaces.
- *
- * Autrement dit, l'import des 24 modules du MBA n'a probablement JAMAIS
- * fonctionné : il ne voyait que les 2 dossiers personnels. Mesurer avec le bon
- * instrument n'est pas un détail — deux clients d'une même API ne voient pas la
- * même chose.
- *
- * `carreFolders()` reste donc tolérant à plusieurs formes, et le regroupement
- * ci-dessous continue d'être testé (il est juste, sur cette forme-là). Ce qui
- * doit être VÉRIFIÉ sur la réponse réelle après reconnexion : quelle forme
- * arrive vraiment, et combien de dossiers un jeton cloisonné renvoie.
+ * Rejeu FIDÈLE du tri de `carreArborescence()` (store, même algorithme).
+ * Depuis le cloisonnement du 29/08, le jeton n'ouvre qu'une BRANCHE : la racine
+ * est le dossier choisi à la connexion, les sous-dossiers sont les modules.
  */
-/** Rejeu du regroupement de `carreFolders()`. */
-function grouper(data) {
-  const brut = [...(data.personal || []), ...(data.shared || [])]
-  const espaces = new Map()
-  for (const f of brut) {
-    const nom = String(f?.name || '').trim()
-    if (!nom) continue
-    const espace = String(f?.spaceName || '').trim() || 'Mes dossiers'
-    if (!espaces.has(espace)) espaces.set(espace, new Set())
-    espaces.get(espace).add(nom)
-  }
-  return [...espaces.entries()]
-    .map(([espace, noms]) => ({ espace, dossiers: [...noms].sort((a, b) => a.localeCompare(b, 'fr')) }))
-    .sort((a, b) => b.dossiers.length - a.dossiers.length)
+function trier(data) {
+  const brut = Array.isArray(data) ? data
+    : (Array.isArray(data?.folders) ? data.folders : (Array.isArray(data?.personal) ? [...data.personal, ...(data.shared || [])] : []))
+  const dossiers = brut
+    .map((f) => ({ id: String(f?.id || ''), nom: String(f?.name || '').trim(), parentId: f?.parentId ?? null }))
+    .filter((f) => f.nom)
+  if (!dossiers.length) return { racine: null, modules: [] }
+  const racine = dossiers.find((f) => !f.parentId) || dossiers[0]
+  const vus = new Set()
+  const modules = dossiers
+    .filter((f) => f.id !== racine.id)
+    .filter((f) => { const c = f.nom.toLowerCase(); if (vus.has(c)) return false; vus.add(c); return true })
+    .sort((a, b) => a.nom.localeCompare(b.nom, 'fr'))
+  return { racine, modules }
 }
 
-// Extrait FIDÈLE de la réponse réelle (28/08), doublons compris.
-const REEL = {
-  personal: [
-    { name: 'TEDx', spaceName: null },
-    { name: 'Gestion de projet - Agnès Galy', spaceName: null },
-  ],
-  shared: [
-    { name: 'Gouvernance', spaceName: 'MBA' },
-    { name: 'Leadership', spaceName: 'MBA' },
-    { name: 'Leadership', spaceName: 'MBA' },                       // doublon RÉEL
-    { name: 'Entrepreneuriat - Stéphan', spaceName: 'MBA' },
-    { name: 'Entrepreneuriat - Stéphan', spaceName: 'MBA' },        // doublon RÉEL
-    { name: 'Droit', spaceName: 'MBA' },
-    { name: 'Pitchs', spaceName: 'MBA' },                           // pas un module
-    { name: 'RING', spaceName: 'EDUFREM' },
-    { name: 'Finance', spaceName: 'EDUFREM' },
-    { name: '', spaceName: 'MBA' },                                 // nom vide
+// Forme livrée par Carré le 29/08 : `{ folders: [{ id, name, parentId, spaceId }] }`.
+const BRANCHE = {
+  folders: [
+    { id: 'f0', name: 'MBA', parentId: null, spaceId: 's1' },              // la racine
+    { id: 'f1', name: 'Gouvernance', parentId: 'f0', spaceId: 's1' },
+    { id: 'f2', name: 'Leadership', parentId: 'f0', spaceId: 's1' },
+    { id: 'f3', name: 'Leadership', parentId: 'f0', spaceId: 's1' },       // doublon RÉEL
+    { id: 'f4', name: 'Entrepreneuriat - Stéphan', parentId: 'f0', spaceId: 's1' },
+    { id: 'f5', name: 'Entrepreneuriat - Stéphan', parentId: 'f0', spaceId: 's1' }, // doublon RÉEL
+    { id: 'f6', name: 'Droit', parentId: 'f0', spaceId: 's1' },
+    { id: 'f7', name: 'Pitchs', parentId: 'f0', spaceId: 's1' },           // pas un module
+    { id: 'f8', name: '', parentId: 'f0', spaceId: 's1' },                 // nom vide
   ],
 }
 
-describe('regroupement des dossiers Carré', () => {
+describe('lecture de la branche Carré', () => {
+  it('⚠️ le dossier SANS parent est la racine, pas un module', () => {
+    const { racine, modules } = trier(BRANCHE)
+    expect(racine.nom).toBe('MBA')
+    expect(modules.map((m) => m.nom)).not.toContain('MBA')
+  })
+
   it('⚠️ les doublons sont fusionnés', () => {
-    const mba = grouper(REEL).find((e) => e.espace === 'MBA')
-    expect(mba.dossiers.filter((d) => d === 'Leadership')).toHaveLength(1)
-    expect(mba.dossiers.filter((d) => d === 'Entrepreneuriat - Stéphan')).toHaveLength(1)
+    const noms = trier(BRANCHE).modules.map((m) => m.nom)
+    expect(noms.filter((n) => n === 'Leadership')).toHaveLength(1)
+    expect(noms.filter((n) => n === 'Entrepreneuriat - Stéphan')).toHaveLength(1)
   })
 
   it('un dossier sans nom est écarté', () => {
-    const mba = grouper(REEL).find((e) => e.espace === 'MBA')
-    expect(mba.dossiers).not.toContain('')
+    expect(trier(BRANCHE).modules.map((m) => m.nom)).not.toContain('')
   })
 
-  it('les dossiers personnels sont regroupés à part', () => {
-    const g = grouper(REEL)
-    expect(g.map((e) => e.espace)).toContain('Mes dossiers')
-    expect(g.find((e) => e.espace === 'Mes dossiers').dossiers).toContain('TEDx')
+  it('les modules sont triés, pour être retrouvés', () => {
+    const noms = trier(BRANCHE).modules.map((m) => m.nom)
+    expect(noms).toEqual([...noms].sort((a, b) => a.localeCompare(b, 'fr')))
   })
 
-  it('l’espace le plus fourni vient en premier', () => {
-    // Sur son compte, « MBA » (24 dossiers) doit s'afficher avant EDUFREM.
-    expect(grouper(REEL)[0].espace).toBe('MBA')
+  it('chaque module garde son id : c’est lui qui cible les notes', () => {
+    // Sans l'id, on retomberait sur une recherche par mot-clé — l'ancien défaut.
+    expect(trier(BRANCHE).modules.every((m) => !!m.id)).toBe(true)
   })
 
-  it('les dossiers sont triés, pour être retrouvés', () => {
-    const mba = grouper(REEL).find((e) => e.espace === 'MBA')
-    expect(mba.dossiers).toEqual([...mba.dossiers].sort((a, b) => a.localeCompare(b, 'fr')))
+  it('⚠️ une forme INATTENDUE ne renvoie pas une liste vide en silence', () => {
+    // Tableau nu, sans parentId : aucun dossier n'est « sans parent » au sens
+    // strict → le premier sert de racine. Approximatif, mais explicable ;
+    // une liste vide, elle, ne s'explique pas à l'utilisateur.
+    const { racine, modules } = trier([{ id: 'a', name: 'Cours' }, { id: 'b', name: 'Droit' }])
+    expect(racine.nom).toBe('Cours')
+    expect(modules.map((m) => m.nom)).toEqual(['Droit'])
+  })
+
+  it('l’ancienne forme personal/shared reste lue', () => {
+    // Les jetons émis avant le cloisonnement existent encore.
+    const { modules } = trier({ personal: [{ id: 'p1', name: 'TEDx' }], shared: [{ id: 's1', name: 'RING' }] })
+    expect(modules.map((m) => m.nom)).toEqual(['RING'])
   })
 })
 
@@ -119,7 +122,7 @@ describe('⭐ on propose, la personne tranche', () => {
     // de projet ; ne rien cocher oblige à un choix conscient.
     const code = sansCommentaires(VUE)
     expect(code).toContain('choisis.value = new Set(listeModules(props.valeur))')
-    expect(code).not.toMatch(/choisis\.value = new Set\(.*dossiers/)
+    expect(code).not.toMatch(/choisis\.value = new Set\(.*modules\.value/)
   })
 
   it('les modules DÉJÀ enregistrés restent cochés à l’ouverture', () => {
@@ -129,6 +132,13 @@ describe('⭐ on propose, la personne tranche', () => {
 
   it('la validation est impossible sans sélection', () => {
     expect(sansCommentaires(VUE)).toContain(':disabled="!choisis.size"')
+  })
+
+  it('⚠️ plus aucun regroupement par espace dans l’écran', () => {
+    // Le jeton ne voit qu'une branche : afficher des « espaces » laisserait
+    // croire qu'on peut piocher ailleurs.
+    expect(sansCommentaires(VUE)).not.toContain('carreFolders')
+    expect(sansCommentaires(VUE)).toContain('carreArborescence()')
   })
 })
 
@@ -181,17 +191,57 @@ describe('⭐⭐ le périmètre est porté par le JETON, plus par le client (29/
   })
 })
 
-describe('le store sait lire les dossiers', () => {
+describe('le store sait lire la branche', () => {
   it('l’action `folders` du proxy est enfin utilisée', () => {
     // Elle existait dans mapo-carre.php depuis le début, et personne ne
     // l'appelait : le périmètre Carré reposait sur un MOT-CLÉ libre.
-    expect(STORE).toContain("action=folders")
-    expect(STORE).toContain('async function carreFolders()')
+    expect(STORE).toContain('action=folders')
+    expect(STORE).toContain('async function carreArborescence()')
   })
 
   it('un lien rompu remet le connecteur à zéro, comme ailleurs', () => {
-    const i = STORE.indexOf('async function carreFolders()')
+    const i = STORE.indexOf('async function carreArborescence()')
     const bloc = STORE.slice(i, i + 900)
     expect(bloc).toContain("j.error === 'non_relie'")
+  })
+
+  it('⭐⭐ les notes sont demandées par DOSSIER, plus par mot-clé', () => {
+    expect(STORE).toContain('folderId')
+    expect(STORE).toContain('async function carreNotesModule(')
+  })
+})
+
+describe('⭐⭐ les notes Carré arrivent enfin JUSQU’AU QUIZ (29/08)', () => {
+  const QUIZ = readFileSync(resolve(RACINE, 'src/components/TuteurQuiz.vue'), 'utf8')
+
+  it('⚠️ le quiz interroge Carré avant de générer', () => {
+    // Le défaut : les notes Carré n'alimentaient QUE le chat. La révision, elle,
+    // ne voyait que les cours saisis à la main dans MAPO+. Tout un MBA rangé
+    // dans Carré ne servait donc à aucune séance.
+    expect(sansCommentaires(QUIZ)).toContain('connecteurs.carreNotesModule(props.matiere)')
+  })
+
+  it('⚠️ Carré indisponible ne bloque PAS la séance', () => {
+    // Best-effort : un connecteur en panne ne doit jamais valoir écran vide,
+    // on retombe sur le cours local et le référentiel.
+    const code = sansCommentaires(QUIZ)
+    const i = code.indexOf('carreNotesModule')
+    expect(code.slice(i - 120, i + 160)).toMatch(/try\s*\{[\s\S]*catch/)
+  })
+
+  it('le cours local et les notes Carré sont CUMULÉS, pas substitués', () => {
+    const code = sansCommentaires(QUIZ)
+    expect(code).toContain('[coursMatiere.value, coursCarre].filter(Boolean)')
+    expect(code).toContain('cours: coursAncrage')
+  })
+
+  it('⚠️ l’ancrage est borné : un module entier ne tient pas dans un prompt', () => {
+    expect(sansCommentaires(QUIZ)).toMatch(/coursAncrage[\s\S]{0,80}slice\(0, \d+\)/)
+  })
+
+  it('la provenance affichée tient compte des notes Carré', () => {
+    // Sinon la séance dirait « référentiel national » alors qu'elle révise ses
+    // propres cours — un mensonge visible.
+    expect(sansCommentaires(QUIZ)).toContain("(coursAncrage ? 'cours' : 'referentiel')")
   })
 })
