@@ -136,7 +136,10 @@ describe('une classe inconnue reste un échec PROPRE', () => {
 
   it('⚠️ une liste vide reste un résultat LÉGITIME', () => {
     // Mieux vaut pas de référentiel qu'un référentiel faux : un pays sans
-    // programme intégré (Côte d'Ivoire aujourd'hui) doit renvoyer vide.
-    expect(notions('CI', '5e', 'Mathématiques')).toEqual([])
+    // programme intégré doit renvoyer vide.
+    // ⚠️ Cet exemple citait la CÔTE D'IVOIRE — elle a reçu ses programmes de
+    // maths le 02/09/2026 et le test est passé au rouge. Bon signe : il mesurait
+    // vraiment quelque chose. Remplacé par le Sénégal, encore sans référentiel.
+    expect(notions('SN', '5e', 'Mathématiques')).toEqual([])
   })
 })

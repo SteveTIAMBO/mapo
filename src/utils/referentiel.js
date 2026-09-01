@@ -128,6 +128,12 @@ import cmPhysique2nde from '../data/referentiels/cm-physique-2nde.json'
 import cmChimie2nde from '../data/referentiels/cm-chimie-2nde.json'
 import cmHistoireTle from '../data/referentiels/cm-histoire-tle.json'
 import cmGeographieTle from '../data/referentiels/cm-geographie-tle.json'
+// CÔTE D'IVOIRE — premier référentiel du pays (02/09/2026). Le catalogue MAPO+
+// proposait la Côte d'Ivoire depuis le début avec 0 % de couverture : chaque
+// séance y partait sans cadrage, en silence. Source : DPFC (dpfc-ci.net), PDF
+// en accès direct. ⚠️ Un seul fichier pour les quatre classes : c'est un
+// programme unique, décliné 6e → 3e par le même arrêté.
+import ciMathsPremierCycle from '../data/referentiels/ci-mathematiques-premier-cycle.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -145,7 +151,8 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, mathsCycle4_2020, francaisCycle4
   cmAnglais43, cmInfoTleA, cmInfoTleCD,
   cmArts43, cmAllemand43, cmArabe43, cmChinois43, cmEspagnol43, cmLatin43, cmGrec43,
   cmInfo65, cmAnglais2nde, cmInfo2ndeA, cmInfo2ndeC,
-  cmSvt2nde, cmPhysique2nde, cmChimie2nde, cmHistoireTle, cmGeographieTle]
+  cmSvt2nde, cmPhysique2nde, cmChimie2nde, cmHistoireTle, cmGeographieTle,
+  ciMathsPremierCycle]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
