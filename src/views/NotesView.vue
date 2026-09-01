@@ -405,11 +405,14 @@
                     <th>{{ t('notes.docSeq', { n: seqNumbers[1] }) }}</th>
                     <th>{{ t('notes.docTermAvg') }}</th>
                   </template>
-                  <!-- Annual -->
-                  <th v-if="selectedTrimester === 'annual'">T1</th>
-                  <th v-if="selectedTrimester === 'annual'">T2</th>
-                  <th v-if="selectedTrimester === 'annual'">T3</th>
-                  <th v-if="selectedTrimester === 'annual'">{{ t('notes.docAnnualAvg') }}</th>
+                  <!-- Bilan annuel : une colonne par période DE L'ÉCOLE.
+                       ⚠️ C'était T1, T2, T3 en dur : une école au semestre voyait
+                       une colonne T3 toujours vide, et une école à quatre
+                       périodes n'en voyait jamais la dernière. -->
+                  <template v-if="selectedTrimester === 'annual'">
+                    <th v-for="p in TRIMESTERS" :key="p.value">{{ p.value }}</th>
+                    <th>{{ t('notes.docAnnualAvg') }}</th>
+                  </template>
                   <th>{{ t('notes.docClassAvg') }}</th>
                   <th>{{ isApc ? t('notes.docPalier') : t('notes.docAppreciation') }}</th>
                 </tr>
@@ -437,9 +440,7 @@
                     </td>
                   </template>
                   <template v-else>
-                    <td :class="{ 'note-cell-fail': row.t1 !== null && row.t1 < 10 }">{{ row.t1 !== null ? row.t1.toFixed(2) : '-' }}</td>
-                    <td :class="{ 'note-cell-fail': row.t2 !== null && row.t2 < 10 }">{{ row.t2 !== null ? row.t2.toFixed(2) : '-' }}</td>
-                    <td :class="{ 'note-cell-fail': row.t3 !== null && row.t3 < 10 }">{{ row.t3 !== null ? row.t3.toFixed(2) : '-' }}</td>
+                    <td v-for="p in row.periodes" :key="p.code" :class="{ 'note-cell-fail': p.avg !== null && p.avg < 10 }">{{ p.avg !== null ? p.avg.toFixed(2) : '-' }}</td>
                     <td class="bulletin-avg" :class="{ 'note-cell-fail': row.annualAvg !== null && row.annualAvg < 10, 'note-cell-success': row.annualAvg >= 10 }">
                       <strong>{{ row.annualAvg !== null ? row.annualAvg.toFixed(2) : '-' }}</strong>
                     </td>
@@ -1463,9 +1464,13 @@ const bulletinRows = computed(() => {
       row.seqNote = notesStore.getNote(selectedClass.value, subject, period, selectedEleve.value)
       mainAvg = row.seqNote
     } else if (selectedTrimester.value === 'annual') {
-      row.t1 = notesStore.getSubjectTrimesterAvg(selectedClass.value, subject, 'T1', selectedEleve.value)
-      row.t2 = notesStore.getSubjectTrimesterAvg(selectedClass.value, subject, 'T2', selectedEleve.value)
-      row.t3 = notesStore.getSubjectTrimesterAvg(selectedClass.value, subject, 'T3', selectedEleve.value)
+      // Une entrée par période de l'école, dans son ordre. Les codes T1/T2/T3
+      // étaient écrits en dur : le bilan annuel d'une école au semestre portait
+      // une colonne vide, et celui d'une école à quatre périodes en oubliait une.
+      row.periodes = TRIMESTERS.value.map((p) => ({
+        code: p.value,
+        avg: notesStore.getSubjectTrimesterAvg(selectedClass.value, subject, p.value, selectedEleve.value),
+      }))
       row.annualAvg = notesStore.getSubjectAnnualAvg(selectedClass.value, subject, selectedEleve.value)
       mainAvg = row.annualAvg
     } else if (tri) {

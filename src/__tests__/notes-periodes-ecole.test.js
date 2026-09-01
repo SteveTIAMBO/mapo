@@ -127,3 +127,33 @@ describe('l’école au découpage classique n’est pas affectée', () => {
     expect(store.getSubjectTrimesterAvg('c1', 'Maths', 'T9', 'e1')).toBe(null)
   })
 })
+
+// ── Le bilan annuel affiche autant de colonnes que l'école a de périodes ────
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const racineSrc = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+describe('⚠️ colonnes du bilan annuel', () => {
+  const vue = fs.readFileSync(path.join(racineSrc, 'views/NotesView.vue'), 'utf8')
+  // Les commentaires citent forcément les codes fautifs qu'ils expliquent.
+  const code = vue
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n')
+
+  it('plus aucune colonne T1/T2/T3 écrite en dur', () => {
+    // Une école au semestre voyait une colonne T3 toujours vide ; une école à
+    // quatre périodes n'en voyait jamais la dernière.
+    expect(code).not.toContain('<th v-if="selectedTrimester === \'annual\'">T1</th>')
+    expect(code).not.toContain("subject, 'T1', selectedEleve")
+  })
+
+  it('les colonnes et les cellules viennent de la même liste', () => {
+    // Deux listes parallèles auraient dérivé : un en-tête sans cellule, ou
+    // l'inverse, dès qu'une école ajoute une période.
+    expect(code).toContain('v-for="p in TRIMESTERS"')
+    expect(code).toContain('v-for="p in row.periodes"')
+    expect(code).toContain('row.periodes = TRIMESTERS.value.map(')
+  })
+})
