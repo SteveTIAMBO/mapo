@@ -943,7 +943,7 @@ import { useSubjectsStore } from '../stores/subjects'
 import { useSchoolStore } from '../stores/school'
 import { useAuthStore } from '../stores/auth'
 import { useEditionStore } from '../stores/edition'
-import { DISCIPLINES_PRIMAIRE } from '../data/primaire'
+import { useDisciplinesPrimaireStore } from '../stores/disciplinesPrimaire'
 import {
   AlertCircle, AlertTriangle, Plus, Trash2, Wand2, Settings, RotateCcw, Printer, X, Calendar, Loader2, CheckCircle2, Sparkles
 } from 'lucide-vue-next'
@@ -952,6 +952,7 @@ const edtStore = useEmploiDuTempsStore()
 const classesStore = useClassesStore()
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
+const discPrimaireStore = useDisciplinesPrimaireStore()
 const schoolStore = useSchoolStore()
 const authStore = useAuthStore()
 const editionStore = useEditionStore()
@@ -1102,10 +1103,19 @@ const getLevelKeyLabel = (key) => {
 const getBaseLevelFromKey = (key) => key.split('_')[0]
 
 const allSubjects = computed(() => {
-  // Primaire : les 10 disciplines APC (sinon la classification par cycle range les
-  // niveaux SIL-CM2 en « lycée » → afficherait des matières de lycée, incohérent).
+  // Primaire : les disciplines DE L'ÉCOLE.
+  //
+  // ⚠️ C'était `DISCIPLINES_PRIMAIRE`, la liste camerounaise en dur : une école
+  // de Dakar qui avait renommé ses matières voyait quand même « TIC » et
+  // « Langues et cultures nationales » dans sa grille horaire. Le store part
+  // d'une amorce (camerounaise ou neutre selon le pays) et l'école la corrige,
+  // donc `noms` est toujours renseigné — le court-circuit n'a plus d'objet.
+  //
+  // On garde en revanche le branchement sur l'édition : la classification par
+  // cycle rangeait les niveaux SIL-CM2 en « lycée » et servait des matières de
+  // lycée à un instituteur.
   if (editionStore.isPrimaire) {
-    return DISCIPLINES_PRIMAIRE.map(d => d.name)
+    return discPrimaireStore.noms
   }
   const subjects = new Set()
   for (const key of availableLevelKeys.value) {
@@ -2017,6 +2027,10 @@ onMounted(async () => {
   await classesStore.loadClasses()
   await personnelStore.loadStaff()
   await subjectsStore.loadSubjects()
+  // Sans ce chargement, la grille du primaire afficherait l'amorce du pays le
+  // temps que la liste de l'école arrive : les matières renommées auraient
+  // clignoté vers leurs anciens noms.
+  await discPrimaireStore.load()
   await edtStore.loadData()
 
   timeGridForm.value = { ...edtStore.timeGrid }

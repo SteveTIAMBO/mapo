@@ -142,3 +142,39 @@ describe('⚠️ « je ne sais pas » n’est pas « Cameroun »', () => {
     expect(noms).toEqual(DISCIPLINES_PRIMAIRE_NEUTRE.map((d) => d.name))
   })
 })
+
+// ── Branchements vérifiés sur le code source ──────────────────────────────
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const racineSrc = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+
+describe('⚠️ aucun écran ne sert la liste camerounaise en dur', () => {
+  /**
+   * Défaut mesuré le 01/09/2026 : `EmploiDuTempsView` court-circuitait le store
+   * avec `DISCIPLINES_PRIMAIRE.map(d => d.name)`. Une école de Dakar qui avait
+   * renommé ses matières voyait quand même « TIC » et « Langues et cultures
+   * nationales » dans sa grille horaire. Le contournement avait été mis parce que
+   * la classification par cycle rangeait SIL-CM2 en « lycée » — mais il a survécu
+   * à sa cause, `niveaux.js` sachant désormais répondre.
+   */
+  const edt = fs.readFileSync(path.join(racineSrc, 'views/EmploiDuTempsView.vue'), 'utf8')
+  // ⚠️ On dépouille les commentaires : celui qui explique la correction CITE
+  // forcément le nom fautif. Sans ce filtre, le test échouerait sur la
+  // documentation du correctif lui-même.
+  const edtCode = edt
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/<!--[\s\S]*?-->/g, '')
+    .split('\n').filter((l) => !l.trim().startsWith('//')).join('\n')
+
+  it('la grille horaire lit le store, pas la constante', () => {
+    expect(edtCode).not.toContain('DISCIPLINES_PRIMAIRE')
+    expect(edtCode).toContain('discPrimaireStore.noms')
+  })
+
+  it('et elle charge la liste de l’école avant de l’afficher', () => {
+    // Sans ça, les matières renommées clignotent vers l'amorce du pays.
+    expect(edt).toContain('discPrimaireStore.load()')
+  })
+})
