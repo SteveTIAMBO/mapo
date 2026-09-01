@@ -43,5 +43,18 @@
     </script>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <!-- Signalement de bug, côté ÉCOLE seulement : le même code sert MAPO et
+         MAPO+ sur deux domaines, mais MAPO+ a déjà son formulaire dans l'écran
+         Aide (il envoie lui-même vers HUB). Ici, rien n'existe : on affiche
+         donc la bulle du formulaire commun. -->
+    <script>
+      (function () {
+        if (/mapoplus/i.test(location.hostname)) return;
+        var s = document.createElement('script');
+        s.src = 'https://hub.app-edufrem.com/bug.js';
+        s.setAttribute('data-app', 'MAPO');
+        document.head.appendChild(s);
+      })();
+    </script>
   </body>
 </html>

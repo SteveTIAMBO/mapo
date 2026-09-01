@@ -128,7 +128,29 @@ async function submit() {
   const res = await sendFeedback({ type: tab.value === 'bug' ? 'bug' : 'feature', subject: subject.value, message: message.value, hp: hp.value })
   busy.value = false
   if (res.ok) { sent.value = true } else { error.value = true }
+  // Un bug part aussi dans la file de développement de HUB, avec la page, le
+  // navigateur et la taille d'écran. L'idée, elle, garde son seul chemin : ce
+  // n'est pas un bug et elle ne se traite pas dans la même file.
+  if (res.ok && tab.value === 'bug') signalerAHub()
 }
+// Envoi discret vers HUB : s'il échoue, la personne n'en sait rien et son
+// message est de toute façon déjà parti par le chemin habituel.
+function signalerAHub() {
+  try {
+    fetch('https://hub.app-edufrem.com/hub-bug.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        app: /mapoplus/i.test(location.hostname) ? 'MAPO+' : 'MAPO',
+        quoi: (subject.value ? subject.value + '. ' : '') + message.value,
+        page: location.href.slice(0, 400),
+        navigateur: navigator.userAgent.slice(0, 300),
+        ecran: window.innerWidth + 'x' + window.innerHeight,
+      }),
+    }).catch(() => {})
+  } catch (e) { /* le signalement est un bonus, jamais un blocage */ }
+}
+
 function resetForm() { subject.value = ''; message.value = ''; hp.value = ''; sent.value = false; error.value = false }
 </script>
 
