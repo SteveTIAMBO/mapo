@@ -142,6 +142,54 @@ describe('⭐ on propose, la personne tranche', () => {
   })
 })
 
+describe('⭐⭐ rien n’est sélectionné sans être VISIBLE (01/09)', () => {
+  /**
+   * Défaut mesuré sur le compte de Steve : la fenêtre affichait 23 lignes Carré,
+   * 0 cochée, et le pied annonçait « 12 sélectionné(s) ». Ses 12 modules en
+   * place étaient dans la sélection mais absents de la liste — d'où « les autres
+   * modules ont disparu ». Ni visibles, ni décochables, et « Tout cocher » ne
+   * les touchait pas.
+   */
+  const code = sansCommentaires(VUE)
+
+  it('⚠️ les modules déjà en place ont leur propre section', () => {
+    expect(code).toContain("t('mia.mcarDeja')")
+    expect(code).toContain('v-for="m in deja"')
+  })
+
+  it('la section « déjà là » se calcule depuis la valeur reçue', () => {
+    expect(code).toContain('listeModules(props.valeur).filter')
+  })
+
+  it('⚠️ un module homonyme d’un dossier Carré n’apparaît pas DEUX fois', () => {
+    // Rejeu du calcul de `deja` : même nom = même module, une seule case.
+    const cle = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+    const carre = new Set(['Gouvernance', 'Droit'].map(cle))
+    const enPlace = ['gouvernance', 'Stratégie d’entreprise', 'Droit']
+    expect(enPlace.filter((m) => !carre.has(cle(m)))).toEqual(['Stratégie d’entreprise'])
+  })
+
+  it('⚠️ « Tout cocher » agit sur SA section, pas sur toute la sélection', () => {
+    expect(code).toContain('basculerSection(deja)')
+    expect(code).toContain('basculerSection(nomsModules)')
+    expect(code).not.toContain('basculerTout()')
+  })
+
+  it('le pied annonce le TOTAL, pas un décompte invisible', () => {
+    expect(code).toContain("t('mia.mcarTotal'")
+    expect(code).not.toContain("t('mia.mcarSelected'")
+  })
+
+  it('⚠️ Carré vide n’efface pas les modules en place', () => {
+    // La section « déjà là » s'affiche indépendamment de `modules` : un
+    // connecteur muet ne doit pas donner l'impression d'une remise à zéro.
+    const i = code.indexOf('v-if="deja.length"')
+    const j = code.indexOf('v-if="!modules.length"')
+    expect(i).toBeGreaterThan(-1)
+    expect(i).toBeLessThan(j) // la section survit au message « aucun dossier »
+  })
+})
+
 describe('le format de sortie reste celui des modules', () => {
   it('la virgule est le séparateur attendu par le reste du code', () => {
     const sortie = ['Gouvernance', 'Droit', 'Design Sprint'].join(', ')
@@ -229,9 +277,10 @@ describe('⭐⭐ les notes Carré arrivent enfin JUSQU’AU QUIZ (29/08)', () =>
     expect(code.slice(i - 120, i + 160)).toMatch(/try\s*\{[\s\S]*catch/)
   })
 
-  it('le cours local et les notes Carré sont CUMULÉS, pas substitués', () => {
+  it('le cours local, celui de l’école et les notes Carré sont CUMULÉS', () => {
+    // Trois sources, aucune ne prend le pas : cf. cours-ecole-quiz.test.js.
     const code = sansCommentaires(QUIZ)
-    expect(code).toContain('[coursMatiere.value, coursCarre].filter(Boolean)')
+    expect(code).toContain('[coursMatiere.value, coursEcole, coursCarre].filter(Boolean)')
     expect(code).toContain('cours: coursAncrage')
   })
 

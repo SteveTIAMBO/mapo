@@ -5808,14 +5808,18 @@
     "edtSchoolEmpty": "Your school hasn't published your class timetable yet.",
     "mcarImport": "From Carré",
     "mcarLoading": "Reading…",
-    "mcarTitle": "My modules from Carré",
+    "mcarTitle": "My modules",
     "mcarHint": "One folder per course. Tick the ones that are modules of your programme — projects and working folders aren't.",
     "mcarEmpty": "No folder found in Carré.",
     "mcarAll": "Select all",
     "mcarNone": "Clear all",
     "mcarSelected": "{n} selected",
     "mcarApply": "Use these modules",
-    "mcCarreFolderNote": "Your course folder is chosen in Carré, when you connect. To change it, connect again."
+    "mcCarreFolderNote": "Your course folder is chosen in Carré, when you connect. To change it, connect again.",
+    "mcarDeja": "Already in your programme",
+    "mcarDejaHint": "These modules stay unless you untick them. Carré adds to them, it replaces nothing.",
+    "mcarCarre": "From Carré",
+    "mcarTotal": "{n} module(s) in total"
   },
   "cx": {
     "appTitle": "Complex workspace",

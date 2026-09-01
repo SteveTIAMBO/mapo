@@ -1382,6 +1382,7 @@ import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recomp
 import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo'
 import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
+import { setCoursEcole } from '../utils/coursEcole'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Persistance du drapeau « visite guidée déjà vue » : voir tourDocRef().
@@ -3129,6 +3130,40 @@ watch(section, (s) => {
   dernierSyncEdt = n
   recupererEdtEcole({ auto: true })
 })
+
+/**
+ * MÊME PRINCIPE POUR LES COURS DU PROF (01/09, question de Steve).
+ *
+ * ⚠️ Ce que le prof publie n'atteignait PAS la révision : `fetchCours` ne
+ * servait que l'écran de consultation « école ». Le quiz n'ancrait que le cours
+ * perso et les notes Carré. Un élève relié à son établissement révisait donc
+ * tout SAUF le cours de son enseignant.
+ *
+ * ⚠️ PIÈGE ÉVITÉ. J'avais d'abord accroché cette synchro à l'ouverture de la
+ * section « cours » — comme pour l'emploi du temps. Elle n'aurait JAMAIS pu
+ * partir : quand l'école est reliée, cette entrée disparaît du menu (l'écran
+ * école la remplace). Un déclencheur inatteignable n'échoue pas, il se tait.
+ * On s'accroche donc au PROFIL ACTIF : dès qu'un profil relié est ouvert, le
+ * cache se remplit, quel que soit l'écran affiché.
+ *
+ * Silencieux et sans réseau bloquant : la séance doit pouvoir démarrer hors
+ * ligne. Un échec ne dit rien et ne casse rien — les autres sources restent
+ * (cf. utils/coursEcole.js).
+ */
+const DELAI_SYNC_COURS_MS = 10 * 60 * 1000
+const dernierSyncCours = new Map()   // par profil : deux enfants, deux écoles
+watch(() => activeEnfant.value && activeEnfant.value.id, async (id) => {
+  const e = activeEnfant.value
+  if (!id || !e || !e.lienEcole) return
+  const n = Date.now()
+  const precedent = dernierSyncCours.get(id) || 0
+  if (precedent && (n - precedent) < DELAI_SYNC_COURS_MS) return
+  dernierSyncCours.set(id, n)
+  try {
+    const r = await lienEcole.fetchCours(e.lienEcole.schoolId, e.lienEcole.eleveId)
+    if (r && r.ok) setCoursEcole(id, r.cours || [])
+  } catch { /* silencieux : la révision garde ses autres sources */ }
+}, { immediate: true })
 function ajouterCreneau() {
   if (!activeEnfant.value || !crJour.value || !crMatiere.value.trim()) return
   store.addCreneau(activeEnfant.value.id, { jour: crJour.value, heure: crHeure.value, matiere: crMatiere.value })

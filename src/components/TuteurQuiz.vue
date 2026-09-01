@@ -285,6 +285,7 @@ import { useLigueStore } from '../stores/ligue'
 import { niveauSuivant, PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
 import { noteQuestion } from '../utils/jaugeNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
+import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useConnecteursStore } from '../stores/connecteurs'
@@ -726,7 +727,12 @@ async function start() {
   // local et le référentiel, jamais d'écran vide.
   let coursCarre = ''
   try { coursCarre = await connecteurs.carreNotesModule(props.matiere) } catch { coursCarre = '' }
-  const coursAncrage = [coursMatiere.value, coursCarre].filter(Boolean).join('\n\n').slice(0, 6000)
+  // ⚠️ ET LE COURS DU PROF (01/09). Il n'arrivait pas non plus : `fetchCours`
+  // ne servait que l'écran de consultation « école ». Un élève relié à son
+  // établissement révisait donc tout SAUF le cours de son enseignant.
+  // Les trois sources s'ADDITIONNENT — aucune ne prend le pas sur une autre.
+  const coursEcole = coursEcoleTexteMatiere(props.studentId, props.matiere)
+  const coursAncrage = [coursMatiere.value, coursEcole, coursCarre].filter(Boolean).join('\n\n').slice(0, 6000)
   const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursAncrage, digest, studentId: props.studentId })
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursAncrage ? 'cours' : 'referentiel')

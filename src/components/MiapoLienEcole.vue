@@ -168,6 +168,7 @@ import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import CoursFileViewer from './CoursFileViewer.vue'
 import MiapoEcoleBulletin from './MiapoEcoleBulletin.vue'
 import MiapoEcoleMessagerie from './MiapoEcoleMessagerie.vue'
+import { setCoursEcole } from '../utils/coursEcole'
 
 // `module` : quand la nav pilote un module précis (devoirs/cours/notes/messages),
 // on masque la barre d'onglets interne et on n'affiche QUE ce module. Sans module,
@@ -263,8 +264,12 @@ async function loadTab(k) {
     crs.value.busy = true
     const r = await lien.fetchCours(sid.value, eid.value)
     crs.value.busy = false; crs.value.loaded = true
-    if (r && r.ok) crs.value.list = r.cours || []
-    else crs.value.err = msgTxt(r && r.reason)
+    if (r && r.ok) {
+      crs.value.list = r.cours || []
+      // Le même appel sert désormais DEUX besoins : afficher, et alimenter la
+      // révision. Aucune requête supplémentaire (cf. utils/coursEcole.js).
+      setCoursEcole(eid.value, crs.value.list)
+    } else crs.value.err = msgTxt(r && r.reason)
   }
   // notes/messages : chargés par leurs sous-composants dédiés.
 }

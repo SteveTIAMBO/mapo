@@ -5,6 +5,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore'
 import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso } from '../utils/coursPerso'
+import { clearCoursEcole } from '../utils/coursEcole'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
 import { baremePour, versAcquisition, maxDe, paliersDe } from '../data/baremes'
 import { ROLE_ENFANT, ROLE_APPRENANT, typeProfilPour, typeProfilDe } from '../utils/typeProfil'
@@ -844,6 +845,9 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
         deleteDoc(doc(db, 'users', uid, 'revisions', n)).catch(() => { /* absent ou offline */ })
       }
     }
+    // Le cache local des cours de l'école part avec la fiche : c'est du contenu
+    // scolaire rattachable à la personne, il ne doit pas survivre au profil.
+    clearCoursEcole(id)
     persist()
   }
 

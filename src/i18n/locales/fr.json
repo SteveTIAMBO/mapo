@@ -5808,14 +5808,18 @@
     "edtSchoolEmpty": "Ton école n'a pas encore publié l'emploi du temps de ta classe.",
     "mcarImport": "Depuis Carré",
     "mcarLoading": "Lecture…",
-    "mcarTitle": "Mes modules depuis Carré",
+    "mcarTitle": "Mes modules",
     "mcarHint": "Un dossier par cours. Cochez ceux qui sont des modules de votre formation — les projets et les dossiers de travail n'en sont pas.",
     "mcarEmpty": "Aucun dossier trouvé dans Carré.",
     "mcarAll": "Tout cocher",
     "mcarNone": "Tout décocher",
     "mcarSelected": "{n} sélectionné(s)",
     "mcarApply": "Utiliser ces modules",
-    "mcCarreFolderNote": "Le dossier de cours se choisit dans Carré, au moment de la connexion. Pour en changer, refaites la connexion."
+    "mcCarreFolderNote": "Le dossier de cours se choisit dans Carré, au moment de la connexion. Pour en changer, refaites la connexion.",
+    "mcarDeja": "Déjà dans ta formation",
+    "mcarDejaHint": "Ces modules restent, sauf si vous les décochez. Carré s'ajoute, il ne remplace rien.",
+    "mcarCarre": "Depuis Carré",
+    "mcarTotal": "{n} module(s) au total"
   },
   "cx": {
     "appTitle": "Espace complexe",

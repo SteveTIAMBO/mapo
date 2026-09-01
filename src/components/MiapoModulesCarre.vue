@@ -27,17 +27,40 @@
         </div>
 
         <div class="mcar-corps">
+          <!--
+            ⚠️ SECTION « DÉJÀ LÀ » : elle corrige un vrai défaut mesuré le 01/09.
+            La fenêtre n'affichait que les dossiers Carré, alors que la sélection
+            était pré-remplie avec les modules en place. Sur son compte : 23
+            lignes affichées, 0 cochée, et le pied annonçait « 12 sélectionné(s) ».
+            Douze modules sélectionnés que RIEN ne montrait — d'où l'impression
+            qu'ils avaient disparu, et l'impossibilité de les décocher.
+          -->
+          <div v-if="deja.length" class="mcar-espace">
+            <div class="mcar-espace-head">
+              <strong>{{ t('mia.mcarDeja') }}</strong>
+              <span class="mcar-n">{{ deja.length }}</span>
+              <button class="lnk mcar-tout" @click="basculerSection(deja)">
+                {{ sectionCochee(deja) ? t('mia.mcarNone') : t('mia.mcarAll') }}
+              </button>
+            </div>
+            <p class="muted small">{{ t('mia.mcarDejaHint') }}</p>
+            <label v-for="m in deja" :key="'d|' + m" class="mcar-item">
+              <input type="checkbox" :value="m" :checked="choisis.has(m)" @change="basculer(m)" />
+              <span>{{ m }}</span>
+            </label>
+          </div>
+
           <p v-if="!modules.length" class="muted">{{ t('mia.mcarEmpty') }}</p>
           <template v-else>
-            <p class="muted small">{{ t('mia.mcarHint') }}</p>
             <div class="mcar-espace">
               <div class="mcar-espace-head">
-                <strong>{{ racine }}</strong>
+                <strong>{{ t('mia.mcarCarre') }}{{ racine ? ' — ' + racine : '' }}</strong>
                 <span class="mcar-n">{{ modules.length }}</span>
-                <button class="lnk mcar-tout" @click="basculerTout()">
-                  {{ toutCoche() ? t('mia.mcarNone') : t('mia.mcarAll') }}
+                <button class="lnk mcar-tout" @click="basculerSection(nomsModules)">
+                  {{ sectionCochee(nomsModules) ? t('mia.mcarNone') : t('mia.mcarAll') }}
                 </button>
               </div>
+              <p class="muted small">{{ t('mia.mcarHint') }}</p>
               <label v-for="d in modules" :key="d.id" class="mcar-item">
                 <input type="checkbox" :value="d.nom" :checked="choisis.has(d.nom)" @change="basculer(d.nom)" />
                 <span>{{ d.nom }}</span>
@@ -47,7 +70,7 @@
         </div>
 
         <div class="mcar-pied">
-          <span class="muted small mcar-compte">{{ t('mia.mcarSelected', { n: choisis.size }) }}</span>
+          <span class="muted small mcar-compte">{{ t('mia.mcarTotal', { n: choisis.size }) }}</span>
           <button class="btn btn-ghost" @click="ouvert = false">{{ t('mia.cancel') }}</button>
           <button class="btn btn-primary" :disabled="!choisis.size" @click="valider">
             <Check :size="16" /> <span>{{ t('mia.mcarApply') }}</span>
@@ -59,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { X, Check } from 'lucide-vue-next'
 import { useConnecteursStore } from '../stores/connecteurs'
@@ -100,16 +123,32 @@ async function ouvrir() {
   }
 }
 
+/** Comparaison de noms tolérante à la casse et aux accents. */
+const cle = (s) => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim()
+
+const nomsModules = computed(() => modules.value.map((d) => d.nom))
+
+/**
+ * Les modules DÉJÀ en place qui n'ont pas d'équivalent dans Carré (proposés par
+ * MIAPO, importés d'un PDF, saisis à la main). On retire les homonymes pour ne
+ * pas afficher deux fois la même case : c'est le même module.
+ */
+const deja = computed(() => {
+  const carre = new Set(modules.value.map((d) => cle(d.nom)))
+  return listeModules(props.valeur).filter((m) => !carre.has(cle(m)))
+})
+
 function basculer(d) {
   const s = new Set(choisis.value)
   if (s.has(d)) s.delete(d); else s.add(d)
   choisis.value = s
 }
-const toutCoche = () => modules.value.length > 0 && modules.value.every((d) => choisis.value.has(d.nom))
-function basculerTout() {
+/** « Tout cocher » agit sur SA section, jamais sur ce qui est ailleurs. */
+const sectionCochee = (noms) => noms.length > 0 && noms.every((n) => choisis.value.has(n))
+function basculerSection(noms) {
   const s = new Set(choisis.value)
-  const tout = toutCoche()
-  for (const d of modules.value) { if (tout) s.delete(d.nom); else s.add(d.nom) }
+  const tout = sectionCochee(noms)
+  for (const n of noms) { if (tout) s.delete(n); else s.add(n) }
   choisis.value = s
 }
 
