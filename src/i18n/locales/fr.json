@@ -4109,7 +4109,8 @@
     "salaryTaxHint": "Appliqué au salaire brut diminué des cotisations. Laissez à 0 tant que vous ne connaissez pas le taux : le bulletin indiquera alors que l'impôt n'est pas déduit, plutôt que d'afficher un net faux.",
     "payrollNoScale": "Aucun barème de cotisations n'est paramétré pour ce pays : les bulletins n'affichent que le salaire brut.",
     "payrollNoTax": "Les cotisations sociales de ce pays sont paramétrées. En revanche l'impôt sur les salaires ne l'est pas : les sources publiques disponibles se contredisent, nous ne l'avons donc pas codé. Saisissez votre taux ci-dessous.",
-    "payrollOk": "Cotisations et impôt paramétrés pour ce pays. {s}"
+    "payrollOk": "Cotisations et impôt paramétrés pour ce pays. {s}",
+    "academicYearHint": "L'import du classeur porte la liste de l'année PRÉCÉDENTE : gardez cette année-là jusqu'à la vérification, puis lancez le passage d'année."
   },
   "onb": {
     "welcome": "Bienvenue ! Comment démarrer ?",

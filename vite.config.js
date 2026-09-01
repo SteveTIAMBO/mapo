@@ -57,6 +57,22 @@ export default defineConfig({
         // l'avoir hors connexion ne retire rien.
         globIgnores: ['**/pdf-*.js', '**/pdf.worker*'],
         cleanupOutdatedCaches: true,
+        /**
+         * ⚠️ `/site` n'appartient PAS à cette application.
+         *
+         * Le site vitrine de l'école est un AUTRE produit, servi sur le même
+         * sous-domaine sous `/site/`. Sans cette exclusion, le service worker de
+         * l'ERP répond à sa place : `navigateFallback` vaut `index.html` par
+         * défaut, donc un visiteur ayant déjà ouvert MAPO sur cette origine
+         * arrivait sur le TABLEAU DE BORD en demandant le site public.
+         *
+         * Mesuré le 01/09/2026 sur epc1 : `curl` recevait bien la vitrine (le
+         * serveur fait son travail), mais le navigateur affichait l'ERP. Le
+         * défaut ne touche donc que les personnes ayant déjà utilisé MAPO —
+         * c'est-à-dire l'équipe de l'école, exactement celles qui vérifient si
+         * « notre site est en ligne ».
+         */
+        navigateFallbackDenylist: [/^\/site(\/|$)/],
         // Greffe les handlers push/notificationclick en tête du SW généré,
         // sans avoir à passer en injectManifest (on garde generateSW).
         importScripts: ['/push-sw.js'],
@@ -70,7 +86,10 @@ export default defineConfig({
             urlPattern: ({ request, url }) =>
               request.mode === 'navigate' &&
               !url.pathname.endsWith('.php') &&
-              !url.pathname.startsWith('/scolarite-bridge'),
+              !url.pathname.startsWith('/scolarite-bridge') &&
+              // Le site vitrine vit sous /site : ne pas le mettre en cache sous
+              // le nom « app-shell », sinon on lui sert la coquille de l'ERP.
+              !url.pathname.startsWith('/site'),
             handler: 'NetworkFirst',
             options: {
               cacheName: 'app-shell',

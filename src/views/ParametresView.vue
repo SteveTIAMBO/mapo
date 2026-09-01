@@ -109,7 +109,14 @@
             <div class="field-row">
               <div class="field">
                 <label>{{ t('param.academicYear') }}</label>
-                <input v-model="form.academicYear" type="text" class="input" placeholder="2025-2026" />
+                <!-- Liste fermée : « 2025-26 », « 2025/2026 » ou une faute de
+                     frappe produisaient une année que rien ne reconnaissait, et
+                     qui se propageait ensuite dans les bulletins et le passage
+                     d'année. Demande de Steve du 01/09/2026. -->
+                <select v-model="form.academicYear" class="input">
+                  <option v-for="a in anneesProposees" :key="a" :value="a">{{ a }}</option>
+                </select>
+                <p class="field-hint">{{ t('param.academicYearHint') }}</p>
               </div>
               <div class="field">
                 <label>{{ t('param.currency') }}</label>
@@ -546,6 +553,26 @@ const form = reactive({
 })
 
 /** Barème de paie du pays choisi, ou null s'il n'y en a pas. */
+/**
+ * Années proposées : de deux ans en arrière à un an en avant.
+ *
+ * ⚠️ La valeur ACTUELLE de l'école est toujours incluse, même hors de cette
+ * plage. Sans cela, un `select` dont la valeur n'a aucune option s'affiche VIDE —
+ * c'est exactement ce que Steve a vu dans la barre latérale, et ce serait pire
+ * ici : enregistrer effacerait l'année sans qu'il l'ait voulu.
+ *
+ * L'import portant TOUJOURS la liste de l'année précédente (règle rappelée par
+ * Steve), la plage descend volontairement deux ans en arrière.
+ */
+const anneesProposees = computed(() => {
+  const now = new Date()
+  const depart = now.getMonth() + 1 >= 9 ? now.getFullYear() : now.getFullYear() - 1
+  const liste = [-2, -1, 0, 1].map((d) => `${depart + d}-${depart + d + 1}`)
+  const actuelle = String(form.academicYear || '').trim()
+  if (actuelle && !liste.includes(actuelle)) liste.push(actuelle)
+  return [...new Set(liste)].sort()
+})
+
 const paieBareme = computed(() => baremePaie(form.country))
 
 /** Saisie en pourcentage, stockage en taux : 5 à l'écran, 0.05 en base. */
