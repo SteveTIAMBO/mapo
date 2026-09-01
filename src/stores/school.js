@@ -247,6 +247,20 @@ export const useSchoolStore = defineStore('school', () => {
     if (schoolSettings.value.academicYear) {
       return schoolSettings.value.academicYear
     }
+    /**
+     * ⚠️ AVANT de calculer quoi que ce soit : l'année déclarée à la CRÉATION de
+     * l'école (`anneeAcademique`, écrite par la console EDUFREM).
+     *
+     * Vécu sur EPC1 le 01/09/2026 : l'école avait `anneeAcademique: 2026-2027`
+     * et `academicYear: 2025-2026`. Deux champs pour un seul fait, et c'est le
+     * mauvais qui s'affichait — la barre latérale et le tableau de bord
+     * annonçaient une année scolaire écoulée. Le calcul par la date est un
+     * dernier recours, pas une source : lancée en août, il rend l'année
+     * précédente, et une fois PERSISTÉ ce calcul devient une fausse déclaration.
+     */
+    if (schoolSettings.value.anneeAcademique) {
+      return String(schoolSettings.value.anneeAcademique).trim()
+    }
     // Auto-calculate based on current date
     const now = new Date()
     const month = now.getMonth() + 1 // getMonth returns 0-11

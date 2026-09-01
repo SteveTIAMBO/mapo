@@ -185,3 +185,35 @@ describe('Paramètres est VISIBLE, pas seulement présent', () => {
     expect(bloc).toContain("hasAccess('parametres')")
   })
 })
+
+describe('⚠️ deux champs pour une année, et c’était le mauvais qui gagnait', () => {
+  /**
+   * Mesuré sur EPC1 le 01/09/2026 : le document école portait
+   * `anneeAcademique: "2026-2027"` (écrit à la création par la console EDUFREM)
+   * ET `academicYear: "2025-2026"` (calculé depuis la date puis PERSISTÉ). La
+   * barre latérale et le tableau de bord annonçaient donc une année scolaire
+   * déjà écoulée.
+   *
+   * Le calcul par la date est un dernier recours, pas une source : lancé en
+   * août il rend l'année précédente, et une fois enregistré ce calcul devient
+   * une fausse déclaration.
+   */
+  const store = lire('stores/school.js')
+
+  it('l’année DÉCLARÉE passe avant tout calcul', () => {
+    const i = store.indexOf('const currentAcademicYear')
+    const bloc = store.slice(i, i + 1400)
+    expect(bloc).toContain('schoolSettings.value.anneeAcademique')
+    // Et elle passe AVANT le calcul par la date.
+    expect(bloc.indexOf('anneeAcademique')).toBeLessThan(bloc.indexOf('new Date()'))
+  })
+
+  it('le champ explicite reste prioritaire sur les deux', () => {
+    // Ordre voulu : academicYear (choix de l'école) → anneeAcademique
+    // (déclaration EDUFREM) → calcul.
+    const i = store.indexOf('const currentAcademicYear')
+    const bloc = store.slice(i, i + 1400)
+    expect(bloc.indexOf('schoolSettings.value.academicYear'))
+      .toBeLessThan(bloc.indexOf('schoolSettings.value.anneeAcademique'))
+  })
+})
