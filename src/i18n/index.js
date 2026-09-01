@@ -29,3 +29,23 @@ export function setLang(lang) {
 export function currentLang() {
   return i18n.global.locale.value
 }
+
+/**
+ * Langue PAR DÉFAUT de l'école — appliquée seulement si le visiteur n'a jamais
+ * choisi lui-même.
+ *
+ * ⚠️ Le réglage « Langue » des paramètres d'école et les boutons FR/EN de
+ * l'en-tête désignaient la même chose sans se parler : le réglage enregistrait,
+ * confirmait, et n'agissait pas du tout. Il agit désormais — mais il ne doit pas
+ * écraser un choix explicite à chaque chargement, sinon un enseignant anglophone
+ * dans une école francophone serait remis en français sans arrêt.
+ *
+ * On n'écrit donc PAS `mapo_lang` ici : un défaut n'est pas un choix.
+ */
+export function appliquerLangueEcole(lang) {
+  if (savedLang()) return false
+  if (lang !== 'fr' && lang !== 'en') return false
+  i18n.global.locale.value = lang
+  try { document.documentElement.lang = lang } catch { /* sûreté */ }
+  return true
+}

@@ -48,11 +48,36 @@ export function generateBulletinPDF(opts) {
   const margin = 15
   let y = 15
 
+  // ── Logo de l'école (haut gauche) ──
+  //
+  // ⚠️ Il était téléversé dans Paramètres, transmis jusqu'ici… et jamais
+  // dessiné : le mot « logo » n'apparaissait dans ce fichier qu'en commentaire.
+  // Le directeur le voyait en haut de l'application et le cherchait en vain sur
+  // ses bulletins.
+  //
+  // ⚠️ Deux champs pour un même fait : `logo` est écrit par les Paramètres de
+  // l'école, `logoUrl` par la console EDUFREM. On accepte les deux plutôt que
+  // d'en imposer un et de laisser la moitié des écoles sans logo.
+  let leftX = margin
+  const logo = school.logo || school.logoUrl
+  if (typeof logo === 'string' && logo.startsWith('data:image/')) {
+    try {
+      // Le format se lit sur l'en-tête de la donnée : le téléversement produit
+      // du JPEG, la console peut produire du PNG. Se tromper ferait échouer
+      // l'insertion.
+      doc.addImage(logo, /^data:image\/png/i.test(logo) ? 'PNG' : 'JPEG', margin, y - 4, 14, 14)
+      leftX = margin + 18
+    } catch (e) {
+      // Une image illisible ne doit pas emporter tout le bulletin.
+      console.warn('Logo illisible : bulletin généré sans logo', e)
+    }
+  }
+
   // ── School name (top left, bold) ──
   doc.setTextColor(30, 30, 30)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(14)
-  doc.text(school.schoolName || 'Établissement', margin, y)
+  doc.text(school.schoolName || 'Établissement', leftX, y)
 
   // ── "BULLETIN DE NOTES" (top right) ──
   doc.setFontSize(14)
@@ -75,7 +100,7 @@ export function generateBulletinPDF(opts) {
   schoolDetails.push('Année scolaire ' + (school.academicYear || '2025-2026'))
 
   for (const line of schoolDetails) {
-    doc.text(line, margin, y)
+    doc.text(line, leftX, y)
     y += 4
   }
 

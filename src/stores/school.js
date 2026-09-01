@@ -8,6 +8,7 @@ import { demoKey, paysDemo } from '../utils/demoScope'
 import { packPays, directeurDuPays } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 import { publishSchoolDirectory } from '../utils/schoolDirectory'
+import { appliquerLangueEcole } from '../i18n'
 
 export const COUNTRY_DEFAULTS = {
   CM: {
@@ -379,6 +380,11 @@ export const useSchoolStore = defineStore('school', () => {
     }
     await migrerLibellesEnCodes()
     applyPrimaryColor()
+    // La langue déclarée par l'école sert de DÉFAUT : elle ne s'applique que si
+    // le visiteur n'a jamais choisi lui-même (voir `appliquerLangueEcole`).
+    // Sans cet appel, une école anglophone devait rebasculer l'en-tête à chaque
+    // ouverture, et son réglage n'était qu'un décor.
+    appliquerLangueEcole(schoolSettings.value?.language)
   }
 
   /**

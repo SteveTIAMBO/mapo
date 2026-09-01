@@ -41,14 +41,14 @@
               <label>{{ t('param.schoolName') }}</label>
               <input v-model="form.schoolName" type="text" class="input" :placeholder="t('param.schoolNamePh')" />
             </div>
+            <!-- Le « type d'établissement » a été retiré le 01/09/2026. Il
+                 n'avait qu'un seul lecteur (tuteur facultatif dans le
+                 supérieur) : il ne basculait ni le programme, ni le bulletin,
+                 ni la terminologie — c'est `edition`, fixée par EDUFREM à la
+                 création de l'école, qui décide. Le champ reste en base et
+                 continue d'être écrit par la console EDUFREM et par l'import :
+                 seul le menu déroulant sans effet disparaît. -->
             <div class="field-row">
-              <div class="field">
-                <label>{{ t('param.schoolType') }}</label>
-                <select v-model="form.schoolType" class="input">
-                  <option value="">{{ t('param.select') }}</option>
-                  <option v-for="st in SCHOOL_TYPES" :key="st.value" :value="st.value">{{ st.label }}</option>
-                </select>
-              </div>
               <div class="field">
                 <label>{{ t('param.acronym') }}</label>
                 <input v-model="form.acronym" type="text" class="input" placeholder="Ex: CE" />
@@ -131,20 +131,16 @@
                 </select>
               </div>
             </div>
+            <!-- Le « format de date » a été retiré le 01/09/2026 : il proposait
+                 trois formats et n'avait AUCUN lecteur dans l'application. Tous
+                 nos marchés écrivent JJ/MM/AAAA. Décision de Steve : retirer
+                 plutôt que brancher un réglage que personne ne demande. -->
             <div class="field-row">
               <div class="field">
                 <label>{{ t('param.language') }}</label>
                 <select v-model="form.language" class="input">
                   <option value="fr">{{ t('param.langFr') }}</option>
                   <option value="en">{{ t('param.langEn') }}</option>
-                </select>
-              </div>
-              <div class="field">
-                <label>{{ t('param.dateFormat') }}</label>
-                <select v-model="form.dateFormat" class="input">
-                  <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                  <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                  <option value="YYYY-MM-DD">YYYY-MM-DD</option>
                 </select>
               </div>
             </div>
@@ -465,7 +461,8 @@
 <script setup>
 import { onMounted, ref, reactive, watch, computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useSchoolStore, COUNTRY_DEFAULTS, SCHOOL_TYPES } from '../stores/school'
+import { setLang } from '../i18n'
+import { useSchoolStore, COUNTRY_DEFAULTS } from '../stores/school'
 import { useEditionStore } from '../stores/edition'
 import { useAuthStore } from '../stores/auth'
 import { ImagePlus, Check, ArrowRight, Trash2, Plus, ShieldCheck, Bug, Lightbulb, Send } from 'lucide-vue-next'
@@ -525,9 +522,12 @@ const saveSuccess = ref(false)
 const logoInput = ref(null)
 const signatureInput = ref(null)
 
+// `schoolType` et `dateFormat` ne sont plus dans ce formulaire (01/09/2026) :
+// c'étaient des réglages sans effet. Les champs restent en base — ils y sont
+// écrits par la console EDUFREM et par l'import — mais Paramètres ne les
+// propose plus et ne les réécrit plus.
 const form = reactive({
   schoolName: '',
-  schoolType: '',
   acronym: '',
   country: 'CM',
   city: '',
@@ -537,7 +537,6 @@ const form = reactive({
   website: '',
   academicYear: '',
   currency: 'XAF',
-  dateFormat: 'DD/MM/YYYY',
   phoneFormat: '+237 6XX XXX XXX',
   logo: null,
   directorSignature: null,
@@ -659,7 +658,6 @@ const updateCountryDefaults = () => {
     form.phoneFormat = d.phoneFormat
     // Ne pas ecraser la devise si elle a ete changee manuellement
     if (!form.currency) form.currency = d.currency
-    if (!form.dateFormat) form.dateFormat = d.dateFormat
   }
 }
 
@@ -667,7 +665,6 @@ const onCountryChange = () => {
   const d = COUNTRY_DEFAULTS[form.country]
   if (d) {
     form.currency = d.currency
-    form.dateFormat = d.dateFormat
     form.phoneFormat = d.phoneFormat
   }
 }
@@ -821,6 +818,11 @@ const saveSettings = async () => {
     await schoolStore.saveSettings({ ...form })
     // Appliquer la couleur dominante à tout le site
     applyColorVars(form.primaryColor)
+    // ⚠️ Appliquer la LANGUE, sinon le réglage ne fait rien. Il enregistrait,
+    // le toast confirmait, et l'interface restait en français : la langue vient
+    // de `setLang`, que seuls les boutons FR/EN de l'en-tête appelaient. Deux
+    // commandes du même nom à deux écrans de distance, une seule branchée.
+    if (form.language === 'fr' || form.language === 'en') setLang(form.language)
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 3000)
   } catch (err) {
