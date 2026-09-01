@@ -180,12 +180,25 @@
               <label>{{ t('classes.className') }} *</label>
               <input v-model="formData.name" type="text" class="input" :placeholder="t('classes.classNamePh')" required />
             </div>
+            <!-- ⚠️ Saisie LIBRE, avec suggestions. C'était un menu fermé A→D :
+                 une école à six divisions ne pouvait pas créer E et F, et celle
+                 qui nomme ses classes « Rouge » ou « Bleu » n'avait aucune case
+                 — alors que l'import de classeur, lui, acceptait déjà n'importe
+                 quel texte. Les suggestions viennent des sections DE L'ÉCOLE,
+                 complétées par A→D tant qu'elle n'en a aucune. -->
             <div class="field">
               <label>{{ t('classes.section') }}</label>
-              <select v-model="formData.section" class="input">
-                <option value="">{{ t('classes.noneF') }}</option>
-                <option v-for="s in SECTIONS" :key="s.value" :value="s.value">{{ s.label }}</option>
-              </select>
+              <input
+                v-model="formData.section"
+                type="text"
+                class="input"
+                list="sections-ecole"
+                maxlength="20"
+                :placeholder="t('classes.noneF')"
+              />
+              <datalist id="sections-ecole">
+                <option v-for="s in sectionsProposees" :key="s" :value="s"></option>
+              </datalist>
             </div>
           </div>
 
@@ -409,6 +422,20 @@ const niveauxStore = useNiveauxStore()
 // déclaré, le store sert une amorce déduite de son pays et de son édition.
 const levels = computed(() => niveauxStore.niveaux)
 
+/**
+ * Suggestions de section — celles que l'école utilise DÉJÀ, sinon A→D.
+ *
+ * ⚠️ Ce sont des suggestions, pas une liste : le champ est libre. La liste
+ * fermée A→D interdisait une sixième division, ou des sections nommées
+ * autrement, alors que l'import de classeur acceptait déjà n'importe quel texte.
+ */
+const sectionsProposees = computed(() => {
+  const utilisees = [...new Set(
+    (classesStore.classes || []).map((c) => String(c.section || '').trim()).filter(Boolean),
+  )].sort((a, b) => a.localeCompare(b, 'fr'))
+  return utilisees.length ? utilisees : SECTIONS.map((s) => s.value)
+})
+
 const showNiveaux = ref(false)
 const nouveauNiveau = ref('')
 const nouveauCycle = ref(editionStore.isPrimaire ? 'primaire' : 'premier')
@@ -548,7 +575,9 @@ const saveClass = async () => {
   const data = {
     name: formData.name,
     level: formData.level,
-    section: formData.section || null,
+    // Saisie libre depuis le 02/09 : on retire les espaces, sinon « A » et
+    // « A » avec une espace deviendraient deux sections distinctes.
+    section: String(formData.section || '').trim() || null,
     capacity: formData.capacity || 60,
     enrolled: formData.enrolled || 0,
     homeroomTeacher: formData.homeroomTeacher || null,
