@@ -139,6 +139,10 @@ import ciHistGeoPremierCycle from '../data/referentiels/ci-histoire-geographie-p
 import ciPcPremierCycle from '../data/referentiels/ci-physique-chimie-premier-cycle.json'
 import ciSvtPremierCycle from '../data/referentiels/ci-svt-premier-cycle.json'
 import ciEdhcPremierCycle from '../data/referentiels/ci-edhc-premier-cycle.json'
+// ⚠️ SECOND CYCLE : dix séries, dix programmes DIFFÉRENTS (2nde A/C, 1re et Tle
+// en A1/A2/C/D). Un seul fichier, mais surtout pas une seule liste de notions —
+// servir le programme de la C à un élève de la A serait invisible et faux.
+import ciMathsSecondCycle from '../data/referentiels/ci-mathematiques-second-cycle.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -158,7 +162,7 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, mathsCycle4_2020, francaisCycle4
   cmInfo65, cmAnglais2nde, cmInfo2ndeA, cmInfo2ndeC,
   cmSvt2nde, cmPhysique2nde, cmChimie2nde, cmHistoireTle, cmGeographieTle,
   ciMathsPremierCycle, ciFrancaisPremierCycle, ciHistGeoPremierCycle,
-  ciPcPremierCycle, ciSvtPremierCycle, ciEdhcPremierCycle]
+  ciPcPremierCycle, ciSvtPremierCycle, ciEdhcPremierCycle, ciMathsSecondCycle]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

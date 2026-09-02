@@ -81,12 +81,13 @@ describe('⚠️ pas de contamination entre pays ni entre classes', () => {
     expect(maths('6e')).not.toEqual(cm)
   })
 
-  it('⚠️ une classe de LYCÉE ivoirien ne renvoie encore RIEN', () => {
-    // Le second cycle (2nde/1re/Tle, séries A1/A2/C/D) existe sur le portail
-    // mais n'est pas intégré. Un résultat vide est légitime ; inventer ne l'est
-    // pas — surtout pour des séries dont les programmes DIFFÈRENT.
+  it('⚠️ une classe de lycée SANS SÉRIE ne renvoie rien', () => {
+    // Au lycée ivoirien, « 2nde » tout court n'existe pas : il y a 2nde A et
+    // 2nde C, aux programmes très différents. Répondre quelque chose à une
+    // classe sans série serait deviner laquelle.
     expect(maths('2nde')).toEqual([])
-    expect(maths('Tle D')).toEqual([])
+    expect(maths('1re')).toEqual([])
+    expect(maths('Terminale')).toEqual([])
   })
 
   it('les matières NON intégrées restent vides', () => {
@@ -191,6 +192,79 @@ describe('⭐⭐ les CINQ autres matières du premier cycle (02/09)', () => {
     // programme, une seule est enseignée — on les garde donc toutes les deux.
     const n = M('Histoire-Géographie', '3e').map((x) => x.notion)
     expect(n.filter((x) => /alternante/.test(x))).toHaveLength(2)
+  })
+})
+
+describe('⭐⭐ SECOND CYCLE — dix séries, dix programmes différents', () => {
+  const SERIES = ['2nde A', '2nde C', '1re A1', '1re A2', '1re C', '1re D', 'Tle A1', 'Tle A2', 'Tle C', 'Tle D']
+
+  it('les dix séries du catalogue ont un programme de maths', () => {
+    for (const s of SERIES) expect(maths(s).length, s).toBeGreaterThan(0)
+  })
+
+  it('le compte par série est celui du corps du programme', () => {
+    expect(SERIES.map((s) => maths(s).length)).toEqual([8, 15, 7, 7, 17, 15, 8, 7, 19, 12])
+  })
+
+  it('⚠️⚠️ AUCUNE série n’a le même programme qu’une autre', () => {
+    // Le risque central du second cycle : servir le programme de la C à un
+    // élève de la A. Ce serait invisible — les questions auraient l'air justes.
+    const listes = SERIES.map((s) => JSON.stringify(maths(s)))
+    expect(new Set(listes).size).toBe(SERIES.length)
+  })
+
+  it('⚠️ A1 et A2 se ressemblent mais ne sont PAS identiques', () => {
+    // Piège le plus vraisemblable : deux séries littéraires très proches.
+    // En 1re, elles diffèrent d'un accent sur une leçon et d'un thème ;
+    // en Tle, A1 a « Primitives et Calcul intégral » que A2 n'a pas.
+    expect(maths('1re A1')).not.toEqual(maths('1re A2'))
+    expect(maths('Tle A1')).not.toEqual(maths('Tle A2'))
+    expect(maths('Tle A1').map((n) => n.notion)).toContain('Primitives et Calcul intégral')
+    expect(maths('Tle A2').map((n) => n.notion)).not.toContain('Primitives et Calcul intégral')
+  })
+
+  it('⚠️ C et D non plus : la géométrie les sépare', () => {
+    const c = maths('1re C').map((n) => n.notion)
+    const d = maths('1re D').map((n) => n.notion)
+    expect(c).toContain('Géométrie analytique du plan')
+    expect(d).not.toContain('Géométrie analytique du plan')
+    expect(c).toContain('Vecteurs de l’espace')
+    expect(d).not.toContain('Vecteurs de l’espace')
+    // Et en terminale, seule la C porte l'arithmétique.
+    expect(maths('Tle C').map((n) => n.domaine)).toContain('ARITHMÉTIQUE')
+    expect(maths('Tle D').map((n) => n.domaine)).not.toContain('ARITHMÉTIQUE')
+  })
+
+  it('⭐ le CATALOGUE atteint les dix séries', async () => {
+    const { NIVEAUX_SECONDAIRE_CI, matieresCI } = await import('../stores/enfantsAutonomes')
+    for (const s of SERIES) {
+      expect(NIVEAUX_SECONDAIRE_CI, `niveau ${s}`).toContain(s)
+      expect(matieresCI(s), `catalogue ${s}`).toContain('Mathématiques')
+      expect(maths(s).length, `référentiel ${s}`).toBeGreaterThan(0)
+    }
+  })
+
+  it('⚠️ le premier cycle n’est pas contaminé par le second', () => {
+    for (const c of ['6e', '5e', '4e', '3e']) {
+      for (const s of SERIES) expect(maths(c), `${c} vs ${s}`).not.toEqual(maths(s))
+    }
+  })
+
+  it('les coquilles du texte officiel sont conservées', () => {
+    // « GÉOMETRIE » sans accent sur le 2e E, « PHENOMENES » sans accents,
+    // « DONNEÉS » avec l'accent déplacé en Tle D : toutes du document.
+    const d = new Set(SERIES.flatMap((s) => maths(s).map((n) => n.domaine)))
+    expect(d.has('GÉOMETRIE DU PLAN')).toBe(true)
+    expect(d.has('MODÉLISATION DE PHENOMENES ALÉATOIRES')).toBe(true)
+    expect(d.has('ORGANISATION ET TRAITEMENT DES DONNEÉS')).toBe(true)
+  })
+
+  it('aucune notion vide, aucun doublon dans une série', () => {
+    for (const s of SERIES) {
+      const noms = maths(s).map((n) => `${n.domaine}|${n.notion}`)
+      expect(noms.every((x) => x.trim().length > 3), s).toBe(true)
+      expect(new Set(noms).size, `doublon ${s}`).toBe(noms.length)
+    }
   })
 })
 

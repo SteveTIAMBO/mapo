@@ -1,0 +1,537 @@
+{
+  "_licence": "Texte officiel ivoirien (MENA/DPFC). ⚠️ Aucune licence explicite n'est publiée sur dpfc-ci.net et aucun régime de droits n'a pu être établi. Position retenue, identique au Cameroun : on n'extrait que les INTITULÉS de thèmes et de leçons, on cite la source, et on ne rediffuse JAMAIS les PDF.",
+  "_attribution": "Source : Ministère de l'Éducation nationale et de l'Alphabétisation de Côte d'Ivoire — Direction de la Pédagogie et de la Formation Continue (DPFC), Programmes éducatifs et guides d'exécution du Secondaire.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MENA ni par la DPFC.",
+  "_extraitPar": "Extraction assistée depuis les PDF officiels, le 02/09/2026. ⚠️ SEUL LE CORPS DU PROGRAMME fait foi — jamais le tableau synoptique (tableau : l'extraction texte entrelace les colonnes), jamais le guide d'exécution (il diverge du corps sur de nombreux intitulés).",
+  "_granularite": "classe",
+  "pays": "CI",
+  "cycle": "Premier cycle de l'enseignement secondaire général (6e à 3e)",
+  "bo": "DPFC — Programmes éducatifs et guides d'exécution du Secondaire",
+  "url": "https://dpfc-ci.net/?page_id=283",
+  "extraitLe": "2026-09-02",
+  "arrete": "Programmes éducatifs recadrés par l'Approche Par les Compétences (APC), édition CND 09/2023",
+  "matiere": "Mathématiques",
+  "_note": "⚠️⚠️ DIX SÉRIES, DIX PROGRAMMES DIFFÉRENTS — ne jamais présumer qu'une série ressemble à sa voisine. ⚠️ LE PDF DE Tle A2 EST TRUFFÉ DE RESTES DE COPIER-COLLER DU A1 : sa table des matières, son profil de sortie et TOUT son guide d'exécution sont titrés « A1 », et son tableau de spécification annonce 8 leçons alors que le corps A2 n'en contient que 7 (il n'a PAS « Primitives et Calcul intégral »). Seuls le tableau synoptique et l'en-tête du corps sont bien A2 : c'est le corps qui a été retenu. ⚠️ INCERTITUDE ASSUMÉE en Tle D : l'énoncé de la compétence 3 annonce géométrie de l'espace ET transformations du plan, mais le corps n'ouvre qu'un seul thème de géométrie. On suit le corps (12 leçons) — à revérifier sur un exemplaire papier avant d'en tirer une conclusion pédagogique. ⚠️ Le tableau synoptique de 2nde C annonce des thèmes (Modélisation, Arithmétique) qui appartiennent aux colonnes Première/Terminale : les retenir aurait ajouté jusqu'à 4 fausses leçons.",
+  "classes": {
+    "2nde A": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/05.%20Prog%20%C3%89duct%20MATHS%202A%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Calcul numérique"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Calcul littéral"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Système d’équations linéaires"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Etudes de fonctions élémentaires"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique"
+        },
+        {
+          "domaine": "MODÉLISATION DE PHENOMENES ALÉATOIRES",
+          "notion": "Dénombrement"
+        }
+      ]
+    },
+    "2nde C": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/06.Prog%20Educt%20maths%202C%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Ensemble des nombres réels"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Polynômes et fractions rationnelles"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Inéquations dans ℝ × ℝ"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Étude de fonctions élémentaires"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique à une variable"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Vecteurs et points du plan"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Produit scalaire"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Angles inscrits"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Angles orientés et trigonométrie"
+        },
+        {
+          "domaine": "GÉOMETRIE DE L’ESPACE",
+          "notion": "Droites et plans de l’espace"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Utilisation des symétries et translations"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Homothéties"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Rotations"
+        }
+      ]
+    },
+    "1re A1": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/07.%20Prog%20%C3%89duct%20MATHS%201A1%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes linéaires dans ℝ × ℝ"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivabilité et Etude de fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique"
+        },
+        {
+          "domaine": "MODELISATION DE PHÉNOMÈNES ALÉATOIRES",
+          "notion": "Dénombrement"
+        }
+      ]
+    },
+    "1re A2": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/08.%20Prog%20%C3%89duct%20MATHS%201A2%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes linéaires dans ℝ × ℝ"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivabilité et étude de fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique"
+        },
+        {
+          "domaine": "MODELISATION DE PHÉNOMENES ALÉATOIRES",
+          "notion": "Dénombrement"
+        }
+      ]
+    },
+    "1re C": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/09.Prog%20Educt%20maths%201C%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations du second degré dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes d’équations linéaires dans ℝ² et dans ℝ³"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Limites et continuité"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Extension de la notion de limite"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivation"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Etude et représentation graphique d’une fonction"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique à une variable"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Dénombrement"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Probabilité"
+        },
+        {
+          "domaine": "GÉOMÉTRIE DU PLAN",
+          "notion": "Géométrie analytique du plan"
+        },
+        {
+          "domaine": "GÉOMÉTRIE DU PLAN",
+          "notion": "Barycentre"
+        },
+        {
+          "domaine": "GÉOMÉTRIE DU PLAN",
+          "notion": "Angles orientés et trigonométrie"
+        },
+        {
+          "domaine": "GÉOMETRIE DE L’ESPACE",
+          "notion": "Vecteurs de l’espace"
+        },
+        {
+          "domaine": "GÉOMETRIE DE L’ESPACE",
+          "notion": "Orthogonalité dans l’espace"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Composées de transformations du plan"
+        }
+      ]
+    },
+    "1re D": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/10.Prog%20Educt%20maths%201D%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Équations et inéquations du second degré dans ℝ"
+        },
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes d’équations linéaires dans ℝ² et dans ℝ³"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Généralités sur les fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Limites et continuité"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Extension de la notion de limite"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivation"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Étude et représentation graphique d’une fonction"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DES DONNÉES",
+          "notion": "Statistique à une variable"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Dénombrement"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Probabilité"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Barycentre"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Angles orientés et trigonométrie"
+        },
+        {
+          "domaine": "GÉOMETRIE DE L’ESPACE",
+          "notion": "Orthogonalité dans l’espace"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Composées de transformations du plan"
+        }
+      ]
+    },
+    "Tle A1": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/11.%20Prog%20%C3%89duct%20MATHS%20TA1%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes linéaires dans ℝ × ℝ"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Étude de fonctions polynômes et de fonctions rationnelles"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Primitives et Calcul intégral"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Fonction logarithme népérien"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Fonction exponentielle népérienne"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique à deux variables"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Probabilité"
+        }
+      ]
+    },
+    "Tle A2": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/12.%20Prog%20%C3%89duct%20MATHS%20TA2%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Systèmes linéaires dans ℝ × ℝ"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Étude de fonctions polynômes et de fonctions rationnelles"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Fonction logarithme népérien"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Fonction exponentielle népérienne"
+        },
+        {
+          "domaine": "FONCTIONS NUMÉRIQUES",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistique à deux variables"
+        },
+        {
+          "domaine": "MODELISATION DE PHÉNOMENES ALÉATOIRES",
+          "notion": "Probabilité"
+        }
+      ]
+    },
+    "Tle C": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/13.%20Prog%20Educt%20maths%20TC%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Nombres complexes"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Limites et continuité"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivabilité et étude de fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Primitives"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Fonctions logarithmes"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Fonctions exponentielles et fonctions puissances"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Calcul intégral"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Équations différentielles"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DE DONNÉES",
+          "notion": "Statistiques à deux variables"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Probabilité conditionnelle et variable aléatoire"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Barycentre et lignes de niveaux"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Coniques"
+        },
+        {
+          "domaine": "GÉOMETRIE DE L’ESPACE",
+          "notion": "Géométrie analytique dans l’espace"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Isométries du plan"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Similitudes directes du plan"
+        },
+        {
+          "domaine": "TRANSFORMATIONS DU PLAN",
+          "notion": "Nombres complexes et géométrie du plan"
+        },
+        {
+          "domaine": "ARITHMÉTIQUE",
+          "notion": "Divisibilité dans ℤ"
+        },
+        {
+          "domaine": "ARITHMÉTIQUE",
+          "notion": "Plus petit commun multiple et plus grand commun diviseur de deux entiers relatifs"
+        }
+      ]
+    },
+    "Tle D": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/dpfc/programmes/maths/14.%20Prog%20Educt%20maths%20TD%20CND%200923.pdf",
+      "notions": [
+        {
+          "domaine": "CALCULS ALGÉBRIQUES",
+          "notion": "Nombres complexes"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Limites et continuité d’une fonction"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Dérivabilité et étude de fonctions"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Primitives"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Fonctions logarithmes"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Fonctions exponentielles et fonctions puissances"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Calcul intégral"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Suites numériques"
+        },
+        {
+          "domaine": "FONCTIONS",
+          "notion": "Équations différentielles"
+        },
+        {
+          "domaine": "ORGANISATION ET TRAITEMENT DES DONNEÉS",
+          "notion": "Statistiques à deux variables"
+        },
+        {
+          "domaine": "MODÉLISATION D’UN PHÉNOMÈNE ALÉATOIRE",
+          "notion": "Probabilité conditionnelle et variable aléatoire"
+        },
+        {
+          "domaine": "GÉOMETRIE DU PLAN",
+          "notion": "Nombres complexes et géométrie du plan"
+        }
+      ]
+    }
+  }
+}
