@@ -755,7 +755,7 @@
                  plutôt que « il » : c'est ce que fait le reste de la vue, et ça
                  évite d'accorder au masculin ce qui ne l'est pas. -->
             <div v-if="calibrationEnfant" class="calib-bloc">
-              <div class="calib-head"><Target :size="15" /> <strong>{{ isApprenant ? t('mia.calibTitreMoi') : t('mia.calibTitre', { name: activeEnfant.firstName }) }}</strong></div>
+              <div class="calib-head"><span class="calib-ic"><Target :size="15" /></span> <strong>{{ isApprenant ? t('mia.calibTitreMoi') : t('mia.calibTitre', { name: activeEnfant.firstName }) }}</strong></div>
               <p v-if="calibrationEnfant.ecartMoyen !== null" class="calib-l">
                 {{ isApprenant
                   ? t('mia.calibEcartMoi', { n: Math.abs(calibrationEnfant.ecartMoyen), sens: calibrationEnfant.ecartMoyen > 0 ? t('mia.calibMoins') : t('mia.calibPlus') })
@@ -3913,17 +3913,40 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .suivi-ecole { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #1B8A5A; background: rgba(27,138,90,.08); padding: 7px 11px; border-radius: 10px; margin: 0 0 12px; }
 .suivi-ecole svg { flex-shrink: 0; }
 
-/* Bilan de calibration (P11).
+/* Bilan de calibration (P11) — tuile façon HUB / Liquid Glass.
+   Matière translucide, filet de 1 px, liseré spéculaire en haut, angles
+   généreux : le même vocabulaire que les cartes de l'app, en plus discret
+   puisque cette tuile vit DANS une carte.
    ⚠️ NE PAS renommer en « calib-card ». `main.css` peint tout
    `[class*="-card"]` en fond blanc + ombre portée, en `!important` : la classe
    attrapait ce style SANS padding ni marge, et le bloc chevauchait la liste des
    niveaux — visible seulement à l'écran, jamais dans les tests. C'est le même
    piège que `.m-tile` ailleurs dans l'app. */
-.calib-bloc { background: rgba(59,130,246,.06); border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
-.calib-head { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--tx); margin-bottom: 6px; }
-.calib-head svg { flex-shrink: 0; color: var(--pr); }
-.calib-l { font-size: 13px; color: var(--tx2); margin: 0 0 4px; line-height: 1.5; }
-.calib-aide { font-size: 12px; color: var(--tx3, var(--tx2)); margin: 6px 0 0; line-height: 1.45; }
+.calib-bloc {
+  margin: 2px 0 16px; padding: 14px 16px 12px; border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.5));
+  border: 1px solid var(--card-border, rgba(17,24,39,.07));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(20,24,40,.04);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+}
+.calib-head { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.calib-head strong { font-size: 14px; font-weight: 600; color: var(--tx); letter-spacing: -.01em; }
+/* Pastille d'icône : le même carré arrondi teinté que les tuiles du hub
+   (`.rt-ic`), en plus petit. */
+.calib-ic {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 9px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(var(--pr-rgb,10,132,255),.12); color: var(--pr);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.5);
+}
+.calib-l { font-size: 13.5px; color: var(--tx2); margin: 0 0 5px; line-height: 1.5; }
+.calib-l:last-of-type { margin-bottom: 0; }
+/* Note de bas de tuile, séparée par un filet — hiérarchie, pas décoration. */
+.calib-aide {
+  margin: 10px 0 0; padding-top: 9px; border-top: 1px solid var(--divider, rgba(17,24,39,.08));
+  font-size: 12px; color: var(--tx3); line-height: 1.45;
+}
 .courbe-list { display: flex; flex-direction: column; gap: 12px; }
 .courbe-row { display: flex; align-items: center; gap: 12px; }
 .courbe-mat { flex: 0 0 32%; font-size: 14px; color: var(--tx, #1f2937); }

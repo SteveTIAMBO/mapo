@@ -30,7 +30,7 @@
 
     <!-- Prédiction de score — métacognition (P11). Un écran, zéro token. -->
     <div v-else-if="mode === 'predire'" class="tq-predire">
-      <Target :size="30" />
+      <span class="tq-predire-ic"><Target :size="24" /></span>
       <h2>{{ locale.startsWith('en') ? 'Before you start' : 'Avant de commencer' }}</h2>
       <p>{{ locale.startsWith('en')
         ? `Out of ${questions.length} questions, how many do you think you'll get right on the first try?`
@@ -125,14 +125,19 @@
            réglage qu'on touche ou non, et qui ne retarde rien. -->
       <div v-if="!revealed" class="tq-surete">
         <span class="tq-surete-l">{{ locale.startsWith('en') ? 'Before answering:' : 'Avant de répondre :' }}</span>
-        <button type="button" class="tq-surete-b" :class="{ on: sureteQ === true }"
-          @click="sureteQ = sureteQ === true ? null : true">
-          {{ locale.startsWith('en') ? "I'm sure" : 'Je suis sûr' }}
-        </button>
-        <button type="button" class="tq-surete-b" :class="{ on: sureteQ === false }"
-          @click="sureteQ = sureteQ === false ? null : false">
-          {{ locale.startsWith('en') ? 'Not sure' : 'Pas sûr' }}
-        </button>
+        <!-- Contrôle segmenté (piste creusée + capsule blanche en relief) plutôt
+             que deux pastilles isolées : c'est le vocabulaire du hub, et ça dit
+             visuellement qu'il s'agit d'UN choix à deux positions. -->
+        <div class="tq-seg">
+          <button type="button" class="tq-seg-b" :class="{ on: sureteQ === true }"
+            @click="sureteQ = sureteQ === true ? null : true">
+            {{ locale.startsWith('en') ? "I'm sure" : 'Je suis sûr' }}
+          </button>
+          <button type="button" class="tq-seg-b" :class="{ on: sureteQ === false }"
+            @click="sureteQ = sureteQ === false ? null : false">
+            {{ locale.startsWith('en') ? 'Not sure' : 'Pas sûr' }}
+          </button>
+        </div>
       </div>
 
       <div class="tq-choices">
@@ -232,7 +237,7 @@
            on ne dit rien quand l'écart est d'un point, parce qu'un point sur dix
            est du bruit. -->
       <div v-if="prediction !== null" class="tq-calib">
-        <Target :size="15" />
+        <span class="tq-calib-ic"><Target :size="14" /></span>
         <p>{{ locale.startsWith('en')
           ? `You predicted ${prediction}, you got ${firstTryCount} on the first try.`
           : `Tu avais prévu ${prediction}, tu en as réussi ${firstTryCount} du premier coup.` }}</p>
@@ -1313,33 +1318,84 @@ onMounted(start)
 }
 
 /* ── MÉTACOGNITION (P11) ────────────────────────────────────────────────── */
-/* Volontairement discret : ces éléments accompagnent la séance, ils ne doivent
-   pas concurrencer la question elle-même. */
+/* Vocabulaire du HUB / Liquid Glass : matières translucides, filets de 1 px,
+   liseré spéculaire en haut, angles généreux, pastilles d'icône teintées par
+   `--pr`. Volontairement discret : ces éléments ACCOMPAGNENT la séance, ils ne
+   doivent pas concurrencer la question elle-même. */
 .tq-predire {
   display: flex; flex-direction: column; align-items: center; gap: 12px;
-  padding: 32px 20px; text-align: center;
+  padding: 36px 20px 32px; text-align: center;
 }
-.tq-predire h2 { margin: 0; font-size: 19px; font-weight: 600; }
+/* Pastille d'icône : carré arrondi teinté, comme les tuiles du hub. */
+.tq-predire-ic {
+  width: 48px; height: 48px; border-radius: 15px; margin-bottom: 2px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(var(--pr-rgb,10,132,255),.12); color: var(--pr);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.6);
+}
+.tq-predire h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .tq-predire > p { margin: 0; max-width: 380px; color: var(--tx2); }
 .tq-predire small { max-width: 400px; color: var(--tx3); font-size: 12.5px; line-height: 1.5; }
-.tq-predire-choix { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 6px 0; }
+.tq-predire-choix { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0 2px; }
+/* Boutons de chiffre : verre clair, filet fin, liseré en haut. Au survol la
+   tuile se teinte et se soulève très légèrement — pas d'ombre lourde. */
 .tq-predire-n {
-  min-width: 42px; padding: 10px 0; border-radius: 10px;
-  border: 1px solid rgba(0, 0, 0, .12); background: #fff;
-  font-size: 15px; font-weight: 600; cursor: pointer;
+  min-width: 46px; padding: 11px 0; border-radius: 13px;
+  border: 1px solid var(--card-border, rgba(17,24,39,.07));
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(255,255,255,.65));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 1px 2px rgba(20,24,40,.05);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+  color: var(--tx); font-size: 15px; font-weight: 600; font-family: inherit; cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s, transform .08s;
 }
-.tq-predire-n:hover { border-color: var(--pr); color: var(--pr); }
-.tq-predire-skip { background: none; border: none; color: var(--tx3); font-size: 13px; cursor: pointer; text-decoration: underline; }
+.tq-predire-n:hover {
+  border-color: rgba(var(--pr-rgb,10,132,255),.45); color: var(--pr);
+  background: rgba(var(--pr-rgb,10,132,255),.10);
+}
+.tq-predire-n:active { transform: scale(.96); }
+.tq-predire-skip {
+  background: none; border: none; color: var(--tx3); font-family: inherit;
+  font-size: 13px; cursor: pointer; padding: 6px 12px; border-radius: 9px;
+}
+.tq-predire-skip:hover { color: var(--tx2); background: rgba(17,24,39,.05); }
 
-.tq-surete { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; flex-wrap: wrap; }
+.tq-surete { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; flex-wrap: wrap; }
 .tq-surete-l { font-size: 12.5px; color: var(--tx3); }
-.tq-surete-b {
-  padding: 5px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
-  border: 1px solid rgba(0, 0, 0, .12); background: #fff; color: var(--tx2);
+/* Contrôle segmenté : piste creusée, capsule blanche en relief sur l'option
+   retenue. C'est le motif système ; il rend lisible d'un coup d'œil qu'aucune
+   des deux positions n'est choisie tant que l'apprenant n'a rien touché. */
+.tq-seg {
+  display: inline-flex; gap: 2px; padding: 2px; border-radius: 999px;
+  background: rgba(17,24,39,.05);
+  border: 1px solid var(--card-border, rgba(17,24,39,.07));
 }
-.tq-surete-b.on { border-color: var(--pr); background: var(--pr); color: #fff; }
+.tq-seg-b {
+  padding: 5px 13px; border-radius: 999px; border: none; background: none;
+  color: var(--tx2); font-family: inherit; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; transition: background .15s, color .15s, box-shadow .15s;
+}
+.tq-seg-b:hover { color: var(--tx); }
+.tq-seg-b.on {
+  background: #fff; color: var(--pr); font-weight: 600;
+  box-shadow: 0 1px 3px rgba(20,24,40,.12), inset 0 1px 0 rgba(255,255,255,.9);
+}
 
-.tq-calib { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--tx2); }
+/* Bilan de fin de séance : une puce de verre, pas une ligne de texte nue. */
+.tq-calib {
+  display: inline-flex; align-items: center; gap: 9px; margin: 10px 0 0;
+  padding: 8px 14px 8px 9px; border-radius: 999px; color: var(--tx2);
+  background: linear-gradient(180deg, rgba(255,255,255,.85), rgba(255,255,255,.6));
+  border: 1px solid var(--card-border, rgba(17,24,39,.07));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.85), 0 1px 2px rgba(20,24,40,.04);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
+}
+.tq-calib-ic {
+  flex-shrink: 0; width: 24px; height: 24px; border-radius: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(var(--pr-rgb,10,132,255),.12); color: var(--pr);
+}
 .tq-calib p { margin: 0; font-size: 13.5px; }
-.tq-calib-msg { max-width: 420px; margin: 6px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
+.tq-calib-msg { max-width: 420px; margin: 8px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
 </style>
