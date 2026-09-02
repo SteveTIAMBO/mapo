@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sur quoi repose MIAPO · EDUFREM</title>
+<style>
+  :root{
+    --violet:#5B3FD9;
+    --indigo:#2E2A6B;
+    --or:#C9A227;
+    --encre:#14132B;
+    --gris:#5A5872;
+    --trait:#E2E0EC;
+    --fond:#FFFFFF;
+    --fond-doux:#F7F6FB;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--fond-doux);
+    color:var(--encre);
+    font-family:"Inter","Segoe UI",Helvetica,Arial,sans-serif;
+    font-size:16px;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page{
+    max-width:900px;
+    margin:32px auto;
+    background:var(--fond);
+    padding:48px 52px 40px;
+    border:1px solid var(--trait);
+    border-radius:14px;
+  }
+
+  /* En-tête */
+  .kicker{
+    font-size:12.5px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--violet);
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:34px;
+    line-height:1.2;
+    margin:0 0 12px;
+    letter-spacing:-.015em;
+    color:var(--indigo);
+  }
+  .chapeau{
+    font-size:17px;
+    color:var(--gris);
+    margin:0 0 8px;
+    max-width:62ch;
+  }
+  .regle{
+    height:3px;
+    width:64px;
+    background:var(--or);
+    border:0;
+    margin:22px 0 30px;
+  }
+
+  /* Grille de principes */
+  .grille{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+  }
+  .carte{
+    border:1px solid var(--trait);
+    border-radius:12px;
+    padding:20px 22px;
+    background:var(--fond);
+  }
+  .carte h2{
+    font-size:16.5px;
+    margin:0 0 8px;
+    color:var(--indigo);
+    display:flex;
+    align-items:center;
+    gap:10px;
+    line-height:1.3;
+  }
+  .carte svg{
+    width:20px;
+    height:20px;
+    flex:0 0 20px;
+    stroke:var(--violet);
+    fill:none;
+    stroke-width:1.7;
+    stroke-linecap:round;
+    stroke-linejoin:round;
+  }
+  .carte p{
+    margin:0 0 10px;
+    font-size:14.5px;
+    color:var(--encre);
+    text-align:justify;
+    hyphens:auto;
+  }
+  .preuve{
+    margin:0;
+    font-size:12.5px;
+    color:var(--gris);
+    border-top:1px solid var(--trait);
+    padding-top:9px;
+    text-align:left;
+  }
+  .preuve b{color:var(--indigo);font-weight:600}
+
+  /* Encadré honnêteté */
+  .encadre{
+    margin-top:24px;
+    border:1px solid var(--trait);
+    border-radius:12px;
+    background:var(--fond-doux);
+    padding:22px 24px;
+  }
+  .encadre h2{
+    font-size:16.5px;
+    margin:0 0 10px;
+    color:var(--indigo);
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .encadre svg{
+    width:20px;height:20px;flex:0 0 20px;
+    stroke:var(--or);fill:none;stroke-width:1.7;
+    stroke-linecap:round;stroke-linejoin:round;
+  }
+  .encadre ul{margin:0;padding-left:18px}
+  .encadre li{
+    font-size:14.5px;
+    margin-bottom:7px;
+    text-align:justify;
+    hyphens:auto;
+  }
+  .encadre li:last-child{margin-bottom:0}
+
+  /* Pied */
+  footer{
+    margin-top:30px;
+    padding-top:18px;
+    border-top:1px solid var(--trait);
+    font-size:12.5px;
+    color:var(--gris);
+    display:flex;
+    justify-content:space-between;
+    gap:20px;
+    flex-wrap:wrap;
+  }
+  footer strong{color:var(--indigo)}
+
+  @media (max-width:720px){
+    .page{padding:30px 22px;margin:12px}
+    .grille{grid-template-columns:1fr}
+    h1{font-size:27px}
+  }
+  @media print{
+    body{background:#fff}
+    .page{margin:0;border:0;border-radius:0;padding:24px 26px;max-width:none}
+    .carte,.encadre{break-inside:avoid}
+    h1{font-size:27px}
+    .grille{gap:11px}
+    .carte{padding:14px 16px}
+    .carte p{font-size:12.6px;margin-bottom:7px}
+    .preuve{font-size:11px;padding-top:6px}
+    .encadre{margin-top:14px;padding:15px 17px}
+    .encadre li{font-size:12.6px}
+    .chapeau{font-size:14px}
+    .regle{margin:14px 0 18px}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <p class="kicker">EDUFREM · MAPO+ · Tuteur MIAPO</p>
+  <h1>Sur quoi repose le tuteur MIAPO</h1>
+  <p class="chapeau">
+    Chaque choix de conception du tuteur est rattaché à une étude ou à une méta-analyse revue par les pairs.
+    Voici les cinq principes qui structurent une séance de révision, et la preuve derrière chacun.
+  </p>
+  <hr class="regle">
+
+  <div class="grille">
+
+    <div class="carte">
+      <h2>
+        <svg viewBox="0 0 24 24"><path d="M4 5h11a3 3 0 0 1 3 3v11"/><path d="m15 16 3 3 3-3"/><path d="M4 10h8"/><path d="M4 15h5"/></svg>
+        On se teste, on ne relit pas
+      </h2>
+      <p>
+        Toute séance MIAPO est un exercice de récupération : l'élève doit produire la réponse de mémoire.
+        Relire un cours donne un sentiment de maîtrise trompeur ; se tester construit une mémoire qui tient
+        des semaines plus tard.
+      </p>
+      <p class="preuve">
+        <b>Preuve :</b> Yang et al., <i>Psychological Bulletin</i>, 2021. 222 études, 48 478 élèves en classe réelle,
+        gain moyen de 0,50 écart-type. Niveau de preuve solide.
+      </p>
+    </div>
+
+    <div class="carte">
+      <h2>
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/><path d="M20.5 5.5 22 4"/></svg>
+        On revoit espacé, pas en bloc
+      </h2>
+      <p>
+        Les notions reviennent à intervalles répartis dans le temps plutôt que d'être entassées la veille du
+        contrôle. L'intervalle se calcule à partir de la date de restitution : réviser pour un contrôle dans
+        une semaine et pour un examen dans six mois ne demande pas le même rythme.
+      </p>
+      <p class="preuve">
+        <b>Preuve :</b> Cepeda et al., <i>Psychological Science</i>, 2008 ; Latimier, Peyre et Ramus,
+        <i>Educational Psychology Review</i>, 2021. Niveau de preuve solide.
+      </p>
+    </div>
+
+    <div class="carte">
+      <h2>
+        <svg viewBox="0 0 24 24"><path d="M3 18V9"/><path d="M9 18V5"/><path d="M15 18v-7"/><path d="M21 18V7"/><path d="M2 21h20"/></svg>
+        On enseigne au niveau réel
+      </h2>
+      <p>
+        Le facteur qui bloque le plus les apprentissages n'est ni l'âge ni la classe, c'est l'écart entre le
+        niveau réel de l'élève et celui que suppose le programme. MIAPO commence par un positionnement, puis
+        ajuste la difficulté séance après séance, dans le référentiel du pays de l'élève.
+      </p>
+      <p class="preuve">
+        <b>Preuve :</b> Muralidharan, Singh et Ganimian, <i>American Economic Review</i>, 2019 (0,37 écart-type
+        en mathématiques en 4,5 mois, gains les plus forts chez les élèves les plus faibles) ; évaluations
+        randomisées « Teaching at the Right Level », J-PAL. Niveau de preuve solide.
+      </p>
+    </div>
+
+    <div class="carte">
+      <h2>
+        <svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-9 8.4L3 21l1.1-3.3A8.4 8.4 0 1 1 21 11.5Z"/><path d="M9 11h6"/><path d="M9 8h4"/></svg>
+        Le retour explique, il ne note pas
+      </h2>
+      <p>
+        Une note seule n'apprend rien. Chaque question porte un indice qui oriente la réflexion, puis une
+        explication qui justifie la bonne réponse. Le retour porte toujours sur la tâche et sur la méthode,
+        jamais sur l'élève lui-même.
+      </p>
+      <p class="preuve">
+        <b>Preuve :</b> Black et Wiliam, 1998 (effet de 0,4 à 0,7, plus fort chez les élèves en difficulté) ;
+        Wisniewski, Zierer et Hattie, 2020 ; Kluger et DeNisi, 1996, sur les conditions où le retour devient
+        contre-productif. Niveau de preuve solide.
+      </p>
+    </div>
+
+  </div>
+
+  <div class="encadre" style="margin-top:16px">
+    <h2>
+      <svg viewBox="0 0 24 24"><path d="M12 3 4 6.5v5c0 4.7 3.2 8.4 8 9.5 4.8-1.1 8-4.8 8-9.5v-5Z"/><path d="M12 8.5v4"/><path d="M12 15.5h.01"/></svg>
+      Le garde-fou : MIAPO ne donne jamais la réponse
+    </h2>
+    <p style="margin:0 0 10px;font-size:14.5px;text-align:justify;hyphens:auto">
+      C'est le point qui sépare un outil qui aide d'un outil qui nuit, et ce n'est pas une préférence
+      pédagogique : c'est un résultat mesuré. Un essai contrôlé publié dans <i>PNAS</i> en 2025 a réparti près
+      de 1 000 lycéens en trois groupes. Ceux qui avaient un accès libre à un modèle génératif ont obtenu à
+      l'examen des résultats <b>inférieurs de 17 %</b> à ceux du groupe sans IA : ils avaient délégué le
+      travail sans apprendre. Ceux qui utilisaient un tuteur bridé, donnant des indices et jamais la solution,
+      n'ont subi aucune perte. MIAPO est construit sur ce second modèle, et le mode d'aide guidée n'est pas
+      désactivable.
+    </p>
+    <p class="preuve" style="text-align:left">
+      <b>Preuve :</b> Bastani et al., <i>Generative AI without guardrails can harm learning</i>, PNAS, 2025.
+      Voir aussi VanLehn, <i>Educational Psychologist</i>, 2011 : un tuteur automatique bien conçu atteint
+      0,76 écart-type, contre 0,79 pour un tuteur humain.
+    </p>
+  </div>
+
+  <div class="encadre">
+    <h2>
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a2.9 2.9 0 0 1 5.6 1c0 1.9-2.8 2.4-2.8 2.4"/><path d="M12 17h.01"/></svg>
+      Ce que nous ne prétendons pas
+    </h2>
+    <ul>
+      <li>
+        <b>Pas de styles d'apprentissage.</b> L'idée qu'un élève serait « visuel » ou « auditif » et
+        apprendrait mieux dans son canal n'a pas de base scientifique (Pashler et al., 2008). Les schémas
+        aident tous les apprenants, pas une catégorie d'entre eux.
+      </li>
+      <li>
+        <b>Pas de « 2 sigma ».</b> Le chiffre de Bloom, souvent cité par les acteurs de l'edtech, n'a jamais
+        été répliqué. L'ordre de grandeur établi est de 0,76 à 0,79 écart-type. C'est déjà considérable, et
+        c'est ce que nous annonçons.
+      </li>
+      <li>
+        <b>Pas de pourcentages de rétention.</b> Le « on retient 10 % de ce qu'on lit, 90 % de ce qu'on
+        fait » est une invention sans aucune étude derrière (Subramony, Molenda et al., 2014).
+      </li>
+      <li>
+        <b>Ce que nous devons encore prouver.</b> Nous mesurons aujourd'hui la réussite pendant la séance.
+        Ce n'est pas une preuve d'apprentissage. Un protocole d'évaluation avec test différé sans assistance
+        est en cours de mise en place avec nos écoles partenaires.
+      </li>
+    </ul>
+  </div>
+
+  <footer>
+    <span><strong>EDUFREM</strong> · Référentiel scientifique du tutorat MIAPO, version 1.0, septembre 2026</span>
+    <span>Document complet et bibliographie sur demande · contact@edufrem.com</span>
+  </footer>
+
+</div>
+</body>
+</html>

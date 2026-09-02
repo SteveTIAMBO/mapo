@@ -20,6 +20,26 @@
 //   • The Learning Scientists — 6 stratégies : spaced practice, retrieval
 //     practice, elaboration, interleaving, concrete examples, dual coding.
 //
+// ⚠️ DEUX PRÉCISIONS QUE CES SOURCES IMPOSENT (référentiel P4 et section 4.1).
+//
+// 1. ENTRELACEMENT — le modérateur est le MATÉRIEL, pas l'âge. Brunmair et
+//    Richter (2019), 59 études et 238 tailles d'effet : g = 0,42 global, mais
+//    fort sur les catégories visuelles (0,67), modéré en mathématiques (0,34),
+//    NON SIGNIFICATIF sur les textes expositifs. Ce qui fait l'effet, c'est la
+//    similarité entre les catégories à discriminer. Le filtre par famille de
+//    matière (`needs`) est donc le bon critère ; voir `excludePrimaire` plus bas
+//    pour le second, qui n'en est pas un.
+//
+// 2. DOUBLE CODAGE ≠ STYLES D'APPRENTISSAGE. Le type `mindmap` porte
+//    `technique: 'dual-coding'`. Présenter la même information en mots ET en
+//    images aide TOUT LE MONDE (Paivio, Mayer) — niveau de preuve modéré.
+//    Adapter le canal à une prétendue préférence individuelle (« visuel »,
+//    « auditif ») NE MARCHE PAS : Pashler, McDaniel, Rohrer et Bjork (2008)
+//    concluent qu'aucune base de preuve ne le justifie. Formulation sûre, à
+//    reprendre telle quelle dans les supports : « les schémas aident tous les
+//    apprenants, ils n'aident pas particulièrement les apprenants dits visuels ».
+//    Ne JAMAIS étiqueter un apprenant par un style dans MIAPO.
+//
 // engine : où le type est exécuté.
 //   'quiz'    → TuteurQuiz (QCM de récupération)                      [existant]
 //   'fiches'  → MiapoFiches (fiche + flashcards)                      [existant]
@@ -76,6 +96,21 @@ export function typesForMatiere(matiere, opts = {}) {
   const prim = !!(opts && opts.primaire)
   return REVISION_TYPES.filter((tpe) => {
     if (sup && tpe.excludeSuperieur) return false
+    // ⚠️ `excludePrimaire` est une PRUDENCE, pas une conclusion de la recherche.
+    //
+    // Le cas de l'entrelacement (`interleave`) est le plus délicat : le
+    // modérateur établi est le MATÉRIEL et la similarité entre catégories
+    // (Brunmair et Richter, 2019), pas l'âge de l'apprenant. Rohrer et al.
+    // (2020) le démontrent en classe réelle sur des élèves de 5e (d = 0,83),
+    // mais la preuve directe AU PRIMAIRE est mince. On maintient donc
+    // l'exclusion par précaution — et il faut le dire ainsi. Écrire que « la
+    // recherche déconseille l'entrelacement au primaire » serait faux : elle ne
+    // dit rien de tel, elle ne s'est pas prononcée.
+    //
+    // Pour `redaction` et `mindmap`, l'exclusion relève d'un autre motif, plus
+    // simple : la production écrite longue et la carte conceptuelle supposent
+    // des compétences de rédaction et d'abstraction qu'on ne présume pas au
+    // primaire. Choix d'ingénierie assumé, sans prétention scientifique.
     if (prim && tpe.excludePrimaire) return false
     return tpe.always || (tpe.needs || []).some((n) => tags.includes(n))
   })

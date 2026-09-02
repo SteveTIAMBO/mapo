@@ -1,10 +1,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // PROFIL PAR ÂGE — calibrage de la révision selon le développement cognitif.
 //
-// Base scientifique (cf. MANIFESTE) : la mémoire de travail et l'attention
-// soutenue augmentent avec l'âge (Gathercole 2004 ; Cowan 2016) ; le cortex
-// préfrontal (autorégulation) mûrit tard. → plus jeune = sessions plus courtes,
-// moins d'items à la fois. On ne fixe donc PLUS « 10 questions dans le marbre ».
+// Référence : docs/REFERENTIEL-PEDAGOGIQUE-MIAPO.md, piliers P5 et P6.
+//
+// CE QUE DIT LA RECHERCHE. La mémoire de travail se structure dès 6 ans et sa
+// capacité augmente de façon à peu près linéaire jusqu'à 15 ans (Gathercole,
+// Pickering, Ambridge et Wearing, 2004). La focalisation attentionnelle de
+// l'adulte tient environ quatre unités (Cowan, 2001). Toute information nouvelle
+// transite par cette mémoire de travail limitée avant d'être stockée (Sweller,
+// van Merriënboer et Paas, 2019).
+//
+// ⚠️ CE QUE CES TRAVAUX NE DISENT PAS, et c'est le point important. Aucun d'eux
+// ne prescrit une durée de séance ni un nombre de questions. Passer de « la
+// mémoire de travail augmente avec l'âge » à « donc 5 questions à 8 ans et 10 à
+// 15 ans » est une INFÉRENCE DE CONCEPTION, pas un résultat expérimental. La
+// gradation ci-dessous est donc un CHOIX DE PRUDENCE, cohérent avec P5 et P6
+// mais non démontré, à calibrer sur nos propres données d'abandon et de
+// réussite. Face à une école qui demanderait quelle étude fixe 5 questions à
+// 8 ans, la réponse honnête est : aucune.
+//
+// ⚠️ Ne PAS invoquer ici la règle populaire « une minute d'attention par année
+// d'âge » : elle n'a aucun fondement empirique établi (référentiel, section 4.6).
+// La durée d'attention dépend massivement de la tâche, de l'intérêt et du
+// contexte, pas seulement de l'âge.
 //
 // L'âge vient de l'enfant (saisi à la création) ; à défaut on l'estime depuis le
 // niveau scolaire.
@@ -58,6 +76,12 @@ export function ageDe(enfant) {
 
 // Nombre de questions d'une session de quiz, adapté à l'âge (plus jeune = plus
 // court). Fourchette 5 → 10.
+//
+// ⚠️ Ces cinq seuils sont un CHOIX D'INGÉNIERIE non démontré, pas une valeur
+// tirée d'une étude (voir l'en-tête du fichier). Ils sont volontairement
+// prudents. À réviser dès qu'on aura des données d'abandon et de réussite par
+// tranche d'âge — pas avant, et surtout pas en cherchant une source qui les
+// justifierait après coup.
 export function sessionQuestions(enfant) {
   const a = ageDe(enfant)
   if (a <= 8) return 5

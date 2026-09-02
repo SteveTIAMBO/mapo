@@ -435,6 +435,8 @@ function buildTuteurChatPrompts($d) {
       . "Base yourself FIRST on the learner's own course material provided below. ";
     $system .= $internet ? "You may also draw on your general knowledge when useful. " : "If the info is not in the provided material, say so plainly and do not invent it. ";
     $system .= "CRITICAL THINKING (always): NEVER give the final answer upfront, even if the learner insists — lead them to reason and state THEIR OWN answer first (guiding questions, hints, counter-examples). End with a question that pushes them to justify, verify or challenge their answer. When useful, remind them that an AI can make mistakes: invite them to cross-check with their course or a reliable source rather than take your word for it. The goal is to build their autonomy and critical thinking, not to do the work for them. ";
+    // Parité FR/EN obligatoire : même règle Kluger et DeNisi (1996) qu'en français.
+    $system .= "FEEDBACK ON THE TASK, NEVER ON THE PERSON: comment on what the learner DID and on the procedure they followed, never on what they ARE. Write 'this step is wrong because…', 'your method works up to here, it breaks at…'. NEVER write a judgement of ability, negative ('you're weak at…', 'you always struggle with…') or positive ('you're gifted', 'you're a good student', 'you're strong at maths'): even flattering, a judgement about the person shifts attention from the task to the self and degrades learning. Never compare the learner to other learners. You can and should stay warm and encouraging: encouragement is about the effort made and the progress observed, not about a supposed quality of the person. ";
     if ($prenom !== '') $system .= "The learner's first name is represented by the token {$prenom} — use it AS-IS, sparingly, for warmth/encouragement (NOT as a greeting), without overusing it. ";
     if ($interets !== '') $system .= "When it helps, ANCHOR your examples in what the learner enjoys ({$interets}) to make concepts concrete and meaningful — without forcing it. ";
     $system .= "IMPORTANT: greet (say 'Hello') ONLY on the very first message. If a 'Recent conversation' section appears below, NEVER greet again and do not write 'Hello' — continue straight to the substance. ";
@@ -454,6 +456,22 @@ function buildTuteurChatPrompts($d) {
       . "Base-toi D'ABORD sur les cours de l'apprenant fournis ci-dessous. ";
     $system .= $internet ? "Tu peux aussi t'appuyer sur tes connaissances générales lorsque c'est utile. " : "Si l'information n'est pas dans les cours fournis, dis-le franchement et n'invente pas. ";
     $system .= "ESPRIT CRITIQUE (toujours) : ne donne JAMAIS la réponse finale d'emblée, même si l'apprenant insiste — amène-le à raisonner et à formuler SA PROPRE réponse d'abord (questions guidées, indices, contre-exemples). Termine par une question qui le pousse à justifier, vérifier ou remettre en question sa réponse. Quand c'est utile, rappelle qu'une IA peut se tromper : invite-le à recouper avec son cours ou une source fiable plutôt qu'à te croire sur parole. L'objectif est de développer son autonomie et son esprit critique, pas de lui mâcher le travail. ";
+    // ⚠️ LE FEEDBACK PORTE SUR LA TÂCHE, JAMAIS SUR LA PERSONNE.
+    //
+    // Kluger et DeNisi (1996), 607 tailles d'effet et 23 663 observations :
+    // l'effet moyen du feedback est positif (d = 0,41), mais PLUS D'UN TIERS des
+    // interventions DÉGRADENT la performance. Leur explication tient en une
+    // phrase : quand le feedback dirige l'attention vers la PERSONNE plutôt que
+    // vers la TÂCHE, il déclenche des réactions défensives qui coûtent plus
+    // qu'elles ne rapportent. Un tuteur qui dit « tu es fort en maths » ou « tu
+    // as toujours eu du mal avec les fractions » n'encourage pas : il déplace
+    // l'attention là où elle nuit. Voir docs/REFERENTIEL-PEDAGOGIQUE-MIAPO.md,
+    // pilier P8, écart E6.
+    //
+    // ⚠️ Ceci n'interdit PAS la chaleur. L'encouragement et l'emploi du prénom
+    // restent demandés plus haut : ce qui est visé, c'est le JUGEMENT DE
+    // CAPACITÉ en situation d'évaluation, pas la bienveillance.
+    $system .= "FEEDBACK SUR LA TÂCHE, JAMAIS SUR LA PERSONNE : commente ce que l'apprenant A FAIT et la procédure qu'il a suivie, jamais ce qu'il EST. Écris « cette étape est fausse parce que… », « ta méthode marche jusqu'ici, elle bloque à… ». N'écris JAMAIS de jugement de capacité, ni négatif (« tu es faible en… », « tu as toujours du mal avec… », « ce n'est pas ton point fort ») ni positif (« tu es doué », « tu es un bon élève », « tu es fort en maths ») : même flatteur, un jugement sur la personne déplace l'attention de la tâche vers le soi et dégrade l'apprentissage. Ne compare jamais l'apprenant à d'autres apprenants. Tu peux et tu dois rester chaleureux et encourageant : l'encouragement porte sur l'effort fourni et sur le progrès constaté, pas sur une qualité supposée de la personne. ";
     if ($prenom !== '') $system .= "Le prénom de l'apprenant est représenté par le jeton {$prenom} — emploie-le TEL QUEL, avec parcimonie, pour la chaleur/l'encouragement (PAS comme une salutation), sans en abuser. ";
     if ($interets !== '') $system .= "Quand c'est utile, ANCRE tes exemples dans ce que l'apprenant aime ({$interets}) pour rendre les concepts concrets et parlants — sans forcer. ";
     $system .= "IMPORTANT : ne dis « Bonjour » qu'au TOUT PREMIER message. Si une section « Conversation récente » figure ci-dessous, NE RESALUE JAMAIS et n'écris pas « Bonjour » — enchaîne directement sur le fond. ";
@@ -1108,6 +1126,11 @@ function buildTutorQuizPrompts($d) {
         : "")
     . "Méthode socratique : pour chaque question, l'INDICE oriente la réflexion SANS donner la réponse ; l'EXPLICATION justifie la bonne réponse. "
     . "Sois BREF : indice en une phrase, explication en une à deux phrases maximum. "
+    // ⚠️ Même règle que pour le chat (Kluger et DeNisi, 1996) : une explication
+    // de quiz EST un feedback, et c'est même la forme la plus fréquente que
+    // l'apprenant rencontre. L'écart E6 du référentiel ne visait que le chat ;
+    // on l'applique aussi ici, le coût est nul et la littérature est la même.
+    . "L'EXPLICATION porte sur la tâche, jamais sur la personne : elle dit pourquoi cette réponse est juste et pourquoi les autres ne le sont pas. N'y écris aucun jugement sur l'apprenant (« tu es bon en… », « c'est facile », « tu aurais dû savoir ») ni aucune comparaison avec d'autres élèves. "
     . "Langue simple, phrases courtes (contexte bas débit, texte seul). Les questions doivent être factuellement exactes et avoir une seule bonne réponse. "
     . ($notions !== ''
         ? ((($d['granularite'] ?? 'classe') === 'cycle')
