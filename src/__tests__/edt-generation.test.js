@@ -618,3 +618,27 @@ describe('l’écran propose les fériés sans les imposer', () => {
     expect(vue).toContain("edtStore.updateSchoolEvent(evt.id, { cancelsCourses: $event.target.checked })")
   })
 })
+
+describe('⚠️ ordre de montage : on ne sauvegarde jamais avant d’avoir chargé', () => {
+  /**
+   * Défaut que J'AI introduit le 02/09 et corrigé le même jour. La proposition
+   * automatique des fériés appelle `saveToStorage()`. Placée AVANT
+   * `edtStore.loadData()` dans `onMounted`, elle écrivait l'état INITIAL du
+   * store — emploi du temps vide, `setupStep` à zéro — par-dessus les données de
+   * l'école. `loadData` restaurait ensuite fidèlement… ce vide.
+   *
+   * Mesuré sur la démo : 636 cours devenus 0, et l'écran retombé sur l'assistant
+   * de configuration. Sur une VRAIE école, c'était son emploi du temps effacé à
+   * la simple ouverture de l'écran.
+   *
+   * La leçon est générale : toute écriture déclenchée au montage doit venir
+   * APRÈS la lecture, sinon elle publie un état qui n'a jamais existé.
+   */
+  it('la proposition des fériés vient après le chargement des données', () => {
+    const iLoad = vue.indexOf('await edtStore.loadData()')
+    const iPropose = vue.indexOf('proposerFeriesSiBesoin()', vue.indexOf('onMounted('))
+    expect(iLoad).toBeGreaterThan(0)
+    expect(iPropose).toBeGreaterThan(0)
+    expect(iPropose).toBeGreaterThan(iLoad)
+  })
+})

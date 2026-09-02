@@ -2255,10 +2255,15 @@ onMounted(async () => {
   // temps que la liste de l'école arrive : les matières renommées auraient
   // clignoté vers leurs anciens noms.
   await discPrimaireStore.load()
-  // Les fériés du pays sont PROPOSÉS (une seule fois par année scolaire) :
-  // le responsable valide ensuite jour par jour s'il y a cours.
-  proposerFeriesSiBesoin()
   await edtStore.loadData()
+
+  // ⚠️ APRÈS `loadData`, jamais avant. Proposer les fériés déclenche un
+  // `saveToStorage()` : placé plus haut, il écrivait l'état INITIAL du store
+  // — emploi du temps vide, `setupStep` à zéro — par-dessus les données de
+  // l'école, que `loadData` restaurait ensuite fidèlement… vides. Mesuré sur la
+  // démo : 636 cours devenus 0. Sur une vraie école, c'était son emploi du
+  // temps effacé à la simple ouverture de l'écran.
+  proposerFeriesSiBesoin()
 
   timeGridForm.value = { ...edtStore.timeGrid }
 
