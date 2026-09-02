@@ -1428,6 +1428,34 @@ const getLevelsForSubject = (subject) => {
   return levels
 }
 
+/**
+ * Écrit l'affectation dans la FICHE de l'enseignant.
+ *
+ * ⚠️ L'école répondait deux fois à la même question : ici (rangé par matière)
+ * et dans la fiche du professeur (rangé par personne). Le générateur ne lisait
+ * que cet écran, donc remplir les fiches ne servait à rien pour l'emploi du
+ * temps — et les deux sources avaient déjà divergé (mesuré sur la démo : 231
+ * affectations ici, 2 dans les fiches).
+ *
+ * La fiche est désormais la source. Cet écran reste une VUE par matière, plus
+ * commode pour bâtir un emploi du temps, mais il écrit dans la fiche.
+ */
+async function synchroniserFiche(teacherId, subject, classIds) {
+  const membre = personnelStore.staff.find((m) => m.id === teacherId)
+  if (!membre) return
+  const cbs = { ...(membre.classesBySubject || {}) }
+  if (classIds && classIds.length) cbs[subject] = [...classIds]
+  else delete cbs[subject]
+  // La matière enseignée suit l'affectation : sans elle, la fiche dirait que le
+  // professeur enseigne dans une classe une matière qu'il ne déclare pas.
+  const matieres = new Set(membre.subjects || [])
+  if (classIds && classIds.length) matieres.add(subject)
+  await personnelStore.updateStaff(teacherId, {
+    classesBySubject: cbs,
+    subjects: [...matieres],
+  })
+}
+
 const addTeacherToSubject = (subject, event) => {
   const teacherId = event.target.value
   if (!teacherId) return
@@ -1439,18 +1467,23 @@ const addTeacherToSubject = (subject, event) => {
     return (edtStore.subjectHours[levelKey]?.[subject] || 0) > 0
   })
 
+  const classIds = eligibleClasses.map(c => c.id)
   edtStore.addTeacherAssignment({
     teacherId: teacher.id,
     teacherName: `${teacher.firstName} ${teacher.lastName}`,
     subjectId: subject,
-    classIds: eligibleClasses.map(c => c.id)
+    classIds,
   })
+  synchroniserFiche(teacher.id, subject, classIds)
 
   event.target.value = ''
 }
 
 const removeAssignment = (assignment) => {
   edtStore.removeTeacherAssignment(assignment.teacherId, assignment.subjectId)
+  // La fiche suit : sinon l'affectation retirée ici resterait vraie là-bas, et
+  // le générateur — qui lit la fiche en premier — continuerait de l'appliquer.
+  synchroniserFiche(assignment.teacherId, assignment.subjectId, [])
 }
 
 const toggleClassForAssignment = (assignment, classId, event) => {
@@ -1461,6 +1494,7 @@ const toggleClassForAssignment = (assignment, classId, event) => {
     if (idx > -1) assignment.classIds.splice(idx, 1)
   }
   edtStore.saveToStorage()
+  synchroniserFiche(assignment.teacherId, assignment.subjectId, assignment.classIds)
 }
 
 // Slot editor functions

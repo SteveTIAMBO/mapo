@@ -642,3 +642,96 @@ describe('⚠️ ordre de montage : on ne sauvegarde jamais avant d’avoir char
     expect(iPropose).toBeGreaterThan(iLoad)
   })
 })
+
+describe('⚠️ une seule saisie : la fiche enseignant fait foi', () => {
+  /**
+   * L'école répondait DEUX fois à la même question : dans la fiche du
+   * professeur (`classesBySubject`, rangé par personne) et dans l'assistant
+   * emploi du temps (`teacherAssignments`, rangé par matière). Le générateur ne
+   * lisait que le second — remplir les fiches ne servait donc à rien pour
+   * l'emploi du temps, et les deux sources avaient déjà divergé (mesuré sur la
+   * démo : 231 affectations côté assistant, 2 côté fiches).
+   *
+   * Décision : la FICHE est la source, l'assistant en est une vue. Ses
+   * affectations restent le REPLI pour les écoles qui n'ont rempli que lui —
+   * sans ce repli, leur emploi du temps se viderait du jour au lendemain.
+   */
+  function avecFiche(classesBySubject) {
+    const personnel = usePersonnelStore()
+    personnel.staff = [{ id: 'p1', firstName: 'Awa', lastName: 'Nkeng', classesBySubject }]
+    return bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [],
+    })
+  }
+
+  it('la fiche seule suffit : plus besoin de resaisir dans l’assistant', () => {
+    const edt = avecFiche({ 'Mathématiques': ['c1'] })
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule).toHaveLength(4)
+    expect(res.newSchedule.every((e) => e.teacherId === 'p1')).toBe(true)
+    expect(res.newSchedule[0].teacherName).toBe('Awa Nkeng')
+    // Et aucun conflit « aucun enseignant rattaché ».
+    expect(res.conflicts.filter((c) => c.type === 'teacher_missing')).toHaveLength(0)
+  })
+
+  it('l’assistant reste le repli quand la fiche est muette', () => {
+    // Cas des écoles existantes : elles n'ont rempli que l'assistant.
+    const personnel = usePersonnelStore()
+    personnel.staff = [{ id: 'p1', firstName: 'Awa', lastName: 'Nkeng' }]
+    const edt = bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p1', teacherName: 'Nkeng', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule.every((e) => e.teacherId === 'p1')).toBe(true)
+  })
+
+  it('⚠️ la fiche l’emporte quand les deux se contredisent', () => {
+    // Sinon corriger la fiche resterait sans effet, ce qui est le défaut qu'on
+    // corrige : une donnée saisie qui n'agit pas.
+    const personnel = usePersonnelStore()
+    personnel.staff = [
+      { id: 'p1', firstName: 'Awa', lastName: 'Nkeng', classesBySubject: { 'Mathématiques': ['c1'] } },
+      { id: 'p2', firstName: 'Paul', lastName: 'Biyick' },
+    ]
+    const edt = bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p2', teacherName: 'Biyick', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule.every((e) => e.teacherId === 'p1')).toBe(true)
+  })
+
+  it('une fiche sans affectation pour CETTE classe ne prend pas la main', () => {
+    // La fiche ne l'emporte que là où elle dit quelque chose, pas globalement.
+    const personnel = usePersonnelStore()
+    personnel.staff = [
+      { id: 'p1', firstName: 'Awa', lastName: 'Nkeng', classesBySubject: { 'Mathématiques': ['c2'] } },
+      { id: 'p2', firstName: 'Paul', lastName: 'Biyick' },
+    ]
+    const edt = bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p2', teacherName: 'Biyick', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule.every((e) => e.teacherId === 'p2')).toBe(true)
+  })
+})
+
+describe('l’assistant écrit dans la fiche', () => {
+  it('ajouter, retirer ou cocher une classe met la fiche à jour', () => {
+    // Sans cela, la fiche — devenue la source — resterait en retard sur ce que
+    // le responsable vient de saisir, et le générateur appliquerait l'ancien
+    // état.
+    expect(vue).toContain('async function synchroniserFiche(')
+    const appels = vue.match(/synchroniserFiche\(/g) || []
+    // 1 définition + 3 appels : ajout, retrait, case à cocher.
+    expect(appels.length).toBe(4)
+    expect(vue).toContain('personnelStore.updateStaff(teacherId, {')
+  })
+})

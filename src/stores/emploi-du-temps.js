@@ -441,6 +441,50 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     const baseDays = timeGrid.value.days
     const baseSlots = timeSlots.value
 
+    const plafondContrat = {}
+    // ── Qui enseigne quoi : la FICHE de l'enseignant d'abord ────────────────
+    //
+    // L'école répondait DEUX fois à la même question : dans la fiche
+    // (`classesBySubject`, rangé par personne) et dans l'assistant
+    // (`teacherAssignments`, rangé par matière). Le générateur ne lisait que le
+    // second — donc remplir les fiches ne servait à rien pour l'emploi du temps.
+    //
+    // La fiche est la source : c'est là qu'on décrit naturellement un
+    // enseignant, et le dépôt le déclarait déjà (`getTeacherClassIds`). Les
+    // affectations de l'assistant restent le REPLI, pour les écoles qui n'ont
+    // rempli que lui.
+    const parFiche = {}
+    try {
+      const personnelStore = usePersonnelStore()
+      for (const m of personnelStore.staff || []) {
+        const h = Number(m.weeklyHours)
+        if (Number.isFinite(h) && h > 0) plafondContrat[m.id] = h
+        const cbs = m.classesBySubject
+        if (cbs && typeof cbs === 'object') {
+          for (const [matiere, classes] of Object.entries(cbs)) {
+            for (const cid of (classes || [])) {
+              const cle = `${matiere}|${cid}`
+              // Premier arrivé : deux enseignants déclarés sur la même matière
+              // dans la même classe est une incohérence de saisie, pas au
+              // générateur de la trancher en silence.
+              if (!parFiche[cle]) {
+                parFiche[cle] = { teacherId: m.id, teacherName: `${m.firstName || ''} ${m.lastName || ''}`.trim() }
+              }
+            }
+          }
+        }
+      }
+    } catch (e) { /* hors contexte école : aucun plafond, aucune fiche */ }
+
+    function enseignantPour(subjectId, classId) {
+      const deLaFiche = parFiche[`${subjectId}|${classId}`]
+      if (deLaFiche) return deLaFiche
+      const a = teacherAssignments.value.find(
+        (x) => x.subjectId === subjectId && x.classIds?.includes(classId),
+      )
+      return a ? { teacherId: a.teacherId, teacherName: a.teacherName } : null
+    }
+
     // Build requirements: for each class, which subjects and how many hours
     const requirements = []
     for (const cls of classesStore.classes) {
@@ -449,9 +493,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
       if (!levelHours) continue
       for (const [subject, hours] of Object.entries(levelHours)) {
         if (hours <= 0) continue
-        const assignment = teacherAssignments.value.find(
-          a => a.subjectId === subject && a.classIds.includes(cls.id)
-        )
+        const assignment = enseignantPour(subject, cls.id)
         requirements.push({
           classId: cls.id,
           className: cls.name,
@@ -499,14 +541,6 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     // ⚠️ `weeklyHours` absent = PAS de plafond, jamais un plafond de zéro. Un
     // zéro empêcherait de placer le moindre cours et ressemblerait à une panne
     // plutôt qu'à un réglage non renseigné — c'est le piège de `Number(null)`.
-    const plafondContrat = {}
-    try {
-      const personnelStore = usePersonnelStore()
-      for (const m of personnelStore.staff || []) {
-        const h = Number(m.weeklyHours)
-        if (Number.isFinite(h) && h > 0) plafondContrat[m.id] = h
-      }
-    } catch (e) { /* hors contexte école : aucun plafond */ }
     const heuresPlacees = {}
 
     /** L'enseignant a-t-il encore des heures de contrat disponibles ? */
