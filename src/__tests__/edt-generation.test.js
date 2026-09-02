@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
 import { useClassesStore } from '../stores/classes'
+import { usePersonnelStore } from '../stores/personnel'
 
 /**
  * Banc d'essai du générateur d'emploi du temps (02/09/2026).
@@ -381,5 +382,103 @@ describe('la saisie des indisponibilités existe dans l’écran', () => {
   it('un refus est expliqué, jamais silencieux', () => {
     expect(vue).toContain('erreurIndispo[teacherId]')
     expect(vue).toContain("t('edt.unavailErrRange')")
+  })
+})
+
+describe('⚠️ heures de contrat : croisées à la génération', () => {
+  /**
+   * Décision de Steve (02/09) : « c'est le responsable pédagogique qui définit
+   * le nombre d'heures par enseignant, les matières et niveaux qu'il enseigne,
+   * et le nombre d'heures par semaine de son contrat ». Ces paramètres doivent
+   * être CROISÉS au moment de la génération.
+   *
+   * ⚠️ Le champ n'existait pas : la fiche enseignant de l'ERP n'avait que
+   * `contractType` (de simples libellés) et `salary`. Les volumes horaires ne
+   * vivaient que dans le module Supérieur. Il a donc fallu créer `weeklyHours`.
+   */
+  function bancAvecContrat(heuresContrat, nbClasses = 3) {
+    const classes = [CLASSE_6A, CLASSE_6B, CLASSE_6C].slice(0, nbClasses)
+    const personnel = usePersonnelStore()
+    personnel.staff = [{ id: 'p1', firstName: 'Awa', lastName: 'Nkeng', weeklyHours: heuresContrat }]
+    return bancEssai({
+      classes,
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p1', teacherName: 'Nkeng', subjectId: 'Mathématiques', classIds: classes.map((c) => c.id) }],
+    })
+  }
+
+  it('le contrat plafonne réellement les heures placées', () => {
+    // 3 classes × 4 h = 12 h demandées, contrat de 6 h.
+    const edt = bancAvecContrat(6)
+    const res = edt.generateSchedule({ commit: false })
+
+    const avecProf = res.newSchedule.filter((e) => e.teacherId === 'p1')
+    expect(avecProf).toHaveLength(6)
+    expect(doublonsDEnseignant(res.newSchedule)).toEqual([])
+  })
+
+  it('le motif dit « contrat atteint », pas « plus de créneau libre »', () => {
+    // Les deux causes n'appellent pas la même décision : revoir le contrat et
+    // recruter ne sont pas la même action.
+    const edt = bancAvecContrat(6)
+    const res = edt.generateSchedule({ commit: false })
+
+    const sansProf = res.conflicts.filter((c) => c.type === 'teacher_missing')
+    expect(sansProf.length).toBeGreaterThan(0)
+    expect(sansProf.some((c) => c.motif === 'contrat_atteint')).toBe(true)
+    expect(sansProf.find((c) => c.motif === 'contrat_atteint').message).toContain('6h/6h de contrat')
+  })
+
+  it('la recommandation renvoie vers la fiche Personnel', () => {
+    const edt = bancAvecContrat(6)
+    edt.generateSchedule({ commit: true })
+    const perso = edt.analyzeConflicts().find((r) => r.type === 'personnel')
+    expect(perso.detail).toContain('volume de son contrat')
+    expect(perso.detail).toContain('fiche Personnel')
+  })
+
+  it('⚠️ contrat NON renseigné = aucun plafond, jamais un plafond de zéro', () => {
+    // Le piège de `Number(null)` : un plafond à 0 empêcherait de placer le
+    // moindre cours et ressemblerait à une panne, pas à un réglage absent.
+    const personnel = usePersonnelStore()
+    personnel.staff = [{ id: 'p1', firstName: 'Awa', lastName: 'Nkeng', weeklyHours: null }]
+    const edt = bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p1', teacherName: 'Nkeng', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule.filter((e) => e.teacherId === 'p1')).toHaveLength(4)
+    expect(res.conflicts.filter((c) => c.type === 'teacher_missing')).toHaveLength(0)
+  })
+
+  it('un contrat plus large que la demande ne change rien', () => {
+    // Garde-fou de non-régression : le plafond ne doit pas se déclencher tout seul.
+    const edt = bancAvecContrat(30, 1)
+    const res = edt.generateSchedule({ commit: false })
+    expect(res.newSchedule.filter((e) => e.teacherId === 'p1')).toHaveLength(4)
+    expect(res.conflicts).toHaveLength(0)
+  })
+})
+
+describe('la fiche enseignant porte les heures de contrat', () => {
+  const pers = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'views/PersonnelView.vue'),
+    'utf8',
+  )
+
+  it('le champ est saisissable et enregistré', () => {
+    expect(pers).toContain('formData.weeklyHours')
+    expect(pers).toContain('weeklyHours:')
+  })
+
+  it('⚠️ il est enregistré à null quand il est vide, jamais à 0', () => {
+    expect(pers).toContain('Number(formData.weeklyHours) > 0')
+  })
+
+  it('aucune valeur légale n’est pré-remplie', () => {
+    // La charge d'un enseignant diffère selon le pays et nous n'avons pas de
+    // source pour chacun : proposer un chiffre serait l'inventer.
+    expect(pers).toContain('weeklyHours: null')
   })
 })

@@ -250,6 +250,29 @@
             </div>
           </div>
 
+          <!-- Heures de contrat : un fait RH, qui devient une contrainte pour le
+               générateur d'emploi du temps.
+               ⚠️ Aucune valeur pré-remplie : la charge hebdomadaire d'un
+               enseignant n'est pas la même au Cameroun, au Sénégal ou en France,
+               et nous n'avons pas de source pour chacun. Laisser vide signifie
+               « non renseigné », ce qui n'est PAS « zéro heure » : le générateur
+               ne pose alors aucun plafond. -->
+          <div v-if="formData.category === 'enseignement'" class="field-row">
+            <div class="field">
+              <label>{{ t('pers.weeklyHours') }}</label>
+              <input
+                v-model.number="formData.weeklyHours"
+                type="number"
+                class="input"
+                min="0"
+                max="60"
+                step="0.5"
+                :placeholder="t('pers.weeklyHoursPlaceholder')"
+              />
+              <small style="display:block;margin-top:6px;color:var(--tx3);font-size:12px;">{{ t('pers.weeklyHoursHint') }}</small>
+            </div>
+          </div>
+
           <div class="field-row" style="margin-bottom: 16px;">
             <label class="check-field">
               <input type="checkbox" v-model="formData.handicap" />
@@ -497,6 +520,11 @@ const formData = reactive({
   // deux champs — et non deux copies d'un même fait, qui finiraient par diverger.
   subjects: [], classesTenues: [], classesBySubject: {}, phone: '', email: '', status: 'Actif',
   contractType: '', qualification: '', experienceYears: null, handicap: false,
+  // Heures hebdomadaires du contrat. `null` = non renseigné, et le générateur
+  // n'applique alors aucun plafond. Ne jamais initialiser à 0 : un plafond de
+  // zéro heure empêcherait de placer le moindre cours, ce qui ressemblerait à
+  // une panne plutôt qu'à un réglage absent.
+  weeklyHours: null,
 })
 
 // Vrai pendant qu'on pré-remplit le formulaire (édition) : empêche le watch sur
@@ -650,6 +678,7 @@ const openEditModal = (member) => {
   formData.contractType = member.contractType || ''
   formData.qualification = member.qualification || ''
   formData.experienceYears = member.experienceYears || null
+  formData.weeklyHours = member.weeklyHours ?? null
   formData.handicap = !!member.handicap
   showModal.value = true
   nextTick(() => { populatingForm.value = false })
@@ -672,6 +701,12 @@ const saveMember = async () => {
     contractType: formData.contractType || null,
     qualification: formData.category === 'enseignement' ? (formData.qualification || null) : null,
     experienceYears: formData.category === 'enseignement' ? (formData.experienceYears || null) : null,
+    // ⚠️ On enregistre `null` quand ce n'est pas renseigné, jamais 0 : le
+    // générateur lit ce champ comme un plafond, et un plafond de zéro heure
+    // l'empêcherait de placer le moindre cours.
+    weeklyHours: formData.category === 'enseignement' && Number(formData.weeklyHours) > 0
+      ? Number(formData.weeklyHours)
+      : null,
     handicap: formData.handicap || false,
   }
   if (editingMember.value) {

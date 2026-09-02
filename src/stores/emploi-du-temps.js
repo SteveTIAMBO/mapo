@@ -481,6 +481,38 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     const teacherBusy = {}
     const classSubjectDayCount = {}
 
+    // ── Heures de contrat : un plafond OPPOSABLE ──────────────────────────
+    //
+    // Le responsable pédagogique déclare les matières et niveaux d'un
+    // enseignant, et son volume hebdomadaire vient de son contrat (fiche
+    // Personnel). La génération croise les deux : on ne place plus un cours à
+    // quelqu'un qui a atteint son contrat.
+    //
+    // ⚠️ On compte les heures RÉELLEMENT placées, pas `subjectHours × classIds`
+    // comme le badge d'affichage : ce sont deux nombres différents dès qu'une
+    // heure n'a pas trouvé de créneau.
+    //
+    // ⚠️ `weeklyHours` absent = PAS de plafond, jamais un plafond de zéro. Un
+    // zéro empêcherait de placer le moindre cours et ressemblerait à une panne
+    // plutôt qu'à un réglage non renseigné — c'est le piège de `Number(null)`.
+    const plafondContrat = {}
+    try {
+      const personnelStore = usePersonnelStore()
+      for (const m of personnelStore.staff || []) {
+        const h = Number(m.weeklyHours)
+        if (Number.isFinite(h) && h > 0) plafondContrat[m.id] = h
+      }
+    } catch (e) { /* hors contexte école : aucun plafond */ }
+    const heuresPlacees = {}
+
+    /** L'enseignant a-t-il encore des heures de contrat disponibles ? */
+    function contratDisponible(teacherId) {
+      if (!teacherId) return true
+      const max = plafondContrat[teacherId]
+      if (!max) return true
+      return (heuresPlacees[teacherId] || 0) < max
+    }
+
     // Build teacher unavailability map
     const teacherUnavail = {}
     for (const c of teacherConstraints.value) {
@@ -579,6 +611,8 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
             const teacherKey = req.teacherId ? `${req.teacherId}_${day}_${slot.index}` : null
             if (teacherKey && teacherBusy[teacherKey]) continue
             if (!isTeacherAvailable(req.teacherId, day, slot)) continue
+            // Contrat atteint : on n'ajoute plus d'heures à cet enseignant.
+            if (!contratDisponible(req.teacherId)) continue
 
             const currentDayKey = `${req.classId}_${req.subjectId}_${day}`
             const currentOnDay = classSubjectDayCount[currentDayKey] || 0
@@ -591,6 +625,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
             })
             classBusy[classKey] = true
             if (teacherKey) teacherBusy[teacherKey] = true
+            if (req.teacherId) heuresPlacees[req.teacherId] = (heuresPlacees[req.teacherId] || 0) + 1
             classSubjectDayCount[currentDayKey] = (classSubjectDayCount[currentDayKey] || 0) + 1
             placed++
             // Placé, mais sans enseignant rattaché : à compter ici aussi, sinon
@@ -641,15 +676,25 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
       // compteur : l'\u00e9cole recevait un emploi du temps d'apparence compl\u00e8te
       // dont certaines heures n'avaient personne devant les \u00e9l\u00e8ves.
       if (sansEnseignant > 0) {
-        const motif = req.teacherId ? 'enseignant_sature' : 'aucun_enseignant'
+        // Trois causes, trois d\u00e9cisions diff\u00e9rentes pour le responsable
+        // p\u00e9dagogique. Les confondre le laisserait chercher lui-m\u00eame.
+        const plafond = plafondContrat[req.teacherId]
+        const motif = !req.teacherId
+          ? 'aucun_enseignant'
+          : (plafond && (heuresPlacees[req.teacherId] || 0) >= plafond)
+            ? 'contrat_atteint'
+            : 'enseignant_sature'
+        const messages = {
+          aucun_enseignant: `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, aucun enseignant rattach\u00e9`,
+          contrat_atteint: `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, ${req.teacherName} est \u00e0 ${plafond}h/${plafond}h de contrat`,
+          enseignant_sature: `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, ${req.teacherName} n'a plus de cr\u00e9neau libre`,
+        }
         conflicts.push({
           type: 'teacher_missing',
           motif,
           classId: req.classId, className: req.className,
           subjectId: req.subjectId, hours: sansEnseignant,
-          message: motif === 'aucun_enseignant'
-            ? `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, aucun enseignant rattach\u00e9`
-            : `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, ${req.teacherName} n'a plus de cr\u00e9neau libre`
+          message: messages[motif],
         })
       }
 
@@ -787,7 +832,9 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
       // laisserait le directeur chercher lui-même.
       const aFaire = info.motifs.has('aucun_enseignant')
         ? `rattacher un enseignant à ${matiere} pour ces classes (étape « Enseignants » de l'emploi du temps).`
-        : `alléger la charge de l'enseignant concerné, lui ajouter des créneaux disponibles, ou rattacher un second enseignant à ${matiere}.`
+        : info.motifs.has('contrat_atteint')
+          ? `l'enseignant a atteint le volume de son contrat. Revoir ses heures dans sa fiche Personnel si le contrat a changé, rattacher un second enseignant à ${matiere}, ou réduire le volume horaire demandé.`
+          : `alléger la charge de l'enseignant concerné, lui ajouter des créneaux disponibles, ou rattacher un second enseignant à ${matiere}.`
       recs.push({
         type: 'personnel',
         title: `${matiere} : ${info.heures}h sans enseignant`,

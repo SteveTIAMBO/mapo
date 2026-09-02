@@ -357,7 +357,13 @@
             <div v-else class="teacher-load-grid">
               <div v-for="load in teacherLoadSummary" :key="load.teacherId" class="teacher-load-card">
                 <div class="teacher-load-name">{{ load.teacherName }}</div>
-                <div class="teacher-load-hours" :class="load.badgeClass">{{ t('edt.hoursPerWeek', { n: load.totalHours }) }}</div>
+                <!-- Avec le contrat quand il est déclaré : « 18 / 20 h » dit
+                     bien plus que « 18 h » seul. -->
+                <div class="teacher-load-hours" :class="load.badgeClass">
+                  <template v-if="load.contrat">{{ t('edt.hoursOfContract', { n: load.totalHours, max: load.contrat }) }}</template>
+                  <template v-else>{{ t('edt.hoursPerWeek', { n: load.totalHours }) }}</template>
+                </div>
+                <div v-if="!load.contrat" class="unavail-none">{{ t('edt.noContractHours') }}</div>
 
                 <!-- Indisponibilités : le générateur les respecte depuis
                      toujours, rien ne les lui donnait. -->
@@ -1242,14 +1248,26 @@ const teacherLoadSummary = computed(() => {
   }
 
   for (const [teacherId, load] of Object.entries(teacherHours)) {
-    let badgeClass = 'badge-success'
-    if (load.totalHours > 25) badgeClass = 'badge-danger'
-    else if (load.totalHours >= 20) badgeClass = 'badge-warning'
+    // ⚠️ La charge est comparée aux HEURES DE CONTRAT de l'enseignant, pas à
+    // des seuils de 20 h et 25 h écrits en dur : ils n'avaient de fondement
+    // dans aucun des pays où MAPO est vendu.
+    //
+    // Contrat non renseigné = aucune couleur de jugement. Afficher « orange »
+    // sur une charge qu'on ne peut comparer à rien serait un avis inventé.
+    const membre = personnelStore.staff.find((m) => m.id === teacherId)
+    const contrat = Number(membre?.weeklyHours) > 0 ? Number(membre.weeklyHours) : null
+    let badgeClass = 'badge-neutral'
+    if (contrat) {
+      badgeClass = load.totalHours > contrat
+        ? 'badge-danger'
+        : load.totalHours >= contrat * 0.9 ? 'badge-warning' : 'badge-success'
+    }
 
     summary.push({
       teacherId,
       teacherName: load.teacherName,
       totalHours: load.totalHours,
+      contrat,
       badgeClass
     })
   }
@@ -3224,6 +3242,9 @@ watch(() => edtStore.setupStep, (newStep) => {
   font-style: italic;
   font-weight: 600;
 }
+
+/* Charge sans contrat déclaré : on affiche, on ne juge pas. */
+.badge-neutral { background: var(--bg2, #f3f4f6); color: var(--tx2, #6b7280); }
 
 /* Indisponibilités : compact, sous la charge de l'enseignant. */
 .unavail { margin-top: 8px; border-top: 1px solid var(--bd, #e5e7eb); padding-top: 6px; }
