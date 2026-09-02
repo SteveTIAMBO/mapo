@@ -482,3 +482,49 @@ describe('la fiche enseignant porte les heures de contrat', () => {
     expect(pers).toContain('weeklyHours: null')
   })
 })
+
+describe('⚠️ le formulaire n’exige pas ce que l’import laisse vide', () => {
+  /**
+   * Trouvé le 02/09 en vérifiant les heures de contrat en production : mon
+   * enregistrement ne partait pas, et la cause n'était pas mon code — le
+   * formulaire était INVALIDE parce que « Genre » y était obligatoire et vide
+   * sur la fiche.
+   *
+   * Or l'import du personnel déclare `gender` facultatif et écrit une chaîne
+   * vide quand le classeur n'a pas de colonne « Sexe ». Une école qui importe
+   * son personnel sans cette colonne ne pouvait donc plus modifier AUCUNE
+   * fiche : le navigateur refusait l'envoi, et le seul retour était une bulle
+   * native sur un champ souvent hors de vue dans une longue modale.
+   *
+   * ⚠️ EPC1 y a échappé de justesse : son classeur avait la colonne (7 F, 4 M).
+   * Le défaut était latent, pas actif.
+   */
+  const pers = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'views/PersonnelView.vue'),
+    'utf8',
+  )
+  const imp = fs.readFileSync(
+    path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'views/ImportView.vue'),
+    'utf8',
+  )
+
+  it('le genre n’est plus obligatoire dans la fiche personnel', () => {
+    const i = pers.indexOf('formData.gender')
+    expect(i).toBeGreaterThan(0)
+    const balise = pers.slice(pers.lastIndexOf('<select', i), pers.indexOf('>', i))
+    expect(balise).not.toContain('required')
+  })
+
+  it('et l’étoile a disparu du libellé', () => {
+    // Garder l'étoile annoncerait une obligation que le code n'applique plus :
+    // c'est le mensonge inverse.
+    expect(pers).not.toContain("{{ t('pers.gender') }} *")
+  })
+
+  it('l’import du personnel, lui, le laisse bien facultatif', () => {
+    // C'est la source de l'incohérence : les deux portes d'entrée de la même
+    // donnée doivent appliquer la même règle.
+    const i = imp.indexOf("{ key: 'gender', label: 'Sexe (M/F)', required: false }")
+    expect(i).toBeGreaterThan(0)
+  })
+})

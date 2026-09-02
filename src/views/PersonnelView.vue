@@ -202,10 +202,21 @@
           </div>
 
           <div class="field-row">
+            <!-- ⚠️ Le genre N'EST PLUS obligatoire ici (02/09/2026).
+                 Il l'était dans ce formulaire, alors que l'import du personnel
+                 le déclare facultatif et écrit une chaîne vide quand le classeur
+                 n'a pas de colonne « Sexe ». Conséquence : une école qui importe
+                 son personnel sans cette colonne ne pouvait plus modifier
+                 AUCUNE fiche — le navigateur refusait l'envoi du formulaire sur
+                 un champ que l'import avait le droit de laisser vide, et le seul
+                 retour était une bulle native sur un champ souvent hors de vue.
+                 Les statistiques hommes/femmes tolèrent déjà l'absence.
+                 L'étoile est retirée en même temps : la garder annoncerait une
+                 obligation que le code n'applique plus. -->
             <div class="field">
-              <label>{{ t('pers.gender') }} *</label>
-              <select v-model="formData.gender" class="input" required>
-                <option value="">{{ t('pers.select') }}</option>
+              <label>{{ t('pers.gender') }}</label>
+              <select v-model="formData.gender" class="input">
+                <option value="">{{ t('pers.notSet') }}</option>
                 <option value="M">{{ t('pers.male') }}</option>
                 <option value="F">{{ t('pers.female') }}</option>
               </select>
