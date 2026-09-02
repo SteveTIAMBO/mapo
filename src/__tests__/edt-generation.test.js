@@ -296,3 +296,90 @@ describe('⚠️ les trois chemins d’écriture partagent le même contrôle', 
     expect(vue).toContain('.teacher-clash')
   })
 })
+
+describe('⚠️ indisponibilités : le moteur les respectait, rien ne les lui donnait', () => {
+  /**
+   * `teacherConstraints` était honoré par `isTeacherAvailable` depuis toujours
+   * et restait vide en pratique — aucune interface ne l'alimentait, et la démo
+   * le mettait explicitement à `[]`. Un moteur capable, jamais informé.
+   *
+   * On éprouve donc le CHEMIN COMPLET : saisie → contrainte → effet mesurable
+   * sur l'emploi du temps produit. Une saisie qui n'agit pas serait exactement
+   * le « faux paramètre » qu'on élimine partout ailleurs.
+   */
+  function edtVierge() {
+    return bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p1', teacherName: 'Nkeng', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+  }
+
+  it('une indisponibilité saisie déplace réellement les cours', () => {
+    const edt = edtVierge()
+    expect(edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '08:00', to: '12:00' })).toEqual({ ok: true })
+
+    const res = edt.generateSchedule({ commit: false })
+    const avecProf = res.newSchedule.filter((e) => e.teacherId === 'p1')
+    expect(avecProf).toHaveLength(4)
+    expect(avecProf.every((e) => e.day === 'mardi')).toBe(true)
+  })
+
+  it('une plage couvre tous les créneaux qu’elle chevauche, sans les énumérer', () => {
+    // `isTeacherAvailable` teste un chevauchement : « 08:00 → 10:00 » doit
+    // neutraliser les deux premiers créneaux d'une heure, pas seulement celui
+    // qui commence à 08:00.
+    const edt = edtVierge()
+    edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '08:00', to: '10:00' })
+
+    const res = edt.generateSchedule({ commit: false })
+    const lundiAvecProf = res.newSchedule.filter((e) => e.teacherId === 'p1' && e.day === 'lundi')
+    expect(lundiAvecProf.every((e) => e.slotIndex >= 2)).toBe(true)
+  })
+
+  it('une plage inversée est REFUSÉE, pas enregistrée sans effet', () => {
+    // L'enregistrer laisserait croire à une contrainte active alors qu'elle ne
+    // bloquerait rien : c'est la définition d'un faux paramètre.
+    const edt = edtVierge()
+    expect(edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '12:00', to: '08:00' }))
+      .toEqual({ ok: false, reason: 'plage' })
+    expect(edt.indisponibilitesDe('p1')).toEqual([])
+  })
+
+  it('une saisie incomplète ou en doublon est refusée avec son motif', () => {
+    const edt = edtVierge()
+    expect(edt.ajouterIndisponibilite('p1', { day: 'lundi' }).reason).toBe('incomplet')
+    edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '08:00', to: '09:00' })
+    expect(edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '08:00', to: '09:00' }).reason).toBe('doublon')
+    expect(edt.indisponibilitesDe('p1')).toHaveLength(1)
+  })
+
+  it('retirer la dernière indisponibilité ne laisse pas de fiche vide', () => {
+    // Une fiche `{ teacherId, unavailable: [] }` qui traîne ferait croire à une
+    // contrainte déclarée.
+    const edt = edtVierge()
+    edt.ajouterIndisponibilite('p1', { day: 'lundi', from: '08:00', to: '09:00' })
+    expect(edt.retirerIndisponibilite('p1', 0)).toBe(true)
+    expect(edt.teacherConstraints).toEqual([])
+  })
+})
+
+describe('la saisie des indisponibilités existe dans l’écran', () => {
+  it('elle est branchée sur les actions du store', () => {
+    expect(vue).toContain('edtStore.indisponibilitesDe(load.teacherId)')
+    expect(vue).toContain('edtStore.retirerIndisponibilite(load.teacherId, i)')
+    expect(vue).toContain('function ajouterIndispo(')
+  })
+
+  it('⚠️ le jour proposé vient de la grille de l’école, pas de « lundi » en dur', () => {
+    // Une école peut ne pas travailler le lundi ; proposer un jour qu'elle
+    // n'ouvre pas produirait une contrainte sans effet.
+    expect(vue).toContain("v-for=\"d in edtStore.timeGrid.days\"")
+    expect(vue).toContain('edtStore.timeGrid.days?.[0]')
+  })
+
+  it('un refus est expliqué, jamais silencieux', () => {
+    expect(vue).toContain('erreurIndispo[teacherId]')
+    expect(vue).toContain("t('edt.unavailErrRange')")
+  })
+})

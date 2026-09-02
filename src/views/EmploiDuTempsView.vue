@@ -350,6 +350,7 @@
             <h3>{{ t('edt.teacherLoad') }}</h3>
           </div>
           <div class="card-body">
+            <p class="settings-hint">{{ t('edt.unavailHint') }}</p>
             <div v-if="teacherLoadSummary.length === 0" class="empty-state">
               <p>{{ t('edt.noTeacherAssigned') }}</p>
             </div>
@@ -357,6 +358,40 @@
               <div v-for="load in teacherLoadSummary" :key="load.teacherId" class="teacher-load-card">
                 <div class="teacher-load-name">{{ load.teacherName }}</div>
                 <div class="teacher-load-hours" :class="load.badgeClass">{{ t('edt.hoursPerWeek', { n: load.totalHours }) }}</div>
+
+                <!-- Indisponibilités : le générateur les respecte depuis
+                     toujours, rien ne les lui donnait. -->
+                <div class="unavail">
+                  <div v-if="!edtStore.indisponibilitesDe(load.teacherId).length" class="unavail-none">
+                    {{ t('edt.unavailNone') }}
+                  </div>
+                  <div
+                    v-for="(u, i) in edtStore.indisponibilitesDe(load.teacherId)"
+                    :key="i"
+                    class="unavail-row"
+                  >
+                    <span>{{ u.day }} {{ u.from }} – {{ u.to }}</span>
+                    <button
+                      class="unavail-del"
+                      type="button"
+                      :title="t('edt.unavailRemove')"
+                      @click="edtStore.retirerIndisponibilite(load.teacherId, i)"
+                    ><X :size="12" /></button>
+                  </div>
+                  <div class="unavail-add">
+                    <select v-model="brouillonIndispo[load.teacherId].day" class="input input-xs">
+                      <option v-for="d in edtStore.timeGrid.days" :key="d" :value="d">{{ d }}</option>
+                    </select>
+                    <input v-model="brouillonIndispo[load.teacherId].from" type="time" class="input input-xs" />
+                    <input v-model="brouillonIndispo[load.teacherId].to" type="time" class="input input-xs" />
+                    <button class="btn btn-sm btn-outline" type="button" @click="ajouterIndispo(load.teacherId)">
+                      {{ t('edt.unavailAdd') }}
+                    </button>
+                  </div>
+                  <div v-if="erreurIndispo[load.teacherId]" class="unavail-err">
+                    {{ erreurIndispo[load.teacherId] }}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -949,7 +984,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick, onUnmounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted, nextTick, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEmploiDuTempsStore, DAYS, SUBJECT_COLORS, DEFAULT_SUBJECT_HOURS, getSubjectTextColor, HOLIDAYS_BY_COUNTRY, SERIES, SERIES_SUBJECT_HOURS, getDefaultHoursForLevel, getSubjectHoursKey } from '../stores/emploi-du-temps'
 import { useClassesStore, LEVELS } from '../stores/classes'
@@ -1481,6 +1516,49 @@ const slotConflictWarning = computed(() => {
   }
   return null
 })
+
+// ── Indisponibilités : brouillon de saisie, un par enseignant ──────────────
+const brouillonIndispo = reactive({})
+const erreurIndispo = reactive({})
+
+/**
+ * Prépare un brouillon pour chaque enseignant affiché.
+ *
+ * ⚠️ Créé ici et pas à la volée dans le gabarit : muter un état réactif pendant
+ * le rendu peut relancer le rendu. Le premier jour de la grille sert de valeur
+ * de départ — jamais « lundi » en dur, une école peut ne pas travailler ce
+ * jour-là.
+ */
+watch(
+  () => [teacherLoadSummary.value.map((l) => l.teacherId).join(','), edtStore.timeGrid.days.join(',')],
+  () => {
+    const premierJour = edtStore.timeGrid.days?.[0] || ''
+    for (const l of teacherLoadSummary.value) {
+      if (!brouillonIndispo[l.teacherId]) {
+        brouillonIndispo[l.teacherId] = { day: premierJour, from: '', to: '' }
+      }
+    }
+  },
+  { immediate: true },
+)
+
+/** Ajoute l'indisponibilité saisie, et DIT pourquoi si elle est refusée. */
+function ajouterIndispo(teacherId) {
+  const b = brouillonIndispo[teacherId]
+  const res = edtStore.ajouterIndisponibilite(teacherId, b)
+  if (res.ok) {
+    erreurIndispo[teacherId] = ''
+    // On garde le jour choisi : on saisit souvent plusieurs plages le même jour.
+    b.from = ''
+    b.to = ''
+    return
+  }
+  erreurIndispo[teacherId] = res.reason === 'plage'
+    ? t('edt.unavailErrRange')
+    : res.reason === 'doublon'
+      ? t('edt.unavailErrDup')
+      : t('edt.unavailErrIncomplete')
+}
 
 /**
  * Un enseignant déjà pris ailleurs sur ce créneau — calculé sur l'emploi du
@@ -3146,6 +3224,15 @@ watch(() => edtStore.setupStep, (newStep) => {
   font-style: italic;
   font-weight: 600;
 }
+
+/* Indisponibilités : compact, sous la charge de l'enseignant. */
+.unavail { margin-top: 8px; border-top: 1px solid var(--bd, #e5e7eb); padding-top: 6px; }
+.unavail-none { font-size: 11px; color: var(--tx3, #9ca3af); font-style: italic; }
+.unavail-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11.5px; padding: 2px 0; }
+.unavail-del { background: none; border: 0; cursor: pointer; color: #b91c1c; display: inline-flex; padding: 2px; }
+.unavail-add { display: flex; gap: 4px; align-items: center; margin-top: 6px; flex-wrap: wrap; }
+.input-xs { font-size: 11.5px; padding: 3px 5px; height: auto; max-width: 96px; }
+.unavail-err { font-size: 11px; color: #b91c1c; margin-top: 4px; }
 
 /* Doublon d'enseignant : la cellule le dit là où il est, tant qu'il dure. */
 .teacher-clash {

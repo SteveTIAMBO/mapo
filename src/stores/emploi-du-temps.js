@@ -1001,6 +1001,53 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     saveToStorage()
   }
 
+  // ── Indisponibilités des enseignants ──────────────────────────────────────
+  //
+  // ⚠️ C'était la SEULE contrainte que le solveur savait honorer et qu'aucun
+  // écran ne lui donnait : `teacherConstraints` était respecté par
+  // `isTeacherAvailable` depuis toujours, et restait vide en pratique — la démo
+  // le mettait même explicitement à `[]`. Un moteur capable, jamais informé.
+  //
+  // ⚠️ `isTeacherAvailable` teste un CHEVAUCHEMENT d'horaires, pas une égalité
+  // de créneau : « lundi 08:00 → 12:00 » couvre donc toute la matinée sans qu'on
+  // ait à énumérer les créneaux, et reste juste si la grille horaire change.
+
+  /** Indisponibilités déclarées pour un enseignant (jamais `null`). */
+  function indisponibilitesDe(teacherId) {
+    return teacherConstraints.value.find((c) => c.teacherId === teacherId)?.unavailable || []
+  }
+
+  function ajouterIndisponibilite(teacherId, { day, from, to } = {}) {
+    if (!teacherId || !day || !from || !to) return { ok: false, reason: 'incomplet' }
+    // Une plage vide ou inversée ne bloquerait RIEN. La refuser vaut mieux que
+    // de l'enregistrer en laissant croire à une contrainte active — c'est le
+    // même piège que les réglages sans effet.
+    if (timeToMinutes(from) >= timeToMinutes(to)) return { ok: false, reason: 'plage' }
+    let c = teacherConstraints.value.find((x) => x.teacherId === teacherId)
+    if (!c) {
+      c = { teacherId, unavailable: [] }
+      teacherConstraints.value.push(c)
+    }
+    if (c.unavailable.some((u) => u.day === day && u.from === from && u.to === to)) {
+      return { ok: false, reason: 'doublon' }
+    }
+    c.unavailable.push({ day, from, to })
+    saveToStorage()
+    return { ok: true }
+  }
+
+  function retirerIndisponibilite(teacherId, index) {
+    const c = teacherConstraints.value.find((x) => x.teacherId === teacherId)
+    if (!c || index < 0 || index >= c.unavailable.length) return false
+    c.unavailable.splice(index, 1)
+    // Pas de fiche vide qui traîne : elle ferait croire à une contrainte.
+    if (!c.unavailable.length) {
+      teacherConstraints.value = teacherConstraints.value.filter((x) => x.teacherId !== teacherId)
+    }
+    saveToStorage()
+    return true
+  }
+
   function setSetupStep(step) {
     setupStep.value = step
     saveToStorage()
@@ -1165,6 +1212,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     loadData, generateSchedule, resolveConflicts, analyzeConflicts, updateTimeGrid,
     updateSubjectHours, setSubjectHoursForLevel,
     addTeacherAssignment, removeTeacherAssignment,
+    indisponibilitesDe, ajouterIndisponibilite, retirerIndisponibilite,
     setSetupStep, moveEntry, saveToStorage, getSubjectColor,
     buildTimeSlots, buildDisplaySlots, minutesToTime, timeToMinutes,
     setLevelOverride, removeLevelOverride, getEffectiveGrid,
