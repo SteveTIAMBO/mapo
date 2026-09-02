@@ -230,6 +230,10 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
   const generationLog = ref([])      // Messages from last generation
   const generationConflicts = ref([]) // [{ type, message, ... }] - conflicts from last generation
   const levelOverrides = ref({})    // { levelName: { days: [...], startTime: '...', endTime: '...', breaks: [...] } }
+  // Année scolaire pour laquelle les jours fériés du pays ont DÉJÀ été proposés
+  // (clé « PAYS_ANNÉE »). Sans cette trace, une proposition automatique
+  // ressusciterait à chaque chargement les fériés supprimés par l'école.
+  const holidaysProposedFor = ref('')
   const schoolEvents = ref([])      // [{ id, title, date (YYYY-MM-DD), type: 'event'|'holiday', cancelsCourses: true|false, description: '' }]
   const currentWeek = ref(getCurrentWeekMonday()) // Current displayed week (YYYY-MM-DD of Monday)
 
@@ -851,6 +855,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     subjectHours.value = data.subjectHours || {}
     teacherAssignments.value = data.teacherAssignments || []
     teacherConstraints.value = data.teacherConstraints || []
+    holidaysProposedFor.value = data.holidaysProposedFor || ''
     schedule.value = data.schedule || []
     setupStep.value = data.setupStep || 0
     levelOverrides.value = data.levelOverrides || {}
@@ -989,6 +994,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
       setupStep: setupStep.value,
       levelOverrides: levelOverrides.value,
       schoolEvents: schoolEvents.value,
+      holidaysProposedFor: holidaysProposedFor.value,
       generationConflicts: generationConflicts.value,
     }
   }
@@ -1215,6 +1221,31 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
   }
 
   // Pre-fill holidays for a country and academic year
+  /**
+   * Propose les jours fériés du pays — UNE SEULE FOIS par année scolaire.
+   *
+   * Décision de Steve (02/09/2026) : « on propose ceux du pays par défaut et
+   * c'est au responsable de valider s'il y a cours ou pas ce jour-là ».
+   *
+   * ⚠️ Proposer à chaque chargement ferait RÉAPPARAÎTRE les fériés que l'école a
+   * supprimés : `prefillHolidays` ne recrée que ce qui n'existe pas, et un jour
+   * supprimé n'existe plus. On mémorise donc l'année déjà proposée.
+   *
+   * ⚠️ Pays inconnu = on ne propose RIEN. Le repli historique était « CM » : une
+   * école sénégalaise se serait vue proposer la fête nationale camerounaise.
+   */
+  function proposerJoursFeries(countryCode, academicYear) {
+    const pays = String(countryCode || '').trim().toUpperCase()
+    if (!pays || !HOLIDAYS_BY_COUNTRY[pays]) return { ok: false, reason: 'pays_inconnu' }
+    const cle = `${pays}_${academicYear}`
+    if (holidaysProposedFor.value === cle) return { ok: false, reason: 'deja_propose' }
+    const avant = schoolEvents.value.length
+    prefillHolidays(pays, academicYear)
+    holidaysProposedFor.value = cle
+    saveToStorage()
+    return { ok: true, ajoutes: schoolEvents.value.length - avant }
+  }
+
   function prefillHolidays(countryCode, academicYear) {
     const holidays = HOLIDAYS_BY_COUNTRY[countryCode]
     if (!holidays) return
@@ -1263,7 +1294,8 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     setSetupStep, moveEntry, saveToStorage, getSubjectColor,
     buildTimeSlots, buildDisplaySlots, minutesToTime, timeToMinutes,
     setLevelOverride, removeLevelOverride, getEffectiveGrid,
-    addSchoolEvent, updateSchoolEvent, removeSchoolEvent, prefillHolidays,
+    addSchoolEvent, updateSchoolEvent, removeSchoolEvent, prefillHolidays, proposerJoursFeries,
+    holidaysProposedFor,
     setCurrentWeek, navigateWeek, getWeekLabel, isDateCancelled, getWeekDates,
   }
 })

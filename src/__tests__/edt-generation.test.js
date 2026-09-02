@@ -528,3 +528,93 @@ describe('⚠️ le formulaire n’exige pas ce que l’import laisse vide', () 
     expect(i).toBeGreaterThan(0)
   })
 })
+
+describe('⚠️ jours fériés : proposés, puis validés par le responsable', () => {
+  /**
+   * Décision de Steve (02/09/2026) : « on propose ceux du pays par défaut et
+   * c'est au responsable de valider s'il y a cours ou pas ce jour-là. Il peut
+   * décocher si besoin ou ajouter des jours sans cours ».
+   *
+   * Avant : le préremplissage était un BOUTON (donc souvent jamais pressé), et
+   * un férié ne pouvait qu'être SUPPRIMÉ — l'école perdait l'information « ce
+   * jour est férié, mais nous travaillons ». Le modèle portait pourtant déjà
+   * `cancelsCourses`, que rien ne permettait de régler.
+   */
+  function edtVide() {
+    return bancEssai({ classes: [CLASSE_6A], heures: {}, profs: [] })
+  }
+
+  it('les fériés du pays sont proposés', () => {
+    const edt = edtVide()
+    const res = edt.proposerJoursFeries('CM', 2026)
+    expect(res.ok).toBe(true)
+    expect(res.ajoutes).toBeGreaterThan(0)
+    const feries = edt.schoolEvents.filter((e) => e.type === 'holiday')
+    expect(feries.length).toBe(res.ajoutes)
+    // Proposés comme « cours suspendus » : c'est le cas le plus courant, et le
+    // responsable décoche si son école travaille.
+    expect(feries.every((e) => e.cancelsCourses === true)).toBe(true)
+  })
+
+  it('⚠️ pays inconnu : on ne propose RIEN', () => {
+    // Le repli historique était « CM » : une école sénégalaise se voyait
+    // proposer la fête nationale camerounaise. « Je ne sais pas » n'est pas
+    // « Cameroun ».
+    const edt = edtVide()
+    expect(edt.proposerJoursFeries('', 2026)).toEqual({ ok: false, reason: 'pays_inconnu' })
+    expect(edt.proposerJoursFeries('ZZ', 2026)).toEqual({ ok: false, reason: 'pays_inconnu' })
+    expect(edt.schoolEvents).toHaveLength(0)
+  })
+
+  it('⚠️ un férié SUPPRIMÉ ne réapparaît pas à la proposition suivante', () => {
+    // C'est tout l'enjeu de la trace : proposer à chaque ouverture
+    // ressusciterait ce que l'école a écarté.
+    const edt = edtVide()
+    edt.proposerJoursFeries('CM', 2026)
+    const premier = edt.schoolEvents.find((e) => e.type === 'holiday')
+    edt.removeSchoolEvent(premier.id)
+    const avant = edt.schoolEvents.length
+
+    expect(edt.proposerJoursFeries('CM', 2026)).toEqual({ ok: false, reason: 'deja_propose' })
+    expect(edt.schoolEvents).toHaveLength(avant)
+  })
+
+  it('une nouvelle année scolaire est proposée à nouveau', () => {
+    const edt = edtVide()
+    edt.proposerJoursFeries('CM', 2026)
+    expect(edt.proposerJoursFeries('CM', 2027).ok).toBe(true)
+  })
+
+  it('le responsable peut dire « cours maintenus » sans supprimer le jour', () => {
+    const edt = edtVide()
+    edt.proposerJoursFeries('CM', 2026)
+    const f = edt.schoolEvents.find((e) => e.type === 'holiday')
+    expect(edt.isDateCancelled(f.date)).toBe(true)
+
+    edt.updateSchoolEvent(f.id, { cancelsCourses: false })
+    // Le jour existe toujours, mais il n'annule plus les cours.
+    expect(edt.schoolEvents.find((e) => e.id === f.id)).toBeTruthy()
+    expect(edt.isDateCancelled(f.date)).toBe(false)
+  })
+
+  it('et ajouter un jour sans cours qui n’est pas un férié national', () => {
+    const edt = edtVide()
+    edt.addSchoolEvent({ id: 'ev1', title: 'Journée pédagogique', date: '2026-10-15', type: 'event', cancelsCourses: true })
+    expect(edt.isDateCancelled('2026-10-15')).toBe(true)
+  })
+})
+
+describe('l’écran propose les fériés sans les imposer', () => {
+  it('la proposition est automatique au montage', () => {
+    expect(vue).toContain('proposerFeriesSiBesoin()')
+  })
+
+  it('⚠️ plus de repli « CM » quand le pays est inconnu', () => {
+    expect(vue).not.toContain("schoolStore.schoolSettings?.country || 'CM'")
+    expect(vue).toContain("t('edt.holidaysNoCountry')")
+  })
+
+  it('chaque férié porte une bascule cours suspendus / maintenus', () => {
+    expect(vue).toContain("edtStore.updateSchoolEvent(evt.id, { cancelsCourses: $event.target.checked })")
+  })
+})

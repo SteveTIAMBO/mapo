@@ -805,6 +805,8 @@
             </div>
           </div>
           <div class="card-body">
+            <p class="settings-hint">{{ t('edt.holidaysHint') }}</p>
+            <div v-if="messageFeries" class="unavail-none" style="margin-bottom:8px;">{{ messageFeries }}</div>
             <div v-if="edtStore.schoolEvents.filter(e => e.type === 'holiday').length === 0" class="empty-state">
               <p>{{ t('edt.noHoliday') }}</p>
             </div>
@@ -816,6 +818,20 @@
                 </div>
                 <div class="event-info">
                   <div class="event-title">{{ evt.title }}</div>
+                  <!-- ⚠️ Le férié est une PROPOSITION : c'est le responsable qui
+                       tranche s'il y a cours ce jour-là. Auparavant la seule
+                       issue était de supprimer la ligne — donc de perdre
+                       l'information « ce jour est férié, mais nous travaillons ».
+                       Le modèle portait déjà `cancelsCourses` ; rien ne
+                       permettait de le régler. -->
+                  <label class="holiday-toggle">
+                    <input
+                      type="checkbox"
+                      :checked="evt.cancelsCourses !== false"
+                      @change="edtStore.updateSchoolEvent(evt.id, { cancelsCourses: $event.target.checked })"
+                    />
+                    <span>{{ evt.cancelsCourses !== false ? t('edt.coursesSuspended') : t('edt.coursesHeld') }}</span>
+                  </label>
                 </div>
                 <button class="icon-btn icon-btn-danger" @click="edtStore.removeSchoolEvent(evt.id)" type="button">
                   <Trash2 :size="16" />
@@ -1709,11 +1725,40 @@ const saveEvent = () => {
   showEventModal.value = false
 }
 
-const prefillHolidaysFromCountry = () => {
-  const country = schoolStore.schoolSettings?.country || 'CM'
+/** Année scolaire en cours, au sens du calendrier (septembre → août). */
+function anneeScolaireCourante() {
   const now = new Date()
-  const year = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
-  edtStore.prefillHolidays(country, year)
+  return now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1
+}
+
+const prefillHolidaysFromCountry = () => {
+  // ⚠️ Plus de repli « CM ». Il proposait la fête nationale camerounaise à une
+  // école sénégalaise : « je ne sais pas » n'est pas « Cameroun ».
+  const country = schoolStore.schoolSettings?.country
+  if (!country) {
+    messageFeries.value = t('edt.holidaysNoCountry')
+    return
+  }
+  edtStore.prefillHolidays(country, anneeScolaireCourante())
+}
+
+const messageFeries = ref('')
+
+/**
+ * Proposition automatique des fériés du pays, à l'ouverture.
+ *
+ * Décision de Steve : « on propose ceux du pays par défaut et c'est au
+ * responsable de valider s'il y a cours ou pas ce jour-là ». Le store ne
+ * propose qu'UNE fois par année scolaire : sans cette garde, les fériés
+ * supprimés par l'école réapparaîtraient à chaque ouverture.
+ */
+function proposerFeriesSiBesoin() {
+  const country = schoolStore.schoolSettings?.country
+  if (!country) return
+  const res = edtStore.proposerJoursFeries(country, anneeScolaireCourante())
+  if (res.ok && res.ajoutes > 0) {
+    messageFeries.value = t('edt.holidaysProposed', { n: res.ajoutes })
+  }
 }
 
 const getTeachersForSubject = (subject) => {
@@ -2210,6 +2255,9 @@ onMounted(async () => {
   // temps que la liste de l'école arrive : les matières renommées auraient
   // clignoté vers leurs anciens noms.
   await discPrimaireStore.load()
+  // Les fériés du pays sont PROPOSÉS (une seule fois par année scolaire) :
+  // le responsable valide ensuite jour par jour s'il y a cours.
+  proposerFeriesSiBesoin()
   await edtStore.loadData()
 
   timeGridForm.value = { ...edtStore.timeGrid }
@@ -3245,6 +3293,9 @@ watch(() => edtStore.setupStep, (newStep) => {
 
 /* Charge sans contrat déclaré : on affiche, on ne juge pas. */
 .badge-neutral { background: var(--bg2, #f3f4f6); color: var(--tx2, #6b7280); }
+
+/* Férié : bascule « cours suspendus / cours maintenus ». */
+.holiday-toggle { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--tx2); cursor: pointer; }
 
 /* Indisponibilités : compact, sous la charge de l'enseignant. */
 .unavail { margin-top: 8px; border-top: 1px solid var(--bd, #e5e7eb); padding-top: 6px; }
