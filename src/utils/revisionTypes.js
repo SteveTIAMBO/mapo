@@ -73,8 +73,21 @@ export const REVISION_TYPES = [
   // Auto-explication (méthode Feynman) — expliquer avec ses mots, toutes matières.
   { key: 'explain', engine: 'chat', icon: 'MessagesSquare', technique: 'self-explanation', always: true },
   // Entrelacement — alterner types de problèmes : discrimination (maths/sciences).
-  // Technique exigeante (comparer des méthodes) : dès le collège, pas au primaire.
-  { key: 'interleave', engine: 'chat', icon: 'Shuffle', technique: 'interleaving', needs: ['scientifique'], excludePrimaire: true },
+  //
+  // ⚠️ OUVERT AU PRIMAIRE le 02/09/2026 (décision Steve). Il en était exclu par
+  // `excludePrimaire`, au motif que la technique serait « exigeante ». Ce critère
+  // d'âge n'a jamais été fondé : le modérateur établi de l'entrelacement est le
+  // MATÉRIEL et la similarité entre catégories à discriminer (Brunmair et
+  // Richter, 2019), pas l'âge de l'apprenant.
+  //
+  // ⚠️ Ce n'est PAS « la recherche montre qu'il faut l'ouvrir au primaire » — la
+  // preuve directe au primaire est mince, elle ne s'est pas prononcée. C'est
+  // « le critère d'âge n'était pas fondé, donc on s'en remet au seul critère qui
+  // l'est ». Le filtre `needs: ['scientifique']` fait ce travail : l'entrelacement
+  // n'est proposé que là où il existe des procédures voisines à distinguer, ce
+  // qui est le cas dès le calcul élémentaire (addition contre soustraction
+  // posée) comme au lycée. Voir REFERENTIEL-PEDAGOGIQUE-MIAPO.md, pilier P4.
+  { key: 'interleave', engine: 'chat', icon: 'Shuffle', technique: 'interleaving', needs: ['scientifique'] },
   // Dictée — production orthographique sous récupération (langues). N'a de sens
   // qu'à l'école (primaire → lycée) : exclue dans l'enseignement supérieur.
   { key: 'dictee', engine: 'chat', icon: 'Ear', technique: 'production', needs: ['langue'], excludeSuperieur: true },
@@ -96,21 +109,14 @@ export function typesForMatiere(matiere, opts = {}) {
   const prim = !!(opts && opts.primaire)
   return REVISION_TYPES.filter((tpe) => {
     if (sup && tpe.excludeSuperieur) return false
-    // ⚠️ `excludePrimaire` est une PRUDENCE, pas une conclusion de la recherche.
+    // ⚠️ `excludePrimaire` ne repose sur AUCUNE étude, et ne doit pas prétendre
+    // le contraire. Depuis le 02/09/2026 il ne porte plus que sur `redaction` et
+    // `mindmap`, pour un motif de prérequis et non de science : un élève de
+    // primaire ne rédige pas un texte argumentatif guidé et ne construit pas une
+    // carte conceptuelle abstraite. Choix d'ingénierie assumé.
     //
-    // Le cas de l'entrelacement (`interleave`) est le plus délicat : le
-    // modérateur établi est le MATÉRIEL et la similarité entre catégories
-    // (Brunmair et Richter, 2019), pas l'âge de l'apprenant. Rohrer et al.
-    // (2020) le démontrent en classe réelle sur des élèves de 5e (d = 0,83),
-    // mais la preuve directe AU PRIMAIRE est mince. On maintient donc
-    // l'exclusion par précaution — et il faut le dire ainsi. Écrire que « la
-    // recherche déconseille l'entrelacement au primaire » serait faux : elle ne
-    // dit rien de tel, elle ne s'est pas prononcée.
-    //
-    // Pour `redaction` et `mindmap`, l'exclusion relève d'un autre motif, plus
-    // simple : la production écrite longue et la carte conceptuelle supposent
-    // des compétences de rédaction et d'abstraction qu'on ne présume pas au
-    // primaire. Choix d'ingénierie assumé, sans prétention scientifique.
+    // L'entrelacement en a été RETIRÉ : son seul modérateur établi est le
+    // matériel (Brunmair et Richter, 2019), et c'est `needs` qui l'applique.
     if (prim && tpe.excludePrimaire) return false
     return tpe.always || (tpe.needs || []).some((n) => tags.includes(n))
   })

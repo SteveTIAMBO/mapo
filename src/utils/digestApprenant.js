@@ -104,11 +104,25 @@ export function digestApprenant(enfant, revisionStates = {}) {
     if (mats.length) parts.push('A importé ses cours en : ' + mats.slice(0, 5).join(', '))
   } catch { /* silencieux */ }
 
-  // Forme du jour (adapter le ton / la longueur) — sans dramatiser
+  // Forme du jour — SIGNAL DE RYTHME, JAMAIS UN SUJET DE CONVERSATION.
+  //
+  // ⚠️ Arbitrage rendu par Steve le 02/09/2026, et il lève une contradiction
+  // réelle. Le périmètre de MIAPO est encadré (REFERENTIEL-PEDAGOGIQUE-MIAPO.md,
+  // section 5.3) : le tuteur ne traite que le scolaire, et l'humeur, l'état
+  // émotionnel et la vie personnelle sont hors périmètre à tout âge. Or on
+  // transmettait ici la forme du jour au modèle, ce qui l'autorisait de fait à
+  // en parler.
+  //
+  // La décision n'est pas de retirer le signal — il sert à raccourcir une séance
+  // un jour de fatigue, ce qui est légitime — mais de le cantonner : il règle le
+  // RYTHME et la LONGUEUR, il ne s'énonce jamais. La consigne correspondante est
+  // posée dans le prompt système de `mapo-ia.php`, en français et en anglais.
+  // Sans elle, ce champ resterait une invitation à demander « ça ne va pas
+  // aujourd'hui ? », exactement ce qu'on s'interdit.
   try {
     const h = humeurDuJour(id)
-    if (h && h.v <= 4) parts.push('Forme du jour : basse (aller en douceur, séance plus courte)')
-    else if (h && h.v >= 8) parts.push('Forme du jour : bonne')
+    if (h && h.v <= 4) parts.push('Forme du jour : basse — séance plus courte et plus douce. NE JAMAIS mentionner ni interroger cet état.')
+    else if (h && h.v >= 8) parts.push('Forme du jour : bonne — rythme normal. NE JAMAIS mentionner cet état.')
   } catch { /* silencieux */ }
 
   // Ressenti de difficulté récent (calibrer)

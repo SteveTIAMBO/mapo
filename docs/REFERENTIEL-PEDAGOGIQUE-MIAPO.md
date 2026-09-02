@@ -400,9 +400,13 @@ Une exigence supplémentaire, non encore satisfaite : **l'apprenant doit toujour
 
 C'est cette restriction de périmètre, et non un âge, qui répond à la recommandation UNESCO et à l'exigence 6 de CARE-AI. Le point 4 est déjà en place dans le code.
 
-**Ce qui reste à faire, et c'est un vrai trou.** Les points 1 et 2 ne sont **pas codés** : vérifié ligne à ligne le 2 septembre 2026, le prompt système de `mapo-ia.php` ne contient aucune interdiction de périmètre, aucun refus, aucune journalisation. Pire, `humeur.js` collecte l'humeur de l'apprenant et la transmet au modèle, ce qui enfreint l'interdit affiché. Tant que la restriction n'est pas appliquée techniquement et journalisée, la position n'est pas démontrable. Détail et plan dans `08_DEEPTECH/2026-09-01_CARE-AI_extraction-et-plan-produits.md`.
+✅ **CODÉ le 2 septembre 2026.** Les points 1 et 2 étaient affirmés publiquement sans exister dans le produit : vérifié ligne à ligne le matin même, le prompt système ne contenait aucune interdiction de périmètre. Ils sont désormais dans `mapo-ia.php`, en français et en anglais, avec la liste explicite des sujets hors périmètre (humeur, état émotionnel, vie personnelle ou familiale, santé, relations, conseils de vie). Hors périmètre égale refus **doux** et retour au cours : un mur serait une mauvaise réponse à un enfant.
 
-**Garde-fou de protection de l'enfance.** Si un apprenant écrit malgré tout quelque chose d'inquiétant, un refus sec est la pire réponse possible. Le comportement à coder est un message court et bienveillant, une orientation vers un adulte de confiance, et un signalement au parent. À faire.
+**La contradiction sur l'humeur est levée, arbitrage Steve : c'est un signal de RYTHME, jamais un sujet.** `digestApprenant.js` continue de transmettre la forme du jour — elle sert à raccourcir une séance un jour de fatigue, ce qui est légitime — mais le prompt interdit désormais de la mentionner ou de la questionner, et le champ lui-même porte la consigne. Sans cela, ce signal était une invitation à demander « ça ne va pas aujourd'hui ? », exactement ce qu'on s'interdit.
+
+✅ **Garde-fou de protection de l'enfance : codé le même jour.** Si un apprenant exprime une détresse, une peur, une violence subie ou une idée de se faire du mal, le tuteur ne répond **ni par un refus sec ni par un conseil** : il dit en une ou deux phrases que ce que vit l'apprenant compte, qu'il n'est pas la bonne aide pour cela, invite à en parler tout de suite à un adulte de confiance, et s'arrête là.
+
+⚠️ **Ce qui reste.** La restriction est appliquée, elle n'est pas encore **journalisée** : un refus hors périmètre ne laisse aucune trace côté serveur. Tant qu'il n'y a pas de trace, la position est tenue mais pas *démontrable* devant un jury, un ministère ou un parent. Ces règles sont pour l'instant protégées par des tests de présence (`src/__tests__/perimetre-et-feedback-miapo.test.js`), ce qui empêche la régression silencieuse mais ne prouve pas le comportement du modèle. Plan complet dans `08_DEEPTECH/2026-09-01_CARE-AI_extraction-et-plan-produits.md`.
 
 ### 5.4 Données personnelles
 
@@ -467,7 +471,7 @@ Un tuteur qui applique le programme français à un élève camerounais commet d
 | P2b | Intervalle calé sur l'horizon | Cepeda et al. 2008 (20 % du délai à une semaine, 5 à 10 % à un an) | Solide | Le pas se calcule depuis l'horizon : examen, sinon fin de séquence, sinon fin de période (`periodes.js`) | À faire |
 | P2c | Pas besoin d'intervalles expansifs | Latimier et al. 2021 (g=0,034, ns) | Solide | Calendrier uniforme, pas de SM-2 | Fait par défaut |
 | P3 | Difficultés désirables | Bjork ; se ramène à P1 et P2 | Solide | Expliquer la difficulté à l'apprenant | Partiel |
-| P4 | Entrelacement | Brunmair et Richter 2019 (g=0,42, modéré par le matériel) ; Rohrer et al. 2020 (d=0,83 en maths) | Solide en maths, modéré ailleurs | Activer selon le matériel, pas selon l'âge | Partiel, exclusion primaire désormais documentée comme prudence (02/09) |
+| P4 | Entrelacement | Brunmair et Richter 2019 (g=0,42, modéré par le matériel) ; Rohrer et al. 2020 (d=0,83 en maths) | Solide en maths, modéré ailleurs | Activer selon le matériel, pas selon l'âge | Fait le 02/09 : `excludePrimaire` retiré de `interleave`, seul `needs` filtre |
 | P5a | Exemples travaillés | Sweller et al. 2019 | Solide | Montrer un exemple résolu avant de faire chercher un novice | À faire |
 | P5b | Inversion d'expertise | Kalyuga et al. 2003 | Solide | Étayage décroissant selon la jauge | À faire |
 | P6 | Développement de la mémoire de travail | Gathercole et al. 2004 ; Cowan 2001 | Solide (le fait), non établi (l'inférence produit) | Séances plus courtes chez les jeunes, déclaré comme choix prudent | Fait, justification corrigée le 02/09 |
@@ -516,14 +520,23 @@ perdu : il pointe maintenant vers ce référentiel. Aucune valeur n'a bougé.
 `revisionTypes.js`, drapeau `excludePrimaire` sur `interleave`. Le modérateur identifié par Brunmair et Richter (2019) est la nature du matériel et la similarité entre catégories. La preuve directe au primaire est mince, l'exclusion peut donc rester, mais comme prudence documentée et non comme conclusion scientifique.
 **Gravité : moyenne.**
 
-✅ **RÉSOLU le 2 septembre 2026, par la documentation et non par le code.** Le
-comportement est **inchangé et assumé** : l'entrelacement reste exclu du primaire.
-Ce qui change, c'est la raison affichée. Le commentaire sur le filtre dit
-maintenant qu'il s'agit d'une précaution devant une preuve directe mince, et non
-d'une conclusion de la recherche — écrire « la recherche déconseille
-l'entrelacement au primaire » serait faux, elle ne s'est pas prononcée. Le même
-drapeau porte sur `redaction` et `mindmap` pour un motif différent, de simple
-prérequis de rédaction et d'abstraction : il est désormais distingué du premier.
+✅ **RÉSOLU le 2 septembre 2026, et le comportement A changé** (arbitrage Steve).
+`excludePrimaire` a été **retiré de `interleave`** : l'entrelacement est désormais
+proposé au primaire, et c'est le seul filtre fondé, `needs: ['scientifique']`, qui
+décide — donc là où il existe des procédures voisines à discriminer, ce qui est le
+cas dès le calcul élémentaire.
+
+⚠️ **Attention à la formulation de cette décision.** Elle ne se justifie PAS par
+« la recherche montre qu'il ne faut pas exclure le primaire » : la preuve directe
+y est mince, la recherche ne s'est pas prononcée. Elle se justifie par « le
+critère d'âge n'a jamais été fondé, donc on s'en remet au seul critère qui l'est,
+le matériel » (Brunmair et Richter, 2019). La nuance compte devant un jury.
+
+Le drapeau subsiste sur `redaction` et `mindmap`, pour un motif tout autre et sans
+prétention scientifique : un élève de primaire ne rédige pas un texte argumentatif
+guidé et ne construit pas une carte conceptuelle abstraite. Choix d'ingénierie,
+déclaré comme tel.
+
 Une note a été ajoutée sur `dual-coding`, que la section 4.1 signale comme piège
 de formulation : les schémas aident tous les apprenants, pas particulièrement les
 apprenants dits visuels.
