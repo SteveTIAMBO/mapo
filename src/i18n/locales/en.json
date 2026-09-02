@@ -4920,6 +4920,7 @@
     "moveText": "Move {subject} to {day}, slot {start} - {end}",
     "moveConflictWarn": "Warning: {n} conflict(s) detected",
     "noConflictDetected": "No conflict detected.",
+    "teacherClashCell": "This teacher already has another class in this slot.",
     "moveAnyway": "Move anyway",
     "confirm": "Confirm",
     "regenPlaced": "{placed}/{required} slots placed",

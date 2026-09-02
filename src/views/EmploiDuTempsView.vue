@@ -630,7 +630,18 @@
                     </template>
                     <template v-else-if="getClassScheduleCell(day, row.index).includes('filled')">
                       <div class="cell-subject">{{ getClassScheduleEntry(day, row.index)?.subjectId }}</div>
-                      <div class="cell-teacher" :class="{ 'teacher-missing': !getClassScheduleEntry(day, row.index)?.teacherId }">{{ getClassScheduleEntry(day, row.index)?.teacherName }}</div>
+                      <!-- `teacher-clash` est calculé sur l'emploi du temps
+                           courant : un doublon reste visible LÀ OÙ IL EST tant
+                           qu'il n'est pas corrigé, et pas seulement dans le
+                           bandeau au moment du clic qui l'a créé. -->
+                      <div
+                        class="cell-teacher"
+                        :class="{
+                          'teacher-missing': !getClassScheduleEntry(day, row.index)?.teacherId,
+                          'teacher-clash': enseignantEnDouble(day, row.index),
+                        }"
+                        :title="enseignantEnDouble(day, row.index) ? t('edt.teacherClashCell') : null"
+                      >{{ getClassScheduleEntry(day, row.index)?.teacherName }}</div>
                     </template>
                     <div v-else class="cell-empty-hint">+</div>
                   </div>
@@ -1471,6 +1482,52 @@ const slotConflictWarning = computed(() => {
   return null
 })
 
+/**
+ * Un enseignant déjà pris ailleurs sur ce créneau — calculé sur l'emploi du
+ * temps COURANT.
+ *
+ * ⚠️ Volontairement pas lu dans un journal de conflits : un conflit corrigé
+ * disparaît alors tout seul, et un conflit créé apparaît même si personne n'a
+ * cliqué sur un avertissement. On mesure l'état, on ne se souvient pas d'un clic.
+ */
+function conflitEnseignantSurCreneau({ teacherId, teacherName, day, slotIndex, classId }) {
+  if (!teacherId) return null
+  const autres = edtStore.schedule.filter(
+    (e) => e.teacherId === teacherId && e.day === day && e.slotIndex === slotIndex && e.classId !== classId,
+  )
+  if (!autres.length) return null
+  return {
+    // Même TYPE que celui produit par le générateur : `analyzeConflicts` ne
+    // comprenait pas l'ancien `teacher_conflict`, donc un doublon créé à la
+    // main n'apparaissait dans AUCUNE recommandation.
+    type: 'teacher_double',
+    teacherId,
+    teacherName: teacherName || autres[0].teacherName,
+    day,
+    slotIndex,
+    entries: autres.map((e) => ({ classId: e.classId, className: e.className, subjectId: e.subjectId })),
+    message: `${teacherName || autres[0].teacherName} : ${autres.length + 1} cours en même temps (${day}, créneau ${slotIndex + 1})`,
+  }
+}
+
+/** Enregistre un conflit sans doublonner la liste (clé = qui, quand). */
+function enregistrerConflit(c) {
+  if (!c) return
+  const deja = edtStore.generationConflicts.some(
+    (x) => x.type === c.type && x.teacherId === c.teacherId && x.day === c.day && x.slotIndex === c.slotIndex,
+  )
+  if (!deja) edtStore.generationConflicts.push(c)
+}
+
+/** Marque de la grille : cette cellule met-elle un enseignant en double ? */
+function enseignantEnDouble(day, slotIndex) {
+  const e = getClassScheduleEntry(day, slotIndex)
+  if (!e?.teacherId) return false
+  return edtStore.schedule.some(
+    (o) => o.teacherId === e.teacherId && o.day === day && o.slotIndex === slotIndex && o.classId !== e.classId,
+  )
+}
+
 const saveSlotEdit = () => {
   const s = editingSlot.value
 
@@ -1496,6 +1553,19 @@ const saveSlotEdit = () => {
       teacherId: s.teacherId || null,
       teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : 'Non assigné',
     })
+
+    // ⚠️ L'avertissement `slotConflictWarning` était affiché juste au-dessus du
+    // bouton, et cette fonction écrivait SANS le consulter : un doublon
+    // d'enseignant créé ici ne laissait aucune trace, alors que le
+    // glisser-déposer, lui, en gardait une. Le générateur garantit l'absence de
+    // doublon, et le clic suivant la défaisait en silence.
+    enregistrerConflit(conflitEnseignantSurCreneau({
+      teacherId: s.teacherId,
+      teacherName: teacher ? `${teacher.firstName} ${teacher.lastName}` : '',
+      day: s.day,
+      slotIndex: s.slotIndex,
+      classId: s.classId,
+    }))
   }
 
   edtStore.saveToStorage()
@@ -2005,13 +2075,22 @@ const confirmMove = () => {
     edtStore.schedule[newSourceIdx].slotEnd = slot.end
   }
 
-  // Update conflicts list if there were teacher conflicts
-  const teacherConflict = moveConflicts.value.find(c => c.type === 'teacher_conflict')
-  if (teacherConflict && !edtStore.generationConflicts.some(c => c.message === teacherConflict.message)) {
-    edtStore.generationConflicts.push({
-      type: 'teacher_conflict',
-      message: teacherConflict.message,
-    })
+  // Conflit d'enseignant : recalculé APRÈS le déplacement, sur l'emploi du temps
+  // réel, et enregistré sous la même forme que celle du générateur.
+  //
+  // ⚠️ L'ancien code recopiait le message calculé AVANT le déplacement, sous le
+  // type `teacher_conflict` que `analyzeConflicts` ne connaît pas : un doublon
+  // forcé n'apparaissait donc dans aucune recommandation, et la déduplication
+  // par message rendait la liste dépendante du libellé.
+  const deplace = edtStore.schedule[newSourceIdx]
+  if (deplace) {
+    enregistrerConflit(conflitEnseignantSurCreneau({
+      teacherId: deplace.teacherId,
+      teacherName: deplace.teacherName,
+      day: deplace.day,
+      slotIndex: deplace.slotIndex,
+      classId: deplace.classId,
+    }))
   }
 
   edtStore.saveToStorage()
@@ -3066,6 +3145,14 @@ watch(() => edtStore.setupStep, (newStep) => {
   color: #dc2626;
   font-style: italic;
   font-weight: 600;
+}
+
+/* Doublon d'enseignant : la cellule le dit là où il est, tant qu'il dure. */
+.teacher-clash {
+  color: #b91c1c;
+  font-weight: 700;
+  text-decoration: underline wavy #b91c1c;
+  text-underline-offset: 2px;
 }
 
 /* Drag & Drop */

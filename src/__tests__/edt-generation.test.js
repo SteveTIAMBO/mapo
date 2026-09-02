@@ -214,3 +214,85 @@ describe('⚠️ cas infaisable : l’outil doit le DIRE, pas le masquer', () =>
     expect(perso.detail).toContain('personne ne sera devant les élèves')
   })
 })
+
+describe('⚠️ l’édition manuelle ne doit pas défaire la garantie', () => {
+  /**
+   * Le générateur ne produit aucun doublon — c'est prouvé plus haut. Mais la
+   * promesse faite à l'école est « sans le moindre doublon », pas « sans
+   * doublon jusqu'au premier clic ».
+   */
+  function edtAvecDeuxCours() {
+    const edt = bancEssai({
+      classes: [CLASSE_6A, CLASSE_6B],
+      heures: {},
+      profs: [],
+    })
+    edt.schedule = [
+      { day: 'lundi', slotIndex: 0, slotStart: '08:00', slotEnd: '09:00', classId: 'c1', className: '6e A', subjectId: 'Mathématiques', teacherId: 'p1', teacherName: 'Nkeng' },
+      { day: 'lundi', slotIndex: 1, slotStart: '09:00', slotEnd: '10:00', classId: 'c2', className: '6e B', subjectId: 'Mathématiques', teacherId: 'p1', teacherName: 'Nkeng' },
+    ]
+    return edt
+  }
+
+  it('déplacer un cours sur un créneau où l’enseignant est déjà pris est REFUSÉ', () => {
+    const edt = edtAvecDeuxCours()
+    // On tente d'amener le cours de 6e B sur le créneau 0, où Nkeng enseigne
+    // déjà à la 6e A.
+    expect(edt.moveEntry(1, 'lundi', 0)).toBe(false)
+    expect(edt.schedule[1].slotIndex).toBe(1) // rien n'a bougé
+  })
+
+  it('déplacer un cours sur un créneau déjà occupé par SA classe est refusé aussi', () => {
+    const edt = edtAvecDeuxCours()
+    edt.schedule.push({ day: 'mardi', slotIndex: 0, slotStart: '08:00', slotEnd: '09:00', classId: 'c1', className: '6e A', subjectId: 'Français', teacherId: 'p2', teacherName: 'Biyick' })
+    expect(edt.moveEntry(2, 'lundi', 0)).toBe(false)
+  })
+})
+
+// ── Les trois chemins d'écriture de la vue ────────────────────────────────
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const vue = fs.readFileSync(
+  path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'views/EmploiDuTempsView.vue'),
+  'utf8',
+)
+
+describe('⚠️ les trois chemins d’écriture partagent le même contrôle', () => {
+  it('l’éditeur de créneau enregistre le conflit qu’il affichait déjà', () => {
+    // Le défaut : `slotConflictWarning` était calculé et affiché juste au-dessus
+    // du bouton, et `saveSlotEdit` écrivait SANS le consulter. L'information
+    // existait et n'atteignait pas la décision.
+    const i = vue.indexOf('const saveSlotEdit')
+    expect(i).toBeGreaterThan(0)
+    const bloc = vue.slice(i, vue.indexOf('const removeSlotEntry', i))
+    expect(bloc).toContain('enregistrerConflit(conflitEnseignantSurCreneau(')
+  })
+
+  it('le glisser-déposer et l’éditeur produisent la MÊME forme de conflit', () => {
+    // Deux formes divergentes rendaient le conflit du glisser-déposer invisible
+    // à l'analyse : il était enregistré sous le type `teacher_conflict`, que
+    // `analyzeConflicts` ne connaît pas — seul `teacher_double` y est traité.
+    //
+    // ⚠️ L'invariant à tenir n'est pas « le mot teacher_conflict a disparu » :
+    // il sert encore, légitimement, à décrire l'avertissement de la modale
+    // AVANT confirmation. C'est l'ÉCRITURE qui doit être unique.
+    const ecritures = vue.match(/generationConflicts\.push\(/g) || []
+    expect(ecritures).toHaveLength(1)
+    const i = vue.indexOf('function enregistrerConflit')
+    expect(i).toBeGreaterThan(0)
+    expect(vue.slice(i, i + 400)).toContain('generationConflicts.push(')
+    // …et les deux chemins passent par le même constructeur.
+    expect(vue.match(/enregistrerConflit\(conflitEnseignantSurCreneau\(/g)).toHaveLength(2)
+    expect(vue).toContain("type: 'teacher_double'")
+  })
+
+  it('la grille marque un doublon là où il est, tant qu’il dure', () => {
+    // Calculé sur l'emploi du temps courant, pas sur un journal : un conflit
+    // corrigé disparaît tout seul.
+    expect(vue).toContain('function enseignantEnDouble(')
+    expect(vue).toContain("'teacher-clash': enseignantEnDouble(day, row.index)")
+    expect(vue).toContain('.teacher-clash')
+  })
+})

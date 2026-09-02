@@ -4920,6 +4920,7 @@
     "moveText": "Déplacer {subject} vers {day}, créneau {start} - {end}",
     "moveConflictWarn": "Attention : {n} conflit(s) détecté(s)",
     "noConflictDetected": "Aucun conflit détecté.",
+    "teacherClashCell": "Cet enseignant est déjà en cours avec une autre classe sur ce créneau.",
     "moveAnyway": "Déplacer quand même",
     "confirm": "Confirmer",
     "regenPlaced": "{placed}/{required} créneaux placés",
