@@ -1,0 +1,325 @@
+{
+  "_licence": "Texte officiel ivoirien (MENA/DPFC). ⚠️ Aucune licence explicite n'est publiée sur dpfc-ci.net et aucun régime de droits n'a pu être établi. Position retenue, identique au Cameroun : on n'extrait que les INTITULÉS de thèmes et de leçons, on cite la source, et on ne rediffuse JAMAIS les PDF.",
+  "_attribution": "Source : Ministère de l'Éducation nationale et de l'Alphabétisation de Côte d'Ivoire — Direction de la Pédagogie et de la Formation Continue (DPFC), Programmes éducatifs et guides d'exécution du Secondaire.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MENA ni par la DPFC.",
+  "_extraitPar": "Extraction assistée depuis les PDF officiels, le 02/09/2026. ⚠️ SEUL LE CORPS DU PROGRAMME fait foi — jamais le tableau synoptique (tableau : l'extraction texte entrelace les colonnes), jamais le guide d'exécution (il diverge du corps sur de nombreux intitulés).",
+  "_granularite": "classe",
+  "pays": "CI",
+  "cycle": "Premier cycle de l'enseignement secondaire général (6e à 3e)",
+  "bo": "DPFC — Programmes éducatifs et guides d'exécution du Secondaire",
+  "url": "https://dpfc-ci.net/?page_id=283",
+  "extraitLe": "2026-09-02",
+  "arrete": "Programmes éducatifs recadrés par l'Approche Par les Compétences (APC)",
+  "matiere": "Français",
+  "_note": "⚠️ STRUCTURE DIFFÉRENTE DES AUTRES MATIÈRES : le français n'a pas de « thèmes ». Le corps s'organise en COMPÉTENCE → « Activité » → LEÇON ; le champ `domaine` porte donc l'ACTIVITÉ (5 par classe : expression orale, lecture, expression écrite, grammaire, orthographe). La casse varie d'une classe à l'autre dans le document même (« Expression orale » en 6e/5e, « Expression Orale » en 4e/3e) : conservée telle quelle. ⚠️ AUCUNE ŒUVRE LITTÉRAIRE n'est stockée — le programme n'en prescrit d'ailleurs aucune, l'œuvre intégrale est laissée en pointillés par le texte officiel. ⚠️ Les leçons suffixées I/II sont deux entrées distinctes dans le corps ; le tableau récapitulatif de chaque PDF les compte comme une seule.",
+  "classes": {
+    "6e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads/dpfc_fichiers/Programmes/prg_secondaire/Fran/PROGRAMME%20EDUCATIF%206e%20VALIDE.pdf",
+      "notions": [
+        {
+          "domaine": "Expression orale",
+          "notion": "Le dialogue oral"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Œuvre intégrale"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "La lettre personnelle"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le texte narratif"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le texte descriptif"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "La lettre personnelle"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "Le récit"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "La description I"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "La description II"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "La phrase"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le Groupe Nominal"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le discours direct et le discours indirect"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "le verbe"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le Groupe Verbal"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Les adverbes"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe lexicale"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe grammaticale"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads/dpfc_fichiers/Programmes/prg_secondaire/Fran/PROGRAMME%20EDUCATIF%205%C3%A8%20VALIDE.pdf",
+      "notions": [
+        {
+          "domaine": "Expression orale",
+          "notion": "L’exposé oral I"
+        },
+        {
+          "domaine": "Expression orale",
+          "notion": "L’exposé oral II"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "L’œuvre intégrale"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le portrait"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le texte descriptif"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le poème en vers libres"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le portrait"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "La description"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le poème en vers libres"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le compte rendu de lecture"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le Groupe Nominal"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le groupe adjectif"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "La pronominalisation"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "le verbe : formes et emplois"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "De la phrase simple à la phrase complexe"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe lexicale"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe grammaticale"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads/dpfc_fichiers/Programmes/prg_secondaire/Fran/PROGRAMME%20EDUCATIF%204e%20VALIDE.pdf",
+      "notions": [
+        {
+          "domaine": "Expression Orale",
+          "notion": "Le débat I"
+        },
+        {
+          "domaine": "Expression Orale",
+          "notion": "Le débat II"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "L’œuvre intégrale"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le texte explicatif"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le dialogue argumentatif"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le texte explicatif I"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le texte explicatif II"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le dialogue argumentatif I"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le dialogue argumentatif II"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le compte rendu de réunion"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "La lettre officielle"
+        },
+        {
+          "domaine": "Expression écrite",
+          "notion": "Le résumé du texte informatif"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le Groupe Nominal"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "La pronominalisation"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le verbe : formes et emplois"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Étude de quelques propositions subordonnées"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe lexicale"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe grammaticale"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads/dpfc_fichiers/Programmes/prg_secondaire/Fran/PROGRAMME%20EDUCATIF%203e%20VALIDE.pdf",
+      "notions": [
+        {
+          "domaine": "Expression Orale",
+          "notion": "Le dialogue oral"
+        },
+        {
+          "domaine": "Expression Orale",
+          "notion": "L’exposé oral"
+        },
+        {
+          "domaine": "Expression Orale",
+          "notion": "Le débat"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "L’œuvre intégrale"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "Le texte argumentatif"
+        },
+        {
+          "domaine": "Lecture",
+          "notion": "L’article de journal"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "Le texte argumentatif I"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "Le texte argumentatif II"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "Le résumé du texte argumentatif"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "L’article de journal I"
+        },
+        {
+          "domaine": "Expression Écrite",
+          "notion": "L’article de journal II"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "La communication"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "Le Groupe Nominal : la pronominalisation"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "L’adverbe et le groupe adverbial"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "le verbe : L’infinitif et le participe"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "La coordination"
+        },
+        {
+          "domaine": "Grammaire",
+          "notion": "L’expression des circonstances dans la phrase simple / complexe"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe lexicale"
+        },
+        {
+          "domaine": "Orthographe",
+          "notion": "Orthographe grammaticale"
+        }
+      ]
+    }
+  }
+}

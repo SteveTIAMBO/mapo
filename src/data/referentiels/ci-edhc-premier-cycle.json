@@ -1,0 +1,249 @@
+{
+  "_licence": "Texte officiel ivoirien (MENA/DPFC). ⚠️ Aucune licence explicite n'est publiée sur dpfc-ci.net et aucun régime de droits n'a pu être établi. Position retenue, identique au Cameroun : on n'extrait que les INTITULÉS de thèmes et de leçons, on cite la source, et on ne rediffuse JAMAIS les PDF.",
+  "_attribution": "Source : Ministère de l'Éducation nationale et de l'Alphabétisation de Côte d'Ivoire — Direction de la Pédagogie et de la Formation Continue (DPFC), Programmes éducatifs et guides d'exécution du Secondaire.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MENA ni par la DPFC.",
+  "_extraitPar": "Extraction assistée depuis les PDF officiels, le 02/09/2026. ⚠️ SEUL LE CORPS DU PROGRAMME fait foi — jamais le tableau synoptique (tableau : l'extraction texte entrelace les colonnes), jamais le guide d'exécution (il diverge du corps sur de nombreux intitulés).",
+  "_granularite": "classe",
+  "pays": "CI",
+  "cycle": "Premier cycle de l'enseignement secondaire général (6e à 3e)",
+  "bo": "DPFC — Programmes éducatifs et guides d'exécution du Secondaire",
+  "url": "https://dpfc-ci.net/?page_id=283",
+  "extraitLe": "2026-09-02",
+  "arrete": "Programmes éducatifs recadrés par l'Approche Par les Compétences (APC)",
+  "matiere": "EDHC",
+  "_note": "⚠️ Coquilles du corps conservées : 5e « son l'épanouissement » (double déterminant), 4e « la consolidation l'autorité de l'État » (« de » manquant), 3e « le bien –être ». La progression annuelle du guide diverge du corps en 3e (leçons 2 et 3 interverties, leçon 9 omise) : le corps fait foi.",
+  "classes": {
+    "6e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/EDHC/EDHC_6eme.pdf",
+      "notions": [
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "Les droits à la survie et à la protection de l’enfant et son épanouissement."
+        },
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "Les droits de l’homme et l’épanouissement individuel et collectif"
+        },
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "Le Droit International Humanitaire (DIH) et la préservation de la dignité humaine."
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "Les principes et règles de vie en famille et en communauté."
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "La constitution de la Côte-d’Ivoire et la préservation de la paix."
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "Les principes démocratiques et la justice sociale."
+        },
+        {
+          "domaine": "La gestion des ressources disponibles et l’harmonie au sein de la communauté.",
+          "notion": "Les règles de la circulation routière et la sécurité des usagers."
+        },
+        {
+          "domaine": "La gestion des ressources disponibles et l’harmonie au sein de la communauté.",
+          "notion": "Les activités agro-pastorales et la lutte contre le chômage."
+        },
+        {
+          "domaine": "La puberté et la santé des adolescents.",
+          "notion": "La puberté et l’épanouissement physique, moral et social de l’adolescent."
+        },
+        {
+          "domaine": "La puberté et la santé des adolescents.",
+          "notion": "L’abstinence sexuelle et la préservation de la santé."
+        },
+        {
+          "domaine": "L’assainissement du cadre de vie et la santé des populations.",
+          "notion": "L’entretien du cadre de vie et la santé des populations"
+        },
+        {
+          "domaine": "L’assainissement du cadre de vie et la santé des populations.",
+          "notion": "L’entretien des latrines et des toilettes et la préservation du cadre de vie"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/EDHC/EDHC_5eme.pdf",
+      "notions": [
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "les droits au développement et à la participation de l’enfant et son l’épanouissement"
+        },
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "les principes des Droits de l’Homme et la consolidation de l’équilibre social"
+        },
+        {
+          "domaine": "Les droits et devoirs du citoyen envers la communauté en temps de paix ou de conflits armés.",
+          "notion": "les règles de protection des victimes de conflits armés et l’assistance aux Populations en détresse"
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "Les droits et devoirs du citoyen et la cohésion sociale"
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "Les différents pouvoirs politiques de la Côte -d’Ivoire"
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "Les principes démocratiques de base et la gestion des associations et des clubs"
+        },
+        {
+          "domaine": "Les principes et les règles démocratiques et l’épanouissement individuel et collectif.",
+          "notion": "L’entente entre les peuples et la consolidation de la paix sociale"
+        },
+        {
+          "domaine": "La gestion des ressources disponibles et l’harmonie au sein de la communauté.",
+          "notion": "Les comportements responsables sur les engins à deux roues et à bord des automobiles et la sécurité des individus."
+        },
+        {
+          "domaine": "La gestion des ressources disponibles et l’harmonie au sein de la communauté.",
+          "notion": "les activités génératrices de revenus et l’insertion sociale."
+        },
+        {
+          "domaine": "La puberté et la santé des adolescents.",
+          "notion": "les comportements sexuels à risques et la propagation des IST et du VIH/SIDA."
+        },
+        {
+          "domaine": "La puberté et la santé des adolescents.",
+          "notion": "Les grossesses précoces et les obstacles à l’épanouissement moral, physique et social de la mère."
+        },
+        {
+          "domaine": "La puberté et la santé des adolescents.",
+          "notion": "La consommation de l’alcool et de la drogue et l’insécurité sociale."
+        },
+        {
+          "domaine": "La dégradation du cadre de vie et la santé des individus et de la communauté.",
+          "notion": "Les règles d’hygiène publique et d’assainissement et la préservation du cadre de vie."
+        },
+        {
+          "domaine": "La dégradation du cadre de vie et la santé des individus et de la communauté.",
+          "notion": "La gestion des ordures ménagères et la préservation du cadre de vie."
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/EDHC/EDHC_4eme.pdf",
+      "notions": [
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "La promotion des droits de l’enfant et son épanouissement."
+        },
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "La réinsertion des enfants-soldats et la préservation de la paix sociale."
+        },
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "Les instruments et les mécanismes juridiques de protection contre les discriminations."
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "Les comportements responsables face aux symboles et aux Institutions de la République (Le Président de la République et l’Assemblée Nationale) et la consolidation l’autorité de l’État."
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "L’impôt et les responsabilités fiscales du citoyen."
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "La promotion d’une société civile forte et le bien-être des populations."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "L’utilisation rationnelle des ressources de la famille et le bien-être de ses membres."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "L’entreprise et l’insertion dans la vie active."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "Les alliances entre les peuples KWA et les peuples KROU et la cohésion sociale."
+        },
+        {
+          "domaine": "Les comportements de l’adolescent dans son milieu.",
+          "notion": "Les comportements responsables et la lutte contre les grossesses à risques, les IST et le VIH-SIDA."
+        },
+        {
+          "domaine": "Les comportements de l’adolescent dans son milieu.",
+          "notion": "Les comportements responsables de l’adolescent(e) et l’intégration sociale harmonieuse."
+        },
+        {
+          "domaine": "La dégradation de l’environnement et les mesures de protection.",
+          "notion": "La préservation de l’environnement et le bien-être de la population."
+        },
+        {
+          "domaine": "La dégradation de l’environnement et les mesures de protection.",
+          "notion": "L’entretien des points d’eau et la préservation de la santé des populations."
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/EDHC/EDHC_3eme.pdf",
+      "notions": [
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "Les devoirs de parents et l’épanouissement de l’enfant."
+        },
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "Les instruments et les mécanismes juridiques de protection contre les violences faites aux personnes vulnérables."
+        },
+        {
+          "domaine": "La promotion des Droits de l’Homme et du Droit International Humanitaire.(D.I.H.)",
+          "notion": "Les organisations humanitaires et la promotion de l’assistance aux populations en détresse."
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "Les comportements responsables face aux partis politiques et aux institutions de la République (la Cour Suprême, le Conseil Economique et Social et le Conseil Constitutionnel) et la préservation de la paix sociale"
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "Le vote et la participation du citoyen à la vie de la Nation."
+        },
+        {
+          "domaine": "Les comportements du citoyen et la démocratie.",
+          "notion": "L’impôt et le développement de la nation."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "L’utilisation rationnelle des biens publics et le bien –être de la communauté."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "Le projet d’entreprise et l’insertion sociale."
+        },
+        {
+          "domaine": "La cohésion en famille et dans la communauté.",
+          "notion": "Les alliances entre les peuples Mandé et les peuples Gour et la cohésion sociale."
+        },
+        {
+          "domaine": "Les comportements de l’adolescent dans son milieu.",
+          "notion": "La fréquentation des centres de santé et la lutte contre l’automédication, les maladies endémiques et parasitaires."
+        },
+        {
+          "domaine": "Les comportements de l’adolescent dans son milieu.",
+          "notion": "Les bienfaits du dépistage du VIH et la gestion de la vie."
+        },
+        {
+          "domaine": "La dégradation de l’environnement et les mesures de protection.",
+          "notion": "La protection des parcs nationaux et des réserves forestières et la sauvegarde de l’environnement."
+        },
+        {
+          "domaine": "La dégradation de l’environnement et les mesures de protection.",
+          "notion": "La gestion rationnelle de l’eau et la sauvegarde de la paix sociale."
+        }
+      ]
+    }
+  }
+}

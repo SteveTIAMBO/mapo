@@ -1,0 +1,253 @@
+{
+  "_licence": "Texte officiel ivoirien (MENA/DPFC). ⚠️ Aucune licence explicite n'est publiée sur dpfc-ci.net et aucun régime de droits n'a pu être établi. Position retenue, identique au Cameroun : on n'extrait que les INTITULÉS de thèmes et de leçons, on cite la source, et on ne rediffuse JAMAIS les PDF.",
+  "_attribution": "Source : Ministère de l'Éducation nationale et de l'Alphabétisation de Côte d'Ivoire — Direction de la Pédagogie et de la Formation Continue (DPFC), Programmes éducatifs et guides d'exécution du Secondaire.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MENA ni par la DPFC.",
+  "_extraitPar": "Extraction assistée depuis les PDF officiels, le 02/09/2026. ⚠️ SEUL LE CORPS DU PROGRAMME fait foi — jamais le tableau synoptique (tableau : l'extraction texte entrelace les colonnes), jamais le guide d'exécution (il diverge du corps sur de nombreux intitulés).",
+  "_granularite": "classe",
+  "pays": "CI",
+  "cycle": "Premier cycle de l'enseignement secondaire général (6e à 3e)",
+  "bo": "DPFC — Programmes éducatifs et guides d'exécution du Secondaire",
+  "url": "https://dpfc-ci.net/?page_id=283",
+  "extraitLe": "2026-09-02",
+  "arrete": "Programmes éducatifs recadrés par l'Approche Par les Compétences (APC)",
+  "matiere": "Physique-Chimie",
+  "_note": "⚠️ Le corps ne sépare PAS physique et chimie : ces intitulés n'apparaissent que dans le tableau de progression du guide. Coquille conservée en 4e : « Sources et récepteursde lumière » (espace manquant dans le corps).",
+  "classes": {
+    "6e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Physique_Chimie/PHYSIQUE-CHIMIE_6eme.pdf",
+      "notions": [
+        {
+          "domaine": "Electricité",
+          "notion": "Le circuit électrique"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Commande d’un circuit électrique"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Court - circuit et protection des installations électriques"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Solides et liquides"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Les gaz"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Température d’un corps"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Les changements d’état de l’eau"
+        },
+        {
+          "domaine": "Mesure de grandeurs physiques",
+          "notion": "Volume d’un liquide et d’un solide"
+        },
+        {
+          "domaine": "Mesure de grandeurs physiques",
+          "notion": "Masse d’un solide et d’un liquide"
+        },
+        {
+          "domaine": "L’air et les combustions",
+          "notion": "Les constituants de l’air"
+        },
+        {
+          "domaine": "L’air et les combustions",
+          "notion": "Combustion d’un solide et d’un liquide dans l’air"
+        },
+        {
+          "domaine": "L’air et les combustions",
+          "notion": "Combustion d’un gaz dans l’air"
+        },
+        {
+          "domaine": "L’air et les combustions",
+          "notion": "Dangers des combustions"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Physique_Chimie/PHYSIQUE-CHIMIE_5eme.pdf",
+      "notions": [
+        {
+          "domaine": "Electricité",
+          "notion": "Adaptation d’un générateur à un récepteur"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Association de lampes électriques"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Association de piles en série"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Dilatation des solides"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Dilatation des liquides"
+        },
+        {
+          "domaine": "Propriétés physiques de la matière",
+          "notion": "Dilatation des gaz"
+        },
+        {
+          "domaine": "Mesure de grandeurs physiques",
+          "notion": "Intensité du courant électrique"
+        },
+        {
+          "domaine": "Mesure de grandeurs physiques",
+          "notion": "Tension électrique"
+        },
+        {
+          "domaine": "Mesure de grandeurs physiques",
+          "notion": "Pression atmosphérique"
+        },
+        {
+          "domaine": "Mélanges et réactions chimiques",
+          "notion": "Les mélanges"
+        },
+        {
+          "domaine": "Mélanges et réactions chimiques",
+          "notion": "Atomes et molécules"
+        },
+        {
+          "domaine": "Mélanges et réactions chimiques",
+          "notion": "Combustion du carbone"
+        },
+        {
+          "domaine": "Mélanges et réactions chimiques",
+          "notion": "Combustion du soufre"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Physique_Chimie/PHYSIQUE-CHIMIE_4eme.pdf",
+      "notions": [
+        {
+          "domaine": "Optique",
+          "notion": "Sources et récepteursde lumière"
+        },
+        {
+          "domaine": "Optique",
+          "notion": "Propagation de la lumière"
+        },
+        {
+          "domaine": "Optique",
+          "notion": "Les phases de la Lune et les éclipses"
+        },
+        {
+          "domaine": "Optique",
+          "notion": "Analyse et synthèse de la lumière blanche"
+        },
+        {
+          "domaine": "Courants et tensions alternatifs",
+          "notion": "Aimant et bobine"
+        },
+        {
+          "domaine": "Courants et tensions alternatifs",
+          "notion": "Production d’une tension alternative"
+        },
+        {
+          "domaine": "Courants et tensions alternatifs",
+          "notion": "Tension alternative sinusoïdale"
+        },
+        {
+          "domaine": "Courants et tensions alternatifs",
+          "notion": "Les dangers du courant du secteur"
+        },
+        {
+          "domaine": "Courants et tensions alternatifs",
+          "notion": "Transformation, redressement et lissage d’une tension alternative sinusoïdale"
+        },
+        {
+          "domaine": "Les ions",
+          "notion": "Atomes et ions"
+        },
+        {
+          "domaine": "Les ions",
+          "notion": "Transformation d’un métal en ion et inversement"
+        },
+        {
+          "domaine": "L’eau potable",
+          "notion": "Traitement de l’eau"
+        },
+        {
+          "domaine": "L’eau potable",
+          "notion": "Qualité de l’eau"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Physique_Chimie/PHYSIQUE-CHIMIE_3eme.pdf",
+      "notions": [
+        {
+          "domaine": "Optique",
+          "notion": "Les lentilles"
+        },
+        {
+          "domaine": "Optique",
+          "notion": "Les défauts de l’œil et leurs corrections"
+        },
+        {
+          "domaine": "Mécanique",
+          "notion": "Masse et poids d’un corps"
+        },
+        {
+          "domaine": "Mécanique",
+          "notion": "Les forces"
+        },
+        {
+          "domaine": "Mécanique",
+          "notion": "Equilibre d’un solide soumis à deux forces"
+        },
+        {
+          "domaine": "Mécanique",
+          "notion": "Travail et puissance mécaniques"
+        },
+        {
+          "domaine": "Mécanique",
+          "notion": "Energie mécanique"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Puissance et énergie électriques"
+        },
+        {
+          "domaine": "Electricité",
+          "notion": "Le conducteur ohmique"
+        },
+        {
+          "domaine": "Les réactions chimiques",
+          "notion": "Electrolyse et synthèse de l'eau"
+        },
+        {
+          "domaine": "Les réactions chimiques",
+          "notion": "Les alcanes"
+        },
+        {
+          "domaine": "Les réactions chimiques",
+          "notion": "Oxydation des corps purs simples"
+        },
+        {
+          "domaine": "Les réactions chimiques",
+          "notion": "Réduction des oxydes"
+        },
+        {
+          "domaine": "Les réactions chimiques",
+          "notion": "Solutions acides, basiques et neutres"
+        }
+      ]
+    }
+  }
+}

@@ -134,6 +134,11 @@ import cmGeographieTle from '../data/referentiels/cm-geographie-tle.json'
 // en accès direct. ⚠️ Un seul fichier pour les quatre classes : c'est un
 // programme unique, décliné 6e → 3e par le même arrêté.
 import ciMathsPremierCycle from '../data/referentiels/ci-mathematiques-premier-cycle.json'
+import ciFrancaisPremierCycle from '../data/referentiels/ci-francais-premier-cycle.json'
+import ciHistGeoPremierCycle from '../data/referentiels/ci-histoire-geographie-premier-cycle.json'
+import ciPcPremierCycle from '../data/referentiels/ci-physique-chimie-premier-cycle.json'
+import ciSvtPremierCycle from '../data/referentiels/ci-svt-premier-cycle.json'
+import ciEdhcPremierCycle from '../data/referentiels/ci-edhc-premier-cycle.json'
 
 // Plusieurs référentiels peuvent couvrir la même matière dans des cycles
 // différents : on cherche donc par (pays, matière, CLASSE), pas par matière.
@@ -152,7 +157,8 @@ const REFERENTIELS = [mathsCycle3, mathsCycle4, mathsCycle4_2020, francaisCycle4
   cmArts43, cmAllemand43, cmArabe43, cmChinois43, cmEspagnol43, cmLatin43, cmGrec43,
   cmInfo65, cmAnglais2nde, cmInfo2ndeA, cmInfo2ndeC,
   cmSvt2nde, cmPhysique2nde, cmChimie2nde, cmHistoireTle, cmGeographieTle,
-  ciMathsPremierCycle]
+  ciMathsPremierCycle, ciFrancaisPremierCycle, ciHistGeoPremierCycle,
+  ciPcPremierCycle, ciSvtPremierCycle, ciEdhcPremierCycle]
 
 const norm = (s) => String(s || '')
   .toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')

@@ -1,0 +1,253 @@
+{
+  "_licence": "Texte officiel ivoirien (MENA/DPFC). ⚠️ Aucune licence explicite n'est publiée sur dpfc-ci.net et aucun régime de droits n'a pu être établi. Position retenue, identique au Cameroun : on n'extrait que les INTITULÉS de thèmes et de leçons, on cite la source, et on ne rediffuse JAMAIS les PDF.",
+  "_attribution": "Source : Ministère de l'Éducation nationale et de l'Alphabétisation de Côte d'Ivoire — Direction de la Pédagogie et de la Formation Continue (DPFC), Programmes éducatifs et guides d'exécution du Secondaire.",
+  "_avertissement": "MAPO+ n'est ni édité ni approuvé par le MENA ni par la DPFC.",
+  "_extraitPar": "Extraction assistée depuis les PDF officiels, le 02/09/2026. ⚠️ SEUL LE CORPS DU PROGRAMME fait foi — jamais le tableau synoptique (tableau : l'extraction texte entrelace les colonnes), jamais le guide d'exécution (il diverge du corps sur de nombreux intitulés).",
+  "_granularite": "classe",
+  "pays": "CI",
+  "cycle": "Premier cycle de l'enseignement secondaire général (6e à 3e)",
+  "bo": "DPFC — Programmes éducatifs et guides d'exécution du Secondaire",
+  "url": "https://dpfc-ci.net/?page_id=283",
+  "extraitLe": "2026-09-02",
+  "arrete": "Programmes éducatifs recadrés par l'Approche Par les Compétences (APC)",
+  "matiere": "Histoire-Géographie",
+  "_note": "⚠️ Les PDF séparent nettement HISTOIRE et GÉOGRAPHIE : le préfixe du domaine est fiable. ⚠️ En 3e, deux leçons portent le même numéro et la mention « (alternante) » : l'enseignant choisit la guerre du Biafra OU celle du Rwanda — les deux sont listées, mais une seule est enseignée. La 6e compte 17 leçons contre 12 ailleurs : c'est bien ce que dit le document.",
+  "classes": {
+    "6e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Histoire_Geographie/HISTGEO_6eme.pdf",
+      "notions": [
+        {
+          "domaine": "HISTOIRE — LES BASES DE L’ETUDE DE L’HISTOIRE",
+          "notion": "L’HISTOIRE ET SON OBJET"
+        },
+        {
+          "domaine": "HISTOIRE — LES BASES DE L’ETUDE DE L’HISTOIRE",
+          "notion": "LES SOURCES DE L’HISTOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LES BASES DE L’ETUDE DE L’HISTOIRE",
+          "notion": "LES SOURCES D’INFORMATION ET LA DIGNITE HUMAINE EN TEMPS DE GUERRE OU DE VIOLENCE"
+        },
+        {
+          "domaine": "HISTOIRE — LES BASES DE L’ETUDE DE L’HISTOIRE",
+          "notion": "LA NOTION DE CHRONOLOGIE"
+        },
+        {
+          "domaine": "HISTOIRE — LES BASES DE L’ETUDE DE L’HISTOIRE",
+          "notion": "LES GRANDES PERIODES DE L’HISTOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LA PREHISTOIRE DE LA CÔTE D’IVOIRE",
+          "notion": "LE PALEOLITHIQUE IVOIRIEN"
+        },
+        {
+          "domaine": "HISTOIRE — LA PREHISTOIRE DE LA CÔTE D’IVOIRE",
+          "notion": "LA REVOLUTION DU NEOLITHIQUE EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LA PREHISTOIRE DE LA CÔTE D’IVOIRE",
+          "notion": "LA METALLURGIE DU FER EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "LA GEOGRAPHIE ET SON OBJET"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "LE RELIEF"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "LE CLIMAT"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "L’INTERRELATION ENTRE LES SOLS, LE CLIMAT ET LA VEGETATION"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "LES MOYENS DE REPRESENTATION DE LA TERRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES BASES DE L’ETUDE DE LA GEOGRAPHIE",
+          "notion": "LES MOUVEMENTS DE LA TERRE ET LEURS INFLUENCES SUR LA VIE QUOTIDIENNE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU LOCAL EN CÔTE D’IVOIRE",
+          "notion": "POPULATION ET ENVIRONNEMENT LOCAL"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU LOCAL EN CÔTE D’IVOIRE",
+          "notion": "L’HOMME ET LE CYCLE DE L’EAU"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU LOCAL EN CÔTE D’IVOIRE",
+          "notion": "L’IMPORTANCE DE L’IMPÔT DANS LE DEVELOPPEMENT DE MA REGION"
+        }
+      ]
+    },
+    "5e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Histoire_Geographie/HISTGEO_5eme.pdf",
+      "notions": [
+        {
+          "domaine": "HISTOIRE — EVOLUTION ET TRAITS DE CIVILISATION DES PEUPLES DE MA REGION",
+          "notion": "L’ORIGINE ET L’INSTALLATION DES PEUPLES DES REGIONS DE COTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — EVOLUTION ET TRAITS DE CIVILISATION DES PEUPLES DE MA REGION",
+          "notion": "LES TRAITS DE CIVILISATION DES PEUPLES DES DIFFERENTES REGIONS DE CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — EVOLUTION ET TRAITS DE CIVILISATION DES PEUPLES DE MA REGION",
+          "notion": "LES CODES DE REGLEMENTATION DES CONFLITS DANS LES REGIONS DE CÔTE D’IVOIRE ET LE DROIT INTERNATIONAL HUMANITAIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LE PEUPLEMENT DE LA CÔTE D’IVOIRE DES ORIGINES A L’ECLATEMENT DE L’EMPIRE DU MALI",
+          "notion": "LES PREMIERS HABITANTS DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LE PEUPLEMENT DE LA CÔTE D’IVOIRE DES ORIGINES A L’ECLATEMENT DE L’EMPIRE DU MALI",
+          "notion": "LES PREMIERS MOUVEMENTS MIGRATOIRES EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LE PEUPLEMENT DE LA CÔTE D’IVOIRE DES ORIGINES A L’ECLATEMENT DE L’EMPIRE DU MALI",
+          "notion": "LES GRANDS EMPIRES DE L’AFRIQUE DE L’OUEST : EXEMPLE DU MALI"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU EN CÔTE D’IVOIRE",
+          "notion": "LE MILIEU PHYSIQUE EN CÔTE D’IVOIRE ET L’INSTALLATION DES POPULATIONS"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU EN CÔTE D’IVOIRE",
+          "notion": "LA CROISSANCE DEMOGRAPHIQUE EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’HOMME ET SON MILIEU EN CÔTE D’IVOIRE",
+          "notion": "L’EAU DANS LE DEVELOPPEMENT DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES CONSEQUENCES DES ACTIVITES ECONOMIQUES SUR L’ENVIRONNEMENT",
+          "notion": "LES CONSEQUENCES DES METHODES ET TECHNIQUES AGRICOLES SUR L’ENVIRONNEMENT"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES CONSEQUENCES DES ACTIVITES ECONOMIQUES SUR L’ENVIRONNEMENT",
+          "notion": "LES EFFETS DE LA POLLUTION INDUSTRIELLE ET COMMERCIALE SUR L’ENVIRONNEMENT"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES CONSEQUENCES DES ACTIVITES ECONOMIQUES SUR L’ENVIRONNEMENT",
+          "notion": "L’IMPÔT ET L’AMENAGEMENT DU TERRITOIRE IVOIRIEN"
+        }
+      ]
+    },
+    "4e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Histoire_Geographie/HISTGEO_4eme.pdf",
+      "notions": [
+        {
+          "domaine": "HISTOIRE — LES PEUPLES DE CÔTE D’IVOIRE ET LEURS CONTACTS AVEC L’EUROPE DU XVIème AU XVIIIème SIECLE.",
+          "notion": "LA MISE EN PLACE DES PEUPLES DE CÔTE D’IVOIRE DU XVIème AU XVIIIème SIECLE"
+        },
+        {
+          "domaine": "HISTOIRE — LES PEUPLES DE CÔTE D’IVOIRE ET LEURS CONTACTS AVEC L’EUROPE DU XVIème AU XVIIIème SIECLE.",
+          "notion": "L’ORGANISATION SOCIO POLITIQUE DES PEUPLES DE COTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LES PEUPLES DE CÔTE D’IVOIRE ET LEURS CONTACTS AVEC L’EUROPE DU XVIème AU XVIIIème SIECLE.",
+          "notion": "LES MECANISMES DE PREVENTION ET DE RESOLUTION DES CONFLITS CHEZ LES PEUPLES DE CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — LES PEUPLES DE CÔTE D’IVOIRE ET LEURS CONTACTS AVEC L’EUROPE DU XVIème AU XVIIIème SIECLE.",
+          "notion": "L’EVOLUTION DES CONTACTS ENTRE LA CÔTE D’IVOIRE ET L’EUROPE DU XVIème AU XVIIIème SIECLE"
+        },
+        {
+          "domaine": "HISTOIRE — LES BOULEVERSEMENTS SOCIOPOLITIQUES ET ECONOMIQUES EN AFRIQUE ET EN EUROPE DU XVIIème AU XIXème SIECLE",
+          "notion": "LA TRAITE NEGRIERE DANS L’HISTOIRE DE L’HUMANITE"
+        },
+        {
+          "domaine": "HISTOIRE — LES BOULEVERSEMENTS SOCIOPOLITIQUES ET ECONOMIQUES EN AFRIQUE ET EN EUROPE DU XVIIème AU XIXème SIECLE",
+          "notion": "LA REVOLUTION FRANÇAISE DE 1789"
+        },
+        {
+          "domaine": "HISTOIRE — LES BOULEVERSEMENTS SOCIOPOLITIQUES ET ECONOMIQUES EN AFRIQUE ET EN EUROPE DU XVIIème AU XIXème SIECLE",
+          "notion": "LA REVOLUTION INDUSTRIELLE AUX XVIIIème ET XIXème SIECLES EN EUROPE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’ORGANISATION ADMINISTRATIVE DANS LE DEVELOPPEMENT DE LA CÔTE D’IVOIRE",
+          "notion": "LA DECONCENTRATION ADMINISTRATIVE EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’ORGANISATION ADMINISTRATIVE DANS LE DEVELOPPEMENT DE LA CÔTE D’IVOIRE",
+          "notion": "LA DECENTRALISATION ADMINISTRATIVE EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’ORGANISATION ADMINISTRATIVE DANS LE DEVELOPPEMENT DE LA CÔTE D’IVOIRE",
+          "notion": "LES INSUFFISANCES DE L’ORGANISATION ADMINISTRATIVE DANS LE DEVELOPPEMENT DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES REGROUPEMENTS ECONOMIQUES EN AFRIQUE DE L’OUEST ET EN EUROPE : EXEMPLES DE LA C.E.D.E.A.O. ET DE L’U.E.",
+          "notion": "LA COMMUNAUTE ECONOMIQUE DES ETATS DE L’AFRIQUE DE L’OUEST (CEDEAO) : SUCCES ET LIMITES"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — LES REGROUPEMENTS ECONOMIQUES EN AFRIQUE DE L’OUEST ET EN EUROPE : EXEMPLES DE LA C.E.D.E.A.O. ET DE L’U.E.",
+          "notion": "L’UNION EUROPEENNE (U.E) : UN EXEMPLE D’INTEGRATION REGIONALE"
+        }
+      ]
+    },
+    "3e": {
+      "enVigueurRentree": 2023,
+      "urlPdf": "https://dpfc-ci.net/wp-content/uploads//dpfc_fichiers/Programmes/prg_secondaire/Histoire_Geographie/HISTGEO_3eme.pdf",
+      "notions": [
+        {
+          "domaine": "HISTOIRE — L’EVOLUTION SOCIOPOLITIQUE DE LA CÔTE D’IVOIRE ET DE L’AFRIQUE DU XIXème SIECLE A NOS JOURS",
+          "notion": "LE MOUVEMENT IMPERIALISTE ET LA COLONISATION EN CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "HISTOIRE — L’EVOLUTION SOCIOPOLITIQUE DE LA CÔTE D’IVOIRE ET DE L’AFRIQUE DU XIXème SIECLE A NOS JOURS",
+          "notion": "L’ACCESSION DE LA CÔTE D’IVOIRE A L’INDEPENDANCE"
+        },
+        {
+          "domaine": "HISTOIRE — L’EVOLUTION SOCIOPOLITIQUE DE LA CÔTE D’IVOIRE ET DE L’AFRIQUE DU XIXème SIECLE A NOS JOURS",
+          "notion": "(alternante) : LES CRISES SOCIOPOLITIQUES DE L’AFRIQUE INDEPENDANTE : LA GUERRE DU BIAFRA"
+        },
+        {
+          "domaine": "HISTOIRE — L’EVOLUTION SOCIOPOLITIQUE DE LA CÔTE D’IVOIRE ET DE L’AFRIQUE DU XIXème SIECLE A NOS JOURS",
+          "notion": "(alternante) : LES CRISES SOCIOPOLITIQUES DE L’AFRIQUE INDEPENDANTE : LA GUERRE DU RWANDA"
+        },
+        {
+          "domaine": "HISTOIRE — DE LA SECONDE GUERRE MONDIALE AUX EFFORTS DE CONSTRUCTION DU MONDE ET DE L’AFRIQUE",
+          "notion": "LES CAUSES, CARACTERES ET CONSEQUENCES DE LA DEUXIEME GUERRE MONDIALE"
+        },
+        {
+          "domaine": "HISTOIRE — DE LA SECONDE GUERRE MONDIALE AUX EFFORTS DE CONSTRUCTION DU MONDE ET DE L’AFRIQUE",
+          "notion": "L’ORGANISATION DES NATIONS UNIES (ONU)"
+        },
+        {
+          "domaine": "HISTOIRE — DE LA SECONDE GUERRE MONDIALE AUX EFFORTS DE CONSTRUCTION DU MONDE ET DE L’AFRIQUE",
+          "notion": "L’UNION AFRICAINE (UA)"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — ETUDE ECONOMIQUE DE LA CÔTE D’IVOIRE",
+          "notion": "LES ATOUTS NATURELS ET HUMAINS DU DEVELOPPEMENT ECONOMIQUE DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — ETUDE ECONOMIQUE DE LA CÔTE D’IVOIRE",
+          "notion": "LES SECTEURS D’ACTIVITES ECONOMIQUES DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — ETUDE ECONOMIQUE DE LA CÔTE D’IVOIRE",
+          "notion": "LES PROBLEMES DE DEVELOPPEMENT ECONOMIQUE DE LA CÔTE D’IVOIRE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’AFRIQUE FACE A LA MONDIALISATION",
+          "notion": "ETUDE ECONOMIQUE DE L’AFRIQUE"
+        },
+        {
+          "domaine": "GÉOGRAPHIE — L’AFRIQUE FACE A LA MONDIALISATION",
+          "notion": "LA PLACE DE L’AFRIQUE DANS LA MONDIALISATION"
+        }
+      ]
+    }
+  }
+}

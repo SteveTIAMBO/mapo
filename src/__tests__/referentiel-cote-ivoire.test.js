@@ -89,9 +89,108 @@ describe('⚠️ pas de contamination entre pays ni entre classes', () => {
     expect(maths('Tle D')).toEqual([])
   })
 
-  it('les autres matières ivoiriennes restent vides', () => {
-    expect(notionsOfficielles({ pays: 'CI', niveau: '6e', matiere: 'Français', date: en(2026) })).toEqual([])
-    expect(notionsOfficielles({ pays: 'CI', niveau: '6e', matiere: 'SVT', date: en(2026) })).toEqual([])
+  it('les matières NON intégrées restent vides', () => {
+    // L'anglais, l'espagnol et l'allemand existent sur le portail mais ne sont
+    // pas extraits : les programmes de langues listent des activités
+    // langagières, pas des savoirs quizzables (même décision qu'en France).
+    expect(notionsOfficielles({ pays: 'CI', niveau: '6e', matiere: 'Anglais', date: en(2026) })).toEqual([])
+    expect(notionsOfficielles({ pays: 'CI', niveau: '4e', matiere: 'Espagnol (LV2)', date: en(2026) })).toEqual([])
+  })
+})
+
+describe('⭐⭐ les CINQ autres matières du premier cycle (02/09)', () => {
+  const M = (matiere, niveau) => notionsOfficielles({ pays: 'CI', niveau, matiere, date: en(2026) })
+  const CLASSES = ['6e', '5e', '4e', '3e']
+
+  it.each([
+    ['Français', [17, 17, 18, 19]],
+    ['Histoire-Géographie', [17, 12, 12, 12]],
+    ['Physique-Chimie', [13, 13, 13, 14]],
+    ['SVT', [8, 8, 9, 11]],
+    ['EDHC', [12, 14, 13, 13]],
+  ])('%s : le compte par classe est celui du corps du programme', (matiere, attendus) => {
+    expect(CLASSES.map((c) => M(matiere, c).length)).toEqual(attendus)
+  })
+
+  it('⚠️ chaque matière a un programme DIFFÉRENT par classe', () => {
+    for (const m of ['Français', 'Histoire-Géographie', 'Physique-Chimie', 'SVT', 'EDHC']) {
+      const listes = CLASSES.map((c) => JSON.stringify(M(m, c)))
+      expect(new Set(listes).size, `matière ${m}`).toBe(4)
+    }
+  })
+
+  it('⚠️ et deux matières ne se confondent jamais', () => {
+    // Le catalogue ivoirien a « Physique-Chimie » ET « SVT » : si l'une servait
+    // le programme de l'autre, l'élève réviserait la mauvaise discipline sans
+    // que rien ne le signale.
+    expect(M('SVT', '3e')).not.toEqual(M('Physique-Chimie', '3e'))
+    expect(M('Français', '6e')).not.toEqual(M('EDHC', '6e'))
+  })
+
+  it('⭐ histoire et géographie sont distinguées dans le domaine', () => {
+    // Les PDF séparent nettement les deux disciplines : perdre l'information
+    // ferait réviser de la géographie sous l'étiquette « histoire ».
+    const d = new Set(M('Histoire-Géographie', '4e').map((n) => n.domaine.split(' — ')[0]))
+    expect(d.has('HISTOIRE')).toBe(true)
+    expect(d.has('GÉOGRAPHIE')).toBe(true)
+  })
+
+  it('⚠️ le français porte des ACTIVITÉS, pas des thèmes', () => {
+    // Structure propre à cette matière : COMPÉTENCE → Activité → Leçon.
+    const d = new Set(M('Français', '6e').map((n) => n.domaine.toLowerCase()))
+    for (const a of ['lecture', 'grammaire', 'orthographe']) expect(d.has(a)).toBe(true)
+  })
+
+  it('⭐⭐ AUCUNE œuvre littéraire n’est stockée', () => {
+    // Contrainte de droits : les extraits et titres d'œuvres appartiennent à
+    // des tiers. Le programme ivoirien n'en prescrit d'ailleurs aucun — il
+    // laisse « l'œuvre intégrale » en pointillés.
+    const tout = CLASSES.flatMap((c) => M('Français', c).map((n) => n.notion))
+    expect(tout.filter((n) => /œuvre intégrale/i.test(n)).length).toBeGreaterThan(0)
+    // Une œuvre serait citée entre guillemets ou suivie d'un nom d'auteur.
+    expect(tout.some((n) => /[«"]|, (de|par) [A-ZÉÈ]/.test(n))).toBe(false)
+  })
+
+  it('⭐⭐ le CATALOGUE ivoirien atteint les cinq nouvelles matières', async () => {
+    // Le test qui manquait à chaque fois : la rencontre, pas l'extraction.
+    const { matieresCI } = await import('../stores/enfantsAutonomes')
+    for (const c of CLASSES) {
+      const cat = matieresCI(c)
+      for (const m of ['Français', 'Histoire-Géographie', 'Physique-Chimie', 'SVT', 'EDHC']) {
+        expect(cat, `catalogue ${c}`).toContain(m)
+        expect(M(m, c).length, `${m} en ${c}`).toBeGreaterThan(0)
+      }
+    }
+  })
+
+  it('les variantes d’écriture de la classe marchent pour toutes', () => {
+    for (const m of ['Français', 'Histoire-Géographie', 'Physique-Chimie', 'SVT', 'EDHC']) {
+      expect(M(m, '5ème'), m).toEqual(M(m, '5e'))
+    }
+  })
+
+  it('aucune notion vide, aucun doublon dans une classe', () => {
+    for (const m of ['Français', 'Histoire-Géographie', 'Physique-Chimie', 'SVT', 'EDHC']) {
+      for (const c of CLASSES) {
+        const noms = M(m, c).map((n) => `${n.domaine}|${n.notion}`)
+        expect(noms.every((x) => x.trim().length > 3), `${m} ${c}`).toBe(true)
+        expect(new Set(noms).size, `doublon ${m} ${c}`).toBe(noms.length)
+      }
+    }
+  })
+
+  it('⚠️ les coquilles du texte officiel sont conservées', () => {
+    // Corriger rendrait impossible la vérification mot-pour-mot contre la source.
+    expect(M('Physique-Chimie', '4e').map((n) => n.notion)).toContain('Sources et récepteursde lumière')
+    expect(M('SVT', '6e').map((n) => n.domaine)[0]).toContain('vertèbres')
+  })
+
+  it('⚠️ la leçon « alternante » de 3e est bien DOUBLE', () => {
+    // Le corps détaille la guerre du Biafra ET celle du Rwanda sous le même
+    // numéro : l'enseignant choisit l'une OU l'autre. Les deux sont au
+    // programme, une seule est enseignée — on les garde donc toutes les deux.
+    const n = M('Histoire-Géographie', '3e').map((x) => x.notion)
+    expect(n.filter((x) => /alternante/.test(x))).toHaveLength(2)
   })
 })
 
@@ -167,9 +266,13 @@ describe('⭐⭐ le CATALOGUE rencontre bien le RÉFÉRENTIEL', () => {
   })
 
   it('⚠️ et les matières SANS référentiel renvoient vide, sans planter', () => {
-    // Le catalogue ivoirien propose bien plus que les maths aujourd'hui. Chacune
-    // doit répondre « je ne sais pas » proprement — pas inventer, pas lever.
-    for (const m of ['Français', 'SVT', 'Physique-Chimie', 'Histoire-Géographie', 'Anglais']) {
+    // Chacune doit répondre « je ne sais pas » proprement — pas inventer, pas lever.
+    // ⚠️ Cette liste comptait Français, SVT, Physique-Chimie et Histoire-Géo il
+    // y a une heure ; les quatre ont reçu leur programme dans la foulée et le
+    // test est passé au rouge. Il ne reste que les matières volontairement
+    // écartées : les langues (activités langagières, pas des savoirs), l'EPS et
+    // les arts (programmes de pratiques).
+    for (const m of ['Anglais', 'Éducation physique et sportive (EPS)', 'Arts plastiques', 'Éducation musicale']) {
       expect(() => notionsOfficielles({ pays: 'CI', niveau: '6e', matiere: m, date: en(2026) })).not.toThrow()
       expect(notionsOfficielles({ pays: 'CI', niveau: '6e', matiere: m, date: en(2026) }), m).toEqual([])
     }
