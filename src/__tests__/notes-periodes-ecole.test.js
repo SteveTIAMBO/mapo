@@ -157,3 +157,36 @@ describe('⚠️ colonnes du bilan annuel', () => {
     expect(code).toContain('row.periodes = TRIMESTERS.value.map(')
   })
 })
+
+describe('⚠️ les réglages de l’école sont chargés AVANT tout écran', () => {
+  /**
+   * Défaut mesuré en production le 02/09/2026 : en arrivant directement sur
+   * /notes (rechargement, favori, PWA qui rouvre la dernière route),
+   * `schoolSettings.periods` valait `{}` et `listePeriodes` retombait sur le
+   * calendrier camerounais par défaut. Mesuré sur la démo : une 4e période
+   * enregistrée était visible dans Paramètres et ABSENTE du sélecteur de Notes.
+   *
+   * Treize écrans lisent `schoolSettings`, aucun ne le chargeait : le correctif
+   * appartient au layout, pas aux treize écrans. C'est exactement ce qui avait
+   * déjà été fait pour le référentiel des niveaux, juste au-dessus dans le même
+   * `onMounted` — le défaut s'était déplacé d'un store à l'autre.
+   */
+  const layout = fs.readFileSync(
+    path.join(racineSrc, 'components/layout/AppLayout.vue'), 'utf8',
+  )
+
+  it('le layout charge les réglages école', () => {
+    expect(layout).toContain("import { useSchoolStore } from '../../stores/school'")
+    expect(layout).toContain('useSchoolStore().loadSettings()')
+  })
+
+  it('il les charge au même endroit que les niveaux, une fois pour la session', () => {
+    // Deux endroits de chargement différents finiraient par diverger : un
+    // écran servi avant l'autre, et le silence revient.
+    const i = layout.indexOf('onMounted(')
+    expect(i).toBeGreaterThan(0)
+    const bloc = layout.slice(i, layout.indexOf('onUnmounted(', i))
+    expect(bloc).toContain('useNiveauxStore().load()')
+    expect(bloc).toContain('useSchoolStore().loadSettings()')
+  })
+})

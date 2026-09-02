@@ -105,6 +105,7 @@ import MobileBottomBar from './MobileBottomBar.vue'
 import { useConnectionStatus } from '../../composables/useConnectionStatus'
 import { useAuthStore } from '../../stores/auth'
 import { useNiveauxStore } from '../../stores/niveaux'
+import { useSchoolStore } from '../../stores/school'
 
 const { t } = useI18n({ useScope: 'global' })
 const route = useRoute()
@@ -197,6 +198,22 @@ onMounted(() => {
   // démonstration : un niveau déclaré « second cycle » recevait les matières du
   // collège dans l'écran Notes. Le réglage existait, il n'était simplement pas lu.
   useNiveauxStore().load()
+  // Réglages de l'école chargés UNE FOIS pour la session, pour la même raison
+  // exactement que les niveaux ci-dessus — le défaut s'était simplement déplacé
+  // d'un store à l'autre.
+  //
+  // ⚠️ TREIZE écrans lisent `schoolSettings` et AUCUN ne le chargeait ; seuls
+  // Paramètres et le tableau de bord le faisaient. En arrivant DIRECTEMENT sur
+  // /notes — rechargement, favori, PWA qui rouvre la dernière route —
+  // `periods` valait `{}` et `listePeriodes` retombait sur le calendrier
+  // camerounais par défaut. Conséquences mesurées : une école au semestre jugée
+  // sur trois trimestres, le barème de retour à /20, et surtout des notes
+  // ÉCRITES sous des codes de séquence qui ne sont pas les siens — ce qui
+  // recrée le bulletin vide silencieux corrigé le 01/09, par un autre chemin.
+  //
+  // Même famille que « un tableau vide veut dire je ne sais pas, pas rien » :
+  // `listePeriodes` traitait « pas encore chargé » comme « prends le défaut ».
+  useSchoolStore().loadSettings()
 })
 
 onUnmounted(() => {
