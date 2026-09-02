@@ -606,6 +606,16 @@ LACUNE (l'apprenant sait qu'il ne sait pas) d'une ILLUSION (il croit savoir). Or
 l'illusion de compétence est exactement ce que Bastani et al. (2025) ont mesuré
 chez les élèves en accès libre à une IA. MIAPO peut désormais la voir.
 
+⚠️ **Défaut trouvé en PRODUCTION, pas par les tests.** Le bilan de l'écran
+Progression était écrit à la 3e personne pour tout le monde : une élève lisant
+son propre bilan se voyait annoncer « il a réussi… ». `/mon-espace` sert le même
+écran à l'apprenant ET au parent (`isApprenant`), ce que les tests unitaires ne
+pouvaient pas voir — ils vérifiaient les messages, pas qui les lit. Corrigé :
+deux jeux de clés, et la version parent NOMME l'enfant plutôt que d'écrire
+« il », ce qui évite en prime d'accorder au masculin ce qui ne l'est pas. Un test
+verrouille les deux jeux. Illustration de la règle : **un test vert peut encoder
+un bug**.
+
 ### E8. Pas d'exemple travaillé avant la pratique
 Un apprenant qui découvre une notion entre directement en récupération ou en chat socratique. Pour un novice, c'est contraire à l'effet d'exemple travaillé, et le socratique y devient de la charge inutile.
 **Gravité : moyenne à élevée.**

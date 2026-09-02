@@ -5836,12 +5836,15 @@
     "mcarDejaHint": "These modules stay unless you untick them. Carré adds to them, it replaces nothing.",
     "mcarCarre": "From Carré",
     "mcarTotal": "{n} module(s) in total",
-    "calibTitre": "What they expect, what they get",
-    "calibEcart": "Across recent sessions, they scored on average {n} question(s) {sens} than predicted.",
+    "calibTitre": "What {name} expects, what {name} gets",
+    "calibEcart": "Across recent sessions, {name} scored on average {n} question(s) {sens} than predicted.",
     "calibMoins": "lower",
     "calibPlus": "higher",
-    "calibSur": "When they marked “I'm sure”, the answer was right {p}% of the time ({n} questions).",
-    "calibAide": "Being wrong while feeling sure is not a flaw: it flags a topic worth revisiting first."
+    "calibSur": "When {name} marked “I'm sure”, the answer was right {p}% of the time ({n} questions).",
+    "calibAide": "Being wrong while feeling sure is not a flaw: it flags a topic worth revisiting first.",
+    "calibTitreMoi": "What you expect, what you get",
+    "calibEcartMoi": "Across your recent sessions, you scored on average {n} question(s) {sens} than you predicted.",
+    "calibSurMoi": "When you marked “I'm sure”, the answer was right {p}% of the time ({n} questions)."
   },
   "cx": {
     "appTitle": "Complex workspace",

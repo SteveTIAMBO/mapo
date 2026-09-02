@@ -747,14 +747,24 @@
                  ⚠️ Formulation sur la tâche, jamais sur la personne : on affiche
                  des nombres et ce qu'il y a à en faire, pas un jugement. Et rien
                  du tout tant qu'il n'y a pas au moins deux séances : une
-                 tendance sur un point n'est pas une tendance. -->
+                 tendance sur un point n'est pas une tendance.
+                 ⚠️ DEUX PUBLICS, DEUX FORMULATIONS. Cet écran est servi à
+                 l'apprenant ET au parent (`isApprenant`). Écrit à la 3e personne
+                 pour tout le monde, il disait « il a réussi » à une élève en
+                 train de lire son propre bilan. Côté parent on NOMME l'enfant
+                 plutôt que « il » : c'est ce que fait le reste de la vue, et ça
+                 évite d'accorder au masculin ce qui ne l'est pas. -->
             <div v-if="calibrationEnfant" class="calib-card">
-              <div class="calib-head"><Target :size="15" /> <strong>{{ t('mia.calibTitre') }}</strong></div>
+              <div class="calib-head"><Target :size="15" /> <strong>{{ isApprenant ? t('mia.calibTitreMoi') : t('mia.calibTitre', { name: activeEnfant.firstName }) }}</strong></div>
               <p v-if="calibrationEnfant.ecartMoyen !== null" class="calib-l">
-                {{ t('mia.calibEcart', { n: Math.abs(calibrationEnfant.ecartMoyen), sens: calibrationEnfant.ecartMoyen > 0 ? t('mia.calibMoins') : t('mia.calibPlus') }) }}
+                {{ isApprenant
+                  ? t('mia.calibEcartMoi', { n: Math.abs(calibrationEnfant.ecartMoyen), sens: calibrationEnfant.ecartMoyen > 0 ? t('mia.calibMoins') : t('mia.calibPlus') })
+                  : t('mia.calibEcart', { name: activeEnfant.firstName, n: Math.abs(calibrationEnfant.ecartMoyen), sens: calibrationEnfant.ecartMoyen > 0 ? t('mia.calibMoins') : t('mia.calibPlus') }) }}
               </p>
               <p v-if="calibrationEnfant.tauxQuandSur !== null && calibrationEnfant.surTotal >= 5" class="calib-l">
-                {{ t('mia.calibSur', { p: calibrationEnfant.tauxQuandSur, n: calibrationEnfant.surTotal }) }}
+                {{ isApprenant
+                  ? t('mia.calibSurMoi', { p: calibrationEnfant.tauxQuandSur, n: calibrationEnfant.surTotal })
+                  : t('mia.calibSur', { name: activeEnfant.firstName, p: calibrationEnfant.tauxQuandSur, n: calibrationEnfant.surTotal }) }}
               </p>
               <p class="calib-aide">{{ t('mia.calibAide') }}</p>
             </div>

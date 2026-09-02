@@ -7,6 +7,8 @@
  * (sur la tâche, jamais sur la personne — Kluger et DeNisi 1996).
  */
 import { describe, it, expect, beforeEach } from 'vitest'
+import frJson from '../i18n/locales/fr.json'
+import enJson from '../i18n/locales/en.json'
 import {
   historiqueCalibration, enregistrerSeanceCalibration, effacerCalibration,
   calibration, messageCalibration,
@@ -127,6 +129,38 @@ describe('les deux mesures', () => {
     enregistrerSeanceCalibration('e1', seance(null, 10, 10, r))
     enregistrerSeanceCalibration('e1', seance(null, 10, 10, r))
     expect(messageCalibration('e1')).toContain('organiser tes révisions')
+  })
+})
+
+describe('⭐⭐ deux publics, deux formulations (défaut trouvé en prod)', () => {
+  // L'écran Progression de `/mon-espace` est servi à l'apprenant ET au parent.
+  // Écrit à la 3e personne pour tout le monde, il annonçait « il a réussi » à
+  // une élève en train de lire son PROPRE bilan — et au masculin.
+  const fr = frJson.mia
+  const en = enJson.mia
+
+  it('les deux jeux de clés existent, FR et EN', () => {
+    for (const l of [fr, en]) {
+      for (const k of ['calibTitre', 'calibEcart', 'calibSur', 'calibTitreMoi', 'calibEcartMoi', 'calibSurMoi']) {
+        expect(l[k], k).toBeTruthy()
+      }
+    }
+  })
+
+  it('⚠️ la version parent NOMME l’enfant — jamais « il », qui accorde au masculin', () => {
+    for (const l of [fr, en]) {
+      for (const k of ['calibTitre', 'calibEcart', 'calibSur']) expect(l[k], k).toContain('{name}')
+    }
+    expect(fr.calibEcart).not.toMatch(/\bil a réussi\b/)
+    expect(fr.calibSur).not.toMatch(/\bil a coché\b/)
+  })
+
+  it('la version apprenant tutoie et ne porte PAS de nom', () => {
+    for (const k of ['calibTitreMoi', 'calibEcartMoi', 'calibSurMoi']) {
+      expect(fr[k], k).not.toContain('{name}')
+      expect(en[k], k).not.toContain('{name}')
+      expect(fr[k], k).toMatch(/\btu\b|\btes\b|\bton\b/i)
+    }
   })
 })
 
