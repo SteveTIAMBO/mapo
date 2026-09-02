@@ -1336,7 +1336,14 @@ onMounted(start)
 .tq-predire h2 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -.02em; }
 .tq-predire > p { margin: 0; max-width: 380px; color: var(--tx2); }
 .tq-predire small { max-width: 400px; color: var(--tx3); font-size: 12.5px; line-height: 1.5; }
-.tq-predire-choix { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 8px 0 2px; }
+/* ⚠️ `align-self: stretch` : sans lui, la rangée se calait sur la largeur des
+   PARAGRAPHES voisins (380 px) et le dernier chiffre tombait seul sur une
+   deuxième ligne. La rangée doit prendre la largeur de la carte, pas celle du
+   texte. Elle s'enroule quand même sur mobile, ce qui est normal. */
+.tq-predire-choix {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  margin: 8px 0 2px; align-self: stretch;
+}
 /* Boutons de chiffre : verre clair, filet fin, liseré en haut. Au survol la
    tuile se teinte et se soulève très légèrement — pas d'ombre lourde. */
 .tq-predire-n {
