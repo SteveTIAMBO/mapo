@@ -28,6 +28,25 @@
       </div>
     </div>
 
+    <!-- Prédiction de score — métacognition (P11). Un écran, zéro token. -->
+    <div v-else-if="mode === 'predire'" class="tq-predire">
+      <Target :size="30" />
+      <h2>{{ locale.startsWith('en') ? 'Before you start' : 'Avant de commencer' }}</h2>
+      <p>{{ locale.startsWith('en')
+        ? `Out of ${questions.length} questions, how many do you think you'll get right on the first try?`
+        : `Sur ${questions.length} questions, combien penses-tu en réussir du premier coup ?` }}</p>
+      <div class="tq-predire-choix">
+        <button v-for="n in (questions.length + 1)" :key="n - 1" type="button"
+          class="tq-predire-n" @click="repondrePrediction(n - 1)">{{ n - 1 }}</button>
+      </div>
+      <button type="button" class="tq-predire-skip" @click="repondrePrediction(null)">
+        {{ locale.startsWith('en') ? 'I have no idea — start' : 'Je ne sais pas, on commence' }}
+      </button>
+      <small>{{ locale.startsWith('en')
+        ? 'No wrong answer here. Comparing what you expected with what you got is what makes you better at judging what you know.'
+        : 'Il n’y a pas de mauvaise réponse ici. Comparer ce que tu prévois à ce que tu obtiens, c’est ce qui apprend à mieux juger ce qu’on sait.' }}</small>
+    </div>
+
     <!-- Quiz -->
     <template v-else-if="mode === 'quiz'">
       <button type="button" class="tq-back" @click="$emit('quit')">
@@ -98,6 +117,22 @@
         </button>
         <div v-if="coursMatiere && showFullCourse" class="tq-course-body">{{ coursMatiere }}</div>
         <p v-else-if="!coursMatiere && !current.hint" class="tq-course-empty">{{ locale.startsWith('en') ? 'No lesson imported for this subject yet — import your courses to re-read them here.' : 'Aucun cours importé pour cette matière — importe tes cours pour les relire ici.' }}</p>
+      </div>
+
+      <!-- Jugement de confiance — AVANT de répondre, et facultatif.
+           Le quiz valide au clic et sous chrono : une étape « confirmer »
+           obligatoire doublerait les clics sous contrainte de temps. Ici, un
+           réglage qu'on touche ou non, et qui ne retarde rien. -->
+      <div v-if="!revealed" class="tq-surete">
+        <span class="tq-surete-l">{{ locale.startsWith('en') ? 'Before answering:' : 'Avant de répondre :' }}</span>
+        <button type="button" class="tq-surete-b" :class="{ on: sureteQ === true }"
+          @click="sureteQ = sureteQ === true ? null : true">
+          {{ locale.startsWith('en') ? "I'm sure" : 'Je suis sûr' }}
+        </button>
+        <button type="button" class="tq-surete-b" :class="{ on: sureteQ === false }"
+          @click="sureteQ = sureteQ === false ? null : false">
+          {{ locale.startsWith('en') ? 'Not sure' : 'Pas sûr' }}
+        </button>
       </div>
 
       <div class="tq-choices">
@@ -189,6 +224,20 @@
         </div>
       </div>
       <p v-if="meilleureSerie >= 2" class="tq-serie-fin"><Flame :size="15" /> {{ locale.startsWith('en') ? `Best streak: ${meilleureSerie}` : `Meilleure série : ${meilleureSerie} d'affilée` }}</p>
+
+      <!-- BILAN MÉTACOGNITIF (P11). Ce que l'apprenant avait prévu contre ce
+           qu'il a obtenu, puis la tendance sur plusieurs séances.
+           ⚠️ Le libellé porte sur la TÂCHE, jamais sur la personne (P8, Kluger
+           et DeNisi 1996) : on compare deux nombres, on ne qualifie personne. Et
+           on ne dit rien quand l'écart est d'un point, parce qu'un point sur dix
+           est du bruit. -->
+      <div v-if="prediction !== null" class="tq-calib">
+        <Target :size="15" />
+        <p>{{ locale.startsWith('en')
+          ? `You predicted ${prediction}, you got ${firstTryCount} on the first try.`
+          : `Tu avais prévu ${prediction}, tu en as réussi ${firstTryCount} du premier coup.` }}</p>
+      </div>
+      <p v-if="messageCalib" class="tq-calib-msg">{{ messageCalib }}</p>
 
       <!-- JAUGE DU PALIER. Voir la barre avancer est tout l'intérêt du
            mécanisme : franchir un palier demande des dizaines de séances, et
@@ -287,6 +336,8 @@ import { niveauSuivant, PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
 import { noteQuestion } from '../utils/jaugeNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { coursEcoleTexteMatiere } from '../utils/coursEcole'
+import { enregistrerSeanceCalibration, messageCalibration } from '../utils/calibration'
+import { bandeAge } from '../utils/ageProfil'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useConnecteursStore } from '../stores/connecteurs'
@@ -640,6 +691,34 @@ function refuserPalier() {
 }
 
 const phase = ref('answering')
+
+// ── MÉTACOGNITION (P11, écart E7) ────────────────────────────────────────────
+//
+// L'EEF classe la métacognition en impact ÉLEVÉ, coût FAIBLE, preuve SOLIDE.
+// C'est le meilleur rapport effet sur coût du référentiel, et il manquait.
+// Trois dispositifs, ZÉRO appel IA supplémentaire (cf. utils/calibration.js).
+//
+// ⚠️ CONTRAINTE QUE LE RÉFÉRENTIEL NE POUVAIT PAS CONNAÎTRE : le quiz valide au
+// CLIC, sous chronomètre. Insérer une étape « confirmer » à chaque question
+// doublerait les clics sous contrainte de temps — ce serait de la friction, pas
+// de la métacognition. D'où ce compromis : le réglage de confiance se pose AVANT
+// de répondre et reste FACULTATIF. S'il n'est pas touché, on enregistre `null`,
+// et la mesure se fait sur les questions où l'apprenant s'est prononcé.
+const sureteQ = ref(null)            // true = sûr, false = pas sûr, null = non renseigné
+const reponsesCalib = ref([])        // [{ sur, juste }] pour la séance en cours
+const prediction = ref(null)         // nombre annoncé avant la séance
+const messageCalib = ref('')         // phrase de bilan, calculée à la fin
+
+// ⚠️ La grille par âge (référentiel, section 3) module ce qu'on demande : au
+// primaire, « es-tu sûr ? » binaire et RIEN de plus — une prédiction chiffrée
+// suppose une estimation de proportion qu'on ne présume pas à 8 ans. À partir du
+// collège, prédiction de score en plus.
+const demandePrediction = computed(() => {
+  try {
+    const e = enfantsStore.enfants.find((x) => x.id === props.studentId)
+    return bandeAge(e) !== 'enfant'
+  } catch { return true }
+})
 const revealed = ref(false)
 const firstTry = ref(false)
 const attempts = ref(0)
@@ -712,7 +791,7 @@ async function start() {
   if (props.presetQuestions && props.presetQuestions.length) {
     if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
     questions.value = props.presetQuestions
-    index.value = 0; grades.value = []; resetQ(); startedAt.value = Date.now(); mode.value = 'quiz'
+    index.value = 0; grades.value = []; resetQ(); startedAt.value = Date.now(); lancerSeance()
     return
   }
   // Récupère le suivi durable (Firestore) pour les vrais comptes avant de jouer.
@@ -767,6 +846,30 @@ async function start() {
   grades.value = []
   resetQ()
   startedAt.value = Date.now()
+  lancerSeance()
+}
+
+/**
+ * Sas de prédiction, avant la première question (P11, écart E7).
+ *
+ * ⚠️ Il passe par un MODE à part, et pas par un encart au-dessus de la question :
+ * le chronomètre démarre sur `watch(mode)` dès que le mode vaut « quiz ». Poser
+ * la prédiction dans le flux de la question 1 aurait donc mangé le temps de
+ * lecture — exactement le défaut corrigé en août quand on a laissé le temps de
+ * LIRE avant de démarrer le chrono.
+ *
+ * Facultatif par construction : « Je ne sais pas » lance la séance sans
+ * prédiction, et la mesure se fait alors sur les seules confiances par question.
+ */
+function lancerSeance() {
+  reponsesCalib.value = []
+  prediction.value = null
+  messageCalib.value = ''
+  mode.value = (props.studentId && demandePrediction.value) ? 'predire' : 'quiz'
+}
+
+function repondrePrediction(n) {
+  prediction.value = Number.isFinite(n) ? n : null
   mode.value = 'quiz'
 }
 
@@ -812,10 +915,17 @@ function resetQ() {
   phase.value = 'answering'; revealed.value = false; firstTry.value = false; qGrade.value = 0
   attempts.value = 0; wrongSet.value = new Set()
   aideOuverte.value = false; coursOuvert.value = false
+  // Le jugement de confiance vaut pour UNE question : il repart à zéro.
+  sureteQ.value = null
 }
 
 function select(i) {
   if (revealed.value) return
+  // ⚠️ On enregistre au PREMIER essai seulement. Après une erreur, l'apprenant
+  // sait déjà qu'il s'était trompé : sa « confiance » ne mesurerait plus rien.
+  if (attempts.value === 0) {
+    reponsesCalib.value = [...reponsesCalib.value, { sur: sureteQ.value, juste: i === current.value.answer }]
+  }
   if (i === current.value.answer) {
     revealed.value = true; phase.value = 'revealed'; firstTry.value = attempts.value === 0
     // Note graduée CACHÉE. Trouver seul, trouver avec l'indice, trouver après
@@ -878,6 +988,21 @@ const recapMissed = computed(() => recap.value.filter((r) => r.missed))
 
 function finish() {
   clearTimer()
+  // MÉTACOGNITION — on clôt la calibration AVANT tout le reste : c'est une
+  // simple soustraction locale, aucun appel réseau, et elle doit être faite même
+  // si l'archivage de séance échoue plus bas (hors ligne).
+  if (props.studentId) {
+    try {
+      enregistrerSeanceCalibration(props.studentId, {
+        matiere: props.matiere,
+        prevu: prediction.value,
+        reussi: firstTryCount.value,   // réussi DU PREMIER COUP : c'est ce que l'apprenant prédisait
+        total: questions.value.length,
+        reponses: reponsesCalib.value,
+      })
+      messageCalib.value = messageCalibration(props.studentId, { en: locale.value.startsWith('en') })
+    } catch { /* la séance se termine normalement, on perd la mesure */ }
+  }
   // La PROGRESSION est pilotée par le score de MAÎTRISE pondéré (caché), pas par
   // le simple taux de bonnes réponses : trouver du 1er coup fait vraiment monter.
   if (masteryPercent.value >= 80) sonVictoire()
@@ -1186,4 +1311,35 @@ onMounted(start)
 @media (prefers-reduced-motion: reduce) {
   .tq-pop-enter-active, .tq-eclat { animation: none; }
 }
+
+/* ── MÉTACOGNITION (P11) ────────────────────────────────────────────────── */
+/* Volontairement discret : ces éléments accompagnent la séance, ils ne doivent
+   pas concurrencer la question elle-même. */
+.tq-predire {
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  padding: 32px 20px; text-align: center;
+}
+.tq-predire h2 { margin: 0; font-size: 19px; font-weight: 600; }
+.tq-predire > p { margin: 0; max-width: 380px; color: var(--tx2); }
+.tq-predire small { max-width: 400px; color: var(--tx3); font-size: 12.5px; line-height: 1.5; }
+.tq-predire-choix { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 6px 0; }
+.tq-predire-n {
+  min-width: 42px; padding: 10px 0; border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, .12); background: #fff;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.tq-predire-n:hover { border-color: var(--pr); color: var(--pr); }
+.tq-predire-skip { background: none; border: none; color: var(--tx3); font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+.tq-surete { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; flex-wrap: wrap; }
+.tq-surete-l { font-size: 12.5px; color: var(--tx3); }
+.tq-surete-b {
+  padding: 5px 12px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, .12); background: #fff; color: var(--tx2);
+}
+.tq-surete-b.on { border-color: var(--pr); background: var(--pr); color: #fff; }
+
+.tq-calib { display: inline-flex; align-items: center; gap: 8px; margin: 8px 0 0; color: var(--tx2); }
+.tq-calib p { margin: 0; font-size: 13.5px; }
+.tq-calib-msg { max-width: 420px; margin: 6px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
 </style>

@@ -5835,7 +5835,13 @@
     "mcarDeja": "Déjà dans ta formation",
     "mcarDejaHint": "Ces modules restent, sauf si vous les décochez. Carré s'ajoute, il ne remplace rien.",
     "mcarCarre": "Depuis Carré",
-    "mcarTotal": "{n} module(s) au total"
+    "mcarTotal": "{n} module(s) au total",
+    "calibTitre": "Ce qu’il prévoit, ce qu’il obtient",
+    "calibEcart": "Sur ses dernières séances, il a réussi en moyenne {n} question(s) de {sens} que ce qu’il annonçait.",
+    "calibMoins": "moins",
+    "calibPlus": "plus",
+    "calibSur": "Quand il a coché « je suis sûr », la réponse était juste {p} % du temps ({n} questions).",
+    "calibAide": "Se tromper en se croyant sûr n’est pas un défaut : c’est le signe d’une notion à revoir en priorité."
   },
   "cx": {
     "appTitle": "Espace complexe",

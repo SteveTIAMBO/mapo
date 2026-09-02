@@ -737,6 +737,27 @@
             </div>
             <p class="muted">{{ t('mia.levelRises', { name: activeEnfant.firstName }) }}</p>
             <p v-if="ecoleLieActive && isApprenant" class="suivi-ecole"><Link2 :size="13" /> {{ t('mia.suiviPartageEcole') }}</p>
+
+            <!-- CALIBRATION MÉTACOGNITIVE (P11, écart E7).
+                 Ce que l'apprenant prévoit contre ce qu'il obtient. C'est la
+                 seule mesure du produit qui distingue une LACUNE (il sait qu'il
+                 ne sait pas) d'une ILLUSION (il croit savoir) — et l'illusion
+                 est précisément ce que Bastani et al. (2025) ont mesuré chez les
+                 élèves en accès libre à une IA.
+                 ⚠️ Formulation sur la tâche, jamais sur la personne : on affiche
+                 des nombres et ce qu'il y a à en faire, pas un jugement. Et rien
+                 du tout tant qu'il n'y a pas au moins deux séances : une
+                 tendance sur un point n'est pas une tendance. -->
+            <div v-if="calibrationEnfant" class="calib-card">
+              <div class="calib-head"><Target :size="15" /> <strong>{{ t('mia.calibTitre') }}</strong></div>
+              <p v-if="calibrationEnfant.ecartMoyen !== null" class="calib-l">
+                {{ t('mia.calibEcart', { n: Math.abs(calibrationEnfant.ecartMoyen), sens: calibrationEnfant.ecartMoyen > 0 ? t('mia.calibMoins') : t('mia.calibPlus') }) }}
+              </p>
+              <p v-if="calibrationEnfant.tauxQuandSur !== null && calibrationEnfant.surTotal >= 5" class="calib-l">
+                {{ t('mia.calibSur', { p: calibrationEnfant.tauxQuandSur, n: calibrationEnfant.surTotal }) }}
+              </p>
+              <p class="calib-aide">{{ t('mia.calibAide') }}</p>
+            </div>
             <div v-if="progression.length" class="prog-list">
               <div v-for="p in progression" :key="p.matiere" class="prog-row">
                 <span class="prog-mat">{{ p.matiere }}</span>
@@ -1383,6 +1404,7 @@ import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo
 import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
 import { setCoursEcole } from '../utils/coursEcole'
+import { calibration } from '../utils/calibration'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Persistance du drapeau « visite guidée déjà vue » : voir tourDocRef().
@@ -1402,6 +1424,9 @@ const store = useEnfantsAutonomesStore()
 const abo = useAbonnementStore()
 const tuteur = useTuteurStore()
 const lienEcole = useLienEcoleStore()
+// Calibration métacognitive de l'apprenant actif (P11). `null` tant qu'il n'y a
+// pas assez de séances : on préfère ne rien dire que dire du bruit.
+const calibrationEnfant = computed(() => (activeEnfant.value ? calibration(activeEnfant.value.id) : null))
 const connecteurs = useConnecteursStore()
 const lang2 = useLangue2Store()
 const analytics = useMiapoAnalyticsStore()

@@ -481,7 +481,7 @@ Un tuteur qui applique le programme français à un élève camerounais commet d
 | P9 | Tutorat et maîtrise | VanLehn 2011 (humain 0,79 ; machine 0,76) | Solide | Citer 0,76 à 0,79, jamais 2 sigma | À corriger dans les supports |
 | P10a | Motivation autonome | Howard et al. 2021 | Modéré | Choix de la matière, du type, du rythme | Partiel |
 | P10b | État d'esprit de développement | Sisk et al. 2018 (d=0,08) ; Macnamara et Burgoyne 2023 | Contesté | Ne pas en faire un argument produit | À surveiller |
-| P11 | Métacognition | EEF (impact élevé, coût faible, preuve solide) | Solide | Jugement de confiance, prédiction de score | À faire |
+| P11 | Métacognition | EEF (impact élevé, coût faible, preuve solide) | Solide | Jugement de confiance, prédiction de score | Fait le 02/09 (`utils/calibration.js`, zéro appel IA) |
 | P12 | Adaptation au niveau réel | TaRL ; Muralidharan et al. 2019 ; Angrist et al. 2022 | Solide | Le positionnement prime sur la bande d'âge | Fait |
 | P13a | La ludification aide modestement | Sailer et Homner 2020 (g=0,49 cognitif) | Modéré | On garde badges, séries et points | Fait |
 | P13b | Les récompenses tangibles sapent la motivation | Deci, Koestner et Ryan 1999 (d de -0,28 à -0,40) | Solide | Symbolique uniquement, sur le processus, sans classement | Fait, à tenir |
@@ -566,6 +566,45 @@ un tuteur froid, ce que Kluger et DeNisi ne demandent nulle part.
 ### E7. Aucune trace métacognitive
 Pas de jugement de confiance, pas de prédiction de score, pas de retour de calibration. C'est l'intervention à meilleur rapport effet sur coût de tout ce document (EEF), et elle est absente.
 **Gravité : élevée, coût faible.**
+
+✅ **RÉSOLU le 2 septembre 2026**, `utils/calibration.js` et `TuteurQuiz.vue`.
+**Aucun appel IA ajouté** : tout se calcule en local à partir de ce que
+l'apprenant a déjà cliqué. La calibration est une soustraction, pas une
+inférence — si quelqu'un est un jour tenté d'appeler le modèle pour « analyser »
+la calibration, c'est qu'il a perdu le fil.
+
+Trois dispositifs :
+
+1. **Prédiction de score** avant la séance, sur un écran dédié (mode `predire`).
+2. **Jugement de confiance** par question, posé AVANT de répondre.
+3. **Bilan** en fin de séance, puis tendance sur plusieurs séances, visible aussi
+   par le parent dans l'écran Progression.
+
+⚠️ **Un compromis d'implémentation à connaître, il n'est pas dans le
+référentiel.** Le quiz valide au CLIC et sous CHRONOMÈTRE. Insérer une étape
+« confirmer » à chaque question aurait doublé les clics sous contrainte de temps :
+de la friction, pas de la métacognition. Le réglage de confiance est donc
+**facultatif** — non touché, il vaut `null`, et la mesure porte sur les seules
+questions où l'apprenant s'est prononcé. Pour la même raison, la prédiction passe
+par un mode à part et non par un encart au-dessus de la question 1 : le chrono
+démarre dès que le mode vaut `quiz`, un encart aurait mangé le temps de lecture.
+
+⚠️ **La confiance n'est enregistrée qu'au PREMIER essai.** Après une erreur,
+l'apprenant sait déjà qu'il s'était trompé : sa confiance ne mesurerait plus rien.
+
+⚠️ **Deux règles de retenue, volontaires.** Rien n'est affiché avant **deux
+séances** (une tendance sur un point n'est pas une tendance), et un écart d'un
+point sur dix ne déclenche **aucun** message : c'est du bruit, le commenter
+fabriquerait du sens. Même logique que le seuil d'affichage de la ligue.
+
+⚠️ **Minimisation (section 5.4)** : on ne stocke que des compteurs agrégés par
+séance, jamais le détail question par question. Et la calibration s'efface avec
+le profil.
+
+**Ce que ça apporte de neuf au produit** : c'est la seule mesure qui distingue une
+LACUNE (l'apprenant sait qu'il ne sait pas) d'une ILLUSION (il croit savoir). Or
+l'illusion de compétence est exactement ce que Bastani et al. (2025) ont mesuré
+chez les élèves en accès libre à une IA. MIAPO peut désormais la voir.
 
 ### E8. Pas d'exemple travaillé avant la pratique
 Un apprenant qui découvre une notion entre directement en récupération ou en chat socratique. Pour un novice, c'est contraire à l'effet d'exemple travaillé, et le socratique y devient de la charge inutile.
