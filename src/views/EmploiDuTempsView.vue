@@ -518,8 +518,12 @@
         </div>
         <div v-if="showConflictPanel" class="conflict-list">
           <div v-for="(c, idx) in edtStore.generationConflicts" :key="idx" class="conflict-item">
-            <span class="conflict-icon" :class="c.type === 'teacher_double' ? 'conflict-teacher' : 'conflict-unplaced'">
-              {{ c.type === 'teacher_double' ? 'T' : 'H' }}
+            <!-- Trois natures de conflit, trois pastilles : T = un enseignant
+                 sur deux cours, P = des heures sans personne, H = des heures
+                 qu'aucun créneau ne peut accueillir. Elles n'appellent pas les
+                 mêmes décisions. -->
+            <span class="conflict-icon" :class="c.type === 'unplaced' ? 'conflict-unplaced' : 'conflict-teacher'">
+              {{ c.type === 'teacher_double' ? 'T' : c.type === 'teacher_missing' ? 'P' : 'H' }}
             </span>
             <span class="conflict-message">{{ c.message }}</span>
           </div>

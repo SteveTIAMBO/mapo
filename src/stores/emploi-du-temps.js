@@ -543,6 +543,14 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
 
     for (const req of requirements) {
       let placed = 0
+      // Heures placées sans personne devant les élèves. Deux causes bien
+      // distinctes, et il faut les distinguer pour l'école :
+      //  - aucun enseignant n'est rattaché à cette matière pour cette classe :
+      //    le cours est alors placé dès la passe 1 avec `teacherId: null`, donc
+      //    la passe 3 ne s'exécute jamais et RIEN n'était signalé ;
+      //  - un enseignant est rattaché mais n'a plus de créneau libre : c'est la
+      //    passe 3 qui force le placement.
+      let sansEnseignant = 0
       const maxPerDay = req.hoursNeeded <= 2 ? 1 : 2
       const days = getDaysForLevel(req.levelKey)
       const slots = getSlotsForLevel(req.levelKey)
@@ -585,6 +593,9 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
             if (teacherKey) teacherBusy[teacherKey] = true
             classSubjectDayCount[currentDayKey] = (classSubjectDayCount[currentDayKey] || 0) + 1
             placed++
+            // Placé, mais sans enseignant rattaché : à compter ici aussi, sinon
+            // le cas « personne n'enseigne cette matière » reste muet.
+            if (!req.teacherId) sansEnseignant++
           }
         }
       }
@@ -607,16 +618,39 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
             const currentDayKey = `${req.classId}_${req.subjectId}_${day}`
             classSubjectDayCount[currentDayKey] = (classSubjectDayCount[currentDayKey] || 0) + 1
             placed++
+            sansEnseignant++
 
-            // Track as conflict
+            // Trace au CR\u00c9NEAU : sert la grille (cellule \u00ab Non assign\u00e9 \u00bb), pas
+            // la liste de conflits \u2014 un item par cr\u00e9neau la noyait, et c'est
+            // pour \u00e7a qu'elle avait fini filtr\u00e9e. L'agr\u00e9gat suit juste apr\u00e8s.
             conflicts.push({
-              type: 'teacher_missing',
+              type: 'teacher_missing_slot',
               classId: req.classId, className: req.className,
               subjectId: req.subjectId, day, slotIndex: slot.index,
               message: `${req.className} - ${req.subjectId} (${day} cr\u00e9neau ${slot.index + 1}): enseignant non assign\u00e9`
             })
           }
         }
+      }
+
+      // \u26a0\ufe0f Le manque de PERSONNEL, agr\u00e9g\u00e9 par classe \u00d7 mati\u00e8re \u2014 l'unit\u00e9 sur
+      // laquelle l'\u00e9cole agit (\u00ab affecter un enseignant aux maths de 6e C \u00bb).
+      //
+      // Sans cet agr\u00e9gat, le g\u00e9n\u00e9rateur savait qu'il manquait des enseignants,
+      // remplissait la case quand m\u00eame, et ne le disait qu'\u00e0 travers un
+      // compteur : l'\u00e9cole recevait un emploi du temps d'apparence compl\u00e8te
+      // dont certaines heures n'avaient personne devant les \u00e9l\u00e8ves.
+      if (sansEnseignant > 0) {
+        const motif = req.teacherId ? 'enseignant_sature' : 'aucun_enseignant'
+        conflicts.push({
+          type: 'teacher_missing',
+          motif,
+          classId: req.classId, className: req.className,
+          subjectId: req.subjectId, hours: sansEnseignant,
+          message: motif === 'aucun_enseignant'
+            ? `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, aucun enseignant rattach\u00e9`
+            : `${req.className} \u2014 ${req.subjectId} : ${sansEnseignant}h, ${req.teacherName} n'a plus de cr\u00e9neau libre`
+        })
       }
 
       req.hoursPlaced = placed
@@ -655,7 +689,13 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     // ── Build log ─────────────────────────────────────────
     const totalRequired = requirements.reduce((s, r) => s + r.hoursNeeded, 0)
     const totalPlaced = newSchedule.length
-    const missingTeachers = conflicts.filter(c => c.type === 'teacher_missing').length
+    // Compte des CRÉNEAUX sans enseignant — pas des matières concernées : c'est
+    // ce que le bandeau annonce. On somme les heures des agrégats, ce qui
+    // couvre les DEUX causes ; ne compter que la trace de la passe 3 laissait à
+    // zéro le cas « aucun enseignant rattaché », pourtant le plus fréquent.
+    const missingTeachers = conflicts
+      .filter(c => c.type === 'teacher_missing')
+      .reduce((s, c) => s + (c.hours || 0), 0)
     const doubleBookings = conflicts.filter(c => c.type === 'teacher_double').length
     const unplacedCount = conflicts.filter(c => c.type === 'unplaced').length
 
@@ -664,7 +704,11 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     if (doubleBookings > 0) log.push(`${doubleBookings} conflit(s) d'enseignant`)
     if (unplacedCount > 0) log.push(`${unplacedCount} matière(s) pas entièrement placée(s)`)
 
-    const actionableConflicts = conflicts.filter(c => c.type !== 'teacher_missing') // Show only actionable conflicts
+    // ⚠️ On ne filtre plus que la trace par CRÉNEAU. L'agrégat par classe ×
+    // matière (`teacher_missing`) reste dans la liste : c'est la réponse à
+    // « signaler s'il manque du personnel », et c'est ce qui manquait. Filtrer
+    // les deux revenait à calculer un diagnostic pour le jeter.
+    const actionableConflicts = conflicts.filter(c => c.type !== 'teacher_missing_slot')
     if (commit) {
       schedule.value = newSchedule
       generationLog.value = log
@@ -723,6 +767,31 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
         type: 'enseignant',
         title: `${teacher} : ${n} chevauchement(s)`,
         detail: `${teacher} est affecté à plusieurs classes sur le même créneau. À FAIRE : affecter un autre enseignant à l'une de ces classes (fiche personnel → Enseignements), ou déplacer un de ses cours vers un créneau libre.`,
+      })
+    }
+    // 3) Heures sans enseignant → regroupées par MATIÈRE. Ce n'est pas un
+    //    problème d'agencement : relancer la génération n'y changera rien, il
+    //    manque quelqu'un. C'est pour ça que ces heures méritent une
+    //    recommandation distincte des deux précédentes.
+    const sansProf = conflicts.filter((c) => c.type === 'teacher_missing')
+    const parMatiere = {}
+    for (const c of sansProf) {
+      if (!parMatiere[c.subjectId]) parMatiere[c.subjectId] = { heures: 0, classes: [], motifs: new Set() }
+      parMatiere[c.subjectId].heures += c.hours || 0
+      parMatiere[c.subjectId].classes.push(c.className)
+      parMatiere[c.subjectId].motifs.add(c.motif || 'aucun_enseignant')
+    }
+    for (const [matiere, info] of Object.entries(parMatiere)) {
+      // La cause change complètement ce qu'il y a à faire : rattacher quelqu'un,
+      // ou alléger la charge de celui qui est déjà là. Dire « soit… soit… »
+      // laisserait le directeur chercher lui-même.
+      const aFaire = info.motifs.has('aucun_enseignant')
+        ? `rattacher un enseignant à ${matiere} pour ces classes (étape « Enseignants » de l'emploi du temps).`
+        : `alléger la charge de l'enseignant concerné, lui ajouter des créneaux disponibles, ou rattacher un second enseignant à ${matiere}.`
+      recs.push({
+        type: 'personnel',
+        title: `${matiere} : ${info.heures}h sans enseignant`,
+        detail: `Classes concernées : ${info.classes.join(', ')}. À FAIRE : ${aFaire} ⚠️ Ces heures FIGURENT dans la grille, mais personne ne sera devant les élèves. Relancer la génération n'y changera rien : ce n'est pas un problème d'agencement.`,
       })
     }
     if (!recs.length) recs.push({ type: 'ok', title: 'Aucun conflit', detail: 'L\'emploi du temps ne présente plus de conflit.' })
