@@ -616,6 +616,12 @@ deux jeux de clés, et la version parent NOMME l'enfant plutôt que d'écrire
 verrouille les deux jeux. Illustration de la règle : **un test vert peut encoder
 un bug**.
 
+⚠️ **Second défaut, même passage à l'écran** : le bloc s'appelait `calib-card`.
+`main.css` peint tout `[class*="-card"]` en fond blanc + ombre portée, en
+`!important` — le bloc héritait donc d'un habillage de carte SANS padding ni
+marge, et chevauchait la liste des niveaux. Renommé `calib-bloc`, avec son
+propre style. Rien de tout ça n'est visible sans ouvrir la page.
+
 ### E8. Pas d'exemple travaillé avant la pratique
 Un apprenant qui découvre une notion entre directement en récupération ou en chat socratique. Pour un novice, c'est contraire à l'effet d'exemple travaillé, et le socratique y devient de la charge inutile.
 **Gravité : moyenne à élevée.**

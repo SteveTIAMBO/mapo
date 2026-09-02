@@ -754,7 +754,7 @@
                  train de lire son propre bilan. Côté parent on NOMME l'enfant
                  plutôt que « il » : c'est ce que fait le reste de la vue, et ça
                  évite d'accorder au masculin ce qui ne l'est pas. -->
-            <div v-if="calibrationEnfant" class="calib-card">
+            <div v-if="calibrationEnfant" class="calib-bloc">
               <div class="calib-head"><Target :size="15" /> <strong>{{ isApprenant ? t('mia.calibTitreMoi') : t('mia.calibTitre', { name: activeEnfant.firstName }) }}</strong></div>
               <p v-if="calibrationEnfant.ecartMoyen !== null" class="calib-l">
                 {{ isApprenant
@@ -3912,6 +3912,18 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .seq-conseil-arr { color: var(--pr); flex-shrink: 0; opacity: .7; }
 .suivi-ecole { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #1B8A5A; background: rgba(27,138,90,.08); padding: 7px 11px; border-radius: 10px; margin: 0 0 12px; }
 .suivi-ecole svg { flex-shrink: 0; }
+
+/* Bilan de calibration (P11).
+   ⚠️ NE PAS renommer en « calib-card ». `main.css` peint tout
+   `[class*="-card"]` en fond blanc + ombre portée, en `!important` : la classe
+   attrapait ce style SANS padding ni marge, et le bloc chevauchait la liste des
+   niveaux — visible seulement à l'écran, jamais dans les tests. C'est le même
+   piège que `.m-tile` ailleurs dans l'app. */
+.calib-bloc { background: rgba(59,130,246,.06); border-radius: 12px; padding: 12px 14px; margin: 0 0 14px; }
+.calib-head { display: flex; align-items: center; gap: 7px; font-size: 13.5px; color: var(--tx); margin-bottom: 6px; }
+.calib-head svg { flex-shrink: 0; color: var(--pr); }
+.calib-l { font-size: 13px; color: var(--tx2); margin: 0 0 4px; line-height: 1.5; }
+.calib-aide { font-size: 12px; color: var(--tx3, var(--tx2)); margin: 6px 0 0; line-height: 1.45; }
 .courbe-list { display: flex; flex-direction: column; gap: 12px; }
 .courbe-row { display: flex; align-items: center; gap: 12px; }
 .courbe-mat { flex: 0 0 32%; font-size: 14px; color: var(--tx, #1f2937); }
