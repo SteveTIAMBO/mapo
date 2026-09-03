@@ -157,6 +157,29 @@ export async function deleteCoursFile(item) {
   }
 }
 
+/**
+ * Supprime les fichiers serveur d'un LOT de documents (suppression de profil,
+ * de compte). Renvoie ce qui a échoué au lieu de le taire.
+ *
+ * ⚠️ POURQUOI ÇA COMPTE POUR LE RGPD. Un « effacement » qui laisse des PDF sur
+ * l'hébergement n'est pas un effacement. Pire, dans le cas d'un COMPTE : après
+ * `deleteUser`, l'identifiant Firebase disparaît, le marqueur `.own` ne
+ * correspondra plus jamais à personne, et le fichier devient **définitivement**
+ * ineffaçable. C'est donc AVANT de détruire quoi que ce soit qu'il faut le
+ * faire, et s'arrêter si ça échoue.
+ *
+ * @returns {Promise<{total: number, echecs: number}>}
+ */
+export async function deleteCoursFiles(docs) {
+  const avecFichier = (Array.isArray(docs) ? docs : []).filter((d) => d && d.fileId)
+  let echecs = 0
+  for (const d of avecFichier) {
+    const r = await deleteCoursFile(d)
+    if (!r.ok) echecs++
+  }
+  return { total: avecFichier.length, echecs }
+}
+
 /** Déclenche le téléchargement du fichier original. */
 export async function downloadCoursFile(item) {
   const url = item.fileData ? item.fileData : await blobUrl(item, { dl: true })

@@ -81,6 +81,11 @@ const lignes = computed(() => [
 const erreurLisible = computed(() => {
   if (!dp.erreur) return ''
   if (dp.erreur === 'auth/requires-recent-login') return t('rgpd.errRecentLogin')
+  // ⚠️ Cas à part : la suppression a été REFUSÉE avant de rien détruire, parce
+  // que des PDF de cours n'ont pas pu être effacés du serveur. Le dire
+  // précisément, sinon la personne réessaie sans comprendre — ou croit que ses
+  // documents sont partis.
+  if (dp.erreur === 'fichiers_non_supprimes') return t('rgpd.errFilesNotDeleted')
   if (dp.erreur === 'mdp_faux') return t('rgpd.errWrongPassword')
   if (dp.erreur === 'non_connecte') return t('rgpd.errNotSignedIn')
   return t('rgpd.errGeneric')

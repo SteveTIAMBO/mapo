@@ -69,6 +69,23 @@ export function removeCoursPerso(enfantId, id) {
 }
 
 /**
+ * Efface TOUS les cours d'un profil — RGPD, à la suppression du profil.
+ *
+ * ⚠️ Ça n'existait pas. `removeEnfant` effaçait la fiche, l'historique de
+ * révisions et le cache des cours de l'école, mais laissait ce dépôt-ci intact :
+ * le TEXTE des cours de la personne survivait au profil, dans ce navigateur,
+ * sous une clé qui porte son identifiant. Du contenu scolaire rattachable, après
+ * un « effacement ».
+ *
+ * ⚠️ À appeler APRÈS la suppression des fichiers serveur : c'est ici que vivent
+ * les identifiants qui permettent de les désigner.
+ */
+export function clearCoursPerso(enfantId) {
+  if (!enfantId) return
+  try { localStorage.removeItem(KEY(enfantId)) } catch { /* rien à faire */ }
+}
+
+/**
  * Modifie un cours déjà enregistré (matière, titre, contenu).
  *
  * ⚠️ Il n'y avait AUCUN moyen de corriger un cours : on ne pouvait que le

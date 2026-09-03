@@ -5,6 +5,8 @@ import { deleteUser, reauthenticateWithCredential, EmailAuthProvider } from 'fir
 import { doc, getDoc, getDocs, deleteDoc, collection } from 'firebase/firestore'
 import { useEnfantsComptesStore } from './enfantsComptes'
 import { useEnfantsAutonomesStore } from './enfantsAutonomes'
+import { listCoursPerso } from '../utils/coursPerso'
+import { deleteCoursFiles } from '../services/coursFiles'
 
 /**
  * Store « donneesPersonnelles » — les droits RGPD, côté code.
@@ -164,6 +166,29 @@ export const useDonneesPersonnellesStore = defineStore('donneesPersonnelles', ()
           await eco.supprimerCompteEnfant(e.id)
         }
       } catch { /* best-effort : ne doit jamais empêcher la suppression du parent */ }
+      // 0 bis. Les FICHIERS DE COURS sur le serveur (PDF), pour tous les profils.
+      //
+      //    ⚠️ ICI, ET PAS PLUS TARD. Le serveur exige un jeton Firebase et ne
+      //    laisse supprimer qu'au déposant (marqueur `.own`, cf. mapo-files.php).
+      //    Après `deleteUser`, l'identifiant n'existe plus : le marqueur ne
+      //    correspondra JAMAIS à personne, et le PDF devient définitivement
+      //    ineffaçable. Et les identifiants de fichiers ne vivent que dans
+      //    localStorage, effacé à l'étape 4 — donc avant elle aussi.
+      //
+      //    ⚠️ ON ABANDONNE SI ÇA ÉCHOUE, comme pour `requires-recent-login` : un
+      //    effacement qui laisse des documents scolaires sur l'hébergement n'est
+      //    pas un effacement, et la personne ne pourra plus rien y faire. Mieux
+      //    vaut lui dire de réessayer.
+      try {
+        const enfants = useEnfantsAutonomesStore()
+        for (const e of (enfants.enfants || [])) {
+          const r = await deleteCoursFiles(listCoursPerso(e.id))
+          if (r.echecs > 0) { erreur.value = 'fichiers_non_supprimes'; return false }
+        }
+      } catch {
+        erreur.value = 'fichiers_non_supprimes'
+        return false
+      }
       // 1. La sous-collection b2c : profils enfants, lien co-parent, compte enfant.
       try {
         const snap = await getDocs(collection(db, 'users', u, 'b2c'))

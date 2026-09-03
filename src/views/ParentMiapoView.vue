@@ -3025,7 +3025,7 @@ function addNote() {
   store.addNote(activeEnfant.value.id, newMatiere.value, newNote.value, newType.value)
   newMatiere.value = ''; newNote.value = null; newType.value = ''
 }
-function confirmRemove() {
+async function confirmRemove() {
   if (!activeEnfant.value) return
   // ⚠️ Mesuré sur le compte de Djany le 27/08 : ses DEUX fiches s'appelaient
   // « Djany », et la confirmation demandait « Retirer le profil de Djany ? ».
@@ -3037,10 +3037,17 @@ function confirmRemove() {
   const e = activeEnfant.value
   const homonymes = enfants.value.filter((x) => x.firstName === e.firstName).length > 1
   const quoi = homonymes ? ((e.formation || '').trim() || niveauLabel(e) || e.firstName) : e.firstName
-  if (confirm(t('mia.confirmRemoveProfile', { name: quoi }))) {
-    store.removeEnfant(activeEnfant.value.id)
-    activeId.value = enfants.value[0]?.id || ''
+  if (!confirm(t('mia.confirmRemoveProfile', { name: quoi }))) return
+  // ⚠️ `removeEnfant` supprime d'abord les FICHIERS SERVEUR des cours, et refuse
+  // d'effacer quoi que ce soit s'il n'y arrive pas : un effacement partiel qui
+  // laisse un PDF sur l'hébergement est pire qu'un effacement qui n'a pas eu
+  // lieu, parce qu'on peut réessayer le second. On le DIT plutôt que d'afficher
+  // un profil disparu de l'écran mais dont les documents sont restés.
+  if (!(await store.removeEnfant(activeEnfant.value.id))) {
+    window.alert(t('mia.removeProfileFileError'))
+    return
   }
+  activeId.value = enfants.value[0]?.id || ''
 }
 
 // ── Lecture de copie (vision) ──────────────────────────────────────────

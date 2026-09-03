@@ -4,7 +4,9 @@ import { useAuthStore } from './auth'
 import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore'
 import { enregistrerActivite } from '../utils/recompenses'
-import { addCoursPerso } from '../utils/coursPerso'
+import { addCoursPerso, listCoursPerso, clearCoursPerso } from '../utils/coursPerso'
+import { effacerCalibration } from '../utils/calibration'
+import { deleteCoursFiles } from '../services/coursFiles'
 import { clearCoursEcole } from '../utils/coursEcole'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
 import { baremePour, versAcquisition, maxDe, paliersDe } from '../data/baremes'
@@ -831,7 +833,31 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     return enfant.id
   }
 
-  function removeEnfant(id) {
+  /**
+   * Supprime un profil et TOUT ce qui s'y rattache.
+   *
+   * ⚠️ ASYNCHRONE DEPUIS LE 03/09/2026, et l'ordre n'est pas négociable. Les
+   * cours de la personne peuvent avoir un PDF sur le serveur ; l'identifiant qui
+   * permet de le désigner ne vit QUE dans le dépôt local. Effacer le local
+   * d'abord rendrait le fichier ineffaçable — il resterait sur l'hébergement
+   * sans que personne ne puisse plus le nommer.
+   *
+   * ⚠️ ON N'EFFACE RIEN SI LE SERVEUR REFUSE. Même philosophie que
+   * `supprimerMonCompte` : un effacement partiel qui laisse un PDF derrière lui
+   * est pire qu'un effacement qui n'a pas eu lieu, parce qu'on peut réessayer le
+   * second. La fonction renvoie donc `false` et le profil reste en place.
+   *
+   * @returns {Promise<boolean>} vrai si tout a été effacé.
+   */
+  async function removeEnfant(id) {
+    // 1. Les FICHIERS serveur d'abord, tant qu'on a encore leurs identifiants.
+    const r = await deleteCoursFiles(listCoursPerso(id))
+    if (r.echecs > 0) return false
+    // 2. Les dépôts locaux rattachables à la personne. `clearCoursPerso` et
+    //    `effacerCalibration` manquaient : le texte de ses cours et sa
+    //    calibration survivaient au profil.
+    clearCoursPerso(id)
+    effacerCalibration(id)
     enfants.value = enfants.value.filter((e) => e.id !== id)
     const uid = dataUid()
     if (uid) {
@@ -849,6 +875,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     // scolaire rattachable à la personne, il ne doit pas survivre au profil.
     clearCoursEcole(id)
     persist()
+    return true
   }
 
   /** Met à jour la fiche de profil (config) d'un enfant/apprenant. */
