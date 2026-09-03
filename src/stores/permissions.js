@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useAuthStore } from './auth'
 import { demoKey } from '../utils/demoScope'
+import { db } from '../firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 /**
  * Système RBAC (Role-Based Access Control) de MAPO
@@ -167,7 +169,19 @@ export const DEFAULT_ROLES = {
 const DEMO_ROLES_KEY = 'mapo_demo_roles'
 
 export const usePermissionsStore = defineStore('permissions', () => {
-  const roles = ref({ ...DEFAULT_ROLES })
+  /**
+   * ⚠️ Copie PROFONDE des rôles par défaut.
+   *
+   * C'était `{ ...DEFAULT_ROLES }`, une copie de surface : les objets
+   * `permissions` restaient partagés avec la constante. `updatePermission`
+   * écrivait donc dans `DEFAULT_ROLES` lui-même, et « remettre le rôle à ses
+   * permissions par défaut » relisait… les valeurs déjà modifiées. Le bouton de
+   * réinitialisation, confirmation comprise, ne remettait rien.
+   */
+  const clonerDefauts = () => JSON.parse(JSON.stringify(DEFAULT_ROLES))
+  const roles = ref(clonerDefauts())
+  // Motif du dernier échec de lecture ou d'écriture, pour que l'écran le dise.
+  const erreur = ref(null)
   const authStore = useAuthStore()
 
   // Permission du rôle actuel pour un module donné
@@ -200,7 +214,7 @@ export const usePermissionsStore = defineStore('permissions', () => {
   })
 
   // Charger les rôles personnalisés
-  const loadRoles = () => {
+  const loadRoles = async () => {
     if (authStore.isDemo) {
       try {
         const stored = localStorage.getItem(demoKey(DEMO_ROLES_KEY))
@@ -214,41 +228,90 @@ export const usePermissionsStore = defineStore('permissions', () => {
           for (const [k, v] of Object.entries(parsed || {})) {
             if (DEFAULT_ROLES[k]) retenus[k] = v
           }
-          roles.value = { ...DEFAULT_ROLES, ...retenus }
+          roles.value = { ...clonerDefauts(), ...retenus }
         }
       } catch (e) { /* silent */ }
       return
     }
+
+    // ── Mode école ────────────────────────────────────────────────────────
+    //
+    // ⚠️ Cette branche N'EXISTAIT PAS : `loadRoles` et `saveRoles` s'arrêtaient
+    // après le bloc démo. Hors démonstration, la matrice des droits n'était donc
+    // ni lue ni écrite : le directeur retirait un accès, l'écran confirmait, et
+    // au rechargement les défauts revenaient. Un faux paramètre sur des DROITS.
+    const sid = authStore.schoolId
+    if (!sid) return
+    try {
+      const snap = await getDoc(doc(db, 'schools', sid, 'config', 'roles'))
+      const enregistres = snap.exists() ? (snap.data().roles || {}) : null
+      if (!enregistres) return
+      // Même précaution que la démo : on n'accepte que les rôles qui existent
+      // encore, sinon un rôle retiré du produit réapparaîtrait à l'écran.
+      const retenus = {}
+      for (const [k, v] of Object.entries(enregistres)) {
+        if (DEFAULT_ROLES[k]) retenus[k] = v
+      }
+      roles.value = { ...clonerDefauts(), ...retenus }
+      erreur.value = null
+    } catch (e) {
+      // On DIT l'échec : sans lui, « droits par défaut » et « lecture
+      // impossible » se ressemblent, et l'école croit voir sa configuration.
+      erreur.value = e?.code || 'lecture_impossible'
+    }
   }
 
   // Sauvegarder les rôles
-  const saveRoles = () => {
+  const saveRoles = async () => {
     if (authStore.isDemo) {
       try {
         localStorage.setItem(demoKey(DEMO_ROLES_KEY), JSON.stringify(roles.value))
-      } catch (e) { /* silent */ }
-      return
+        return { ok: true }
+      } catch (e) { return { ok: false, reason: 'stockage' } }
+    }
+
+    // ── Mode école : la matrice vit dans le document de l'école ───────────
+    const sid = authStore.schoolId
+    if (!sid) return { ok: false, reason: 'hors_ecole' }
+    // Seule la direction fixe les droits. Le laisser au client sans le dire
+    // reviendrait à promettre un réglage que les règles refuseront.
+    if (!authStore.isDirecteur) return { ok: false, reason: 'interdit' }
+    try {
+      await setDoc(doc(db, 'schools', sid, 'config', 'roles'), { roles: roles.value }, { merge: true })
+      erreur.value = null
+      return { ok: true }
+    } catch (e) {
+      erreur.value = e?.code || 'ecriture_impossible'
+      return { ok: false, reason: erreur.value }
     }
   }
 
-  // Mettre à jour la permission d'un rôle pour un module
+  /**
+   * Mettre à jour la permission d'un rôle pour un module.
+   *
+   * ⚠️ Ces deux fonctions appelaient `saveRoles()` sans attendre ni lire le
+   * résultat, alors que l'écran a par ailleurs un bouton « Enregistrer ». Deux
+   * chemins d'écriture pour un même fait : le bandeau annonçait « modifications
+   * non enregistrées » sur une matrice déjà écrite, et un refus des règles
+   * Firestore ne laissait aucune trace. On ne touche plus qu'à l'état en
+   * mémoire ; l'écriture appartient à `saveRoles()`, qui la rapporte.
+   */
   const updatePermission = (roleName, moduleKey, level) => {
     if (roles.value[roleName] && roles.value[roleName].editable !== false) {
       roles.value[roleName].permissions[moduleKey] = level
-      saveRoles()
     }
   }
 
-  // Réinitialiser un rôle aux valeurs par défaut
+  // Réinitialiser un rôle aux valeurs par défaut (en mémoire, cf. ci-dessus)
   const resetRole = (roleName) => {
     if (DEFAULT_ROLES[roleName]) {
-      roles.value[roleName] = { ...DEFAULT_ROLES[roleName], permissions: { ...DEFAULT_ROLES[roleName].permissions } }
-      saveRoles()
+      roles.value[roleName] = JSON.parse(JSON.stringify(DEFAULT_ROLES[roleName]))
     }
   }
 
   return {
     roles,
+    erreur,
     getPermission,
     hasAccess,
     canWrite,

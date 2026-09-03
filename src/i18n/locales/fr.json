@@ -1622,6 +1622,8 @@
     "insightWatchMany": "{n} élèves à surveiller : signaux d'assiduité ou de résultats. Un point individuel maintenant aide à inverser la tendance avant qu'elle ne s'installe."
   },
   "revsuivi": {
+    "notesLoading": "Lecture des notes en cours — cette liste n'est pas encore complète.",
+    "notesFailed": "Les notes n'ont pas pu être lues : cette liste est incomplète. Rechargez la page.",
     "title": "Suivi des révisions",
     "subtitle": "Ce que le Tuteur IA observe : les élèves en difficulté et sur quels sujets.",
     "weakestSubjects": "Matières les plus fragiles",
@@ -3817,6 +3819,10 @@
     }
   },
   "rolesv": {
+    "loadFailed": "Impossible de lire les droits de l'établissement : la matrice affichée est celle par défaut, pas la vôtre.",
+    "saved": "Droits enregistrés.",
+    "saveFailed": "Enregistrement impossible : vos modifications ne sont PAS appliquées. Réessayez.",
+    "saveForbidden": "Seule la direction peut modifier les droits.",
     "title": "Rôles & Permissions",
     "subtitle": "Configurez les accès de chaque rôle aux modules de l'application",
     "accessLevels": "Niveaux d'accès",

@@ -1622,6 +1622,8 @@
     "insightWatchMany": "{n} students to watch: attendance or results signals. An individual check-in now helps reverse the trend before it sets in."
   },
   "revsuivi": {
+    "notesLoading": "Loading marks — this list is not complete yet.",
+    "notesFailed": "Marks could not be read: this list is incomplete. Please reload the page.",
     "title": "Revision tracking",
     "subtitle": "What the AI Tutor observes: which students are struggling and on what topics.",
     "weakestSubjects": "Weakest subjects",
@@ -3817,6 +3819,10 @@
     }
   },
   "rolesv": {
+    "loadFailed": "The school's permissions could not be read: the matrix shown is the default one, not yours.",
+    "saved": "Permissions saved.",
+    "saveFailed": "Could not save: your changes are NOT applied. Please try again.",
+    "saveForbidden": "Only the school head can change permissions.",
     "title": "Roles & Permissions",
     "subtitle": "Configure each role's access to the application's modules",
     "accessLevels": "Access levels",

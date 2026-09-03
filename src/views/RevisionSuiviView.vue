@@ -111,8 +111,14 @@
       <div class="card-head"><Users :size="18" /><h3>{{ t('revsuivi.studentsToSupport', { n: filteredStudents.length }) }}</h3></div>
 
       <div v-if="filteredStudents.length === 0" class="empty">
-        <!-- Ne JAMAIS dire « aucune difficulté » quand on n'a rien pu regarder. -->
+        <!-- Ne JAMAIS dire « aucune difficulté » quand on n'a rien pu regarder.
+             Trois raisons distinctes de ne rien montrer, trois messages : on ne
+             sait pas de quelles classes il s'agit, la lecture des notes a
+             échoué, ou elles ne sont pas encore arrivées. Seul le quatrième cas
+             — tout est lu, rien à signaler — autorise à rassurer. -->
         <p v-if="cloisonnementIndetermine">{{ t('revsuivi.scopeUnknown') }}</p>
+        <p v-else-if="notesEnEchec">{{ t('revsuivi.notesFailed') }}</p>
+        <p v-else-if="!notesChargees">{{ t('revsuivi.notesLoading') }}</p>
         <p v-else>{{ t('revsuivi.noDifficulty') }}</p>
       </div>
 
@@ -246,6 +252,11 @@ async function copyRemed() {
 }
 const states = ref({})   // états de révision réels (Tuteur) : { studentId: { subjectId: {...} } }
 const loaded = ref(false)
+// Les notes arrivent APRÈS l'affichage : tant qu'elles ne sont pas là, une liste
+// vide ne veut pas dire « aucune difficulté », elle veut dire « je ne sais pas
+// encore ». Et si leur lecture échoue, il faut le DIRE plutôt que de rassurer.
+const notesChargees = ref(false)
+const notesEnEchec = ref(false)
 
 const WEAK_NOTE = 10   // moyenne /20 sous laquelle une matière est « à travailler »
 const WEAK_MASTERY = 50 // maîtrise de révision sous laquelle une matière est fragile
@@ -375,7 +386,20 @@ function buildDemoSample() {
 const students = computed(() => {
   if (!loaded.value) return []
   const real = buildFromData()
-  const list = real.length ? real : buildDemoSample()
+  // ⚠️ L'échantillon fabriqué est réservé à la DÉMONSTRATION.
+  //
+  // Sans ce garde, `buildDemoSample()` construisait des lignes à partir des VRAIS
+  // élèves inscrits — vrai nom, vrai prénom, vraie classe — avec des notes
+  // calculées par une formule et affichées « 7/20 », dans le même style visuel
+  // que les vraies. Et ce n'était pas un cas rare : au premier affichage
+  // `buildFromData()` est toujours vide, puisque les notes se chargent en
+  // arrière-plan, et il le reste toute l'année dans une école qui n'a pas encore
+  // saisi de notes. Le plan de remédiation envoyé à l'IA était bâti dessus.
+  //
+  // Un enseignant pouvait convoquer un parent pour une note qui n'existe pas.
+  // Le store `miapoSuivi` garde correctement son échantillon derrière `isDemo` :
+  // c'est ce garde qui manquait ici.
+  const list = real.length ? real : (authStore.isDemo ? buildDemoSample() : [])
   return list.sort((a, b) => (b.weak.length - a.weak.length) || (a.weak[0].sort - b.weak[0].sort))
 })
 
@@ -495,7 +519,13 @@ onMounted(async () => {
   Promise.resolve(miapoSuivi.load(inscrits.value)).catch(() => {})
   // Les notes (lourdes pour 900+ élèves) se chargent en arrière-plan : elles
   // affineront la liste réelle quand elles seront prêtes, sans bloquer l'affichage.
-  Promise.resolve(notesStore.loadNotes?.()).catch(() => {})
+  //
+  // ⚠️ On retient QUAND elles sont arrivées. Sans ce drapeau, une liste vide
+  // pendant le chargement était présentée comme « aucune difficulté » — un vide
+  // qui veut dire « je n'ai pas encore lu les notes » annoncé comme un constat.
+  Promise.resolve(notesStore.loadNotes?.())
+    .then(() => { notesChargees.value = true })
+    .catch(() => { notesEnEchec.value = true })
 })
 </script>
 

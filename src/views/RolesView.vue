@@ -161,6 +161,13 @@
       </div>
     </div>
 
+    <!-- Lecture impossible : sans ce bandeau, l'école croit voir SA matrice
+         alors que ce sont les valeurs par défaut. -->
+    <div v-if="permissionsStore.erreur" class="info-banner card">
+      <ShieldAlert :size="18" style="color: var(--gold); flex-shrink: 0;" />
+      <p>{{ t('rolesv.loadFailed') }}</p>
+    </div>
+
     <!-- Info for non-directeur -->
     <div v-if="!isDirecteur" class="info-banner card">
       <Info :size="18" style="color: var(--pr); flex-shrink: 0;" />
@@ -168,9 +175,9 @@
     </div>
 
     <!-- Sticky Save Bar -->
-    <div v-if="dirty && isDirecteur" class="save-bar">
+    <div v-if="(dirty || enregistrement) && isDirecteur" class="save-bar">
       <div class="save-bar-content">
-        <span class="save-message">{{ t('rolesv.unsaved') }}</span>
+        <span class="save-message">{{ enregistrement || t('rolesv.unsaved') }}</span>
         <div class="save-buttons">
           <button class="btn btn-sm btn-outline" @click="handleCancel">
             {{ t('rolesv.cancel') }}
@@ -248,6 +255,9 @@ const onPermChange = (roleKey, moduleKey, value) => {
 const handleReset = (roleKey) => {
   if (confirm(`Remettre le r\u00f4le "${roles.value[roleKey]?.label}" \u00e0 ses permissions par d\u00e9faut ?`)) {
     permissionsStore.resetRole(roleKey)
+    // La remise \u00e0 z\u00e9ro est une modification comme une autre : elle doit passer
+    // par \u00ab Enregistrer \u00bb, sinon elle ne serait ni \u00e9crite ni confirm\u00e9e.
+    dirty.value = true
   }
 }
 
@@ -255,14 +265,38 @@ const resetSelectedRole = () => {
   handleReset(selectedRole.value)
 }
 
-const handleSave = () => {
-  dirty.value = false
+/**
+ * Enregistre la matrice des droits — et le DIT.
+ *
+ * ⚠️ Cette fonction se contentait de `dirty.value = false` : elle n'appelait
+ * même pas `saveRoles()`. Le bandeau « modifications non enregistrées »
+ * disparaissait, le directeur croyait avoir cloisonné son école, et rien
+ * n'était écrit — d'autant que `saveRoles` lui-même ne faisait rien hors
+ * démonstration. Un faux paramètre, sur des DROITS.
+ */
+const enregistrement = ref('')
+const handleSave = async () => {
+  const res = await permissionsStore.saveRoles()
+  if (res?.ok) {
+    dirty.value = false
+    enregistrement.value = t('rolesv.saved')
+    setTimeout(() => { enregistrement.value = '' }, 3000)
+    return
+  }
+  // On garde `dirty` à vrai : les modifications ne sont PAS enregistrées, et
+  // l'écran ne doit pas laisser croire le contraire.
+  enregistrement.value = res?.reason === 'interdit'
+    ? t('rolesv.saveForbidden')
+    : t('rolesv.saveFailed')
 }
 
-const handleCancel = () => {
-  // Reload roles from store to discard changes
-  permissionsStore.loadRoles()
+const handleCancel = async () => {
+  // Relit la matrice réellement enregistrée pour écarter les modifications.
+  // ⚠️ `loadRoles` ne faisait rien hors démo : « Annuler » n'annulait donc rien,
+  // et la matrice mutée en mémoire restait active toute la session.
+  await permissionsStore.loadRoles()
   dirty.value = false
+  enregistrement.value = ''
 }
 
 onMounted(() => {
