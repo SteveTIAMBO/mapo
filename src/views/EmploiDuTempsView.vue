@@ -384,15 +384,22 @@
                       @click="edtStore.retirerIndisponibilite(load.teacherId, i)"
                     ><X :size="12" /></button>
                   </div>
+                  <!-- ⚠️ Trois choix au lieu de deux heures à taper. La vraie vie
+                       se dit « pas le mercredi » ou « seulement le matin » ; pour
+                       24 professeurs, saisir 48 horaires découragerait n'importe
+                       quel responsable. Les horaires sont DÉDUITS de la grille de
+                       l'école (voir `plagesRapides`), jamais 12:00 en dur. -->
                   <div class="unavail-add">
                     <select v-model="brouillonIndispo[load.teacherId].day" class="input input-xs">
                       <option v-for="d in edtStore.timeGrid.days" :key="d" :value="d">{{ d }}</option>
                     </select>
-                    <input v-model="brouillonIndispo[load.teacherId].from" type="time" class="input input-xs" />
-                    <input v-model="brouillonIndispo[load.teacherId].to" type="time" class="input input-xs" />
-                    <button class="btn btn-sm btn-outline" type="button" @click="ajouterIndispo(load.teacherId)">
-                      {{ t('edt.unavailAdd') }}
-                    </button>
+                    <button
+                      v-for="p in ['journee', 'matin', 'apresMidi']"
+                      :key="p"
+                      class="btn btn-sm btn-outline"
+                      type="button"
+                      @click="ajouterIndispo(load.teacherId, p)"
+                    >{{ t('edt.unavail_' + p) }}</button>
                   </div>
                   <div v-if="erreurIndispo[load.teacherId]" class="unavail-err">
                     {{ erreurIndispo[load.teacherId] }}
@@ -1603,22 +1610,25 @@ watch(
     const premierJour = edtStore.timeGrid.days?.[0] || ''
     for (const l of teacherLoadSummary.value) {
       if (!brouillonIndispo[l.teacherId]) {
-        brouillonIndispo[l.teacherId] = { day: premierJour, from: '', to: '' }
+        brouillonIndispo[l.teacherId] = { day: premierJour }
       }
     }
   },
   { immediate: true },
 )
 
-/** Ajoute l'indisponibilité saisie, et DIT pourquoi si elle est refusée. */
-function ajouterIndispo(teacherId) {
+/**
+ * Ajoute l'indisponibilité, et DIT pourquoi si elle est refusée.
+ *
+ * `plage` vaut « journee », « matin » ou « apresMidi » : les horaires viennent
+ * de la grille de l'école, le responsable ne tape aucune heure.
+ */
+function ajouterIndispo(teacherId, plage) {
   const b = brouillonIndispo[teacherId]
-  const res = edtStore.ajouterIndisponibilite(teacherId, b)
+  const horaires = edtStore.plagesRapides()[plage]
+  const res = edtStore.ajouterIndisponibilite(teacherId, { day: b.day, ...horaires })
   if (res.ok) {
     erreurIndispo[teacherId] = ''
-    // On garde le jour choisi : on saisit souvent plusieurs plages le même jour.
-    b.from = ''
-    b.to = ''
     return
   }
   erreurIndispo[teacherId] = res.reason === 'plage'

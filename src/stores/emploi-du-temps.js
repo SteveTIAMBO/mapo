@@ -1104,6 +1104,45 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     return teacherConstraints.value.find((c) => c.teacherId === teacherId)?.unavailable || []
   }
 
+  /**
+   * Les trois plages qu'une école emploie vraiment : la journée, la matinée,
+   * l'après-midi — calculées sur SA grille horaire.
+   *
+   * ⚠️ Aucune heure en dur. Midi n'est pas 12:00 partout : la frontière est la
+   * pause la plus LONGUE de la journée, qui est la pause déjeuner dans tous les
+   * cas réels. On la reconnaît par sa durée et non par son libellé, qui change
+   * avec la langue et avec l'école.
+   *
+   * Sans pause déclarée, on coupe au milieu de la journée : approximatif, mais
+   * l'école peut le corriger — alors qu'une frontière fausse et invisible, non.
+   */
+  function plagesRapides() {
+    const grid = timeGrid.value || {}
+    const debut = grid.startTime || '08:00'
+    const fin = grid.endTime || '17:00'
+    let coupureDebut = null
+    let coupureFin = null
+    let plusLongue = 0
+    for (const p of grid.breaks || []) {
+      const duree = timeToMinutes(p.end) - timeToMinutes(p.start)
+      if (duree > plusLongue) {
+        plusLongue = duree
+        coupureDebut = p.start
+        coupureFin = p.end
+      }
+    }
+    if (!coupureDebut) {
+      const milieu = minutesToTime(Math.round((timeToMinutes(debut) + timeToMinutes(fin)) / 2))
+      coupureDebut = milieu
+      coupureFin = milieu
+    }
+    return {
+      journee: { from: debut, to: fin },
+      matin: { from: debut, to: coupureDebut },
+      apresMidi: { from: coupureFin, to: fin },
+    }
+  }
+
   function ajouterIndisponibilite(teacherId, { day, from, to } = {}) {
     if (!teacherId || !day || !from || !to) return { ok: false, reason: 'incomplet' }
     // Une plage vide ou inversée ne bloquerait RIEN. La refuser vaut mieux que
@@ -1325,6 +1364,7 @@ export const useEmploiDuTempsStore = defineStore('emploiDuTemps', () => {
     updateSubjectHours, setSubjectHoursForLevel,
     addTeacherAssignment, removeTeacherAssignment,
     indisponibilitesDe, ajouterIndisponibilite, retirerIndisponibilite,
+    plagesRapides,
     setSetupStep, moveEntry, saveToStorage, getSubjectColor,
     buildTimeSlots, buildDisplaySlots, minutesToTime, timeToMinutes,
     setLevelOverride, removeLevelOverride, getEffectiveGrid,

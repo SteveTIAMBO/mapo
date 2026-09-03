@@ -735,3 +735,83 @@ describe('l’assistant écrit dans la fiche', () => {
     expect(vue).toContain('personnelStore.updateStaff(teacherId, {')
   })
 })
+
+describe('⚠️ indisponibilités : journée / matin / après-midi, sans taper d’heure', () => {
+  /**
+   * La saisie demandait un jour et DEUX heures tapées à la main, par enseignant.
+   * Pour 24 professeurs, cela fait 48 horaires à saisir — personne ne le fait.
+   * Or la vraie vie se dit « pas le mercredi » ou « seulement le matin ».
+   *
+   * ⚠️ Les horaires sont DÉDUITS de la grille de l'école. Coder midi à 12:00
+   * aurait donné une frontière fausse dans toute école qui déjeune à 12h10 ou à
+   * 13h — et fausse en silence, puisque le générateur aurait quand même placé
+   * des cours.
+   *
+   * ⚠️ La pause déjeuner est reconnue par sa DURÉE (la plus longue), pas par son
+   * libellé : « Pause déjeuner », « Lunch », « Grande pause » changent avec la
+   * langue et avec l'école.
+   */
+  function grille({ debut, fin, pauses }) {
+    const edt = bancEssai({ classes: [CLASSE_6A], heures: {}, profs: [] })
+    edt.timeGrid = { days: ['lundi'], startTime: debut, endTime: fin, slotDuration: 55, breaks: pauses }
+    return edt
+  }
+
+  it('la frontière midi est la pause la plus longue, pas 12:00', () => {
+    const edt = grille({
+      debut: '07:30',
+      fin: '15:30',
+      pauses: [
+        { start: '10:05', end: '10:20', label: 'Récréation' },     // 15 min
+        { start: '12:10', end: '13:10', label: 'Pause déjeuner' }, // 60 min
+      ],
+    })
+    const p = edt.plagesRapides()
+    expect(p.journee).toEqual({ from: '07:30', to: '15:30' })
+    expect(p.matin).toEqual({ from: '07:30', to: '12:10' })
+    expect(p.apresMidi).toEqual({ from: '13:10', to: '15:30' })
+  })
+
+  it('une école qui déjeune à 13h a bien 13h pour frontière', () => {
+    const edt = grille({
+      debut: '08:00', fin: '17:00',
+      pauses: [{ start: '13:00', end: '14:00', label: 'Déjeuner' }],
+    })
+    const p = edt.plagesRapides()
+    expect(p.matin.to).toBe('13:00')
+    expect(p.apresMidi.from).toBe('14:00')
+  })
+
+  it('sans pause déclarée, on coupe au milieu — approximatif mais corrigeable', () => {
+    const edt = grille({ debut: '08:00', fin: '16:00', pauses: [] })
+    const p = edt.plagesRapides()
+    expect(p.matin.to).toBe('12:00')
+    expect(p.apresMidi.from).toBe('12:00')
+  })
+
+  it('« matin » empêche réellement les cours du matin', () => {
+    // La chaîne complète : choix → contrainte → effet sur le placement.
+    const edt = bancEssai({
+      classes: [CLASSE_6A],
+      heures: { '6e': { Mathématiques: 4 } },
+      profs: [{ teacherId: 'p1', teacherName: 'Nkeng', subjectId: 'Mathématiques', classIds: ['c1'] }],
+    })
+    // Grille 08:00–12:00, pause de 10:00 à 10:15 → matin = 08:00 → 10:00
+    edt.timeGrid = { days: ['lundi', 'mardi'], startTime: '08:00', endTime: '12:00', slotDuration: 60, breaks: [{ start: '10:00', end: '10:15', label: 'Récré' }] }
+    const p = edt.plagesRapides()
+    edt.ajouterIndisponibilite('p1', { day: 'lundi', ...p.matin })
+
+    const res = edt.generateSchedule({ commit: false })
+    const lundi = res.newSchedule.filter((e) => e.teacherId === 'p1' && e.day === 'lundi')
+    expect(lundi.every((e) => e.slotStart >= '10:00')).toBe(true)
+  })
+
+  it('l’écran propose les trois plages et ne demande plus d’heure', () => {
+    expect(vue).toContain("v-for=\"p in ['journee', 'matin', 'apresMidi']\"")
+    expect(vue).toContain('edtStore.plagesRapides()[plage]')
+    // Plus de champs d'heures à remplir dans le bloc d'indisponibilité.
+    const i = vue.indexOf('<div class="unavail-add">')
+    const bloc = vue.slice(i, vue.indexOf('</div>', vue.indexOf('</button>', i)))
+    expect(bloc).not.toContain('type="time"')
+  })
+})
