@@ -512,7 +512,10 @@
                   <div class="ex-item-row">
                     <div class="ex-item-main">
                       <span class="ex-name">{{ ex.label }}<span v-if="ex.official" class="ex-badge">{{ t('mia.exOfficialTag') }}</span></span>
-                      <span class="ex-meta">{{ formatDateLong(ex.date) }} · <b :class="jClass(ex.date)">{{ jLabel(ex.date) }}</b></span>
+                      <!-- La matière est AFFICHÉE : c'est elle qui décide de ce
+                           que le programme fera réviser. La cacher rendrait le
+                           résultat incompréhensible. -->
+                      <span class="ex-meta"><b v-if="ex.matiere" class="ex-mat">{{ ex.matiere }}</b><template v-if="ex.matiere"> · </template>{{ formatDateLong(ex.date) }} · <b :class="jClass(ex.date)">{{ jLabel(ex.date) }}</b></span>
                     </div>
                     <div class="ex-item-actions">
                       <button class="btn btn-primary btn-xs" @click="genererProgrammePour(ex)"><CalendarCheck :size="14" /> <span>{{ programmes[ex.id] ? t('mia.exRegen') : t('mia.exGen') }}</span></button>
@@ -524,12 +527,21 @@
               </div>
               <p v-else class="muted small">{{ t('mia.exEmpty') }}</p>
 
-              <!-- Ajouter un examen personnel -->
+              <!-- Ajouter un examen personnel.
+                   ⚠️ La MATIÈRE est obligatoire, et vient de la liste des cours.
+                   Sans elle, MIAPO ne sait pas sur quoi porte l'examen : il
+                   étalait alors des séances sur TOUTES les matières, ce qui
+                   revenait à ne rien cibler. -->
               <div class="ex-add">
                 <input v-model="newExamLabel" class="input" :placeholder="t('mia.exLabelPh')" />
+                <select v-model="newExamMatiere" class="input ex-mat-in">
+                  <option value="" disabled>{{ t('mia.exSubjectPh') }}</option>
+                  <option v-for="m in matieresList" :key="'xm' + m" :value="m">{{ m }}</option>
+                </select>
                 <input v-model="newExamDate" type="date" class="input ex-date-in" :min="todayISO" />
-                <button class="btn btn-outline btn-sm" :disabled="!newExamLabel.trim() || !newExamDate" @click="addExamManuel"><Plus :size="15" /> <span>{{ t('mia.add') }}</span></button>
+                <button class="btn btn-outline btn-sm" :disabled="!newExamLabel.trim() || !newExamDate || !newExamMatiere" @click="addExamManuel"><Plus :size="15" /> <span>{{ t('mia.add') }}</span></button>
               </div>
+              <p v-if="!matieresList.length" class="muted small ex-nomat">{{ t('mia.exNoSubject') }}</p>
 
               <!-- Méthode détaillée par l'IA (optionnel) -->
               <div class="ex-ai">
@@ -3383,6 +3395,7 @@ async function getPrepa() {
 const exams = ref([])
 const newExamLabel = ref('')
 const newExamDate = ref('')
+const newExamMatiere = ref('')
 const programmes = ref({})            // { examId: nbSéances } après génération
 const todayISO = computed(() => {
   const d = new Date()
@@ -3403,21 +3416,39 @@ const examOfficielSuggere = computed(() => (examOfficiel.value && !exams.value.s
 // (authStore.schoolId) affichera la date exacte « synchronisée ».
 const examSyncNote = computed(() => t('mia.exPrevisionnel'))
 
-function addExam(label, date, official = false, key = '') {
+function addExam(label, date, official = false, key = '', matiere = '') {
   const l = String(label || '').trim()
   if (!l || !date) return
-  exams.value = [...exams.value, { id: 'x' + Date.now().toString(36), label: l, date, official, key }]
+  exams.value = [...exams.value, { id: 'x' + Date.now().toString(36), label: l, date, official, key, matiere: String(matiere || '').trim() }]
   saveExams()
 }
-function addExamManuel() { addExam(newExamLabel.value, newExamDate.value, false, ''); newExamLabel.value = ''; newExamDate.value = '' }
+function addExamManuel() {
+  addExam(newExamLabel.value, newExamDate.value, false, '', newExamMatiere.value)
+  newExamLabel.value = ''; newExamDate.value = ''; newExamMatiere.value = ''
+}
 function ajouterExamenOfficiel() { const eo = examOfficiel.value; if (eo) addExam(t('mia.exOff_' + eo.key), examOfficielDate.value, true, eo.key) }
 function removeExam(id) {
   exams.value = exams.value.filter((e) => e.id !== id); saveExams()
   writeAgenda(readAgenda().filter((d) => d.examId !== id))    // retire aussi son programme de l'agenda
   const p = { ...programmes.value }; delete p[id]; programmes.value = p
 }
+/**
+ * ⚠️ UN EXAMEN PORTE SUR QUELQUE CHOSE. Avant, `genererProgramme` recevait
+ * TOUTES les matières, quel que soit l'examen : un partiel de « Conformité
+ * normative » déclenchait des séances d'Audit interne et de PDCA. MIAPO ne
+ * savait pas à quoi rattacher l'examen, donc il révisait tout — et ne révisait
+ * rien en particulier. Un examen personnel cible désormais SON cours.
+ *
+ * ⚠️ L'examen OFFICIEL (Bac, BEPC, Probatoire…) garde toutes les matières :
+ * c'est sa nature, il porte sur l'ensemble du programme.
+ *
+ * ⚠️ Un examen enregistré AVANT ce changement n'a pas de matière. On retombe
+ * alors sur l'ancien comportement plutôt que de ne rien générer : « pas de
+ * matière » veut dire « on ne sait pas », pas « aucune matière ».
+ */
 function genererProgrammePour(ex) {
-  const prog = genererProgramme({ examId: ex.id, examLabel: ex.label, dateISO: ex.date, matieres: matieresList.value })
+  const cible = ex.official ? matieresList.value : (ex.matiere ? [ex.matiere] : matieresList.value)
+  const prog = genererProgramme({ examId: ex.id, examLabel: ex.label, dateISO: ex.date, matieres: cible })
   writeAgenda([...prog, ...readAgenda().filter((d) => d.examId !== ex.id)])   // idempotent : remplace l'ancien programme
   programmes.value = { ...programmes.value, [ex.id]: prog.length }
 }
@@ -4046,6 +4077,9 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .ex-add { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .ex-add .input { flex: 1; min-width: 140px; }
 .ex-date-in { flex: 0 0 auto; max-width: 170px; }
+.ex-mat-in { flex: 1 1 150px; min-width: 0; }
+.ex-mat { color: var(--pr); font-weight: 600; }
+.ex-nomat { margin: 8px 0 0; }
 .ex-ai { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--divider, rgba(17,24,39,.08)); }
 /* ── Historique ── */
 .hist-list { display: flex; flex-direction: column; gap: 8px; }

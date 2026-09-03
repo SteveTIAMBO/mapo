@@ -19,7 +19,35 @@ function save(enfantId, list) {
   try { localStorage.setItem(KEY(enfantId), JSON.stringify(list)) } catch { /* quota */ }
 }
 
-export function addCoursPerso(enfantId, { matiere = '', titre = '', contenu = '' }) {
+/**
+ * Champs du FICHIER joint, normalisés.
+ *
+ * ⚠️ LE TEXTE ET LE FICHIER NE SE REMPLACENT PAS. Le texte extrait sert à
+ * ancrer les révisions (c'est lui que le quiz lit) ; le fichier sert à
+ * CONSULTER le cours tel que le prof l'a écrit — schémas, mise en page,
+ * tableaux, que l'extraction perd. Garder l'un sans l'autre appauvrit une
+ * moitié du produit.
+ *
+ * ⚠️ `fileData` (data URL) n'existe QU'EN DÉMO, où il n'y a pas de serveur. Il
+ * est plafonné, parce que localStorage l'est aussi : un seul PDF de 3 Mo
+ * saturerait le quota et ferait échouer EN SILENCE toutes les écritures
+ * suivantes — c'est déjà arrivé avec les clés `fin_*`. Au-delà, on garde le
+ * texte et on le DIT ; on ne fait pas semblant d'avoir rangé le fichier.
+ */
+export const FILE_DATA_MAX = 900 * 1024 // ~0,9 Mo de data URL, démo uniquement
+
+function champsFichier(src = {}) {
+  const data = String(src.fileData || '')
+  return {
+    fileId: String(src.fileId || ''),
+    fileData: data.length <= FILE_DATA_MAX ? data : '',
+    fileName: String(src.fileName || ''),
+    fileExt: String(src.fileExt || ''),
+    fileViewable: !!src.fileViewable,
+  }
+}
+
+export function addCoursPerso(enfantId, { matiere = '', titre = '', contenu = '', ...fichier }) {
   const c = String(contenu || '').trim()
   if (!c) return null
   const list = listCoursPerso(enfantId)
@@ -29,6 +57,7 @@ export function addCoursPerso(enfantId, { matiere = '', titre = '', contenu = ''
     titre: String(titre || '').trim(),
     contenu: c.slice(0, 20000),
     at: new Date().toISOString(),
+    ...champsFichier(fichier),
   }
   list.unshift(entry)
   save(enfantId, list)
@@ -64,6 +93,9 @@ export function updateCoursPerso(enfantId, id, patch = {}) {
   }
   if ('matiere' in patch) cible.matiere = String(patch.matiere || '').trim()
   if ('titre' in patch) cible.titre = String(patch.titre || '').trim()
+  // ⚠️ On ne touche au fichier que si un fichier est FOURNI. Sans ce garde-fou,
+  // renommer un cours (`{ matiere }` seul) détacherait son PDF en silence.
+  if ('fileId' in patch || 'fileData' in patch) Object.assign(cible, champsFichier(patch))
   cible.majAt = new Date().toISOString()
   save(enfantId, list)
   return cible

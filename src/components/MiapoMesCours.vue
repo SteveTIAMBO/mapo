@@ -86,8 +86,10 @@
           <div v-for="d in c.docs" :key="d.id" class="mc-item">
             <div class="mc-item-main">
               <span class="mc-name">{{ d.titre || t('mia.mcUntitled') }}</span>
-              <span class="mc-meta">{{ fmt(d.majAt || d.at) }} · {{ (d.contenu || '').length }} {{ t('mia.mcChars') }}</span>
+              <span class="mc-meta">{{ fmt(d.majAt || d.at) }} · {{ (d.contenu || '').length }} {{ t('mia.mcChars') }}<template v-if="d.fileName"> · {{ d.fileName }}</template></span>
             </div>
+            <button v-if="isViewable(d)" class="mc-act" :title="t('mia.mcViewFile')" @click="visionneuse = d"><Eye :size="15" /></button>
+            <button v-else-if="hasFile(d)" class="mc-act" :title="t('mia.mcDownloadFile')" @click="telecharger(d)"><Download :size="15" /></button>
             <button class="mc-act" :title="t('mia.mcEdit')" @click="ouvrirEdition(d)"><Pencil :size="15" /></button>
             <button class="mc-act mc-del" :title="t('mia.remove')" @click="supprimer(d)"><Trash2 :size="15" /></button>
           </div>
@@ -186,6 +188,15 @@
             />
             <span v-if="info" class="muted small mc-info">{{ info }}</span>
           </div>
+          <!-- Le fichier CONSERVÉ, distinct du texte extrait. On le nomme et on
+               offre de le retirer : sans ça, un PDF joint par erreur resterait
+               attaché sans qu'on puisse le voir ni le défaire. -->
+          <div v-if="fichier.fileName" class="mc-fichier">
+            <FileText :size="14" />
+            <span class="mc-fichier-nom">{{ fichier.fileName }}</span>
+            <span v-if="!fichier.fileId && !fichier.fileData" class="mc-fichier-non">{{ t('mia.mcFileNotKept') }}</span>
+            <button class="mc-act" :title="t('mia.remove')" @click="retirerFichier"><X :size="14" /></button>
+          </div>
           <p class="mc-privacy"><ShieldCheck :size="13" /> {{ t('mia.photoPrivacyNote') }}</p>
         </div>
 
@@ -219,6 +230,10 @@
         </div>
       </div>
     </div>
+
+    <!-- Consultation du PDF : le composant existait déjà côté ERP, il n'y avait
+         aucune raison d'en écrire un second. -->
+    <CoursFileViewer v-if="visionneuse" :item="visionneuse" @close="visionneuse = null" />
   </div>
 </template>
 
@@ -228,10 +243,12 @@ import { useI18n } from 'vue-i18n'
 import MiapoBoutonImport from './MiapoBoutonImport.vue'
 import { listCoursPerso, addCoursPerso, removeCoursPerso, updateCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
+import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
+import CoursFileViewer from './CoursFileViewer.vue'
 import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useTuteurStore } from '../stores/tuteur'
-import { FolderOpen, Plus, Pencil, Trash2, Check, X, ShieldCheck, ExternalLink, Link2, ChevronDown, Sparkles } from 'lucide-vue-next'
+import { FolderOpen, Plus, Pencil, Trash2, Check, X, ShieldCheck, ExternalLink, Link2, ChevronDown, Sparkles, Eye, Download, FileText } from 'lucide-vue-next'
 // `Check` et `FolderOpen` servent aussi au choix du dossier Carré.
 
 const props = defineProps({
@@ -372,11 +389,17 @@ const titre = ref('')
 const contenu = ref('')
 const importing = ref(false)
 const info = ref('')
+const FICHIER_VIDE = { fileName: '', fileExt: '', fileId: '', fileData: '', fileViewable: false }
+const fichier = ref(FICHIER_VIDE)
+const visionneuse = ref(null)
 
 function reinitialiser() {
   matiere.value = ''; newSubject.value = ''; newSubjectMode.value = false
   titre.value = ''; contenu.value = ''; info.value = ''; enEdition.value = null
+  fichier.value = FICHIER_VIDE
 }
+function retirerFichier() { fichier.value = FICHIER_VIDE }
+function telecharger(d) { downloadCoursFile(d) }
 /** `matierePrechoisie` : le « + » d'un groupe range le document au bon endroit. */
 function ouvrirAjout(matierePrechoisie = '') {
   reinitialiser()
@@ -389,6 +412,9 @@ function ouvrirEdition(d) {
   matiere.value = d.matiere || ''
   titre.value = d.titre || ''
   contenu.value = d.contenu || ''
+  // Le fichier déjà joint est REPRIS : sans ça, corriger une coquille dans le
+  // texte détacherait le PDF, en silence.
+  fichier.value = { fileName: d.fileName || '', fileExt: d.fileExt || '', fileId: d.fileId || '', fileData: d.fileData || '', fileViewable: !!d.fileViewable }
   modaleOuverte.value = true
 }
 function fermer() { modaleOuverte.value = false; reinitialiser() }
@@ -429,16 +455,38 @@ async function transcrirePhoto(file) {
     importing.value = false
   }
 }
+/**
+ * Un PDF : on en extrait le TEXTE **et** on CONSERVE le fichier.
+ *
+ * ⚠️ Jusqu'ici le fichier était lu puis jeté. L'apprenant croyait avoir « importé
+ * son cours » ; il n'en restait qu'un texte à plat — sans les schémas, les
+ * tableaux ni la mise en page, c'est-à-dire sans une bonne part de ce qui fait
+ * un cours de sciences ou de gestion. Les deux servent à des choses
+ * différentes : le texte ancre les révisions, le fichier se consulte.
+ *
+ * ⚠️ Un dépôt qui échoue ne fait pas échouer l'import : le texte est extrait,
+ * on le garde, et on DIT que le fichier n'a pas été conservé. Perdre les deux
+ * parce que le réseau a coupé serait la pire des deux options.
+ */
 async function lireFichier(file) {
   importing.value = true; info.value = ''
   try {
     const text = (await fileToText(file)).trim()
-    if (text) {
-      contenu.value = text
-      if (!titre.value) titre.value = file.name.replace(/\.(pdf|txt)$/i, '')
-      info.value = t('mia.mcImported', { name: file.name })
-    } else {
-      info.value = t('mia.mcImportError')
+    if (!text) { info.value = t('mia.mcImportError'); return }
+    contenu.value = text
+    if (!titre.value) titre.value = file.name.replace(/\.(pdf|txt)$/i, '')
+    info.value = t('mia.mcImported', { name: file.name })
+
+    // Seuls les formats que le serveur accepte et sait rendre consultables.
+    const ext = (file.name.split('.').pop() || '').toLowerCase()
+    if (ext !== 'pdf') { fichier.value = FICHIER_VIDE; return }
+    const r = await uploadCoursFile(file)
+    fichier.value = r.ok
+      ? { fileName: r.fileName, fileExt: r.fileExt, fileId: r.fileId || '', fileData: r.fileData || '', fileViewable: !!r.fileViewable }
+      : { ...FICHIER_VIDE, fileName: file.name }
+    if (!r.ok) {
+      info.value = t('mia.mcImported', { name: file.name }) + ' — ' + (
+        r.reason === 'demo_too_large' || r.reason === 'too_large' ? t('mia.mcFileTooLarge') : t('mia.mcFileNotKeptWhy'))
     }
   } catch {
     info.value = t('mia.mcImportError')
@@ -450,7 +498,7 @@ async function lireFichier(file) {
 function enregistrer() {
   if (!contenu.value.trim()) return
   const mat = matiereEffective.value
-  const champs = { matiere: mat, titre: titre.value, contenu: contenu.value }
+  const champs = { matiere: mat, titre: titre.value, contenu: contenu.value, ...fichier.value }
   // ⚠️ Une matière créée à la volée doit entrer AU PROGRAMME, pas seulement
   // servir d'étiquette au document. Sinon le cours n'existe que sur ce
   // document : ni le quiz, ni les notes, ni les examens ne le connaissent, et
@@ -540,6 +588,15 @@ function fmt(iso) {
   color: #1B8A5A; background: rgba(27, 138, 90, .10);
 }
 .mc-tag-ecole svg { flex-shrink: 0; }
+
+.mc-fichier {
+  display: flex; align-items: center; gap: 7px; margin-top: 8px;
+  padding: 7px 10px; border-radius: 10px; background: rgba(17, 24, 39, .05);
+  font-size: 12.5px; color: var(--tx2);
+}
+.mc-fichier svg { flex-shrink: 0; color: var(--pr); }
+.mc-fichier-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-fichier-non { flex-shrink: 0; font-size: 11.5px; color: #C0392B; }
 
 .mc-priv { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 11.5px; color: var(--tx3); }
 .mc-privacy { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 11.5px; color: var(--tx3); }
