@@ -1,49 +1,76 @@
 <!--
-  « Mes cours » — une BIBLIOTHÈQUE, plus une page d'import.
+  « Mes cours » — LA liste du programme de l'apprenant.
 
-  ⚠️ CE QUI CHANGE, ET POURQUOI (Steve, 27/08). La page était faite de trois
-  ONGLETS — Importer / Ajouter une matière / Carré — alors que ce sont des
-  ACTIONS ponctuelles, pas des destinations. Deux conséquences vécues :
+  ⚠️ CE QUI CHANGE, ET POURQUOI (Steve, 03/09). Deux défauts vécus le même jour,
+  sur le compte MBA de Djany :
 
-   - la liste des cours enregistrés était cachée SOUS l'onglet « Importer »,
-     c'est-à-dire derrière un formulaire de saisie. Pour revoir ce qu'on avait
-     importé, il fallait passer par l'écran qui sert à importer ;
-   - « Ajouter une matière » occupait un onglet permanent pour un geste qu'on
-     fait deux fois par an.
+  1. **Ce composant se fabriquait sa PROPRE liste de matières** —
+     `matieresPourNiveau(niveau)`, sans le pays et sans regarder
+     `formationModules`. Pour « Formation (hors catalogue) », cette fonction
+     tombe sur son `return MATIERES` final, c'est-à-dire le programme du
+     SECONDAIRE CAMEROUNAIS. Une apprenante en certification ISO 27001 se voyait
+     donc proposer « Éducation physique et sportive » pour ranger son cours,
+     pendant que ses treize vrais modules s'affichaient dans la carte du dessus.
+     Le reste de l'app (`matieresList`) était juste : c'est ce composant, seul,
+     qui inventait. **Il ne calcule plus rien — la vue lui passe la liste.**
 
-  Désormais : la page MONTRE la bibliothèque, et un bouton ouvre une modale.
-  Steve : « ajouter une matière revient en réalité à ajouter un cours » — d'où
-  une seule modale, où la matière se choisit ou se crée à la volée.
+  2. **Le programme et la bibliothèque étaient DEUX cartes.** On ajoutait une
+     matière dans l'une et un cours dans l'autre, sans que rien ne dise laquelle
+     faisait autorité. Steve : « le cours EST le module ». Désormais une seule
+     liste : un cours porte un nom et N documents. Elle alimente le quiz, les
+     notes, le planning et les examens.
 
-  ⚠️ Le slot `ajouter-matiere` n'est PAS la même chose : il porte l'éditeur de
-  modules d'une formation hors catalogue (le PROGRAMME, pas un cours). Il reste
-  donc affiché, en carte, sans onglet — l'enterrer à nouveau reproduirait le
-  défaut corrigé le 25/08, où l'import du programme n'était atteignable que
-  depuis un écran vide.
+  ⚠️ RIEN NE SE REMPLIT PAR DÉFAUT LÀ OÙ MAPO NE SAIT PAS. Pour le supérieur et
+  le hors-catalogue, la liste part VIDE : MAPO ne connaît pas le programme d'un
+  MBA, et proposer une liste plausible serait pire qu'une liste vide — l'erreur
+  aurait l'air d'un réglage. Là où un référentiel national existe (primaire,
+  secondaire), il reste la base : c'est vraiment le programme de l'élève.
 -->
 <template>
   <div class="mescours">
-    <!-- ══════ La bibliothèque ══════ -->
+    <!-- ══════ Le programme : une ligne par cours ══════ -->
     <div class="card">
       <div class="card-head mc-head">
         <FolderOpen :size="18" /><h3>{{ t('mia.mcMine') }}</h3>
-        <button class="btn btn-primary btn-sm mc-add" @click="ouvrirAjout()">
-          <Plus :size="15" /> <span>{{ t('mia.mcAdd') }}</span>
+        <button class="btn btn-primary btn-sm mc-add" @click="ouvrirNouveauCours">
+          <Plus :size="15" /> <span>{{ t('mia.mcAddCourse') }}</span>
         </button>
       </div>
+      <p class="muted mc-intro">{{ t('mia.mcProgrammeHint') }}</p>
 
-      <p v-if="!docs.length" class="muted mc-vide">{{ t('mia.mcHint') }}</p>
+      <!-- Second chemin de création : la plaquette de la formation. L'IA en
+           extrait les modules, l'apprenant VALIDE, puis ils sont créés. Réservé
+           aux formations sans référentiel : ailleurs le programme est connu. -->
+      <div v-if="sansReferentiel" class="mc-sources">
+        <button class="btn btn-outline btn-sm" @click="emit('importer-plaquette')">
+          <Sparkles :size="15" /> <span>{{ t('mia.importProgramme') }}</span>
+        </button>
+        <slot name="modules-carre" />
+      </div>
 
-      <div v-for="g in groupes" :key="g.matiere || '__sans__'" class="mc-groupe">
-        <div class="mc-groupe-head">
-          <span class="mc-groupe-nom">{{ g.matiere || t('mia.mcNoSubject') }}</span>
-          <span class="mc-groupe-n">{{ g.docs.length }}</span>
-          <button class="mc-groupe-add" :title="t('mia.mcAddToSubject')" @click="ouvrirAjout(g.matiere)">
-            <Plus :size="15" />
-          </button>
+      <p v-if="!coursListe.length" class="muted mc-vide">{{ t('mia.mcNoCourse') }}</p>
+
+      <div v-for="c in coursListe" :key="c.nom" class="mc-cours">
+        <form v-if="renommage === c.nom" class="mc-cours-edit" @submit.prevent="validerRenommage(c.nom)">
+          <input ref="champRenommage" v-model="saisieRenommage" class="input" maxlength="60" @keyup.esc="renommage = ''" />
+          <button class="btn btn-outline btn-sm" type="submit" :disabled="!saisieRenommage.trim()">{{ t('mia.moduleSave') }}</button>
+          <button class="btn btn-ghost btn-sm" type="button" @click="renommage = ''">{{ t('mia.moduleCancel') }}</button>
+        </form>
+        <div v-else class="mc-cours-head">
+          <span class="mc-cours-nom">{{ c.nom }}</span>
+          <span class="mc-cours-n">{{ c.docs.length }}</span>
+          <button class="mc-act" :title="t('mia.mcAddToSubject')" @click="ouvrirAjout(c.nom)"><Plus :size="15" /></button>
+          <!-- Un cours du référentiel national ne se renomme ni ne se supprime
+               d'ici : ce n'est pas l'apprenant qui l'a créé. Seuls ses propres
+               cours portent ces deux boutons. -->
+          <template v-if="c.modifiable">
+            <button class="mc-act" :title="t('mia.moduleRename')" @click="ouvrirRenommage(c.nom)"><Pencil :size="15" /></button>
+            <button class="mc-act mc-del" :title="t('mia.moduleRemove')" @click="supprimerCours(c)"><Trash2 :size="15" /></button>
+          </template>
         </div>
-        <div class="mc-list">
-          <div v-for="d in g.docs" :key="d.id" class="mc-item">
+
+        <div v-if="c.docs.length" class="mc-list">
+          <div v-for="d in c.docs" :key="d.id" class="mc-item">
             <div class="mc-item-main">
               <span class="mc-name">{{ d.titre || t('mia.mcUntitled') }}</span>
               <span class="mc-meta">{{ fmt(d.majAt || d.at) }} · {{ (d.contenu || '').length }} {{ t('mia.mcChars') }}</span>
@@ -52,16 +79,32 @@
             <button class="mc-act mc-del" :title="t('mia.remove')" @click="supprimer(d)"><Trash2 :size="15" /></button>
           </div>
         </div>
+        <p v-else class="mc-cours-vide">{{ t('mia.mcCourseEmpty') }}</p>
+      </div>
+
+      <!-- ⚠️ Documents dont la matière ne figure plus au programme (cours
+           supprimé, renommé hors de l'app, import ancien). Sans ce groupe ils
+           deviendraient invisibles ALORS QU'ILS EXISTENT ENCORE — et un document
+           qu'on ne voit plus, on le réimporte. -->
+      <div v-if="orphelins.length" class="mc-cours mc-orphelins">
+        <div class="mc-cours-head">
+          <span class="mc-cours-nom">{{ t('mia.mcOrphans') }}</span>
+          <span class="mc-cours-n">{{ orphelins.length }}</span>
+        </div>
+        <p class="mc-cours-vide">{{ t('mia.mcOrphansHint') }}</p>
+        <div class="mc-list">
+          <div v-for="d in orphelins" :key="d.id" class="mc-item">
+            <div class="mc-item-main">
+              <span class="mc-name">{{ d.titre || t('mia.mcUntitled') }}</span>
+              <span class="mc-meta">{{ d.matiere || t('mia.mcNoSubject') }} · {{ fmt(d.majAt || d.at) }}</span>
+            </div>
+            <button class="mc-act" :title="t('mia.mcEdit')" @click="ouvrirEdition(d)"><Pencil :size="15" /></button>
+            <button class="mc-act mc-del" :title="t('mia.remove')" @click="supprimer(d)"><Trash2 :size="15" /></button>
+          </div>
+        </div>
       </div>
 
       <p class="mc-priv"><ShieldCheck :size="13" /> {{ t('mia.mcPrivacy') }}</p>
-    </div>
-
-    <!-- ══════ Le programme de la formation (hors catalogue) ══════
-         Contenu fourni par la vue parente : c'est elle qui détient le profil. -->
-    <div v-if="$slots['ajouter-matiere']" class="card">
-      <div class="card-head"><BookPlus :size="18" /><h3><DualText :text="t('mia.mcSubjectsTitle')" /></h3></div>
-      <slot name="ajouter-matiere" />
     </div>
 
     <!-- ══════ Carré ══════ Un RÉGLAGE : replié par défaut, il n'a pas à peser
@@ -107,6 +150,9 @@
         <div class="mc-modal-corps">
           <div class="mc-row">
             <input v-if="newSubjectMode" v-model="newSubject" class="input" :placeholder="t('mia.mcNewSubjectPh')" @keydown.enter.prevent />
+            <!-- ⚠️ Les options viennent de la PROP, plus d'un calcul local. Ce
+                 menu servait un catalogue du secondaire à une apprenante en
+                 certification, parce qu'il redéduisait la liste tout seul. -->
             <select v-else v-model="matiere" class="input" @change="onMatiereChange">
               <option value="">{{ t('mia.chooseSubject') }}</option>
               <option v-for="m in matieresConnues" :key="m" :value="m">{{ m }}</option>
@@ -138,24 +184,58 @@
         </div>
       </div>
     </div>
+
+    <!-- ══════ Modale : créer un cours ══════
+         Un cours se crée pour lui-même, avant d'avoir le moindre document —
+         c'est ainsi qu'on saisit un programme « un cours à la fois ». -->
+    <div v-if="modaleCours" class="mc-modal-fond" @click.self="modaleCours = false">
+      <div class="mc-modal mc-modal-court" role="dialog" aria-modal="true">
+        <div class="mc-modal-head">
+          <h3>{{ t('mia.mcAddCourse') }}</h3>
+          <button class="btn btn-ghost btn-sm" :aria-label="t('mia.close')" @click="modaleCours = false"><X :size="18" /></button>
+        </div>
+        <form class="mc-modal-corps" @submit.prevent="creerCours">
+          <input ref="champCours" v-model="nomCours" class="input" maxlength="60" :placeholder="t('mia.mcCourseNamePh')" />
+          <p class="muted small mc-cours-aide">{{ t('mia.mcCourseNameHint') }}</p>
+        </form>
+        <div class="mc-modal-pied">
+          <button class="btn btn-ghost" @click="modaleCours = false">{{ t('mia.cancel') }}</button>
+          <button class="btn btn-primary" :disabled="!nomCours.trim()" @click="creerCours">
+            <Check :size="16" /> <span>{{ t('mia.moduleAdd') }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
-import DualText from './DualText.vue'
 import MiapoBoutonImport from './MiapoBoutonImport.vue'
-import { matieresPourNiveau } from '../stores/enfantsAutonomes'
-import { listCoursPerso, addCoursPerso, removeCoursPerso, updateCoursPerso, coursParMatiere } from '../utils/coursPerso'
+import { listCoursPerso, addCoursPerso, removeCoursPerso, updateCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
 import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
 import { useTuteurStore } from '../stores/tuteur'
-import { FolderOpen, BookPlus, Plus, Pencil, Trash2, Check, X, ShieldCheck, ExternalLink, Link2, ChevronDown } from 'lucide-vue-next'
+import { FolderOpen, Plus, Pencil, Trash2, Check, X, ShieldCheck, ExternalLink, Link2, ChevronDown, Sparkles } from 'lucide-vue-next'
 // `Check` et `FolderOpen` servent aussi au choix du dossier Carré.
 
-const props = defineProps({ enfant: { type: Object, default: null } })
+const props = defineProps({
+  enfant: { type: Object, default: null },
+  // ⚠️ LA liste du programme, calculée par la vue (qui détient le profil). Ce
+  // composant ne la déduit plus : il la recevait autrefois par un
+  // `matieresPourNiveau(niveau)` qui servait le secondaire camerounais à une
+  // apprenante en certification.
+  matieres: { type: Array, default: () => [] },
+  // Cours créés par l'apprenant : les seuls qu'il peut renommer ou supprimer.
+  // Ceux d'un référentiel national ne lui appartiennent pas.
+  matieresPropres: { type: Array, default: () => [] },
+  // Vrai quand MAPO ne connaît pas le programme (supérieur, hors catalogue) :
+  // c'est là, et là seulement, qu'on propose l'import de la plaquette.
+  sansReferentiel: { type: Boolean, default: false },
+})
+const emit = defineEmits(['creer-cours', 'retirer-cours', 'renommer-cours', 'importer-plaquette'])
 const { t, locale } = useI18n({ useScope: 'global' })
 const connecteurs = useConnecteursStore()
 const tuteur = useTuteurStore()
@@ -164,25 +244,82 @@ const enfantId = computed(() => props.enfant?.id || 'me')
 const niveau = computed(() => props.enfant?.niveau || '')
 
 const docs = ref([])
-const groupes = ref([])
-function refresh() {
-  docs.value = listCoursPerso(enfantId.value)
-  groupes.value = coursParMatiere(enfantId.value)
-}
+function refresh() { docs.value = listCoursPerso(enfantId.value) }
 onMounted(refresh)
 watch(enfantId, refresh)
 
+const memeNom = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
+
+/** Le programme : une entrée par cours, ses documents dessous. */
+const coursListe = computed(() => props.matieres.map((nom) => ({
+  nom,
+  docs: docs.value.filter((d) => memeNom(d.matiere, nom)),
+  modifiable: props.sansReferentiel || props.matieresPropres.some((m) => memeNom(m, nom)),
+})))
+
+/** Documents rattachés à une matière absente du programme — jamais masqués. */
+const orphelins = computed(() =>
+  docs.value.filter((d) => !props.matieres.some((m) => memeNom(m, d.matiere))))
+
 /**
- * Matières proposées : celles du programme PLUS celles déjà utilisées.
- * ⚠️ Sans les secondes, une matière créée à la volée disparaissait du menu au
- * document suivant — on la retapait, avec une faute de frappe une fois sur
- * deux, et le cours se retrouvait rangé dans deux matières jumelles.
+ * Matières proposées dans la modale : le programme PLUS celles déjà utilisées.
+ * ⚠️ Sans les secondes, un document orphelin n'aurait plus aucune matière à
+ * laquelle se raccrocher au moment de le corriger.
  */
 const matieresConnues = computed(() => {
-  const s = new Set(matieresPourNiveau(niveau.value))
-  for (const d of docs.value) if (d.matiere) s.add(d.matiere)
-  return [...s].sort((a, b) => a.localeCompare(b, 'fr'))
+  const s = [...props.matieres]
+  for (const d of docs.value) if (d.matiere && !s.some((m) => memeNom(m, d.matiere))) s.push(d.matiere)
+  return s
 })
+
+// ── Créer / renommer / supprimer un COURS ────────────────────────────────
+const modaleCours = ref(false)
+const nomCours = ref('')
+const champCours = ref(null)
+const renommage = ref('')
+const saisieRenommage = ref('')
+const champRenommage = ref(null)
+
+function ouvrirNouveauCours() {
+  nomCours.value = ''
+  modaleCours.value = true
+  nextTick(() => { const c = champCours.value; if (c && c.focus) c.focus() })
+}
+function creerCours() {
+  const n = nomCours.value.trim()
+  if (!n) return
+  emit('creer-cours', n)
+  modaleCours.value = false
+  nomCours.value = ''
+}
+function ouvrirRenommage(nom) {
+  renommage.value = nom
+  saisieRenommage.value = nom
+  nextTick(() => { const c = champRenommage.value; const el = Array.isArray(c) ? c[0] : c; if (el && el.focus) el.focus() })
+}
+function validerRenommage(ancien) {
+  const n = saisieRenommage.value.trim()
+  renommage.value = ''
+  if (!n || memeNom(n, ancien)) return
+  emit('renommer-cours', { ancien, nouveau: n })
+  // Les documents suivent leur cours : sans ça, renommer vidait la ligne et
+  // faisait réapparaître les documents dans « À ranger ».
+  for (const d of docs.value.filter((x) => memeNom(x.matiere, ancien))) {
+    updateCoursPerso(enfantId.value, d.id, { matiere: n })
+  }
+  refresh()
+}
+function supprimerCours(c) {
+  // On dit combien de documents partent avec : « Supprimer ce cours ? » ne le
+  // dit pas, et un document supprimé ne revient pas.
+  const msg = c.docs.length
+    ? t('mia.mcConfirmDelCourseDocs', { name: c.nom, n: c.docs.length })
+    : t('mia.mcConfirmDelCourse', { name: c.nom })
+  if (!confirm(msg)) return
+  for (const d of c.docs) removeCoursPerso(enfantId.value, d.id)
+  emit('retirer-cours', c.nom)
+  refresh()
+}
 
 // ── Carré : un réglage, replié par défaut ────────────────────────────────
 const carreOuvert = ref(false)
@@ -277,7 +414,13 @@ async function lireFichier(file) {
 
 function enregistrer() {
   if (!contenu.value.trim()) return
-  const champs = { matiere: matiereEffective.value, titre: titre.value, contenu: contenu.value }
+  const mat = matiereEffective.value
+  const champs = { matiere: mat, titre: titre.value, contenu: contenu.value }
+  // ⚠️ Une matière créée à la volée doit entrer AU PROGRAMME, pas seulement
+  // servir d'étiquette au document. Sinon le cours n'existe que sur ce
+  // document : ni le quiz, ni les notes, ni les examens ne le connaissent, et
+  // il apparaît dans « À ranger » au prochain affichage.
+  if (mat && !props.matieres.some((m) => memeNom(m, mat))) emit('creer-cours', mat)
   if (enEdition.value) updateCoursPerso(enfantId.value, enEdition.value, champs)
   else addCoursPerso(enfantId.value, champs)
   fermer()
@@ -318,24 +461,31 @@ function fmt(iso) {
 .mc-head > .mc-add { margin-left: auto; }
 .mc-vide { margin: 2px 0 4px; }
 
-/* ── Groupe de matière ── */
-.mc-groupe + .mc-groupe { margin-top: 14px; }
-.mc-groupe-head {
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 2px 6px; border-bottom: 1px solid rgba(0, 0, 0, .07); margin-bottom: 6px;
-}
-.mc-groupe-nom { font-size: 13.5px; font-weight: 600; color: var(--tx); }
-.mc-groupe-n {
-  min-width: 20px; padding: 1px 6px; border-radius: 999px;
-  background: rgba(0, 0, 0, .06); font-size: 11.5px; text-align: center; color: var(--tx3);
-}
-.mc-groupe-add {
-  margin-left: auto; display: flex; padding: 4px; border: 0; border-radius: 7px;
-  background: transparent; color: var(--pr); cursor: pointer; opacity: .8;
-}
-.mc-groupe-add:hover { opacity: 1; background: rgba(0, 0, 0, .05); }
+.mc-intro { margin: 2px 0 12px; }
+.mc-sources { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
 
-.mc-list { display: flex; flex-direction: column; gap: 4px; }
+/* ── Un cours = une tuile de verre (langage du hub) ── */
+.mc-cours {
+  padding: 11px 13px; border-radius: 14px; margin-bottom: 8px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .5));
+  border: 1px solid var(--card-border, rgba(17, 24, 39, .07));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .85);
+}
+.mc-cours-head { display: flex; align-items: center; gap: 8px; }
+.mc-cours-nom { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--tx); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-cours-n {
+  min-width: 20px; padding: 1px 7px; border-radius: 999px;
+  background: rgba(var(--pr-rgb, 10, 132, 255), .12); color: var(--pr);
+  font-size: 11.5px; font-weight: 600; text-align: center;
+}
+.mc-cours-vide { margin: 6px 0 0; font-size: 12px; color: var(--tx3); }
+.mc-cours-edit { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.mc-cours-edit .input { flex: 1 1 180px; min-width: 0; }
+.mc-cours-aide { margin: 8px 0 0; }
+/* Les orphelins ne sont pas une erreur à sanctionner : teinte neutre, pas rouge. */
+.mc-orphelins { background: rgba(17, 24, 39, .04); }
+
+.mc-list { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; padding-top: 4px; border-top: 1px solid var(--divider, rgba(17, 24, 39, .08)); }
 .mc-item { display: flex; align-items: center; gap: 8px; padding: 7px 2px; }
 .mc-item + .mc-item { border-top: 1px solid rgba(0, 0, 0, .045); }
 .mc-item-main { min-width: 0; flex: 1; display: flex; flex-direction: column; }
@@ -387,6 +537,7 @@ function fmt(iso) {
 .mc-modal-head { border-bottom: 1px solid rgba(0, 0, 0, .07); }
 .mc-modal-head h3 { flex: 1; margin: 0; font-size: 16px; font-weight: 600; }
 .mc-modal-corps { padding: 14px 16px; overflow: auto; }
+.mc-modal-court { max-width: 460px; }
 .mc-modal-pied { border-top: 1px solid rgba(0, 0, 0, .07); justify-content: flex-end; }
 
 .mc-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }

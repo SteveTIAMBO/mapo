@@ -198,9 +198,15 @@ describe('le PDF est la seule source, et il reste atteignable', () => {
   it('⚠️ l’import est atteignable même quand des modules existent DÉJÀ', () => {
     // Il ne l'était que depuis un écran vide : un apprenant dont les modules
     // avaient été devinés par l'IA devait TOUT effacer pour importer son PDF.
-    const i = VUE.indexOf('<MiapoModulesFormation')
-    const j = VUE.indexOf('</template>', i)
-    expect(VUE.slice(i, j)).toContain('@click="openFormationSetup"')
+    //
+    // ⚠️ Réécrit le 03/09 : le bouton vit désormais DANS la liste « Mes cours »,
+    // qui a absorbé la carte des modules. Ce qu'on vérifie est inchangé — le
+    // chemin d'import existe sans condition d'écran vide.
+    const COURS = readFileSync(resolve(RACINE2, 'src/components/MiapoMesCours.vue'), 'utf8')
+    expect(VUE).toContain('@importer-plaquette="openFormationSetup"')
+    expect(COURS).toContain("emit('importer-plaquette')")
+    // …et il n'est pas conditionné à une liste vide.
+    expect(COURS).toMatch(/v-if="sansReferentiel" class="mc-sources"/)
   })
 
   it('la lecture d’URL a bien été retirée partout', () => {

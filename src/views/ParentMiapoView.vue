@@ -563,46 +563,30 @@
           <MiapoFiches :enfant="activeEnfant" />
         </section>
 
-        <!-- ========== COURS (dépôt perso + Carré) ========== -->
+        <!-- ========== COURS — LA liste du programme ==========
+             ⚠️ Le programme et la bibliothèque étaient deux cartes distinctes :
+             on ajoutait une matière dans l'une et un cours dans l'autre, sans
+             que rien ne dise laquelle faisait autorité. Steve, 03/09 : « le
+             cours EST le module ». Une seule liste désormais, et c'est CETTE
+             vue qui écrit — elle seule détient le profil. -->
         <section v-else-if="section === 'cours'" class="sec">
-          <!-- L'ajout de matière est passé en SLOT : c'est cette vue qui détient
-               le profil de l'enfant, mais c'est le module Cours qui décide de
-               l'onglet où l'afficher. -->
-          <MiapoMesCours :enfant="activeEnfant">
-            <template #ajouter-matiere>
-              <!-- Formation hors catalogue ou supérieur : les matières viennent de
-                   `formationModules`, pas d'un référentiel. MiapoAjouterMatiere y
-                   était doublement inerte — son catalogue (`matieresProgramme`) est
-                   VIDE, et ce qu'il écrit (`matieresSup`) n'est pas lu par
-                   `matieresList` dès que `formationModules` est renseigné. On sert
-                   donc l'éditeur de modules, seul capable d'en RETIRER un. -->
-              <template v-if="activeEnfant && sansReferentiel">
-                <MiapoModulesFormation
-                  :valeur="activeEnfant.formationModules || ''"
-                  @changer="majModulesFormation"
-                />
-                <!-- ⚠️ L'import du programme n'etait atteignable QUE depuis un
-                     ecran vide : un apprenant dont les modules etaient deja
-                     remplis — par une proposition de l'IA, donc peut-etre a
-                     cote — ne pouvait plus jamais importer le PDF de son
-                     ecole. Il lui fallait d'abord tout effacer. -->
-                <div class="mods-actions">
-                  <button type="button" class="btn btn-outline btn-sm" @click="openFormationSetup">
-                    <Sparkles :size="15" /> <span>{{ t('mia.importProgramme') }}</span>
-                  </button>
-                  <!-- Carré tient déjà la liste des modules, un dossier par cours :
-                       la lire vaut mieux que la faire deviner par l'IA. -->
-                  <MiapoModulesCarre
-                    v-if="connecteurs.carreConnected"
-                    :valeur="activeEnfant.formationModules || ''"
-                    @changer="majModulesFormation"
-                  />
-                </div>
-              </template>
-              <MiapoAjouterMatiere
-                v-else-if="activeEnfant"
-                :base="matieresProgramme" :ajoutees="activeEnfant.matieresSup || []"
-                @changer="majMatieresSup"
+          <MiapoMesCours
+            :enfant="activeEnfant"
+            :matieres="matieresList"
+            :matieres-propres="coursPropres"
+            :sans-referentiel="sansReferentiel"
+            @creer-cours="creerCours"
+            @retirer-cours="retirerCours"
+            @renommer-cours="renommerCours"
+            @importer-plaquette="openFormationSetup"
+          >
+            <!-- Carré tient déjà la liste des modules, un dossier par cours :
+                 la lire vaut mieux que la faire deviner par l'IA. -->
+            <template #modules-carre>
+              <MiapoModulesCarre
+                v-if="activeEnfant && sansReferentiel && connecteurs.carreConnected"
+                :valeur="activeEnfant.formationModules || ''"
+                @changer="majModulesFormation"
               />
             </template>
           </MiapoMesCours>
@@ -1388,11 +1372,12 @@ import MiapoEchangePoints from '../components/MiapoEchangePoints.vue'
 import MiapoPositionnement from '../components/MiapoPositionnement.vue'
 import MiapoChapitre from '../components/MiapoChapitre.vue'
 import MiapoTabBar from '../components/MiapoTabBar.vue'
-import MiapoAjouterMatiere from '../components/MiapoAjouterMatiere.vue'
-import MiapoModulesFormation from '../components/MiapoModulesFormation.vue'
-import { listeModules } from '../utils/modulesFormation'
+// ⚠️ MiapoAjouterMatiere et MiapoModulesFormation ne sont plus montés ici : leur
+// rôle — nommer les cours du programme — a été absorbé par la liste unique de
+// « Mes cours » (03/09). Les deux fichiers restent dans le dépôt, non utilisés.
+import { listeModules, ajouterModule, retirerModule, renommerModule } from '../utils/modulesFormation'
 import { parserIcs } from '../utils/icsEdt'
-import { fusionnerMatieres } from '../utils/matieresSup'
+import { fusionnerMatieres, ajouterMatiere, retirerMatiere } from '../utils/matieresSup'
 import { doitDemanderChapitre } from '../utils/chapitreLibre'
 import MiapoDictee from '../components/MiapoDictee.vue'
 import MiapoAppariement from '../components/MiapoAppariement.vue'
@@ -2669,16 +2654,46 @@ function avancementPct(p) {
 // Sujets proposés pour la saisie de notes / la révision. Pour un apprenant
 // hors-catalogue qui a renseigné ses modules, on pilote toute la boucle
 // (notes → faiblesses → quiz → révision) par SES modules ; sinon catalogue scolaire.
-// Programme officiel SEUL (sans les ajouts) : c'est lui qu'on présente comme
-// non retirable, et qui sert à ne pas reproposer une matière déjà suivie.
-const matieresProgramme = computed(() => {
-  const e = activeEnfant.value
-  if (!e || sansReferentiel.value) return []
-  return matieresPourNiveau(e.niveau, e.pays) || []
-})
 function majMatieresSup(liste) {
   if (!activeEnfant.value) return
   store.updateEnfant(activeEnfant.value.id, { matieresSup: liste })
+}
+
+// ── « Mes cours » écrit ici ────────────────────────────────────────────────
+// Deux dépôts selon le profil, un seul geste pour l'apprenant :
+//  • sans référentiel (supérieur, hors catalogue) → `formationModules`, la
+//    liste EST le programme, et tout y est modifiable ;
+//  • avec référentiel national → `matieresSup`, en SUPPLÉMENT du programme
+//    officiel. On n'y retire pas une matière officielle : ce n'est pas
+//    l'apprenant qui l'a mise, et la retirer masquerait une partie de sa
+//    scolarité sans rien corriger.
+const coursPropres = computed(() => {
+  const e = activeEnfant.value
+  if (!e) return []
+  return sansReferentiel.value ? listeModules(e.formationModules || '') : (e.matieresSup || [])
+})
+function creerCours(nom) {
+  const e = activeEnfant.value
+  if (!e || !String(nom || '').trim()) return
+  if (sansReferentiel.value) majModulesFormation(ajouterModule(e.formationModules || '', nom))
+  else majMatieresSup(ajouterMatiere(e.matieresSup || [], nom))
+}
+function retirerCours(nom) {
+  const e = activeEnfant.value
+  if (!e) return
+  if (sansReferentiel.value) majModulesFormation(retirerModule(e.formationModules || '', nom))
+  else majMatieresSup(retirerMatiere(e.matieresSup || [], nom))
+}
+function renommerCours({ ancien, nouveau }) {
+  const e = activeEnfant.value
+  if (!e) return
+  if (sansReferentiel.value) {
+    majModulesFormation(renommerModule(e.formationModules || '', ancien, nouveau))
+  } else {
+    // Pas de renommage en place côté `matieresSup` : retirer puis ajouter donne
+    // le même résultat, l'ordre d'un supplément n'ayant pas de sens propre.
+    majMatieresSup(ajouterMatiere(retirerMatiere(e.matieresSup || [], ancien), nouveau))
+  }
 }
 const matieresList = computed(() => {
   const e = activeEnfant.value

@@ -129,16 +129,36 @@ describe('aller-retour stable', () => {
  */
 describe('branchement dans l’espace MAPO+', () => {
   const VUE = lire('src/views/ParentMiapoView.vue')
+  const COURS = lire('src/components/MiapoMesCours.vue')
 
-  it('l’éditeur de modules est servi quand il n’y a pas de référentiel', () => {
-    expect(VUE).toContain('<MiapoModulesFormation')
-    expect(VUE).toMatch(/v-if="activeEnfant && sansReferentiel"/)
+  // ⚠️ RÉÉCRITS LE 03/09. Ces tests vérifiaient la PRÉSENCE de deux composants
+  // (MiapoModulesFormation / MiapoAjouterMatiere) alors que ce qui compte est
+  // qu'on puisse nommer, renommer et retirer ses cours. Les deux cartes ont
+  // fusionné dans la liste unique de « Mes cours » ; l'intention est conservée,
+  // la forme a changé.
+
+  it('la liste de « Mes cours » reçoit le programme, elle ne le déduit plus', () => {
+    // Le défaut de Djany : le composant recalculait `matieresPourNiveau(niveau)`
+    // et servait le secondaire camerounais à une formation hors catalogue.
+    expect(VUE).toMatch(/<MiapoMesCours[\s\S]{0,400}:matieres="matieresList"/)
+    // On vise l'IMPORT, pas le mot : le commentaire du fichier cite le nom de la
+    // fonction fautive, et un test qui interdit le mot interdirait d'expliquer
+    // le défaut.
+    expect(COURS).not.toMatch(/import\s*\{[^}]*matieresPourNiveau/)
   })
 
-  it('l’ancien module reste pour les classes qui ONT un référentiel', () => {
-    // Sinon on retirerait aux élèves du secondaire l'ajout de matière hors
-    // programme, qui marche très bien pour eux.
-    expect(VUE).toMatch(/<MiapoAjouterMatiere\s+v-else-if="activeEnfant"/)
+  it('on peut créer, renommer et retirer un cours depuis cette liste', () => {
+    for (const e of ['@creer-cours="creerCours"', '@retirer-cours="retirerCours"', '@renommer-cours="renommerCours"']) {
+      expect(VUE, e).toContain(e)
+    }
+  })
+
+  it('⚠️ sans référentiel on écrit les MODULES, avec référentiel un SUPPLÉMENT', () => {
+    // Retirer une matière officielle du programme d'un élève de 5ème
+    // masquerait une partie de sa scolarité sans rien corriger : côté
+    // référentiel national, l'apprenant n'ajoute qu'en plus.
+    expect(VUE).toContain("majModulesFormation(ajouterModule(e.formationModules || '', nom))")
+    expect(VUE).toContain('majMatieresSup(ajouterMatiere(e.matieresSup || [], nom))')
   })
 
   it('la modification est bien enregistrée dans le profil', () => {
@@ -150,7 +170,6 @@ describe('branchement dans l’espace MAPO+', () => {
     // masquait celle-ci. Deux définitions du même concept, sous le même nom,
     // finissent par diverger sans que rien ne le signale.
     expect((VUE.match(/const sansReferentiel\b/g) || [])).toHaveLength(1)
-    expect(VUE).toContain('if (!e || sansReferentiel.value) return []')
   })
 
   it('la liste du Tuteur lit les modules comme l’éditeur les écrit', () => {

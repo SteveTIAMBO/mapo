@@ -24,9 +24,16 @@ import {
 
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const VUE = readFileSync(resolve(RACINE, 'src/components/MiapoMesCours.vue'), 'utf8')
+/**
+ * ⚠️ LE `(^|\s)` DEVANT `\/\*` N'EST PAS DÉCORATIF (03/09/2026). Sans lui, le
+ * filtre prenait le `/*` de `accept="…,image/*"` pour une ouverture de
+ * commentaire et effaçait TOUT le template jusqu'au premier `*​/` du script —
+ * c'est-à-dire la modale placée juste après. Le test échouait alors sur un bloc
+ * qui existait bel et bien : l'instrument mentait, pas le code.
+ */
 const sansCommentaires = (src) => src
   .replace(/<!--[\s\S]*?-->/g, ' ')
-  .replace(/\/\*[\s\S]*?\*\//g, ' ')
+  .replace(/(^|\s)\/\*[\s\S]*?\*\//g, ' ')
   .split('\n').map((l) => l.replace(/(^|\s)\/\/.*$/, '')).join('\n')
 
 beforeEach(() => { localStorage.clear() })
@@ -107,13 +114,17 @@ describe('⭐ plus d’onglets : la page MONTRE, un bouton ouvre une modale', ()
 
   it('la liste des cours n’est plus derrière un formulaire', () => {
     // Elle est le premier bloc de la page, plus un panneau d'onglet.
+    // ⚠️ 03/09 : les groupes de documents sont devenus les COURS eux-mêmes —
+    // la page liste le programme, chaque cours portant ses documents.
     expect(code()).toContain("t('mia.mcMine')")
-    expect(code()).toContain('v-for="g in groupes"')
+    expect(code()).toContain('v-for="c in coursListe"')
   })
 
   it('le bouton d’ajout ouvre la modale', () => {
-    expect(code()).toContain('@click="ouvrirAjout()"')
+    // Deux modales désormais : créer un COURS, et ajouter un DOCUMENT.
+    expect(code()).toContain('@click="ouvrirNouveauCours"')
     expect(code()).toContain('v-if="modaleOuverte"')
+    expect(code()).toContain('v-if="modaleCours"')
   })
 
   it('⭐ une SEULE modale sert l’ajout et la modification', () => {
@@ -123,15 +134,18 @@ describe('⭐ plus d’onglets : la page MONTRE, un bouton ouvre une modale', ()
     expect(code()).toContain('if (enEdition.value) updateCoursPerso(')
   })
 
-  it('on peut ajouter un document DANS une matière existante', () => {
-    expect(code()).toContain('@click="ouvrirAjout(g.matiere)"')
+  it('on peut ajouter un document DANS un cours existant', () => {
+    expect(code()).toContain('@click="ouvrirAjout(c.nom)"')
   })
 
-  it('⚠️ le programme de la formation reste visible, sans onglet', () => {
-    // Enterrer à nouveau l'éditeur de modules reproduirait le défaut du 25/08,
-    // où l'import du programme n'était atteignable que depuis un écran vide.
-    expect(code()).toContain(`v-if="$slots['ajouter-matiere']"`)
-    expect(code()).toContain("t('mia.mcSubjectsTitle')")
+  it('⚠️ l’import du programme reste atteignable, sans écran vide requis', () => {
+    // Enterrer à nouveau ce chemin reproduirait le défaut du 25/08, où l'import
+    // du programme n'était atteignable que depuis un écran vide.
+    // ⚠️ 03/09 : la carte « Mes matières » a fusionné dans cette liste, le
+    // bouton y vit maintenant — c'est la MÊME garantie, à un autre endroit.
+    expect(code()).toContain("emit('importer-plaquette')")
+    expect(code()).toMatch(/v-if="sansReferentiel" class="mc-sources"/)
+    expect(code()).not.toContain("$slots['ajouter-matiere']")
   })
 
   it('Carré redevient un réglage, replié', () => {
