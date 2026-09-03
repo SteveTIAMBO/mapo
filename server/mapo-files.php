@@ -76,14 +76,60 @@ if (is_dir(MAPO_UPLOAD_DIR) && !file_exists($ht)) {
 }
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-  handleUpload($ALLOWED);
+  if (($_POST['action'] ?? $_GET['action'] ?? '') === 'delete') handleDelete($uid, $ALLOWED);
+  else handleUpload($ALLOWED, $uid);
 } else {
   handleServe($ALLOWED);
 }
 
 function cleanId($s) { return preg_replace('/[^a-f0-9]/', '', strtolower((string) $s)); }
 
-function handleUpload($ALLOWED) {
+/**
+ * Fichier compagnon qui note QUI a déposé le document.
+ *
+ * ⚠️ POURQUOI IL EXISTE (03/09/2026). Ce script ne gardait AUCUNE trace du
+ * propriétaire : l'identifiant opaque de 24 caractères tenait lieu de droit
+ * d'accès. Ça se défend pour la LECTURE — il faut connaître l'identifiant pour
+ * demander le fichier — mais pas pour la SUPPRESSION : un identifiant qui fuite
+ * (un cours partagé par l'école, un lien recopié) permettrait alors d'effacer le
+ * document d'un enseignant. Une lecture indue se rattrape ; un fichier effacé,
+ * non.
+ */
+function ownerFile($id) { return MAPO_UPLOAD_DIR . '/' . $id . '.own'; }
+
+/**
+ * Supprime un document et tout ce qui l'accompagne (PDF converti, marqueur).
+ *
+ * ⚠️ ON REFUSE PAR DÉFAUT. Sans marqueur de propriétaire, on ne supprime pas :
+ * les fichiers déposés AVANT ce changement n'en ont pas, et personne ne pourra
+ * les effacer par cette route. C'est volontaire — supposer que « pas de
+ * marqueur = à tout le monde » ferait exactement le trou qu'on vient de fermer.
+ * Ils seront traités par le ménage RGPD côté serveur, pas ici.
+ */
+function handleDelete($uid, $ALLOWED) {
+  header('Content-Type: application/json; charset=utf-8');
+  $id = cleanId($_POST['id'] ?? $_GET['id'] ?? '');
+  if ($id === '') { http_response_code(400); echo json_encode(['ok' => false, 'error' => 'no_id']); return; }
+
+  $own = ownerFile($id);
+  if (!file_exists($own)) { http_response_code(403); echo json_encode(['ok' => false, 'error' => 'sans_proprietaire']); return; }
+  if (!hash_equals(trim((string) @file_get_contents($own)), (string) $uid)) {
+    http_response_code(403); echo json_encode(['ok' => false, 'error' => 'pas_le_proprietaire']); return;
+  }
+
+  $n = 0;
+  foreach (array_merge(array_keys($ALLOWED), ['pdf']) as $e) {
+    $p = MAPO_UPLOAD_DIR . '/' . $id . '.' . $e;
+    if (file_exists($p) && @unlink($p)) $n++;
+  }
+  @unlink($own);
+  // `ok` même si rien n'a été trouvé : l'appelant veut que le fichier n'existe
+  // plus, et il n'existe plus. Renvoyer une erreur bloquerait la suppression du
+  // document côté client pour un fichier déjà absent.
+  echo json_encode(['ok' => true, 'supprimes' => $n]);
+}
+
+function handleUpload($ALLOWED, $uid) {
   header('Content-Type: application/json; charset=utf-8');
   if (empty($_FILES['file']) || ($_FILES['file']['error'] ?? 1) !== UPLOAD_ERR_OK) {
     echo json_encode(['ok' => false, 'error' => 'no_file']); return;
@@ -112,6 +158,10 @@ function handleUpload($ALLOWED) {
   $id = bin2hex(random_bytes(12));
   $dest = MAPO_UPLOAD_DIR . '/' . $id . '.' . $ext;
   if (!move_uploaded_file($f['tmp_name'], $dest)) { echo json_encode(['ok' => false, 'error' => 'store_failed']); return; }
+  // On note le propriétaire DÈS le dépôt : c'est la seule occasion où on le
+  // connaît de façon certaine. Sans ce marqueur, le fichier ne pourra jamais
+  // être supprimé par son auteur (refus par défaut, cf. handleDelete).
+  @file_put_contents(ownerFile($id), (string) $uid);
 
   // Une image n'a pas de version PDF, et il ne faut surtout pas lancer
   // LibreOffice dessus : conversion inutile, et lente sur un hébergement mutualisé.

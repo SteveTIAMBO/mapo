@@ -5837,6 +5837,7 @@
     "mcFileNotKept": "non conservé",
     "mcFileTooLarge": "le fichier est trop lourd pour être conservé, seul le texte est gardé.",
     "mcFileNotKeptWhy": "le fichier n’a pas pu être conservé, seul le texte est gardé.",
+    "mcDeleteFileError": "Le fichier n’a pas pu être supprimé du serveur. Le document est conservé — réessaie, ou signale-le si ça se répète.",
     "mcConfirmDelCourse": "Supprimer le cours « {name} » ?",
     "mcConfirmDelCourseDocs": "Supprimer le cours « {name} » et ses {n} document(s) ? C’est définitif.",
     "mcConfirmDel": "Supprimer « {name} » ?",

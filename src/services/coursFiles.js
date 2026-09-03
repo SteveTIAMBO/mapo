@@ -123,6 +123,40 @@ export async function viewCoursFileUrl(item) {
   return blobUrl(item, { pdf: usePdf })
 }
 
+/**
+ * Supprime le fichier CÔTÉ SERVEUR.
+ *
+ * ⚠️ POURQUOI (Steve, 03/09/2026) : « supprimer un doc de l'interface doit le
+ * supprimer du serveur ». Retirer la ligne de l'écran en laissant le PDF sur
+ * l'hébergement, c'est croire avoir supprimé sans avoir supprimé — un problème
+ * de confiance avant d'être un problème de disque.
+ *
+ * ⚠️ En démo il n'y a rien à faire : le fichier vit en data URL dans l'entrée
+ * elle-même, il part avec elle.
+ *
+ * ⚠️ Le serveur REFUSE si l'appelant n'est pas le déposant (marqueur `.own`), et
+ * refuse aussi pour les fichiers déposés avant l'existence de ce marqueur. On
+ * renvoie donc la raison au lieu de prétendre que c'est fait.
+ *
+ * @returns {Promise<{ok: boolean, reason?: string}>}
+ */
+export async function deleteCoursFile(item) {
+  if (!item || !item.fileId) return { ok: true }   // rien à supprimer (démo, ou pas de fichier)
+  const token = await idToken()
+  if (!token) return { ok: false, reason: 'auth' }
+  try {
+    const fd = new FormData()
+    fd.append('action', 'delete')
+    fd.append('id', item.fileId)
+    const res = await fetch(FILES_URL, { method: 'POST', headers: { Authorization: 'Bearer ' + token }, body: fd })
+    const json = await res.json().catch(() => null)
+    if (json && json.ok) return { ok: true }
+    return { ok: false, reason: (json && json.error) || 'delete_failed' }
+  } catch {
+    return { ok: false, reason: 'network' }
+  }
+}
+
 /** Déclenche le téléchargement du fichier original. */
 export async function downloadCoursFile(item) {
   const url = item.fileData ? item.fileData : await blobUrl(item, { dl: true })

@@ -243,7 +243,7 @@ import { useI18n } from 'vue-i18n'
 import MiapoBoutonImport from './MiapoBoutonImport.vue'
 import { listCoursPerso, addCoursPerso, removeCoursPerso, updateCoursPerso } from '../utils/coursPerso'
 import { fileToText } from '../utils/pdfText'
-import { uploadCoursFile, hasFile, isViewable, downloadCoursFile } from '../services/coursFiles'
+import { uploadCoursFile, hasFile, isViewable, downloadCoursFile, deleteCoursFile } from '../services/coursFiles'
 import CoursFileViewer from './CoursFileViewer.vue'
 import { fileToCleanImageUrl } from '../utils/image'
 import { useConnecteursStore } from '../stores/connecteurs'
@@ -361,14 +361,20 @@ function validerRenommage(ancien) {
   }
   refresh()
 }
-function supprimerCours(c) {
+async function supprimerCours(c) {
   // On dit combien de documents partent avec : « Supprimer ce cours ? » ne le
   // dit pas, et un document supprimé ne revient pas.
   const msg = c.docs.length
     ? t('mia.mcConfirmDelCourseDocs', { name: c.nom, n: c.docs.length })
     : t('mia.mcConfirmDelCourse', { name: c.nom })
   if (!confirm(msg)) return
-  for (const d of c.docs) removeCoursPerso(enfantId.value, d.id)
+  // Même règle que pour un document seul : le serveur d'abord, et on s'arrête
+  // au premier échec plutôt que de laisser des fichiers orphelins derrière soi.
+  for (const d of c.docs) {
+    const r = await deleteCoursFile(d)
+    if (!r.ok) { window.alert(t('mia.mcDeleteFileError')); refresh(); return }
+    removeCoursPerso(enfantId.value, d.id)
+  }
   emit('retirer-cours', c.nom)
   refresh()
 }
@@ -510,11 +516,26 @@ function enregistrer() {
   refresh()
 }
 
-function supprimer(d) {
+/**
+ * Supprime un document — À L'ÉCRAN **ET** SUR LE SERVEUR.
+ *
+ * ⚠️ Steve, 03/09 : « supprimer un doc de l'interface doit le supprimer du
+ * serveur ». Retirer la ligne en laissant le PDF sur l'hébergement, c'est croire
+ * avoir supprimé sans avoir supprimé — un problème de confiance avant d'être un
+ * problème de disque.
+ *
+ * ⚠️ ORDRE : le serveur D'ABORD. Si on retirait l'entrée locale en premier et
+ * que l'appel échouait, on perdrait l'identifiant du fichier — il resterait sur
+ * le serveur SANS que personne ne puisse plus le désigner. Un échec laisse donc
+ * le document en place, avec la raison affichée.
+ */
+async function supprimer(d) {
   // On nomme le document : plusieurs cours d'une même matière se ressemblent
   // dans la liste, et « Supprimer ce cours ? » ne dit pas lequel.
   const quoi = (d.titre || '').trim() || d.matiere || t('mia.mcUntitled')
   if (!confirm(t('mia.mcConfirmDel', { name: quoi }))) return
+  const r = await deleteCoursFile(d)
+  if (!r.ok) { window.alert(t('mia.mcDeleteFileError')); return }
   removeCoursPerso(enfantId.value, d.id)
   refresh()
 }

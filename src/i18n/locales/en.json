@@ -5837,6 +5837,7 @@
     "mcFileNotKept": "not kept",
     "mcFileTooLarge": "the file is too large to keep, only the text was saved.",
     "mcFileNotKeptWhy": "the file could not be kept, only the text was saved.",
+    "mcDeleteFileError": "The file could not be deleted from the server. The document was kept — try again, or report it if it persists.",
     "mcConfirmDelCourse": "Delete the course “{name}”?",
     "mcConfirmDelCourseDocs": "Delete the course “{name}” and its {n} document(s)? This cannot be undone.",
     "mcConfirmDel": "Delete “{name}”?",
