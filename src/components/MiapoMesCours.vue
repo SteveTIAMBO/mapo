@@ -58,7 +58,10 @@
         </form>
         <div v-else class="mc-cours-head">
           <span class="mc-cours-nom">{{ c.nom }}</span>
-          <span class="mc-cours-n">{{ c.docs.length }}</span>
+          <!-- Le compteur inclut les documents de l'école : ce sont des cours
+               du même cours. En exclure une source ferait dire « 0 » à une
+               ligne qui en affiche trois. -->
+          <span class="mc-cours-n">{{ c.docs.length + c.docsEcole.length }}</span>
           <button class="mc-act" :title="t('mia.mcAddToSubject')" @click="ouvrirAjout(c.nom)"><Plus :size="15" /></button>
           <!-- Un cours du référentiel national ne se renomme ni ne se supprime
                d'ici : ce n'est pas l'apprenant qui l'a créé. Seuls ses propres
@@ -69,7 +72,17 @@
           </template>
         </div>
 
-        <div v-if="c.docs.length" class="mc-list">
+        <div v-if="c.docs.length || c.docsEcole.length" class="mc-list">
+          <!-- Cours publiés par l'établissement : LECTURE SEULE. Ils
+               n'appartiennent pas à l'apprenant ; les effacer d'ici ne ferait
+               que masquer ce que son école publie, sans rien corriger. -->
+          <div v-for="d in c.docsEcole" :key="'ec' + d.id" class="mc-item mc-item-ecole">
+            <div class="mc-item-main">
+              <span class="mc-name">{{ d.titre || t('mia.mcUntitled') }}</span>
+              <span class="mc-meta">{{ d.auteur || t('mia.mcFromSchool') }} · {{ (d.contenu || '').length }} {{ t('mia.mcChars') }}</span>
+            </div>
+            <span class="mc-tag-ecole"><Link2 :size="12" /> {{ t('mia.mcSchoolTag') }}</span>
+          </div>
           <div v-for="d in c.docs" :key="d.id" class="mc-item">
             <div class="mc-item-main">
               <span class="mc-name">{{ d.titre || t('mia.mcUntitled') }}</span>
@@ -231,6 +244,8 @@ const props = defineProps({
   // Cours créés par l'apprenant : les seuls qu'il peut renommer ou supprimer.
   // Ceux d'un référentiel national ne lui appartiennent pas.
   matieresPropres: { type: Array, default: () => [] },
+  // Cours publiés par les enseignants (cache `coursEcole`). En lecture seule.
+  coursEcole: { type: Array, default: () => [] },
   // Vrai quand MAPO ne connaît pas le programme (supérieur, hors catalogue) :
   // c'est là, et là seulement, qu'on propose l'import de la plaquette.
   sansReferentiel: { type: Boolean, default: false },
@@ -250,16 +265,36 @@ watch(enfantId, refresh)
 
 const memeNom = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase()
 
-/** Le programme : une entrée par cours, ses documents dessous. */
-const coursListe = computed(() => props.matieres.map((nom) => ({
-  nom,
-  docs: docs.value.filter((d) => memeNom(d.matiere, nom)),
-  modifiable: props.sansReferentiel || props.matieresPropres.some((m) => memeNom(m, nom)),
-})))
+/**
+ * Le programme : une entrée par cours, ses documents dessous.
+ *
+ * ⚠️ Les sources s'ADDITIONNENT. Un cours peut porter à la fois ce que le prof
+ * a publié et ce que l'apprenant a importé — c'est déjà la règle côté quiz
+ * (cf. utils/coursEcole.js), elle doit se voir à l'écran.
+ *
+ * ⚠️ Un cours de l'école dont la matière n'est PAS au programme (matière que
+ * l'apprenant n'a pas encore) apparaît quand même : la liste des cours de
+ * l'école entre dans les entrées, sinon on masquerait un cours publié.
+ */
+const coursListe = computed(() => {
+  const noms = [...props.matieres]
+  for (const c of props.coursEcole) {
+    if (c.matiere && !noms.some((m) => memeNom(m, c.matiere))) noms.push(c.matiere)
+  }
+  return noms.map((nom) => ({
+    nom,
+    docs: docs.value.filter((d) => memeNom(d.matiere, nom)),
+    docsEcole: props.coursEcole.filter((d) => memeNom(d.matiere, nom)),
+    // Un cours porté par l'école ne se supprime pas d'ici, même s'il figure
+    // aussi dans les modules : l'apprenant n'en est pas l'auteur.
+    modifiable: (props.sansReferentiel || props.matieresPropres.some((m) => memeNom(m, nom)))
+      && !props.coursEcole.some((c) => memeNom(c.matiere, nom)),
+  }))
+})
 
 /** Documents rattachés à une matière absente du programme — jamais masqués. */
 const orphelins = computed(() =>
-  docs.value.filter((d) => !props.matieres.some((m) => memeNom(m, d.matiere))))
+  docs.value.filter((d) => !coursListe.value.some((c) => memeNom(c.nom, d.matiere))))
 
 /**
  * Matières proposées dans la modale : le programme PLUS celles déjà utilisées.
@@ -497,6 +532,14 @@ function fmt(iso) {
 }
 .mc-act:hover { background: rgba(0, 0, 0, .06); color: var(--tx); }
 .mc-del:hover { color: #d93025; }
+
+.mc-item-ecole .mc-name { color: var(--tx2); }
+.mc-tag-ecole {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
+  color: #1B8A5A; background: rgba(27, 138, 90, .10);
+}
+.mc-tag-ecole svg { flex-shrink: 0; }
 
 .mc-priv { display: flex; align-items: center; gap: 6px; margin: 12px 0 0; font-size: 11.5px; color: var(--tx3); }
 .mc-privacy { display: flex; align-items: center; gap: 6px; margin: 10px 0 0; font-size: 11.5px; color: var(--tx3); }

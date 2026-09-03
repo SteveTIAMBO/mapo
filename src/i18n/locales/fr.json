@@ -5825,6 +5825,8 @@
     "mcCourseNameHint": "Le nom que tu utilises toi. C’est lui qui apparaîtra dans les révisions, les notes et les examens.",
     "mcOrphans": "À ranger",
     "mcOrphansHint": "Ces documents sont rattachés à un cours qui n’est plus au programme. Modifie-les pour les remettre au bon endroit.",
+    "mcSchoolTag": "École",
+    "mcFromSchool": "Publié par ton école",
     "mcConfirmDelCourse": "Supprimer le cours « {name} » ?",
     "mcConfirmDelCourseDocs": "Supprimer le cours « {name} » et ses {n} document(s) ? C’est définitif.",
     "mcConfirmDel": "Supprimer « {name} » ?",

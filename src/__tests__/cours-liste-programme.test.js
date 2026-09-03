@@ -110,6 +110,36 @@ describe('⭐ rien ne se remplit par défaut là où MAPO ne sait pas', () => {
   })
 })
 
+describe('⭐⭐ école reliée : on hérite ET on peut ajouter', () => {
+  const VUE = lire('src/views/ParentMiapoView.vue')
+  const COURS = lire('src/components/MiapoMesCours.vue')
+
+  it('⚠️ l’entrée « Mes cours » n’est PLUS retirée du menu', () => {
+    // Elle l'était : `...(ecoleLie ? [] : [{ key: 'cours' … }])`. La personne
+    // arrivée par une invitation MAPO héritait des cours de son école et ne
+    // pouvait plus en ajouter AUCUN — ni ses notes, ni un support non publié.
+    expect(VUE).not.toMatch(/ecoleLie \? \[\] : \[\{ key: 'cours'/)
+    expect(VUE).toMatch(/\{ key: 'cours', label: t\('mia\.secMyCourses'\)/)
+  })
+
+  it('les cours de l’école sont servis à la liste', () => {
+    expect(VUE).toContain(':cours-ecole="coursEcoleListe"')
+    expect(VUE).toContain('listCoursEcole(activeEnfant.value.id)')
+  })
+
+  it('⚠️ ils sont en LECTURE SEULE — ni renommables, ni supprimables', () => {
+    // Les effacer localement ne corrigerait rien : ça masquerait ce que
+    // l'école publie.
+    expect(COURS).toContain('&& !props.coursEcole.some((c) => memeNom(c.matiere, nom))')
+    expect(COURS).toContain('mc-item-ecole')
+    expect(COURS).not.toMatch(/docsEcole[\s\S]{0,200}supprimer\(/)
+  })
+
+  it('un cours publié dont la matière n’est pas au programme reste visible', () => {
+    expect(COURS).toContain("if (c.matiere && !noms.some((m) => memeNom(m, c.matiere))) noms.push(c.matiere)")
+  })
+})
+
 describe('⭐⭐ créer une matière à la volée l’inscrit AU PROGRAMME', () => {
   it('la modale document émet « creer-cours » pour une matière inconnue', () => {
     // Sinon le cours n'existe que sur ce document : ni le quiz, ni les notes,

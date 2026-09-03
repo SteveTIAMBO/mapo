@@ -122,13 +122,19 @@ describe('⭐⭐ les trois sources s’ADDITIONNENT dans le quiz', () => {
 describe('⚠️ le remplissage du cache s’accroche à un déclencheur ATTEIGNABLE', () => {
   const VUE = sansCommentaires(lire('src/views/ParentMiapoView.vue'))
 
-  it('⚠️⚠️ PAS sur la section « cours » : elle disparaît quand l’école est reliée', () => {
+  it('⚠️⚠️ PAS accrochée à l’ouverture d’une section', () => {
     // Piège rencontré en écrivant ce correctif : j'avais copié le déclencheur de
-    // l'emploi du temps (`watch(section)`), mais l'entrée « Mes cours » est
-    // retirée du menu dès que l'école est reliée — la synchro n'aurait JAMAIS
-    // pu partir. Un déclencheur inatteignable n'échoue pas, il se tait.
-    expect(VUE).toContain("...(ecoleLie ? [] : [{ key: 'cours'")
+    // l'emploi du temps (`watch(section)`), alors que l'entrée « Mes cours »
+    // était retirée du menu dès que l'école était reliée — la synchro n'aurait
+    // JAMAIS pu partir. Un déclencheur inatteignable n'échoue pas, il se tait.
+    //
+    // ⚠️ Le 03/09 l'entrée a été RÉTABLIE (on hérite des cours de l'école ET on
+    // peut en ajouter). La prémisse a donc disparu ; la règle, elle, reste :
+    // une synchro ne s'accroche pas à un écran, elle suit le profil. Accrocher
+    // à `section` remarcherait aujourd'hui — et retomberait en panne le jour où
+    // l'on remasque l'entrée, en silence.
     expect(VUE).not.toMatch(/watch\(section, async \(s\) => \{\s*if \(s !== 'cours'/)
+    expect(VUE).toContain('watch(() => activeEnfant.value?.id')
   })
 
   it('la synchro suit le PROFIL ACTIF, et part dès l’ouverture', () => {

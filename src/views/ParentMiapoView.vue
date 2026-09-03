@@ -574,6 +574,7 @@
             :enfant="activeEnfant"
             :matieres="matieresList"
             :matieres-propres="coursPropres"
+            :cours-ecole="coursEcoleListe"
             :sans-referentiel="sansReferentiel"
             @creer-cours="creerCours"
             @retirer-cours="retirerCours"
@@ -1398,7 +1399,7 @@ import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recomp
 import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo'
 import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
-import { setCoursEcole } from '../utils/coursEcole'
+import { setCoursEcole, listCoursEcole } from '../utils/coursEcole'
 import { calibration } from '../utils/calibration'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
@@ -1531,9 +1532,15 @@ const SECTIONS = computed(() => {
   return [
     home,
     { key: 'tuteur', label: t('mia.secTutor'), icon: GraduationCap, group: 'apprendre' },
-    // « Mes cours » (import perso) masqué quand l'école est reliée : les cours
-    // proviennent de l'établissement et n'apparaissent QUE dans « Mon école ».
-    ...(ecoleLie ? [] : [{ key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' }]),
+    // ⚠️ « Mes cours » était MASQUÉ quand l'école était reliée, au motif que les
+    // cours venaient de l'établissement. Conséquence non voulue : la personne
+    // arrivée par une invitation MAPO héritait des cours de son école et ne
+    // pouvait plus en ajouter AUCUN à la main — ni ses propres notes, ni un
+    // support qu'un prof n'a pas publié. Steve, 03/09 : « elle hérite des cours
+    // de l'école, ET peut ajouter d'autres cours manuellement ». L'entrée reste
+    // donc toujours là ; ce sont les cours de l'école qui y apparaissent en
+    // lecture seule, à côté des siens.
+    { key: 'cours', label: t('mia.secMyCourses'), icon: FolderOpen, group: 'apprendre' },
     ...(estClasseExamen(activeEnfant.value?.niveau) ? [{ key: 'annales', label: t('mia.secAnnales'), icon: ClipboardList, group: 'apprendre' }] : []),
     { key: 'historique', label: t('mia.secHistory'), icon: History, group: 'apprendre' },
     { key: 'recompenses', label: t('mia.secRewards'), icon: Trophy, group: 'apprendre' },
@@ -2671,6 +2678,14 @@ const coursPropres = computed(() => {
   const e = activeEnfant.value
   if (!e) return []
   return sansReferentiel.value ? listeModules(e.formationModules || '') : (e.matieresSup || [])
+})
+// Cours publiés par les enseignants, servis en LECTURE SEULE dans la même liste.
+// Ils ne sont ni modifiables ni supprimables d'ici : ils appartiennent à
+// l'école, et les effacer localement ne ferait que masquer ce qu'elle publie.
+// `section` est dans les dépendances pour relire le cache après une synchro.
+const coursEcoleListe = computed(() => {
+  void section.value
+  return activeEnfant.value ? listCoursEcole(activeEnfant.value.id) : []
 })
 function creerCours(nom) {
   const e = activeEnfant.value

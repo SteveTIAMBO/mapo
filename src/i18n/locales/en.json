@@ -5825,6 +5825,8 @@
     "mcCourseNameHint": "The name you use yourself. It is what will appear in revisions, marks and exams.",
     "mcOrphans": "To file",
     "mcOrphansHint": "These documents belong to a course that is no longer in the programme. Edit them to file them in the right place.",
+    "mcSchoolTag": "School",
+    "mcFromSchool": "Published by your school",
     "mcConfirmDelCourse": "Delete the course “{name}”?",
     "mcConfirmDelCourseDocs": "Delete the course “{name}” and its {n} document(s)? This cannot be undone.",
     "mcConfirmDel": "Delete “{name}”?",
