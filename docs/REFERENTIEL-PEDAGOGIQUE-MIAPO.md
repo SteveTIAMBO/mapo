@@ -634,6 +634,27 @@ La jauge monte selon le score, mais aucun taux de réussite cible n'est défini.
 MIAPO mesure la réussite pendant la séance. Bastani et al. (2025) montrent que c'est exactement la mesure trompeuse : leur groupe le plus performant pendant l'entraînement n'apprenait pas mieux. Sans test différé sans assistance, EDUFREM ne saura jamais si MIAPO fonctionne, et ne pourra rien démontrer à une institution.
 **Gravité : élevée. C'est l'écart stratégique le plus important du document.**
 
+⚠️ **PARTIELLEMENT TRAITÉ le 4 septembre 2026 — l'instrument existe, la preuve
+non.** Arbitrage de Steve : plutôt qu'attendre un protocole en écoles
+partenaires, l'épreuve sans assistance est **dans l'application**, une fois par
+mois et par matière (`utils/examenBlanc.js`, mode `epreuve` de
+`TuteurQuiz.vue`). Elle retire l'indice, le cours, l'explication avant réponse,
+le chat et le deuxième essai ; elle ne nourrit ni la maîtrise, ni le palier, ni
+les points, ni la série de jours. Elle mesure, elle n'entraîne pas.
+
+Ce que ça change : MIAPO dispose enfin d'une mesure différée sans aide, par
+apprenant et dans le temps. Ce que ça ne change PAS : **une courbe qui monte ne
+prouve toujours rien.** Sans groupe témoin, elle peut être l'école, l'âge ou
+l'habitude du format. Un instantané de l'état de révision est figé à chaque
+épreuve pour comparer, chez le même apprenant, les matières travaillées et les
+autres — mais l'apprenant choisit lui-même ce qu'il révise, donc cette
+comparaison est une indication à instruire, pas un effet mesuré. Le protocole du
+rang 5 (J+7, groupe témoin, effet par quartile de niveau initial) reste entier.
+
+⚠️ Stockage **local uniquement**, comme la calibration : aucun résultat scolaire
+ne part au serveur, donc rien n'est agrégé côté EDUFREM. Agréger un jour est une
+décision de protection des données (section 5.4), pas un ajout technique.
+
 ### E11. Le bornage de la difficulté par le haut existe, celui par le bas est à vérifier
 `progressionNiveau.js` plafonne au programme de la classe et propose le passage à l'année suivante. Il faut vérifier qu'un apprenant en retard peut réviser un programme d'année inférieure sans friction ni marquage négatif (P12).
 **Gravité : moyenne, à instruire.**
