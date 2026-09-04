@@ -79,12 +79,18 @@ import { ref, computed, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
-import { matieresPourNiveau } from '../stores/enfantsAutonomes'
 import { PenLine, Sparkles, Loader2, Check, Lightbulb } from 'lucide-vue-next'
 
 // presetMatiere : quand la carte « Rédaction guidée » lance ce widget sur une
 // matière précise, on démarre directement la question (pas de sélecteur).
-const props = defineProps({ enfant: { type: Object, default: null }, presetMatiere: { type: String, default: '' } })
+const props = defineProps({
+  enfant: { type: Object, default: null },
+  presetMatiere: { type: String, default: '' },
+  // ⚠️ Reçue, plus déduite. `matieresPourNiveau(niveau)` était appelée ici sans
+  // le pays et sans regarder `formationModules` : elle servait le secondaire
+  // camerounais à une formation hors catalogue, comme dans Mes cours.
+  matieres: { type: Array, default: () => [] },
+})
 defineEmits(['revise'])
 const { t, locale } = useI18n({ useScope: 'global' })
 // Correcteur natif du navigateur (souligné rouge) dans la zone de rédaction.
@@ -93,7 +99,7 @@ const cours = useCoursStore()
 const tuteur = useTuteurStore()
 
 const niveau = computed(() => props.enfant?.niveau || '')
-const matieres = computed(() => matieresPourNiveau(niveau.value))
+const matieres = computed(() => props.matieres)
 const matiere = ref('')
 const question = ref('')
 const reponse = ref('')

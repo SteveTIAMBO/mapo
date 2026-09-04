@@ -5273,6 +5273,7 @@
     "fichesHint": "MAPO+ crée une fiche de synthèse et des cartes mémo à partir de TON cours — collé ou importé (PDF ou fichier texte).",
     "fichesPastePh": "Colle ici le cours à réviser (ou importe un fichier ci-dessous)…",
     "fichesImport": "Importer un PDF ou un texte",
+    "fichesFromMyCourses": "Repris de tes cours enregistrés. Tu peux le corriger, ou importer autre chose.",
     "fichesImporting": "Lecture du fichier…",
     "fichesImported": "Importé : {name}",
     "fichesPdfError": "Lecture du fichier impossible. Colle plutôt le texte du cours.",

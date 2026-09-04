@@ -60,17 +60,22 @@
 import { ref, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
-import { matieresPourNiveau, NIVEAUX_PRIMAIRE, isNiveauSuperieur, PAYS } from '../stores/enfantsAutonomes'
+import { NIVEAUX_PRIMAIRE, isNiveauSuperieur, PAYS } from '../stores/enfantsAutonomes'
 import { ClipboardList, Sparkles, Loader2, RefreshCw, Copy, ChevronRight, ChevronDown, Timer, Info } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 
-const props = defineProps({ enfant: { type: Object, default: null } })
+const props = defineProps({
+  enfant: { type: Object, default: null },
+  // ⚠️ Reçue, plus déduite. L'appel local oubliait le PAYS : un élève sénégalais
+  // ou ivoirien se voyait proposer les matières camerounaises pour ses annales.
+  matieres: { type: Array, default: () => [] },
+})
 const { t } = useI18n({ useScope: 'global' })
 const cours = useCoursStore()
 
 const niveau = computed(() => props.enfant?.niveau || '')
 const pays = computed(() => props.enfant?.pays || 'CM')
-const matieresList = computed(() => matieresPourNiveau(niveau.value))
+const matieresList = computed(() => props.matieres)
 
 // Cycle déduit du niveau → examen(s) national/nationaux du pays.
 function cycleOf(n) {

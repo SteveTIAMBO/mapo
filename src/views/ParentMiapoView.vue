@@ -465,7 +465,7 @@
                   <!-- Module lancé : bouton retour au choix -->
                   <div v-else class="rt-active">
                     <button type="button" class="rt-back" @click="activeRedaction = ''; activeDictee = ''; activeAppariement = ''"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
-                    <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
+                    <MiapoQuestionOuverte v-if="activeRedaction" :key="'red-' + activeRedaction" :enfant="activeEnfant" :matieres="matieresList" :preset-matiere="activeRedaction" @revise="onReviseFrancais" />
                     <MiapoDictee v-if="activeDictee" :key="'dic-' + activeDictee" :enfant="activeEnfant" :matiere="activeDictee" @quit="activeDictee = ''" />
                     <MiapoAppariement v-if="activeAppariement" :key="'appa-' + activeAppariement" :enfant="activeEnfant" :matiere="activeAppariement" @quit="activeAppariement = ''" />
                   </div>
@@ -566,13 +566,20 @@
 
         <!-- ========== ANNALES ========== -->
         <section v-else-if="section === 'annales'" class="sec">
-          <MiapoAnnales :enfant="activeEnfant" />
+          <MiapoAnnales :enfant="activeEnfant" :matieres="matieresList" />
         </section>
 
         <!-- ========== FICHES + FLASHCARDS ========== -->
         <section v-else-if="section === 'fiches'" class="sec">
           <button type="button" class="rt-back" @click="section = 'tuteur'"><ChevronLeft :size="16" /> <span>{{ t('mia.back') }}</span></button>
-          <MiapoFiches :enfant="activeEnfant" />
+          <!-- ⚠️ `reviseMatiere` est la matière choisie à l'écran d'avant : la passer
+               évite de la redemander. `:key` force le remontage quand elle
+               change, sinon `onMounted` ne rejouerait pas et l'écran garderait
+               le cours de la matière précédente. -->
+          <MiapoFiches
+            :key="'fiches-' + (reviseMatiere || '')"
+            :enfant="activeEnfant" :matieres="matieresList" :preset-matiere="reviseMatiere"
+          />
         </section>
 
         <!-- ========== COURS — LA liste du programme ==========

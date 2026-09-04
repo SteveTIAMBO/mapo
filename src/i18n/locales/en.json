@@ -5273,6 +5273,7 @@
     "fichesHint": "MAPO+ builds a summary sheet and flashcards from YOUR course — pasted or imported (PDF or text file).",
     "fichesPastePh": "Paste the course to revise here (or import a file below)…",
     "fichesImport": "Import a PDF or text file",
+    "fichesFromMyCourses": "Taken from your saved courses. You can edit it, or import something else.",
     "fichesImporting": "Reading the file…",
     "fichesImported": "Imported: {name}",
     "fichesPdfError": "Could not read the file. Paste the course text instead.",

@@ -77,16 +77,28 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useCoursStore } from '../stores/cours'
 import { useTuteurStore } from '../stores/tuteur'
 import { useAuthStore } from '../stores/auth'
-import { matieresPourNiveau } from '../stores/enfantsAutonomes'
+import { coursTexteMatiere } from '../utils/coursPerso'
+import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info, FolderOpen } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
 
-const props = defineProps({ enfant: { type: Object, default: null } })
+const props = defineProps({
+  enfant: { type: Object, default: null },
+  // ⚠️ LA LISTE VIENT DE LA VUE, elle n'est plus déduite ici. Ce composant
+  // appelait `matieresPourNiveau(niveau)` — sans le pays, sans regarder
+  // `formationModules` — et servait donc le secondaire camerounais à une
+  // apprenante en certification. Même défaut que Mes cours, à un autre endroit :
+  // trois copies de la même question finissent par donner trois réponses.
+  matieres: { type: Array, default: () => [] },
+  // Matière déjà choisie à l'écran précédent. Sans elle, on redemandait ce que
+  // la personne venait de dire.
+  presetMatiere: { type: String, default: '' },
+})
 const { t } = useI18n({ useScope: 'global' })
 const cours = useCoursStore()
 const tuteur = useTuteurStore()
@@ -110,8 +122,28 @@ const importInfo = ref('')
 const fileInput = ref(null)
 
 const niveau = computed(() => props.enfant?.niveau || '')
-const matieresList = computed(() => matieresPourNiveau(niveau.value))
+const matieresList = computed(() => props.matieres)
 const hasCourse = computed(() => courseText.value.trim().length >= 40)
+
+/**
+ * Le cours DÉJÀ LÀ, pour la matière retenue.
+ *
+ * ⚠️ CE QUE ÇA CORRIGE (Steve, 03/09). Après avoir importé un PDF de
+ * « Conformité normative » dans Mes cours, l'écran des cartes mémoire proposait
+ * quand même d'importer un cours : il ne regardait QUE `cours.items`, le module
+ * de l'ERP alimenté par les enseignants. Le dépôt personnel et le cache des
+ * cours de l'école lui étaient invisibles. On demandait donc à la personne de
+ * réimporter ce qu'elle venait d'importer.
+ *
+ * Mêmes sources que l'ancrage du quiz (`coursPerso` + `coursEcole`), pour que
+ * les deux écrans voient la même chose. Carré reste au quiz : sa lecture est un
+ * appel réseau, et une fiche doit pouvoir se préparer hors ligne.
+ */
+function coursDejaLa(mat) {
+  const id = props.enfant?.id
+  if (!id || !mat) return ''
+  return [coursTexteMatiere(id, mat), coursEcoleTexteMatiere(id, mat)].filter(Boolean).join('\n\n').slice(0, 6000)
+}
 
 // ── Option B : cours déjà publiés par le professeur (module Cours) comme source. ──
 const pickedCourseId = ref('')
@@ -124,7 +156,24 @@ function onPickCourse() {
   courseText.value = [c.titre, c.contenu].filter(Boolean).join('\n').slice(0, 6000)
   if (c.matiere && matieresList.value.includes(c.matiere)) matiere.value = c.matiere
 }
-onMounted(() => { if (ecoleConnectee.value && !cours.loaded) cours.load() })
+onMounted(() => {
+  if (ecoleConnectee.value && !cours.loaded) cours.load()
+  // La matière vient de l'écran précédent : on la reprend, et on charge le
+  // cours qui existe déjà. Sans ça, l'apprenant refaisait deux gestes qu'il
+  // venait de faire.
+  if (props.presetMatiere) {
+    matiere.value = props.presetMatiere
+    const deja = coursDejaLa(props.presetMatiere)
+    if (deja) { courseText.value = deja; importInfo.value = t('mia.fichesFromMyCourses') }
+  }
+})
+// Changer de matière à la main recharge la source correspondante — mais on
+// n'écrase JAMAIS un texte que la personne a collé ou importé elle-même.
+watch(matiere, (m) => {
+  if (!m || courseText.value.trim()) return
+  const deja = coursDejaLa(m)
+  if (deja) { courseText.value = deja; importInfo.value = t('mia.fichesFromMyCourses') }
+})
 
 function pickFile() { fileInput.value?.click() }
 // Renvoie vers le menu « Cours » (dépôt personnel + Carré).
