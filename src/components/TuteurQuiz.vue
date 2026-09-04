@@ -98,7 +98,7 @@
 
       <div class="tq-qrow">
         <h2 class="tq-q">{{ current.q }}</h2>
-        <button type="button" class="tq-info" :class="{ on: showCourse }"
+        <button v-if="!epreuve" type="button" class="tq-info" :class="{ on: showCourse }"
           :title="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
           :aria-label="locale.startsWith('en') ? 'Re-read the lesson' : 'Relire la section du cours'"
           @click="basculerAide">
@@ -108,7 +108,7 @@
 
       <!-- Aide « i » : l'indice PROPRE À CETTE QUESTION d'abord (il change à chaque
            question) ; le cours complet (identique) reste en repli, sur demande. -->
-      <div v-if="showCourse" class="tq-course">
+      <div v-if="showCourse && !epreuve" class="tq-course">
         <div class="tq-course-head"><Lightbulb :size="15" /> <strong>{{ locale.startsWith('en') ? 'Hint for this question' : 'Indice pour cette question' }}</strong></div>
         <p v-if="current.hint" class="tq-course-key">{{ current.hint }}</p>
         <p v-else class="tq-course-key tq-course-fallback">{{ locale.startsWith('en') ? 'Re-read the question and rule out the impossible answers.' : 'Relis la question et élimine les réponses impossibles.' }}</p>
@@ -180,7 +180,7 @@
 
       <!-- Aide facultative : seulement si l'apprenant a échoué. « Approfondir »
            déclenche l'explication du concept ; « Répondre » ouvre le chat. -->
-      <div v-if="revealed && !firstTry" class="tq-deepen">
+      <div v-if="revealed && !firstTry && !epreuve" class="tq-deepen">
         <button v-if="!conceptText && !conceptBusy" type="button" class="tq-appro-btn" @click="approfondir">
           <MiapoOrbe :size="16" :frozen="true" /> <span>{{ ackLabels.deepen }}</span>
         </button>
@@ -196,7 +196,7 @@
         </div>
       </div>
 
-      <div v-if="voiceOn && revealed && !firstTry" class="tq-voice-help">
+      <div v-if="voiceOn && revealed && !firstTry && !epreuve" class="tq-voice-help">
         <button type="button" class="tq-help-btn" @click="readExplanation(true)"><Volume2 :size="14" /> <span>Réécouter</span></button>
         <button type="button" class="tq-help-btn accent" @click="jeNaiPasCompris">
           <RotateCcw :size="14" /> <span>{{ notUnderstood < 1 ? "Je n'ai pas compris" : 'Ouvrir la fiche de cours' }}</span>
@@ -215,12 +215,25 @@
     <!-- Résultat -->
     <div v-else-if="mode === 'result'" class="tq-result">
       <!-- Paillettes de félicitation (quiz validé / 100 %) : renfort dopamine. -->
-      <div v-if="celebrate" class="tq-confetti" aria-hidden="true">
+      <div v-if="celebrate && !epreuve" class="tq-confetti" aria-hidden="true">
         <i v-for="n in 14" :key="n" :style="confettiStyle(n)"></i>
       </div>
       <div class="tq-ring" :class="{ perfect: masteryPercent === 100 }" :style="ringStyle"><span>{{ masteryPercent }}%</span></div>
       <h2>{{ resultTitle }}</h2>
       <p class="tq-sub">{{ firstTryCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'first try' : 'du premier coup' }} · {{ correctCount }}/{{ questions.length }} {{ locale.startsWith('en') ? 'correct' : 'trouvées' }} — {{ matiere }}</p>
+      <!-- ÉPREUVE : on dit ce qui a été mesuré, et on s'arrête là. Pas de
+           palier, pas de points, pas de paillettes — récompenser une épreuve la
+           transformerait en séance de plus, et c'est précisément ce qu'elle ne
+           doit pas être. L'écart avec l'épreuve précédente ne s'affiche qu'à
+           partir de deux : un point n'est pas une tendance. -->
+      <div v-if="epreuve" class="tq-epreuve">
+        <p>{{ locale.startsWith('en')
+          ? 'Unassisted test: no hint, no explanation before answering, one attempt. This score is the one that says what you have kept.'
+          : 'Épreuve sans aide : aucun indice, aucune explication avant de répondre, un seul essai. C’est ce score-là qui dit ce qu’il te reste.' }}</p>
+        <p v-if="progressionEpreuve">{{ locale.startsWith('en')
+          ? `Previous test: ${progressionEpreuve.precedent}%. Today: ${progressionEpreuve.dernier}%.`
+          : `Épreuve précédente : ${progressionEpreuve.precedent} %. Aujourd’hui : ${progressionEpreuve.dernier} %.` }}</p>
+      </div>
       <div v-if="gainPoints && gainPoints.total" class="tq-points">
         <Trophy :size="17" />
         <div>
@@ -342,6 +355,7 @@ import { noteQuestion } from '../utils/jaugeNiveau'
 import { coursTexteMatiere } from '../utils/coursPerso'
 import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { enregistrerSeanceCalibration, messageCalibration } from '../utils/calibration'
+import { enregistrerEpreuve, progressionEpreuves } from '../utils/examenBlanc'
 import { bandeAge } from '../utils/ageProfil'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -369,6 +383,18 @@ const props = defineProps({
   // Pays de l'apprenant : les listes de classes en dépendent (CM2→6ème au
   // Cameroun, CM2→6e en France…). Sans lui, « année suivante » serait faux.
   enfantPays: { type: String, default: '' },
+  // ÉPREUVE SANS ASSISTANCE (écart E10 du référentiel). Une séance normale
+  // mesure la réussite AVEC l'indice, l'explication et le chat à portée de
+  // clic : Bastani et al. (2025) ont montré que ce score ne dit rien de ce qui
+  // reste. Ici, aucune aide avant de répondre, un seul essai, et le résultat
+  // ne nourrit NI la maîtrise, NI le palier, NI les récompenses — une épreuve
+  // mesure, elle n'entraîne pas.
+  //
+  // ⚠️ Choix d'ingénierie assumé : la correction reste affichée APRÈS chaque
+  // réponse. Le score retenu est celui du premier essai, donc la mesure n'en
+  // dépend pas, et priver l'apprenant du retour reviendrait à jeter l'effet-test
+  // (Yang et al. 2021, g = 0,50) pour un gain de pureté nul.
+  epreuve: { type: Boolean, default: false },
 })
 const emit = defineEmits(['quit', 'abonnement', 'ouvrir-fiche'])
 
@@ -522,6 +548,11 @@ const index = ref(0)
 // Horodatage de début de séance (pour durée + temps moyen/question → signal de
 // forme, corrélé plus tard avec l'humeur ; jamais montré à l'apprenant).
 const startedAt = ref(0)
+// Épreuve : état de révision de la matière AVANT de commencer. Pris ici et
+// nulle part ailleurs — relu après coup, il aurait déjà bougé, et c'est
+// justement ce « avant » qui permettra de comparer travaillé et non travaillé.
+const etatAvant = ref(null)
+const progressionEpreuve = ref(null)
 // « i » par question : relire la section du cours SANS révéler la réponse.
 // Source : cours perso importé de la matière (+ le point-clé/indice de la question).
 const showCourse = ref(false)
@@ -792,6 +823,14 @@ onUnmounted(() => {
 async function start() {
   mode.value = 'loading'
   sourceRev.value = '' // provenance (cours/référentiel/mix) — définie ci-dessous
+  if (props.epreuve && props.studentId) {
+    const st = (tuteur.getRevisionState(props.studentId) || {})[subjectId.value] || {}
+    etatAvant.value = {
+      seances: Number(st.attempts) || 0,
+      maitrise: Number.isFinite(st.mastery) ? st.mastery : null,
+      palier: Number(st.level) || 1,
+    }
+  }
   // Rejeu : on réutilise les questions archivées, aucun appel IA (économie de tokens).
   if (props.presetQuestions && props.presetQuestions.length) {
     if (props.studentId) level.value = tuteur.getLevel(props.studentId, subjectId.value)
@@ -956,7 +995,9 @@ function select(i) {
     serie.value = 0 // une erreur casse la série, c'est ce qui lui donne sa valeur
     sonFaux()
     const ws = new Set(wrongSet.value); ws.add(i); wrongSet.value = ws
-    if (attempts.value >= 2) { revealed.value = true; phase.value = 'revealed'; firstTry.value = false; qGrade.value = 0 }
+    // En épreuve, un seul essai : le deuxième essai s'accompagne d'un indice,
+    // et un indice est une assistance. C'est exactement ce que l'épreuve retire.
+    if (attempts.value >= 2 || props.epreuve) { revealed.value = true; phase.value = 'revealed'; firstTry.value = false; qGrade.value = 0 }
     else phase.value = 'hinted'
   }
 }
@@ -1007,6 +1048,28 @@ function finish() {
       })
       messageCalib.value = messageCalibration(props.studentId, { en: locale.value.startsWith('en') })
     } catch { /* la séance se termine normalement, on perd la mesure */ }
+  }
+  // ÉPREUVE : elle MESURE, elle n'entraîne pas. Ni maîtrise, ni palier, ni
+  // points, ni série de jours, ni archivage de séance. Faire monter un niveau
+  // sur la foi d'un test qu'on a soi-même produit n'aurait aucun sens, et
+  // récompenser une épreuve la transformerait en séance de plus.
+  if (props.epreuve) {
+    if (props.studentId) {
+      try {
+        enregistrerEpreuve(props.studentId, {
+          matiere: props.matiere,
+          reussi: firstTryCount.value,
+          total: questions.value.length,
+          dureeSec: startedAt.value ? Math.round((Date.now() - startedAt.value) / 1000) : 0,
+          etatRevision: etatAvant.value,
+        })
+        progressionEpreuve.value = progressionEpreuves(props.studentId, props.matiere)
+      } catch { /* la mesure est perdue, l'épreuve se termine normalement */ }
+    }
+    startedAt.value = 0
+    lastResult.value = null
+    mode.value = 'result'
+    return
   }
   // La PROGRESSION est pilotée par le score de MAÎTRISE pondéré (caché), pas par
   // le simple taux de bonnes réponses : trouver du 1er coup fait vraiment monter.
@@ -1405,4 +1468,8 @@ onMounted(start)
 }
 .tq-calib p { margin: 0; font-size: 13.5px; }
 .tq-calib-msg { max-width: 420px; margin: 8px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
+/* Épreuve : volontairement sobre, aucun accent de couleur. Ce n'est pas une
+   récompense, c'est une mesure. */
+.tq-epreuve { max-width: 420px; margin: 10px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
+.tq-epreuve p { margin: 0 0 4px; }
 </style>

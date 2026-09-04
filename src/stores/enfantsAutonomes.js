@@ -6,6 +6,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/fi
 import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso, listCoursPerso, clearCoursPerso } from '../utils/coursPerso'
 import { effacerCalibration } from '../utils/calibration'
+import { effacerEpreuves } from '../utils/examenBlanc'
 import { deleteCoursFiles } from '../services/coursFiles'
 import { clearCoursEcole } from '../utils/coursEcole'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
@@ -858,6 +859,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     //    calibration survivaient au profil.
     clearCoursPerso(id)
     effacerCalibration(id)
+    effacerEpreuves(id)
     enfants.value = enfants.value.filter((e) => e.id !== id)
     const uid = dataUid()
     if (uid) {

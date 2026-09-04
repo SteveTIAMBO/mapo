@@ -73,6 +73,7 @@ writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfan
   .replace("from '../services/coursFiles'", "from './coursfiles.js'")
   // Sans dépendance : on importe les VRAIS modules plutôt que des bouchons.
   .replace("from '../utils/calibration'", `from '${join(racine, 'src/utils/calibration.js')}'`)
+  .replace("from '../utils/examenBlanc'", `from '${join(racine, 'src/utils/examenBlanc.js')}'`)
   .replace("from '../utils/coursEcole'", `from '${join(racine, 'src/utils/coursEcole.js')}'`)
   .replace("from '../utils/typeProfil'", `from '${join(racine, 'src/utils/typeProfil.js')}'`)
   // Barèmes : on importe le VRAI module (sans dépendance) plutôt qu'un bouchon —

@@ -404,7 +404,7 @@
             />
           </div>
           <div v-else-if="quizMatiere" class="card">
-            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.passions || ''" :preset-questions="quizPreset" :timer-seconds="quizTimer" :enfant-pays="activeEnfant.pays || ''" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
+            <TuteurQuiz :matiere="quizMatiere" :niveau="quizNiveau" :student-id="activeEnfant.id" :themes="quizThemes" :nombre="quizNombre" :interets="activeEnfant.passions || ''" :preset-questions="quizPreset" :timer-seconds="quizTimer" :enfant-pays="activeEnfant.pays || ''" :epreuve="quizEpreuve" @quit="quizMatiere = ''; quizThemes = ''; quizPreset = null; quizEpreuve = false" @abonnement="quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'profil'; sousSection = 'abonnement'" @ouvrir-fiche="(m) => { quizMatiere = ''; quizThemes = ''; quizPreset = null; section = 'fiches' }" />
           </div>
           <template v-else>
             <div v-if="aReviser.length" class="card">
@@ -460,6 +460,19 @@
                           <small><DualText :text="t('mia.rth_' + rt.key)" /></small>
                         </span>
                       </button>
+                    </div>
+                    <!-- ÉPREUVE SANS AIDE (référentiel, écart E10). À part des
+                         types de révision, et volontairement sobre : ce n'est
+                         pas une façon de plus de réviser, c'est la seule mesure
+                         de ce qui reste une fois l'aide retirée. Un seul rythme
+                         possible, mensuel, par matière. -->
+                    <div class="rt-epreuve">
+                      <strong>{{ t('mia.epreuveTitre') }}</strong>
+                      <p>{{ t('mia.epreuveQuoi') }}</p>
+                      <button v-if="epreuveMatiere.ouverte" type="button" class="btn btn-outline btn-sm" @click="lancerEpreuve">
+                        <Target :size="15" /> <span>{{ t('mia.epreuveGo') }}</span>
+                      </button>
+                      <p v-else class="rt-epreuve-fermee">{{ t('mia.epreuveFermee', { subject: reviseMatiere, n: epreuveMatiere.joursRestants }) }}</p>
                     </div>
                   </template>
                   <!-- Module lancé : bouton retour au choix -->
@@ -1420,6 +1433,7 @@ import { prochaineRevision } from '../utils/sequenceur'
 import { useLienEcoleStore } from '../stores/lienEcole'
 import { setCoursEcole, listCoursEcole } from '../utils/coursEcole'
 import { calibration } from '../utils/calibration'
+import { epreuveOuverte } from '../utils/examenBlanc'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Persistance du drapeau « visite guidée déjà vue » : voir tourDocRef().
@@ -2471,20 +2485,43 @@ function launchRevision(typeKey) {
 const quizThemes = ref('')
 // Questions rejouées depuis l'Historique (null = quiz normal généré par l'IA).
 const quizPreset = ref(null)
+// Épreuve sans aide (référentiel, écart E10) : mesure, pas entraînement.
+const quizEpreuve = ref(false)
+const epreuveMatiere = computed(() => {
+  void tuteur.revisionsVersion // relit après chaque séance terminée
+  if (!activeEnfant.value || !reviseMatiere.value) return { ouverte: false, joursRestants: 0 }
+  return epreuveOuverte(activeEnfant.value.id, reviseMatiere.value)
+})
+function lancerEpreuve() {
+  if (!reviseMatiere.value || !epreuveMatiere.value.ouverte) return
+  // Pas de thème : une épreuve porte sur la matière, sinon l'apprenant choisit
+  // ce sur quoi il sera mesuré et la mesure ne vaut plus rien.
+  goRevise(reviseMatiere.value, '', { epreuve: true })
+}
 // Longueur de session adaptée à l'âge de l'apprenant (plus « 10 » figé).
 const quizNombre = computed(() => {
   const base = sessionQuestions(activeEnfant.value)
   // Forme basse aujourd'hui → séance plus courte (à ton rythme), sans l'afficher.
   return humeurBasseAujourdhui.value ? Math.max(5, Math.round(base * 0.7)) : base
 })
-function goRevise(matiere, themes) {
+function goRevise(matiere, themes, { epreuve = false } = {}) {
   // Garde-fou : SEUL l'apprenant lance une révision. Le parent propose des
   // matières, mais n'écrit jamais dans la progression de son enfant (sinon il
   // fausserait la détection de niveau). Vaut aussi pour tout futur appelant.
   if (!isApprenant.value) return
   quizPreset.value = null
+  quizEpreuve.value = epreuve
   quizMatiere.value = matiere
   quizThemes.value = Array.isArray(themes) ? themes.join(', ') : (themes || '')
+  // Une épreuve ne passe ni par le test de positionnement ni par le choix d'un
+  // chapitre : les deux calent la difficulté ou restreignent le périmètre, et
+  // une mesure dont l'apprenant a choisi le terrain ne mesure plus rien.
+  if (epreuve) {
+    positionnementAFaire.value = false
+    chapitreADemander.value = false
+    section.value = 'tuteur'
+    return
+  }
   // Décidé UNE FOIS, à l'ouverture : le test ne se propose qu'au tout premier
   // contact avec la matière (jamais joué et jamais positionné).
   positionnementAFaire.value = tuteur.doitProposerPositionnement(activeEnfant.value?.id, 'auto-' + matiere)
@@ -3956,6 +3993,12 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .rt-card { display: flex; align-items: flex-start; gap: 11px; padding: 12px 13px; border: 1px solid var(--bd, #e5e7eb); border-radius: 14px; background: #fff; cursor: pointer; text-align: left; font-family: inherit; transition: border-color .15s, box-shadow .15s, transform .06s; }
 .rt-card:hover { border-color: var(--pr); box-shadow: 0 3px 14px rgba(var(--pr-rgb,21,88,176),.10); }
 .rt-card:active { transform: translateY(1px); }
+/* Épreuve : à part, discrète, sans couleur d'accent. Elle ne doit pas se lire
+   comme une neuvième façon de réviser. */
+.rt-epreuve { margin-top: 14px; padding: 12px 13px; border: 1px dashed var(--bd, #e5e7eb); border-radius: 14px; }
+.rt-epreuve strong { display: block; font-size: 14px; color: var(--tx, #1f2937); }
+.rt-epreuve p { margin: 4px 0 10px; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
+.rt-epreuve-fermee { margin-bottom: 0 !important; }
 .rt-ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); }
 .rt-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rt-tx strong { font-size: 14px; color: var(--tx, #1f2937); }
