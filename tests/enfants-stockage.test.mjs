@@ -61,14 +61,20 @@ export async function deleteDoc(ref) { journal.push({ op: 'del', path: ref.path 
 `)
 // Bouchons des utilitaires importés par le store (hors périmètre de ce test).
 writeFileSync(join(dir, 'recompenses.js'), `export function enregistrerActivite() {}\n`)
-writeFileSync(join(dir, 'coursperso.js'), `export function addCoursPerso() {}\n`)
+writeFileSync(join(dir, 'coursperso.js'), `export function addCoursPerso() {}\nexport function listCoursPerso() { return [] }\nexport function clearCoursPerso() {}\n`)
 writeFileSync(join(dir, 'demoecole.js'), `export const DEMO_LIEN = { schoolId: 'demo', eleveId: 'demo', className: '', classId: '', matricule: '', ecole: '' }\n`)
+writeFileSync(join(dir, 'coursfiles.js'), `export async function deleteCoursFiles() { return { total: 0, echecs: 0 } }\n`)
 writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfantsAutonomes.js'), 'utf8')
   .replace("from '../firebase'", "from './firebase.js'")
   .replace("from 'firebase/firestore'", "from './firestore.js'")
   .replace("from './auth'", "from './authstub.js'")
   .replace("from '../utils/recompenses'", "from './recompenses.js'")
   .replace("from '../utils/coursPerso'", "from './coursperso.js'")
+  .replace("from '../services/coursFiles'", "from './coursfiles.js'")
+  // Sans dépendance : on importe les VRAIS modules plutôt que des bouchons.
+  .replace("from '../utils/calibration'", `from '${join(racine, 'src/utils/calibration.js')}'`)
+  .replace("from '../utils/coursEcole'", `from '${join(racine, 'src/utils/coursEcole.js')}'`)
+  .replace("from '../utils/typeProfil'", `from '${join(racine, 'src/utils/typeProfil.js')}'`)
   // Barèmes : on importe le VRAI module (sans dépendance) plutôt qu'un bouchon —
   // c'est justement la conversion note ↔ acquisition qu'on veut voir à l'œuvre.
   .replace("from '../data/baremes'", `from '${join(racine, 'src/data/baremes.js')}'`)
@@ -131,7 +137,7 @@ ok('écriture ciblée : le repli groupé reste alimenté', ecrits.includes('user
 
 // ── 4. Suppression : le document de l'enfant part aussi ───────────────
 fs.journal.length = 0
-s.removeEnfant('ea-B')
+await s.removeEnfant('ea-B')
 ok('suppression : le document enfant_ea-B est supprimé', fs.journal.some((j) => j.op === 'del' && j.path.endsWith('enfant_ea-B')), fs.journal)
 
 // ── 5. Compte enfant : lecture directe, aucun list, aucun repli ───────
