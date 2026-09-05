@@ -45,6 +45,11 @@ rules_version = '2';
 //
 // ── Historique des publications chirurgicales ────────────────────
 //
+// 05/09/2026 — `epreuves_` et `notions_` ajoutés aux documents qu'un compte
+//   enfant peut écrire sous `/revisions/`. Insertion chirurgicale mesurée : le
+//   document est passé de 30 980 à 31 813 caractères et tout ce qui précède et
+//   suit l'ancre est resté identique au caractère près. ⚠️ Non vérifié depuis
+//   une vraie session enfant.
 // 05/08/2026 — `scolariteInchangee()` : un compte enfant ne peut plus modifier
 //   sa scolarité. ⚠️ Non vérifié depuis une vraie session enfant.
 // 05/08/2026 — `profilB2CValide()` + `allow create` sur users/{uid}, vérifié
