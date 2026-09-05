@@ -81,6 +81,22 @@ export function enregistrerEpreuve(studentId, e) {
   }
 }
 
+/**
+ * Remplace le registre local par celui rapatrié du nuage.
+ *
+ * Appelé par `stores/tuteur.js` au changement de profil. Ce module reste sans
+ * Firebase — il ne sait pas d'où vient la liste, et c'est ce qui le garde
+ * testable sans compte ni réseau.
+ */
+export function remplacerEpreuves(studentId, liste) {
+  if (!studentId || !Array.isArray(liste)) return
+  try {
+    localStorage.setItem(CLE(studentId), JSON.stringify(liste.slice(0, MAX_EPREUVES)))
+  } catch {
+    // Quota plein : on garde ce qu'on avait.
+  }
+}
+
 /** Efface les épreuves d'un profil — RGPD, appelé à la suppression. */
 export function effacerEpreuves(studentId) {
   if (!studentId) return

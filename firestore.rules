@@ -341,7 +341,14 @@ service cloud.firestore {
                 // sur son téléphone n'existait nulle part ailleurs, son parent
                 // ne le voyait jamais, et un changement d'appareil effaçait
                 // tout. Même espace que ses révisions : une famille, un espace.
-                || docId == 'recompenses_' + monEnfantId());
+                || docId == 'recompenses_' + monEnfantId()
+                // Épreuves sans assistance (référentiel, écart E10). C'est la
+                // seule mesure d'apprentissage réel de MIAPO, et l'apprenant la
+                // passe souvent depuis SON compte : sans cette ligne, son
+                // résultat ne quitterait jamais son téléphone, et un cache vidé
+                // effacerait la mesure. Agrégats uniquement, jamais de question
+                // ni de réponse.
+                || docId == 'epreuves_' + monEnfantId());
         }
         allow read, write: if isSignedIn() && (request.auth.uid == uid || estMaRevision());
       }

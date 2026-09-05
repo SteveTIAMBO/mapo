@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
-  historiqueEpreuves, enregistrerEpreuve, effacerEpreuves,
+  historiqueEpreuves, enregistrerEpreuve, effacerEpreuves, remplacerEpreuves,
   epreuveOuverte, progressionEpreuves, comparaisonTravaillees,
 } from '../utils/examenBlanc'
 
@@ -96,6 +96,46 @@ describe('l’épreuve ne laisse aucune aide et ne fait rien monter', () => {
   it('l’apprenant ne choisit ni le chapitre ni son niveau de départ', () => {
     expect(VUE).toContain('goRevise(reviseMatiere.value, \'\', { epreuve: true })')
     expect(VUE).toMatch(/if \(epreuve\) \{\s*\n\s*positionnementAFaire\.value = false\s*\n\s*chapitreADemander\.value = false/)
+  })
+})
+
+// La mesure ne vaut que si elle survit au téléphone qui la produit : un cache
+// vidé effaçait la seule preuve d'apprentissage que MIAPO sache produire.
+describe('le registre suit l’apprenant d’un appareil à l’autre', () => {
+  const racine = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
+  beforeEach(() => localStorage.clear())
+
+  it('le registre rapatrié remplace le local', () => {
+    enregistrerEpreuve('e1', epreuve('Mathématiques', 3, 10))
+    remplacerEpreuves('e1', [{ at: '2026-09-01T10:00:00.000Z', matiere: 'Français', reussi: 9, total: 10 }])
+    const h = historiqueEpreuves('e1')
+    expect(h).toHaveLength(1)
+    expect(h[0].matiere).toBe('Français')
+  })
+
+  it('une liste absurde ne casse rien', () => {
+    enregistrerEpreuve('e1', epreuve('Mathématiques', 3, 10))
+    remplacerEpreuves('e1', null)
+    remplacerEpreuves('e1', 'nawak')
+    expect(historiqueEpreuves('e1')).toHaveLength(1)
+  })
+
+  it('l’épreuve terminée est poussée dans le nuage', () => {
+    const quiz = readFileSync(resolve(racine, 'src/components/TuteurQuiz.vue'), 'utf8')
+    const ecrit = quiz.indexOf('enregistrerEpreuve(props.studentId, {')
+    const pousse = quiz.indexOf('tuteur.pousserEpreuves(props.studentId)')
+    expect(ecrit).toBeGreaterThan(-1)
+    expect(pousse).toBeGreaterThan(ecrit) // le local d'abord : hors ligne, la mesure existe quand même
+  })
+
+  it('le compte enfant a le droit d’écrire ses épreuves', () => {
+    const regles = readFileSync(resolve(racine, 'firestore.rules'), 'utf8')
+    expect(regles).toContain("docId == 'epreuves_' + monEnfantId()")
+  })
+
+  it('et tout part avec le profil, jusque dans le nuage', () => {
+    const store = readFileSync(resolve(racine, 'src/stores/enfantsAutonomes.js'), 'utf8')
+    expect(store).toContain('`epreuves_${id}`')
   })
 })
 

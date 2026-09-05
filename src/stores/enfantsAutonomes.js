@@ -869,7 +869,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // la seule fiche laissait donc derrière elle la progression, l'historique
       // de séances, les conversations et les récompenses — invisibles dans
       // l'app, mais bien présentes, et rattachables à la personne.
-      for (const n of [id, `history_${id}`, `conversations_${id}`, `recompenses_${id}`]) {
+      for (const n of [id, `history_${id}`, `conversations_${id}`, `recompenses_${id}`, `epreuves_${id}`]) {
         deleteDoc(doc(db, 'users', uid, 'revisions', n)).catch(() => { /* absent ou offline */ })
       }
     }

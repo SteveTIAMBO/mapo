@@ -3516,7 +3516,7 @@ function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 &
 // Progression s'affichait donc VIDE alors que le nuage contenait tout, et
 // l'Historique juste à côté, lui, montrait bien les révisions. Deux fonctions
 // jumelles, une seule branchée.
-watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncFromCloud(id); tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id) } }, { immediate: true })
+watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncFromCloud(id); tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id); tuteur.syncEpreuvesFromCloud(id) } }, { immediate: true })
 
 onMounted(async () => {
   await store.hydrate()

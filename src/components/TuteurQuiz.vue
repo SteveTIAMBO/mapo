@@ -1064,6 +1064,9 @@ function finish() {
           etatRevision: etatAvant.value,
         })
         progressionEpreuve.value = progressionEpreuves(props.studentId, props.matiere)
+        // Le miroir part après l'écriture locale : si le réseau manque, la
+        // mesure existe quand même, et repartira au prochain passage.
+        tuteur.pousserEpreuves(props.studentId)
       } catch { /* la mesure est perdue, l'épreuve se termine normalement */ }
     }
     startedAt.value = 0

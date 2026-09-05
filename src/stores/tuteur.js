@@ -7,6 +7,7 @@ import { enregistrerActivite, hydraterRecompenses } from '../utils/recompenses'
 import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, niveauSuivant } from '../utils/progressionNiveau'
 import { appliquerSeance } from '../utils/jaugeNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
+import { historiqueEpreuves, remplacerEpreuves } from '../utils/examenBlanc'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
 import { useAbonnementStore } from './abonnement'
@@ -733,6 +734,42 @@ export const useTuteurStore = defineStore('tuteur', () => {
   }
   /** Liste des sessions passées (les plus récentes d'abord). */
   function getRevisionHistory(studentId) { return loadHistory(studentId) }
+
+  // ── ÉPREUVES SANS ASSISTANCE (référentiel, écart E10) ──────────────────────
+  //
+  // Le registre est tenu en local par `utils/examenBlanc.js`, module sans
+  // Firebase, comme la calibration. Le miroir vit ICI, dans le même arbre que
+  // l'historique : une famille, un espace. Sans lui, une mesure d'apprentissage
+  // disparaissait avec le cache du navigateur ou un changement de téléphone —
+  // et une mesure qu'un nettoyage efface ne démontre rien à personne.
+  //
+  // ⚠️ On ne pousse QUE ce que le local retient : matière, score, total, durée,
+  // date et l'état de révision d'avant. Jamais une question, jamais une réponse
+  // (minimisation, section 5.4 du référentiel). Ce sont des résultats scolaires
+  // de mineurs.
+  //
+  // ⚠️ Un compte ENFANT ne pourra écrire ici qu'une fois la règle Firestore
+  // publiée (`docId == 'epreuves_' + monEnfantId()`, cf. `firestore.rules`).
+  // Tant qu'elle ne l'est pas, l'écriture échoue en silence et l'épreuve reste
+  // locale : le produit fonctionne, seule la durabilité manque.
+  function epreuvesDocRef(uid, studentId) {
+    return doc(db, 'users', uid, 'revisions', 'epreuves_' + (studentId || 'self'))
+  }
+  function pousserEpreuves(studentId) {
+    const uid = proprietaireUid()
+    if (!uid) return
+    setDoc(epreuvesDocRef(uid, studentId), {
+      list: historiqueEpreuves(studentId), updatedAt: new Date().toISOString(),
+    }).catch(() => { /* hors ligne ou règle non publiée : le local fait foi */ })
+  }
+  async function syncEpreuvesFromCloud(studentId) {
+    const uid = proprietaireUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(epreuvesDocRef(uid, studentId))
+      if (snap.exists()) remplacerEpreuves(studentId, snap.data()?.list)
+    } catch { /* hors ligne ou non autorisé : on garde le registre local */ }
+  }
   /** Hydrate l'historique depuis Firestore (vrais comptes, multi-appareils). */
   async function syncHistoryFromCloud(studentId) {
     const uid = proprietaireUid()
@@ -1567,6 +1604,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     accepterAnneeSuivante, refuserAnneeSuivante, getProgramme,
     genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
+    pousserEpreuves, syncEpreuvesFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
