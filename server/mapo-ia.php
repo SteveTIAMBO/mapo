@@ -1101,6 +1101,15 @@ function buildTutorQuizPrompts($d) {
     $notions = implode("\n- ", $n);
   }
 
+  // Notions sur lesquelles l'apprenant s'est trompé récemment (écart E5 : rien
+  // ne garantissait qu'une notion ratée revienne). Le client les calcule depuis
+  // son propre suivi ; ici on ne fait que les remonter dans le prompt.
+  $prioritaires = '';
+  if (!empty($d['prioritaires']) && is_array($d['prioritaires'])) {
+    $p = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 160); }, $d['prioritaires']))), 0, 8);
+    $prioritaires = implode("\n- ", $p);
+  }
+
   $exclure = '';
   if (!empty($d['exclure']) && is_array($d['exclure'])) {
     $ex = array_slice(array_values(array_filter(array_map(function ($x) { return clean($x, 200); }, $d['exclure']))), 0, 40);
@@ -1153,6 +1162,12 @@ function buildTutorQuizPrompts($d) {
           )
           . "Chaque question DOIT porter sur l'une de ces notions. N'en invente aucune autre : une question juste mais hors de cette liste est hors programme, donc ratée. "
           . "Si le thème demandé par l'élève ne correspond à aucune notion de la liste, prends la notion la plus proche qui y figure. "
+          // Le suivi par notion (écarts E2 et E5 du référentiel) suppose de
+          // savoir sur QUOI porte chaque question. On ne le devine pas depuis
+          // le texte : on le demande, et on n'accepte qu'un intitulé qui figure
+          // dans la liste envoyée — l'application jette les autres. Un tag
+          // inventé vaudrait moins que pas de tag du tout.
+          . "Ajoute à chaque question un champ \"notion\" : l'intitulé EXACT de la notion de la liste ci-dessus sur laquelle elle porte, recopié caractère pour caractère (forme « Domaine — Notion »). Ne le reformule pas, ne le raccourcis pas, n'en invente pas : un intitulé absent de la liste sera ignoré par l'application. "
         : '')
     . "PRIORITÉ À LA SOURCE : si un COURS DE L'ÉLÈVE est fourni ci-dessous, tire les questions EN PRIORITÉ de son contenu (notions, exemples, formules qui y figurent) ; complète par le programme officiel seulement si nécessaire. Si AUCUN cours n'est fourni, appuie-toi sur le programme officiel (référentiel national/manuels validés). "
     . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
@@ -1186,6 +1201,10 @@ function buildTutorQuizPrompts($d) {
   // à la difficulté (pilotée par le niveau adaptatif) ni recopier le profil.
   if ($digest !== '') $system .= " PERSONNALISATION : un PROFIL de l'apprenant est fourni ci-dessous (forces, centres d'intérêt, forme du jour…). ANCRE le contexte et les exemples des questions dans ses centres d'intérêt, et adapte le TON pour le motiver — MAIS conserve EXACTEMENT le niveau de difficulté demandé plus haut, et ne cite JAMAIS le profil dans le texte des questions.";
   if ($exclure !== '') $system .= " QUESTIONS DÉJÀ POSÉES : la liste « Déjà vues » ci-dessous a DÉJÀ été jouée par cet apprenant. Ne les repose pas, et n'en produis pas de simple reformulation ou de variante triviale (même notion, mêmes nombres). Traite d'AUTRES aspects du programme, ou les mêmes notions sous un angle réellement différent.";
+  // Écart E5 du référentiel : les questions ratées étaient écartées, mais rien
+  // ne garantissait que la NOTION revienne. C'est ici qu'elle revient — sous un
+  // autre angle, sinon on mesure la mémoire de la question, pas la notion.
+  if ($prioritaires !== '') $system .= " NOTIONS À REPRENDRE EN PRIORITÉ : l'apprenant s'est trompé récemment sur les notions listées sous « À reprendre » ci-dessous. Consacre-leur AU MOINS LA MOITIÉ des questions, en les abordant sous un angle différent de celui d'une question déjà posée. Le reste de la séance couvre d'autres notions du programme.";
 
   $u = "Matière : {$matiere}\n";
   if ($niveau !== '') $u .= "Niveau / classe : {$niveau}\n";
@@ -1193,6 +1212,7 @@ function buildTutorQuizPrompts($d) {
   if ($themes !== '') $u .= "Cibler en priorité ces notions à revoir : {$themes}\n";
   if ($digest !== '') $u .= "Profil de l'apprenant (ancrer les exemples et le ton — NE PAS recopier dans les questions) : {$digest}\n";
   if ($cours !== '') $u .= "\nCOURS DE L'ÉLÈVE (source PRIORITAIRE — tire les questions de ce contenu) :\n{$cours}\n";
+  if ($prioritaires !== '') $u .= "\nÀ reprendre (notions ratées récemment, au moins la moitié des questions) :\n- {$prioritaires}\n";
   if ($exclure !== '') $u .= "\nDéjà vues (NE PAS reposer, ni reformuler) :\n- {$exclure}\n";
   $u .= "\nGénère le quiz au format JSON demandé.";
 

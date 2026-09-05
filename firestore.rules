@@ -348,7 +348,12 @@ service cloud.firestore {
                 // résultat ne quitterait jamais son téléphone, et un cache vidé
                 // effacerait la mesure. Agrégats uniquement, jamais de question
                 // ni de réponse.
-                || docId == 'epreuves_' + monEnfantId());
+                || docId == 'epreuves_' + monEnfantId()
+                // Suivi par notion (écarts E2 et E5) : c'est lui qui fait
+                // revenir une notion ratée et qui permet de proposer une notion
+                // jamais touchée. Sans cette ligne, un apprenant sur son propre
+                // compte ne pourrait rien en écrire.
+                || docId == 'notions_' + monEnfantId());
         }
         allow read, write: if isSignedIn() && (request.auth.uid == uid || estMaRevision());
       }

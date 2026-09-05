@@ -8,6 +8,7 @@ import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, niveauSuivant } from '../u
 import { appliquerSeance } from '../utils/jaugeNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
 import { historiqueEpreuves, remplacerEpreuves } from '../utils/examenBlanc'
+import { notionsAReprendre, suiviNotions, remplacerNotions } from '../utils/notions'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
 import { useAbonnementStore } from './abonnement'
@@ -316,7 +317,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
    * @returns {Promise<{ok, questions, mode, reason}>}
    *   questions: [{ q, choices[4], answer, hint, explanation }]
    */
-  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '', digest = '', studentId = '' }) {
+  async function generateQuiz({ matiere, niveau, nombre = 10, themes = '', difficulte = 1, cours = '', digest = '', studentId = '', subjectId = '' }) {
     generating.value = true
     lastMode.value = ''
     lastReason.value = ''
@@ -378,6 +379,17 @@ export const useTuteurStore = defineStore('tuteur', () => {
       refSource = sourceOfficielle(args)
       granularite = granulariteProgramme(args)
     } catch { /* pas de référentiel : comportement inchangé */ }
+    // Écart E5 : les notions ratées récemment reviennent. On ne les envoie que
+    // si elles appartiennent au programme transmis — une priorité portant sur
+    // une notion absente du cadrage serait ignorée par le modèle, ou pire,
+    // l'en ferait sortir.
+    let prioritaires = []
+    try {
+      if (notions.length && studentId && subjectId) {
+        const aReprendre = new Set(notionsAReprendre(studentId, subjectId))
+        prioritaires = notions.filter((n) => aReprendre.has(n))
+      }
+    } catch { /* pas de suivi : séance normale */ }
 
     // ORDRE DES SOURCES. Il dépend de ce que l'apprenant a fourni :
     //
@@ -452,7 +464,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
       const res = await fetch(IA_URL, {
         method: 'POST',
         headers,
-        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre: nombreDemande, themes: effThemes, difficulte, cours, digest: digestEff, notions, granularite, exclure: exclureTexte } }),
+        body: JSON.stringify({ metered: mtrB2C(), famille: famB2C(), task: 'tutor_quiz', data: { matiere, niveau, nombre: nombreDemande, themes: effThemes, difficulte, cours, digest: digestEff, notions, granularite, prioritaires, exclure: exclureTexte } }),
       })
       const json = await res.json().catch(() => null)
       noteCredits(json)
@@ -464,7 +476,10 @@ export const useTuteurStore = defineStore('tuteur', () => {
       }
 
       if (json && json.ok && json.text) {
-        const parsed = parseQuiz(json.text)
+        // On ne garde le tag de notion QUE s'il figure dans la liste envoyée :
+        // un intitulé inventé rangerait le suivi de l'apprenant sous une notion
+        // qui n'existe pas au programme (cf. `validerNotions`).
+        const parsed = validerNotions(parseQuiz(json.text), notions)
         if (parsed.length) {
           lastMode.value = 'ia'
           // Provenance des questions (cours de l'élève / référentiel / mix) pour le
@@ -762,6 +777,27 @@ export const useTuteurStore = defineStore('tuteur', () => {
       list: historiqueEpreuves(studentId), updatedAt: new Date().toISOString(),
     }).catch(() => { /* hors ligne ou règle non publiée : le local fait foi */ })
   }
+  // Suivi par notion — même arbre, même raison : ce que l'apprenant a
+  // réellement travaillé ne doit pas mourir avec un cache de navigateur.
+  function notionsDocRef(uid, studentId) {
+    return doc(db, 'users', uid, 'revisions', 'notions_' + (studentId || 'self'))
+  }
+  function pousserNotions(studentId) {
+    const uid = proprietaireUid()
+    if (!uid) return
+    setDoc(notionsDocRef(uid, studentId), {
+      suivi: suiviNotions(studentId), updatedAt: new Date().toISOString(),
+    }).catch(() => { /* hors ligne ou règle non publiée : le local fait foi */ })
+  }
+  async function syncNotionsFromCloud(studentId) {
+    const uid = proprietaireUid()
+    if (!uid) return
+    try {
+      const snap = await getDoc(notionsDocRef(uid, studentId))
+      if (snap.exists()) remplacerNotions(studentId, snap.data()?.suivi)
+    } catch { /* hors ligne ou non autorisé : on garde le suivi local */ }
+  }
+
   async function syncEpreuvesFromCloud(studentId) {
     const uid = proprietaireUid()
     if (!uid) return
@@ -1604,7 +1640,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     accepterAnneeSuivante, refuserAnneeSuivante, getProgramme,
     genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
-    pousserEpreuves, syncEpreuvesFromCloud,
+    pousserEpreuves, syncEpreuvesFromCloud, pousserNotions, syncNotionsFromCloud,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }
@@ -1757,8 +1793,37 @@ function parseQuiz(text) {
       answer: Number.isInteger(x.answer) ? x.answer : 0,
       hint: String(x.hint ?? '').trim(),
       explanation: String(x.explanation ?? x.explication ?? '').trim(),
+      // Notion du programme sur laquelle porte la question (écarts E2 et E5).
+      // Gardée telle quelle ici ; c'est `generateQuiz` qui la VALIDE contre la
+      // liste envoyée, parce que lui seul sait ce qui a été envoyé.
+      notion: String(x.notion ?? '').trim(),
     }))
     .filter((x) => x.q && x.choices.length === 4 && x.answer >= 0 && x.answer < 4)
+}
+
+/**
+ * Ne garde la notion que si elle figure dans la liste envoyée au modèle.
+ *
+ * ⚠️ Sans ce filtre, le tag serait une ÉTIQUETTE — exactement le défaut que le
+ * référentiel reproche à l'ancien `source: "referentiel"` : on demandait au
+ * modèle d'écrire un mot, il l'écrivait, et ça avait l'apparence d'un sourçage.
+ * Une notion inventée rangerait le suivi de l'apprenant sous un intitulé qui
+ * n'existe pas au programme : pire que pas de suivi du tout.
+ *
+ * La comparaison tolère la casse, les accents et les espaces : le modèle
+ * recopie fidèlement le sens, pas toujours la typographie.
+ */
+function normNotion(s) {
+  return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+export function validerNotions(questions, notionsEnvoyees) {
+  const index = new Map()
+  for (const n of (notionsEnvoyees || [])) index.set(normNotion(n), n)
+  return (questions || []).map((q) => {
+    const officiel = index.get(normNotion(q && q.notion))
+    return { ...q, notion: officiel || '' }
+  })
 }
 
 /**

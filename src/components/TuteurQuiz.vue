@@ -356,6 +356,7 @@ import { coursTexteMatiere } from '../utils/coursPerso'
 import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { enregistrerSeanceCalibration, messageCalibration } from '../utils/calibration'
 import { enregistrerEpreuve, progressionEpreuves } from '../utils/examenBlanc'
+import { enregistrerResultatsNotions } from '../utils/notions'
 import { bandeAge } from '../utils/ageProfil'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -873,7 +874,7 @@ async function start() {
   // Les trois sources s'ADDITIONNENT — aucune ne prend le pas sur une autre.
   const coursEcole = coursEcoleTexteMatiere(props.studentId, props.matiere)
   const coursAncrage = [coursMatiere.value, coursEcole, coursCarre].filter(Boolean).join('\n\n').slice(0, 6000)
-  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursAncrage, digest, studentId: props.studentId })
+  const res = await tuteur.generateQuiz({ matiere: props.matiere, niveau: programme, nombre: props.nombre, themes: props.themes, difficulte: level.value, cours: coursAncrage, digest, studentId: props.studentId, subjectId: subjectId.value })
   if (res && (res.reason === 'credits_epuises' || res.reason === 'plafond_atteint')) { motifEpuise.value = res.reason; mode.value = 'epuise'; return }
   sourceRev.value = res && res.source ? res.source : (coursAncrage ? 'cours' : 'referentiel')
   seanceCourte.value = (res && res.courte) || null
@@ -1048,6 +1049,22 @@ function finish() {
       })
       messageCalib.value = messageCalibration(props.studentId, { en: locale.value.startsWith('en') })
     } catch { /* la séance se termine normalement, on perd la mesure */ }
+  }
+  // SUIVI PAR NOTION (écarts E2 et E5). On enregistre AVANT la branche épreuve :
+  // une épreuve dit elle aussi ce qui est acquis et ce qui ne l'est pas, et
+  // c'est même la mesure la plus fiable qu'on ait — la priver de trace serait
+  // absurde. Ce qu'une épreuve ne doit pas faire, c'est nourrir la maîtrise et
+  // le palier, et ça reste vrai plus bas.
+  if (props.studentId) {
+    const resultats = questions.value
+      .map((q, i) => ({ notion: (q && q.notion) || '', juste: (grades.value[i] || 0) === 1 }))
+      .filter((r) => r.notion)
+    if (resultats.length) {
+      try {
+        enregistrerResultatsNotions(props.studentId, subjectId.value, resultats)
+        tuteur.pousserNotions(props.studentId)
+      } catch { /* le suivi est perdu, la séance se termine normalement */ }
+    }
   }
   // ÉPREUVE : elle MESURE, elle n'entraîne pas. Ni maîtrise, ni palier, ni
   // points, ni série de jours, ni archivage de séance. Faire monter un niveau

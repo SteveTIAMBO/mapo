@@ -7,6 +7,7 @@ import { enregistrerActivite } from '../utils/recompenses'
 import { addCoursPerso, listCoursPerso, clearCoursPerso } from '../utils/coursPerso'
 import { effacerCalibration } from '../utils/calibration'
 import { effacerEpreuves } from '../utils/examenBlanc'
+import { effacerNotions } from '../utils/notions'
 import { deleteCoursFiles } from '../services/coursFiles'
 import { clearCoursEcole } from '../utils/coursEcole'
 import { DEMO_LIEN } from '../data/demoEcoleLiee'
@@ -860,6 +861,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
     clearCoursPerso(id)
     effacerCalibration(id)
     effacerEpreuves(id)
+    effacerNotions(id)
     enfants.value = enfants.value.filter((e) => e.id !== id)
     const uid = dataUid()
     if (uid) {
@@ -869,7 +871,7 @@ export const useEnfantsAutonomesStore = defineStore('enfantsAutonomes', () => {
       // la seule fiche laissait donc derrière elle la progression, l'historique
       // de séances, les conversations et les récompenses — invisibles dans
       // l'app, mais bien présentes, et rattachables à la personne.
-      for (const n of [id, `history_${id}`, `conversations_${id}`, `recompenses_${id}`, `epreuves_${id}`]) {
+      for (const n of [id, `history_${id}`, `conversations_${id}`, `recompenses_${id}`, `epreuves_${id}`, `notions_${id}`]) {
         deleteDoc(doc(db, 'users', uid, 'revisions', n)).catch(() => { /* absent ou offline */ })
       }
     }

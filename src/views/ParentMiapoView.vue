@@ -434,6 +434,26 @@
                   <span class="seq-conseil-tx"><strong>{{ t('mia.seqConseil') }}</strong> {{ conseilRevision.matiere }} — {{ t('mia.seqR_' + conseilRevision.raison) }}</span>
                   <ChevronRight :size="16" class="seq-conseil-arr" />
                 </button>
+                <!-- Le conseil descend à la notion quand on connaît le programme
+                     de la classe. Muet sinon : deviner une notion vaudrait moins
+                     que de ne rien dire. -->
+                <button v-if="conseilNotion && !reviseMatiere && isApprenant" type="button" class="seq-conseil" @click="lancerConseilNotion">
+                  <Target :size="18" />
+                  <span class="seq-conseil-tx">
+                    <strong>{{ t('mia.conseilNotionTitre') }}</strong>
+                    {{ conseilNotion.matiere }} — {{ libelleNotion(conseilNotion.notion) }}
+                    <em>({{ conseilNotion.quoi === 'neuf' ? t('mia.conseilNotionNeuf') : t('mia.conseilNotionFragile') }})</em>
+                  </span>
+                  <ChevronRight :size="16" class="seq-conseil-arr" />
+                </button>
+                <!-- L'épreuve va CHERCHER l'apprenant : sans ça, personne ne
+                     clique spontanément sur un test sans aide. Uniquement sur
+                     une matière déjà travaillée. -->
+                <button v-if="conseilEpreuve && !reviseMatiere" type="button" class="seq-conseil" @click="lancerConseilEpreuve">
+                  <Target :size="18" />
+                  <span class="seq-conseil-tx">{{ t('mia.conseilEpreuve', { subject: conseilEpreuve.matiere }) }}</span>
+                  <ChevronRight :size="16" class="seq-conseil-arr" />
+                </button>
                 <div class="revise-pick">
                   <select v-model="reviseMatiere" class="input" @change="onReviseMatiereChange">
                     <option value="" disabled>{{ t('mia.chooseModule') }}</option>
@@ -1434,6 +1454,8 @@ import { useLienEcoleStore } from '../stores/lienEcole'
 import { setCoursEcole, listCoursEcole } from '../utils/coursEcole'
 import { calibration } from '../utils/calibration'
 import { epreuveOuverte } from '../utils/examenBlanc'
+import { notionsAReprendre, notionsJamaisVues } from '../utils/notions'
+import { notionsPourPrompt } from '../utils/referentiel'
 import { dayKey } from '../utils/humeur'
 import { COMPETENCES_6C } from '../data/orientation'
 // Persistance du drapeau « visite guidée déjà vue » : voir tourDocRef().
@@ -2442,6 +2464,65 @@ const conseilRevision = computed(() => {
   const faibs = faiblesses.value.map((f) => f.matiere)
   return prochaineRevision(e.id, matieresList.value, { faiblesses: faibs })
 })
+// ── Le conseil descend à la NOTION (écarts E2 et E5) ───────────────────────
+//
+// Le conseil ci-dessus dit quelle MATIÈRE travailler. C'est utile, mais un
+// apprenant qui ne sait pas quoi réviser n'est pas beaucoup plus avancé : il
+// ouvre les mathématiques et retombe sur ce qu'il sait déjà faire. Ici on dit
+// QUOI, en nommant une notion précise — celle qu'il vient de rater, sinon une
+// qu'il n'a jamais rencontrée.
+//
+// ⚠️ Silencieux quand le programme officiel est inconnu pour (pays, classe,
+// matière), ce qui est le cas le plus fréquent. Deviner une notion serait
+// exactement le défaut que le référentiel reproche à l'ancienne étiquette
+// « referentiel » : l'apparence d'un sourçage qui n'existe pas.
+const conseilNotion = computed(() => {
+  void tuteur.revisionsVersion
+  const e = activeEnfant.value
+  const matiere = conseilRevision.value?.matiere
+  if (!e || !matiere) return null
+  const sid = 'auto-' + matiere
+  const aReprendre = notionsAReprendre(e.id, sid, { max: 1 })
+  if (aReprendre.length) return { matiere, notion: aReprendre[0], quoi: 'fragile' }
+  let toutes = []
+  try {
+    toutes = notionsPourPrompt({ pays: e.pays || 'FR', niveau: e.niveau || '', matiere })
+  } catch { return null }
+  const neuves = notionsJamaisVues(e.id, sid, toutes, { max: 1 })
+  return neuves.length ? { matiere, notion: neuves[0], quoi: 'neuf' } : null
+})
+// L'intitulé du référentiel s'écrit « Domaine — Notion ». À l'écran, seule la
+// notion parle à l'apprenant ; le domaine est du vocabulaire de programme.
+const libelleNotion = (n) => String(n || '').split('—').pop().trim()
+function lancerConseilNotion() {
+  const c = conseilNotion.value
+  if (!c || !isApprenant.value) return
+  reviseMatiere.value = c.matiere
+  goRevise(c.matiere, libelleNotion(c.notion))
+}
+
+// L'épreuve ne se propose QUE sur une matière déjà travaillée. Proposer un test
+// sans aide sur une matière jamais ouverte donnerait une mesure « propre » et un
+// apprenant découragé : ce n'est pas un arbitrage scientifique, c'est un enfant.
+const conseilEpreuve = computed(() => {
+  void tuteur.revisionsVersion
+  const e = activeEnfant.value
+  if (!e || !isApprenant.value) return null
+  const etats = tuteur.getRevisionState(e.id) || {}
+  for (const [sid, st] of Object.entries(etats)) {
+    if ((st?.attempts || 0) < 3) continue
+    const matiere = st.name || String(sid).replace(/^auto-/, '')
+    if (epreuveOuverte(e.id, matiere).ouverte) return { matiere }
+  }
+  return null
+})
+function lancerConseilEpreuve() {
+  const c = conseilEpreuve.value
+  if (!c) return
+  reviseMatiere.value = c.matiere
+  goRevise(c.matiere, '', { epreuve: true })
+}
+
 // Matière en cours de « Rédaction guidée » (affiche le widget de production écrite).
 const activeRedaction = ref('')
 // Matière en cours de « Dictée » (module vocal dédié).
@@ -3516,7 +3597,7 @@ function jClass(iso) { const j = joursAvant(iso); return (j !== null && j >= 0 &
 // Progression s'affichait donc VIDE alors que le nuage contenait tout, et
 // l'Historique juste à côté, lui, montrait bien les révisions. Deux fonctions
 // jumelles, une seule branchée.
-watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncFromCloud(id); tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id); tuteur.syncEpreuvesFromCloud(id) } }, { immediate: true })
+watch(activeId, (id) => { loadExams(); programmes.value = {}; if (id) { tuteur.syncFromCloud(id); tuteur.syncHistoryFromCloud(id); tuteur.syncConversationsFromCloud(id); tuteur.syncEpreuvesFromCloud(id); tuteur.syncNotionsFromCloud(id) } }, { immediate: true })
 
 onMounted(async () => {
   await store.hydrate()
