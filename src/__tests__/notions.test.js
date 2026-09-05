@@ -15,7 +15,7 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   etatNotions, enregistrerResultatsNotions, notionsAReprendre, notionsJamaisVues,
-  couvertureNotions, suiviNotions, remplacerNotions, effacerNotions,
+  couvertureNotions, suiviNotions, remplacerNotions, effacerNotions, notionsDues,
 } from '../utils/notions'
 import { validerNotions } from '../stores/tuteur'
 
@@ -97,6 +97,58 @@ describe('une notion ratée revient (E5)', () => {
   })
 })
 
+// Écart E2 : la date de reprise appartient à la NOTION, pas à la matière.
+// Un élève qui tient les fractions et lâche les pourcentages avait une seule
+// échéance pour les deux — ce que la littérature sur l'espacement ne dit nulle
+// part, elle porte sur des items.
+describe('chaque notion porte sa propre date de reprise', () => {
+  const JOUR = 86400000
+  beforeEach(() => localStorage.clear())
+
+  it('réussie, elle revient dans une semaine ; ratée, dès demain', () => {
+    enregistrerResultatsNotions('e1', 'auto-Maths', [
+      { notion: PROG[0], juste: true },
+      { notion: PROG[1], juste: false },
+    ])
+    const m = etatNotions('e1', 'auto-Maths')
+    const jours = (n) => Math.round((Date.parse(m[n].due) - Date.now()) / JOUR)
+    expect(jours(PROG[0])).toBe(7)
+    expect(jours(PROG[1])).toBe(1)
+  })
+
+  it('deux notions de la MÊME matière peuvent avoir deux échéances', () => {
+    enregistrerResultatsNotions('e1', 'auto-Maths', [
+      { notion: PROG[0], juste: true },
+      { notion: PROG[1], juste: false },
+    ])
+    const m = etatNotions('e1', 'auto-Maths')
+    expect(m[PROG[0]].due).not.toBe(m[PROG[1]].due)
+  })
+
+  it('rien n’est dû tant que l’échéance n’est pas passée', () => {
+    enregistrerResultatsNotions('e1', 'auto-Maths', [{ notion: PROG[0], juste: true }])
+    expect(notionsDues('e1', 'auto-Maths')).toEqual([])
+    expect(notionsDues('e1', 'auto-Maths', Date.now() + 8 * JOUR)).toEqual([PROG[0]])
+  })
+
+  it('la plus en retard passe devant', () => {
+    enregistrerResultatsNotions('e1', 'auto-Maths', [{ notion: PROG[1], juste: false }]) // due J+1
+    enregistrerResultatsNotions('e1', 'auto-Maths', [{ notion: PROG[0], juste: true }])  // due J+7
+    expect(notionsDues('e1', 'auto-Maths', Date.now() + 10 * JOUR)).toEqual([PROG[1], PROG[0]])
+  })
+
+  it('une notion échue rejoint les notions à reprendre, après les ratées', () => {
+    enregistrerResultatsNotions('e1', 'auto-Maths', [
+      { notion: PROG[0], juste: true },   // échue dans 7 jours, jamais ratée
+      { notion: PROG[2], juste: false },  // ratée
+    ])
+    const r = notionsAReprendre('e1', 'auto-Maths', { maintenant: Date.now() + 8 * JOUR })
+    expect(r[0]).toBe(PROG[2])            // l'échec passe devant le calendrier
+    expect(r).toContain(PROG[0])
+    expect(r).toHaveLength(2)             // aucune notion en double
+  })
+})
+
 describe('ce qui n’a jamais été touché', () => {
   beforeEach(() => localStorage.clear())
 
@@ -167,7 +219,7 @@ describe('le suivi part dans le nuage et revient', () => {
 
   it('la séance terminée pousse le suivi, et le profil supprimé l’emporte', () => {
     const quiz = readFileSync(resolve(racine, 'src/components/TuteurQuiz.vue'), 'utf8')
-    expect(quiz).toContain('enregistrerResultatsNotions(props.studentId, subjectId.value, resultats)')
+    expect(quiz).toContain('enregistrerResultatsNotions(props.studentId, subjectId.value, resultats, { horizon })')
     expect(quiz).toContain('tuteur.pousserNotions(props.studentId)')
     const store = readFileSync(resolve(racine, 'src/stores/enfantsAutonomes.js'), 'utf8')
     expect(store).toContain('effacerNotions(id)')

@@ -30,7 +30,23 @@
  * ⚠️ AUCUN APPEL IA. Des compteurs, une comparaison de listes.
  */
 
+import { pasRevision } from './horizon'
+
 const CLE = (sid) => `mapo_b2c_notions_${sid || 'me'}`
+
+// Pas de reprise, en jours. Deux valeurs, pas une suite qui s'allonge.
+//
+// ⚠️ C'est un choix SOURCÉ, pas un raccourci. Latimier, Peyre et Ramus (2021)
+// ne trouvent aucune supériorité des intervalles expansifs type SM-2 ou Anki
+// sur un calendrier uniforme (g = 0,034, non significatif). Construire une
+// machinerie d'intervalles croissants coûterait du code et de la complexité
+// pour un gain que la littérature ne mesure pas.
+//
+// ⚠️ `JOURS_ACQUIS` n'est plus qu'un REPLI : dès qu'une échéance est connue, le
+// pas se calcule sur l'horizon de restitution (`utils/horizon.js`, écart E1).
+// C'est donc la valeur d'un apprenant qui n'a déclaré aucun examen.
+const JOURS_ACQUIS = 7
+const JOURS_RATE = 1
 
 /** Lit tout le suivi. Jamais d'exception : un cache illisible vaut « rien ». */
 function lire(studentId) {
@@ -63,8 +79,11 @@ export function etatNotions(studentId, subjectId) {
  * @param {Array<{notion: string, juste: boolean}>} resultats
  *        Une entrée par question TAGUÉE. Les questions sans notion sont
  *        ignorées : mieux vaut ne rien savoir que ranger au mauvais endroit.
+ * @param {{horizon?: number|null}} [options]
+ *        `horizon` = jours jusqu'à l'échéance de restitution (`utils/horizon.js`).
+ *        Absent, on retombe sur le forfait.
  */
-export function enregistrerResultatsNotions(studentId, subjectId, resultats) {
+export function enregistrerResultatsNotions(studentId, subjectId, resultats, { horizon = null } = {}) {
   if (!studentId || !subjectId || !Array.isArray(resultats)) return
   const tout = lire(studentId)
   const m = { ...(tout[subjectId] || {}) }
@@ -72,7 +91,7 @@ export function enregistrerResultatsNotions(studentId, subjectId, resultats) {
   for (const r of resultats) {
     const n = String((r && r.notion) || '').trim()
     if (!n) continue
-    const e = m[n] || { vues: 0, justes: 0, dernier: '', rateLe: '' }
+    const e = m[n] || { vues: 0, justes: 0, dernier: '', rateLe: '', due: '' }
     m[n] = {
       vues: e.vues + 1,
       justes: e.justes + (r.juste ? 1 : 0),
@@ -80,6 +99,14 @@ export function enregistrerResultatsNotions(studentId, subjectId, resultats) {
       // La DATE du dernier échec, pas un drapeau : c'est elle qui permet de
       // faire remonter en premier ce qui vient d'être raté.
       rateLe: r.juste ? e.rateLe : maintenant,
+      // Prochaine reprise DE CETTE NOTION (écart E2). Jusqu'ici la date de
+      // reprise était portée par la matière entière : un élève qui tenait les
+      // fractions et lâchait les pourcentages recevait une seule échéance pour
+      // les deux, ce qui ne correspond à aucun résultat de la littérature —
+      // elle porte sur des items, pas sur des disciplines.
+      // Une notion RATÉE revient vite, quelle que soit l'échéance : l'horizon
+      // dit quand il faudra savoir, pas quand il faut réparer.
+      due: new Date(Date.now() + (r.juste ? pasRevision(horizon, JOURS_ACQUIS) : JOURS_RATE) * 86400000).toISOString(),
     }
   }
   tout[subjectId] = m
@@ -87,23 +114,39 @@ export function enregistrerResultatsNotions(studentId, subjectId, resultats) {
 }
 
 /**
- * Les notions à faire revenir, les plus fraîchement ratées d'abord.
+ * Les notions dont la reprise est ÉCHUE, la plus en retard d'abord.
  *
- * Une notion est « à reprendre » si sa dernière séance s'est mal passée, ou si
- * elle reste sous la barre de réussite après plusieurs passages.
+ * `due` est portée par la notion, pas par la matière (écart E2). C'est ce qui
+ * distingue « il faut revoir les maths » de « il faut revoir les pourcentages ».
+ */
+export function notionsDues(studentId, subjectId, maintenant = Date.now()) {
+  const m = etatNotions(studentId, subjectId)
+  return Object.entries(m)
+    .filter(([, e]) => e.due && Date.parse(e.due) <= maintenant)
+    .sort((a, b) => String(a[1].due).localeCompare(String(b[1].due)))
+    .map(([n]) => n)
+}
+
+/**
+ * Les notions à faire revenir dans la prochaine séance.
+ *
+ * Deux motifs, dans cet ordre : ce qui vient d'être raté, puis ce dont la
+ * reprise est échue. Une notion ratée passe devant une notion simplement due —
+ * un échec est une information plus fraîche qu'un calendrier.
  *
  * ⚠️ Le seuil de 60 % n'est pas dérivé de la littérature : c'est un choix
  * d'ingénierie, à déclarer comme tel (règle du référentiel). Il est volontai-
  * rement bas — remonter une notion à 70 % de réussite ferait revenir presque
  * tout, et une séance qui ne fait que ressasser décourage.
  */
-export function notionsAReprendre(studentId, subjectId, { max = 6, seuil = 0.6 } = {}) {
+export function notionsAReprendre(studentId, subjectId, { max = 6, seuil = 0.6, maintenant = Date.now() } = {}) {
   const m = etatNotions(studentId, subjectId)
-  return Object.entries(m)
+  const fragiles = Object.entries(m)
     .filter(([, e]) => e.rateLe || (e.vues >= 2 && e.justes / e.vues < seuil))
     .sort((a, b) => String(b[1].rateLe || '').localeCompare(String(a[1].rateLe || '')))
-    .slice(0, max)
     .map(([n]) => n)
+  const dues = notionsDues(studentId, subjectId, maintenant)
+  return [...new Set([...fragiles, ...dues])].slice(0, max)
 }
 
 /**

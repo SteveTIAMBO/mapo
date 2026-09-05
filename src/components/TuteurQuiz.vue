@@ -357,6 +357,7 @@ import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { enregistrerSeanceCalibration, messageCalibration } from '../utils/calibration'
 import { enregistrerEpreuve, progressionEpreuves } from '../utils/examenBlanc'
 import { enregistrerResultatsNotions } from '../utils/notions'
+import { horizonJours } from '../utils/horizon'
 import { bandeAge } from '../utils/ageProfil'
 import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
@@ -1061,7 +1062,10 @@ function finish() {
       .filter((r) => r.notion)
     if (resultats.length) {
       try {
-        enregistrerResultatsNotions(props.studentId, subjectId.value, resultats)
+        // L'horizon de restitution (écart E1) : s'il y a un examen déclaré sur
+        // cette matière, c'est LUI qui fixe le pas de reprise, pas un forfait.
+        const horizon = horizonJours(props.studentId, props.matiere)
+        enregistrerResultatsNotions(props.studentId, subjectId.value, resultats, { horizon })
         tuteur.pousserNotions(props.studentId)
       } catch { /* le suivi est perdu, la séance se termine normalement */ }
     }

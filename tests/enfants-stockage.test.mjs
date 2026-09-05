@@ -64,6 +64,10 @@ writeFileSync(join(dir, 'recompenses.js'), `export function enregistrerActivite(
 writeFileSync(join(dir, 'coursperso.js'), `export function addCoursPerso() {}\nexport function listCoursPerso() { return [] }\nexport function clearCoursPerso() {}\n`)
 writeFileSync(join(dir, 'demoecole.js'), `export const DEMO_LIEN = { schoolId: 'demo', eleveId: 'demo', className: '', classId: '', matricule: '', ecole: '' }\n`)
 writeFileSync(join(dir, 'coursfiles.js'), `export async function deleteCoursFiles() { return { total: 0, echecs: 0 } }\n`)
+// Bouchon : `utils/notions.js` importe `./horizon` sans extension — Vite le
+// résout, node non. Le store ne s'en sert que pour l'effacement RGPD, et la
+// logique réelle est couverte par `src/__tests__/notions.test.js`.
+writeFileSync(join(dir, 'notionsstub.js'), `export function effacerNotions() {}\n`)
 writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfantsAutonomes.js'), 'utf8')
   .replace("from '../firebase'", "from './firebase.js'")
   .replace("from 'firebase/firestore'", "from './firestore.js'")
@@ -74,7 +78,7 @@ writeFileSync(join(dir, 'store.js'), readFileSync(join(racine, 'src/stores/enfan
   // Sans dépendance : on importe les VRAIS modules plutôt que des bouchons.
   .replace("from '../utils/calibration'", `from '${join(racine, 'src/utils/calibration.js')}'`)
   .replace("from '../utils/examenBlanc'", `from '${join(racine, 'src/utils/examenBlanc.js')}'`)
-  .replace("from '../utils/notions'", `from '${join(racine, 'src/utils/notions.js')}'`)
+  .replace("from '../utils/notions'", "from './notionsstub.js'")
   .replace("from '../utils/coursEcole'", `from '${join(racine, 'src/utils/coursEcole.js')}'`)
   .replace("from '../utils/typeProfil'", `from '${join(racine, 'src/utils/typeProfil.js')}'`)
   // Barèmes : on importe le VRAI module (sans dépendance) plutôt qu'un bouchon —
