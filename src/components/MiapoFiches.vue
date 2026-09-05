@@ -330,10 +330,18 @@ async function extractPdfText(file) {
 .row-actions { display: flex; align-items: center; gap: 10px; margin-top: 16px; }
 
 /* Flashcards */
-.fc { position: relative; min-height: 168px; border-radius: 14px; cursor: pointer; margin-bottom: 12px; }
-.fc-face { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 168px; padding: 22px; border-radius: 14px; text-align: center; transition: opacity .2s ease; }
+/* Les deux faces sont EMPILÉES dans la même cellule de grille.
+   ⚠️ Ne pas repasser le dos en `position: absolute; inset: 0` (ce qu'il était
+   jusqu'au 05/09/2026). Sorti du flux, il prenait exactement la hauteur de la
+   carte — laquelle était calculée sur la seule face avant. Or le dos est
+   toujours plus long : il porte la bonne réponse ET son explication. Le texte
+   débordait donc de la carte, ce qui se lisait comme une troncature alors
+   qu'aucun caractère n'était perdu. Empilées en grille, les deux faces
+   participent au calcul de hauteur, et la carte prend celle de la plus haute. */
+.fc { position: relative; display: grid; min-height: 168px; border-radius: 14px; cursor: pointer; margin-bottom: 12px; }
+.fc-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 168px; padding: 22px; border-radius: 14px; text-align: center; transition: opacity .2s ease; }
 .fc-front { background: rgba(var(--pr-rgb),.05); border: 1.5px solid rgba(var(--pr-rgb),.18); }
-.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); opacity: 0; pointer-events: none; }
 .fc.flipped .fc-front { opacity: 0; }
 .fc.flipped .fc-back { opacity: 1; }
 .fc-face p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; color: var(--tx); }
