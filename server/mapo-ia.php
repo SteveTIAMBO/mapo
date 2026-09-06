@@ -1172,7 +1172,12 @@ function buildTutorQuizPrompts($d) {
     . "PRIORITÉ À LA SOURCE : si un COURS DE L'ÉLÈVE est fourni ci-dessous, tire les questions EN PRIORITÉ de son contenu (notions, exemples, formules qui y figurent) ; complète par le programme officiel seulement si nécessaire. Si AUCUN cours n'est fourni, appuie-toi sur le programme officiel (référentiel national/manuels validés). "
     . "Indique la provenance dans le champ \"source\" : \"cours\" (questions tirées du cours fourni), \"referentiel\" (programme officiel, aucun cours fourni), ou \"mix\" (les deux). "
     . "Réponds STRICTEMENT en JSON valide, sans aucun texte avant ou après, sans bloc de code markdown. "
-    . "AUCUN LaTeX ni balisage : rien entre dollars, pas de \\frac, pas de ^{}. L'application affiche du TEXTE BRUT — un élève qui lit « \$2x^2 + 7x\$ » ne voit pas une formule, il voit des symboles. Écris 2x² + 7x, 3/4, √9, 5 × 4. "
+    . "AUCUN LaTeX : rien entre dollars, pas de \\frac, pas de ^{}. Un élève qui lit « \$2x^2 + 7x\$ » ne voit pas une formule, il voit des symboles. Écris 2x² + 7x, 3/4, √9, 5 × 4. "
+    // Retour de Steve (16/08/2026) : le modèle entourait chaque terme d'apostrophes,
+    // ce qui alourdit une explication de trois lignes. L'application sait
+    // maintenant afficher du gras — UNE seule marque, et une seule par phrase :
+    // du gras partout ne met plus rien en valeur.
+    . "MISE EN FORME : la SEULE marque autorisée est le gras, écrit **entre deux paires d'astérisques**. Mets en gras le TERME CLÉ de l'explication — le mot que l'élève doit retenir — au maximum UN par phrase. N'entoure PAS les exemples ni les termes d'apostrophes ou de guillemets : le gras remplace cet usage. Aucune autre marque : ni italique, ni titre, ni liste, ni lien. "
     . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
     . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition. "
     // ── AUTO-VÉRIFICATION OBLIGATOIRE ───────────────────────────────────────

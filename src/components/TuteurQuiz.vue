@@ -41,7 +41,7 @@
       <div class="tq-exemple-carte">
         <p class="tq-exemple-q">{{ exemple.q }}</p>
         <p class="tq-exemple-r"><Check :size="15" /> <span>{{ exemple.choices[exemple.answer] }}</span></p>
-        <p v-if="exemple.explanation" class="tq-exemple-e">{{ exemple.explanation }}</p>
+        <p v-if="exemple.explanation" class="tq-exemple-e"><TexteRiche :texte="exemple.explanation" /></p>
       </div>
       <button type="button" class="btn btn-primary" @click="apresExemple">
         {{ locale.startsWith('en') ? 'Got it — my turn' : 'J’ai compris, à moi' }}
@@ -129,7 +129,7 @@
            question) ; le cours complet (identique) reste en repli, sur demande. -->
       <div v-if="showCourse && !epreuve" class="tq-course">
         <div class="tq-course-head"><Lightbulb :size="15" /> <strong>{{ locale.startsWith('en') ? 'Hint for this question' : 'Indice pour cette question' }}</strong></div>
-        <p v-if="current.hint" class="tq-course-key">{{ current.hint }}</p>
+        <p v-if="current.hint" class="tq-course-key"><TexteRiche :texte="current.hint" /></p>
         <p v-else class="tq-course-key tq-course-fallback">{{ locale.startsWith('en') ? 'Re-read the question and rule out the impossible answers.' : 'Relis la question et élimine les réponses impossibles.' }}</p>
         <button v-if="coursMatiere" type="button" class="tq-course-more" @click="basculerCours">
           <BookOpen :size="13" /> <span>{{ showFullCourse ? (locale.startsWith('en') ? 'Hide the lesson' : 'Masquer le cours') : (locale.startsWith('en') ? 'Re-read the whole lesson' : 'Relire tout le cours') }}</span>
@@ -176,12 +176,12 @@
 
       <div v-if="phase === 'hinted'" class="tq-fb hint">
         <Lightbulb :size="18" />
-        <div><strong>Indice</strong><p>{{ current.hint || 'Relis la question et élimine les réponses impossibles.' }}</p></div>
+        <div><strong>Indice</strong><p><TexteRiche :texte="current.hint || 'Relis la question et élimine les réponses impossibles.'" /></p></div>
       </div>
       <div v-if="revealed" class="tq-fb" :class="firstTry ? 'ok' : 'expl'">
         <component :is="firstTry ? Check : BookOpen" :size="18" />
         <div><strong>{{ firstTry ? 'Bravo, bonne réponse !' : 'À retenir' }}</strong>
-          <p>{{ current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.') }}</p></div>
+          <p><TexteRiche :texte="current.explanation || ('La bonne réponse est : ' + current.choices[current.answer] + '.')" /></p></div>
       </div>
       <!-- Signalement — FORMULATION NEUTRE, à ne pas durcir.
            La version précédente disait « Cette question est fausse » : elle
@@ -207,7 +207,7 @@
           <MiapoOrbe :size="18" :frozen="true" />
           <div><strong>MIAPO t'explique le concept</strong>
             <p v-if="conceptBusy && !conceptText" class="tq-concept-load">MIAPO prépare l'explication…</p>
-            <p v-else>{{ conceptText }}</p>
+            <p v-else><TexteRiche :texte="conceptText" /></p>
             <div v-if="conceptText && !conceptBusy" class="tq-concept-ack">
               <button type="button" class="tq-ack-btn no" @click="conceptRepondre"><ArrowUpRight :size="14" /> <span>{{ ackLabels.answer }}</span></button>
             </div>
@@ -382,6 +382,7 @@ import { digestApprenant } from '../utils/digestApprenant'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useConnecteursStore } from '../stores/connecteurs'
 import MiapoCreditsEpuises from './MiapoCreditsEpuises.vue'
+import TexteRiche from './TexteRiche.vue'
 
 const props = defineProps({
   matiere: { type: String, required: true },

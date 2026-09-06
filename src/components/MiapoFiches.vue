@@ -58,7 +58,7 @@
         <template v-if="cardIdx < cards.length">
           <div class="fc" :class="{ flipped }" @click="flipped = !flipped">
             <div class="fc-face fc-front"><span class="fc-tag">{{ t('mia.fichesFront') }}</span><p>{{ cards[cardIdx].recto }}</p><small class="fc-tap">{{ t('mia.fichesFlip') }}</small></div>
-            <div class="fc-face fc-back"><span class="fc-tag">{{ t('mia.fichesBack') }}</span><p>{{ cards[cardIdx].verso }}</p></div>
+            <div class="fc-face fc-back"><span class="fc-tag">{{ t('mia.fichesBack') }}</span><p><TexteRiche :texte="cards[cardIdx].verso" /></p></div>
           </div>
           <div class="fc-counter">{{ t('mia.fichesCardCounter', { n: cardIdx + 1, total: cards.length }) }}</div>
           <div class="fc-actions">
@@ -86,6 +86,7 @@ import { coursTexteMatiere } from '../utils/coursPerso'
 import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { Layers, Loader2, Check, RotateCcw, RefreshCw, Copy, Upload, Info, FolderOpen } from 'lucide-vue-next'
 import MiapoOrbe from './MiapoOrbe.vue'
+import TexteRiche from './TexteRiche.vue'
 
 const props = defineProps({
   enfant: { type: Object, default: null },
