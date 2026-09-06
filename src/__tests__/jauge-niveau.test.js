@@ -7,6 +7,9 @@
  * plantage : un nombre de séances qui dérive est une régression silencieuse.
  */
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { resolve, dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import {
   noteQuestion, deltaJauge, appliquerSeance,
   JAUGE_MAX, JAUGE_APRES_CHUTE, SEUIL_GAIN, SEUIL_PERTE,
@@ -45,7 +48,7 @@ describe('Note d’une question selon l’aide utilisée', () => {
 
 describe('Trois zones : gain, neutre, perte', () => {
   it('la zone d’apprentissage normal ne fait ni gagner ni perdre', () => {
-    for (const s of [31, 45, 60, 74]) expect(deltaJauge(s)).toBe(0)
+    for (const s of [31, 45, 60, 74, 79]) expect(deltaJauge(s)).toBe(0)
   })
 
   it('au-dessus du seuil on gagne, en dessous on perd', () => {
@@ -65,8 +68,15 @@ describe('Trois zones : gain, neutre, perte', () => {
 })
 
 describe('Rythme décidé : ~40 séances pour un élève régulier', () => {
-  it('un élève à 82 % franchit un palier en 30 à 50 séances', () => {
-    const n = seancesPourUnPalier(82)
+  // ⚠️ RÉANCRÉ le 06/09/2026 (écart E9). Ce test visait 82 % : c'était le
+  // rythme du seuil de gain à 75 %. Depuis que la difficulté vise la fourchette
+  // de réussite 80-85 %, 82 % est le MILIEU de la cible — un apprenant qui s'y
+  // trouve est exactement où il doit être, et le pousser n'aurait pas de sens.
+  // Le repère des ~40 séances est donc porté au HAUT de la fourchette. Ce n'est
+  // pas une régression, c'est l'arbitrage rendu : la progression ralentit, et
+  // c'est le prix de la cible.
+  it('un élève au haut de la fourchette franchit un palier en 30 à 50 séances', () => {
+    const n = seancesPourUnPalier(85)
     expect(n).toBeGreaterThanOrEqual(30)
     expect(n).toBeLessThanOrEqual(50)
   })
@@ -150,5 +160,42 @@ describe('Avancement affiché dans le programme de la classe', () => {
 
   it('un profil hérité sans jauge repart du début de son palier', () => {
     expect(avancementPct(5, 0)).toBe(80) // palier conservé, jauge à zéro
+  })
+})
+
+// ── Cible de réussite (écart E9, arbitrage du 06/09/2026) ───────────────────
+//
+// Le seuil de gain valait 75 % : la difficulté montait tant que l'apprenant
+// dépassait 75 %, donc la réussite d'équilibre s'établissait juste en dessous —
+// sous la fourchette de 80 à 85 % retenue par le référentiel.
+describe('⭐⭐ la difficulté vise la fourchette 80-85 %', () => {
+  it('en dessous de la fourchette, la difficulté ne monte pas', () => {
+    // 78 % : l'apprenant est en dessous de la cible, le pousser plus haut
+    // aggraverait les choses.
+    expect(deltaJauge(78)).toBe(0)
+    expect(deltaJauge(79)).toBe(0)
+  })
+
+  it('dans la fourchette, on avance mais très lentement', () => {
+    // C'est le sens même d'une cible : à 82 % la difficulté est BIEN réglée,
+    // l'apprenant est là où il doit être. On ne le pousse pas.
+    expect(deltaJauge(82)).toBeGreaterThan(0)
+    expect(seancesPourUnPalier(82)).toBeGreaterThan(50)
+  })
+
+  it('au-dessus de la fourchette, la montée s’accélère nettement', () => {
+    // 92 % : la difficulté est manifestement trop basse, il faut monter vite
+    // sous peine d'ennuyer quelqu'un qui maîtrise.
+    expect(seancesPourUnPalier(92)).toBeLessThan(seancesPourUnPalier(85) / 2)
+    expect(seancesPourUnPalier(100)).toBeLessThanOrEqual(10)
+  })
+
+  it('⚠️ la fourchette est une HEURISTIQUE, et le code le dit', () => {
+    // Wilson (2019) a dérivé la « règle des 85 % » pour des réseaux de
+    // neurones, pas pour des élèves. Le référentiel interdit de la présenter
+    // comme un fait sur l'apprentissage humain.
+    const SRC = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '../utils/jaugeNiveau.js'), 'utf8')
+    expect(SRC).toContain('HEURISTIQUE')
+    expect(SRC).toContain('réseaux de neurones')
   })
 })

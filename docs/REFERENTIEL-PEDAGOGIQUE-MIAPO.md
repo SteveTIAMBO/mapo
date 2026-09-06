@@ -498,9 +498,48 @@ Un tuteur qui applique le programme français à un élève camerounais commet d
 `tuteur.js`, fonction `recordResult` : l'intervalle vaut 7 jours si le score dépasse 80 %, 3 jours au-dessus de 50 %, 1 jour sinon. Ces valeurs ne dépendent ni de la date du contrôle, ni de la fin de séquence, ni de la date d'examen, alors que `periodes.js` et `examens.js` détiennent déjà ces dates. Cepeda et al. (2008) montrent que c'est précisément l'horizon qui détermine le bon écart.
 **Gravité : élevée.** C'est l'écart le plus coûteux en efficacité réelle. **Et il est réparable sans rien demander à l'utilisateur** : dès que MAPO est relié, la fin de séquence donne l'horizon (voir le tableau des sources en P2).
 
+⚠️ **PARTIELLEMENT RÉSOLU le 5 septembre 2026** (`utils/horizon.js`). Le pas de
+révision se calcule désormais sur l'horizon : environ **20 % des jours restants**
+(Cepeda et al. 2008), au minimum un jour, et **jamais au-delà de l'échéance** —
+réviser après l'examen ne sert personne. Une notion RATÉE revient le lendemain
+quelle que soit l'échéance : l'horizon dit quand il faudra savoir, pas quand il
+faut réparer.
+
+Deux des quatre sources de la cascade sont câblées : l'examen déclaré par
+l'apprenant (ou un examen **officiel**, qui concerne toutes les matières et pas
+seulement celle où il a été saisi), puis le repli forfaitaire. **Fin de séquence
+et fin de période ne le sont pas** : elles décrivent le calendrier d'un
+établissement, et le store du tuteur n'a pas ce lien. Écrire une cascade dont
+deux niveaux ne se déclenchent jamais donnerait l'illusion d'un dispositif
+complet.
+
+⚠️ **Simplification déclarée** : Cepeda mesure ~20 % du délai à une semaine mais
+5 à 10 % à un an — la bonne fraction diminue quand l'horizon s'éloigne. Le 20 %
+constant surestime donc le pas pour une échéance très lointaine. À raffiner le
+jour où un apprenant déclare une échéance à plus d'un an.
+
 ### E2. L'espacement porte sur la matière, pas sur la notion
 L'état de révision est indexé par matière (`data[subjectId]`). Un élève qui maîtrise les fractions et échoue sur les pourcentages a un seul score de « mathématiques » et une seule date de reprise. La littérature sur l'espacement porte sur des items, pas sur des disciplines.
 **Gravité : élevée.** Sans granularité par notion, la répétition espacée reste largement symbolique.
+
+✅ **RÉSOLU les 5 et 6 septembre 2026** (`utils/notions.js`). Le générateur rend
+un champ `notion` par question, **validé contre le programme envoyé** : un
+intitulé absent de la liste est jeté. Sans ce filtre, le tag aurait été une
+étiquette — exactement le défaut reproché à l'ancien `source: "referentiel"` —
+et le suivi de l'apprenant se serait rangé sous des notions inexistantes.
+
+Chaque notion porte désormais **sa propre date de reprise**. Deux notions de la
+même matière peuvent revenir à deux dates différentes, ce qui était tout l'objet
+de l'écart.
+
+⚠️ **Pas d'intervalles expansifs**, et c'est un choix sourcé : Latimier, Peyre et
+Ramus (2021) n'en trouvent aucune supériorité sur un calendrier uniforme
+(g = 0,034, ns). Deux valeurs suffisent — le pas calculé sur l'horizon pour une
+notion acquise, un jour pour une notion ratée.
+
+⚠️ **Muet là où aucun programme officiel n'existe** pour (pays, classe, matière),
+ce qui reste le cas le plus fréquent. C'est un manque de données, pas une panne :
+il se comble en ajoutant des référentiels dans `src/data/referentiels/`.
 
 ### E3. La justification du 5 à 10 questions n'est pas soutenue par les sources citées
 Traité en P6 et section 3. Correction de commentaire, coût nul, enjeu de crédibilité élevé.
@@ -544,6 +583,16 @@ apprenants dits visuels.
 ### E5. Les erreurs ne sont pas reprises de façon ciblée
 Les questions signalées comme fausses sont écartées, les questions déjà vues sont écartées sur douze séances. Mais rien ne garantit qu'une notion échouée revienne. Or c'est le point de rencontre de P1, P2 et du troisième pilier de Dehaene.
 **Gravité : élevée.**
+
+✅ **RÉSOLU le 5 septembre 2026.** Les notions ratées repartent au générateur en
+priorité (champ `prioritaires`), avec consigne de leur consacrer **au moins la
+moitié** de la séance suivante, sous un angle différent. Auparavant les questions
+fausses étaient écartées des séances suivantes : on écartait donc la question ET
+la notion, c'est-à-dire l'inverse de ce qu'il faut faire.
+
+Le calendrier s'y ajoute : une notion dont la reprise est échue rejoint la liste,
+après les notions fraîchement ratées — un échec est une information plus récente
+qu'une échéance.
 
 ### E6. Rien ne garantit que le feedback du chat porte sur la tâche
 Le prompt impose le mode socratique et l'explication. Il n'interdit pas explicitement les formulations centrées sur la personne (« tu es bon en », « tu as toujours du mal avec »). Kluger et DeNisi (1996) montrent que c'est exactement là que le feedback bascule du positif au négatif.
@@ -626,9 +675,45 @@ propre style. Rien de tout ça n'est visible sans ouvrir la page.
 Un apprenant qui découvre une notion entre directement en récupération ou en chat socratique. Pour un novice, c'est contraire à l'effet d'exemple travaillé, et le socratique y devient de la charge inutile.
 **Gravité : moyenne à élevée.**
 
+✅ **RÉSOLU le 6 septembre 2026** (`TuteurQuiz.vue`, mode `exemple`). Avant la
+première question d'une notion **jamais rencontrée**, un écran montre une
+question résolue : énoncé, bonne réponse, explication. La pratique commence
+ensuite.
+
+⚠️ **Réservé aux notions jamais rencontrées**, et ce n'est pas une précaution
+décorative : l'effet s'INVERSE chez qui maîtrise déjà (renversement d'expertise,
+Kalyuga et al. 2003). C'est le suivi par notion (E2) qui rend la distinction
+possible ; sans lui, on aurait servi des exemples à tout le monde, y compris à
+ceux que cela dessert.
+
+⚠️ **Zéro appel supplémentaire au modèle** : on prélève une question de la séance
+et on la montre résolue. Elle sort du lot — la reposer trois secondes plus tard
+mesurerait la mémoire immédiate. Ni pendant une épreuve (elle mesure, elle
+n'enseigne pas), ni sur une séance de moins de cinq questions (elle ne peut pas
+en perdre une).
+
 ### E9. La difficulté adaptative ne vise pas une cible de réussite
 La jauge monte selon le score, mais aucun taux de réussite cible n'est défini. Sans cible, on ne sait pas si la difficulté est bien réglée.
 **Gravité : moyenne.** Piste de calibration : viser une réussite autour de 80 à 85 %, en assumant qu'il s'agit d'une heuristique (voir 4.7).
+
+✅ **RÉSOLU le 6 septembre 2026, arbitrage de Steve** (`utils/jaugeNiveau.js`).
+Le seuil de gain passe de **75 % à 80 %**. Il existait déjà une cible implicite :
+la difficulté montait tant que l'apprenant dépassait 75 %, donc le système se
+stabilisait juste sous 75 %, en dessous de la fourchette. L'équilibre se déplace
+maintenant dans la fourchette.
+
+⚠️ **CE QUE ÇA COÛTE, et l'arbitrage a été rendu en connaissance de cause : la
+progression ralentit pour tout le monde.** À 82 % de moyenne, un palier demandait
+une quarantaine de séances, il en demande environ soixante-dix. C'est cohérent
+avec la cible — à 82 % la difficulté est BIEN réglée, l'apprenant est là où il
+doit être, et il n'y a pas de raison de le pousser. On avance en dépassant
+durablement la fourchette, pas en s'y trouvant. Le repère des ~40 séances est
+donc réancré au HAUT de la fourchette (85 %).
+
+⚠️ **Reste une HEURISTIQUE.** La règle des 85 % (Wilson 2019) a été dérivée pour
+des réseaux de neurones, pas pour des élèves — section 4.7. Repère de calibrage,
+jamais un résultat scientifique sur l'apprentissage humain, et aucun support
+commercial ne doit la citer comme tel.
 
 ### E10. Aucun protocole de mesure de l'efficacité
 MIAPO mesure la réussite pendant la séance. Bastani et al. (2025) montrent que c'est exactement la mesure trompeuse : leur groupe le plus performant pendant l'entraînement n'apprenait pas mieux. Sans test différé sans assistance, EDUFREM ne saura jamais si MIAPO fonctionne, et ne pourra rien démontrer à une institution.
@@ -659,6 +744,27 @@ décision de protection des données (section 5.4), pas un ajout technique.
 `progressionNiveau.js` plafonne au programme de la classe et propose le passage à l'année suivante. Il faut vérifier qu'un apprenant en retard peut réviser un programme d'année inférieure sans friction ni marquage négatif (P12).
 **Gravité : moyenne, à instruire.**
 
+✅ **INSTRUIT ET RÉSOLU le 6 septembre 2026.** Vérification faite : il n'y avait
+**aucun** moyen de redescendre. `niveauSuivant` ne va que vers le haut, et le
+programme d'une matière ne changeait que par `accepterAnneeSuivante`. Celui qui
+en avait le plus besoin était donc bloqué — or une notion de 5e mal acquise ne se
+répare pas avec des exercices de 4e.
+
+`niveauPrecedent()` existe désormais, et un bouton « revoir le programme de
+<classe> » figure dans l'écran de révision.
+
+⚠️ **DISPONIBLE, JAMAIS SUGGÉRÉ**, et c'est tout l'équilibre demandé par P12.
+L'application ne propose pas ce chemin en réaction à de mauvais résultats : un
+outil qui annonce à un enfant qu'il devrait redescendre d'une classe le marque.
+Le bouton est là sans condition de score, au même endroit que les autres façons
+de réviser, et seul l'apprenant peut l'actionner — jamais le parent. On repart au
+palier du milieu : renvoyer aux bases quelqu'un qui redescend déjà serait une
+punition déguisée.
+
+Un changement de programme n'est plus invisible, dans un sens comme dans
+l'autre : quand une matière ne suit pas le programme de la classe, l'écran le
+dit.
+
 ### E12. Les récompenses ne respectent pas encore les règles arbitrées
 L'arbitrage a été rendu le 2 septembre 2026, voir P13 : on garde la ludification et on l'aligne sur la preuve. Deux écarts restent ouverts dans `recompenses.js`.
 
@@ -667,9 +773,38 @@ L'arbitrage a été rendu le 2 septembre 2026, voir P13 : on garde la ludificati
 
 **Gravité : moyenne, coût faible.** Les autres règles de P13 (rien de monnayable, pas de classement, Elo interne) sont déjà respectées et deviennent des interdits à tenir.
 
+✅ **RÉSOLU le 6 septembre 2026** (`utils/recompenses.js`).
+
+1. **La série est réparable.** Un filet répare UN jour manqué. Deux, non : au-delà
+   ce n'est plus un accroc, et le racheter viderait la série de son sens. Le filet
+   se gagne en tenant sept jours, **ne s'achète pas, ne se convertit en rien**, et
+   on n'en cumule pas plus de deux — une série qu'on ne peut plus rompre ne mesure
+   plus rien. La réparation est annoncée une fois, factuellement, et **aucun
+   message n'accompagne une rupture** : on ne commente pas l'absence d'un élève.
+2. **Les libellés ont été repris.** « bravo », « Légende », « Impressionnant »
+   visaient la personne (Kluger et DeNisi 1996). Ils disent maintenant ce que le
+   comportement produit sur l'apprentissage — sept jours de suite retiennent mieux
+   qu'une longue séance. Un test refuse la réapparition d'un jugement.
+
 ---
 
 ## 9. Backlog priorisé d'implémentation
+
+> **ÉTAT AU 6 SEPTEMBRE 2026.** Les rangs 1, 2, 3, 6, 7 et 8 sont faits ; le
+> rang 4 l'est aux trois quarts (l'horizon ne lit pas encore le calendrier d'un
+> établissement) ; le rang 5 a son instrument mais pas sa preuve. Il reste donc,
+> par ordre de valeur :
+>
+> 1. **Ajouter des référentiels de programmes** dans `src/data/referentiels/`.
+>    Ce n'est pas dans la liste ci-dessous et c'est pourtant le meilleur retour
+>    sur effort du produit : le suivi par notion, la reprise ciblée, l'exemple
+>    travaillé, le conseil à la notion et les figures sont **muets** partout où
+>    il n'existe pas de programme officiel. Aujourd'hui : France, Cameroun et
+>    Côte d'Ivoire, sur une partie seulement des matières et des classes.
+> 2. **Le protocole en école** (rang 5), document écrit le 04/09 :
+>    `PROTOCOLE-MESURE-ECOLES.md`. Il lui manque trois pièces produit, listées
+>    dans sa section 8.
+> 3. **Fin de séquence et fin de période** dans l'horizon (fin du rang 4).
 
 Ordre recommandé, du meilleur rapport preuve sur coût au plus lourd.
 

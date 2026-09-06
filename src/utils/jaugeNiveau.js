@@ -11,15 +11,36 @@
 // d'échec. Le palier est une conquête, pas un coup de chance.
 //
 // TROIS ZONES, volontairement asymétriques :
-//   • >= 75 %  → on gagne, d'autant plus qu'on approche de 100 ;
-//   • 30–75 %  → rien. C'est la zone de l'apprentissage normal : on ne punit
+//   • >= 80 %  → on gagne, d'autant plus qu'on approche de 100 ;
+//   • 30–80 %  → rien. C'est la zone de l'apprentissage normal : on ne punit
 //                pas quelqu'un qui progresse en trébuchant ;
 //   • <= 30 %  → on perd, d'autant plus qu'on approche de 0.
 //
+// ── CIBLE DE RÉUSSITE (écart E9, arbitrage de Steve du 06/09/2026) ──────────
+//
+// Le seuil de gain valait 75 %. La difficulté montait donc tant que l'apprenant
+// dépassait 75 %, et le système se stabilisait juste en dessous : la réussite
+// d'équilibre était d'environ 75 %, sous la fourchette de 80 à 85 % que le
+// référentiel retient. Porté à 80 %, l'équilibre se déplace dans la fourchette.
+//
+// ⚠️ C'est une HEURISTIQUE, pas un fait démontré. Le référentiel (section 4.7)
+// est explicite : la « règle des 85 % » de Wilson (2019) a été dérivée pour des
+// réseaux de neurones, pas pour des élèves. On s'en sert comme d'un repère de
+// calibrage, jamais comme d'une preuve, et aucun support ne doit la citer comme
+// un résultat scientifique sur l'apprentissage humain.
+//
+// ⚠️ CE QUE ÇA COÛTE, et c'était le sens de l'arbitrage : la progression
+// RALENTIT pour tout le monde. À 82 % de moyenne, un palier demandait une
+// quarantaine de séances, il en demande maintenant plus du double. C'est
+// cohérent avec la cible — à 82 % la difficulté est BIEN réglée, l'apprenant est
+// exactement là où il doit être, et il n'y a aucune raison de le pousser plus
+// haut. On avance quand on dépasse durablement la fourchette, pas quand on s'y
+// trouve.
+//
 // La courbe est en puissance 1,5 : elle sépare nettement « correct » de
-// « excellent » sans transformer 75 % en mur. Un apprenant à 82 % de moyenne
-// franchit un palier en une quarantaine de séances ; un apprenant parfait en
-// dix. C'est voulu : il ne faut pas ennuyer celui qui maîtrise vraiment.
+// « excellent » sans transformer 80 % en mur. Un apprenant parfait franchit un
+// palier en dix séances. C'est voulu : il ne faut pas ennuyer celui qui
+// maîtrise vraiment.
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Jauge pleine = palier suivant. */
@@ -32,13 +53,17 @@ export const PERTE_MAX = 10
 
 /** En dessous de ce score, on perd. Au-dessus de SEUIL_GAIN, on gagne. */
 export const SEUIL_PERTE = 30
-export const SEUIL_GAIN = 75
+/** Bas de la fourchette de réussite visée (80 à 85 %). Voir l'en-tête, E9. */
+export const SEUIL_GAIN = 80
+/** Haut de la fourchette : au-delà, la difficulté est manifestement trop basse. */
+export const HAUT_FOURCHETTE = 85
 
-// Point d'ancrage de la courbe de gain. Distinct du seuil : à 75 % pile on ne
-// gagne presque rien, et le gain décolle ensuite. Sans cet écart, franchir 75 %
-// d'un cheveu rapporterait autant qu'un vrai bon score.
-const ANCRE_GAIN = 70
-const AMPLITUDE_GAIN = 30
+// Point d'ancrage de la courbe de gain. Distinct du seuil : à 80 % pile on ne
+// gagne presque rien, et le gain décolle ensuite. Sans cet écart, franchir 80 %
+// d'un cheveu rapporterait autant qu'un vrai bon score. L'amplitude est calée
+// pour qu'un score parfait vaille toujours le gain maximal.
+const ANCRE_GAIN = 75
+const AMPLITUDE_GAIN = 25
 
 /**
  * Note d'UNE question, selon l'aide qu'il a fallu.
