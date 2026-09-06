@@ -1471,8 +1471,23 @@ onMounted(start)
   to { box-shadow: 0 0 0 14px rgba(22,163,74,0); }
 }
 .tq-choice { position: relative; }
+/* RETOUR AU CLIC. La proposition s'enfonce sous le doigt, brièvement. C'est le
+   seul mouvement admis dans la zone de la question, et il l'est parce qu'il
+   RÉPOND à un geste au lieu de le devancer : ce qui bouge pendant qu'on
+   réfléchit détourne l'attention de la question. */
+.tq-choice:active:not(:disabled) { transform: scale(.985); }
+
+/* ⚠️ CETTE LISTE DOIT RESTER COMPLÈTE. Le réglage système « réduire les
+   animations » n'est pas un confort : il concerne des personnes que le
+   mouvement rend malades. Elle ne couvrait que deux animations sur sept — les
+   confettis tombaient quand même. Toute nouvelle animation dans ce fichier doit
+   être ajoutée ici, et un test le vérifie. */
 @media (prefers-reduced-motion: reduce) {
-  .tq-pop-enter-active, .tq-eclat { animation: none; }
+  .tq-pop-enter-active, .tq-eclat, .tq-ring.perfect, .tq-confetti i,
+  .tq-mic.listening, .tq-timer.low, .spin { animation: none !important; }
+  .tq-confetti { display: none; }
+  .tq-choice { transition: none; }
+  .tq-choice:active:not(:disabled) { transform: none; }
 }
 
 /* ── MÉTACOGNITION (P11) ────────────────────────────────────────────────── */
