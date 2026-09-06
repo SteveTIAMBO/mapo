@@ -340,6 +340,55 @@ if ($action === 'edt') {
   exit;
 }
 
+/**
+ * ABSENCES et RETARDS de l'élève lié.
+ *
+ * L'école fait l'appel dans l'ERP, et jusqu'ici cette information ne ressortait
+ * nulle part côté famille : le parent relié voyait le bulletin de son enfant
+ * mais pas ses absences. Tant qu'aucun canal SMS n'est en service, le pont est
+ * le SEUL chemin par lequel une école MAPO peut le dire à une famille.
+ *
+ * Contrairement aux devoirs ou à l'emploi du temps, la donnée est ici propre à
+ * l'élève et non à sa classe : on interroge donc `presences` par eleveId
+ * (égalité simple → aucun index composite à créer), et on ne s'appuie pas sur
+ * la classe. Un élève qui a changé de classe garde son historique.
+ */
+if ($action === 'absences') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+
+  // Une école qui n'a pas encore fait l'appel N'EST PAS une erreur : liste vide,
+  // et l'écran le dit (même parti pris que l'emploi du temps).
+  list($rows) = fsRunQuery("schools/{$schoolId}", 'presences', 'eleveId', $eleveId, $saToken);
+  $sliced = sliceAbsences($rows, $eleveId);
+  echo json_encode(['ok' => true, 'className' => $ln['className'], 'absences' => $sliced['items'], 'resume' => $sliced['resume']]);
+  exit;
+}
+
+/**
+ * DISCIPLINE — incidents et sanctions de l'élève lié.
+ *
+ * Même modèle que les absences (requête par eleveId, pas par classe). Le
+ * commentaire interne de la vie scolaire est retiré côté tranchage, pas ici :
+ * voir sliceDiscipline() dans mapo-lien-lib.php, qui porte la justification.
+ */
+if ($action === 'discipline') {
+  $schoolId = strtolower(trim((string)($body['schoolId'] ?? '')));
+  if (!preg_match('/^[a-z0-9-]{2,40}$/', $schoolId)) { http_response_code(400); echo json_encode(['error' => 'ecole_invalide']); exit; }
+  $eleveId = trim((string)($body['eleveId'] ?? ''));
+  if ($eleveId === '') { http_response_code(400); echo json_encode(['error' => 'eleve_manquant']); exit; }
+  $ln = bridgeLink($schoolId, $uid, $eleveId, $saToken);
+  if (!$ln) { http_response_code(403); echo json_encode(['error' => 'non_relie']); exit; }
+
+  list($rows) = fsRunQuery("schools/{$schoolId}", 'discipline', 'eleveId', $eleveId, $saToken);
+  echo json_encode(['ok' => true, 'className' => $ln['className'], 'incidents' => sliceDiscipline($rows, $eleveId)]);
+  exit;
+}
+
 // ════════════════════════════════════════════════════════════════════
 //  Streaming d'un fichier de cours (PDF du prof) : autorisé PAR le pont, l'id
 //  du fichier ne sort JAMAIS côté client. Sortie BINAIRE (pas JSON).

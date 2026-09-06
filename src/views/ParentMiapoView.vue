@@ -660,6 +660,9 @@
         <section v-else-if="section === 'ecole_bulletins'" class="sec">
           <MiapoLienEcole :enfant="activeEnfant" module="notes" />
         </section>
+        <section v-else-if="section === 'ecole_viescolaire'" class="sec">
+          <MiapoLienEcole :enfant="activeEnfant" module="viescolaire" />
+        </section>
         <section v-else-if="section === 'ecole_messages'" class="sec">
           <MiapoLienEcole :enfant="activeEnfant" module="messages" />
         </section>
@@ -1568,6 +1571,7 @@ const SECTIONS = computed(() => {
     { key: 'ecole_devoirs', label: t('mia.ecDevoirs'), icon: ClipboardList, group: 'ecole' },
     { key: 'ecole_cours', label: t('mia.ecCours'), icon: FolderOpen, group: 'ecole' },
     { key: 'ecole_bulletins', label: t('mia.ecBulletins'), icon: FileText, group: 'ecole' },
+    { key: 'ecole_viescolaire', label: t('mia.ecVieScolaire'), icon: CalendarCheck, group: 'ecole' },
     ...messagerieEcole,
   ] : []
   // Entrée « Mon école » (saisir le code) : proposée seulement là où l'école a du

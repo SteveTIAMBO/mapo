@@ -20,6 +20,18 @@ Comparaison bloc par bloc : **25 des 28 blocs `match` sont identiques au caract�
 
 ⚠️ Les règles MOBI encore présentes ne gardent aucune donnée : vestige d'une migration jamais faite, et risque dormant si quelque chose créait ces collections. À trancher avec Steve avant de les retirer.
 
+## Référentiel pédagogique MIAPO (OBLIGATOIRE avant toute modification de MAPO+ ou MIAPO)
+
+**`docs/REFERENTIEL-PEDAGOGIQUE-MIAPO.md`** est la source de vérité pédagogique de MAPO+ et de MIAPO. Lis-le avant de toucher à `stores/tuteur.js`, `utils/ageProfil.js`, `utils/revisionTypes.js`, `utils/progressionNiveau.js`, `utils/jaugeNiveau.js`, `utils/examens.js`, `utils/periodes.js`, `utils/recompenses.js`, `utils/pointsEffort.js`, `utils/elo.js` ou aux prompts de `server/mapo-ia.php`.
+
+Trois règles qui ne se négocient pas :
+
+1. **Tout paramètre pédagogique est soit sourcé, soit déclaré « choix d'ingénierie non démontré ».** Pas de troisième option. Ne fais jamais dire à une étude ce qu'elle ne dit pas.
+2. **Le mode socratique n'est pas désactivable.** Bastani et al., PNAS 2025 : un accès libre à un modèle génératif fait chuter les résultats de 17 % à l'examen. C'est la preuve qui fonde le produit.
+3. **Ne cite jamais le « 2 sigma » de Bloom, les styles d'apprentissage ni les pourcentages de rétention du cône de Dale.** La bonne valeur du tutorat est 0,76 à 0,79 (VanLehn 2011). Liste complète des mythes bannis en section 4 du référentiel.
+
+Quand tu modifies un paramètre pédagogique, mets à jour la ligne correspondante du tableau de synthèse (section 7) et la section 8 (écarts) dans le **même** commit. Copie identique à maintenir dans `MAPO-B/docs/`.
+
 ## Tests
 `node tests/enfants-stockage.test.mjs` — vérifie le stockage MAPO+ (1 doc par enfant, migration, isolement du compte enfant) contre un faux Firestore, sans compte ni réseau. À lancer après toute modification de `src/stores/enfantsAutonomes.js`.
 

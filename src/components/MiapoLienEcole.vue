@@ -96,6 +96,9 @@
       <!-- :key = élève lié → remonte (recharge) si le parent change d'enfant. -->
       <MiapoEcoleBulletin v-else-if="tab === 'notes'" :key="'b-' + (lienInfo.eleveId || '')" :enfant="enfant" :lien="lienInfo" />
 
+      <!-- VIE SCOLAIRE (assiduité + discipline, tel que l'école les saisit) -->
+      <MiapoEcoleVieScolaire v-else-if="tab === 'viescolaire'" :key="'v-' + (lienInfo.eleveId || '')" :lien="lienInfo" />
+
       <!-- MESSAGERIE (reçus / envoyés, façon MAPO) -->
       <MiapoEcoleMessagerie v-else-if="tab === 'messages'" :key="'m-' + (lienInfo.eleveId || '')" :lien="lienInfo" />
     </template>
@@ -162,12 +165,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { School, ClipboardList, BookOpen, FileText, MessageCircle, Link2, Check, Info, Loader2, FolderOpen, Send, Globe, ChevronRight, X } from 'lucide-vue-next'
+import { School, ClipboardList, BookOpen, FileText, MessageCircle, Link2, Check, Info, Loader2, FolderOpen, Send, Globe, ChevronRight, X, CalendarCheck } from 'lucide-vue-next'
 import { useLienEcoleStore } from '../stores/lienEcole'
 import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import CoursFileViewer from './CoursFileViewer.vue'
 import MiapoEcoleBulletin from './MiapoEcoleBulletin.vue'
 import MiapoEcoleMessagerie from './MiapoEcoleMessagerie.vue'
+import MiapoEcoleVieScolaire from './MiapoEcoleVieScolaire.vue'
 import { setCoursEcole } from '../utils/coursEcole'
 
 // `module` : quand la nav pilote un module précis (devoirs/cours/notes/messages),
@@ -206,6 +210,7 @@ const tabs = computed(() => [
   { key: 'devoirs', icon: ClipboardList, label: en.value ? 'Homework' : 'Devoirs' },
   { key: 'cours', icon: BookOpen, label: en.value ? 'Courses' : 'Cours' },
   { key: 'notes', icon: FileText, label: en.value ? 'Report cards' : 'Bulletins' },
+  { key: 'viescolaire', icon: CalendarCheck, label: en.value ? 'Attendance and conduct' : 'Vie scolaire' },
   { key: 'messages', icon: MessageCircle, label: en.value ? 'Messages' : 'Messagerie' },
 ])
 

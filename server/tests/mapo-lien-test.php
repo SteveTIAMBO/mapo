@@ -77,6 +77,51 @@ check(sliceDevoirs(null, null, 'X', '', 'e') === [], "devoirs null → []");
 check(sliceCours('pas un tableau', 'X') === [], "cours non-array → []");
 check(sliceDevoirs([['id' => 'x']], [], 'X', '', 'e') === [], "devoir sans classe → exclu");
 
+echo "\n== 6) ABSENCES : tranche d'un élève, résumé, no-leak ==\n";
+$LIE = 'ELEVE_LIE'; $AUTRE = 'ELEVE_AUTRE';
+$pres = [
+  'att-2026-01-08-' . $LIE   => ['eleveId' => $LIE, 'date' => '2026-01-08', 'status' => 'present', 'note' => '', 'className' => '5ème'],
+  'att-2026-01-09-' . $LIE   => ['eleveId' => $LIE, 'date' => '2026-01-09', 'status' => 'absent', 'note' => 'Non justifié', 'className' => '5ème'],
+  'att-2026-01-10-' . $LIE   => ['eleveId' => $LIE, 'date' => '2026-01-10', 'status' => 'retard', 'note' => '', 'className' => '5ème'],
+  'att-2026-01-11-' . $LIE   => ['eleveId' => $LIE, 'date' => '2026-01-11', 'status' => 'excuse', 'note' => 'Certificat médical', 'className' => '5ème'],
+  // Le camarade ne doit JAMAIS ressortir, même si la requête distante le laissait passer.
+  'att-2026-01-09-' . $AUTRE => ['eleveId' => $AUTRE, 'date' => '2026-01-09', 'status' => 'absent', 'note' => 'SECRET_VOISIN', 'className' => '5ème'],
+  // Lignes corrompues : sans date, ou statut inconnu.
+  'att-vide'                 => ['eleveId' => $LIE, 'date' => '', 'status' => 'absent'],
+  'att-bidon'                => ['eleveId' => $LIE, 'date' => '2026-01-12', 'status' => 'teleporte'],
+];
+$abs = sliceAbsences($pres, $LIE);
+$jabs = json_encode($abs);
+check(strpos($jabs, 'SECRET_VOISIN') === false && strpos($jabs, $AUTRE) === false, "absence d'un camarade JAMAIS renvoyée");
+check(count($abs['items']) === 3, "3 lignes renvoyées (absent + retard + excusé), le 'présent' n'est pas listé (=" . count($abs['items']) . ")");
+check($abs['resume']['total'] === 4, "résumé : 4 jours d'appel comptés, statut inconnu et ligne sans date exclus (=" . $abs['resume']['total'] . ")");
+check($abs['resume']['present'] === 1 && $abs['resume']['absent'] === 1 && $abs['resume']['retard'] === 1 && $abs['resume']['excuse'] === 1, "résumé : 1 de chaque");
+check($abs['resume']['tauxPresence'] === 25.0, "taux de présence = 25 % (1 présent / 4) (=" . var_export($abs['resume']['tauxPresence'], true) . ")");
+check($abs['items'][0]['date'] === '2026-01-11', "tri antéchronologique : le plus récent d'abord");
+check(sliceAbsences($pres, '')['items'] === [] && sliceAbsences(null, $LIE)['items'] === [], "eleveId vide ou rows null → liste vide");
+check(sliceAbsences([], $LIE)['resume']['tauxPresence'] === null, "aucun appel → taux null (et non 0 %, qui se lirait « jamais présent »)");
+
+echo "\n== 7) DISCIPLINE : tranche d'un élève, commentaire interne retenu ==\n";
+$disc = [
+  'd1' => ['eleveId' => $LIE, 'date' => '2026-02-10', 'type' => 'retard', 'description' => 'Trois retards',
+           'sanction' => 'observation', 'sanctionDate' => '2026-02-10', 'reportedBy' => 'M. Fotso',
+           'resolved' => true, 'className' => '5ème', 'notes' => 'INTERNE_FAMILLE_FACTUREE'],
+  'd2' => ['eleveId' => $LIE, 'date' => '2026-03-04', 'type' => 'triche', 'description' => 'Copie au contrôle',
+           'sanction' => 'retenue', 'reportedBy' => 'Mme Abena', 'resolved' => false, 'className' => '5ème'],
+  'd3' => ['eleveId' => $AUTRE, 'date' => '2026-03-05', 'type' => 'violence', 'description' => 'INCIDENT_DU_VOISIN'],
+  'd4' => ['eleveId' => $LIE, 'date' => '', 'type' => 'autre', 'description' => 'Sans date'],
+];
+$od = sliceDiscipline($disc, $LIE);
+$jd = json_encode($od);
+check(strpos($jd, 'INCIDENT_DU_VOISIN') === false && strpos($jd, $AUTRE) === false, "incident d'un camarade JAMAIS renvoyé");
+check(strpos($jd, 'INTERNE_FAMILLE_FACTUREE') === false, "commentaire INTERNE de la vie scolaire JAMAIS renvoyé");
+check(count($od) === 2, "2 incidents renvoyés, celui sans date exclu (=" . count($od) . ")");
+check($od[0]['id'] === 'd2' && $od[0]['date'] === '2026-03-04', "tri antéchronologique");
+check($od[0]['resolved'] === false && $od[1]['resolved'] === true, "resolved conservé et typé booléen");
+check($od[1]['reportedBy'] === 'M. Fotso', "reportedBy conservé : le parent a le droit de savoir qui a signalé");
+check($od[0]['sanctionDate'] === '', "sanctionDate absente → chaîne vide, pas de clé manquante");
+check(sliceDiscipline($disc, '') === [] && sliceDiscipline('pas un tableau', $LIE) === [], "eleveId vide ou rows non-array → []");
+
 echo "\n";
 echo $fail === 0 ? "TOUS LES TESTS PASSENT ($pass) ✅\n" : "$fail ÉCHEC(S) sur " . ($pass + $fail) . " ❌\n";
 exit($fail === 0 ? 0 : 1);

@@ -185,6 +185,33 @@ export function demoMessages() {
   ]
 }
 
+// Absences et retards, tels que le pont les renvoie : la liste ne contient QUE
+// ce qui appelle une explication (le « présent » ne compte que dans le taux),
+// et le résumé porte sur l'année entière, pas sur les lignes affichées.
+export function demoAbsences() {
+  return {
+    absences: [
+      { date: jour(-3), status: 'retard', note: 'Arrivée à 8h20', className: '5ème' },
+      { date: jour(-12), status: 'excuse', note: 'Justifié par le tuteur', className: '5ème' },
+      { date: jour(-13), status: 'absent', note: 'Non justifié', className: '5ème' },
+      { date: jour(-27), status: 'excuse', note: 'Certificat médical', className: '5ème' },
+      { date: jour(-41), status: 'retard', note: '', className: '5ème' },
+    ],
+    resume: { total: 112, present: 107, absent: 1, retard: 2, excuse: 2, tauxPresence: 95.5 },
+  }
+}
+
+// Incidents et sanctions. Le commentaire interne de la vie scolaire (champ
+// `notes` côté ERP) n'apparaît pas ici — le pont ne le transmet pas.
+export function demoDiscipline() {
+  return [
+    { id: 'di1', date: jour(-9), type: 'retard', description: 'Retards répétés au cours de mathématiques (3e en deux semaines).',
+      sanction: 'observation', sanctionDate: jour(-9), reportedBy: 'M. Fotso (Mathématiques)', resolved: true, className: '5ème' },
+    { id: 'di2', date: jour(-34), type: 'comportement', description: 'Bavardages répétés pendant le cours d\'anglais.',
+      sanction: 'avertissement', sanctionDate: jour(-33), reportedBy: 'Mme Abena (Français)', resolved: true, className: '5ème' },
+  ]
+}
+
 // Destinataires possibles d'un nouveau message (services + enseignants), façon MAPO.
 export function demoDestinataires() {
   return [

@@ -179,6 +179,94 @@ function sliceEdt($data, $className) {
   return array_slice($out, 0, 60);
 }
 
+/**
+ * ABSENCES — la tranche d'UN élève, telle qu'un parent doit la voir.
+ *
+ * L'école saisit l'appel dans l'ERP (`schools/{id}/presences`, un document par
+ * jour et par élève, cf. src/stores/presences.js). Sans cette action, un parent
+ * relié voyait les devoirs et le bulletin de son enfant mais PAS ses absences —
+ * alors que c'est la première chose qu'une famille veut savoir, et la seule que
+ * l'école ne peut pas lui transmettre autrement tant qu'aucun canal SMS n'est
+ * en service.
+ *
+ * $rows = [docId => champs] tel que renvoyé par fsRunQuery, DÉJÀ filtré côté
+ * Firestore sur eleveId. On refiltre ici quand même : le no-leak ne doit pas
+ * dépendre de la bonne rédaction d'une requête distante. Une ligne sans date
+ * est écartée (impossible à situer, elle ne ferait qu'encombrer la liste).
+ *
+ * `note` est le motif saisi par l'école (« Justifié par le tuteur », « Non
+ * justifié ») : il concerne l'élève lui-même, donc il sort. Le résumé est
+ * calculé sur TOUTES les lignes, pas seulement celles renvoyées, sinon le taux
+ * de présence changerait avec la troncature.
+ */
+function sliceAbsences($rows, $eleveId, $max = 400) {
+  $items = [];
+  $resume = ['total' => 0, 'present' => 0, 'absent' => 0, 'retard' => 0, 'excuse' => 0, 'tauxPresence' => null];
+  if (!is_array($rows) || $eleveId === '') return ['items' => $items, 'resume' => $resume];
+  foreach ($rows as $r) {
+    if (!is_array($r)) continue;
+    if ((string)($r['eleveId'] ?? '') !== (string)$eleveId) continue;
+    $date = trim((string)($r['date'] ?? ''));
+    if ($date === '') continue;
+    $status = (string)($r['status'] ?? '');
+    if (!in_array($status, ['present', 'absent', 'retard', 'excuse'], true)) continue;
+    $resume['total']++;
+    $resume[$status]++;
+    // L'élève présent n'intéresse personne ligne à ligne : il ne compte que
+    // dans le taux. On ne renvoie que ce qui appelle une explication.
+    if ($status === 'present') continue;
+    $items[] = [
+      'date' => $date,
+      'status' => $status,
+      'note' => (string)($r['note'] ?? ''),
+      'className' => (string)($r['className'] ?? ''),
+    ];
+  }
+  if ($resume['total'] > 0) {
+    $resume['tauxPresence'] = round(($resume['present'] / $resume['total']) * 1000) / 10;
+  }
+  usort($items, function ($a, $b) { return strcmp($b['date'], $a['date']); });
+  return ['items' => array_slice($items, 0, $max), 'resume' => $resume];
+}
+
+/**
+ * DISCIPLINE — les incidents d'UN élève, tels qu'un parent doit les voir.
+ *
+ * Source : `schools/{id}/discipline` (un document par incident, cf.
+ * src/stores/discipline.js). Même garde que les absences : refiltrage local sur
+ * eleveId, et une ligne sans date est écartée.
+ *
+ * ⚠️ CE QUI NE SORT PAS : le champ `notes`. C'est le commentaire INTERNE de la
+ * vie scolaire (« Famille facturée pour les réparations », « Suivi
+ * comportemental mis en place ») — écrit entre adultes de l'établissement, pas
+ * à destination de la famille. L'école qui veut dire quelque chose au parent a
+ * la messagerie du pont pour cela. `reportedBy` sort, lui : un parent a le
+ * droit de savoir QUI a signalé son enfant, c'est la base du contradictoire.
+ */
+function sliceDiscipline($rows, $eleveId, $max = 200) {
+  $out = [];
+  if (!is_array($rows) || $eleveId === '') return $out;
+  foreach ($rows as $id => $r) {
+    if (!is_array($r)) continue;
+    if ((string)($r['eleveId'] ?? '') !== (string)$eleveId) continue;
+    $date = trim((string)($r['date'] ?? ''));
+    if ($date === '') continue;
+    $out[] = [
+      'id' => (string)$id,
+      'date' => $date,
+      'type' => (string)($r['type'] ?? 'autre'),
+      'description' => (string)($r['description'] ?? ''),
+      'sanction' => (string)($r['sanction'] ?? ''),
+      'sanctionDate' => (string)($r['sanctionDate'] ?? ''),
+      'reportedBy' => (string)($r['reportedBy'] ?? ''),
+      'resolved' => !empty($r['resolved']),
+      'className' => (string)($r['className'] ?? ''),
+    ];
+  }
+  usort($out, function ($a, $b) { return strcmp($b['date'], $a['date']); });
+  return array_slice($out, 0, $max);
+}
+
 // ══════════════════════════════════════════════════════════════════════
 //  BULLETINS — calcul PUR (miroir fidèle de src/stores/notes.js)
 //  Ne renvoie JAMAIS que la tranche de l'élève lié : le rang et la moyenne

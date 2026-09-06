@@ -5,6 +5,7 @@ import { useAuthStore } from './auth'
 import {
   DEMO_LINK_CODE, DEMO_LIEN,
   demoDevoirs, demoCours, demoEdt, demoBulletin, demoPeriodes, demoMessages, demoDestinataires,
+  demoAbsences, demoDiscipline,
 } from '../data/demoEcoleLiee'
 
 // Client du PONT de liaison école ↔ MAPO+ (#124). Toute la donnée école transite
@@ -167,6 +168,27 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
     return call({ action: 'notes', schoolId, eleveId, periodeId: periodeId || '' })
   }
 
+  /**
+   * Absences et retards de l'élève lié, plus le résumé de l'année.
+   *
+   * L'école fait l'appel dans l'ERP ; sans cette action, la famille voyait le
+   * bulletin mais pas les absences — la première chose qu'un parent veut savoir.
+   * La liste ne contient que ce qui appelle une explication ; les jours de
+   * présence ne comptent que dans `resume.tauxPresence`.
+   */
+  async function fetchAbsences(schoolId, eleveId) {
+    if (isDemo()) { const d = demoAbsences(); return { ok: true, className: DEMO_LIEN.className, ...d } }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'absences', schoolId, eleveId })
+  }
+
+  /** Incidents et sanctions de l'élève lié (sans le commentaire interne de la vie scolaire). */
+  async function fetchDiscipline(schoolId, eleveId) {
+    if (isDemo()) return { ok: true, className: DEMO_LIEN.className, incidents: demoDiscipline() }
+    if (!schoolId || !eleveId) return { ok: false, reason: 'non_relie' }
+    return call({ action: 'discipline', schoolId, eleveId })
+  }
+
   /** Fil de messagerie parent/élève ↔ école (reçus + envoyés, groupés en fils). */
   async function fetchMessages(schoolId, eleveId) {
     if (isDemo()) { if (!demoThread.value) demoThread.value = demoMessages(); return { ok: true, messages: demoThread.value } }
@@ -217,7 +239,7 @@ export const useLienEcoleStore = defineStore('lienEcole', () => {
   return {
     busy, redeemCode, apercuCode,
     fetchDevoirs, submitDevoir, fetchCours, fetchCoursFileUrl, fetchEdt,
-    fetchPeriodes, fetchNotes,
+    fetchPeriodes, fetchNotes, fetchAbsences, fetchDiscipline,
     fetchMessages, fetchDestinataires, sendMessage, pushSuivi,
   }
 })
