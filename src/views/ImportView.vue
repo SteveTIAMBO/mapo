@@ -286,7 +286,7 @@ import { useClassesStore, LEVELS, LEVELS_TOUS } from '../stores/classes'
 import { useSubjectsStore, SUBJECT_DEFAULT_COLORS } from '../stores/subjects'
 import { useActivityStore } from '../stores/activity'
 import { useSchoolStore } from '../stores/school'
-import { normaliserConfigEcole } from '../utils/normaliserConfigEcole'
+import { normaliserConfigEcole, codeSysteme } from '../utils/normaliserConfigEcole'
 import { useEditionStore } from '../stores/edition'
 import { useDisciplinesPrimaireStore, amorcePays, programmeOfficiel } from '../stores/disciplinesPrimaire'
 
@@ -393,6 +393,10 @@ const modules = [
     columns: [
       { key: 'schoolName', label: "Nom de l'école", required: true },
       { key: 'schoolType', label: 'Type (Collège/Lycée/Primaire)', required: false },
+      // Une école bilingue tient deux systèmes. Deux valeurs séparées par un
+      // point-virgule (« francophone;anglophone ») ouvrent le mode bilingue ;
+      // une seule, ou rien, et la notion n'apparaît nulle part.
+      { key: 'systemes', label: 'Systèmes (francophone;anglophone)', required: false },
       { key: 'city', label: 'Ville', required: false },
       { key: 'country', label: 'Pays', required: false },
       { key: 'address', label: 'Adresse / Quartier', required: false },
@@ -409,6 +413,9 @@ const modules = [
     headerMap: {
       "nom de l'école": 'schoolName', "nom de l'ecole": 'schoolName', 'nom ecole': 'schoolName', 'nom école': 'schoolName', "ecole": 'schoolName', "école": 'schoolName', 'school name': 'schoolName', 'etablissement': 'schoolName', 'établissement': 'schoolName',
       'type': 'schoolType', 'type (collège/lycée/primaire)': 'schoolType', 'type (college/lycee/primaire)': 'schoolType', "type d'école": 'schoolType',
+      'systemes': 'systemes', 'systèmes': 'systemes', 'systeme': 'systemes', 'système': 'systemes',
+      'systèmes (francophone;anglophone)': 'systemes', 'systemes (francophone;anglophone)': 'systemes',
+      'sous-systemes': 'systemes', 'sous-systèmes': 'systemes', 'systems': 'systemes',
       'ville': 'city', 'city': 'city',
       'pays': 'country', 'country': 'country',
       'adresse': 'address', 'adresse / quartier': 'address', 'quartier': 'address', 'address': 'address',
@@ -479,6 +486,10 @@ const modules = [
       { key: 'email', label: 'Email', required: false },
       { key: 'phone', label: 'Téléphone', required: false },
       { key: 'subjects', label: 'Matières (séparées par ;)', required: false },
+      // Vide = PARTAGÉ entre les deux systèmes. C'est le cas de la direction, du
+      // secrétariat, de la comptabilité, et de tout enseignant qui intervient
+      // des deux côtés. Renseigné = dédié à ce système-là.
+      { key: 'systeme', label: 'Système (vide = les deux)', required: false },
     ],
     headerMap: {
       'nom': 'lastName', 'nom de famille': 'lastName', 'last name': 'lastName',
@@ -489,6 +500,9 @@ const modules = [
       'email': 'email', 'e-mail': 'email', 'mail': 'email',
       'telephone': 'phone', 'téléphone': 'phone', 'tel': 'phone', 'tél': 'phone', 'phone': 'phone',
       'matieres': 'subjects', 'matières': 'subjects', 'matières (séparées par ;)': 'subjects', 'matieres (separees par ;)': 'subjects', 'subjects': 'subjects', 'discipline': 'subjects', 'disciplines': 'subjects',
+      'systeme': 'systeme', 'système': 'systeme', 'system': 'systeme',
+      'système (vide = les deux)': 'systeme', 'systeme (vide = les deux)': 'systeme',
+      'sous-systeme': 'systeme', 'sous-système': 'systeme',
     },
   },
   {
@@ -528,9 +542,17 @@ const modules = [
       { key: 'level', label: 'Niveau', required: true },
       { key: 'serie', label: 'Série (A/B/C/D)', required: false },
       { key: 'capacity', label: 'Effectif max', required: false },
+      // ⚠️ C'est la CLASSE qui porte le système, pas le niveau : deux systèmes
+      // peuvent employer le même intitulé de niveau, et c'est à la classe que
+      // les élèves sont rattachés. Un élève n'a donc pas de colonne « système »,
+      // il tient le sien de sa classe — une donnée saisie deux fois est une
+      // donnée qui finira par se contredire.
+      { key: 'systeme', label: 'Système', required: false },
     ],
     headerMap: {
       'niveau': 'level', 'level': 'level',
+      'systeme': 'systeme', 'système': 'systeme', 'system': 'systeme',
+      'sous-systeme': 'systeme', 'sous-système': 'systeme',
       'classe': 'serie', 'classe (a, b, c)': 'serie', 'section': 'serie', 'serie': 'serie', 'série': 'serie', 'série (a/c/d)': 'serie', 'serie (a/c/d)': 'serie', 'série (a/b/c/d)': 'serie', 'serie (a/b/c/d)': 'serie', 'class': 'serie',
       'effectif': 'capacity', 'effectif max': 'capacity', 'capacite': 'capacity', 'capacité': 'capacity', 'max': 'capacity', 'capacity': 'capacity',
       // Le nom de la classe est dérivé (Niveau + Série). On garde ces alias en
@@ -1186,6 +1208,9 @@ async function importerModule(modId, validRows) {
       data.subjects = data._subjectsList || []
       delete data._subjectsList
       data.status = 'Actif'
+      // Vide = partagé entre les deux systèmes (direction, secrétariat, et tout
+      // enseignant qui intervient des deux côtés).
+      data.systeme = codeSysteme(data.systeme)
 
       if (importMode.value === 'update') {
         const existing = personnelStore.staff.find(m =>
@@ -1235,6 +1260,10 @@ async function importerModule(modId, validRows) {
       const data = { ...row }
       delete data._errors
       data.capacity = parseInt(data.capacity, 10) || 60
+      // « Francophone », « FR » et « francophone » doivent donner UNE valeur, pas
+      // trois : sans cette normalisation, un filtre par système découperait
+      // l'école en autant de groupes que d'orthographes employées.
+      data.systeme = codeSysteme(data.systeme)
 
       if (importMode.value === 'update') {
         const existing = classesStore.classes.find(c =>

@@ -77,19 +77,12 @@ export function noteToPalier(note) {
   return depuisAcquisition(versAcquisition(n, 'note20'), 'paliers3')
 }
 
-// ── Examens de fin de primaire ─────────────────────────────────────────
-// `systeme` (renommé de `sousSysteme` le 06/09/2026) : même vocabulaire que
-// l'annuaire public et que le rattachement des niveaux d'une école bilingue.
-// ⚠️ Cette liste n'est importée nulle part à ce jour — c'est du camerounais en
-// dur, et les examens réellement servis viennent de EXAM_TYPES_PAR_PAYS
-// (stores/examens.js), qui est sourcé par pays. À supprimer ou à brancher, mais
-// c'est une décision à prendre, pas un effet de bord de ce renommage.
-export const EXAMENS_PRIMAIRE = [
-  { nom: 'CEP', libelle: "Certificat d'Études Primaires", systeme: 'francophone' },
-  { nom: 'Entrée en 6e', libelle: "Concours d'entrée en 6e", systeme: 'francophone' },
-  { nom: 'FSLC', libelle: 'First School Leaving Certificate', systeme: 'anglophone' },
-  { nom: 'Common Entrance', libelle: 'Common Entrance Examination', systeme: 'anglophone' },
-]
+// Les examens de fin de primaire vivaient ici, en dur et au format camerounais
+// (CEP, Entrée en 6e, FSLC, Common Entrance). Liste supprimée le 06/09/2026 :
+// elle n'était importée nulle part, et elle doublait EXAM_TYPES_PAR_PAYS
+// (stores/examens.js), qui est sourcé pays par pays et sait donc qu'une école
+// congolaise présente le CEPE et non le CEP. Deux listes d'examens dont une
+// fausse hors du Cameroun, c'est une de trop.
 
 // Classes de démonstration pour une école primaire type
 export const CLASSES_DEMO_PRIMAIRE = [

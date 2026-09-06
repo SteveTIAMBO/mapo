@@ -75,8 +75,49 @@ export function codeDevise(valeur, codePaysEcole) {
   return ''
 }
 
+export const SYSTEMES_CONNUS = ['francophone', 'anglophone']
+
 /**
- * Normalise les trois champs à liste fermée d'un import de configuration.
+ * Systèmes déclarés par l'établissement, depuis une saisie libre.
+ *
+ * Accepte « francophone;anglophone », « FR / EN », « bilingue », une virgule ou
+ * un point-virgule. « bilingue » vaut les deux : c'est le mot que les écoles
+ * emploient, le refuser au profit d'une énumération serait leur demander de
+ * parler notre langue plutôt que la leur.
+ *
+ * Renvoie une liste NETTOYÉE et sans doublon. Un intitulé inconnu est ignoré et
+ * signalé — jamais deviné : ouvrir un second système par erreur ferait
+ * apparaître un filtre et une colonne dans toute l'application.
+ */
+export function codeSystemes(valeur) {
+  const brut = String(valeur || '').trim()
+  if (!brut) return { systemes: [], inconnus: [] }
+  const systemes = []
+  const inconnus = []
+  for (const morceau of brut.split(/[;,/|]+/)) {
+    const m = cle(morceau)
+    if (!m) continue
+    if (m === 'bilingue' || m === 'bilingual') { systemes.push(...SYSTEMES_CONNUS); continue }
+    if (m === 'francophone' || m === 'francais' || m === 'french' || m === 'fr') { systemes.push('francophone'); continue }
+    if (m === 'anglophone' || m === 'anglais' || m === 'english' || m === 'en') { systemes.push('anglophone'); continue }
+    inconnus.push(morceau.trim())
+  }
+  return { systemes: [...new Set(systemes)], inconnus }
+}
+
+/**
+ * Le système d'UNE ligne (une classe, un membre du personnel).
+ * Vide = non renseigné, ce qui veut dire « les deux » pour un personnel et
+ * « pas encore rattachée » pour une classe. Un intitulé inconnu rend '' :
+ * mieux vaut un rattachement absent qu'un rattachement inventé.
+ */
+export function codeSysteme(valeur) {
+  const { systemes } = codeSystemes(valeur)
+  return systemes.length === 1 ? systemes[0] : ''
+}
+
+/**
+ * Normalise les champs à liste fermée d'un import de configuration.
  * Renvoie `{ valeurs, avertissements }` — les avertissements nomment l'intitulé
  * refusé, pour que l'école sache quoi corriger.
  */
@@ -95,6 +136,10 @@ export function normaliserConfigEcole(row) {
   const devise = codeDevise(row.currency, pays)
   if (row.currency && !devise) avertissements.push(`devise « ${row.currency} » non reconnue`)
   if (devise) valeurs.currency = devise
+
+  const { systemes, inconnus } = codeSystemes(row.systemes)
+  for (const i of inconnus) avertissements.push(`système « ${i} » non reconnu`)
+  if (systemes.length) valeurs.systemes = systemes
 
   return { valeurs, avertissements }
 }

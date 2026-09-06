@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { codePays, codeTypeEcole, codeDevise, normaliserConfigEcole } from '../utils/normaliserConfigEcole'
+import { codePays, codeTypeEcole, codeDevise, codeSystemes, codeSysteme, normaliserConfigEcole } from '../utils/normaliserConfigEcole'
 
 /**
  * L'école écrit des LIBELLÉS, l'application lit des CODES (28/08/2026).
@@ -181,5 +181,68 @@ describe('⚠️ les écoles DÉJÀ importées se réparent seules', () => {
     // `valeur !== s[cle]` empêche toute écriture inutile.
     const i = store.indexOf('async function migrerLibellesEnCodes')
     expect(store.slice(i, i + 1400)).toContain('valeur !== s[cle]')
+  })
+})
+
+/**
+ * SYSTÈMES d'un établissement bilingue (06/09/2026).
+ *
+ * Le champ ouvre — ou n'ouvre pas — toute une fonctionnalité : un filtre et une
+ * colonne dans une dizaine d'écrans. Deviner un second système à partir d'un
+ * intitulé mal orthographié le ferait apparaître chez une école qui n'en a
+ * qu'un. D'où : on reconnaît large, on refuse net, on n'invente jamais.
+ */
+describe('systèmes d’un établissement', () => {
+  it('reconnaît les écritures que les écoles emploient vraiment', () => {
+    expect(codeSystemes('francophone;anglophone').systemes).toEqual(['francophone', 'anglophone'])
+    expect(codeSystemes('Francophone, Anglophone').systemes).toEqual(['francophone', 'anglophone'])
+    expect(codeSystemes('FR / EN').systemes).toEqual(['francophone', 'anglophone'])
+    expect(codeSystemes('français').systemes).toEqual(['francophone'])
+    expect(codeSystemes('English').systemes).toEqual(['anglophone'])
+  })
+
+  it('« bilingue » vaut les deux — c’est le mot des écoles', () => {
+    expect(codeSystemes('bilingue').systemes).toEqual(['francophone', 'anglophone'])
+  })
+
+  it('ne renvoie jamais de doublon', () => {
+    expect(codeSystemes('francophone;francophone;FR').systemes).toEqual(['francophone'])
+    expect(codeSystemes('bilingue;anglophone').systemes).toEqual(['francophone', 'anglophone'])
+  })
+
+  it('⚠️ un intitulé inconnu est SIGNALÉ, jamais deviné', () => {
+    const r = codeSystemes('francophone;germanophone')
+    expect(r.systemes).toEqual(['francophone'])
+    expect(r.inconnus).toEqual(['germanophone'])
+  })
+
+  it('vide reste vide : pas de système par défaut', () => {
+    expect(codeSystemes('').systemes).toEqual([])
+    expect(codeSystemes(null).systemes).toEqual([])
+    expect(codeSystemes(undefined).systemes).toEqual([])
+  })
+
+  it('sur UNE ligne, le système est unique ou absent', () => {
+    expect(codeSysteme('anglophone')).toBe('anglophone')
+    expect(codeSysteme('EN')).toBe('anglophone')
+    expect(codeSysteme('')).toBe('')
+    // Une classe ne peut pas être dans les deux : ambigu → vide, pas un choix au hasard.
+    expect(codeSysteme('bilingue')).toBe('')
+    expect(codeSysteme('germanophone')).toBe('')
+  })
+
+  it('la configuration remonte les systèmes et signale l’intrus', () => {
+    const { valeurs, avertissements } = normaliserConfigEcole({ systemes: 'francophone;anglophone' })
+    expect(valeurs.systemes).toEqual(['francophone', 'anglophone'])
+    expect(avertissements).toEqual([])
+
+    const r2 = normaliserConfigEcole({ systemes: 'francophone;klingon' })
+    expect(r2.valeurs.systemes).toEqual(['francophone'])
+    expect(r2.avertissements.some((a) => a.includes('klingon'))).toBe(true)
+  })
+
+  it('⚠️ une école qui ne déclare rien n’a PAS le champ — donc pas de mode bilingue', () => {
+    const { valeurs } = normaliserConfigEcole({ schoolName: 'École ordinaire' })
+    expect('systemes' in valeurs).toBe(false)
   })
 })

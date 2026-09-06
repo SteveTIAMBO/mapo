@@ -230,6 +230,20 @@ export const useSchoolStore = defineStore('school', () => {
     directorSignature: null,
     academicYear: '',
     cycles: [],
+    /**
+     * SYSTÈMES de l'établissement : ['francophone'], ['anglophone'], ou les deux.
+     *
+     * Une école bilingue tient deux systèmes dans un même établissement : des
+     * classes, des enseignants et des bulletins de chaque côté. Le champ dit
+     * lesquels sont ouverts chez elle.
+     *
+     * ⚠️ VIDE OU À UN SEUL ÉLÉMENT = LA NOTION N'EXISTE PAS À L'ÉCRAN. Aucune
+     * colonne « système », aucun filtre, rien. C'est délibéré : la très grande
+     * majorité des écoles n'a qu'un système, et leur montrer un filtre à un seul
+     * choix serait leur faire porter la complexité d'un cas qui n'est pas le
+     * leur. Les écoles déjà en service ne voient donc aucun changement.
+     */
+    systemes: [],
     language: 'fr',
     primaryColor: '#0A84FF',
     evaluationType: '2_sequences',
@@ -242,6 +256,26 @@ export const useSchoolStore = defineStore('school', () => {
   const hasCompletedOnboarding = computed(() => {
     return !!schoolSettings.value.schoolName
   })
+
+  /** Systèmes réellement ouverts chez cette école, nettoyés et sans doublon. */
+  const systemes = computed(() => {
+    const brut = schoolSettings.value.systemes
+    if (!Array.isArray(brut)) return []
+    const connus = ['francophone', 'anglophone']
+    return [...new Set(brut.map((s) => String(s || '').trim().toLowerCase()))]
+      .filter((s) => connus.includes(s))
+  })
+
+  /**
+   * L'école tient-elle DEUX systèmes ?
+   *
+   * C'est le seul interrupteur de toute la fonctionnalité : à `false`, aucun
+   * écran ne parle de système, aucun filtre n'apparaît, et les données déjà
+   * saisies restent intactes. Une école qui déclarerait par erreur deux
+   * systèmes puis reviendrait à un seul ne perd rien — le champ `systeme` de
+   * ses classes et de ses personnels dort, il n'est pas effacé.
+   */
+  const estBilingue = computed(() => systemes.value.length > 1)
 
   const currentAcademicYear = computed(() => {
     // If academicYear is explicitly set, return it
@@ -577,6 +611,8 @@ export const useSchoolStore = defineStore('school', () => {
   return {
     schoolSettings,
     hasCompletedOnboarding,
+    systemes,
+    estBilingue,
     currentAcademicYear,
     currentPeriod,
     isSequenceLocked,
