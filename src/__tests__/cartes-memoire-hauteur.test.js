@@ -48,9 +48,13 @@ describe('⭐⭐ la carte prend la hauteur de sa face la plus haute', () => {
     const regleDos = (FICHES.match(/\.fc-back \{[^}]*\}/) || [''])[0]
     expect(regleDos).not.toContain('position: absolute')
     expect(regleDos).not.toContain('inset: 0')
-    // Il reste invisible et non cliquable tant que la carte n'est pas retournée.
-    expect(regleDos).toContain('opacity: 0')
+    // Il reste invisible tant que la carte n'est pas retournée — désormais
+    // parce qu'il nous tourne le dos (rotation d'un demi-tour + backface
+    // masquée), et non plus par un fondu.
+    expect(regleDos).toContain('rotateY(180deg)')
     expect(regleDos).toContain('pointer-events: none')
+    const regleFace = (FICHES.match(/\.fc-face \{[^}]*\}/) || [''])[0]
+    expect(regleFace).toContain('backface-visibility: hidden')
   })
 
   it('rien ne masque le débordement : on agrandit, on ne rogne pas', () => {
@@ -59,5 +63,24 @@ describe('⭐⭐ la carte prend la hauteur de sa face la plus haute', () => {
     const regleFace = (FICHES.match(/\.fc-face \{[^}]*\}/) || [''])[0]
     expect(regleFace).not.toContain('overflow: hidden')
     expect(regleFace).not.toContain('line-clamp')
+  })
+})
+
+describe('⭐⭐ le retournement ne met jamais un texte en miroir', () => {
+  it('la face visible est toujours à rotation nulle', () => {
+    // Une face laissée à 180° pendant qu'on la regarde afficherait son texte
+    // inversé. Le dos ne doit donc être à 180° que TANT QU'IL EST CACHÉ.
+    expect(FICHES).toContain('.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); pointer-events: none; transform: rotateY(180deg); }')
+    expect(FICHES).toContain('.fc.flipped .fc-back { transform: rotateY(0deg); }')
+    expect(FICHES).toContain('.fc.flipped .fc-front { transform: rotateY(-180deg); }')
+  })
+
+  it('la profondeur est portée par la carte, pas par les faces', () => {
+    const regleCarte = (FICHES.match(/\.fc \{[^}]*\}/) || [''])[0]
+    expect(regleCarte).toContain('perspective:')
+  })
+
+  it('et la rotation s’efface quand on demande moins de mouvement', () => {
+    expect(FICHES).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\n\s*\.fc-face \{ transition: none; \}/)
   })
 })

@@ -339,12 +339,23 @@ async function extractPdfText(file) {
    débordait donc de la carte, ce qui se lisait comme une troncature alors
    qu'aucun caractère n'était perdu. Empilées en grille, les deux faces
    participent au calcul de hauteur, et la carte prend celle de la plus haute. */
-.fc { position: relative; display: grid; min-height: 168px; border-radius: 14px; cursor: pointer; margin-bottom: 12px; }
-.fc-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 168px; padding: 22px; border-radius: 14px; text-align: center; transition: opacity .2s ease; }
-.fc-front { background: rgba(var(--pr-rgb),.05); border: 1.5px solid rgba(var(--pr-rgb),.18); }
-.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); opacity: 0; pointer-events: none; }
-.fc.flipped .fc-front { opacity: 0; }
-.fc.flipped .fc-back { opacity: 1; }
+.fc { position: relative; display: grid; min-height: 168px; border-radius: 14px; cursor: pointer; margin-bottom: 12px; perspective: 1100px; }
+/* Les deux faces tournent chacune d'un demi-tour, et `backface-visibility`
+   masque celle qui nous tourne le dos. Pas de fondu : une carte se retourne,
+   elle ne se dissout pas.
+   ⚠️ Quand le dos est visible, sa rotation nette vaut ZÉRO — c'est ce qui
+   garantit que son texte n'est pas en miroir. Ne jamais laisser une face
+   visible à 180°. */
+.fc-face { grid-area: 1 / 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 168px; padding: 22px; border-radius: 14px; text-align: center; backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform .5s cubic-bezier(.2, .7, .3, 1); }
+.fc-front { background: rgba(var(--pr-rgb),.05); border: 1.5px solid rgba(var(--pr-rgb),.18); transform: rotateY(0deg); }
+.fc-back { background: rgba(27,138,90,.06); border: 1.5px solid rgba(27,138,90,.22); pointer-events: none; transform: rotateY(180deg); }
+.fc.flipped .fc-front { transform: rotateY(-180deg); }
+.fc.flipped .fc-back { transform: rotateY(0deg); }
+/* Mouvement réduit : le retournement devient instantané. La carte fonctionne
+   toujours — c'est la rotation qui disparaît, pas l'information. */
+@media (prefers-reduced-motion: reduce) {
+  .fc-face { transition: none; }
+}
 .fc-face p { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.45; color: var(--tx); }
 .fc-tag { font-size: 10.5px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; color: var(--tx3); }
 .fc-tap { color: var(--tx3); font-size: 12px; }
