@@ -274,3 +274,114 @@ describe('ligues — un classement d’enfants expose le strict minimum', () => 
       { points: 10, prenom: 'M'.repeat(200), maj: 'x' }))
   })
 })
+
+// ══════════════════════════════════════════════════════════════════════
+//  DIRECTEUR DE COMPLEXE — un propriétaire, plusieurs écoles
+// ══════════════════════════════════════════════════════════════════════
+//
+// Ce qu'on vérifie : il compte les élèves et le personnel de TOUTES ses écoles,
+// et rien de plus. Avant, `isMember` le limitait à la sienne — la vue complexe
+// affichait 0 partout, et le refus était avalé par un try/catch.
+//
+// Le piège que ces cas gardent : la tentation de lui ouvrir
+// `match /{coll}/{docId=**}` d'un bloc, ce qui lui donnerait aussi les notes,
+// la discipline et les salaires de trois établissements.
+describe('directeur de complexe — les compteurs, et rien d’autre', () => {
+  const DIR = 'dir-complexe-uid'
+  const DIR_AUTRE = 'dir-autre-complexe-uid'
+  const ECOLE_A = 'lareussite-fr'
+  const ECOLE_B = 'lareussite-prim'
+  const ECOLE_HORS = 'ecole-sans-rapport'
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'users', DIR), {
+        role: 'directeur_complexe', status: 'active',
+        complexeId: 'cx-lareussite', schoolId: ECOLE_A,
+      })
+      await setDoc(doc(db, 'users', DIR_AUTRE), {
+        role: 'directeur_complexe', status: 'active',
+        complexeId: 'cx-un-autre', schoolId: ECOLE_HORS,
+      })
+      await setDoc(doc(db, 'schools', ECOLE_A), { schoolName: 'Section francophone', complexeId: 'cx-lareussite' })
+      await setDoc(doc(db, 'schools', ECOLE_B), { schoolName: 'École primaire', complexeId: 'cx-lareussite' })
+      await setDoc(doc(db, 'schools', ECOLE_HORS), { schoolName: 'Sans rapport' })
+      for (const sid of [ECOLE_A, ECOLE_B, ECOLE_HORS]) {
+        await setDoc(doc(db, 'schools', sid, 'eleves', 'e1'), { lastName: 'Mavoungou' })
+        await setDoc(doc(db, 'schools', sid, 'personnel', 'p1'), { lastName: 'Bantsimba' })
+        await setDoc(doc(db, 'schools', sid, 'notes', 'data'), { secret: 'notes' })
+        await setDoc(doc(db, 'schools', sid, 'discipline', 'd1'), { secret: 'incident' })
+        await setDoc(doc(db, 'schools', sid, 'salaires', 's1'), { secret: 'paie' })
+      }
+    })
+  })
+
+  const dbDir = () => env.authenticatedContext(DIR).firestore()
+  const dbDirAutre = () => env.authenticatedContext(DIR_AUTRE).firestore()
+
+  it('il lit les élèves et le personnel d’une AUTRE école de son complexe', async () => {
+    await assertSucceeds(getDoc(doc(dbDir(), 'schools', ECOLE_B, 'eleves', 'e1')))
+    await assertSucceeds(getDoc(doc(dbDir(), 'schools', ECOLE_B, 'personnel', 'p1')))
+  })
+
+  it('⚠️ il ne lit NI les notes, NI la discipline, NI les salaires', async () => {
+    await assertFails(getDoc(doc(dbDir(), 'schools', ECOLE_B, 'notes', 'data')))
+    await assertFails(getDoc(doc(dbDir(), 'schools', ECOLE_B, 'discipline', 'd1')))
+    await assertFails(getDoc(doc(dbDir(), 'schools', ECOLE_B, 'salaires', 's1')))
+  })
+
+  it('⚠️ une école HORS de son complexe lui reste fermée', async () => {
+    await assertFails(getDoc(doc(dbDir(), 'schools', ECOLE_HORS, 'eleves', 'e1')))
+    await assertFails(getDoc(doc(dbDir(), 'schools', ECOLE_HORS, 'personnel', 'p1')))
+  })
+
+  it('⚠️ le directeur d’un AUTRE complexe n’entre pas ici', async () => {
+    await assertFails(getDoc(doc(dbDirAutre(), 'schools', ECOLE_A, 'eleves', 'e1')))
+    await assertFails(getDoc(doc(dbDirAutre(), 'schools', ECOLE_B, 'eleves', 'e1')))
+  })
+
+  it('⚠️ il n’ÉCRIT pas dans les écoles de son complexe', async () => {
+    await assertFails(setDoc(doc(dbDir(), 'schools', ECOLE_B, 'eleves', 'e2'), { lastName: 'Ajouté' }))
+    await assertFails(setDoc(doc(dbDir(), 'schools', ECOLE_B), { schoolName: 'Renommée' }, { merge: true }))
+  })
+})
+
+// Le total encaissé remonte sur le document école pour la vue complexe. Le
+// comptable doit pouvoir l'y déposer — mais UNIQUEMENT lui, et uniquement lui.
+describe('recettes remontées — le comptable dépose un chiffre, pas davantage', () => {
+  const ECOLE = 'ecole-compta'
+  const COMPTABLE = 'comptable-uid'
+  const ENSEIGNANT = 'enseignant-uid'
+
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore()
+      await setDoc(doc(db, 'users', COMPTABLE), { role: 'comptable', status: 'active', schoolId: ECOLE })
+      await setDoc(doc(db, 'users', ENSEIGNANT), { role: 'enseignant', status: 'active', schoolId: ECOLE })
+      await setDoc(doc(db, 'schools', ECOLE), { schoolName: 'École compta', recettes: 0 })
+    })
+  })
+
+  const dbCompta = () => env.authenticatedContext(COMPTABLE).firestore()
+  const dbEnseignant = () => env.authenticatedContext(ENSEIGNANT).firestore()
+
+  it('le comptable dépose le total encaissé', async () => {
+    await assertSucceeds(setDoc(doc(dbCompta(), 'schools', ECOLE),
+      { recettes: 4500000, recettesMajLe: '2026-09-06T10:00:00.000Z' }, { merge: true }))
+  })
+
+  it('⚠️ mais il ne renomme pas l’école au passage', async () => {
+    await assertFails(setDoc(doc(dbCompta(), 'schools', ECOLE),
+      { recettes: 4500000, schoolName: 'Autre nom' }, { merge: true }))
+  })
+
+  it('⚠️ et il ne rattache pas l’école à un complexe', async () => {
+    await assertFails(setDoc(doc(dbCompta(), 'schools', ECOLE),
+      { recettes: 4500000, complexeId: 'cx-invente' }, { merge: true }))
+  })
+
+  it('⚠️ un enseignant ne touche pas au document école', async () => {
+    await assertFails(setDoc(doc(dbEnseignant(), 'schools', ECOLE), { recettes: 1 }, { merge: true }))
+  })
+})

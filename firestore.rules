@@ -153,6 +153,34 @@ service cloud.firestore {
       return hasRole(schoolId, ['directeur', 'admin']);
     }
 
+    // Complexe déclaré sur le document école (posé par le méga-admin EDUFREM).
+    // `.get(clé, défaut)` et non `.complexeId` : la très grande majorité des
+    // écoles n'appartient à aucun complexe et n'a donc pas ce champ — un accès
+    // direct lèverait une erreur d'évaluation au lieu de refuser proprement.
+    function complexeDeLEcole(schoolId) {
+      return get(/databases/$(database)/documents/schools/$(schoolId)).data.get('complexeId', '');
+    }
+
+    // Directeur d'un COMPLEXE scolaire : un même propriétaire, plusieurs écoles
+    // (section francophone, section anglophone, primaire…), chacune restant un
+    // tenant MAPO isolé. Son profil porte `complexeId` ; l'accès n'est accordé
+    // que si l'école visée porte le même.
+    //
+    // ⚠️ Sans cette règle, `isMember` le limitait à SON école : la vue complexe
+    // comptait 0 élève et 0 personnel pour toutes les autres, et le refus était
+    // avalé par le try/catch de complexe.js — un écran de zéros sans un message.
+    //
+    // Coût assumé : une lecture du document école par évaluation. Elle ne pèse
+    // que sur les écrans du complexe, jamais sur le travail quotidien d'une
+    // école, qui passe par isMember sans relire quoi que ce soit.
+    function isDirecteurComplexe(schoolId) {
+      return hasProfile()
+        && userDoc().get('status', '') == 'active'
+        && userDoc().get('role', '') == 'directeur_complexe'
+        && userDoc().get('complexeId', '') != ''
+        && userDoc().get('complexeId', '') == complexeDeLEcole(schoolId);
+    }
+
     // Membre de l'équipe EDUFREM (super admin). Présence d'un document
     // dans superAdmins/{uid}. Cette collection n'est pas modifiable depuis
     // l'application — elle est gérée uniquement via la console Firebase.
@@ -494,9 +522,38 @@ service cloud.firestore {
       // les règles du `match /{coll}/{docId=**}` plus bas.
       allow read: if true;
       allow create: if isSuperAdmin();
-      allow update: if isAdmin(schoolId) || isSuperAdmin();
+      // Le comptable touche au document école POUR UN SEUL MOTIF : y déposer le
+      // total encaissé, que la vue complexe lit sans entrer dans la comptabilité
+      // de chaque établissement. Deux champs, pas un de plus — la contrainte est
+      // vérifiée ici et non côté application, sinon elle ne vaut rien.
+      // `resource != null` d'abord : sans lui, `diff(resource.data)` lève une
+      // erreur d'ÉVALUATION au lieu de refuser proprement quand le document
+      // n'existe pas encore. Le refus est le même, la trace ne l'est pas.
+      allow update: if isAdmin(schoolId) || isSuperAdmin()
+        || (hasRole(schoolId, ['comptable'])
+            && resource != null
+            && request.resource.data.diff(resource.data).affectedKeys()
+                 .hasOnly(['recettes', 'recettesMajLe']));
       // Suppression d'école réservée à EDUFREM (bouton « Supprimer l'école »).
       allow delete: if isSuperAdmin();
+
+      // ── Directeur de complexe : les COMPTEURS, et rien d'autre ────
+      //
+      // Portée délibérément étroite. Il lui faut le nombre d'élèves et de
+      // membres du personnel par école — Steve, 06/09 : « pas besoin d'avoir la
+      // liste de tous les élèves, juste le nombre ». Il n'obtient donc NI les
+      // notes, NI la discipline, NI les salaires, NI la comptabilité détaillée.
+      // Le total encaissé lui vient du champ `recettes` du document école,
+      // déjà lisible plus haut.
+      //
+      // Ces blocs s'AJOUTENT au `match /{coll}/{docId=**}` ci-dessous : les
+      // règles Firestore s'additionnent, celle-ci n'enlève rien à personne.
+      match /eleves/{eleveId} {
+        allow read: if isDirecteurComplexe(schoolId);
+      }
+      match /personnel/{membreId} {
+        allow read: if isDirecteurComplexe(schoolId);
+      }
 
       // Toutes les sous-collections de modules (eleves, classes, notes,
       // presences, devoirs, discipline, facturation, inscriptions,

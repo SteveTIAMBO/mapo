@@ -379,11 +379,38 @@ export const useFacturationStore = defineStore('facturation', () => {
       if (authStore.schoolId) {
         const docRef = doc(db, 'schools', authStore.schoolId, 'facturation', 'data')
         await setDoc(docRef, data, { merge: true })
+        await remonterRecettes()
       }
       localStorage.setItem(cleFacturation(), JSON.stringify(data))
     } catch {
       localStorage.setItem(cleFacturation(), JSON.stringify(data))
     }
+  }
+
+  /**
+   * Recopie le total encaissé sur le document de l'école.
+   *
+   * POURQUOI. La vue « complexe » (un propriétaire, plusieurs écoles) lit
+   * `schools/{id}.recettes` pour sa colonne argent. Personne ne l'écrivait
+   * jamais : le directeur d'un complexe voyait 0 F sur chacune de ses écoles,
+   * sans rien pour le lui dire. Le total existe pourtant — il est calculé ici,
+   * mais il ne sortait pas de l'établissement.
+   *
+   * Un CHIFFRE, pas la comptabilité. Le complexe n'entre pas dans les
+   * échéanciers ni dans les impayés de chaque école : il voit ce qui est rentré.
+   * Les règles Firestore verrouillent d'ailleurs l'écriture à ces deux champs.
+   *
+   * Best-effort et silencieux : un refus d'écriture ne doit pas faire échouer
+   * l'enregistrement de la facturation, qui, lui, a réussi.
+   */
+  async function remonterRecettes() {
+    try {
+      await setDoc(
+        doc(db, 'schools', authStore.schoolId),
+        { recettes: globalStats.value.totalCollected, recettesMajLe: new Date().toISOString() },
+        { merge: true },
+      )
+    } catch { /* le complexe affichera la valeur précédente, pas une erreur */ }
   }
 
   async function loadFacturation() {

@@ -119,6 +119,12 @@ export const useComplexeStore = defineStore('complexe', () => {
           name: data.schoolName || data.name || sid,
           type: data.complexeType || data.type || (data.edition === 'primaire' ? 'primaire' : 'secondaire'),
           edition: data.edition || 'secondaire',
+          // La pastille de langue affichait « FR » pour toutes les écoles en
+          // production : `lang` n'était renseigné que par la démo. La langue
+          // vit sur le document école lui-même, lisible sans droit particulier.
+          // Vide plutôt que 'fr' par défaut : la vue masque alors la pastille,
+          // au lieu d'annoncer une langue que l'école n'a pas déclarée.
+          lang: data.language || '',
           eleves,
           personnel,
           directeur: data.directeurNom || data.directeur || '',

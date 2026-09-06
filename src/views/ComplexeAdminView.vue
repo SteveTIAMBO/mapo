@@ -73,7 +73,9 @@
             <span class="cx-badge" :class="'ty-' + s.type">{{ t('cx.types.' + s.type) }}</span>
             <span class="cx-top-right-min">
               <span class="cx-edition">{{ t('cx.editions.' + s.edition) }}</span>
-              <span class="cx-lang-chip" :title="t('cx.defaultLang')">{{ (s.lang || 'fr').toUpperCase() }}</span>
+              <!-- Pas de langue déclarée : pas de pastille. Afficher « FR » par
+                   défaut inventait une information sur l'école. -->
+              <span v-if="s.lang" class="cx-lang-chip" :title="t('cx.defaultLang')">{{ s.lang.toUpperCase() }}</span>
             </span>
           </div>
           <h4 class="cx-school-name">{{ s.name }}</h4>
