@@ -11,6 +11,7 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { demoKey, paysDemo } from '../utils/demoScope'
+import { useSystemeFiltreStore } from './systemeFiltre'
 import { packPays, localiserNom, montantDemo } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 
@@ -188,7 +189,12 @@ export const usePersonnelStore = defineStore('personnel', () => {
         !selectedCategory.value ||
         member.category === selectedCategory.value
 
-      return matchesSearch && matchesCategory
+      // École bilingue. Une fiche sans système est PARTAGÉE — direction,
+      // secrétariat, comptabilité, et tout enseignant des deux côtés : elle
+      // reste visible quel que soit le filtre, et c'est le sens voulu.
+      const matchesSysteme = useSystemeFiltreStore().passe(member.systeme)
+
+      return matchesSearch && matchesCategory && matchesSysteme
     })
   })
 

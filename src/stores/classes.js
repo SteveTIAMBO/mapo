@@ -15,6 +15,7 @@ import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
 import { packPays, localiserNomComplet, appliquerSeries, PAYS_DEMO } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
 import { useNiveauxStore } from './niveaux'
+import { useSystemeFiltreStore } from './systemeFiltre'
 
 export const LEVELS = [
   { value: '6e', label: '6ème', cycle: 'premier' },
@@ -211,7 +212,14 @@ export const useClassesStore = defineStore('classes', () => {
         !selectedLevel.value ||
         cls.level === selectedLevel.value
 
-      return matchesSearch && matchesLevel
+      // École bilingue : le filtre système. Inerte partout ailleurs.
+      // ⚠️ C'est le point d'entrée le plus rentable de tout le filtrage : la
+      // plupart des modules (notes, présences, discipline, bulletins) partent
+      // d'un choix de classe alimenté par cette liste. Les filtrer ici les
+      // filtre tous, sans toucher à un seul de leurs écrans.
+      const matchesSysteme = useSystemeFiltreStore().passe(cls.systeme)
+
+      return matchesSearch && matchesLevel && matchesSysteme
     })
   })
 

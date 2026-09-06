@@ -67,6 +67,7 @@
           <Search :size="18" class="search-icon" />
           <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('classes.searchPlaceholder')" />
         </div>
+        <SelecteurSysteme />
         <div class="filter-chips">
           <button
             v-for="lvl in levelFilters"
@@ -216,6 +217,18 @@
             </div>
           </div>
 
+          <!-- École bilingue seulement : la classe appartient à un système, et
+               ses élèves en héritent. Invisible partout ailleurs. -->
+          <div v-if="schoolStore.estBilingue" class="field-row">
+            <div class="field">
+              <label>{{ t('sys.champ') }}</label>
+              <select v-model="formData.systeme" class="input">
+                <option value="">{{ t('classes.select') }}</option>
+                <option v-for="s in schoolStore.systemes" :key="s" :value="s">{{ t('sys.' + s) }}</option>
+              </select>
+            </div>
+          </div>
+
           <div class="field-row">
             <div class="field">
               <label>{{ t('classes.enrolledCount') }}</label>
@@ -355,6 +368,8 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { Search, Plus, Pencil, Trash2, X, BookOpen, ListOrdered, ChevronUp, ChevronDown } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
+import SelecteurSysteme from '../components/SelecteurSysteme.vue'
+import { useSystemeFiltreStore } from '../stores/systemeFiltre'
 
 const { t } = useI18n({ useScope: 'global' })
 const classesStore = useClassesStore()
@@ -416,6 +431,7 @@ const teachersList = computed(() => {
 // PAYS de l'école : le primaire congolais commence à CP1, pas à la SIL.
 const editionStore = useEditionStore()
 const schoolStore = useSchoolStore()
+const filtreSysteme = useSystemeFiltreStore()
 const niveauxStore = useNiveauxStore()
 
 // Les niveaux proposés viennent du référentiel DE L'ÉCOLE. Tant qu'elle n'a rien
@@ -485,7 +501,7 @@ const niveauxCount = computed(() => new Set((classesStore.classes || []).map((c)
 
 const formData = reactive({
   name: '', level: '', section: '', capacity: 60,
-  enrolled: 0, homeroomTeacher: ''
+  enrolled: 0, homeroomTeacher: '', systeme: ''
 })
 
 // Classes auxquelles l'utilisateur a accès, AVANT les filtres de l'écran.
@@ -507,6 +523,8 @@ const filteredClasses = computed(() => {
   if (selectedLevel.value) {
     list = list.filter(c => c.level === selectedLevel.value)
   }
+  // École bilingue : le filtre partagé par tous les écrans. Inerte ailleurs.
+  list = list.filter(c => filtreSysteme.passe(c.systeme))
   const levelOrder = levels.value.map(l => l.value)
   return [...list].sort((a, b) => {
     const la = levelOrder.indexOf(a.level)
@@ -554,6 +572,7 @@ const getFillColor = (cls) => {
 const resetForm = () => {
   formData.name = ''; formData.level = ''; formData.section = ''
   formData.capacity = 60; formData.enrolled = 0; formData.homeroomTeacher = ''
+  formData.systeme = ''
 }
 
 const openAddModal = () => { editingClass.value = null; resetForm(); showModal.value = true }
@@ -566,6 +585,7 @@ const openEditModal = (cls) => {
   formData.capacity = cls.capacity || 60
   formData.enrolled = cls.enrolled || 0
   formData.homeroomTeacher = cls.homeroomTeacher || ''
+  formData.systeme = cls.systeme || ''
   showModal.value = true
 }
 

@@ -1,4 +1,13 @@
 {
+  "sys": {
+    "aria": "Filtrer par système",
+    "tous": "Tous les systèmes",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    "champ": "Système",
+    "partage": "Les deux (partagé)",
+    "aide": "Laisser vide si la personne intervient dans les deux systèmes."
+  },
   "common": {
     "byEdufrem": "par EDUFREM",
     "lang": "Langue",

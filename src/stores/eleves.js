@@ -12,6 +12,8 @@ import {
 } from 'firebase/firestore'
 import { useAuthStore } from './auth'
 import { useEditionStore } from './edition'
+import { useClassesStore } from './classes'
+import { useSystemeFiltreStore } from './systemeFiltre'
 import { demoSuffix as demoSuffixGlobal, paysDemo } from '../utils/demoScope'
 import { packPays, localiserDonnees } from '../data/paysDemo'
 import { NOMS_REFERENCE } from '../data/nomsDemo'
@@ -267,6 +269,17 @@ export const useElevesStore = defineStore('eleves', () => {
   const selectedClass = ref('')
   const selectedStatus = ref('')
 
+  // Résolu à la demande (et non importé en tête du store) : `classes.js` et
+  // `eleves.js` se lisent mutuellement à l'usage, et Pinia n'instancie un store
+  // qu'au premier appel. Un `useClassesStore()` au chargement du module créerait
+  // une dépendance circulaire là où il n'y a qu'une lecture ponctuelle.
+  const filtreSysteme = useSystemeFiltreStore()
+  function systemeDeLaClasse(nomClasse) {
+    if (!nomClasse) return ''
+    const c = useClassesStore().classes.find((x) => x.name === nomClasse)
+    return c?.systeme || ''
+  }
+
   const filteredEleves = computed(() => {
     return eleves.value.filter((e) => {
       const matchesSearch =
@@ -283,7 +296,12 @@ export const useElevesStore = defineStore('eleves', () => {
         !selectedStatus.value ||
         e.status === selectedStatus.value
 
-      return matchesSearch && matchesClass && matchesStatus
+      // École bilingue : l'élève tient son système de SA CLASSE, il n'en porte
+      // pas lui-même. Une seule saisie, donc rien qui puisse se contredire —
+      // un élève ne peut pas changer de système sans changer de classe.
+      const matchesSysteme = filtreSysteme.passe(systemeDeLaClasse(e.className))
+
+      return matchesSearch && matchesClass && matchesStatus && matchesSysteme
     })
   })
 

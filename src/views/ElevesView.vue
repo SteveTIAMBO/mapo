@@ -85,6 +85,7 @@
           <Search :size="18" class="search-icon" />
           <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('eleves.searchPlaceholder')" />
         </div>
+        <SelecteurSysteme />
         <select v-model="selectedClass" class="select">
           <option value="">{{ t('eleves.allClasses') }}</option>
           <option v-for="c in allClasses" :key="c" :value="c">{{ c }}</option>
@@ -441,6 +442,8 @@ import { useI18n } from 'vue-i18n'
 import { useRouter, useRoute } from 'vue-router'
 import { Search, Plus, Pencil, Trash2, X, UserPlus, Eye, School, Link2, Copy, Send } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
+import SelecteurSysteme from '../components/SelecteurSysteme.vue'
+import { useSystemeFiltreStore } from '../stores/systemeFiltre'
 import { useAuthStore } from '../stores/auth'
 import { usePersonnelStore } from '../stores/personnel'
 import { useEmploiDuTempsStore } from '../stores/emploi-du-temps'
@@ -452,6 +455,7 @@ import { lienPartage, lienWhatsapp, canauxDisponibles } from '../utils/invitatio
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
 const elevesStore = useElevesStore()
+const filtreSysteme = useSystemeFiltreStore()
 const classesStore = useClassesStore()
 const schoolStore = useSchoolStore()
 const authStore = useAuthStore()
@@ -508,6 +512,11 @@ const toggleVulnerability = (val) => {
   else formData.vulnerabilities.push(val)
 }
 
+function systemeDeLaClasse(nomClasse) {
+  if (!nomClasse) return ''
+  return classesStore.classes.find(c => c.name === nomClasse)?.systeme || ''
+}
+
 const filteredEleves = computed(() => {
   let list = elevesStore.eleves
   // Enseignant : filtrer aux élèves de ses classes
@@ -526,6 +535,11 @@ const filteredEleves = computed(() => {
     )
   }
   if (selectedClass.value) list = list.filter(e => e.className === selectedClass.value)
+  // École bilingue : l'élève tient son système de SA CLASSE, il n'en porte pas.
+  // Une classe non rattachée laisse passer ses élèves — les cacher les ferait
+  // disparaître d'une liste sans rien dire, et on chercherait le défaut partout
+  // sauf dans un champ vide.
+  list = list.filter(e => filtreSysteme.passe(systemeDeLaClasse(e.className)))
   if (selectedStatus.value) list = list.filter(e => e.status === selectedStatus.value)
   if (selectedProfile.value === 'handicap') list = list.filter(e => e.handicap)
   else if (selectedProfile.value === 'redoublant') list = list.filter(e => e.redoublant)

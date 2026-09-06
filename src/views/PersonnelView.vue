@@ -75,6 +75,7 @@
           <Search :size="18" class="search-icon" />
           <input v-model="searchQuery" type="text" class="input search-input" :placeholder="t('pers.searchPlaceholder')" />
         </div>
+        <SelecteurSysteme />
         <div class="filter-chips">
           <button
             v-for="cat in categoryFilters"
@@ -244,6 +245,20 @@
                 <option value="">{{ t('pers.notSet') }}</option>
                 <option v-for="c in CONTRACT_TYPES" :key="c.value" :value="c.value">{{ c.label }}</option>
               </select>
+            </div>
+          </div>
+
+          <!-- École bilingue seulement. Vide = les deux : c'est le cas de la
+               direction, du secrétariat, et de tout enseignant qui intervient
+               des deux côtés. -->
+          <div v-if="schoolStore.estBilingue" class="field-row">
+            <div class="field">
+              <label>{{ t('sys.champ') }}</label>
+              <select v-model="formData.systeme" class="input">
+                <option value="">{{ t('sys.partage') }}</option>
+                <option v-for="sy in schoolStore.systemes" :key="sy" :value="sy">{{ t('sys.' + sy) }}</option>
+              </select>
+              <small class="field-hint">{{ t('sys.aide') }}</small>
             </div>
           </div>
 
@@ -498,8 +513,11 @@ import { onMounted, ref, reactive, computed, watch, nextTick } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Search, Plus, Pencil, Trash2, X, UserPlus } from 'lucide-vue-next'
 import PaginationBar from '../components/ui/PaginationBar.vue'
+import SelecteurSysteme from '../components/SelecteurSysteme.vue'
+import { useSystemeFiltreStore } from '../stores/systemeFiltre'
 
 const { t } = useI18n({ useScope: 'global' })
+const filtreSysteme = useSystemeFiltreStore()
 const personnelStore = usePersonnelStore()
 const subjectsStore = useSubjectsStore()
 const classesStore = useClassesStore()
@@ -525,7 +543,7 @@ const categoryFilters = computed(() => [
 ])
 
 const formData = reactive({
-  firstName: '', lastName: '', gender: '', category: '', role: '',
+  firstName: '', lastName: '', gender: '', category: '', role: '', systeme: '',
   // `classesTenues` et `classesBySubject` ne disent PAS la même chose : tenir une
   // classe (titulaire) n'est pas y enseigner une matière. Deux faits distincts,
   // deux champs — et non deux copies d'un même fait, qui finiraient par diverger.
@@ -618,6 +636,9 @@ const filteredStaff = computed(() => {
   if (selectedCategory.value) {
     list = list.filter(m => m.category === selectedCategory.value)
   }
+  // École bilingue. Une fiche SANS système est partagée : elle reste visible
+  // quel que soit le filtre — c'est le cas de la direction et du secrétariat.
+  list = list.filter(m => filtreSysteme.passe(m.systeme))
   return list
 })
 
@@ -668,6 +689,7 @@ const resetForm = () => {
   formData.email = ''; formData.status = 'Actif'
   formData.contractType = ''; formData.qualification = ''; formData.experienceYears = null
   formData.handicap = false
+  formData.systeme = ''
 }
 
 const openAddModal = () => { editingMember.value = null; resetForm(); showModal.value = true }
@@ -679,6 +701,7 @@ const openEditModal = (member) => {
   formData.lastName = member.lastName || ''
   formData.gender = member.gender || ''
   formData.category = member.category || ''
+  formData.systeme = member.systeme || ''
   formData.role = member.role || ''
   formData.subjects = [...(member.subjects || [])]
   formData.classesTenues = [...(member.classesTenues || [])]

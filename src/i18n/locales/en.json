@@ -1,4 +1,13 @@
 {
+  "sys": {
+    "aria": "Filter by system",
+    "tous": "All systems",
+    "francophone": "Francophone",
+    "anglophone": "Anglophone",
+    "champ": "System",
+    "partage": "Both (shared)",
+    "aide": "Leave empty if the person works in both systems."
+  },
   "common": {
     "byEdufrem": "by EDUFREM",
     "lang": "Language",
