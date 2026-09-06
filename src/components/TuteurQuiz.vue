@@ -40,6 +40,7 @@
       <p v-if="exemple.notion" class="tq-exemple-notion">{{ exemple.notion }}</p>
       <div class="tq-exemple-carte">
         <p class="tq-exemple-q">{{ exemple.q }}</p>
+        <FigureMath v-if="exemple.figure" :figure="exemple.figure" :en="locale.startsWith('en')" />
         <p class="tq-exemple-r"><Check :size="15" /> <span>{{ exemple.choices[exemple.answer] }}</span></p>
         <p v-if="exemple.explanation" class="tq-exemple-e"><TexteRiche :texte="exemple.explanation" /></p>
       </div>
@@ -158,6 +159,10 @@
           </button>
         </div>
       </div>
+
+      <!-- Schéma : il porte le raisonnement (parts d'une fraction, position
+           sur une droite), il ne décore pas. Absent la plupart du temps. -->
+      <FigureMath v-if="current.figure" :figure="current.figure" :en="locale.startsWith('en')" />
 
       <div class="tq-choices">
         <button v-for="(c, i) in current.choices" :key="i" class="tq-choice" :class="choiceClass(i)"
@@ -383,6 +388,7 @@ import { useEnfantsAutonomesStore } from '../stores/enfantsAutonomes'
 import { useConnecteursStore } from '../stores/connecteurs'
 import MiapoCreditsEpuises from './MiapoCreditsEpuises.vue'
 import TexteRiche from './TexteRiche.vue'
+import FigureMath from './FigureMath.vue'
 
 const props = defineProps({
   matiere: { type: String, required: true },

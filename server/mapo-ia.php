@@ -1178,6 +1178,15 @@ function buildTutorQuizPrompts($d) {
     // maintenant afficher du gras — UNE seule marque, et une seule par phrase :
     // du gras partout ne met plus rien en valeur.
     . "MISE EN FORME : la SEULE marque autorisée est le gras, écrit **entre deux paires d'astérisques**. Mets en gras le TERME CLÉ de l'explication — le mot que l'élève doit retenir — au maximum UN par phrase. N'entoure PAS les exemples ni les termes d'apostrophes ou de guillemets : le gras remplace cet usage. Aucune autre marque : ni italique, ni titre, ni liste, ni lien. "
+    // Double codage : un schéma ET des mots aident l'apprentissage — chez tout
+    // le monde, pas chez de prétendus « visuels ». En revanche une image qui
+    // n'apporte rien AJOUTE de la charge : d'où l'insistance sur « seulement si
+    // elle porte le raisonnement ». Le modèle DÉCRIT, l'application dessine :
+    // il ne peut donc produire ni figure invalide ni balise.
+    . "SCHÉMA (facultatif, et le plus souvent ABSENT) : si — et seulement si — une figure aide VRAIMENT à comprendre la question (parts d'une fraction, proportion, position d'un nombre), ajoute un champ \"figure\". N'en mets JAMAIS pour décorer, ni sur une question qui n'en a pas besoin : une figure inutile gêne au lieu d'aider. Deux formes possibles, et aucune autre : "
+    . "{\"type\":\"fraction\",\"parts\":4,\"colorees\":3,\"forme\":\"barre\"} (ou \"disque\") pour représenter une fraction ; "
+    . "{\"type\":\"droite\",\"min\":0,\"max\":1,\"graduations\":4,\"points\":[{\"x\":0.75,\"label\":\"3/4\"}]} pour situer un nombre sur une droite graduée. "
+    . "Ne produis aucun autre type, aucun SVG, aucune image : ils seraient ignorés. "
     . "Format EXACT : {\"source\":\"cours|referentiel|mix\",\"questions\":[{\"q\":\"...\",\"choices\":[\"...\",\"...\",\"...\",\"...\"],\"answer\":0,\"hint\":\"...\",\"explanation\":\"...\"}]}. "
     . "Chaque question a exactement 4 propositions ; \"answer\" est l'index (0 à 3) de la bonne proposition. "
     // ── AUTO-VÉRIFICATION OBLIGATOIRE ───────────────────────────────────────

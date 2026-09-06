@@ -9,6 +9,7 @@ import { appliquerSeance } from '../utils/jaugeNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
 import { historiqueEpreuves, remplacerEpreuves } from '../utils/examenBlanc'
 import { notionsAReprendre, suiviNotions, remplacerNotions } from '../utils/notions'
+import { normaliserFigure } from '../utils/figures'
 import { useMiapoAnalyticsStore } from './miapoAnalytics'
 import { useAuthStore } from './auth'
 import { useAbonnementStore } from './abonnement'
@@ -1797,6 +1798,10 @@ function parseQuiz(text) {
       // Gardée telle quelle ici ; c'est `generateQuiz` qui la VALIDE contre la
       // liste envoyée, parce que lui seul sait ce qui a été envoyé.
       notion: String(x.notion ?? '').trim(),
+      // Schéma éventuel (fractions, droite graduée). Normalisé tout de suite :
+      // une description aberrante devient `null` et l'écran se contente du
+      // texte. On ne stocke jamais une figure qu'on ne saurait pas dessiner.
+      figure: normaliserFigure(x.figure),
     }))
     .filter((x) => x.q && x.choices.length === 4 && x.answer >= 0 && x.answer < 4)
 }
