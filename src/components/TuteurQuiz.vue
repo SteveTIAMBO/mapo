@@ -265,6 +265,11 @@
           <ul><li v-for="(d, i) in gainPoints.detail" :key="i">{{ d.libelle }} <b>+{{ d.points }}</b></li></ul>
         </div>
       </div>
+      <!-- Un jour manqué réparé : on le dit une fois, factuellement. Ni
+           « tu as failli tout perdre », ni célébration — c'est un filet. -->
+      <p v-if="serieRepareeVue" class="tq-serie-fin">{{ locale.startsWith('en')
+        ? 'You missed a day: your streak continues, one safety net used.'
+        : 'Un jour manqué : ta série continue, un filet a été utilisé.' }}</p>
       <p v-if="meilleureSerie >= 2" class="tq-serie-fin"><Flame :size="15" /> {{ locale.startsWith('en') ? `Best streak: ${meilleureSerie}` : `Meilleure série : ${meilleureSerie} d'affilée` }}</p>
 
       <!-- BILAN MÉTACOGNITIF (P11). Ce que l'apprenant avait prévu contre ce
@@ -372,7 +377,7 @@ import { tempsLectureSecondes } from '../utils/tempsLecture'
 import { sonJuste, sonFaux, sonSerie, sonVictoire, sonPalier } from '../utils/sons'
 import { pointsSeance } from '../utils/pointsEffort'
 import { useRecompensesPointsStore } from '../stores/recompensesPoints'
-import { serieActuelle } from '../utils/recompenses'
+import { serieActuelle, serieReparee } from '../utils/recompenses'
 import { useLigueStore } from '../stores/ligue'
 import { niveauSuivant, PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
 import { noteQuestion } from '../utils/jaugeNiveau'
@@ -772,6 +777,8 @@ const sureteQ = ref(null)            // true = sûr, false = pas sûr, null = no
 const reponsesCalib = ref([])        // [{ sur, juste }] pour la séance en cours
 const prediction = ref(null)         // nombre annoncé avant la séance
 const messageCalib = ref('')         // phrase de bilan, calculée à la fin
+// Série réparée par un filet (écart E12) : annoncé UNE fois, sans dramatiser.
+const serieRepareeVue = ref(false)
 
 // ⚠️ La grille par âge (référentiel, section 3) module ce qu'on demande : au
 // primaire, « es-tu sûr ? » binaire et RIEN de plus — une prédiction chiffrée
@@ -1184,6 +1191,7 @@ function finish() {
         recap: recap.value,
       })
       attribuerPoints()
+      serieRepareeVue.value = serieReparee(props.studentId)
     } catch (e) { /* archivage best-effort */ }
     // Signal de forme (séance terminée) : durée, temps moyen/question, humeur.
     // On journalise la MAÎTRISE (signal interne, jamais montré).

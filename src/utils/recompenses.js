@@ -42,11 +42,34 @@ export function hydraterRecompenses(sid, distant) {
   const fusion = {
     ...distant,
     longest: Math.max(local.longest || 0, distant.longest || 0),
+    // Les filets suivent l'apprenant d'un appareil à l'autre. On prend le plus
+    // élevé : plafonné à 2, le risque d'en « gagner » un au change est nul
+    // devant le désagrément d'en perdre un en changeant de téléphone.
+    jokers: Math.max(Number(local.jokers) || 0, Number(distant.jokers) || 0),
   }
   save(sid, fusion)
   return fusion
 }
 function save(sid, s) { try { localStorage.setItem(KEY(sid), JSON.stringify(s)) } catch { /* quota */ } }
+
+// Filets de série (écart E12). Un jour manqué se répare, deux non : au-delà,
+// ce n'est plus un accroc, et prétendre le contraire viderait la série de son
+// sens. On en gagne un tous les 7 jours tenus, et on n'en cumule pas plus de 2 —
+// sinon la série ne mesure plus rien.
+const JOURS_PAR_JOKER = 7
+const JOKERS_MAX = 2
+
+/** Filets disponibles pour réparer un jour manqué. */
+export function jokersDisponibles(sid) {
+  const s = statsRecompenses(sid)
+  return Math.max(0, Math.min(JOKERS_MAX, Number(s.jokers) || 0))
+}
+
+/** La dernière activité a-t-elle réparé une série ? (pour l'annoncer une fois) */
+export function serieReparee(sid) {
+  const s = statsRecompenses(sid)
+  return !!s.repareLe && s.repareLe === dayKey()
+}
 
 // À appeler à chaque révision TERMINÉE. Met à jour le total et la série de jours.
 export function enregistrerActivite(sid, opts = {}) {
@@ -59,7 +82,30 @@ export function enregistrerActivite(sid, opts = {}) {
   const today = dayKey()
   if (s.lastDay !== today) {
     const d = s.lastDay ? ecart(s.lastDay, today) : 999
-    s.streak = d === 1 ? (s.streak || 0) + 1 : 1 // reprise le lendemain → +1, sinon reset
+    s.jokers = Math.max(0, Math.min(JOKERS_MAX, Number(s.jokers) || 0))
+    s.repareLe = ''
+    if (d === 1) {
+      s.streak = (s.streak || 0) + 1
+      // Un joker se gagne en tenant la série, il ne s'achète pas et ne se
+      // convertit en rien : c'est un filet, pas une monnaie (P13).
+      if (s.streak % JOURS_PAR_JOKER === 0 && s.jokers < JOKERS_MAX) s.jokers += 1
+    } else if (d === 2 && s.jokers > 0) {
+      // UN SEUL jour manqué, et un filet disponible : la série continue.
+      //
+      // ⚠️ C'est l'écart E12 du référentiel. Une rupture définitive transforme
+      // un encouragement en pression, puis en motif d'abandon : l'apprenant qui
+      // a « tout perdu » n'a plus de raison de revenir demain. Réparable, la
+      // série redevient ce qu'elle doit être — un repère de régularité, pas une
+      // dette.
+      s.jokers -= 1
+      s.streak = (s.streak || 0) + 1
+      s.repareLe = today
+    } else {
+      // Deux jours ou plus sans filet : on repart de 1, SANS message punitif.
+      // On ne commente pas une absence — la vie d'un élève ne se justifie pas
+      // devant une application.
+      s.streak = 1
+    }
     s.lastDay = today
     s.longest = Math.max(s.longest || 0, s.streak)
   }
@@ -84,11 +130,11 @@ export const BADGES = [
   { id: 'rev10', tier: 'bronze', icon: 'BookOpen', metric: 'total', target: 10, fr: '10 révisions', en: '10 revisions', frd: 'Tu as fait 10 révisions.', end: 'You completed 10 revisions.' },
   { id: 'rev50', tier: 'silver', icon: 'Layers', metric: 'total', target: 50, fr: '50 révisions', en: '50 revisions', frd: '50 révisions au compteur.', end: '50 revisions done.' },
   { id: 'rev100', tier: 'silver', icon: 'Medal', metric: 'total', target: 100, fr: '100 révisions', en: '100 revisions', frd: 'Le cap des 100 révisions !', end: 'You hit 100 revisions!' },
-  { id: 'rev500', tier: 'gold', icon: 'Trophy', metric: 'total', target: 500, fr: '500 révisions', en: '500 revisions', frd: 'Impressionnant : 500 révisions.', end: 'Impressive: 500 revisions.' },
-  { id: 'rev1000', tier: 'gold', icon: 'Crown', metric: 'total', target: 1000, fr: '1000 révisions', en: '1000 revisions', frd: 'Légende : 1000 révisions.', end: 'Legend: 1000 revisions.' },
-  { id: 'streak3', tier: 'bronze', icon: 'Flame', metric: 'streak', target: 3, fr: '3 jours d\'affilée', en: '3-day streak', frd: 'Réviser 3 jours de suite.', end: 'Revised 3 days in a row.' },
-  { id: 'streak7', tier: 'silver', icon: 'Flame', metric: 'streak', target: 7, fr: '1 semaine d\'affilée', en: '1-week streak', frd: '7 jours de suite, bravo !', end: '7 days in a row, well done!' },
-  { id: 'streak21', tier: 'gold', icon: 'Flame', metric: 'streak', target: 21, fr: '3 semaines d\'affilée', en: '3-week streak', frd: '21 jours de suite : une vraie habitude.', end: '21 days in a row: a real habit.' },
+  { id: 'rev500', tier: 'gold', icon: 'Trophy', metric: 'total', target: 500, fr: '500 révisions', en: '500 revisions', frd: '500 révisions : chaque reprise espacée consolide un peu plus ce qui a été appris.', end: '500 revisions: each spaced review consolidates a little more of what was learned.' },
+  { id: 'rev1000', tier: 'gold', icon: 'Crown', metric: 'total', target: 1000, fr: '1000 révisions', en: '1000 revisions', frd: '1000 révisions : de quoi couvrir un programme entier plusieurs fois.', end: '1000 revisions: enough to cover a whole syllabus several times over.' },
+  { id: 'streak3', tier: 'bronze', icon: 'Flame', metric: 'streak', target: 3, fr: '3 jours d\'affilée', en: '3-day streak', frd: 'Trois jours de suite : c\'est la régularité qui installe une habitude, pas la durée.', end: 'Three days in a row: regularity builds the habit, not session length.' },
+  { id: 'streak7', tier: 'silver', icon: 'Flame', metric: 'streak', target: 7, fr: '1 semaine d\'affilée', en: '1-week streak', frd: 'Sept jours de suite : réviser souvent et peu de temps retient mieux qu\'une longue séance.', end: 'Seven days in a row: short frequent sessions are retained better than one long one.' },
+  { id: 'streak21', tier: 'gold', icon: 'Flame', metric: 'streak', target: 21, fr: '3 semaines d\'affilée', en: '3-week streak', frd: 'Vingt et un jours de suite : à ce rythme, les rappels espacés commencent à payer.', end: 'Twenty-one days in a row: at this pace, spaced recall starts to pay off.' },
 ]
 
 // Calcule earned/locked + progression pour chaque badge (récents/plus proches
