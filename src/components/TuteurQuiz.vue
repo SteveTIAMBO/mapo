@@ -29,6 +29,25 @@
     </div>
 
     <!-- Prédiction de score — métacognition (P11). Un écran, zéro token. -->
+    <!-- Exemple travaillé : on MONTRE une résolution avant de demander d'en
+         produire une. Uniquement sur une notion jamais rencontrée. -->
+    <div v-else-if="mode === 'exemple'" class="tq-exemple">
+      <span class="tq-exemple-ic"><BookOpen :size="22" /></span>
+      <h2>{{ locale.startsWith('en') ? 'A worked example first' : 'On regarde d’abord un exemple' }}</h2>
+      <p class="tq-exemple-quoi">{{ locale.startsWith('en')
+        ? 'This topic is new for you. Here is one solved, then it is your turn.'
+        : 'Cette notion est nouvelle pour toi. En voici une résolue, ensuite ce sera à toi.' }}</p>
+      <p v-if="exemple.notion" class="tq-exemple-notion">{{ exemple.notion }}</p>
+      <div class="tq-exemple-carte">
+        <p class="tq-exemple-q">{{ exemple.q }}</p>
+        <p class="tq-exemple-r"><Check :size="15" /> <span>{{ exemple.choices[exemple.answer] }}</span></p>
+        <p v-if="exemple.explanation" class="tq-exemple-e">{{ exemple.explanation }}</p>
+      </div>
+      <button type="button" class="btn btn-primary" @click="apresExemple">
+        {{ locale.startsWith('en') ? 'Got it — my turn' : 'J’ai compris, à moi' }}
+      </button>
+    </div>
+
     <div v-else-if="mode === 'predire'" class="tq-predire">
       <span class="tq-predire-ic"><Target :size="24" /></span>
       <h2>{{ locale.startsWith('en') ? 'Before you start' : 'Avant de commencer' }}</h2>
@@ -356,7 +375,7 @@ import { coursTexteMatiere } from '../utils/coursPerso'
 import { coursEcoleTexteMatiere } from '../utils/coursEcole'
 import { enregistrerSeanceCalibration, messageCalibration } from '../utils/calibration'
 import { enregistrerEpreuve, progressionEpreuves } from '../utils/examenBlanc'
-import { enregistrerResultatsNotions } from '../utils/notions'
+import { enregistrerResultatsNotions, etatNotions } from '../utils/notions'
 import { horizonJours } from '../utils/horizon'
 import { bandeAge } from '../utils/ageProfil'
 import { digestApprenant } from '../utils/digestApprenant'
@@ -907,10 +926,47 @@ async function start() {
  * Facultatif par construction : « Je ne sais pas » lance la séance sans
  * prédiction, et la mesure se fait alors sur les seules confiances par question.
  */
+/**
+ * EXEMPLE TRAVAILLÉ avant la pratique — écart E8 du référentiel.
+ *
+ * Un apprenant qui découvre une notion entrait directement en récupération.
+ * Pour un novice, c'est contraire à l'effet d'exemple travaillé (Sweller et
+ * al. 2019) : sans modèle de résolution, la question ne teste rien, elle
+ * charge la mémoire de travail.
+ *
+ * ⚠️ RÉSERVÉ AUX NOTIONS JAMAIS RENCONTRÉES, et ce n'est pas un détail : l'effet
+ * s'INVERSE chez qui maîtrise déjà (renversement d'expertise, Kalyuga et al.
+ * 2003). Montrer un exemple résolu à quelqu'un qui sait faire lui fait perdre
+ * son temps et le décourage.
+ *
+ * ⚠️ ZÉRO TOKEN SUPPLÉMENTAIRE. On ne demande pas un exemple au modèle : on
+ * PRÉLÈVE une question de la séance et on la montre résolue, avec sa réponse et
+ * son explication. Elle sort du lot pour ne pas être posée ensuite — sinon on
+ * mesurerait la mémoire des trois dernières secondes.
+ */
+const exemple = ref(null)
+function preleverExemple() {
+  exemple.value = null
+  if (!props.studentId || props.epreuve) return // une épreuve mesure, elle n'enseigne pas
+  // Une séance courte ne peut pas se permettre d'y laisser une question.
+  if (questions.value.length < 5) return
+  let connues = {}
+  try { connues = etatNotions(props.studentId, subjectId.value) } catch { return }
+  const i = questions.value.findIndex((q) => q && q.notion && !connues[q.notion])
+  if (i === -1) return
+  exemple.value = questions.value[i]
+  questions.value = questions.value.filter((_, k) => k !== i)
+}
 function lancerSeance() {
   reponsesCalib.value = []
   prediction.value = null
   messageCalib.value = ''
+  preleverExemple()
+  if (exemple.value) { mode.value = 'exemple'; return }
+  mode.value = (props.studentId && demandePrediction.value) ? 'predire' : 'quiz'
+}
+function apresExemple() {
+  exemple.value = null
   mode.value = (props.studentId && demandePrediction.value) ? 'predire' : 'quiz'
 }
 
@@ -1492,6 +1548,18 @@ onMounted(start)
 }
 .tq-calib p { margin: 0; font-size: 13.5px; }
 .tq-calib-msg { max-width: 420px; margin: 8px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
+/* Exemple travaillé — même sobriété que l'écran de prédiction : c'est une étape
+   de lecture, pas une épreuve. */
+.tq-exemple { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 24px 18px; }
+.tq-exemple-ic { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; border-radius: 50%; background: rgba(var(--pr-rgb),.09); color: var(--pr); }
+.tq-exemple h2 { font-size: 19px; margin: 2px 0 0; }
+.tq-exemple-quoi { margin: 0; color: var(--tx2); font-size: 14px; max-width: 420px; }
+.tq-exemple-notion { margin: 0; font-size: 11.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--tx3); }
+.tq-exemple-carte { width: 100%; max-width: 440px; text-align: left; background: rgba(var(--pr-rgb),.05); border: 1.5px solid rgba(var(--pr-rgb),.18); border-radius: 14px; padding: 16px 18px; margin: 4px 0 6px; }
+.tq-exemple-q { margin: 0 0 10px; font-size: 15.5px; font-weight: 700; color: var(--tx); line-height: 1.45; }
+.tq-exemple-r { display: flex; align-items: flex-start; gap: 7px; margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #1B8A5A; line-height: 1.45; }
+.tq-exemple-e { margin: 0; font-size: 14px; color: var(--tx2); line-height: 1.55; }
+
 /* Épreuve : volontairement sobre, aucun accent de couleur. Ce n'est pas une
    récompense, c'est une mesure. */
 .tq-epreuve { max-width: 420px; margin: 10px auto 0; color: var(--tx3); font-size: 13px; line-height: 1.5; }
