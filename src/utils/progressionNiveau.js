@@ -43,6 +43,32 @@ export function niveauSuivant(classe, pays) {
   return suite.length ? suite[0] : null
 }
 
+/**
+ * Classe PRÉCÉDENTE, en redescendant si besoin la frontière entre cycles.
+ *
+ * Écart E11 du référentiel : le bornage par le haut existait, celui par le bas
+ * n'existait pas du tout. `niveauSuivant` ne va que vers le haut, et le
+ * programme d'une matière ne changeait que par `accepterAnneeSuivante` — un
+ * apprenant en retard n'avait donc AUCUN moyen de réviser l'année d'avant. Or
+ * c'est précisément lui qui en a besoin : une notion de 5e mal acquise ne se
+ * répare pas avec des exercices de 4e.
+ *
+ * @returns {string|null} null s'il n'y a plus d'année en dessous.
+ */
+export function niveauPrecedent(classe, pays) {
+  if (!classe) return null
+  const cycle = cycleDuNiveau(classe, pays)
+  const liste = niveauxPourCycle(cycle, pays)
+  const i = liste.indexOf(classe)
+  if (i < 0) return null
+  if (i > 0) return liste[i - 1]
+  // Début d'un cycle : on redescend au DERNIER niveau du cycle en dessous.
+  const avant = cycle === 'superieur' ? 'secondaire' : cycle === 'secondaire' ? 'primaire' : null
+  if (!avant) return null
+  const suite = niveauxPourCycle(avant, pays)
+  return suite.length ? suite[suite.length - 1] : null
+}
+
 /** Le palier est-il au sommet du programme de la classe ? */
 export function auSommetDeLaClasse(palier) {
   return (Number(palier) || 1) >= PALIERS_PAR_CLASSE

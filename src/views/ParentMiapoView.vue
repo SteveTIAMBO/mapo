@@ -494,6 +494,13 @@
                       </button>
                       <p v-else class="rt-epreuve-fermee">{{ t('mia.epreuveFermee', { subject: reviseMatiere, n: epreuveMatiere.joursRestants }) }}</p>
                     </div>
+                    <!-- Programme réellement suivi, quand il n'est pas celui de
+                         la classe : un changement de programme ne doit jamais
+                         être invisible, dans un sens comme dans l'autre. -->
+                    <p v-if="programmeMatiere" class="rt-prog">{{ t('mia.progEnCours', { classe: programmeMatiere }) }}</p>
+                    <button v-if="anneePrecedente && isApprenant" type="button" class="rt-bases" @click="revoirLesBases">
+                      {{ t('mia.revoirBases', { classe: anneePrecedente }) }}
+                    </button>
                   </template>
                   <!-- Module lancé : bouton retour au choix -->
                   <div v-else class="rt-active">
@@ -1448,7 +1455,7 @@ import { History, RotateCcw, FolderOpen, Heart, BookOpen, Medal, Crown, Trending
 import { typesForMatiere } from '../utils/revisionTypes'
 import { examenOfficielPour, prochaineDateISO, joursAvant, genererProgramme } from '../utils/examens'
 import { sessionQuestions } from '../utils/ageProfil'
-import { PALIERS_PAR_CLASSE } from '../utils/progressionNiveau'
+import { PALIERS_PAR_CLASSE, niveauPrecedent } from '../utils/progressionNiveau'
 import { inferMatiereFromTopic, extractTheme } from '../utils/matiereTopics'
 import { calculerBadges, serieActuelle, statsRecompenses } from '../utils/recompenses'
 import { statsElo, tendanceElo, suiviApprenant, seedDemoElo } from '../utils/elo'
@@ -2503,6 +2510,42 @@ function lancerConseilNotion() {
   if (!c || !isApprenant.value) return
   reviseMatiere.value = c.matiere
   goRevise(c.matiere, libelleNotion(c.notion))
+}
+
+// ── Revoir l'année d'avant (écart E11) ─────────────────────────────────────
+//
+// Le bornage par le HAUT existait — au sommet de sa classe, l'apprenant se voit
+// proposer l'année suivante. Par le bas, il n'y avait rien : un apprenant en
+// retard ne pouvait pas réviser le programme précédent, alors que c'est
+// exactement ce dont il a besoin. Une notion de 5e mal acquise ne se répare pas
+// avec des exercices de 4e.
+//
+// ⚠️ DISPONIBLE, JAMAIS SUGGÉRÉ. L'application ne propose pas ce chemin en
+// réaction à de mauvais résultats : un outil qui annonce à un enfant qu'il
+// devrait redescendre d'une classe le marque, et le référentiel demande
+// l'inverse (P12). Le bouton est là, au même endroit que les autres façons de
+// réviser, et c'est l'apprenant qui décide.
+const programmeMatiere = computed(() => {
+  void tuteur.revisionsVersion
+  const e = activeEnfant.value
+  if (!e || !reviseMatiere.value) return ''
+  const p = tuteur.getProgramme(e.id, 'auto-' + reviseMatiere.value)
+  // On n'affiche rien quand c'est le programme de sa propre classe : le dire
+  // serait du bruit. On ne le dit que lorsqu'il s'en écarte, dans un sens ou
+  // dans l'autre.
+  return p && p !== (e.niveau || '') ? p : ''
+})
+const anneePrecedente = computed(() => {
+  void tuteur.revisionsVersion
+  const e = activeEnfant.value
+  if (!e || !reviseMatiere.value) return ''
+  const base = tuteur.getProgramme(e.id, 'auto-' + reviseMatiere.value) || e.niveau || ''
+  return niveauPrecedent(base, e.pays || '') || ''
+})
+function revoirLesBases() {
+  const e = activeEnfant.value
+  if (!e || !reviseMatiere.value || !isApprenant.value) return
+  tuteur.reviserAnneePrecedente(e.id, 'auto-' + reviseMatiere.value, e.niveau || '', e.pays || '')
 }
 
 // L'épreuve ne se propose QUE sur une matière déjà travaillée. Proposer un test
@@ -4084,6 +4127,10 @@ button.cp-mod:hover { border-color: var(--pr, #1558B0); }
 .rt-epreuve strong { display: block; font-size: 14px; color: var(--tx, #1f2937); }
 .rt-epreuve p { margin: 4px 0 10px; font-size: 12.5px; color: var(--tx3, #6b7280); line-height: 1.5; }
 .rt-epreuve-fermee { margin-bottom: 0 !important; }
+/* Revoir l'année d'avant : discret, au même niveau que le reste. Ni alerte, ni
+   couleur d'avertissement — ce n'est pas un constat d'échec, c'est un choix. */
+.rt-prog { margin: 10px 0 4px; font-size: 12.5px; color: var(--tx3, #6b7280); }
+.rt-bases { background: none; border: none; padding: 2px 0; font: inherit; font-size: 12.5px; color: var(--tx2, #4b5563); text-decoration: underline; cursor: pointer; }
 .rt-ic { flex-shrink: 0; width: 34px; height: 34px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; background: rgba(var(--pr-rgb,21,88,176),.10); color: var(--pr, #1558B0); }
 .rt-tx { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .rt-tx strong { font-size: 14px; color: var(--tx, #1f2937); }

@@ -4,7 +4,7 @@ import { auth as fbAuth, db } from '../firebase'
 import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore'
 import { isMapoPlusTenant } from '../utils/tenantContext'
 import { enregistrerActivite, hydraterRecompenses } from '../utils/recompenses'
-import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, niveauSuivant } from '../utils/progressionNiveau'
+import { PALIERS_PAR_CLASSE, PALIER_APRES_CHANGEMENT, niveauSuivant, niveauPrecedent } from '../utils/progressionNiveau'
 import { appliquerSeance } from '../utils/jaugeNiveau'
 import { enregistrerResultatElo } from '../utils/elo'
 import { historiqueEpreuves, remplacerEpreuves } from '../utils/examenBlanc'
@@ -917,6 +917,33 @@ export const useTuteurStore = defineStore('tuteur', () => {
     return suivant
   }
 
+  /**
+   * L'apprenant choisit de revoir le programme de l'année PRÉCÉDENTE pour cette
+   * matière (écart E11).
+   *
+   * ⚠️ Ce chemin n'est JAMAIS proposé par l'application en réaction à de mauvais
+   * résultats. Il est offert en permanence, au même endroit que les autres
+   * façons de réviser, et c'est délibéré : un outil qui annonce à un enfant
+   * qu'il devrait redescendre d'une classe le marque, et le référentiel demande
+   * l'inverse (P12, aucun marquage négatif). Que ce soit disponible sans être
+   * suggéré est exactement l'équilibre visé.
+   *
+   * On repart au palier du milieu, comme pour l'année suivante : les bases sont
+   * plus faciles, le renvoyer au palier 1 serait une punition déguisée.
+   */
+  function reviserAnneePrecedente(studentId, subjectId, classeActuelle, pays) {
+    const data = loadRevisions(studentId)
+    const e = data[subjectId]
+    if (!e) return null
+    const base = e.programme || classeActuelle
+    const precedent = niveauPrecedent(base, pays)
+    if (!precedent) return null // déjà au bas de l'échelle
+    data[subjectId] = { ...e, programme: precedent, level: PALIER_APRES_CHANGEMENT, jauge: 0, pretPourAnneeSuivante: false }
+    saveRevisions(studentId, data)
+    revisionsVersion.value++
+    return precedent
+  }
+
   /** L'apprenant décline : on ne le relance pas à chaque quiz. */
   function refuserAnneeSuivante(studentId, subjectId) {
     const data = loadRevisions(studentId)
@@ -1642,6 +1669,7 @@ export const useTuteurStore = defineStore('tuteur', () => {
     genererPositionnement, enregistrerPositionnement, doitProposerPositionnement, refuserPositionnement,
     saveRevisionSession, getRevisionHistory, syncHistoryFromCloud, migrerRevisionsVersProprietaire,
     pousserEpreuves, syncEpreuvesFromCloud, pousserNotions, syncNotionsFromCloud,
+    reviserAnneePrecedente,
     saveConversation, getConversations, deleteConversation, syncConversationsFromCloud,
     getAllRevisionStates, seedDemoIfEmpty, analyserCopie, transcrireCours, genererDictee, corrigerDictee, genererAppariement, orientation, prepaExamen, generateCoursePlan, generateBilan6c, extraireModules, evaluerReponse, chatTuteur, translateUI,
   }

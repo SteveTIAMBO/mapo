@@ -5486,6 +5486,8 @@
     "conseilNotionNeuf": "never covered",
     "conseilNotionFragile": "to revisit",
     "conseilEpreuve": "Check where you stand in {subject}, with no help",
+    "progEnCours": "In this subject, you are revising the {classe} syllabus.",
+    "revoirBases": "Revise the {classe} syllabus",
     "epreuveTitre": "Unassisted test",
     "epreuveQuoi": "Once a month per subject, under test conditions: no hint, no explanation before answering, one attempt. The result raises no level — it is there to show what you have actually kept.",
     "epreuveGo": "Start the test",

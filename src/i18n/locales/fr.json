@@ -5486,6 +5486,8 @@
     "conseilNotionNeuf": "jamais travaillé",
     "conseilNotionFragile": "à reprendre",
     "conseilEpreuve": "Fais le point sur {subject}, sans aucune aide",
+    "progEnCours": "Dans cette matière, tu révises le programme de {classe}.",
+    "revoirBases": "Revoir le programme de {classe}",
     "epreuveTitre": "Épreuve sans aide",
     "epreuveQuoi": "Une fois par mois et par matière, dans les conditions d’un contrôle : aucun indice, aucune explication avant de répondre, un seul essai. Le résultat ne fait monter aucun niveau — il sert à savoir ce qu’il te reste vraiment.",
     "epreuveGo": "Commencer l’épreuve",
