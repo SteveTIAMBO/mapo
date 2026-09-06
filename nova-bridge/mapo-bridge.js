@@ -169,8 +169,11 @@
       });
     }
 
-    // Sous-système
-    setSelect('sousSysteme', id.sousSysteme);
+    // Système (francophone / anglophone / bilingue).
+    // Deux noms acceptés : MAPO publie `systeme` depuis le 06/09/2026, mais les
+    // documents écrits avant ne portent que `sousSysteme`. Lire les deux évite
+    // de vider le champ pour une école dont le profil n'a pas été republié.
+    setSelect('sousSysteme', id.systeme || id.sousSysteme);
 
     // Filières
     if (id.filieres && id.filieres.length > 0) {

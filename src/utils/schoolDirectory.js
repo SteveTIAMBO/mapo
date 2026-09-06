@@ -77,12 +77,21 @@ function extractLevelsFromClasses(classes) {
 }
 
 /**
- * Déduit la langue d'enseignement / sous-système
+ * Déduit la langue d'enseignement et le SYSTÈME de l'établissement.
+ *
+ * Vocabulaire unifié le 06/09/2026 : « système » partout, au lieu de
+ * « sous-système » ici et de rien ailleurs. Trois endroits portaient ou allaient
+ * porter la même notion (l'annuaire public, les examens de fin de primaire, et
+ * le rattachement des niveaux et des personnels d'une école bilingue) ; deux
+ * mots pour une idée, c'est un mot de trop.
+ *
+ * ⚠️ `bilingue` n'existe qu'ICI. Un établissement peut faire les deux ; un
+ * niveau ou un enseignant appartient à l'un ou à l'autre.
  */
 function mapLanguage(lang) {
-  if (lang === 'fr') return { langues: ['Français'], sousSysteme: 'francophone' }
-  if (lang === 'en') return { langues: ['English'], sousSysteme: 'anglophone' }
-  return { langues: ['Français', 'English'], sousSysteme: 'bilingue' }
+  if (lang === 'fr') return { langues: ['Français'], systeme: 'francophone' }
+  if (lang === 'en') return { langues: ['English'], systeme: 'anglophone' }
+  return { langues: ['Français', 'English'], systeme: 'bilingue' }
 }
 
 /**
@@ -164,7 +173,7 @@ export function buildSchoolProfile({ schoolSettings, eleves, staff, classes, glo
   // ── Niveaux & Séries ──
   const levelsOffered = extractLevelsFromClasses(allClasses)
   const series = extractSeries(allClasses)
-  const { langues, sousSysteme } = mapLanguage(s.language)
+  const { langues, systeme } = mapLanguage(s.language)
 
   // ── Finances ──
   // Frais moyen de scolarité (fee type "scolarite" seulement)
@@ -206,7 +215,14 @@ export function buildSchoolProfile({ schoolSettings, eleves, staff, classes, glo
       website: s.website || '',
       niveauxOfferts: levelsOffered,
       langues,
-      sousSysteme,
+      systeme,
+      // ⚠️ ANCIEN NOM, CONSERVÉ EXPRÈS. Ce document n'est pas à nous seuls : NOVA
+      // et les applications partenaires le lisent pour pré-remplir leur
+      // formulaire ADN, avec la copie de `mapo-bridge.js` qu'elles ont déployée,
+      // pas celle de ce dépôt. Publier `systeme` seul viderait leur champ en
+      // silence. On écrit donc les deux le temps que NOVA bascule.
+      // À retirer une fois `mapo-bridge.js` redéployé côté NOVA — et pas avant.
+      sousSysteme: systeme,
       filieres: series,
       horairesCours: '',         // pas dans MAPO
     },

@@ -78,11 +78,17 @@ export function noteToPalier(note) {
 }
 
 // ── Examens de fin de primaire ─────────────────────────────────────────
+// `systeme` (renommé de `sousSysteme` le 06/09/2026) : même vocabulaire que
+// l'annuaire public et que le rattachement des niveaux d'une école bilingue.
+// ⚠️ Cette liste n'est importée nulle part à ce jour — c'est du camerounais en
+// dur, et les examens réellement servis viennent de EXAM_TYPES_PAR_PAYS
+// (stores/examens.js), qui est sourcé par pays. À supprimer ou à brancher, mais
+// c'est une décision à prendre, pas un effet de bord de ce renommage.
 export const EXAMENS_PRIMAIRE = [
-  { nom: 'CEP', libelle: "Certificat d'Études Primaires", sousSysteme: 'francophone' },
-  { nom: 'Entrée en 6e', libelle: "Concours d'entrée en 6e", sousSysteme: 'francophone' },
-  { nom: 'FSLC', libelle: 'First School Leaving Certificate', sousSysteme: 'anglophone' },
-  { nom: 'Common Entrance', libelle: 'Common Entrance Examination', sousSysteme: 'anglophone' },
+  { nom: 'CEP', libelle: "Certificat d'Études Primaires", systeme: 'francophone' },
+  { nom: 'Entrée en 6e', libelle: "Concours d'entrée en 6e", systeme: 'francophone' },
+  { nom: 'FSLC', libelle: 'First School Leaving Certificate', systeme: 'anglophone' },
+  { nom: 'Common Entrance', libelle: 'Common Entrance Examination', systeme: 'anglophone' },
 ]
 
 // Classes de démonstration pour une école primaire type
